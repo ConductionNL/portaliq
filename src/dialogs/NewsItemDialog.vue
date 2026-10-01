@@ -4,10 +4,11 @@
 <!--
   NewsItemDialog: write or change one news item and choose who it is for.
 
-  Its own file per ADR-004's modal-isolation rule. Opened by the News screen
-  (src/views/NewsAuthoring.vue). It closes with the form when saved, or with
-  nothing when cancelled; the screen does the save, so a refusal from the
-  server is shown where the list is.
+  Its own file per ADR-004's modal-isolation rule. Spawned by the News page's
+  `New news item` and `Change` handlers (src/lib/newsAuthoring.js,
+  createNewsHandlers). It saves through `submit`, closes with the success
+  sentence, and shows a refusal where staff can correct it; cancelled, it
+  closes with nothing.
 
   The school and group choices come from the school app (GET
   /api/news/audiences). When the school app offers no choices, the screen
@@ -17,7 +18,9 @@
 -->
 <template>
 	<NcDialog
-		:name="item ? t('portaliq', 'Change news item') : t('portaliq', 'New news item')"
+		:name="
+			item ? t('portaliq', 'Change news item') : t('portaliq', 'New news item')
+		"
 		size="normal"
 		data-testid="news-item-dialog"
 		@closing="$emit('close', null)">
@@ -33,7 +36,9 @@
 				resize="vertical"
 				data-testid="news-item-body" />
 
-			<fieldset v-if="form.audience !== 'children'" class="news-item__audience">
+			<fieldset
+				v-if="form.audience !== 'children'"
+				class="news-item__audience">
 				<legend>{{ t('portaliq', 'Who is this news for?') }}</legend>
 				<NcCheckboxRadioSwitch
 					v-model="form.audience"
@@ -53,7 +58,12 @@
 				</NcCheckboxRadioSwitch>
 			</fieldset>
 			<NcNoteCard v-else type="info">
-				{{ t('portaliq', 'This news item is for specific children. You can change the text, not who it is for.') }}
+				{{
+					t(
+						'portaliq',
+						'This news item is for specific children. You can change the text, not who it is for.',
+					)
+				}}
 			</NcNoteCard>
 
 			<template v-if="form.audience === 'school'">
@@ -69,7 +79,12 @@
 					v-else
 					v-model="form.schoolRef"
 					:label="t('portaliq', 'School reference')"
-					:helperText="t('portaliq', 'The school app offers no list of schools. Enter the school\'s reference.')"
+					:helperText="
+						t(
+							'portaliq',
+							'The school app offers no list of schools. Enter the school\'s reference.',
+						)
+					"
 					data-testid="news-item-school-ref" />
 			</template>
 			<NcSelect
@@ -80,7 +95,11 @@
 				multiple
 				:taggable="options.groups.length === 0"
 				:inputLabel="t('portaliq', 'Groups')"
-				:placeholder="options.groups.length === 0 ? t('portaliq', 'Enter a group reference') : ''"
+				:placeholder="
+					options.groups.length === 0
+						? t('portaliq', 'Enter a group reference')
+						: ''
+				"
 				data-testid="news-item-groups" />
 
 			<ul v-if="missing.length > 0" class="news-item__missing" role="alert">
@@ -88,6 +107,9 @@
 					{{ t('portaliq', sentence) }}
 				</li>
 			</ul>
+			<p v-if="refusal" class="news-item__missing" role="alert">
+				{{ refusal }}
+			</p>
 		</div>
 
 		<template #actions>
@@ -96,6 +118,7 @@
 			</NcButton>
 			<NcButton
 				variant="primary"
+				:disabled="busy"
 				data-testid="news-item-save"
 				@click="confirm">
 				{{ t('portaliq', 'Save') }}
@@ -142,6 +165,12 @@ export default {
 			type: Object,
 			default: () => ({ schools: [], groups: [] }),
 		},
+
+		/** Saves the form; answers `{ok, message}`. */
+		submit: {
+			type: Function,
+			required: true,
+		},
 	},
 
 	emits: ['close'],
@@ -150,6 +179,8 @@ export default {
 		return {
 			form: this.item ? formFromItem(this.item) : emptyForm(),
 			missing: [],
+			refusal: '',
+			busy: false,
 		}
 	},
 
@@ -163,6 +194,7 @@ export default {
 			get() {
 				return this.optionFor(this.options.schools, this.form.schoolRef)
 			},
+
 			/**
 			 * @param {object|null} option The chosen school.
 			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
@@ -179,15 +211,22 @@ export default {
 			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
 			 */
 			get() {
-				return this.form.groupRefs.map((ref) => this.optionFor(this.options.groups, ref))
+				return this.form.groupRefs.map((ref) =>
+					this.optionFor(this.options.groups, ref),
+				)
 			},
+
 			/**
 			 * @param {Array} selected The chosen groups.
 			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
 			 */
 			set(selected) {
 				this.form.groupRefs = (selected || [])
-					.map((option) => (typeof option === 'string' ? option : option?.id || option?.label || ''))
+					.map((option) =>
+						typeof option === 'string'
+							? option
+							: option?.id || option?.label || '',
+					)
 					.filter((ref) => ref !== '')
 			},
 		},
@@ -220,22 +259,32 @@ export default {
 			if (!ref) {
 				return null
 			}
-			return list.find((option) => option.id === ref) || { id: ref, label: ref }
+			return (
+				list.find((option) => option.id === ref) || { id: ref, label: ref }
+			)
 		},
 
 		/**
-		 * Close with the form, or say what is missing.
+		 * Save, then close on success; else say what is missing or refused.
 		 *
-		 * @return {void}
+		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
 		 */
-		confirm() {
+		async confirm() {
 			this.missing = missingFields(this.form)
+			this.refusal = ''
 			if (this.missing.length > 0) {
 				return
 			}
-			this.$emit('close', { ...this.form })
+			this.busy = true
+			const outcome = await this.submit({ ...this.form })
+			this.busy = false
+			if (outcome.ok) {
+				this.$emit('close', outcome.message)
+				return
+			}
+			this.refusal = outcome.message
 		},
 	},
 }

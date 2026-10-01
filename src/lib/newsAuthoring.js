@@ -2,19 +2,20 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The News screen, without the screen (staff-news-screen T3).
+ * The News page's actions, without the page (staff-news-screen T3, T4).
  *
  * Staff write a news item, choose who it is for (the whole school or one or
  * more groups), change it and publish it. Every write goes through the staff
  * authoring routes of `NewsController` (`POST /api/news`, `PUT
  * /api/news/{id}`, `PUT /api/news/{id}/publish|unpublish`), never through the
  * object API: those routes check the target and keep the read receipts and
- * translations the server owns. The list is read from the object API, where
- * the news schema is readable to every signed-in user.
+ * translations the server owns. The list itself is the manifest's News index
+ * page, which reads the news schema like any other index page.
  *
- * WHY THIS MODULE IMPORTS NOTHING. The transport and the URL generator are
- * handed in by `src/views/NewsAuthoring.vue`, so `tests/news-authoring.spec.mjs`
- * runs it as a plain node script, the same shape as `staffAccountActions.js`.
+ * WHY THIS MODULE IMPORTS NOTHING. The transport, the URL generator, the
+ * dialog and the toasts are handed in by `src/customComponents.js`, so
+ * `tests/news-authoring.spec.mjs` runs it as a plain node script, the same
+ * shape as `staffAccountActions.js`.
  *
  * @spec openspec/changes/staff-news-screen/tasks.md#T3
  */
@@ -200,18 +201,6 @@ export function audienceOf(item, options = { schools: [], groups: [] }) {
 }
 
 /**
- * The newest first: by the last change, then by creation.
- *
- * @param {Array<object>} items The news items.
- * @return {Array<object>}
- */
-function newestFirst(items) {
-	const when = (item) =>
-		String(item?.['@self']?.updated || item?.['@self']?.created || '')
-	return [...items].sort((a, b) => when(b).localeCompare(when(a)))
-}
-
-/**
  * The News screen's calls over an injected transport.
  *
  * @param {object} deps The collaborators.
@@ -227,21 +216,6 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 		generateUrl(path.replace('{id}', encodeURIComponent(id || '')))
 
 	return {
-		/**
-		 * Every news item, newest first.
-		 *
-		 * @return {Promise<Array<object>>}
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T3
-		 */
-		async list() {
-			const { data } = await get(
-				generateUrl('/apps/openregister/api/objects/portaliq/newsItem')
-					+ '?_limit=200',
-			)
-			const rows = Array.isArray(data?.results) ? data.results : []
-			return newestFirst(rows.filter((row) => idOf(row) !== ''))
-		},
-
 		/**
 		 * The school and group choices.
 		 *
@@ -272,7 +246,10 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 				target: targetFromForm(form),
 			}
 			if (id) {
-				const { data } = await put(route('/apps/portaliq/api/news/{id}', id), body)
+				const { data } = await put(
+					route('/apps/portaliq/api/news/{id}', id),
+					body,
+				)
 				return data
 			}
 			const { data } = await post(route('/apps/portaliq/api/news'), {
@@ -298,4 +275,156 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 			return data
 		},
 	}
+}
+
+/**
+ * The News page's header and row handlers (`newNewsItem`, `changeNewsItem`,
+ * `publishNewsItem`, `unpublishNewsItem`), resolved by the manifest's action
+ * dispatcher from `src/customComponents.js`. The dialog saves through
+ * `submit` so a refusal is shown where staff can correct it, the same shape
+ * as `createStaffAccountHandlers`.
+ *
+ * @param {object} deps The collaborators.
+ * @param {object} deps.api The calls, from createNewsApi().
+ * @param {Function} deps.openDialog ({item, options, submit}) => Promise<string|null>, the success sentence or null
+ * @param {Function} deps.currentUser () => string, the signed-in staff member
+ * @param {Function} deps.translate (text, vars) => string
+ * @param {Function} deps.notify Shows a success sentence.
+ * @param {Function} deps.notifyError Shows a failure sentence.
+ * @param {Function} deps.reload Shows the changed list (a handler gets no handle on it).
+ * @return {object}
+ * @spec openspec/changes/staff-news-screen/tasks.md#T4
+ */
+export function createNewsHandlers({
+	api,
+	openDialog,
+	currentUser,
+	translate,
+	notify,
+	notifyError,
+	reload,
+}) {
+	/**
+	 * Open the dialog for a new item (null) or an existing one.
+	 *
+	 * @param {object|null} item The news item.
+	 * @return {Promise<boolean>} Whether something was saved.
+	 */
+	async function edit(item) {
+		let options = { schools: [], groups: [] }
+		try {
+			options = await api.audiences()
+		} catch {
+			// No choices: the dialog asks for a reference instead.
+		}
+		const message = await openDialog({
+			item,
+			options,
+			submit: async (form) => {
+				try {
+					await api.save(form, item ? idOf(item) : '', currentUser())
+					return {
+						ok: true,
+						message: translate(
+							item
+								? 'The news item is changed.'
+								: 'The news item is saved as a draft. Publish it when it is ready.',
+						),
+					}
+				} catch (error) {
+					return { ok: false, message: translate(failureKey(error)) }
+				}
+			},
+		})
+		if (typeof message !== 'string' || message === '') {
+			return false
+		}
+		notify(message)
+		reload()
+		return true
+	}
+
+	/**
+	 * Publish an item or take it back.
+	 *
+	 * @param {object} item The news item.
+	 * @param {boolean} published True to publish.
+	 * @return {Promise<boolean>}
+	 */
+	async function publish(item, published) {
+		try {
+			await api.setPublished(idOf(item), published)
+		} catch (error) {
+			notifyError(translate(failureKey(error)))
+			return false
+		}
+		notify(
+			translate(
+				published
+					? 'The news item is published.'
+					: 'The news item is back to a draft. Parents no longer see it.',
+			),
+		)
+		reload()
+		return true
+	}
+
+	return {
+		/**
+		 * `New news item` on the News page.
+		 *
+		 * @return {Promise<boolean>}
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 */
+		newNewsItem: () => edit(null),
+
+		/**
+		 * `Change` on a News row.
+		 *
+		 * @param {{item: object}} payload The row action payload.
+		 * @return {Promise<boolean>}
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 */
+		changeNewsItem: ({ item }) => edit(item),
+
+		/**
+		 * `Publish` on a draft News row.
+		 *
+		 * @param {{item: object}} payload The row action payload.
+		 * @return {Promise<boolean>}
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 */
+		publishNewsItem: ({ item }) => publish(item, true),
+
+		/**
+		 * `Take back` on a published News row.
+		 *
+		 * @param {{item: object}} payload The row action payload.
+		 * @return {Promise<boolean>}
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 */
+		unpublishNewsItem: ({ item }) => publish(item, false),
+	}
+}
+
+/**
+ * Who a news item is for, as one translated line.
+ *
+ * @param {object} item The news item.
+ * @param {{schools: Array, groups: Array}} options The audience choices.
+ * @param {Function} translate (text, vars) => string
+ * @return {string}
+ * @spec openspec/changes/staff-news-screen/tasks.md#T4
+ */
+export function audienceLine(item, options, translate) {
+	const { kind, names } = audienceOf(item, options)
+	if (kind === AUDIENCE_CHILDREN) {
+		return translate('Specific children')
+	}
+	if (kind === AUDIENCE_GROUPS) {
+		return translate('Groups: {names}', { names: names.join(', ') })
+	}
+	return names.length > 0
+		? translate('Whole school: {name}', { name: names[0] })
+		: translate('Whole school')
 }

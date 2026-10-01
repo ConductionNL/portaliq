@@ -1987,16 +1987,7 @@
         "You may not issue or withdraw portal accounts. Ask an administrator for this right.": "U mag geen portaalaccounts uitgeven of intrekken. Vraag een beheerder om dit recht.",
         "News": "Nieuws",
         "New news item": "Nieuw nieuwsbericht",
-        "Parents see a news item in the portal once it is published, if it is for their child's school or group.": "Ouders zien een nieuwsbericht in het portaal zodra het gepubliceerd is, als het voor de school of groep van hun kind is.",
-        "No news yet": "Nog geen nieuws",
-        "Write a news item for the whole school or for a group.": "Schrijf een nieuwsbericht voor de hele school of voor een groep.",
-        "For": "Voor",
-        "Published": "Gepubliceerd",
-        "Draft": "Concept",
-        "Change {title}": "{title} wijzigen",
         "Change": "Wijzigen",
-        "Take back {title}": "{title} terugnemen",
-        "Publish {title}": "{title} publiceren",
         "Take back": "Terugnemen",
         "Specific children": "Bepaalde kinderen",
         "Groups: {names}": "Groepen: {names}",
@@ -2022,8 +2013,7 @@
         "Give the news item a title.": "Geef het nieuwsbericht een titel.",
         "Write the text of the news item.": "Schrijf de tekst van het nieuwsbericht.",
         "Choose at least one group.": "Kies minstens een groep.",
-        "Choose the school.": "Kies de school.",
-        "The news could not be loaded. Try again.": "Het nieuws kon niet worden geladen. Probeer het opnieuw."
+        "Choose the school.": "Kies de school."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

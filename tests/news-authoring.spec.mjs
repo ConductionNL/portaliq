@@ -19,8 +19,10 @@ import {
 	AUDIENCE_CHILDREN,
 	AUDIENCE_GROUPS,
 	AUDIENCE_SCHOOL,
+	audienceLine,
 	audienceOf,
 	createNewsApi,
+	createNewsHandlers,
 	emptyForm,
 	failureKey,
 	formFromItem,
@@ -52,13 +54,26 @@ function transport(answer = () => ({})) {
 }
 
 test('a new item for the whole school targets the school only', () => {
-	const form = { ...emptyForm(), title: 'Studiedag', body: 'Vrij', schoolRef: 's1', groupRefs: ['g7'] }
+	const form = {
+		...emptyForm(),
+		title: 'Studiedag',
+		body: 'Vrij',
+		schoolRef: 's1',
+		groupRefs: ['g7'],
+	}
 	assert.deepEqual(targetFromForm(form), { schoolRef: 's1' })
 	assert.deepEqual(missingFields(form), [])
 })
 
 test('an item for groups targets the chosen groups only', () => {
-	const form = { ...emptyForm(), audience: AUDIENCE_GROUPS, title: 'Uitje', body: 'Groep 7', schoolRef: 's1', groupRefs: ['g7', 'g8'] }
+	const form = {
+		...emptyForm(),
+		audience: AUDIENCE_GROUPS,
+		title: 'Uitje',
+		body: 'Groep 7',
+		schoolRef: 's1',
+		groupRefs: ['g7', 'g8'],
+	}
 	assert.deepEqual(targetFromForm(form), { groupRefs: ['g7', 'g8'] })
 })
 
@@ -69,45 +84,97 @@ test('a form names what is missing before it can be saved', () => {
 		'Choose the school.',
 	])
 	assert.deepEqual(
-		missingFields({ ...emptyForm(), audience: AUDIENCE_GROUPS, title: 'T', body: 'B' }),
+		missingFields({
+			...emptyForm(),
+			audience: AUDIENCE_GROUPS,
+			title: 'T',
+			body: 'B',
+		}),
 		['Choose at least one group.'],
 	)
 })
 
 test('an existing item opens with its own audience, and children are kept', () => {
-	assert.equal(formFromItem({ target: { schoolRef: 's1' } }).audience, AUDIENCE_SCHOOL)
-	assert.equal(formFromItem({ target: { groupRefs: ['g7'] } }).audience, AUDIENCE_GROUPS)
-	const forChildren = formFromItem({ title: 'T', body: 'B', target: { childRefs: ['vera'] } })
+	assert.equal(
+		formFromItem({ target: { schoolRef: 's1' } }).audience,
+		AUDIENCE_SCHOOL,
+	)
+	assert.equal(
+		formFromItem({ target: { groupRefs: ['g7'] } }).audience,
+		AUDIENCE_GROUPS,
+	)
+	const forChildren = formFromItem({
+		title: 'T',
+		body: 'B',
+		target: { childRefs: ['vera'] },
+	})
 	assert.equal(forChildren.audience, AUDIENCE_CHILDREN)
 	assert.deepEqual(targetFromForm(forChildren), { childRefs: ['vera'] })
 	assert.deepEqual(missingFields(forChildren), [])
 })
 
 test('the audience reads as names when the choices know them', () => {
-	const options = { schools: [{ id: 's1', label: 'De Wilgenboom' }], groups: [{ id: 'g7', label: 'Groep 7' }] }
-	assert.deepEqual(audienceOf({ target: { schoolRef: 's1' } }, options), { kind: AUDIENCE_SCHOOL, names: ['De Wilgenboom'] })
-	assert.deepEqual(audienceOf({ target: { groupRefs: ['g7', 'g9'] } }, options), { kind: AUDIENCE_GROUPS, names: ['Groep 7', 'g9'] })
-	assert.deepEqual(audienceOf({ target: { childRefs: ['vera'] } }, options), { kind: AUDIENCE_CHILDREN, names: [] })
+	const options = {
+		schools: [{ id: 's1', label: 'De Wilgenboom' }],
+		groups: [{ id: 'g7', label: 'Groep 7' }],
+	}
+	assert.deepEqual(audienceOf({ target: { schoolRef: 's1' } }, options), {
+		kind: AUDIENCE_SCHOOL,
+		names: ['De Wilgenboom'],
+	})
+	assert.deepEqual(audienceOf({ target: { groupRefs: ['g7', 'g9'] } }, options), {
+		kind: AUDIENCE_GROUPS,
+		names: ['Groep 7', 'g9'],
+	})
+	assert.deepEqual(audienceOf({ target: { childRefs: ['vera'] } }, options), {
+		kind: AUDIENCE_CHILDREN,
+		names: [],
+	})
 })
 
 test('a new item is created through the authoring route as the signed-in author', async () => {
 	const http = transport(() => ({ id: 'n1', status: 'draft' }))
 	const api = createNewsApi(http)
-	const saved = await api.save({ ...emptyForm(), title: ' Studiedag ', body: 'Vrij ', schoolRef: 's1' }, '', 'po-leerkracht-09')
+	const saved = await api.save(
+		{ ...emptyForm(), title: ' Studiedag ', body: 'Vrij ', schoolRef: 's1' },
+		'',
+		'po-leerkracht-09',
+	)
 	assert.equal(saved.id, 'n1')
-	assert.deepEqual(http.calls, [{
-		method: 'POST',
-		url: '/index.php/apps/portaliq/api/news',
-		body: { title: 'Studiedag', body: 'Vrij', target: { schoolRef: 's1' }, authorRef: 'po-leerkracht-09' },
-	}])
+	assert.deepEqual(http.calls, [
+		{
+			method: 'POST',
+			url: '/index.php/apps/portaliq/api/news',
+			body: {
+				title: 'Studiedag',
+				body: 'Vrij',
+				target: { schoolRef: 's1' },
+				authorRef: 'po-leerkracht-09',
+			},
+		},
+	])
 })
 
 test('a change goes to the item, without touching its author', async () => {
 	const http = transport(() => ({ id: 'n 1' }))
-	await createNewsApi(http).save({ ...emptyForm(), audience: AUDIENCE_GROUPS, title: 'T', body: 'B', groupRefs: ['g7'] }, 'n 1', 'someone-else')
+	await createNewsApi(http).save(
+		{
+			...emptyForm(),
+			audience: AUDIENCE_GROUPS,
+			title: 'T',
+			body: 'B',
+			groupRefs: ['g7'],
+		},
+		'n 1',
+		'someone-else',
+	)
 	assert.equal(http.calls[0].method, 'PUT')
 	assert.equal(http.calls[0].url, '/index.php/apps/portaliq/api/news/n%201')
-	assert.deepEqual(http.calls[0].body, { title: 'T', body: 'B', target: { groupRefs: ['g7'] } })
+	assert.deepEqual(http.calls[0].body, {
+		title: 'T',
+		body: 'B',
+		target: { groupRefs: ['g7'] },
+	})
 })
 
 test('publishing and taking back use their own routes', async () => {
@@ -115,23 +182,13 @@ test('publishing and taking back use their own routes', async () => {
 	const api = createNewsApi(http)
 	await api.setPublished('n1', true)
 	await api.setPublished('n1', false)
-	assert.deepEqual(http.calls.map((call) => [call.method, call.url]), [
-		['PUT', '/index.php/apps/portaliq/api/news/n1/publish'],
-		['PUT', '/index.php/apps/portaliq/api/news/n1/unpublish'],
-	])
-})
-
-test('the list is read from the object API, newest first', async () => {
-	const http = transport(() => ({
-		results: [
-			{ id: 'old', '@self': { updated: '2026-09-01T10:00:00+00:00' } },
-			{ id: 'new', '@self': { updated: '2026-10-01T10:00:00+00:00' } },
-			{ title: 'no id' },
+	assert.deepEqual(
+		http.calls.map((call) => [call.method, call.url]),
+		[
+			['PUT', '/index.php/apps/portaliq/api/news/n1/publish'],
+			['PUT', '/index.php/apps/portaliq/api/news/n1/unpublish'],
 		],
-	}))
-	const items = await createNewsApi(http).list()
-	assert.deepEqual(items.map((item) => item.id), ['new', 'old'])
-	assert.match(http.calls[0].url, /^\/index\.php\/apps\/openregister\/api\/objects\/portaliq\/newsItem\?/)
+	)
 })
 
 test('the choices tolerate an empty answer', async () => {
@@ -140,25 +197,198 @@ test('the choices tolerate an empty answer', async () => {
 })
 
 test('a refusal reads as a plain sentence', () => {
-	assert.equal(failureKey({ response: { status: 403 } }), 'You may not write news. Ask an administrator for this right.')
-	assert.equal(failureKey({ response: { status: 400, data: { error: 'invalid_target' } } }), 'Give a title, a text and who the news is for.')
-	assert.equal(failureKey({ response: { status: 404 } }), 'This news item no longer exists.')
-	assert.equal(failureKey(new Error('offline')), 'The news item could not be saved. Try again.')
+	assert.equal(
+		failureKey({ response: { status: 403 } }),
+		'You may not write news. Ask an administrator for this right.',
+	)
+	assert.equal(
+		failureKey({ response: { status: 400, data: { error: 'invalid_target' } } }),
+		'Give a title, a text and who the news is for.',
+	)
+	assert.equal(
+		failureKey({ response: { status: 404 } }),
+		'This news item no longer exists.',
+	)
+	assert.equal(
+		failureKey(new Error('offline')),
+		'The news item could not be saved. Try again.',
+	)
 })
 
-test('the News screen is a menu entry, a registered page and backed by the routes', () => {
-	const manifest = JSON.parse(readFileSync(join(ROOT, 'src/manifest.json'), 'utf8'))
+test('the audience reads as one translated line', () => {
+	const options = {
+		schools: [{ id: 's1', label: 'De Wilgenboom' }],
+		groups: [{ id: 'g7', label: 'Groep 7' }],
+	}
+	const tr = (text, vars) => text.replace(/\{(\w+)\}/g, (m, k) => vars[k])
+	assert.equal(
+		audienceLine({ target: { schoolRef: 's1' } }, options, tr),
+		'Whole school: De Wilgenboom',
+	)
+	assert.equal(
+		audienceLine({ target: { groupRefs: ['g7'] } }, options, tr),
+		'Groups: Groep 7',
+	)
+	assert.equal(audienceLine({ target: {} }, options, tr), 'Whole school')
+	assert.equal(
+		audienceLine({ target: { childRefs: ['vera'] } }, options, tr),
+		'Specific children',
+	)
+})
+
+/**
+ * The handlers over a recording api and dialog.
+ *
+ * @param {object} overrides Replacements for the api calls.
+ * @return {object}
+ */
+function handlers(overrides = {}) {
+	const seen = {
+		saved: [],
+		published: [],
+		notified: [],
+		errors: [],
+		reloads: 0,
+		dialogs: [],
+	}
+	const api = {
+		audiences: async () => ({
+			schools: [{ id: 's1', label: 'School' }],
+			groups: [],
+		}),
+		save: async (form, id, author) => {
+			seen.saved.push({ form, id, author })
+			return {}
+		},
+		setPublished: async (id, published) => {
+			seen.published.push([id, published])
+			return {}
+		},
+		...overrides,
+	}
+	const list = createNewsHandlers({
+		api,
+		openDialog: async (props) => {
+			seen.dialogs.push(props)
+			const outcome = await props.submit({
+				...emptyForm(),
+				title: 'T',
+				body: 'B',
+				schoolRef: 's1',
+			})
+			return outcome.ok ? outcome.message : null
+		},
+		currentUser: () => 'po-leerkracht-09',
+		translate: (text) => text,
+		notify: (m) => seen.notified.push(m),
+		notifyError: (m) => seen.errors.push(m),
+		reload: () => {
+			seen.reloads++
+		},
+	})
+	return { list, seen }
+}
+
+test('New news item saves a draft as the signed-in author, with the choices offered', async () => {
+	const { list, seen } = handlers()
+	assert.equal(await list.newNewsItem(), true)
+	assert.deepEqual(seen.dialogs[0].options.schools, [
+		{ id: 's1', label: 'School' },
+	])
+	assert.equal(seen.dialogs[0].item, null)
+	assert.deepEqual(
+		seen.saved.map((s) => [s.id, s.author]),
+		[['', 'po-leerkracht-09']],
+	)
+	assert.deepEqual(seen.notified, [
+		'The news item is saved as a draft. Publish it when it is ready.',
+	])
+	assert.equal(seen.reloads, 1)
+})
+
+test('Change saves to the row, and a refusal stays in the dialog', async () => {
+	const ok = handlers()
+	await ok.list.changeNewsItem({
+		item: { id: 'n1', title: 'T', body: 'B', target: { schoolRef: 's1' } },
+	})
+	assert.equal(ok.seen.saved[0].id, 'n1')
+	assert.deepEqual(ok.seen.notified, ['The news item is changed.'])
+
+	const refused = handlers({
+		save: async () => {
+			const e = new Error('no')
+			e.response = { status: 403 }
+			throw e
+		},
+	})
+	assert.equal(await refused.list.changeNewsItem({ item: { id: 'n1' } }), false)
+	assert.equal(refused.seen.reloads, 0)
+})
+
+test('Publish and Take back call their routes and say what happened', async () => {
+	const { list, seen } = handlers()
+	await list.publishNewsItem({ item: { id: 'n1' } })
+	await list.unpublishNewsItem({ item: { id: 'n1' } })
+	assert.deepEqual(seen.published, [
+		['n1', true],
+		['n1', false],
+	])
+	assert.deepEqual(seen.notified, [
+		'The news item is published.',
+		'The news item is back to a draft. Parents no longer see it.',
+	])
+
+	const failing = handlers({
+		setPublished: async () => {
+			const e = new Error('x')
+			e.response = { status: 404 }
+			throw e
+		},
+	})
+	assert.equal(await failing.list.publishNewsItem({ item: { id: 'gone' } }), false)
+	assert.deepEqual(failing.seen.errors, ['This news item no longer exists.'])
+})
+
+test('the News page is an index page whose actions are handlers backed by the routes', () => {
+	const manifest = JSON.parse(
+		readFileSync(join(ROOT, 'src/manifest.json'), 'utf8'),
+	)
 	const page = manifest.pages.find((entry) => entry.id === 'News')
 	assert.ok(page, 'manifest has a News page')
-	assert.equal(page.type, 'custom')
-	assert.equal(page.component, 'NewsAuthoring')
-	assert.ok(manifest.menu.some((entry) => entry.route === 'News'), 'the menu links the News page')
+	assert.equal(page.type, 'index')
+	assert.equal(page.config.schema, 'newsItem')
+	assert.equal(
+		page.config.showAdd,
+		false,
+		'no object-form Add: news goes through the authoring routes',
+	)
+	assert.ok(
+		manifest.menu.some((entry) => entry.route === 'News'),
+		'the menu links the News page',
+	)
+	const handlerNames = [...page.config.headerActions, ...page.config.actions].map(
+		(action) => action.handler,
+	)
+	assert.deepEqual(handlerNames, [
+		'newNewsItem',
+		'changeNewsItem',
+		'publishNewsItem',
+		'unpublishNewsItem',
+	])
 
+	const components = readFileSync(join(ROOT, 'src/customComponents.js'), 'utf8')
+	assert.match(components, /\.\.\.newsHandlers,/)
 	const registry = readFileSync(join(ROOT, 'src/registry.js'), 'utf8')
-	assert.match(registry, /NewsAuthoring: \{\s*kind: 'page',\s*component: NewsAuthoring,/)
+	assert.match(
+		registry,
+		/component: NewsTargetCell,\s*appliesTo: \{\s*schema: 'newsItem',\s*property: 'target',/,
+	)
 
 	const routes = readFileSync(join(ROOT, 'appinfo/routes.php'), 'utf8')
-	for (const route of ["'news#update', 'url' => '/api/news/{id}', 'verb' => 'PUT'", "'news#audiences', 'url' => '/api/news/audiences', 'verb' => 'GET'"]) {
+	for (const route of [
+		"'news#update', 'url' => '/api/news/{id}', 'verb' => 'PUT'",
+		"'news#audiences', 'url' => '/api/news/audiences', 'verb' => 'GET'",
+	]) {
 		assert.ok(routes.includes(route), route)
 	}
 })

@@ -37,12 +37,12 @@
 //
 // See: https://github.com/ConductionNL/hydra → openspec/architecture/adr-036-universal-widget-manifest.md
 
+import NewsTargetCell from './cellRenderers/NewsTargetCell.vue'
 import StatusBadge from './cellRenderers/StatusBadge.vue'
 import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
-import NewsAuthoring from './views/NewsAuthoring.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import AvailabilityReport from './widgets/AvailabilityReport.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
@@ -331,17 +331,6 @@ export default {
 		component: PageLayoutDesigner,
 	},
 
-	/**
-	 * The staff News screen (staff-news-screen T4): write school news,
-	 * choose the whole school or groups, change it and publish it, through
-	 * the staff authoring routes. Custom for the reasons in the manifest
-	 * page's _note.
-	 */
-	NewsAuthoring: {
-		kind: 'page',
-		component: NewsAuthoring,
-	},
-
 	// -------------------------------------------------------------------------
 	// kind: "form-field" — custom property editors
 	// -------------------------------------------------------------------------
@@ -372,6 +361,16 @@ export default {
 		appliesTo: {
 			schema: 'example',
 			property: 'status',
+		},
+	},
+
+	// Who a news item is for, as one line (staff-news-screen T4).
+	'news-target': {
+		kind: 'cell-renderer',
+		component: NewsTargetCell,
+		appliesTo: {
+			schema: 'newsItem',
+			property: 'target',
 		},
 	},
 }
