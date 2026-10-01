@@ -713,12 +713,21 @@ export function createPortalApi(config) {
 		 * Create an object via a declared `type: create` action. Only the action's
 		 * whitelisted fields are sent; the server stamps ownership.
 		 *
+		 * The action's id travels as `?actionId=`, so the server writes through
+		 * the action whose form was filled in. Two create actions on one schema
+		 * (a request and a complaint both writing `ticket`) otherwise fell to
+		 * whichever was declared first.
+		 *
 		 * @param {object} action Manifest action: `{ id, register, schema }`.
 		 * @param {object} data The whitelisted field values.
 		 * @return {Promise<object>} `{ ok, status, object }` result envelope.
+		 *
+		 * @spec openspec/changes/create-names-its-action/tasks.md#T2
 		 */
 		async createObject(action, data) {
-			return send('POST', col(action.register, action.schema), data)
+			const id = action && typeof action.id === 'string' ? action.id : ''
+			const query = id !== '' ? `?actionId=${encodeURIComponent(id)}` : ''
+			return send('POST', `${col(action.register, action.schema)}${query}`, data)
 		},
 
 		/**

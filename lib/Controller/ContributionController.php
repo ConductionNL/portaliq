@@ -49,6 +49,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
@@ -969,6 +970,12 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$match = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
+		if ($match === CreateActionMatcher::AMBIGUOUS) {
+			// Two or more create actions write this schema and the client
+			// named none: refuse rather than guess (create-names-its-action).
+			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
+		}
+
 		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
@@ -1053,31 +1060,40 @@ class ContributionController extends Controller implements PortalProtected {
 
 
 	/**
-	 * Find a `type: create` action for (register, schema) in the subject's
-	 * contributions, or null when the subject is not entitled to create there.
+	 * Find the subject's `type: create` action for (register, schema), by the
+	 * id the client sends as `actionId`.
+	 *
+	 * Two create actions may write one schema (a request form and a complaint
+	 * form both writing `ticket`), so the first declared one is never taken
+	 * for granted (create-names-its-action). A named id must be one of the
+	 * subject's create actions on this register and schema, else null (403).
+	 * Without an id, a single candidate is used as before, and two or more
+	 * answer CreateActionMatcher::AMBIGUOUS (400) rather than a guess.
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param string $register The requested register.
 	 * @param string $schema The requested schema.
 	 *
-	 * @return array{action: array<string, mixed>, app: string}|null The matched
-	 *                                                               action and its contributing app (the
-	 *                                                               WMEBV receipt's `appId`), or null.
+	 * @return array{action: array<string, mixed>, app: string}|string|null The matched
+	 *                                                                      action and its contributing app (the
+	 *                                                                      WMEBV receipt's `appId`), 'ambiguous',
+	 *                                                                      or null.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
 	 */
-	private function authorisedCreateAction(array $subject, string $register, string $schema): ?array {
-		$aggregate = $this->registry->aggregateFor($subject);
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') === 'create'
-					&& ($action['register'] ?? '') === $register
-					&& ($action['schema'] ?? '') === $schema
-				) {
-					return ['action' => $action, 'app' => (string)($contribution['app'] ?? '')];
-				}
-			}
+	private function authorisedCreateAction(array $subject, string $register, string $schema): array|string|null {
+		$requested = $this->request->getParam('actionId', '');
+		$actionId = '';
+		if (is_string($requested) === true) {
+			$actionId = $requested;
 		}
 
-		return null;
+		return (new CreateActionMatcher())->match(
+			aggregate: $this->registry->aggregateFor($subject),
+			register: $register,
+			schema: $schema,
+			actionId: $actionId
+		);
 	}//end authorisedCreateAction()
 
 	/**

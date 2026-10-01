@@ -590,6 +590,102 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testAClaimScopedCreateWithoutTheClaimIsRefused()
 
+	/**
+	 * Two create actions on one schema: the action the form names is the one
+	 * that writes. Before, the first declared action won, so a complaint was
+	 * saved with the request form's defaults and whitelist.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 */
+	public function testCreateWritesThroughTheActionItNames(): void {
+		$captured = null;
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$captured) {
+				$captured = $data;
+				return ['id' => 'new'];
+			}
+		);
+
+		$response = $this->controller(
+			aggregate: $this->twoCreatesOnOneSchema(),
+			writer: $writer,
+			params: ['actionId' => 'fileComplaint', 'title' => 'X']
+		)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('complaint', $captured['ticketType']);
+
+	}//end testCreateWritesThroughTheActionItNames()
+
+	/**
+	 * An id the subject has no create action for on this target is refused
+	 * before anything is written, also when it names another target's action.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 */
+	public function testCreateNamingAnUnknownActionIsRefused(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+		$aggregate = $this->twoCreatesOnOneSchema();
+		$aggregate['contributions'][0]['actions'][] = ['id' => 'elsewhere', 'type' => 'create', 'register' => 'r1', 'schema' => 'other', 'fields' => ['title']];
+
+		foreach (['nope', 'elsewhere'] as $id) {
+			$response = $this->controller(aggregate: $aggregate, writer: $writer, params: ['actionId' => $id])->create('r1', 'ticket');
+			$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus(), $id);
+		}
+
+	}//end testCreateNamingAnUnknownActionIsRefused()
+
+	/**
+	 * Without an id and with two create actions on the target, the create is
+	 * refused with a 400 that says so, rather than guessed.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 */
+	public function testCreateWithoutAnIdBetweenTwoActionsIsRefusedNotGuessed(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+
+		$response = $this->controller(aggregate: $this->twoCreatesOnOneSchema(), writer: $writer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('action_required', $response->getData()['error']);
+
+	}//end testCreateWithoutAnIdBetweenTwoActionsIsRefusedNotGuessed()
+
+	/**
+	 * Without an id and with exactly one create action on the target, the
+	 * create keeps working as it did.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 */
+	public function testCreateWithoutAnIdAndOneActionStillWorks(): void {
+		$aggregate = $this->aggregate(actions: [['id' => 'only', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title']]]);
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturn(['id' => 'new']);
+
+		$response = $this->controller(aggregate: $aggregate, writer: $writer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+
+	}//end testCreateWithoutAnIdAndOneActionStillWorks()
+
+	/**
+	 * Two create actions writing the same schema with different defaults.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function twoCreatesOnOneSchema(): array {
+		return $this->aggregate(
+			actions: [
+				['id' => 'fileRequest', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'defaults' => ['ticketType' => 'request']],
+				['id' => 'fileComplaint', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'defaults' => ['ticketType' => 'complaint']],
+			]
+		);
+
+	}//end twoCreatesOnOneSchema()
+
 	public function testCreateRecordsACreateAuditEntryWithTheNewId(): void {
 		// portal-session-hardening-v2 T09: a successful create() records a
 		// `create` audit entry carrying the NEWLY created object's id.
@@ -2085,16 +2181,17 @@ class ContributionControllerTest extends TestCase {
 		?array $anonymousAggregate = null,
 		?PortalSchemaReader $schemaReader = null,
 		?CaseTypeVisibility $caseTypes = null,
+		array $params = [],
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', '']]);
 		$request->method('getParam')->willReturnCallback(
-			function (string $key) {
-				$params = [
+			function (string $key, $default = null) use ($params) {
+				$params = $params + [
 					'title' => 'X',
 					'claims' => ['portaliq' => ['exampleContactId' => 'HACKED']],
 				];
-				return ($params[$key] ?? null);
+				return ($params[$key] ?? $default);
 			}
 		);
 
