@@ -45,7 +45,9 @@ import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import AvailabilityReport from './widgets/AvailabilityReport.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
+import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
+import PortalRegistration from './widgets/PortalRegistration.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
@@ -224,6 +226,28 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "The portal's case types, each with a \"Show in this portal\" switch (operate-show-per-case-type). Custom because the list is the union of the portal's published forms, the case apps' caseTypeSource and its own hidden list, read and saved through PortalCaseTypesController, and because hiding must warn before it saves.",
+	},
+	// @custom-widget-ratchet exclude the button shows only on a pending account and asks a required reason before posting the guarded void route, which no built-in widget or detail header action can do in nc-vue 2.57
+	PortalAccountWithdraw: {
+		kind: 'widget',
+		component: PortalAccountWithdraw,
+		defaultSize: { w: 12, h: 2 },
+		minSize: { w: 4, h: 2 },
+		maxSize: { w: 12, h: 4 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'Withdraw this account, on a pending account only (identity-staff-account-screens T06). Custom because the reason comes from VoidAccountDialog and the withdrawal posts /api/accounts/void behind portal.provision.',
+	},
+	// @custom-widget-ratchet exclude the policy is written into the portal record's authentication block, and the waiting list answers each registration through the guarded approve and refuse routes, which no built-in widget does
+	PortalRegistration: {
+		kind: 'widget',
+		component: PortalRegistration,
+		defaultSize: { w: 12, h: 7 },
+		minSize: { w: 6, h: 4 },
+		maxSize: { w: 12, h: 12 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "Who may make an account on the portal and the registrations waiting for approval (identity-staff-account-screens T07). Custom because the policy is saved inside the portal's authentication block and Approve and Refuse post the guarded account routes.",
 	},
 	// @custom-widget-ratchet exclude per provider a route choice, the broker settings and a write-only secret, saved through an admin controller that refuses a broker route whose settings are incomplete, which no built-in widget does
 	PortalSignin: {

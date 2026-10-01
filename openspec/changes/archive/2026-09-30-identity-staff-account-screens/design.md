@@ -71,3 +71,21 @@ with the reason given.
 ## What it deliberately does not do
 
 - It does not add a new ADR-023 action; `portal.provision` covers all of it.
+
+## As built (2026-09-30)
+
+- D4 is a widget, not a header action: `PortalAccountWithdraw` on
+  `PortalAccountDetail`. In nc-vue 2.57 a detail page's `headerActions`
+  handler resolves against `manifest.actions`, not the handler map the index
+  pages read, and `open-modal` passes static props, so no header action can
+  open a dialog that knows the record. The widget shows the button only on
+  `status: pending` and says why otherwise.
+- D5 is a widget too, `PortalRegistration` on `PortalDetail`, not a tab. The
+  policy is saved per portal (the `portal.authentication.registration` block
+  `PortalRegistrationPolicyService` reads), so the matrix row's "per
+  organisation" is met per portal.
+- "Withdraw invitation" is hidden on an accepted row (`visibleWhen`), and the
+  server refuses it anyway (`already_accepted`).
+- The invitee's "This invitation is no longer valid." is the acceptance
+  screen of identity-ways-in-screens T06; here the revoked state is what
+  `accept()` refuses.

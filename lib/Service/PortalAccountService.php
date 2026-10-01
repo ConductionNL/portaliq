@@ -399,7 +399,7 @@ class PortalAccountService {
 	 *
 	 * @return bool True when the account is now active.
 	 *
-	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T03
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
 	 */
 	public function approvePending(string $subjectRef): bool {
 		$account = $this->findBySubjectRef(subjectRef: $subjectRef);
