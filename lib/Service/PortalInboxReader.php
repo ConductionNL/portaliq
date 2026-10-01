@@ -49,6 +49,24 @@ class PortalInboxReader {
 	private const ROW_LIMIT = 200;
 
 	/**
+	 * The notices portaliq writes itself (an answered question, a matched
+	 * saved search, a published decision, a submission receipt, a delivered
+	 * task) as one built-in inbox source. Every resident's inbox reads it,
+	 * whether or not a contribution declares an inbox over `portalMessage`,
+	 * through the same scoped read as a declared source: on `subjectRef`, with
+	 * the subject's own reference and organisation.
+	 *
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	public const OWN_MESSAGES = [
+		'id' => 'portalMessages',
+		'kind' => 'inbox',
+		'register' => 'portaliq',
+		'schema' => 'portalMessage',
+		'scopeField' => 'subjectRef',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader The subject-scoped OR reader every
@@ -93,6 +111,7 @@ class PortalInboxReader {
 	 * @return array<int, array<string, mixed>> The merged inbox rows.
 	 *
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T01
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
 	 */
 	public function aggregateInbox(array $subject, array $aggregate): array {
 		$rows = [];
@@ -127,6 +146,8 @@ class PortalInboxReader {
 				}
 			}//end foreach
 		}//end foreach
+
+		$rows = array_merge($rows, $this->ownMessages(subject: $subject, declared: $rows));
 
 		if ($this->deliveries !== null) {
 			$rows = $this->deliveries->annotate(subject: $subject, rows: $rows);
@@ -166,6 +187,67 @@ class PortalInboxReader {
 
 		return $count;
 	}//end unreadCount()
+
+	/**
+	 * The subject's own `portalMessage` notices, tagged as the built-in
+	 * source. A notice a declared collection already returned is left out, so
+	 * a portal that also declares an inbox over `portalMessage` shows it once,
+	 * under the declared collection. A row without an id is left out too: it
+	 * could not be marked read.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<int, array<string, mixed>> $declared The rows the declared collections returned.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	private function ownMessages(array $subject, array $declared): array {
+		$seen = [];
+		foreach ($declared as $row) {
+			if (($row['_source']['register'] ?? '') === self::OWN_MESSAGES['register'] && ($row['_source']['schema'] ?? '') === self::OWN_MESSAGES['schema']) {
+				$seen[$this->rowId(row: $row)] = true;
+			}
+		}
+
+		$rows = [];
+		foreach ($this->readInboxCollection(subject: $subject, collection: self::OWN_MESSAGES, contributingApp: 'portaliq') as $row) {
+			$rowId = $this->rowId(row: $row);
+			if ($rowId === '' || isset($seen[$rowId]) === true) {
+				continue;
+			}
+
+			$row['_source'] = [
+				'appId' => 'portaliq',
+				'label' => '',
+				'register' => self::OWN_MESSAGES['register'],
+				'schema' => self::OWN_MESSAGES['schema'],
+				'collection' => self::OWN_MESSAGES['id'],
+			];
+			$rows[] = $row;
+		}
+
+		return $rows;
+	}//end ownMessages()
+
+	/**
+	 * A row's id, whichever key the reader returned it under.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The id, or '' when the row carries none.
+	 */
+	private function rowId(array $row): string {
+		$self = (array)($row['@self'] ?? []);
+
+		foreach ([($row['id'] ?? null), ($row['uuid'] ?? null), ($self['id'] ?? null)] as $candidate) {
+			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
+				return (string)$candidate;
+			}
+		}
+
+		return '';
+	}//end rowId()
 
 	/**
 	 * Read one inbox collection, subject-scoped, through the standard reader.

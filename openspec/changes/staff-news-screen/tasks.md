@@ -6,5 +6,5 @@
   - PHPUnit `NewsAudienceOptionsTest`, `NewsControllerTest::testAudiencesListsTheSchoolAndGroupChoices`
 - [x] **T3**: `src/lib/newsAuthoring.js`: form, target, missing fields, audience line, calls over the authoring routes
   - `node --test tests/news-authoring.spec.mjs`
-- [x] **T4**: the News index page (manifest page and menu entry, handlers `newNewsItem`, `changeNewsItem`, `publishNewsItem`, `unpublishNewsItem` in `src/customComponents.js`), `src/dialogs/NewsItemDialog.vue`, the `target` cell renderer, Dutch translations
+- [x] **T4**: the News index page (manifest page and menu entry, handlers `newNewsItem`, `changeNewsItem`, `publishNewsItem`, `unpublishNewsItem` in `src/customComponents.js`), `src/dialogs/NewsItemDialog.vue`, the `news-target` column widget (CnAppRoot cellWidgets), Dutch translations
   - `node --test tests/news-authoring.spec.mjs` (handlers and wiring); live: a teacher writes, changes and publishes a school-wide item at the primary school and the guardian reads it
