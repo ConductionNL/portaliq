@@ -15,19 +15,47 @@
 import { outcomeKey } from './rowAction.js'
 
 /**
- * The well-formed attached actions of a collection.
+ * Whether an attached action applies to a row: always without `rowWhen`,
+ * else only when the row's field holds one of the listed values. A malformed
+ * `rowWhen` applies to no row. The server checks the same on the row it read
+ * (attach-to-own-collection REQ-ATO-002); this keeps the screen honest.
+ *
+ * @param {object} entry The attached action.
+ * @param {object} row   The row on screen.
+ * @return {boolean}
+ * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+ */
+function appliesTo(entry, row) {
+	if (!entry.rowWhen) {
+		return true
+	}
+	const { field, in: allowed } = entry.rowWhen
+	if (typeof field !== 'string' || !Array.isArray(allowed)) {
+		return false
+	}
+	return allowed.includes(row[field])
+}
+
+/**
+ * The well-formed attached actions of a collection, and with a row, only the
+ * ones that apply to it.
  *
  * @param {object} collection The manifest collection.
+ * @param {object} [row]      The row on screen; without it nothing is left out.
  * @return {Array<object>} Entries with string `app` and `id`.
+ * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
  */
-export function attachedActionsOf(collection) {
+export function attachedActionsOf(collection, row) {
 	const listed =
 		collection && Array.isArray(collection.attachedActions)
 			? collection.attachedActions
 			: []
 	return listed.filter(
 		(entry) =>
-			entry && typeof entry.app === 'string' && typeof entry.id === 'string',
+			entry
+			&& typeof entry.app === 'string'
+			&& typeof entry.id === 'string'
+			&& (!row || appliesTo(entry, row)),
 	)
 }
 

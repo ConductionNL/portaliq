@@ -7,6 +7,10 @@
  * in their own apps, and belong on opencatalogi's dossier page. Row actions
  * only resolve within one contribution, so the declaring action names its
  * target itself: `attachTo: {app, schema}`, plus the usual `rowField`.
+ * `attachTo.collection` narrows it to that one collection of the target, and
+ * the target may be the action's own app: pipelinq's reply belongs on the
+ * resident's question detail only, not on every ticket list
+ * (attach-to-own-collection).
  *
  * INVARIANT: presentation-only, like RowActionResolver. It never changes the
  * action, and lists on the target collection only what the resident's form
@@ -27,6 +31,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+ * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
  */
 
 declare(strict_types=1);
@@ -46,8 +51,10 @@ class AttachedActionResolver {
 
 	/**
 	 * The action keys the target collection lists; never the endpoint.
+	 * `rowWhen` is listed so a renderer can leave the action off a row it does
+	 * not apply to; the forward checks it again on the row it read.
 	 */
-	private const LISTED = ['label', 'fields', 'fieldConfigs', 'submitLabel', 'successMessage'];
+	private const LISTED = ['label', 'fields', 'fieldConfigs', 'submitLabel', 'successMessage', 'rowWhen'];
 
 	/**
 	 * Add each attaching action to the collections it names.
@@ -78,7 +85,7 @@ class AttachedActionResolver {
 				unset($collection[self::KEY]);
 				$listed = [];
 				foreach ($attaching as $entry) {
-					if ($entry['target'] === $app && $entry['schema'] === (string)($collection['schema'] ?? '')) {
+					if ($this->targets(entry: $entry, app: $app, collection: $collection) === true) {
 						$listed[] = $entry['listed'];
 					}
 				}
@@ -107,16 +114,16 @@ class AttachedActionResolver {
 	 * @return array<string, mixed>|null The action as its own app declares it.
 	 *
 	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
 	 */
 	public function attachedAction(array $contributions, string $collectionApp, array $collection, string $actionApp, string $actionId): ?array {
 		if ($this->isListed(collection: $collection, actionApp: $actionApp, actionId: $actionId) === false) {
 			return null;
 		}
 
-		$schema = (string)($collection['schema'] ?? '');
 		foreach ($this->attaching(contributions: $contributions) as $entry) {
-			$same = [$entry['app'], $entry['action']['id'], $entry['target'], $entry['schema']] === [$actionApp, $actionId, $collectionApp, $schema];
-			if ($same === true) {
+			$same = [$entry['app'], $entry['action']['id']] === [$actionApp, $actionId];
+			if ($same === true && $this->targets(entry: $entry, app: $collectionApp, collection: $collection) === true) {
 				return $entry['action'];
 			}
 		}
@@ -148,7 +155,7 @@ class AttachedActionResolver {
 	 *
 	 * @param array<int, array<string, mixed>> $contributions The contributions.
 	 *
-	 * @return array<int, array{app: string, target: string, schema: string, action: array<string, mixed>, listed: array<string, mixed>}>
+	 * @return array<int, array{app: string, target: string, schema: string, collection: string, action: array, listed: array}>
 	 */
 	private function attaching(array $contributions): array {
 		$out = [];
@@ -175,7 +182,7 @@ class AttachedActionResolver {
 	 * @param string $app    The app that declares it.
 	 * @param mixed  $action The action.
 	 *
-	 * @return array{app: string, target: string, schema: string, action: array<string, mixed>, listed: array<string, mixed>}|null
+	 * @return array{app: string, target: string, schema: string, collection: string, action: array, listed: array}|null
 	 */
 	private function attachment(string $app, mixed $action): ?array {
 		if (is_array($action) === false || is_string($action['id'] ?? null) === false
@@ -191,10 +198,43 @@ class AttachedActionResolver {
 			return null;
 		}
 
+		// An optional collection id narrows the target to that one collection.
+		// A malformed one attaches nothing: widening it to every collection on
+		// the schema would show the action where its app never meant it.
+		$collection = ($target['collection'] ?? '');
+		if ($collection !== '' && $this->isName(value: $collection) === false) {
+			return null;
+		}
+
 		$listed = $this->listedFor(app: $app, action: $action);
 
-		return ['app' => $app, 'target' => $target['app'], 'schema' => $target['schema'], 'action' => $action, 'listed' => $listed];
+		return [
+			'app' => $app,
+			'target' => $target['app'],
+			'schema' => $target['schema'],
+			'collection' => (string)$collection,
+			'action' => $action,
+			'listed' => $listed,
+		];
 	}//end attachment()
+
+	/**
+	 * Whether an attachment targets this collection of this app: the app and
+	 * the schema, and the collection id when the attachment names one.
+	 *
+	 * @param array{target: string, schema: string, collection: string} $entry      The attachment.
+	 * @param string                                                     $app        The app that owns the collection.
+	 * @param array<string, mixed>                                       $collection The collection.
+	 *
+	 * @return bool
+	 */
+	private function targets(array $entry, string $app, array $collection): bool {
+		if ($entry['target'] !== $app || $entry['schema'] !== (string)($collection['schema'] ?? '')) {
+			return false;
+		}
+
+		return $entry['collection'] === '' || $entry['collection'] === (string)($collection['id'] ?? '');
+	}//end targets()
 
 	/**
 	 * What the target collection lists of an attaching action: never its

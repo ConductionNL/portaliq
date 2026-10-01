@@ -150,4 +150,98 @@ class AttachedActionResolverTest extends TestCase {
 		self::assertNull($resolver->attachedAction(contributions: $out, collectionApp: 'opencatalogi', collection: $out[0]['collections'][1], actionApp: 'pipelinq', actionId: 'askAboutDossier'));
 		self::assertNull($resolver->attachedAction(contributions: $out, collectionApp: 'opencatalogi', collection: $out[0]['collections'][0], actionApp: 'dossiq', actionId: 'askAboutDossier'));
 	}//end testFindsTheAttachedActionForAForward()
+
+	/**
+	 * The resolved aggregate of pipelinq answering on its own questions: the
+	 * reply attaches to `myQuestions` only, not to the other ticket list.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function ownQuestions(): array {
+		$reply = [
+			'id' => 'replyToQuestion',
+			'label' => 'Reageren op het antwoord',
+			'endpoint' => '/index.php/apps/pipelinq/api/portal/questions/reply',
+			'method' => 'POST',
+			'fields' => ['ticket', 'message'],
+			'rowField' => 'ticket',
+			'rowWhen' => ['field' => 'status', 'in' => ['awaiting_customer']],
+			'attachTo' => ['app' => 'pipelinq', 'schema' => 'ticket', 'collection' => 'myQuestions'],
+		];
+
+		return (new AttachedActionResolver())->resolve(contributions: [
+			[
+				'app' => 'pipelinq',
+				'collections' => [
+					['id' => 'ownRequests', 'register' => 'pipelinq', 'schema' => 'ticket'],
+					['id' => 'myQuestions', 'register' => 'pipelinq', 'schema' => 'ticket'],
+				],
+				'actions' => [$reply],
+			],
+		]);
+	}//end ownQuestions()
+
+	/**
+	 * `attachTo.collection` narrows the attachment to that one collection, and
+	 * an app may attach to its own collection.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+	 */
+	public function testAttachToCollectionNarrowsToThatCollection(): void {
+		$out = $this->ownQuestions();
+
+		self::assertArrayNotHasKey('attachedActions', $out[0]['collections'][0]);
+		self::assertSame('replyToQuestion', $out[0]['collections'][1]['attachedActions'][0]['id'] ?? null);
+		self::assertSame(['message'], $out[0]['collections'][1]['attachedActions'][0]['fields']);
+	}//end testAttachToCollectionNarrowsToThatCollection()
+
+	/**
+	 * The listing carries the action's `rowWhen`, so a renderer can leave the
+	 * action off a row it does not apply to.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+	 */
+	public function testTheListingCarriesRowWhen(): void {
+		$listed = $this->ownQuestions()[0]['collections'][1]['attachedActions'][0];
+
+		self::assertSame(['field' => 'status', 'in' => ['awaiting_customer']], $listed['rowWhen']);
+		self::assertArrayNotHasKey('endpoint', $listed);
+	}//end testTheListingCarriesRowWhen()
+
+	/**
+	 * The forward's lookup honours the collection narrowing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+	 */
+	public function testTheForwardLookupHonoursTheCollection(): void {
+		$resolver = new AttachedActionResolver();
+		$out = $this->ownQuestions();
+		$questions = $out[0]['collections'][1];
+		$requests = $out[0]['collections'][0];
+		// A forged listing on the other collection still finds nothing.
+		$requests['attachedActions'] = [['app' => 'pipelinq', 'id' => 'replyToQuestion']];
+
+		self::assertSame('replyToQuestion', $resolver->attachedAction(contributions: $out, collectionApp: 'pipelinq', collection: $questions, actionApp: 'pipelinq', actionId: 'replyToQuestion')['id'] ?? null);
+		self::assertNull($resolver->attachedAction(contributions: $out, collectionApp: 'pipelinq', collection: $requests, actionApp: 'pipelinq', actionId: 'replyToQuestion'));
+	}//end testTheForwardLookupHonoursTheCollection()
+
+	/**
+	 * A malformed `attachTo.collection` attaches nothing, rather than widening
+	 * to every collection on the schema.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+	 */
+	public function testAMalformedCollectionAttachesNothing(): void {
+		$out = (new AttachedActionResolver())->resolve(contributions: $this->contributions(action: $this->ask(['attachTo' => ['app' => 'opencatalogi', 'schema' => 'collection', 'collection' => ['x']]])));
+
+		self::assertArrayNotHasKey('attachedActions', $out[0]['collections'][0]);
+	}//end testAMalformedCollectionAttachesNothing()
 }//end class
