@@ -10,9 +10,9 @@
 
 ## The screen
 
-- [ ] **T03**: Extract `ActionFields.jsx` from `SchemaForm.jsx`, use it in `SchemaForm` and in the row action dialog, and remove the unused `ActionFieldsForm.jsx` (REQ-RAI-001). Verification: Vitest `SchemaForm.test.jsx` unchanged green; `RowActionDialog.test.jsx` renders a select for a static options provider.
-- [ ] **T04**: `RowActionDialog.jsx`: declared fields, row inputs, the confirmation text, the success message, errors under their inputs (REQ-RAI-001, REQ-RAI-002, REQ-RAI-003, REQ-RAI-005). Verification: Vitest with a stubbed forward returning 200 with a message, 422 with `errors`, and 403.
-- [ ] **T05**: `CollectionTable.jsx` shows an endpoint row action only where `availableWhen` holds, and the reason elsewhere (REQ-RAI-004). Verification: Vitest with one available and one unavailable row.
+- [ ] **T03**: Extract `src/site/components/ActionFields.vue` from the site's `SchemaForm.vue`, use it in `SchemaForm.vue` and in the row action dialog; the React `ActionFieldsForm.jsx` is not ported (REQ-RAI-001). Verification: node test `tests/schema-form.spec.mjs` green; the row action dialog's node test renders a select for a static options provider.
+- [ ] **T04**: `src/site/modals/RowActionDialog.vue`: declared fields, row inputs, the confirmation text, the success message, errors under their inputs (REQ-RAI-001, REQ-RAI-002, REQ-RAI-003, REQ-RAI-005). Verification: node test with a stubbed forward returning 200 with a message, 422 with `errors`, and 403.
+- [ ] **T05**: `src/site/components/CollectionTable.vue` shows an endpoint row action only where `availableWhen` holds, and the reason elsewhere (REQ-RAI-004). Verification: node test with one available and one unavailable row.
 - [ ] **T06**: Playwright `tests/e2e/case-actions-row-inputs-and-conditions.spec.ts` against a fixture contribution with a reason select, a row input and an availability field. Verification: the spec passes in CI.
 
 ## Strings, docs and validation

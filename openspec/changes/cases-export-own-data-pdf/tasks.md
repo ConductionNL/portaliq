@@ -18,7 +18,7 @@
 
 ## The screen
 
-- [ ] **T06**: "Download as PDF" above an opted-in collection block and in `DetailCard`; `portalApi.downloadPdf()` (REQ-OPX-001)
+- [ ] **T06**: "Download as PDF" above an opted-in collection block and in `DetailCard`, in the site's `src/site/components/` (`CollectionTable.vue`, `DetailCard.vue`); `downloadPdf()` on the shared `src/shared/portalApi.js` (REQ-OPX-001)
   - Playwright `tests/e2e/cases-export-own-data-pdf.spec.ts`: a resident downloads their statement list as a PDF, and the file starts with `%PDF`
 - [ ] **T07**: The too-large and failure messages (REQ-OPX-004)
   - Playwright `tests/e2e/cases-export-own-data-pdf.spec.ts`: a stubbed 400 shows the too-large message

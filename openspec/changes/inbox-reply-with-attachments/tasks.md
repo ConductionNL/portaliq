@@ -19,11 +19,11 @@
 
 ## The screen
 
-- [ ] **T05**: "Reply" under a message with a reply declaration; the in-place form with subject, text and the action's file fields; send, then upload through `fileFieldSubmit.js` (REQ-IRA-002, REQ-IRA-003)
+- [ ] **T05**: "Reply" under a message with a reply declaration, in the site's `src/site/pages/InboxPage.vue`; the in-place form with subject, text and the action's file fields; send, then upload through `fileFieldSubmit.js` (REQ-IRA-002, REQ-IRA-003)
   - Playwright `tests/e2e/inbox-reply-with-attachments.spec.ts`: a resident replies to a handler's message with a PDF, and the reply object carries the case id of the original message and the file
 - [ ] **T06**: The partial-failure message when an upload fails after the reply was written (REQ-IRA-003)
   - Playwright `tests/e2e/inbox-reply-with-attachments.spec.ts`: a stubbed upload failure shows the partial-failure message and the reply exists
-- [ ] **T07**: Incoming attachments listed under a message and downloadable (REQ-IRA-004)
+- [ ] **T07**: Incoming attachments listed under a message in `src/site/pages/InboxPage.vue` and downloadable (REQ-IRA-004)
   - Playwright `tests/e2e/inbox-reply-with-attachments.spec.ts`: a resident downloads a file a handler attached
 
 ## Docs and strings

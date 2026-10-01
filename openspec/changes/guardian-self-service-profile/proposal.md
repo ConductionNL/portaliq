@@ -4,6 +4,8 @@ kind: code
 
 # Proposal: guardian-self-service-profile
 
+> Retargeted 2026-10-01 (`site-reaches-portal-parity`): new frontend work in this change lands in the Vue site `src/site/`, not in the React portal `src/portal/`, which is being retired.
+
 Learniq round 1 competitor sweep, finding 9.11 "Parents maintain their own
 contact data and preferences" (`learniq-round1/compare/findings.md` and
 `change-plan.md` in ConductionNL/market-intelligence, 2026-09-25). moodle
