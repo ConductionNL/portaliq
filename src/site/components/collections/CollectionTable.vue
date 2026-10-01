@@ -264,4 +264,10 @@ export default {
 .pq-collection-table__action + .pq-collection-table__action {
 	margin-inline-start: var(--utrecht-space-inline-sm, 0.5rem);
 }
+
+/* A cell holding a list reads one value per line (cells.js joins with a
+   line break; array-cells-one-line-per-item). */
+.pq-collection-table .utrecht-table__cell {
+	white-space: pre-line;
+}
 </style>
