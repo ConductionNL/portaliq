@@ -350,6 +350,7 @@ class SessionController extends Controller {
 	 * @param string $portal The `?portal=` slug the public site sends when it names no org.
 	 * @param string $silent `1` asks the broker to sign in without a prompt
 	 *                       (signin-session-idle-warning-and-sso D5).
+	 * @param string $returnTo The site page to land on once signed in; only a page on the site route is kept.
 	 *
 	 * @return Response 302 to the broker, or the generic OIDC error.
 	 *
@@ -436,13 +437,18 @@ class SessionController extends Controller {
 			$prompt = 'none';
 		}
 
+		$returnAddress = $siteReturn;
+		if ($returnAddress === '') {
+			$returnAddress = $this->returnToPortal(site: $site);
+		}
+
 		$stored = $this->stateStore->create(
 			state: $state,
 			nonce: $nonce,
 			codeVerifier: $pkce['verifier'],
 			org: $org,
 			provider: $provider,
-			returnTo: $siteReturn !== '' ? $siteReturn : $this->returnToPortal(site: $site),
+			returnTo: $returnAddress,
 			silent: ($prompt === 'none')
 		);
 		if ($stored === false) {
