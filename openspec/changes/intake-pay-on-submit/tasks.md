@@ -6,7 +6,7 @@
 
 ## Declarations
 
-- [ ] **T02**: `portalCaseType.portalFee` (`amount`, `currency`, `description`, `payAction`), `portalIntakeSubmission.paymentIntentId`, `portal.paymentHosts` in `lib/Settings/portaliq_register.json`, with a register version bump (REQ-IPS-001, REQ-IPS-004). Verification: the register import test.
+- [x] **T02**: `portalCaseType.portalFee` (`amount`, `currency`, `description`, `payAction`), `portalIntakeSubmission.paymentIntentId`, `portal.paymentHosts` in `lib/Settings/portaliq_register.json`, with a register version bump (REQ-IPS-001, REQ-IPS-004). Verification: the register import test.
 - [ ] **T03**: The render payload carries the declared fee; a fee-bearing binding requires `substantial` (REQ-IPS-001, REQ-IPS-002). Verification: `PortalFormBindingResolverTest::testFeeRequiresSession`.
 
 ## The pay route
