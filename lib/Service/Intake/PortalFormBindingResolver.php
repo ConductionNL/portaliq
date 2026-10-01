@@ -327,7 +327,7 @@ class PortalFormBindingResolver {
 			'minTrust' => ($form['minTrust'] ?? null),
 			// The fee the case type declares, without the action that takes
 			// it (intake-pay-on-submit REQ-IPS-001); null when it is free.
-			'fee' => $this->publicFee(binding: $binding),
+			'fee' => $this->fees?->publicFeeFor(binding: $binding),
 		];
 	}//end render()
 
@@ -457,22 +457,6 @@ class PortalFormBindingResolver {
 
 		return $out;
 	}//end fieldsOf()
-
-	/**
-	 * The fee the resident is told about, or null when the request is free.
-	 *
-	 * @param array<string, mixed> $binding The binding.
-	 *
-	 * @return array{amount: string, currency: string, description: string}|null
-	 */
-	private function publicFee(array $binding): ?array {
-		$fee = $this->fees?->feeFor(binding: $binding);
-		if ($fee === null) {
-			return null;
-		}
-
-		return ['amount' => $fee['amount'], 'currency' => $fee['currency'], 'description' => $fee['description']];
-	}//end publicFee()
 
 	/**
 	 * The host a URL names, for the card the visitor reads before leaving.

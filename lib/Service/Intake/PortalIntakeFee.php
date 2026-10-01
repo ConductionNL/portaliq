@@ -94,6 +94,25 @@ class PortalIntakeFee {
 	}//end feeFor()
 
 	/**
+	 * The fee the resident is told about, without the action that takes it,
+	 * or null when the request is free.
+	 *
+	 * @param array<string, mixed> $binding The form binding.
+	 *
+	 * @return array{amount: string, currency: string, description: string}|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-fee-comes-from-the-case-type-req-ips-001
+	 */
+	public function publicFeeFor(array $binding): ?array {
+		$fee = $this->feeFor(binding: $binding);
+		if ($fee === null) {
+			return null;
+		}
+
+		return ['amount' => $fee['amount'], 'currency' => $fee['currency'], 'description' => $fee['description']];
+	}//end publicFeeFor()
+
+	/**
 	 * A declared amount as a two-decimal text, or null when it is none.
 	 *
 	 * @param mixed $declared The declared amount: "12.50", "12" or 12.5.
