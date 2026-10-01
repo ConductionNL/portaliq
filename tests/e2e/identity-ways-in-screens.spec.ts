@@ -50,7 +50,9 @@ test.describe('identity-ways-in-screens', () => {
 
 	test('No e-mail based sign-in, no registration', async ({ page }) => {
 		await page.goto('/apps/portaliq/portal?portal=e2e-digid-only')
-		await expect(page.getByRole('heading', { name: 'Create an account' })).toHaveCount(0)
+		await expect(
+			page.getByRole('heading', { name: 'Create an account' }),
+		).toHaveCount(0)
 	})
 
 	test('A reference link arrives by mail', async ({ page }) => {
@@ -66,12 +68,19 @@ test.describe('identity-ways-in-screens', () => {
 
 	test('A resident follows their case without an account', async ({ page }) => {
 		await page.route('**/portal/api/identity/reference-link/redeem', (route) =>
-			route.fulfill({ status: 200, json: { bearer: 'reference-bearer', caseReference: 'Z-2026-0042' } }),
+			route.fulfill({
+				status: 200,
+				json: { bearer: 'reference-bearer', caseReference: 'Z-2026-0042' },
+			}),
 		)
 		await page.route('**/portal/api/identity/reference-case', (route) =>
 			route.fulfill({
 				status: 200,
-				json: { case: { status: 'In behandeling' }, caseReference: 'Z-2026-0042', readOnly: true },
+				json: {
+					case: { status: 'In behandeling' },
+					caseReference: 'Z-2026-0042',
+					readOnly: true,
+				},
 			}),
 		)
 		await page.goto(`${PORTAL}#reference=mailed-secret`)
@@ -82,15 +91,20 @@ test.describe('identity-ways-in-screens', () => {
 	})
 
 	test('The reference session cannot reach another case', async ({ request }) => {
-		const answer = await request.get('/apps/portaliq/portal/api/identity/reference-case', {
-			headers: { Authorization: 'Bearer not-a-reference-session' },
-		})
+		const answer = await request.get(
+			'/apps/portaliq/portal/api/identity/reference-case',
+			{
+				headers: { Authorization: 'Bearer not-a-reference-session' },
+			},
+		)
 		expect(answer.status()).toBe(401)
 	})
 
 	test('A link works once', async ({ page }) => {
 		await page.goto(`${PORTAL}#reference=already-spent`)
-		await expect(page.getByTestId('way-in-link-result')).toContainText('This link is no longer valid.')
+		await expect(page.getByTestId('way-in-link-result')).toContainText(
+			'This link is no longer valid.',
+		)
 	})
 
 	test('An invited supplier accepts', async ({ page }) => {

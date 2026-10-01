@@ -19,7 +19,9 @@ const FRAGMENTS = ['activate', 'invitation', 'reference']
  * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T06
  */
 export function consumeWayInFragment(location, history) {
-	const match = String(location?.hash || '').match(/^#(activate|invitation|reference)=([^&]+)$/)
+	const match = String(location?.hash || '').match(
+		/^#(activate|invitation|reference)=([^&]+)$/,
+	)
 	if (!match || !FRAGMENTS.includes(match[1])) {
 		return null
 	}
@@ -59,7 +61,11 @@ export function leadingZeroBits(bytes) {
  *
  * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T02
  */
-export async function solveChallenge(nonce, difficulty, subtle = globalThis.crypto?.subtle) {
+export async function solveChallenge(
+	nonce,
+	difficulty,
+	subtle = globalThis.crypto?.subtle,
+) {
 	if (!subtle || !nonce) {
 		return ''
 	}
@@ -67,7 +73,9 @@ export async function solveChallenge(nonce, difficulty, subtle = globalThis.cryp
 	const encoder = new TextEncoder()
 	const limit = 2 ** Math.min(30, Math.max(1, difficulty) + 8)
 	for (let counter = 0; counter < limit; counter++) {
-		const digest = new Uint8Array(await subtle.digest('SHA-256', encoder.encode(`${nonce}:${counter}`)))
+		const digest = new Uint8Array(
+			await subtle.digest('SHA-256', encoder.encode(`${nonce}:${counter}`)),
+		)
 		if (leadingZeroBits(digest) >= difficulty) {
 			return String(counter)
 		}
@@ -87,13 +95,16 @@ export async function solveChallenge(nonce, difficulty, subtle = globalThis.cryp
 export function wayInRefusalText(code) {
 	const texts = {
 		registration_off: 'This portal does not take new accounts.',
-		domain_not_allowed: 'This portal takes accounts for some e-mail domains only, and yours is not one of them.',
+		domain_not_allowed:
+			'This portal takes accounts for some e-mail domains only, and yours is not one of them.',
 		invalid_email: 'Check the address and try again.',
-		challenge_failed: 'The check against automated sign-ups did not pass. Try again.',
+		challenge_failed:
+			'The check against automated sign-ups did not pass. Try again.',
 		activation_not_valid: 'This link is no longer valid.',
 		link_not_valid: 'This link is no longer valid.',
 		invitation_not_valid: 'This invitation is no longer valid.',
-		route_not_offered: 'Cases of this kind cannot be followed with a case number.',
+		route_not_offered:
+			'Cases of this kind cannot be followed with a case number.',
 	}
 	return texts[code] || 'That did not work. Try again later.'
 }

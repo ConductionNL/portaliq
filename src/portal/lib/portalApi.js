@@ -655,7 +655,10 @@ export function createPortalApi(config) {
 		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T02
 		 */
 		async challenge(surface) {
-			const query = new URLSearchParams({ surface, portal: config.organisationSlug || '' })
+			const query = new URLSearchParams({
+				surface,
+				portal: config.organisationSlug || '',
+			})
 			return get(`/identity/challenge?${query.toString()}`)
 		},
 
@@ -669,7 +672,13 @@ export function createPortalApi(config) {
 		 *
 		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T02
 		 */
-		async registerAccount({ email, displayName = '', challenge = {}, solution = '', honeypot = null }) {
+		async registerAccount({
+			email,
+			displayName = '',
+			challenge = {},
+			solution = '',
+			honeypot = null,
+		}) {
 			const body = {
 				portal: config.organisationSlug || '',
 				email,
@@ -706,7 +715,13 @@ export function createPortalApi(config) {
 		 *
 		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T04
 		 */
-		async requestReferenceLink({ register, schema, caseType, caseReference, email }) {
+		async requestReferenceLink({
+			register,
+			schema,
+			caseType,
+			caseReference,
+			email,
+		}) {
 			return answer('POST', '/identity/reference-link', {
 				portal: config.organisationSlug || '',
 				register,
@@ -741,7 +756,10 @@ export function createPortalApi(config) {
 		async referenceCase(bearer) {
 			try {
 				const res = await fetch(`${base}/identity/reference-case`, {
-					headers: { Accept: 'application/json', Authorization: `Bearer ${bearer}` },
+					headers: {
+						Accept: 'application/json',
+						Authorization: `Bearer ${bearer}`,
+					},
 				})
 				return res.ok ? await res.json() : null
 			} catch {

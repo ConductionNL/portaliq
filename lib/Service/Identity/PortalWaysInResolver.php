@@ -67,7 +67,8 @@ class PortalWaysInResolver {
 	 * @param array<string, mixed> $portal The portal's own configuration row.
 	 * @param array<int, array<string, mixed>> $oidcProviders The sign-in buttons it offers.
 	 *
-	 * @return array{register: bool, reference: bool, emailSignIn: string, referenceCaseTypes: array<int, array{register: string, schema: string, caseType: string, label: string}>}
+	 * @return array{register: bool, reference: bool, emailSignIn: string, referenceCaseTypes: array<int, array<string, string>>}
+	 *         `referenceCaseTypes` holds `register`, `schema`, `caseType` and `label` per case type.
 	 *
 	 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T07
 	 */
