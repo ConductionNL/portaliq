@@ -312,6 +312,7 @@ return [
         ['name' => 'portalIntake#form', 'url' => '/portal/api/intake/form', 'verb' => 'GET'],
         ['name' => 'portalIntake#submit', 'url' => '/portal/api/intake/submit', 'verb' => 'POST'],
         ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],
+        ['name' => 'portalIntake#pay', 'url' => '/portal/api/intake/pay', 'verb' => 'POST'],
 
         // The citizen's own identity (portal-identity-and-the-organisations-cases):
         // the challenge this portal runs itself, the one-time reference link

@@ -37,6 +37,7 @@ use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
+use OCA\Portaliq\Service\Intake\PortalIntakePayment;
 use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -73,6 +74,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalIntakeQueue $queue Records and reports on submissions.
 	 * @param PortalChallengeService $challenge The portal's own challenge.
 	 * @param PortalCatalogueReader $catalogue The published request entries.
+	 * @param PortalIntakePayment $payments Starts and reads a fee's payment.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -84,6 +86,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly PortalIntakeQueue $queue,
 		private readonly PortalChallengeService $challenge,
 		private readonly PortalCatalogueReader $catalogue,
+		private readonly PortalIntakePayment $payments,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -260,8 +263,48 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		// The payment state is read from integriq's record, never from the
+		// return address (intake-pay-on-submit REQ-IPS-005).
+		$intentId = $this->queue->paymentIntentOf(reference: $reference, portal: (string)($site['slug'] ?? ''));
+		if ($intentId !== '') {
+			$status['payment'] = ['state' => $this->payments->stateOf(paymentIntentId: $intentId)];
+		}
+
 		return new JSONResponse($status);
 	}//end status()
+
+	/**
+	 * Start paying the fee of the resident's own request.
+	 *
+	 * @param string $reference The reference the resident was given.
+	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
+	 *
+	 * @return JSONResponse `checkoutUrl` to go to, or the refusal: 401 without a
+	 *                      session, 404 for a reference that is not the
+	 *                      resident's, 409 without a fee or when paid, 403
+	 *                      when the pay action is not offered, 502 when the
+	 *                      payment cannot start or its host is not declared.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-only-the-submitter-can-pay-once-req-ips-003
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function pay(string $reference, string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
+		if ($site === null) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['error' => 'sign_in_required'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$answer = $this->payments->pay(site: $site, subject: $subject, reference: $reference);
+
+		return new JSONResponse($answer['body'], $answer['status']);
+	}//end pay()
 
 	/**
 	 * Why this form accepts no submission from this visitor, or null.
@@ -304,12 +347,19 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return null;
 		}
 
+		$refusal = ['error' => 'sign_in_required', 'minTrust' => $required];
+		if (is_array($render['fee'] ?? null) === true) {
+			// The fee is named before the first question
+			// (intake-pay-on-submit REQ-IPS-002).
+			$refusal['fee'] = $render['fee'];
+		}
+
 		if ($subject === null) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse($refusal, Http::STATUS_UNAUTHORIZED);
 		}
 
 		if (PortalSessionService::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required], Http::STATUS_FORBIDDEN);
+			return new JSONResponse($refusal, Http::STATUS_FORBIDDEN);
 		}
 
 		return null;

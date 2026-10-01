@@ -230,6 +230,57 @@ class PortalIntakeQueue {
 	}//end markFailed()
 
 	/**
+	 * The resident's own submission behind a reference, or null.
+	 *
+	 * Null as well for another resident's and for an anonymous one, so a
+	 * reference that is not yours reads exactly like one that does not exist.
+	 *
+	 * @param string $reference The reference.
+	 * @param string $portal The portal.
+	 * @param string $subjectRef The signed-in resident.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-only-the-submitter-can-pay-once-req-ips-003
+	 */
+	public function ownSubmission(string $reference, string $portal, string $subjectRef): ?array {
+		$row = $this->byReference(reference: $reference, portal: $portal);
+		if ($row === null || $subjectRef === '' || (string)($row['subjectRef'] ?? '') !== $subjectRef) {
+			return null;
+		}
+
+		return $row;
+	}//end ownSubmission()
+
+	/**
+	 * Note the payment record a submission's fee is paid through.
+	 *
+	 * @param array<string, mixed> $submission The submission row.
+	 * @param string $paymentIntentId Integriq's payment record id.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-result-is-read-from-the-payment-record-req-ips-005
+	 */
+	public function recordPaymentIntent(array $submission, string $paymentIntentId): bool {
+		return $this->write(submission: $submission, data: ['paymentIntentId' => $paymentIntentId]);
+	}//end recordPaymentIntent()
+
+	/**
+	 * The payment record noted on a submission, or '' when there is none.
+	 *
+	 * @param string $reference The reference.
+	 * @param string $portal The portal.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-result-is-read-from-the-payment-record-req-ips-005
+	 */
+	public function paymentIntentOf(string $reference, string $portal): string {
+		return (string)($this->byReference(reference: $reference, portal: $portal)['paymentIntentId'] ?? '');
+	}//end paymentIntentOf()
+
+	/**
 	 * The submission carrying a reference, within one portal.
 	 *
 	 * @param string $reference The reference.

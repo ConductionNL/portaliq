@@ -11,8 +11,8 @@
 
 ## The pay route
 
-- [ ] **T04**: `PortalIntakeController::pay()` and route `POST /portal/api/intake/pay`: 401, 404, 409, 403, server-built body, forward, host check, store `paymentIntentId` (REQ-IPS-001, REQ-IPS-003, REQ-IPS-004). Verification: `PortalIntakeControllerTest::testPayForwardsTheDeclaredAmount`, `::testForeignReferenceIs404`, `::testPaidSubmissionIs409`, `::testUndeclaredCheckoutHostIsRefused`.
-- [ ] **T05**: `status()` adds `payment.state` from the `payment_intent` object (REQ-IPS-005). Verification: `PortalIntakeControllerTest::testStatusReadsPaymentFromTheIntent`, `::testQueryStringDoesNotSetPaymentState`.
+- [x] **T04**: `PortalIntakeController::pay()` and route `POST /portal/api/intake/pay`: 401, 404, 409, 403, server-built body, forward, host check, store `paymentIntentId` (REQ-IPS-001, REQ-IPS-003, REQ-IPS-004). Built: the controller answers 401 itself and hands the rest to `lib/Service/Intake/PortalIntakePayment::pay()` (the controller already carried eight collaborators), the fee read is `PortalIntakeFee`, and the fee names the paying app as well as its action (`portalFee.payApp`, design D1). Verification: `PortalIntakePaymentTest::testPayForwardsTheDeclaredAmount`, `::testForeignReferenceIs404`, `::testPaidSubmissionIs409`, `::testUndeclaredCheckoutHostIsRefused`, `::testAnUnofferedPayActionIs403`; `PortalIntakeControllerTest::testPayNeedsASession`.
+- [x] **T05**: `status()` adds `payment.state` from the `payment_intent` object (REQ-IPS-005). Verification: `PortalIntakeControllerTest::testStatusReadsPaymentFromTheIntent`, `::testQueryStringDoesNotSetPaymentState`.
 
 ## The screen
 
