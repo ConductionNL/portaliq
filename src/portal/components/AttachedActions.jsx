@@ -25,7 +25,8 @@ import {
  * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
  */
 export default function AttachedActions({ collection, row, api, t }) {
-	const actions = attachedActionsOf(collection)
+	// Only the actions this record's state allows (attach-to-own-collection).
+	const actions = attachedActionsOf(collection, row)
 	const [open, setOpen] = useState(null)
 	const [values, setValues] = useState({})
 	const [busy, setBusy] = useState(false)

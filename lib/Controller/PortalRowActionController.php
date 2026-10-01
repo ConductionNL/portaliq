@@ -103,6 +103,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-must-be-offered-only-on-the-rows-its-rowwhen-names
+	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -178,10 +179,13 @@ class PortalRowActionController extends Controller implements PortalProtected {
 					continue;
 				}
 
-				// An action another app attaches to this collection
-				// (woo-journey-entry-points D3): `?actionApp=` names that app.
+				// An action attached to this collection (woo-journey-entry-points
+				// D3): `?actionApp=` names its app. That may be the collection's
+				// own app, for an action it attaches to one of its own
+				// collections (attach-to-own-collection); the lookup then still
+				// requires the attachment, never a row action of the same id.
 				$actionApp = (string)$this->request->getParam('actionApp', '');
-				if ($actionApp !== '' && $actionApp !== (string)($contribution['app'] ?? '')) {
+				if ($actionApp !== '') {
 					$target = ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
 					return $this->attachedMatch(contributions: $contributions, subject: $subject, target: $target, actionApp: $actionApp, actionId: $actionId);
 				}

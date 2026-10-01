@@ -38,6 +38,35 @@ test('the collection lists only well-formed attached actions', () => {
 	assert.deepEqual(attachedActionsOf({}), [])
 })
 
+const REPLY = {
+	app: 'pipelinq',
+	id: 'replyToQuestion',
+	label: 'Reageren op het antwoord',
+	fields: ['message'],
+	rowWhen: { field: 'status', in: ['awaiting_customer'] },
+}
+
+// attach-to-own-collection REQ-ATO-002: the row decides, as the server will.
+test('an attached action shows only on the rows its rowWhen names', () => {
+	const collection = { attachedActions: [ASK, REPLY] }
+	assert.deepEqual(
+		attachedActionsOf(collection, { status: 'awaiting_customer' }),
+		[ASK, REPLY],
+	)
+	assert.deepEqual(attachedActionsOf(collection, { status: 'converted' }), [
+		ASK,
+	])
+	assert.deepEqual(attachedActionsOf(collection, {}), [ASK])
+	const malformed = { ...REPLY, rowWhen: { field: 'status' } }
+	assert.deepEqual(
+		attachedActionsOf({ attachedActions: [malformed] }, { status: 'x' }),
+		[],
+	)
+	// Without a row (a renderer that does not pass it yet) nothing is hidden;
+	// the server still refuses the wrong row with 409.
+	assert.deepEqual(attachedActionsOf(collection), [ASK, REPLY])
+})
+
 test('the body carries only the declared fields', () => {
 	assert.deepEqual(
 		attachedBody(ASK, {
