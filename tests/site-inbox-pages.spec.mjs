@@ -17,7 +17,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { OPEN_STORAGE_KEY } from '../src/portal/lib/openRecord.js'
+import { OPEN_STORAGE_KEY } from '../src/shared/openRecord.js'
 import {
 	markedRead,
 	recordRoute,

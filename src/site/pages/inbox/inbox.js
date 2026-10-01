@@ -9,7 +9,7 @@
  * test it.
  */
 
-import { navKeyFor, OPEN_STORAGE_KEY } from '../../../portal/lib/openRecord.js'
+import { navKeyFor, OPEN_STORAGE_KEY } from '../../../shared/openRecord.js'
 
 /** The site route of "My tasks" in the signed-in area. */
 export const TASKS_ROUTE = '/mijn/tasks'

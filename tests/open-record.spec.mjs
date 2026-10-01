@@ -21,7 +21,7 @@ import {
 	OPEN_STORAGE_KEY,
 	parseOpenFragment,
 	rowFor,
-} from '../src/portal/lib/openRecord.js'
+} from '../src/shared/openRecord.js'
 
 /**
  * A sessionStorage stand-in.
@@ -161,4 +161,52 @@ test('the shell, the inbox and the page view are wired to it', () => {
 			assert.ok(bundle[key], `${locale} has "${key}"`)
 		}
 	}
+})
+
+// The site's half (site-reaches-portal-parity slice b, REQ-SRP-021): the
+// shell asks openRecordEntry() which page to open, and the contribution page
+// selects the row once its collection has loaded.
+
+const { openRecordEntry } = await import('../src/site/pages/collections/index.js')
+
+const siteNav = [
+	{ key: '__cases__', special: 'cases' },
+	{
+		key: 'learniq:absences',
+		contribution: { app: 'learniq' },
+		page: { id: 'absences', blocks: [{ type: 'collection', collection: 'parentExcuseRequests' }] },
+	},
+]
+
+test('site: a link kept across the sign-in opens the page that shows its collection', () => {
+	const store = storage()
+	store.setItem(OPEN_STORAGE_KEY, JSON.stringify({ app: 'learniq', collection: 'parentExcuseRequests', id: 'x1' }))
+
+	const entry = openRecordEntry(siteNav, { location: { hash: '', pathname: '/site', search: '' }, history: null, storage: store })
+
+	assert.equal(entry.key, 'learniq:absences')
+	assert.ok(store.map.has(OPEN_STORAGE_KEY), 'kept until the page has selected the row')
+})
+
+test('site: a link in the address is stripped, and one no page shows is forgotten', () => {
+	const store = storage()
+	const replaced = []
+	const entry = openRecordEntry(siteNav, {
+		location: { hash: '#open=learniq/elsewhere/x1', pathname: '/apps/portaliq/site', search: '?portal=wilgenboom' },
+		history: { replaceState: (...args) => replaced.push(args) },
+		storage: store,
+	})
+
+	assert.equal(entry, null)
+	assert.deepEqual(replaced, [[null, '', '/apps/portaliq/site?portal=wilgenboom']])
+	assert.equal(store.map.has(OPEN_STORAGE_KEY), false)
+})
+
+test('site: the contribution page selects the row from the resident\'s own rows, or says it is not there', () => {
+	const page = readFileSync(new URL('../src/site/pages/collections/ContributionPage.vue', import.meta.url), 'utf8')
+	assert.match(page, /openRecordState\(/)
+	assert.match(page, /forgetOpenTarget\(sessionStore\(\)\)/)
+	assert.match(page, /tr\('This record is not in your list, so nothing of it is shown\.'\)/)
+	const loader = readFileSync(new URL('../src/site/pages/collections/collectionLoader.js', import.meta.url), 'utf8')
+	assert.match(loader, /rowFor\(loaded\.objects, target\.id\) \|\| target\.row \|\| null/)
 })
