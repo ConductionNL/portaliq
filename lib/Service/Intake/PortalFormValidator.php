@@ -39,10 +39,12 @@ class PortalFormValidator {
 	/**
 	 * Constructor.
 	 *
-	 * @param IL10N $l10n The sentences a refusal is given with.
+	 * @param IL10N            $l10n        The sentences a refusal is given with.
+	 * @param VisibleWhenLocal $visibleWhen Whether a field's condition shows it.
 	 */
 	public function __construct(
 		private readonly IL10N $l10n,
+		private readonly VisibleWhenLocal $visibleWhen=new VisibleWhenLocal(),
 	) {
 	}//end __construct()
 
@@ -53,14 +55,21 @@ class PortalFormValidator {
 	 * @param array<string, mixed> $answers What the citizen submitted.
 	 *
 	 * @return array{valid: bool, errors: array<string, string>, answers: array<string, mixed>}
-	 *         `answers` carries only the fields the form declares, so nothing a
-	 *         client invented reaches a create.
+	 *         `answers` carries only the fields the form declares and shows,
+	 *         so nothing a client invented, and no answer to a question the
+	 *         resident was not shown, reaches a create.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-the-server-skips-a-hidden-field-req-icq-002
 	 */
 	public function validate(array $fields, array $answers): array {
 		$errors = [];
 		$accepted = [];
+		// What a condition reads: every answer, less each field found hidden.
+		// Taken in declared order, so a question that hangs on a hidden one
+		// hides too, while a condition on a later field reads its answer, as
+		// the screen's form data holds every answer at once.
+		$shown = $answers;
 		foreach ($fields as $field) {
 			if (is_array($field) === false) {
 				continue;
@@ -68,6 +77,12 @@ class PortalFormValidator {
 
 			$name = (string)($field['name'] ?? '');
 			if ($name === '') {
+				continue;
+			}
+
+			if ($this->visibleWhen->isVisible(condition: ($field['visibleWhen'] ?? null), answers: $shown) === false) {
+				// Not shown, so neither required nor accepted (REQ-ICQ-002).
+				unset($shown[$name]);
 				continue;
 			}
 
