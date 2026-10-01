@@ -21,6 +21,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\Signin\BrokerLogin;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -78,10 +79,12 @@ class BrokerSessionController extends Controller {
 	 * @param string $org      The organisation slug.
 	 * @param string $provider `digid`, `eherkenning` or `eidas`.
 	 * @param string $portal   The portal slug the public site sends when it names no organisation.
+	 * @param string $returnTo The site page to land on once signed in; only a page on the site route is kept.
 	 *
 	 * @return RedirectResponse
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 *
 	 * @no-admin-idor-exempt The anonymous entry point to a portal's login: a
 	 * caller with no session names the organisation and provider it wants.
@@ -92,7 +95,7 @@ class BrokerSessionController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
-	public function start(string $org = '', string $provider = '', string $portal = ''): RedirectResponse {
+	public function start(string $org = '', string $provider = '', string $portal = '', string $returnTo = ''): RedirectResponse {
 		if ($org === '' && $portal !== '') {
 			$org = $this->organisationOfPortal(slug: $portal);
 		}
@@ -100,7 +103,7 @@ class BrokerSessionController extends Controller {
 		$url = $this->login->start(
 			org: $org,
 			provider: $provider,
-			returnTo: $this->portalPath(),
+			returnTo: $this->returnPath(returnTo: $returnTo),
 			callbackUrl: $this->urlGenerator->linkToRouteAbsolute(Application::APP_ID . '.brokerSession.callback')
 		);
 		if ($url === null) {
@@ -158,6 +161,29 @@ class BrokerSessionController extends Controller {
 	private function failed(): RedirectResponse {
 		return new RedirectResponse($this->urlGenerator->getAbsoluteURL($this->portalPath()) . self::FAILED_FRAGMENT, Http::STATUS_FOUND);
 	}//end failed()
+
+
+	/**
+	 * Where a login returns: the site page it was started from, when that is a
+	 * page on the site route, else the portal SPA.
+	 *
+	 * @param string $returnTo The page the site sent.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	private function returnPath(string $returnTo): string {
+		$site = SiteReturnAddress::accept(
+			candidate: $returnTo,
+			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
+		);
+		if ($site !== '') {
+			return $site;
+		}
+
+		return $this->portalPath();
+	}//end returnPath()
 
 
 	/**

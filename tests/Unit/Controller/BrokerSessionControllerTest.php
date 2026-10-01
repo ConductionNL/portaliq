@@ -41,7 +41,9 @@ class BrokerSessionControllerTest extends TestCase {
 	 */
 	private function controller(BrokerLogin $login, ?PortalResolver $portals = null): BrokerSessionController {
 		$urls = $this->createMock(IURLGenerator::class);
-		$urls->method('linkToRoute')->willReturn('/apps/portaliq/portal');
+		$urls->method('linkToRoute')->willReturnCallback(
+			static fn (string $name): string => $name === 'portaliq.portalPage.site' ? '/apps/portaliq/site' : '/apps/portaliq/portal'
+		);
 		$urls->method('linkToRouteAbsolute')->willReturn('https://portal.example/apps/portaliq/portal/api/session/broker/callback');
 		$urls->method('getAbsoluteURL')->willReturnCallback(static fn (string $path): string => 'https://portal.example' . $path);
 
@@ -91,6 +93,30 @@ class BrokerSessionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
 		$this->assertSame('https://integriq.example/idp/start?state=s', $response->getRedirectURL());
 	}//end testStartResolvesOrganisationFromPortal()
+
+
+	/**
+	 * A login started on the public site returns to the page it came from,
+	 * and an address outside the site route to the portal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	public function testStartKeepsTheSitePageToReturnTo(): void {
+		$cases = [
+			'/apps/portaliq/site?portal=venray&route=/mijn' => '/apps/portaliq/site?portal=venray&route=/mijn',
+			'//evil.example/x' => '/apps/portaliq/portal',
+		];
+		foreach ($cases as $returnTo => $kept) {
+			$login = $this->getMockBuilder(BrokerLogin::class)->disableOriginalConstructor()->onlyMethods(['start', 'complete'])->getMock();
+			$login->expects($this->once())->method('start')
+				->with('gemeente-x', 'digid', $kept, $this->anything())
+				->willReturn('https://integriq.example/idp/start?state=s');
+
+			$this->controller(login: $login)->start(org: 'gemeente-x', provider: 'digid', returnTo: $returnTo);
+		}
+	}//end testStartKeepsTheSitePageToReturnTo()
 
 
 	/**

@@ -265,6 +265,11 @@ class PortalPageController extends Controller {
 					// The document title, server-rendered for the same reason the theme
 					// below is; the why lives on siteTitle().
 					'title' => $this->siteTitle(),
+					// How a resident signs in here, which is not content: the
+					// dev login only where the server accepts it, the silent
+					// sign-in provider, and the organisation and audience the
+					// login starts with, the same values `/portal` boots with.
+					'signin' => $this->siteSignin(),
 				],
 				// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.
 				// Everything else this renderer shows is fetched after boot,
@@ -398,6 +403,31 @@ class PortalPageController extends Controller {
 			canonical: $this->urlGenerator->linkToRouteAbsolute('portaliq.portalPage.site', $params)
 		);
 	}//end siteHead()
+
+
+	/**
+	 * The sign-in settings the site needs at boot, from the same resolver
+	 * `/portal` uses, so the two surfaces offer the same ways in.
+	 *
+	 * @return array{devLogin: bool, silentSignIn: string, signinOrganisation: string, audience: string}
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	private function siteSignin(): array {
+		$portal = $this->configResolver->resolvePortal(
+			request: $this->request,
+			portalSlug: (string)$this->request->getParam('portal', ''),
+			orgValue: ''
+		);
+		$config = $this->configResolver->runtimeConfigFor(portal: $portal, orgValue: '', locale: $this->siteLocale());
+
+		return [
+			'devLogin'           => (($config['devLogin'] ?? false) === true),
+			'silentSignIn'       => (string)($config['silentSignIn'] ?? ''),
+			'signinOrganisation' => (string)($config['signinOrganisation'] ?? ''),
+			'audience'           => (string)($config['audience'] ?? ''),
+		];
+	}//end siteSignin()
 
 
 	/**

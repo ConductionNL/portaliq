@@ -44,6 +44,7 @@ use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -356,6 +357,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
 	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 *
 	 * @no-admin-idor-exempt the lookup is unscoped because it MUST be: this is
 	 * the anonymous entry point to a portal's login, so a caller with no
@@ -374,7 +376,7 @@ class SessionController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
-	public function oidcStart(string $org = '', string $provider = '', string $portal = '', string $silent = ''): Response {
+	public function oidcStart(string $org = '', string $provider = '', string $portal = '', string $silent = '', string $returnTo = ''): Response {
 		// The serving portal, resolved once: it names the organisation when
 		// `?org=` is empty, and the login returns to it.
 		$site = $this->siteFor(portal: $portal);
@@ -385,9 +387,21 @@ class SessionController extends Controller {
 		// A provider the organisation routes to integriq's broker goes there
 		// (signin-integriq-broker-login D2), so every sign-in link, the public
 		// site's included, reaches the route the organisation chose.
+		// A login started on the public site returns to the page it came
+		// from, when that page is on the site route; anything else is dropped.
+		$siteReturn = SiteReturnAddress::accept(
+			candidate: $returnTo,
+			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
+		);
+
 		if ($this->loginConfig?->loginRouteFor(orgSlug: $org, provider: $provider) === 'broker') {
+			$brokerParams = ['org' => $org, 'provider' => $provider];
+			if ($siteReturn !== '') {
+				$brokerParams['returnTo'] = $siteReturn;
+			}
+
 			return new RedirectResponse(
-				$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', ['org' => $org, 'provider' => $provider]),
+				$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', $brokerParams),
 				Http::STATUS_FOUND
 			);
 		}
@@ -428,7 +442,7 @@ class SessionController extends Controller {
 			codeVerifier: $pkce['verifier'],
 			org: $org,
 			provider: $provider,
-			returnTo: $this->returnToPortal(site: $site),
+			returnTo: $siteReturn !== '' ? $siteReturn : $this->returnToPortal(site: $site),
 			silent: ($prompt === 'none')
 		);
 		if ($stored === false) {
