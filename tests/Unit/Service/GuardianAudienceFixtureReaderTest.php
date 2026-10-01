@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\GuardianAccountDirectory;
 use OCA\Portaliq\Service\GuardianAudienceFixtureReader;
 use OCA\Portaliq\Service\LeafGuardianAudienceReader;
 use PHPUnit\Framework\TestCase;
@@ -153,6 +154,44 @@ class GuardianAudienceFixtureReaderTest extends TestCase {
 
 		$this->assertSame(['guardian-anna-devries'], $matched);
 	}//end testGuardiansMatchingEnumeratesEveryMatchingRowOnce()
+
+	/**
+	 * Guardians without a fixture row are resolved through the school app, so
+	 * the newsletter preflight and the emergency push reach real guardians
+	 * (guardian-enumeration-from-the-school-app).
+	 *
+	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T2
+	 */
+	public function testGuardiansMatchingAddsTheGuardiansTheSchoolAppResolves(): void {
+		$os = $this->fakeObjectService([
+			['guardianRef' => 'guardian-anna-devries', 'schoolRef' => 'school-a', 'groupRefs' => ['groep-7'], 'childRefs' => ['child-1']],
+			['guardianRef' => 'guardian-piet-bakker', 'schoolRef' => 'school-a', 'groupRefs' => ['groep-5'], 'childRefs' => ['child-2']],
+		]);
+		$directory = $this->createMock(GuardianAccountDirectory::class);
+		$directory->expects($this->once())->method('guardiansMatching')
+			->with(['groupRefs' => ['groep-7']], ['guardian-anna-devries', 'guardian-piet-bakker'])
+			->willReturn(['fatima']);
+
+		$reader = new GuardianAudienceFixtureReader($this->container($os), $this->createMock(LoggerInterface::class), null, $directory);
+
+		$this->assertSame(['guardian-anna-devries', 'fatima'], $reader->guardiansMatching(['groupRefs' => ['groep-7']]));
+	}//end testGuardiansMatchingAddsTheGuardiansTheSchoolAppResolves()
+
+	/**
+	 * Without OpenRegister's fixture, the school app still answers.
+	 *
+	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T2
+	 */
+	public function testWithoutTheFixtureTheSchoolAppStillAnswers(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('OR not installed'));
+		$directory = $this->createMock(GuardianAccountDirectory::class);
+		$directory->method('guardiansMatching')->with(['schoolRef' => 'school-w'], [])->willReturn(['fatima']);
+
+		$reader = new GuardianAudienceFixtureReader($container, $this->createMock(LoggerInterface::class), null, $directory);
+
+		$this->assertSame(['fatima'], $reader->guardiansMatching(['schoolRef' => 'school-w']));
+	}//end testWithoutTheFixtureTheSchoolAppStillAnswers()
 
 	public function testGuardianReachesGroup(): void {
 		$os = $this->fakeObjectService([['guardianRef' => 'guardian-anna-devries', 'groupRefs' => ['groep-5a']]]);
