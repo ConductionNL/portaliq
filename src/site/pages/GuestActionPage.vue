@@ -169,6 +169,8 @@ export default {
 		 *
 		 * @param {string} field The field.
 		 * @return {string} The declared label, else the field name.
+		 *
+		 * @spec openspec/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
 		 */
 		labelOf(field) {
 			const config = this.state.fieldConfigs[field]

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Contribution\GuestActionRegistry;
+use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Controller\GuestActionController;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
@@ -220,7 +221,8 @@ class GuestActionControllerTest extends TestCase {
 				throw new RuntimeException('no service: ' . $id);
 			}
 		);
-		$registry = new PortalContributionRegistry($apps, $container, $this->createMock(LoggerInterface::class));
+		$logger = $this->createMock(LoggerInterface::class);
+		$registry = new GuestActionRegistry($apps, new PortalProviderLocator($apps, $container, $logger), $logger);
 
 		$config = $this->createMock(IConfig::class);
 		$config->method('getAppValue')->willReturnCallback(

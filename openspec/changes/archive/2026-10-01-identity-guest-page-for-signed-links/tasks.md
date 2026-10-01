@@ -3,7 +3,7 @@
 ## The contract
 
 - [x] **T01**: Normalise guest actions (`guest: true`, `tokenField`, `previewEndpoint`, `label`, `confirmText`, `fields`), drop any with a non-local endpoint, no `tokenField` or a `minTrust` above `low`, and add `PortalContributionRegistry::guestAction()` (REQ-GST-001). Verification: `PortalManifestNormaliserTest::testGuestActionNeedsATokenField`, `::testGuestActionAboveLowTrustIsDropped`, `PortalContributionRegistryTest::testGuestActionIsFoundOnlyForTheGuestAudience`.
-  - Done: `GuestActionConfigNormaliser`, `PortalContributionRegistry::guestAction()`; red first in lane22/red-guest-php.txt.
+  - Done: `GuestActionConfigNormaliser`; the lookup is `GuestActionRegistry::guestAction()` (its own class: on `PortalContributionRegistry` it took the class past phpmd's complexity bound), test `GuestActionRegistryTest`; red first in lane22/red-guest-php.txt.
 
 ## The routes
 

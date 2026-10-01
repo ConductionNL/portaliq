@@ -31,7 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Contribution\GuestActionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalResolver;
@@ -58,14 +58,14 @@ class GuestActionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry Finds the declared guest action.
+	 * @param GuestActionRegistry $registry Finds the declared guest action.
 	 * @param PortalActionForwarder $forwarder Forwards with the signed assertion.
 	 * @param PortalResolver $portals Resolves the serving portal for its organisation.
 	 * @param AuditTrailService $auditor Records each forward with the token's hash.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
+		private readonly GuestActionRegistry $registry,
 		private readonly PortalActionForwarder $forwarder,
 		private readonly PortalResolver $portals,
 		private readonly AuditTrailService $auditor,
@@ -259,7 +259,7 @@ class GuestActionController extends Controller {
 
 		return [
 			'subjectRef' => 'guest:' . hash('sha256', $token),
-			'audience' => PortalContributionRegistry::GUEST_AUDIENCE,
+			'audience' => GuestActionRegistry::GUEST_AUDIENCE,
 			'organisation' => (string)($site['organisation'] ?? ''),
 			'trust' => 'low',
 			'jti' => bin2hex(random_bytes(16)),

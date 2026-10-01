@@ -62,23 +62,7 @@ class GuestActionConfigNormaliser {
 			return $action;
 		}
 
-		$tokenField = ($action['tokenField'] ?? null);
-		if (is_string($tokenField) === false || preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $tokenField) !== 1) {
-			return null;
-		}
-
-		// A guest is never more than `low` (REQ-GST-001).
-		if (array_key_exists('minTrust', $action) === true && $action['minTrust'] !== 'low') {
-			return null;
-		}
-
-		if ($this->isLocalPath(path: ($action['endpoint'] ?? null)) === false) {
-			return null;
-		}
-
-		if (array_key_exists('previewEndpoint', $action) === true
-			&& $this->isLocalPath(path: $action['previewEndpoint']) === false
-		) {
+		if ($this->isUsable(action: $action) === false) {
 			return null;
 		}
 
@@ -90,6 +74,34 @@ class GuestActionConfigNormaliser {
 
 		return $action;
 	}//end normaliseAction()
+
+	/**
+	 * Whether a guest declaration can be served: a well-formed `tokenField`,
+	 * no trust above `low` (REQ-GST-001), and instance-local endpoints.
+	 *
+	 * @param array<string, mixed> $action The action marked `guest: true`.
+	 *
+	 * @return bool
+	 */
+	private function isUsable(array $action): bool {
+		$tokenField = ($action['tokenField'] ?? null);
+		if (is_string($tokenField) === false || preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $tokenField) !== 1) {
+			return false;
+		}
+
+		if (array_key_exists('minTrust', $action) === true && $action['minTrust'] !== 'low') {
+			return false;
+		}
+
+		// A declared preview must be local too; a null one is no path.
+		$preview = '/';
+		if (array_key_exists('previewEndpoint', $action) === true) {
+			$preview = $action['previewEndpoint'];
+		}
+
+		return $this->isLocalPath(path: ($action['endpoint'] ?? null)) === true
+			&& $this->isLocalPath(path: $preview) === true;
+	}//end isUsable()
 
 	/**
 	 * Whether a value is an instance-local absolute path: a leading slash, no

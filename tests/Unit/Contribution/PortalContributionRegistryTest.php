@@ -451,68 +451,6 @@ class PortalContributionRegistryTest extends TestCase {
 	}//end testTheAggregateResolvesAttachedActions()
 
 	/**
-	 * `guestAction()` answers only from a provider that serves the `guest`
-	 * audience, only for an action marked `guest`, and only for an installed
-	 * app: a resident action of the same id is never a guest's.
-	 *
-	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
-	 */
-	public function testGuestActionIsFoundOnlyForTheGuestAudience(): void {
-		$guestProvider = new class {
-
-			public function getAudiences(): array {
-				return ['citizen', 'guest'];
-			}
-
-			public function getContribution(array $subject): array {
-				if (($subject['audience'] ?? '') !== 'guest') {
-					return ['actions' => [['id' => 'withdraw', 'endpoint' => '/apps/portaliq/api/resident-withdraw']]];
-				}
-
-				return [
-					'actions' => [
-						['id' => 'withdraw', 'guest' => true, 'endpoint' => '/apps/portaliq/api/withdraw', 'tokenField' => 'token'],
-						['id' => 'plain', 'endpoint' => '/apps/portaliq/api/plain'],
-					],
-				];
-			}
-		};
-
-		$registry = new PortalContributionRegistry(
-			$this->appManager(['portaliq']),
-			$this->anyContainer($guestProvider),
-			$this->createMock(LoggerInterface::class)
-		);
-
-		$found = $registry->guestAction('portaliq', 'withdraw');
-		$this->assertNotNull($found);
-		$this->assertSame('/apps/portaliq/api/withdraw', $found['endpoint']);
-		$this->assertSame('token', $found['tokenField']);
-		$this->assertNull($registry->guestAction('portaliq', 'plain'));
-		$this->assertNull($registry->guestAction('portaliq', 'refund'));
-		$this->assertNull($registry->guestAction('shillinq', 'withdraw'));
-
-		$residentOnly = new class {
-
-			public function getAudiences(): array {
-				return ['citizen'];
-			}
-
-			public function getContribution(array $subject): array {
-				return ['actions' => [['id' => 'withdraw', 'guest' => true, 'endpoint' => '/apps/portaliq/api/withdraw', 'tokenField' => 'token']]];
-			}
-		};
-
-		$registry = new PortalContributionRegistry(
-			$this->appManager(['portaliq']),
-			$this->anyContainer($residentOnly),
-			$this->createMock(LoggerInterface::class)
-		);
-		$this->assertNull($registry->guestAction('portaliq', 'withdraw'));
-
-	}//end testGuestActionIsFoundOnlyForTheGuestAudience()
-
-	/**
 	 * @param array<int, string>    $installed  App ids `getInstalledApps()` reports.
 	 * @param array<string, string> $namespaces App id => `info.xml` `<namespace>`.
 	 */
