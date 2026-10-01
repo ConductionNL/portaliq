@@ -36,7 +36,7 @@ async function load(relative) {
 	return import(pathToFileURL(out).href)
 }
 
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 const { groupDocuments } = await load('lib/caseDocuments.js')
 
 test('the listed documents are grouped: decisions, documents, sent by you', () => {
@@ -96,7 +96,7 @@ test('the case screen renders the groups and both locales say it', () => {
 		'The document could not be opened. Try again later.': 'Het document kon niet worden geopend. Probeer het later opnieuw.',
 	}
 	for (const locale of ['en', 'nl']) {
-		const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`), 'utf8'))
+		const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`), 'utf8'))
 		for (const [key, dutch] of Object.entries(nl)) {
 			assert.equal(bundle[key], locale === 'nl' ? dutch : key, `${locale}: ${key}`)
 		}

@@ -11,7 +11,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import EmbeddedForm from './components/EmbeddedForm.jsx'
 import { startHeightReporting } from './embedHeight.js'
-import { createTranslator } from './i18n/index.js'
+import { createTranslator } from '../shared/i18n/index.js'
 
 // Shell-level NL Design System theme tokens (portal-spa-nl-design-system-styling).
 // The Utrecht components inject their own per-component CSS at runtime; this

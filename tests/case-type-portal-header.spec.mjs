@@ -43,7 +43,7 @@ async function load(relative) {
 	return import(pathToFileURL(out).href)
 }
 
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 
 /**
  * Stub the browser: a stored bearer and a recording fetch.

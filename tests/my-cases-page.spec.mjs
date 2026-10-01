@@ -18,6 +18,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { buildNav } from '../src/shared/portalNav.js'
 import { compileLoading } from './support/compile-loading.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -48,7 +49,7 @@ async function load(relative) {
 }
 
 compileLoading(OUT_DIR)
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 const { splitCases, caseTarget, caseTitle } = await load('lib/myCases.js')
 const { default: MyCasesPage } = await load('components/MyCasesPage.jsx')
 const { createElement } = await import('react')
@@ -167,7 +168,10 @@ test('the shell offers "My cases" first when the server announces it, and both l
 	const shell = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
 	assert.match(shell, /import MyCasesPage from '@portal\/components\/MyCasesPage\.jsx'/)
 	assert.match(shell, /state\.contributions\?\.cases\?\.enabled === true/)
-	assert.match(shell, /nav\.unshift\(\{ key: CASES_KEY, label: t\('My cases'\)/)
+	// The navigation itself is shared with the site renderer: My cases leads it.
+	const nav = buildNav([{ app: 'learniq', pages: [{ id: 'children', label: 'Children' }] }], (key) => key, { cases: true })
+	assert.equal(nav[0].label, 'My cases')
+	assert.equal(nav[0].special, 'cases')
 	assert.match(shell, /<MyCasesPage/)
 	assert.match(shell, /closedMarker=\{state\.contributions\?\.cases\?\.closedMarker === true\}/)
 	assert.match(shell, /canOpen=\{\(target\) => navKeyFor\(nav, target\) !== null\}/)
@@ -180,7 +184,7 @@ test('the shell offers "My cases" first when the server announces it, and both l
 		'Your cases could not be loaded. Try again later.': 'Uw zaken konden niet worden geladen. Probeer het later opnieuw.',
 	}
 	for (const locale of ['en', 'nl']) {
-		const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`), 'utf8'))
+		const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`), 'utf8'))
 		for (const [key, dutch] of Object.entries(nl)) {
 			assert.equal(bundle[key], locale === 'nl' ? dutch : key, `${locale}: ${key}`)
 		}

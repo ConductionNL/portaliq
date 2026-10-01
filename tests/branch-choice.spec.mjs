@@ -63,7 +63,7 @@ async function load(relative) {
 	return import(pathToFileURL(out).href)
 }
 
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 const { default: BranchSwitcher } = await load('components/BranchSwitcher.jsx')
 
 const BRANCHES = [
@@ -215,7 +215,7 @@ test('the new strings are translated for every locale the portal ships', () => {
 	for (const locale of ['nl', 'en']) {
 		const strings = JSON.parse(
 			readFileSync(
-				join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`),
+				join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`),
 				'utf8',
 			),
 		)

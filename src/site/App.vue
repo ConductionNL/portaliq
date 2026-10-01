@@ -333,9 +333,9 @@ import FooterColumns from './components/FooterColumns.vue'
 import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
-import idleEn from '../portal/i18n/en.json'
-import idleNl from '../portal/i18n/nl.json'
-import { logoutTarget } from '../portal/lib/idleSession.js'
+import idleEn from '../shared/i18n/en.json'
+import idleNl from '../shared/i18n/nl.json'
+import { logoutTarget } from '../shared/idleSession.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,

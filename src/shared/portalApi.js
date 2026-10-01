@@ -9,8 +9,13 @@
 // server-authorised endpoints instead of the unscoped `/openregister/api/*`, and
 // the response shapes are normalised to plain arrays/objects the renderers use.
 //
+// Shared by the React portal (src/portal) and the Vue site renderer
+// (src/site): it imports nothing, so node tests cover the one implementation
+// both bundles run.
+//
 // Auth: the portal session is a bearer minted at the auth edge (`/portal/api/
-// session`), stored in localStorage. The server derives subjectRef/audience/
+// session`). The React portal stores it in localStorage (the default below);
+// the site keeps it per tab in sessionStorage and hands its own store in. The server derives subjectRef/audience/
 // organisation from the bearer — the client never sends them. Every method fails
 // closed: a non-2xx or a network error yields an empty/`null` result, never a
 // throw the UI has to guard.
@@ -44,13 +49,6 @@ export function setToken(token) {
 	}
 }
 
-/**
- *
- */
-function authHeaders() {
-	const token = getToken()
-	return token ? { Authorization: `Bearer ${token}` } : {}
-}
 
 /**
  * Build the adapter bound to a runtime config (`{ apiBase, audience, ... }`).
@@ -58,10 +56,26 @@ function authHeaders() {
  * picked up without re-creating the adapter.
  *
  * @param {object} config Runtime portal config: `{ apiBase, audience }`.
+ * @param {object} [store] Where the bearer lives; localStorage when omitted.
+ * @param {() => (string|null)} [store.getToken] Read the bearer.
+ * @param {(token: string|null) => void} [store.setToken] Store or forget the bearer.
  * @return {object} The bound portal API adapter.
+ * @spec openspec/changes/supplier-portal/tasks.md#T02
  */
-export function createPortalApi(config) {
+export function createPortalApi(config, store = {}) {
 	const base = config.apiBase
+	const readToken = store.getToken || getToken
+	const writeToken = store.setToken || setToken
+
+	/**
+	 * The Authorization header for the current bearer, or none.
+	 *
+	 * @return {object} The header.
+	 */
+	function authHeaders() {
+		const token = readToken()
+		return token ? { Authorization: `Bearer ${token}` } : {}
+	}
 
 	// The portal this page is served as. The server applies that portal's
 	// hidden case types, not another portal's of the same organisation
@@ -1225,7 +1239,7 @@ export function createPortalApi(config) {
 			if (!body || !body.token) {
 				return { ok: false }
 			}
-			setToken(body.token)
+			writeToken(body.token)
 			return { ok: true }
 		},
 
@@ -1251,7 +1265,7 @@ export function createPortalApi(config) {
 			}
 			const body = await res.json().catch(() => null)
 			if (body && body.token) {
-				setToken(body.token)
+				writeToken(body.token)
 				return body
 			}
 			return null
@@ -1279,7 +1293,7 @@ export function createPortalApi(config) {
 			}
 			const body = await res.json().catch(() => null)
 			if (body && body.token) {
-				setToken(body.token)
+				writeToken(body.token)
 				return body.token
 			}
 			return null
@@ -1304,7 +1318,7 @@ export function createPortalApi(config) {
 			} catch (e) {
 				/* best-effort — the token is dropped regardless */
 			}
-			setToken(null)
+			writeToken(null)
 			return answer
 		},
 
