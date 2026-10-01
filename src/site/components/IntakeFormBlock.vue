@@ -24,6 +24,13 @@
 		</p>
 
 		<p
+			v-else-if="state === 'signIn' && fee"
+			class="utrecht-paragraph"
+			data-testid="intake-form-sign-in-fee">
+			{{ fee.signIn }}
+		</p>
+
+		<p
 			v-else-if="state === 'signIn'"
 			class="utrecht-paragraph"
 			data-testid="intake-form-sign-in">
@@ -58,6 +65,26 @@
 			<p class="utrecht-paragraph">
 				{{ keepReferenceLabel }}
 			</p>
+			<template v-if="fee">
+				<p class="utrecht-paragraph" data-testid="intake-form-fee">
+					{{ fee.costs }}
+				</p>
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--primary-action"
+					:disabled="paying"
+					data-testid="intake-form-pay"
+					@click="pay">
+					{{ fee.pay }}
+				</button>
+				<p
+					v-if="payFailed"
+					class="utrecht-paragraph pq-intake-form__error"
+					data-testid="intake-form-pay-error"
+					role="alert">
+					{{ payFailedLabel }}
+				</p>
+			</template>
 		</div>
 
 		<form
@@ -158,8 +185,10 @@ import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import {
 	bindingRouteFrom,
+	feeText,
 	initialValues,
 	loadForm,
+	payIntake,
 	submitIntake,
 } from '../lib/intakeApi.js'
 
@@ -277,6 +306,12 @@ export default {
 			type: String,
 			default: 'Maak een keuze',
 		},
+
+		/** Shown when the payment could not start. */
+		payFailedLabel: {
+			type: String,
+			default: 'U kunt nu niet betalen. Probeer het later opnieuw.',
+		},
 	},
 
 	data() {
@@ -289,6 +324,8 @@ export default {
 			sendFailed: false,
 			reference: '',
 			confirmationText: '',
+			paying: false,
+			payFailed: false,
 		}
 	},
 
@@ -302,6 +339,17 @@ export default {
 		 */
 		bindingRoute() {
 			return bindingRouteFrom(this.routeParam, this.route)
+		},
+
+		/**
+		 * The sentences of the fee the case type declares, or null.
+		 *
+		 * @return {{costs: string, pay: string, signIn: string}|null} The sentences.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-a-fee-bearing-form-asks-the-visitor-to-sign-in-first-req-ips-002
+		 */
+		fee() {
+			return feeText(this.render.fee)
 		},
 
 		/**
@@ -399,6 +447,32 @@ export default {
 				this.sendFailed = true
 			} finally {
 				this.submitting = false
+			}
+		},
+
+		/**
+		 * Start paying the fee and leave for the checkout. The top window, so
+		 * an embedded form does not open a payment page inside a frame.
+		 *
+		 * @return {Promise<void>} Resolves when answered.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-portal-redirects-only-to-a-declared-payment-host-req-ips-004
+		 */
+		async pay() {
+			this.paying = true
+			this.payFailed = false
+			try {
+				const { checkoutUrl } = await payIntake(
+					authBaseFrom(resolveApiBase()),
+					this.reference,
+					this.portal,
+					adoptSessionToken(),
+				)
+				window.top.location.assign(checkoutUrl)
+			} catch {
+				this.payFailed = true
+			} finally {
+				this.paying = false
 			}
 		},
 

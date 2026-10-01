@@ -360,3 +360,108 @@ export function statusView(status) {
 		sentence: `Uw aanvraag ${reference} is ontvangen en wordt verwerkt. Kijk later nog eens met hetzelfde kenmerk.`,
 	}
 }
+
+/**
+ * The sentences a declared fee is told in, or null when there is no fee.
+ *
+ * The amount is the one the case type declares, as the server rendered it;
+ * the page never computes or sends an amount (intake-pay-on-submit
+ * REQ-IPS-001, REQ-IPS-002).
+ *
+ * @param {{amount: string, currency?: string}|null} fee The render's fee.
+ * @return {{costs: string, pay: string, signIn: string}|null} The sentences.
+ *
+ * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-fee-comes-from-the-case-type-req-ips-001
+ */
+export function feeText(fee) {
+	const amount = Number(fee?.amount)
+	if (!fee || !Number.isFinite(amount) || amount <= 0) {
+		return null
+	}
+
+	let shown
+	try {
+		shown = new Intl.NumberFormat('nl-NL', {
+			style: 'currency',
+			currency: fee.currency || 'EUR',
+		}).format(amount)
+	} catch {
+		return null
+	}
+
+	return {
+		costs: `Deze aanvraag kost ${shown}.`,
+		pay: `${shown} nu betalen`,
+		signIn: `Log in om deze aanvraag te versturen. Er zijn leges van ${shown}.`,
+	}
+}
+
+/**
+ * Start paying the fee of the visitor's own request.
+ *
+ * Only the reference and the portal are sent: the amount is the server's.
+ *
+ * @param {string} base The portal API base.
+ * @param {string} reference The request's reference.
+ * @param {string} portal The portal slug, or ''.
+ * @param {string} token The portal bearer.
+ * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
+ * @return {Promise<{checkoutUrl: string}>} Where to pay; thrown on any refusal.
+ *
+ * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-only-the-submitter-can-pay-once-req-ips-003
+ */
+export async function payIntake(base, reference, portal, token, fetchImpl = null) {
+	const body = { reference }
+	if (portal) {
+		body.portal = portal
+	}
+
+	const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/pay'), {
+		method: 'POST',
+		headers: headersFor(token, true),
+		body: JSON.stringify(body),
+	})
+	const parsed = await response.json().catch(() => ({}))
+	if (
+		!response.ok
+		|| typeof parsed?.checkoutUrl !== 'string'
+		|| parsed.checkoutUrl === ''
+	) {
+		const error = new Error(`intake pay ${response.status}`)
+		error.status = response.status
+		throw error
+	}
+
+	return { checkoutUrl: parsed.checkoutUrl }
+}
+
+/**
+ * What the visitor reads about a request's payment, or null when nobody
+ * started paying. The state is the one the server read from integriq's
+ * payment record (REQ-IPS-005); a query string never decides it.
+ *
+ * @param {object|null} status The status answer.
+ * @return {{sentence: string, canPay: boolean}|null} The view.
+ *
+ * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-result-is-read-from-the-payment-record-req-ips-005
+ */
+export function paymentView(status) {
+	const state = status?.payment?.state
+	if (!state) {
+		return null
+	}
+
+	if (state === 'paid') {
+		return { sentence: 'Betaald', canPay: false }
+	}
+
+	if (state === 'open') {
+		return { sentence: 'Nog niet betaald', canPay: true }
+	}
+
+	if (state === 'failed') {
+		return { sentence: 'De betaling is mislukt', canPay: true }
+	}
+
+	return { sentence: 'We kunnen de betaling nog niet tonen', canPay: false }
+}

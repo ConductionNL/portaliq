@@ -16,7 +16,7 @@
 
 ## The screen
 
-- [ ] **T06**: The fee line, "Pay {amount} now", top-window navigation from the embed (its Vue `EmbeddedForm.vue`, not the React one), the return page states and the sign-in message on the confirmation surfaces (REQ-IPS-002, REQ-IPS-005). Verification: `tests/e2e/intake-pay-on-submit.spec.ts` with a stub case app action and integriq's `log` provider.
+- [ ] **T06** (built on the site, e2e not written: it needs integriq's `log` provider on a live instance; the embed's `EmbeddedForm.vue` is the site session's #1032): The fee line, "Pay {amount} now", top-window navigation from the embed (its Vue `EmbeddedForm.vue`, not the React one), the return page states and the sign-in message on the confirmation surfaces (REQ-IPS-002, REQ-IPS-005). Verification: `tests/e2e/intake-pay-on-submit.spec.ts` with a stub case app action and integriq's `log` provider.
 
 ## Docs, strings and validation
 
