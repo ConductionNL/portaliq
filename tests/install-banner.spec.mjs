@@ -50,7 +50,11 @@ test('the offer is kept instead of the browser showing its own bar', async () =>
 	const component = await loadSfc(FILE)
 	const self = instance()
 	let prevented = false
-	const event = { preventDefault: () => { prevented = true } }
+	const event = {
+		preventDefault: () => {
+			prevented = true
+		},
+	}
 
 	component.methods.onOffer.call(self, event)
 
@@ -81,7 +85,9 @@ test('"Install" hands the offer back to the browser once', async () => {
 	let prompted = 0
 	component.methods.onOffer.call(self, {
 		preventDefault: () => {},
-		prompt: async () => { prompted++ },
+		prompt: async () => {
+			prompted++
+		},
 	})
 
 	await component.methods.install.call(self)
@@ -96,7 +102,9 @@ test('a browser that refuses its dialog does not break the page', async () => {
 	const self = instance()
 	component.methods.onOffer.call(self, {
 		preventDefault: () => {},
-		prompt: async () => { throw new Error('NotAllowedError') },
+		prompt: async () => {
+			throw new Error('NotAllowedError')
+		},
 	})
 
 	await component.methods.install.call(self)
@@ -147,10 +155,16 @@ test('every string the banner uses is in Dutch and English, as the portal said i
 		.find((dir) => existsSync(join(dir, 'nl.json')))
 
 	for (const locale of ['nl', 'en']) {
-		const shared = JSON.parse(readFileSync(join(i18nDir, `${locale}.json`), 'utf8'))
+		const shared = JSON.parse(
+			readFileSync(join(i18nDir, `${locale}.json`), 'utf8'),
+		)
 		for (const key of keys) {
 			assert.ok(strings[locale][key], `${locale} has "${key}"`)
-			assert.equal(strings[locale][key], shared[key], `${locale} "${key}" matches the shared bundle`)
+			assert.equal(
+				strings[locale][key],
+				shared[key],
+				`${locale} "${key}" matches the shared bundle`,
+			)
 			assert.doesNotMatch(strings[locale][key], /—/, 'no em-dashes')
 		}
 	}

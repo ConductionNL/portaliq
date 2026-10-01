@@ -58,7 +58,11 @@ export async function registerSiteServiceWorker(
 	try {
 		const address = serviceWorkerAddress(authBase)
 		const container = nav?.serviceWorker
-		if (address === null || !container || typeof container.register !== 'function') {
+		if (
+			address === null
+			|| !container
+			|| typeof container.register !== 'function'
+		) {
 			return null
 		}
 

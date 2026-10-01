@@ -9,7 +9,8 @@
 export default {
 	nl: {
 		'Install this app': 'App installeren',
-		'Install this app on your device?': 'Wilt u deze app op uw apparaat installeren?',
+		'Install this app on your device?':
+			'Wilt u deze app op uw apparaat installeren?',
 		Install: 'Installeren',
 		'Not now': 'Niet nu',
 	},

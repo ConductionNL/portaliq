@@ -75,13 +75,24 @@ function workerAnswers(path, method = 'GET') {
 }
 
 test('the site shell is cached: its bundle and its page', () => {
-	assert.equal(workerAnswers('/index.php/apps/portaliq/js/portaliq-site.js?v=123'), true)
+	assert.equal(
+		workerAnswers('/index.php/apps/portaliq/js/portaliq-site.js?v=123'),
+		true,
+	)
 	assert.equal(workerAnswers('/index.php/apps/portaliq/site'), true)
-	assert.equal(workerAnswers('/index.php/apps/portaliq/site?portal=wilgenboom&route=/nieuws'), true)
+	assert.equal(
+		workerAnswers(
+			'/index.php/apps/portaliq/site?portal=wilgenboom&route=/nieuws',
+		),
+		true,
+	)
 })
 
 test('the React portal shell stays cached until it is retired', () => {
-	assert.equal(workerAnswers('/index.php/apps/portaliq/js/portaliq-portal.js'), true)
+	assert.equal(
+		workerAnswers('/index.php/apps/portaliq/js/portaliq-portal.js'),
+		true,
+	)
 	assert.equal(workerAnswers('/index.php/apps/portaliq/portal'), true)
 })
 
@@ -89,7 +100,12 @@ test('the React portal shell stays cached until it is retired', () => {
 // person who opens the same address on that device.
 test('the API is never answered by the worker, signed in or not', () => {
 	assert.equal(workerAnswers('/index.php/apps/portaliq/portal/api/session'), false)
-	assert.equal(workerAnswers('/index.php/apps/portaliq/portal/api/site/js/portaliq-site.js'), false)
+	assert.equal(
+		workerAnswers(
+			'/index.php/apps/portaliq/portal/api/site/js/portaliq-site.js',
+		),
+		false,
+	)
 	assert.equal(workerAnswers('/index.php/apps/portaliq/api/content/site'), false)
 	assert.equal(workerAnswers('/index.php/apps/portaliq/api/content/pages'), false)
 })
@@ -124,7 +140,12 @@ test('the site registers the worker with the app as its scope', async () => {
 	}
 
 	assert.equal(await registerSiteServiceWorker(AUTH_BASE, { nav }), registration)
-	assert.deepEqual(calls, [['/index.php/apps/portaliq/portal/sw.js', { scope: '/index.php/apps/portaliq/' }]])
+	assert.deepEqual(calls, [
+		[
+			'/index.php/apps/portaliq/portal/sw.js',
+			{ scope: '/index.php/apps/portaliq/' },
+		],
+	])
 })
 
 // Scenario "Registration fails" (REQ-SRP-045): the site renders normally.
@@ -151,7 +172,13 @@ test('a browser that refuses service workers does not stop the site', async () =
 
 test('without an auth edge nothing is registered', async () => {
 	let called = false
-	const nav = { serviceWorker: { register: async () => { called = true } } }
+	const nav = {
+		serviceWorker: {
+			register: async () => {
+				called = true
+			},
+		},
+	}
 	assert.equal(await registerSiteServiceWorker('', { nav }), null)
 	assert.equal(called, false)
 })
