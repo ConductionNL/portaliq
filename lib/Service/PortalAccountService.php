@@ -237,7 +237,7 @@ class PortalAccountService {
 		string $provisionedBy = '',
 		string $displayName = '',
 	): ?array {
-		if ($audience === '' || $organisation === '') {
+		if (in_array('', [$audience, $organisation], true) === true) {
 			return null;
 		}
 
