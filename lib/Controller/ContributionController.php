@@ -451,14 +451,23 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return array{collection: array<string, mixed>, app: string}|null
 	 *
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
 	 */
 	private function authorisedInboxCollection(array $subject, string $register, string $schema, string $collectionId = ''): ?array {
 		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || ($match['collection']['kind'] ?? '') !== 'inbox') {
-			return null;
+		if ($match !== null && ($match['collection']['kind'] ?? '') === 'inbox') {
+			return $match;
 		}
 
-		return $match;
+		// Portaliq's own notices are an inbox source of every resident
+		// (PortalInboxReader::OWN_MESSAGES), declared or not. The write that
+		// follows is still scoped on the bearer's own subjectRef.
+		$own = PortalInboxReader::OWN_MESSAGES;
+		if ($match === null && $register === $own['register'] && $schema === $own['schema'] && in_array($collectionId, ['', $own['id']], true) === true) {
+			return ['collection' => $own, 'app' => 'portaliq'];
+		}
+
+		return null;
 	}//end authorisedInboxCollection()
 
 	/**

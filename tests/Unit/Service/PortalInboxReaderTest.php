@@ -68,6 +68,11 @@ class PortalInboxReaderTest extends TestCase {
 					return [['id' => 'q1', 'subject' => 'Nieuw bericht', 'receivedAt' => '2026-07-20T00:00:00Z', 'read' => false]];
 				}
 
+				// Portaliq's own notices are always an inbox source; none here.
+				if ($register === 'portaliq' && $schema === 'portalMessage') {
+					return [];
+				}
+
 				// The non-inbox collection must never even be READ.
 				$this->fail('Only kind:inbox collections may be read.');
 			}
@@ -126,8 +131,9 @@ class PortalInboxReaderTest extends TestCase {
 	}//end testRowsWithoutReceivedAtSortLast()
 
 	/**
-	 * No `kind: inbox` collection anywhere → an empty inbox (fail-closed
-	 * default, not an error).
+	 * No `kind: inbox` collection anywhere: only portaliq's own notices are
+	 * read, so a resident with none has an empty inbox (not an error), and a
+	 * non-inbox collection is never read.
 	 */
 	public function testNoInboxCollectionsYieldsAnEmptyInbox(): void {
 		$aggregate = [
@@ -143,7 +149,9 @@ class PortalInboxReaderTest extends TestCase {
 		];
 
 		$reader = $this->createMock(PortalObjectReader::class);
-		$reader->expects($this->never())->method('readCollection');
+		$reader->expects($this->once())->method('readCollection')
+			->with('portaliq', 'portalMessage', 'subjectRef', 's1')
+			->willReturn([]);
 
 		$inboxReader = new PortalInboxReader($reader);
 		$this->assertSame([], $inboxReader->aggregateInbox(self::SUBJECT, $aggregate));
@@ -246,9 +254,13 @@ class PortalInboxReaderTest extends TestCase {
 			],
 		];
 
+		// Only portaliq's own, subjectRef-scoped notices may be read; the
+		// unscoped rogue collection never is.
 		$reader = $this->createMock(PortalObjectReader::class);
-		$reader->expects($this->never())
-			->method('readCollection');
+		$reader->expects($this->once())
+			->method('readCollection')
+			->with('portaliq', 'portalMessage', 'subjectRef', 's1')
+			->willReturn([]);
 
 		$inboxReader = new PortalInboxReader($reader);
 
@@ -326,8 +338,8 @@ class PortalInboxReaderTest extends TestCase {
 		$messages = $inboxReader->aggregateInbox(self::SUBJECT, $aggregate);
 
 		sort($seen);
-		$this->assertSame(['message', 'note'], $seen, 'scopeClaim and via must still be read');
-		$this->assertCount(2, $messages);
+		$this->assertSame(['message', 'note', 'portalMessage'], $seen, 'scopeClaim and via must still be read');
+		$this->assertCount(3, $messages);
 
 	}//end testScopeClaimAndViaAreStillReadWithoutAScopeField()
 
