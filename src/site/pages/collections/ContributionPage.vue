@@ -164,6 +164,8 @@ export default {
 
 	components: { CollectionTable, DetailCard, RichTextBlock, SlotHost },
 
+	// The shell hands every page the whole contract (session, portal, nav, …);
+	// this page reads none of those, and they must not land on the DOM.
 	inheritAttrs: false,
 
 	props: {
@@ -175,10 +177,6 @@ export default {
 		contribution: { type: Object, default: null },
 		/** The shared portal api, bound to the resident's bearer. */
 		api: { type: Object, default: null },
-		/** The session, as `/portal/api/session` answers it. */
-		session: { type: Object, default: null },
-		/** The portal record. */
-		portal: { type: Object, default: null },
 		/** The contributions aggregate, or its list. */
 		contributions: { type: [Object, Array], default: null },
 		/** The site translator. */

@@ -29,7 +29,7 @@ const NAME_KEYS = ['label', 'title', 'name', 'displayName']
 /**
  * Whether a value is an identifier and nothing else.
  *
- * @param {*} value The value.
+ * @param {unknown} value The value.
  * @return {boolean}
  */
 export function isIdentifier(value) {
@@ -203,7 +203,7 @@ function formatMoment(value, withTime, locale) {
  * as a date, a list as its readable items, and a nested object as its name or
  * else its readable parts.
  *
- * @param {*} value The value.
+ * @param {unknown} value The value.
  * @param {object} context How to write it.
  * @param {string} context.locale The language.
  * @param {(key: string) => string} context.t The translator.
@@ -260,7 +260,7 @@ export function readable(value, { locale, t }, depth = 0) {
 /**
  * The text of one cell, following the column's `render`.
  *
- * @param {*} value The value.
+ * @param {unknown} value The value.
  * @param {string} render The column's render kind.
  * @param {object} context How to write it.
  * @param {string} context.locale The language.
@@ -296,7 +296,7 @@ export function formatCell(value, render, { locale, t }) {
  * The address a `link` cell may point at: an http(s) or site-relative address,
  * never a `javascript:` or other scheme.
  *
- * @param {*} value The value.
+ * @param {unknown} value The value.
  * @return {string} The address, or '' when it is not one.
  */
 export function safeHref(value) {
@@ -314,7 +314,7 @@ export function safeHref(value) {
  * The modifier of a `badge` cell, from its value: lower case, letters, digits
  * and dashes only.
  *
- * @param {*} value The value.
+ * @param {unknown} value The value.
  * @return {string}
  */
 export function badgeModifier(value) {
