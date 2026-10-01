@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T02
+ * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCP\IRequest;
 /**
  * Forwards one declared guest action, or its preview, for a signed token.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T02
+ * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
  */
 class GuestActionController extends Controller {
 	/**
@@ -82,7 +82,7 @@ class GuestActionController extends Controller {
 	 *
 	 * @return JSONResponse The relayed answer, or 400 / 404 / 502.
 	 *
-	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -166,7 +166,7 @@ class GuestActionController extends Controller {
 	 *
 	 * @return JSONResponse The relayed answer, or 400 / 404 / 502.
 	 *
-	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -211,7 +211,7 @@ class GuestActionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
 	 */
 	private function relay(array $action, string $appId, string $auditAs, string $token, array $body): JSONResponse {
 		$subject = $this->guestSubject(token: $token);

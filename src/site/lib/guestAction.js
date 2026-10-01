@@ -14,7 +14,7 @@
  * Portaliq checks nothing about the token: the app that signed it does, on
  * the forward. So nothing here decides whether the act is allowed.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/specs/portal-guest-actions/spec.md#requirement-a-signed-link-opens-a-page-for-its-one-act-without-an-account-req-gst-002
+ * @spec openspec/specs/portal-guest-actions/spec.md#requirement-a-signed-link-opens-a-page-for-its-one-act-without-an-account-req-gst-002
  */
 
 const PREFIX = '#guest/'
@@ -56,10 +56,14 @@ const STRINGS = Object.freeze({
  * @param {string} lang The document language.
  * @return {object} The strings.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T06
+ * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T06
  */
 export function guestStrings(lang) {
-	return String(lang || '').toLowerCase().startsWith('en') ? STRINGS.en : STRINGS.nl
+	return String(lang || '')
+		.toLowerCase()
+		.startsWith('en')
+		? STRINGS.en
+		: STRINGS.nl
 }
 
 /**
@@ -70,7 +74,7 @@ export function guestStrings(lang) {
  * @param {object} history  `window.history`.
  * @return {object|null} `{app, action, token}`, or null.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T03
+ * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T03
  */
 export function takeGuestLink(location, history) {
 	const hash = String((location && location.hash) || '')
@@ -78,7 +82,11 @@ export function takeGuestLink(location, history) {
 		return null
 	}
 
-	history.replaceState(null, '', String(location.pathname || '') + String(location.search || ''))
+	history.replaceState(
+		null,
+		'',
+		String(location.pathname || '') + String(location.search || ''),
+	)
 
 	const parts = hash.slice(PREFIX.length).split('/')
 	if (parts.length !== 3) {
@@ -106,7 +114,10 @@ async function post(url, body, fetchImpl) {
 	try {
 		const response = await fetchImpl(url, {
 			method: 'POST',
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+			},
 			body: JSON.stringify(body),
 		})
 		let parsed = {}
@@ -159,10 +170,14 @@ function bodyOf(fields, token, portal) {
  * @param {Function} fetchImpl `fetch`, replaceable in tests.
  * @return {Promise<object>} `{ok, status, body}`.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T04
+ * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T04
  */
 export function guestPreview(authBase, link, portal, fetchImpl = fetch) {
-	return post(`${routeOf(authBase, link)}/preview`, bodyOf({}, link.token, portal), fetchImpl)
+	return post(
+		`${routeOf(authBase, link)}/preview`,
+		bodyOf({}, link.token, portal),
+		fetchImpl,
+	)
 }
 
 /**
@@ -175,10 +190,14 @@ export function guestPreview(authBase, link, portal, fetchImpl = fetch) {
  * @param {Function} fetchImpl `fetch`, replaceable in tests.
  * @return {Promise<object>} `{ok, status, body}`.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T04
+ * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T04
  */
 export function guestAct(authBase, link, fields, portal, fetchImpl = fetch) {
-	return post(routeOf(authBase, link), bodyOf(fields || {}, link.token, portal), fetchImpl)
+	return post(
+		routeOf(authBase, link),
+		bodyOf(fields || {}, link.token, portal),
+		fetchImpl,
+	)
 }
 
 /**
@@ -200,7 +219,7 @@ function text(value) {
  * @param {object} strings The page's strings.
  * @return {object} `{usable, summary, reason, label, confirmText, fields, fieldConfigs}`.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
+ * @spec openspec/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
  */
 export function previewState(answer, strings) {
 	const body = (answer && answer.body) || {}
@@ -211,8 +230,13 @@ export function previewState(answer, strings) {
 		reason: '',
 		label: text(action.label) || strings.continue,
 		confirmText: text(action.confirmText) || strings.confirm,
-		fields: Array.isArray(action.fields) ? action.fields.filter((f) => typeof f === 'string') : [],
-		fieldConfigs: action.fieldConfigs && typeof action.fieldConfigs === 'object' ? action.fieldConfigs : {},
+		fields: Array.isArray(action.fields)
+			? action.fields.filter((f) => typeof f === 'string')
+			: [],
+		fieldConfigs:
+			action.fieldConfigs && typeof action.fieldConfigs === 'object'
+				? action.fieldConfigs
+				: {},
 	}
 
 	if (answer && answer.ok) {
@@ -230,7 +254,10 @@ export function previewState(answer, strings) {
 		return state
 	}
 
-	return { ...state, usable: false, reason: text(body.message) || strings.unusable }
+	// The route wraps the app's own answer as `preview`; a bare answer
+	// (a 400 or 502 of the route itself) carries its message on top.
+	const message = text((body.preview || {}).message) || text(body.message)
+	return { ...state, usable: false, reason: message || strings.unusable }
 }
 
 /**
@@ -242,7 +269,7 @@ export function previewState(answer, strings) {
  * @param {object} strings     The page's strings.
  * @return {object} `{kind: 'redirect'|'done'|'refused', message, url?}`.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
+ * @spec openspec/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
  */
 export function actOutcome(answer, declaration, strings) {
 	const body = (answer && answer.body) || {}
@@ -254,7 +281,10 @@ export function actOutcome(answer, declaration, strings) {
 
 		return {
 			kind: 'done',
-			message: text(body.message) || text((declaration || {}).successText) || strings.done,
+			message:
+				text(body.message)
+				|| text((declaration || {}).successText)
+				|| strings.done,
 		}
 	}
 

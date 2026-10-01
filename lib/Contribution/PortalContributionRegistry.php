@@ -228,7 +228,7 @@ class PortalContributionRegistry {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
 	 */
 	public function guestAction(string $appId, string $actionId): ?array {
 		if (in_array($appId, $this->appManager->getInstalledApps(), true) === false) {

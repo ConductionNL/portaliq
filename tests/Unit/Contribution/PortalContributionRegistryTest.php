@@ -455,7 +455,7 @@ class PortalContributionRegistryTest extends TestCase {
 	 * audience, only for an action marked `guest`, and only for an installed
 	 * app: a resident action of the same id is never a guest's.
 	 *
-	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
 	 */
 	public function testGuestActionIsFoundOnlyForTheGuestAudience(): void {
 		$guestProvider = new class {

@@ -33,7 +33,7 @@ use RuntimeException;
  * and session service; only the provider, the HTTP client, the portal
  * lookup and the audit store are doubles.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T02
+ * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
  */
 class GuestActionControllerTest extends TestCase {
 

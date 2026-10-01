@@ -728,7 +728,7 @@ class PortalManifestNormaliserTest extends TestCase {
 	 * token, and one aimed off the instance would forward it elsewhere: both
 	 * are dropped, a well-formed one keeps its guest keys.
 	 *
-	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
 	 */
 	public function testGuestActionNeedsATokenField(): void {
 		$out = $this->normaliser()->normalise(
@@ -755,7 +755,7 @@ class PortalManifestNormaliserTest extends TestCase {
 	 * A guest is never more than `low`: a guest action asking for more is
 	 * dropped, not offered to a visitor who cannot have it (REQ-GST-001).
 	 *
-	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
 	 */
 	public function testGuestActionAboveLowTrustIsDropped(): void {
 		$out = $this->normaliser()->normalise(

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T01
+ * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Keeps a well-formed guest action and removes every other one.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T01
+ * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
  */
 class GuestActionConfigNormaliser {
 	/**
@@ -50,7 +50,7 @@ class GuestActionConfigNormaliser {
 	 *
 	 * @return array<string, mixed>|null The action, or null when its guest declaration is unusable.
 	 *
-	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
 	 */
 	public function normaliseAction(array $action): ?array {
 		if (array_key_exists('guest', $action) === false) {

@@ -39,7 +39,10 @@
 				</p>
 			</div>
 
-			<form v-else data-testid="guest-form" @submit.prevent="confirming = true">
+			<form
+				v-else
+				data-testid="guest-form"
+				@submit.prevent="confirming = true">
 				<div
 					v-for="field in state.fields"
 					:key="field"
@@ -52,7 +55,7 @@
 						v-model="values[field]"
 						type="text"
 						class="utrecht-textbox"
-						:data-testid="`guest-field-${field}`">
+						:data-testid="`guest-field-${field}`" />
 				</div>
 
 				<button
@@ -108,7 +111,7 @@ import {
  * no longer possible, otherwise the declared fields, the declared button, a
  * confirmation, and the answer. No account and no session.
  *
- * @spec openspec/changes/identity-guest-page-for-signed-links/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
+ * @spec openspec/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
  */
 export default {
 	name: 'GuestActionPage',
@@ -145,7 +148,7 @@ export default {
 	/**
 	 * Read the link once, then ask what it is for.
 	 *
-	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T03
 	 */
 	async mounted() {
 		this.link = takeGuestLink(window.location, window.history)
@@ -169,7 +172,9 @@ export default {
 		 */
 		labelOf(field) {
 			const config = this.state.fieldConfigs[field]
-			return (config && typeof config.label === 'string' && config.label) || field
+			return (
+				(config && typeof config.label === 'string' && config.label) || field
+			)
 		},
 
 		/**
@@ -177,11 +182,16 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/identity-guest-page-for-signed-links/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
+		 * @spec openspec/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
 		 */
 		async act() {
 			this.busy = true
-			const answer = await guestAct(this.authBase, this.link, this.values, this.portal)
+			const answer = await guestAct(
+				this.authBase,
+				this.link,
+				this.values,
+				this.portal,
+			)
 			this.outcome = actOutcome(answer, this.declaration, this.strings)
 			this.busy = false
 			if (this.outcome.kind === 'redirect') {

@@ -161,7 +161,13 @@
 				<!-- THE HERO REGION: the page's own hero band, else the
 				     portal's, unless the page clears it (REQ-PTB-009). -->
 				<WidgetGrid
-					v-if="!guestLink && !loading && !error && page && regions.hero.length"
+					v-if="
+						!guestLink
+						&& !loading
+						&& !error
+						&& page
+						&& regions.hero.length
+					"
 					data-testid="site-region-hero"
 					:widgets="regions.hero"
 					v-bind="gridContext"
@@ -171,7 +177,7 @@
 				<!-- A signed link opens its one act before any page (REQ-GST-002). -->
 				<GuestActionPage
 					v-if="guestLink"
-					:auth-base="guestAuthBase"
+					:authBase="guestAuthBase"
 					:portal="site.slug || portalSlug" />
 
 				<!-- The signed-in area owns every `/mijn` route; no CMS page is
@@ -982,7 +988,7 @@ export default {
 		 *
 		 * @return {string} The base, `.../portal/api`.
 		 *
-		 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T03
+		 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T03
 		 */
 		guestAuthBase() {
 			return authBaseFrom(resolveApiBase())

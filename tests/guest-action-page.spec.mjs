@@ -97,6 +97,9 @@ test('a preview shows the summary, or the reason and no button (REQ-GST-004)', (
 
 	const refused = lib.previewState({ ok: false, status: 403, body: { message: 'This link has expired.' } }, strings)
 	assert.deepEqual([refused.usable, refused.reason], [false, 'This link has expired.'])
+	// The route wraps the app's answer as `preview` next to the declaration.
+	const wrapped = lib.previewState({ ok: false, status: 410, body: { preview: { message: 'This link has expired.' }, action: { fields: [] } } }, strings)
+	assert.deepEqual([wrapped.usable, wrapped.reason], [false, 'This link has expired.'])
 	const silent = lib.previewState({ ok: false, status: 500, body: {} }, strings)
 	assert.deepEqual([silent.usable, silent.reason], [false, 'This link cannot be used.'])
 })
