@@ -1856,6 +1856,53 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testMarkReadWithUnresolvableClaimIs404BeforeAnyWrite()
 
+	/**
+	 * A resident marks one of portaliq's own notices read although no
+	 * contribution declares an inbox over `portalMessage`: the write is scoped
+	 * on `subjectRef` with the bearer's own reference, and still sets `read`
+	 * only.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	public function testMarkReadReachesTheResidentsOwnPortalMessageWithoutADeclaredInbox(): void {
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+				$received = [$register, $schema, $scopeField, $subjectRef, $organisation, $id, $data];
+				return ['id' => $id, 'read' => true];
+			}
+		);
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'portalMessages']);
+		$response = $controller->markRead('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1', 'm-1', ['read' => true]], $received);
+	}//end testMarkReadReachesTheResidentsOwnPortalMessageWithoutADeclaredInbox()
+
+	/**
+	 * The fallback opens portaliq's own messages only: another schema, or a
+	 * collection id that is not the built-in one, stays 403 with no write.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	public function testMarkReadFallbackOpensNothingButPortaliqsOwnMessages(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('updateObject');
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'somethingElse']);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->markRead('portaliq', 'portalMessage', 'm-1')->getStatus());
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->markRead('portaliq', 'portalAccount', 'a-1')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->markRead('other', 'portalMessage', 'm-1')->getStatus());
+	}//end testMarkReadFallbackOpensNothingButPortaliqsOwnMessages()
+
 	public function testUploadRequiresTheCollectionToOptIntoFileUploads(): void {
 		// The collection does NOT declare filesUpload → 403, no read, no attach.
 		$aggregate = $this->aggregate(
