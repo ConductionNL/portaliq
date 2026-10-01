@@ -93,3 +93,20 @@ test('a portal that resolved to none sends no portal header', async () => {
 
 	assert.equal('X-Portaliq-Portal' in calls[0].headers, false)
 })
+
+// The Vue port on the site (site-reaches-portal-parity T21, REQ-SRP-042): the
+// citizen case block reads through the same adapter, so it names the portal too.
+
+test('site: the citizen case block reads the case through the adapter, which names the serving portal', async () => {
+	const calls = stubBrowser()
+	const api = createPortalApi({ apiBase: '/api', organisationSlug: 'mijn-alkmaar' })
+	await api.fetchCitizenCase(CASES, 'case-1')
+	assert.equal(calls[0].url, '/api/citizen/cases/dossiq/case/case-1')
+	assert.equal(calls[0].headers['X-Portaliq-Portal'], 'mijn-alkmaar')
+
+	const { loadSfc } = await import('./support/render-sfc.mjs')
+	const screen = await loadSfc('src/site/components/e/CitizenCase.vue')
+	await screen.methods.load.call({ caseId: 'case-2', mandateId: '', collection: CASES, api })
+	assert.equal(calls[1].url, '/api/citizen/cases/dossiq/case/case-2')
+	assert.equal(calls[1].headers['X-Portaliq-Portal'], 'mijn-alkmaar', 'the block reads through the adapter')
+})

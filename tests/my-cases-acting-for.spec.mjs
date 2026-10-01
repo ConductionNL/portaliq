@@ -43,6 +43,7 @@ async function load(relative) {
 	const code = compiled.code
 		.replace(/from '\.\/([A-Za-z]+)\.jsx'/g, (whole, name) => `from './${flat('components/' + name + '.jsx')}'`)
 		.replace(/from '\.\.\/lib\/([A-Za-z]+)\.js'/g, (whole, name) => `from './${flat('lib/' + name + '.js')}'`)
+		.replace(/from '\.\.\/\.\.\/shared\/([A-Za-z]+)\.js'/g, (whole, name) => `from '${pathToFileURL(join(ROOT, 'src', 'shared', name + '.js')).href}'`)
 	const out = join(OUT_DIR, flat(relative))
 	writeFileSync(out, code)
 	return import(pathToFileURL(out).href)
@@ -50,7 +51,7 @@ async function load(relative) {
 
 compileLoading(OUT_DIR)
 const { createPortalApi } = await load('lib/portalApi.js')
-const myCases = await load('lib/myCases.js')
+const myCases = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'myCases.js')).href)
 const { default: MyCasesPage } = await load('components/MyCasesPage.jsx')
 const { default: ActingForSwitcher } = await load('components/ActingForSwitcher.jsx')
 const { createElement } = await import('react')
@@ -175,6 +176,91 @@ test('the shell, the page, the case screen and both locales are wired', () => {
 			assert.equal(bundle[key], locale === 'nl' ? dutch : key, `${locale}: ${key}`)
 		}
 	}
+})
+
+// The Vue port on the site (site-reaches-portal-parity T20, REQ-SRP-041).
+
+const { renderSfc, loadSfc } = await import('./support/render-sfc.mjs')
+const store = await import(pathToFileURL(join(ROOT, 'src', 'site', 'components', 'e', 'actingFor.js')).href)
+
+test('site: the switcher names yourself and each mandate with the choice selected, and is absent without a mandate', async () => {
+	const html = await renderSfc('src/site/components/e/ActingForSwitcher.vue', { t, mandates: MANDATES, value: 'mandate-1' })
+	assert.match(html, /<label for="pq-acting-for"[^>]*>Acting for<\/label>/)
+	assert.match(html, /<select id="pq-acting-for"/)
+	assert.match(html, /<option value="self">Yourself<\/option>/)
+	assert.match(html, /<option value="mandate-1" selected>Bakkerij Jansen BV<\/option>/)
+	assert.match(html, /<option value="mandate-2">Mijn vader<\/option>/)
+	assert.equal(await renderSfc('src/site/components/e/ActingForSwitcher.vue', { t, mandates: [] }), '<!---->')
+})
+
+test('site: the store learns the mandates from "My cases", keeps the choice for the session, and a refusal forgets nothing', () => {
+	const kept = storage()
+	store.learnMandates({ ok: true, mandates: MANDATES })
+	assert.deepEqual(store.actingFor.mandates, MANDATES)
+	store.chooseActingFor('mandate-2', kept)
+	assert.equal(store.actingFor.id, 'mandate-2')
+	assert.equal(myCases.readActingFor(kept), 'mandate-2')
+	store.learnMandates({ ok: false, error: 'group_too_large' })
+	assert.deepEqual(store.actingFor.mandates, MANDATES, 'a refusal never forgets the mandates')
+	assert.equal(store.actingFor.id, 'mandate-2')
+	store.learnMandates({ ok: true, mandates: [MANDATES[0]] })
+	assert.equal(store.actingFor.id, 'self', 'a mandate no longer held falls back to yourself')
+})
+
+test('site: the header switcher with only `t` follows the store', async () => {
+	store.learnMandates({ ok: true, mandates: MANDATES })
+	store.chooseActingFor('mandate-1', storage())
+	const html = await renderSfc('src/site/components/e/ActingForSwitcher.vue', { t })
+	assert.match(html, /<option value="mandate-1" selected>Bakkerij Jansen BV<\/option>/)
+	const switcher = await loadSfc('src/site/components/e/ActingForSwitcher.vue')
+	const emitted = []
+	switcher.methods.choose.call({ $emit: (e, id) => emitted.push([e, id]) }, 'mandate-2')
+	assert.equal(store.actingFor.id, 'mandate-2')
+	assert.deepEqual(emitted, [['change', 'mandate-2']])
+	store.chooseActingFor('self', storage())
+})
+
+test('site: "My cases" is read under the mandate in effect and tells the store what it holds', async () => {
+	const page = await loadSfc('src/site/pages/e/MyCasesPage.vue')
+	const asked = []
+	const emitted = []
+	const vm = {
+		request: 0,
+		data: null,
+		actingUnder: 'mandate-1',
+		api: { fetchMyCases: async (id) => { asked.push(id); return { ok: true, cases: [], mandates: MANDATES } } },
+		$emit: (e) => emitted.push(e),
+	}
+	await page.methods.load.call(vm)
+	assert.deepEqual(asked, ['mandate-1'])
+	assert.deepEqual(emitted, ['loaded'])
+	assert.deepEqual(store.actingFor.mandates, MANDATES)
+	assert.equal(page.computed.actingUnder.call({ mandateId: '' }), store.actingFor.id)
+	assert.equal(page.computed.actingUnder.call({ mandateId: 'mandate-2' }), 'mandate-2')
+})
+
+test('site: a mandated case carries its label, a group too large is refused, and the case screen reads under the mandate', async () => {
+	const html = await renderSfc('src/site/pages/e/MyCasesPage.vue', {
+		api: {},
+		t,
+		initialData: { ok: true, cases: [{ id: 'z-9', title: 'Terrasvergunning', _source: { appId: 'dossiq', label: 'Zaken', collection: 'mijnZaken' }, _mandate: { id: 'mandate-1', label: 'Bakkerij Jansen BV' } }] },
+	})
+	assert.match(html, /Terrasvergunning[\s\S]*data-testid="my-cases-mandate"[^>]*>Bakkerij Jansen BV</)
+	const refused = await renderSfc('src/site/pages/e/MyCasesPage.vue', { api: {}, t, initialData: { ok: false, status: 409, error: 'group_too_large', cases: [] } })
+	assert.match(refused, /role="alert"[^>]*>This organisation has too many cases to list here\. Choose a narrower mandate\.</)
+	assert.doesNotMatch(refused, /my-cases-list/)
+
+	const screen = await loadSfc('src/site/components/e/CitizenCase.vue')
+	assert.equal(screen.computed.mandateId.call({ row: { id: 'z-9', _mandate: { id: 'mandate-1' } } }), 'mandate-1')
+	const read = []
+	const vm = {
+		caseId: 'z-9',
+		mandateId: 'mandate-1',
+		collection: { register: 'dossiq', schema: 'case' },
+		api: { fetchCitizenCase: async (c, id, mandate) => { read.push([id, mandate]); return { case: {} } } },
+	}
+	await screen.methods.load.call(vm)
+	assert.deepEqual(read, [['z-9', 'mandate-1']])
 })
 
 test('site: a case opened under a mandate uses the row the list handed over', () => {

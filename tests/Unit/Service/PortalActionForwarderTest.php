@@ -50,4 +50,34 @@ class PortalActionForwarderTest extends TestCase {
 		$this->assertFalse($forwarder->isForwardable(action: []));
 		$this->assertFalse($forwarder->isForwardable(action: ['endpoint' => '/apps/shillinq/pay', 'method' => 'TRACE']));
 	}//end testOnlyAnInstanceLocalEndpointWithAnAllowedMethodIsForwardable()
+
+	/**
+	 * The body a resident sends must reach the domain endpoint. Nextcloud's
+	 * real request declares getContent() protected, so calling it threw
+	 * "Call to protected method" and every forwarded action answered 500 (found
+	 * by the Woo journey e2e: "Bewaar in mijn dossier" never saved). The raw
+	 * body is read from the input stream when getContent() is not callable.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 */
+	public function testTheRawBodyIsRelayedWhenTheRequestHidesGetContent(): void {
+		$forwarder = new class(
+			$this->createMock(IRequest::class),
+			$this->createMock(IClientService::class),
+			$this->createMock(IURLGenerator::class),
+			$this->createMock(PortalSessionService::class),
+		) extends PortalActionForwarder {
+			protected function rawInput(): string {
+				return '{"collectionId":"c-1"}';
+			}
+
+			public function body(): string {
+				return $this->requestBody();
+			}
+		};
+
+		$this->assertSame('{"collectionId":"c-1"}', $forwarder->body());
+	}//end testTheRawBodyIsRelayedWhenTheRequestHidesGetContent()
 }//end class
