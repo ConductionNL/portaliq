@@ -32,21 +32,44 @@ function resolvePortalApiRoot() {
 }
 
 /**
+ * The id of the anonymous create action a bound form submits through.
+ *
+ * @param {string} formId The bound form's id.
+ * @return {string} `submit-{formId}`, or '' without a form id.
+ *
+ * @spec openspec/changes/create-names-its-action/tasks.md#T3
+ */
+export function landingPageActionId(formId) {
+	return typeof formId === 'string' && formId !== '' ? `submit-${formId}` : ''
+}
+
+/**
  * Submit a landing-page form's values through the anonymous create
  * endpoint. A non-2xx is thrown as an Error carrying `.status`, mirroring
  * `contentApi.js`'s `get()` convention.
  *
+ * Every active form is its own anonymous create action on
+ * `landingPageSubmission` (`submit-{formId}`, PortalContributionProvider), so
+ * the submission names its form's action: without it the server filed every
+ * form's answers under the first form's whitelist and `formId`.
+ *
  * @param {object} values The visitor's field values, keyed by the form's own field ids.
  * @param {object} [tracking] `{utmFirstTouch, utmLastTouch, referrer}` captured client-side.
+ * @param {string} [formId] The bound form's id, which names its create action.
  * @return {Promise<object>} The created `landingPageSubmission` object.
  *
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+ * @spec openspec/changes/create-names-its-action/tasks.md#T3
  */
-export async function submitLandingPageForm(values, tracking = {}) {
+export async function submitLandingPageForm(values, tracking = {}, formId = '') {
 	const url = new URL(
 		`${resolvePortalApiRoot()}/portal/api/collections/${REGISTER}/${SUBMISSION_SCHEMA}`,
 		window.location.origin,
 	)
+	const actionId = landingPageActionId(formId)
+	if (actionId !== '') {
+		url.searchParams.set('actionId', actionId)
+	}
 
 	// Only captured parameters travel: a touch of nulls fails the store's
 	// validation of the nested strings, and the form could not be sent by
