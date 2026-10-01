@@ -1086,7 +1086,7 @@ class ContributionController extends Controller implements PortalProtected {
 			aggregate: $this->registry->aggregateFor($subject),
 			register: $register,
 			schema: $schema,
-			actionId: $this->requestedActionId()
+			actionId: $this->request->getParam('actionId', '')
 		);
 	}//end authorisedCreateAction()
 
@@ -1161,30 +1161,14 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
 	 */
 	private function authorisedAnonymousCreateAction(string $register, string $schema): array|string|null {
-		return (new CreateActionMatcher())->match(
+		return (new CreateActionMatcher())->matchAnonymous(
 			aggregate: $this->registry->aggregateAnonymous(),
 			register: $register,
 			schema: $schema,
-			actionId: $this->requestedActionId(),
-			anonymous: true
+			actionId: $this->request->getParam('actionId', '')
 		);
 	}//end authorisedAnonymousCreateAction()
 
-	/**
-	 * The create action id the client named as `?actionId=`, or ''.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
-	 */
-	private function requestedActionId(): string {
-		$requested = $this->request->getParam('actionId', '');
-		if (is_string($requested) === true) {
-			return $requested;
-		}
-
-		return '';
-	}//end requestedActionId()
 
 	/**
 	 * The write body with the action's server-enforced transition target applied.

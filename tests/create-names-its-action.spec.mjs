@@ -147,7 +147,10 @@ function stubSite() {
 	return calls
 }
 
+// Vue reads `document` when it loads, so the block is loaded before the
+// browser stub replaces it.
 const { loadSfc } = await import('./support/render-sfc.mjs')
+const formBlock = await loadSfc('src/site/components/FormBlock.vue')
 
 /**
  * Submit FormBlock's form, with a stand-in `this`.
@@ -156,7 +159,6 @@ const { loadSfc } = await import('./support/render-sfc.mjs')
  * @return {Promise<object>} The stand-in, after the submit.
  */
 async function submitFormBlock(formId) {
-	const block = await loadSfc('src/site/components/FormBlock.vue')
 	const vm = {
 		formId,
 		portal: 'gemeente',
@@ -164,7 +166,7 @@ async function submitFormBlock(formId) {
 		submitting: false,
 		status: null,
 	}
-	await block.methods.submit.call(vm)
+	await formBlock.methods.submit.call(vm)
 	return vm
 }
 
