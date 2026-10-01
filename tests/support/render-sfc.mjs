@@ -89,8 +89,8 @@ export async function renderSfc(file, props = {}, stubs = {}) {
 }
 
 /**
- * Compile a component and return its options object, so a test can call its
- * methods and computed getters on a stand-in `this` (no DOM needed).
+ * Load a component's options without rendering it, so a test can call its
+ * methods and computed getters with a stand-in `this`.
  *
  * @param {string} file  Path of the `.vue` file, relative to the repository.
  * @param {object} stubs Bare specifier to module source.

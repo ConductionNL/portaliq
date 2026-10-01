@@ -262,3 +262,8 @@ test('site: a mandated case carries its label, a group too large is refused, and
 	await screen.methods.load.call(vm)
 	assert.deepEqual(read, [['z-9', 'mandate-1']])
 })
+
+test('site: a case opened under a mandate uses the row the list handed over', () => {
+	const loader = readFileSync(join(ROOT, 'src', 'site', 'pages', 'collections', 'collectionLoader.js'), 'utf8')
+	assert.match(loader, /rowFor\(loaded\.objects, target\.id\) \|\| target\.row \|\| null/)
+})
