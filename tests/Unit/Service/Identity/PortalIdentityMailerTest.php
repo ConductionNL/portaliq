@@ -82,6 +82,8 @@ class PortalIdentityMailerTest extends TestCase {
 			PortalIdentityMailer::TEMPLATE_REFERENCE_LINK => '#reference=secret-abc',
 			PortalIdentityMailer::TEMPLATE_INVITATION => '#invitation=secret-abc',
 			PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION => '#confirm-email=secret-abc',
+			// identity-ways-in-screens T01: the activation link of a self-registration.
+			PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION => '#activate=secret-abc',
 		];
 
 		foreach ($expected as $template => $fragment) {

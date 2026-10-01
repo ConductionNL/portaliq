@@ -322,6 +322,8 @@ return [
         // short reference session it started (identity-ways-in-screens D2).
         ['name' => 'portalIdentity#referenceCase', 'url' => '/portal/api/identity/reference-case', 'verb' => 'GET'],
         ['name' => 'portalIdentity#register', 'url' => '/portal/api/identity/register', 'verb' => 'POST'],
+        // The activation link of a self-registration (identity-ways-in-screens T03).
+        ['name' => 'portalIdentity#activate', 'url' => '/portal/api/identity/activate', 'verb' => 'POST'],
         ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
         // A guest's one act from a link a contributing app signed
         // (identity-guest-page-for-signed-links D3): public, rate limited, no session.

@@ -167,19 +167,28 @@ class SessionController extends Controller {
 	}//end returnAddress()
 
 	/**
-	 * The redirect to integriq's broker start, carrying the site page to
-	 * return to when there is one.
+	 * The redirect to integriq's broker start, carrying the resolved portal
+	 * and the site page to return to when there are any.
 	 *
-	 * @param string $org        The organisation slug.
-	 * @param string $provider   The provider.
-	 * @param string $siteReturn The accepted site page, or ''.
+	 * @param string                    $org        The organisation slug.
+	 * @param string                    $provider   The provider.
+	 * @param string                    $siteReturn The accepted site page, or ''.
+	 * @param array<string, mixed>|null $site       The resolved serving portal, or null.
 	 *
 	 * @return RedirectResponse
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
 	 */
-	private function toBroker(string $org, string $provider, string $siteReturn): RedirectResponse {
+	private function toBroker(string $org, string $provider, string $siteReturn, ?array $site): RedirectResponse {
 		$params = ['org' => $org, 'provider' => $provider];
+		// Only a resolved portal's slug rides along, never raw input; the
+		// broker start resolves it again before echoing it.
+		$slug = (string)($site['slug'] ?? '');
+		if ($slug !== '') {
+			$params['portal'] = $slug;
+		}
+
 		if ($siteReturn !== '') {
 			$params['returnTo'] = $siteReturn;
 		}
@@ -452,7 +461,7 @@ class SessionController extends Controller {
 		$siteReturn = $this->siteReturn(returnTo: $returnTo);
 
 		if ($this->loginConfig?->loginRouteFor(orgSlug: $org, provider: $provider) === 'broker') {
-			return $this->toBroker(org: $org, provider: $provider, siteReturn: $siteReturn);
+			return $this->toBroker(org: $org, provider: $provider, siteReturn: $siteReturn, site: $site);
 		}
 
 		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
