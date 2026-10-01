@@ -246,7 +246,9 @@ function dutchLabel(key, vars = {}) {
 		'Log in': 'Inloggen',
 		'Log in with {provider}': 'Inloggen met {provider}',
 	}
-	return (nl[key] || key).replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
+	return (nl[key] || key).replace(/\{(\w+)\}/g, (_, name) =>
+		String(vars[name] ?? ''),
+	)
 }
 
 /**

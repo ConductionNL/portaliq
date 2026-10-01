@@ -68,7 +68,9 @@
 							class="pq-menu__badge"
 							data-testid="site-menu-badge">
 							<span aria-hidden="true">{{ item.badge }}</span>
-							<span class="pq-menu__sr">{{ item.badgeLabel || item.badge }}</span>
+							<span class="pq-menu__sr">{{
+								item.badgeLabel || item.badge
+							}}</span>
 						</span>
 					</div>
 				</a>
@@ -262,8 +264,14 @@ export default {
 	margin-inline-start: 6px;
 	padding: 0 6px;
 	border-radius: 999px;
-	background: var(--utrecht-badge-counter-background-color, var(--utrecht-document-color, CanvasText));
-	color: var(--utrecht-badge-counter-color, var(--utrecht-document-background-color, Canvas));
+	background: var(
+		--utrecht-badge-counter-background-color,
+		var(--utrecht-document-color, CanvasText)
+	);
+	color: var(
+		--utrecht-badge-counter-color,
+		var(--utrecht-document-background-color, Canvas)
+	);
 	font-size: 0.85em;
 	line-height: 1.5;
 	text-align: center;

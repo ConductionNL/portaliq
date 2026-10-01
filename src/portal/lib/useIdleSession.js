@@ -9,7 +9,11 @@
 // event, and a sign-out in one tab ends the others.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ACTIVITY_EVENTS, shouldRefresh, warningDelayMs } from '../../shared/idleSession.js'
+import {
+	ACTIVITY_EVENTS,
+	shouldRefresh,
+	warningDelayMs,
+} from '../../shared/idleSession.js'
 
 const TOKEN_STORAGE_KEY = 'portaliq_token'
 

@@ -62,26 +62,66 @@ export function buildNav(contributions, t, enabled = {}) {
 		}
 	}
 	if (enabled.cases === true) {
-		nav.unshift({ key: NAV_KEYS.cases, label: t('My cases'), icon: 'FolderAccount', special: 'cases' })
+		nav.unshift({
+			key: NAV_KEYS.cases,
+			label: t('My cases'),
+			icon: 'FolderAccount',
+			special: 'cases',
+		})
 	}
 	if (enabled.tasks === true) {
-		nav.push({ key: NAV_KEYS.tasks, label: t('My tasks'), icon: 'CheckboxMarkedOutline', special: 'tasks' })
+		nav.push({
+			key: NAV_KEYS.tasks,
+			label: t('My tasks'),
+			icon: 'CheckboxMarkedOutline',
+			special: 'tasks',
+		})
 	}
 	if (enabled.messages === true) {
-		nav.push({ key: NAV_KEYS.messages, label: t('Messages'), icon: 'MessageText', special: 'messages' })
+		nav.push({
+			key: NAV_KEYS.messages,
+			label: t('Messages'),
+			icon: 'MessageText',
+			special: 'messages',
+		})
 	}
 	if (enabled.news === true) {
-		nav.push({ key: NAV_KEYS.news, label: t('News'), icon: 'Newspaper', special: 'news' })
+		nav.push({
+			key: NAV_KEYS.news,
+			label: t('News'),
+			icon: 'Newspaper',
+			special: 'news',
+		})
 	}
 	// The inbox only once something else is there: on the pre-load render it
 	// would be the sole entry and lock the default page to an empty inbox.
 	if (nav.length > 0) {
-		nav.push({ key: NAV_KEYS.inbox, label: t('Inbox'), icon: 'Email', special: 'inbox' })
+		nav.push({
+			key: NAV_KEYS.inbox,
+			label: t('Inbox'),
+			icon: 'Email',
+			special: 'inbox',
+		})
 	}
 	if (enabled.access === true) {
-		nav.push({ key: NAV_KEYS.access, label: t('Access to cases'), icon: 'AccountKey', special: 'access' })
-		nav.push({ key: NAV_KEYS.details, label: t('My details'), icon: 'CardAccountDetails', special: 'details' })
-		nav.push({ key: NAV_KEYS.account, label: t('My account'), icon: 'AccountCog', special: 'account' })
+		nav.push({
+			key: NAV_KEYS.access,
+			label: t('Access to cases'),
+			icon: 'AccountKey',
+			special: 'access',
+		})
+		nav.push({
+			key: NAV_KEYS.details,
+			label: t('My details'),
+			icon: 'CardAccountDetails',
+			special: 'details',
+		})
+		nav.push({
+			key: NAV_KEYS.account,
+			label: t('My account'),
+			icon: 'AccountCog',
+			special: 'account',
+		})
 	}
 	return nav
 }
@@ -123,7 +163,8 @@ export function defaultNavKey(nav) {
 	if (!Array.isArray(nav) || nav.length === 0) {
 		return null
 	}
-	const first = nav.find((entry) => !NEVER_DEFAULT.includes(entry.special)) || nav[0]
+	const first =
+		nav.find((entry) => !NEVER_DEFAULT.includes(entry.special)) || nav[0]
 	return first.key
 }
 

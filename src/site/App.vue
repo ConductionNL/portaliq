@@ -817,8 +817,7 @@ export default {
 		 */
 		unreadCount() {
 			return (
-				this.unreadOverride
-				?? (this.account.contributions?.unreadCount || 0)
+				this.unreadOverride ?? (this.account.contributions?.unreadCount || 0)
 			)
 		},
 
@@ -828,7 +827,9 @@ export default {
 		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
 		 */
 		signinFailedMessage() {
-			return this.t('Signing in did not work. Try again or choose another way in.')
+			return this.t(
+				'Signing in did not work. Try again or choose another way in.',
+			)
 		},
 
 		/**
@@ -1146,7 +1147,9 @@ export default {
 		 */
 		async devLogin() {
 			this.devError = ''
-			const minted = await this.api.devLogin(this.signinConfig.audience || undefined)
+			const minted = await this.api.devLogin(
+				this.signinConfig.audience || undefined,
+			)
 			if (!minted) {
 				this.devError = this.t('Dev-login is disabled on this environment.')
 				return
@@ -1398,7 +1401,9 @@ export default {
 				this.page = null
 				// A page behind the portal's sign-in shows the way in rather
 				// than an error: the signed-in area renders signed out.
-				this.signInNeeded = Boolean(error && (error.status === 401 || error.status === 403))
+				this.signInNeeded = Boolean(
+					error && (error.status === 401 || error.status === 403),
+				)
 				// A 404 is information, not a fault — an unknown route and an
 				// unpublished page are answered identically by the API on
 				// purpose, and both belong on screen as "not found".

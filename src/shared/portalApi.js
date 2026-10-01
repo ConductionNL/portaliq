@@ -49,7 +49,6 @@ export function setToken(token) {
 	}
 }
 
-
 /**
  * Build the adapter bound to a runtime config (`{ apiBase, audience, ... }`).
  * Returned methods read the current token on every call, so a login/logout is

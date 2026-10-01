@@ -55,7 +55,8 @@ export function loggedInAs(session, t) {
 	if (!session) {
 		return ''
 	}
-	const who = session.name || session.subjectRef || session.subject || session.sub || ''
+	const who =
+		session.name || session.subjectRef || session.subject || session.sub || ''
 	return who ? t('Logged in as {subjectRef}', { subjectRef: who }) : t('Logged in')
 }
 
@@ -93,7 +94,11 @@ export function accountRedirect(nav, route) {
 export function accountCrumbs(entry, t, hrefFor) {
 	const crumbs = [
 		{ route: '/', label: t('Home'), href: hrefFor('/') },
-		{ route: ACCOUNT_ROUTE, label: t('My overview'), href: hrefFor(ACCOUNT_ROUTE) },
+		{
+			route: ACCOUNT_ROUTE,
+			label: t('My overview'),
+			href: hrefFor(ACCOUNT_ROUTE),
+		},
 	]
 	if (entry) {
 		const route = routeForNav(entry)
