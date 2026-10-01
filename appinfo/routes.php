@@ -322,6 +322,8 @@ return [
         // short reference session it started (identity-ways-in-screens D2).
         ['name' => 'portalIdentity#referenceCase', 'url' => '/portal/api/identity/reference-case', 'verb' => 'GET'],
         ['name' => 'portalIdentity#register', 'url' => '/portal/api/identity/register', 'verb' => 'POST'],
+        // The activation link of a self-registration (identity-ways-in-screens T03).
+        ['name' => 'portalIdentity#activate', 'url' => '/portal/api/identity/activate', 'verb' => 'POST'],
         ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],

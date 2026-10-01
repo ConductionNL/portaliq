@@ -237,7 +237,7 @@ class PortalAccountService {
 		string $provisionedBy = '',
 		string $displayName = '',
 	): ?array {
-		if ($audience === '' || $organisation === '') {
+		if (in_array('', [$audience, $organisation], true) === true) {
 			return null;
 		}
 
@@ -265,16 +265,23 @@ class PortalAccountService {
 			return null;
 		}
 
+		// An address-only account (a self-registration, an invitation) has no
+		// identity yet, and `identityType` is an enum: an empty string is no
+		// member of it, so the register would refuse the row. The two fields
+		// are left out until the sign-in that matches the account fills them.
+		$identity = [];
+		if ($hasIdentity === true) {
+			$identity = ['identityType' => $identityType, 'identityRef' => $identityRef];
+		}
+
 		$created = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
 			organisation: $organisation,
-			data: [
+			data: $identity + [
 				'audience' => $audience,
-				'identityType' => $identityType,
-				'identityRef' => $identityRef,
 				'subjectRef' => $subjectRef,
 				'organisation' => $organisation,
 				'displayName' => $displayName,

@@ -66,6 +66,11 @@ class PortalIdentityMailer {
 	public const TEMPLATE_EMAIL_CONFIRMATION = 'email-confirmation';
 
 	/**
+	 * The activation link of a self-registration (identity-ways-in-screens D4).
+	 */
+	public const TEMPLATE_REGISTRATION_ACTIVATION = 'registration-activation';
+
+	/**
 	 * Per template: the fragment key the portal consumes, and the English
 	 * source keys of the mail (l10n/nl.json carries the Dutch). `%1$s` is the
 	 * portal's name in every line that takes one.
@@ -91,6 +96,13 @@ class PortalIdentityMailer {
 			'heading' => 'Confirm your e-mail address',
 			'intro' => 'You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.',
 			'button' => 'Confirm this address',
+		],
+		self::TEMPLATE_REGISTRATION_ACTIVATION => [
+			'fragment' => 'activate',
+			'subject' => 'Activate your account at %1$s',
+			'heading' => 'Activate your account',
+			'intro' => 'You created an account at %1$s. Follow the link to make it ready for use.',
+			'button' => 'Activate your account',
 		],
 	];
 
