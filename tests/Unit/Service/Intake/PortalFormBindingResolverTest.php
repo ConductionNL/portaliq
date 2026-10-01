@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
+use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormTrustLevel;
+use OCA\Portaliq\Service\Intake\PortalIntakeFee;
+use OCA\Portaliq\Service\Intake\VisibleWhenLocal;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
@@ -316,6 +319,37 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertFalse($render['resolvesToNoForm']);
 		$this->assertSame($local['visibleWhen'], $render['fields'][1]['visibleWhen']);
 	}//end testNonLocalConditionResolvesToNoForm()
+
+	/**
+	 * intake-pay-on-submit REQ-IPS-001, REQ-IPS-002: the render carries the
+	 * fee the case type declares, without the pay action, and a fee-bearing
+	 * form needs a session at substantial, even where nothing else asks one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-a-fee-bearing-form-asks-the-visitor-to-sign-in-first-req-ips-002
+	 */
+	public function testFeeRequiresSession(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'kenteken', 'order' => 1]]);
+		$caseTypes = $this->createMock(CaseTypeReader::class);
+		$caseTypes->method('readCaseType')->willReturnCallback(
+			static fn (string $register, string $schema, string $id): ?array => match ($id) {
+				'verhuizing' => ['title' => 'Parkeervergunning', 'portalFee' => ['amount' => '45', 'description' => 'Parkeervergunning', 'payApp' => 'dossiq', 'payAction' => 'pay-intake-fee']],
+				default => null,
+			}
+		);
+		$resolver = new PortalFormBindingResolver($this->fakeReader(), null, new VisibleWhenLocal(), new PortalIntakeFee($caseTypes));
+
+		$render = $resolver->render(binding: $this->binding());
+
+		$this->assertSame(['amount' => '45.00', 'currency' => 'EUR', 'description' => 'Parkeervergunning'], $render['fee']);
+		$this->assertSame('substantial', $resolver->requiredTrust(site: [], binding: $this->binding(), render: $render));
+		$this->assertSame('high', $resolver->requiredTrust(site: [], binding: ['minTrust' => 'high'], render: $render));
+
+		$free = $resolver->render(binding: $this->binding(['typeId' => 'kapvergunning']));
+		$this->assertNull($free['fee'] ?? null);
+
+	}//end testFeeRequiresSession()
 
 	/**
 	 * A resolver whose portal gemeente-x hides the case type verhuizing.
