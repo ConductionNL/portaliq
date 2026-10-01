@@ -18,7 +18,10 @@ function propDefaults(props = {}) {
 	const out = {}
 	for (const [name, spec] of Object.entries(props)) {
 		const value = spec?.default
-		out[name] = typeof value === 'function' && spec.type !== Function ? value() : (value ?? null)
+		out[name] =
+			typeof value === 'function' && spec.type !== Function
+				? value()
+				: (value ?? null)
 	}
 	return out
 }

@@ -62,6 +62,7 @@ export function withStrings(t, locale) {
 		if (
 			typeof shell !== 'string'
 			|| shell === ''
+			|| shell === key
 			|| shell === interpolate(key, vars)
 		) {
 			return own

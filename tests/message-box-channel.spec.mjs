@@ -100,9 +100,7 @@ test('the inbox and the settings section use it, and both locales say it', async
 	)
 	assert.match(settings, /messageBoxChoice\(this\.loaded\)/)
 	assert.match(settings, /withMessageBoxChoice\(/)
-	const { default: strings } = await import(
-		'../src/site/pages/inbox/strings.js'
-	)
+	const { default: strings } = await import('../src/site/pages/inbox/strings.js')
 	const expected = {
 		nl: {
 			'Also sent to {label}.': 'Ook verstuurd naar {label}.',
@@ -133,8 +131,14 @@ test('the settings show the message box row only when offered, and push only wit
 	})
 	assert.doesNotMatch(plain, /portaliq-notify-message-box/)
 	assert.doesNotMatch(plain, />Push</)
-	assert.match(plain, /<th scope="row" class="utrecht-table__header-cell">Changes on your cases<\/th>/)
-	assert.match(plain, /id="portaliq-notify-case-updated-email" type="checkbox" class="utrecht-checkbox"><label for="portaliq-notify-case-updated-email"/)
+	assert.match(
+		plain,
+		/<th scope="row" class="utrecht-table__header-cell">Changes on your cases<\/th>/,
+	)
+	assert.match(
+		plain,
+		/id="portaliq-notify-case-updated-email" type="checkbox" class="utrecht-checkbox"><label for="portaliq-notify-case-updated-email"/,
+	)
 	const offered = await renderComponent(settings, {
 		api,
 		t,
