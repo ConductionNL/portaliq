@@ -9,7 +9,7 @@
  *
  * WHY A SECOND SHAPE OF SPEC IN THIS SUITE
  * ----------------------------------------
- * Every pre-existing spec here drives the PUBLIC portal (`portaliq-portal.js`)
+ * Every pre-existing spec here drives the PUBLIC site (`portaliq-site.js`)
  * and authenticates itself through the debug-gated portal bearer edge. None of
  * them ever logs into Nextcloud, so nothing in this suite had ever rendered the
  * admin SPA or opened `/settings/admin/portaliq` — the `dashboard-page`,
