@@ -140,7 +140,7 @@ test('the shell renders the page for the route without reading a CMS page, and l
 	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
 	assert.match(app, /const SharedDossierPage = defineAsyncComponent\(\s*\(\) => import\('\.\/components\/SharedDossierPage\.vue'\),?\s*\)/)
 	assert.match(app, /<SharedDossierPage\s+v-else-if="sharedDossierRoute"\s+:token="sharedDossierToken"/)
-	const load = app.slice(app.indexOf('async loadRoute(route)'))
+	const load = app.slice(app.indexOf('async loadRoute(route'))
 	const early = load.indexOf('if (isSharedDossierRoute(route))')
 	assert.ok(early > 0 && early < load.indexOf('fetchPage(route'), 'the route returns before any CMS read')
 })
