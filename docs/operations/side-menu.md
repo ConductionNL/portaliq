@@ -22,11 +22,13 @@ Add the block to the portal's side region, in the portal record (`regions`):
 {
   "regions": {
     "aside": [
-      { "id": "site-navigation", "widgetKey": "siteNavigation", "props": {} }
+      { "id": "site-navigation", "widgetKey": "siteNavigation" }
     ]
   }
 }
 ```
+
+Leave `props` out when it would be empty: the register refuses an empty `{}` there.
 
 Every page of the portal then shows the menu on the left, including the signed-in pages, and the header keeps only the logo, the language and the account controls.
 

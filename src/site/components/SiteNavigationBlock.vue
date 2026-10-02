@@ -161,12 +161,12 @@ export default {
 	font-weight: 700;
 }
 
+/* An outline in the link's own colour, so the count reads on every theme. */
 .pq-sitenav__badge {
 	min-inline-size: 1.5rem;
 	padding-inline: 0.4rem;
+	border: 1px solid currentcolor;
 	border-radius: 999px;
-	background: var(--utrecht-badge-background-color, currentcolor);
-	color: var(--utrecht-badge-color, canvas);
 	text-align: center;
 	font-size: 0.875em;
 }

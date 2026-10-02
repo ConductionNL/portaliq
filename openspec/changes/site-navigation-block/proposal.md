@@ -14,7 +14,7 @@ Ruben reviewed the primary-school parent portal recordings (2026-10-02). The sit
 
 ## For the contributing apps
 
-A school portal created by learniq gets the side menu by writing `regions.aside: [{ "id": "site-navigation", "widgetKey": "siteNavigation", "props": {} }]` on the portal it provisions (`ExamplePortalProvisioner`). That is a learniq change.
+A school portal created by learniq gets the side menu by writing `regions.aside: [{ "id": "site-navigation", "widgetKey": "siteNavigation" }]` on the portal it provisions (`ExamplePortalProvisioner`). That is a learniq change.
 
 ## Not changed
 
