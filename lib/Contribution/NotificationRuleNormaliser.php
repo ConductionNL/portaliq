@@ -19,6 +19,18 @@
  * not see. Anything else is dropped, and the reason is returned so the caller
  * can log it.
  *
+ * A rule MAY name its recipients by a claim and MAY carry its own message text
+ * per new value (claim-addressed-change-notices, NoticeRecipientNormaliser):
+ *
+ *     {"ruleKey": "conference.answered", "collection": "parentConferenceSignups",
+ *      "on": {"field": "lifecycle", "operator": "changed"},
+ *      "recipients": {"field": "guardianRef", "claim": "guardianRef"},
+ *      "messages": {"acknowledged": {"subject": {"nl": "..."}, "body": {"nl": "..."}}}}
+ *
+ * Such a rule may sit on a `scopeClaim` or `via` collection: the record holds
+ * the value of the recipients' claim, and the listener still reads the record
+ * as each recipient before telling them (ClaimAddressedRecipients).
+ *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
  *
@@ -32,6 +44,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+ * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
@@ -72,7 +85,7 @@ class NotificationRuleNormaliser {
 			return $contribution;
 		}
 
-		$result = $this->normalise(notifications: $contribution['notifications'], collections: (array)($contribution['collections'] ?? []));
+		$result = $this->normalise(notifications: $contribution['notifications'], collections: (array)($contribution['collections'] ?? []), appId: $appId);
 		foreach ($result['dropped'] as $reason) {
 			$logger->warning('Portaliq: notification rule dropped', ['app' => $appId, 'rule' => $reason]);
 		}
@@ -87,12 +100,14 @@ class NotificationRuleNormaliser {
 	 *
 	 * @param mixed                            $notifications The declared list.
 	 * @param array<int, array<string, mixed>> $collections   The contribution's normalised collections.
+	 * @param string                           $appId         The contributing app, whose claims a rule may address.
 	 *
 	 * @return array{kept: array<int, string|array<string, mixed>>, dropped: array<int, string>}
 	 *
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
 	 */
-	public function normalise(mixed $notifications, array $collections): array {
+	public function normalise(mixed $notifications, array $collections, string $appId = ''): array {
 		$kept = [];
 		$dropped = [];
 		if (is_array($notifications) === false) {
@@ -112,13 +127,14 @@ class NotificationRuleNormaliser {
 				continue;
 			}
 
-			$reason = $this->refusal(rule: $entry, collections: $collections);
+			$reason = $this->refusal(rule: $entry, collections: $collections, appId: $appId);
 			if ($reason !== null) {
 				$dropped[] = $reason;
 				continue;
 			}
 
-			$kept[] = $this->shape(rule: $entry, collection: $this->collection(id: (string)$entry['collection'], collections: $collections));
+			$kept[] = $this->shape(rule: $entry, collection: $this->collection(id: (string)$entry['collection'], collections: $collections))
+				+ (new NoticeRecipientNormaliser())->shape(rule: $entry, appId: $appId);
 		}//end foreach
 
 		return ['kept' => $kept, 'dropped' => $dropped];
@@ -129,10 +145,11 @@ class NotificationRuleNormaliser {
 	 *
 	 * @param array<string, mixed>             $rule        The rule.
 	 * @param array<int, array<string, mixed>> $collections The collections.
+	 * @param string                           $appId       The contributing app.
 	 *
 	 * @return string|null The reason.
 	 */
-	private function refusal(array $rule, array $collections): ?string {
+	private function refusal(array $rule, array $collections, string $appId): ?string {
 		$ruleKey = ($rule['ruleKey'] ?? null);
 		$collectionId = ($rule['collection'] ?? null);
 		if (is_string($ruleKey) === false || $ruleKey === '' || is_string($collectionId) === false || $collectionId === '') {
@@ -145,11 +162,15 @@ class NotificationRuleNormaliser {
 			return $label.': the collection is not one of this contribution\'s own';
 		}
 
-		if ($this->filled(value: ($collection['scopeClaim'] ?? null)) === true || $this->filled(value: ($collection['via'] ?? null)) === true) {
+		// A record of a claim or via collection does not say whose it is,
+		// unless the rule names its recipients by a claim the record holds.
+		$addressed = array_key_exists('recipients', $rule);
+		if ($addressed === false && ($this->filled(value: ($collection['scopeClaim'] ?? null)) === true || $this->filled(value: ($collection['via'] ?? null)) === true)) {
 			return $label.': the collection is not scoped by the subject reference on the record';
 		}
 
-		return $this->conditionRefusal(rule: $rule, collection: $collection, label: $label);
+		return ($this->conditionRefusal(rule: $rule, collection: $collection, label: $label)
+			?? (new NoticeRecipientNormaliser())->refusal(rule: $rule, collection: $collection, appId: $appId, label: $label));
 	}//end refusal()
 
 	/**
