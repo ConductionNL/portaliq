@@ -20,6 +20,7 @@ import { MOUNT_ID, readEmbedConfig } from './frame.js'
 import { createEmbedTranslator } from './strings.js'
 
 import '@utrecht/paragraph-css/dist/index.css'
+import '@utrecht/skip-link-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
 import '@utrecht/alert-css/dist/index.css'
 import '@utrecht/button-css/dist/index.css'
