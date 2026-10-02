@@ -185,12 +185,14 @@ import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import {
 	bindingRouteFrom,
+	challengeProof,
 	feeText,
 	initialValues,
 	loadForm,
 	payIntake,
 	submitIntake,
 } from '../lib/intakeApi.js'
+import { shownAnswers, shownFields } from '../lib/intakeVisibility.js'
 
 /**
  * The form a catalogue entry starts, rendered on a portal page
@@ -353,16 +355,15 @@ export default {
 		},
 
 		/**
-		 * The rendered fields that carry a name.
+		 * The rendered fields a resident sees for the answers so far: a field
+		 * shows only while its condition holds.
 		 *
 		 * @return {Array<object>} The fields.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-fields-condition-decides-whether-the-resident-sees-it-req-icq-001
 		 */
 		fields() {
-			return (
-				Array.isArray(this.render.fields) ? this.render.fields : []
-			).filter((field) => field && field.name)
+			return shownFields(this.render.fields, this.values)
 		},
 	},
 
@@ -417,11 +418,12 @@ export default {
 		},
 
 		/**
-		 * Send the answers and show the reference.
+		 * Send the answers of the shown fields, with the solved challenge when
+		 * the form carries one, and show the reference.
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+		 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-bound-form-can-be-filled-in-on-a-site-page-req-icq-004
 		 */
 		async submit() {
 			this.submitting = true
@@ -431,9 +433,11 @@ export default {
 				const outcome = await submitIntake(
 					authBaseFrom(resolveApiBase()),
 					this.bindingRoute,
-					this.values,
+					shownAnswers(this.render.fields, this.values),
 					this.portal,
 					adoptSessionToken(),
+					null,
+					await challengeProof(this.render.challenge),
 				)
 				if (outcome.reference === '') {
 					this.errors = outcome.errors

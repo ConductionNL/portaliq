@@ -14,6 +14,8 @@
  * nothing and get `window.fetch`; the tests pass a recorder.
  */
 
+import { solveChallenge } from './waysIn.js'
+
 /**
  * The URL of one intake endpoint.
  *
@@ -247,9 +249,10 @@ export function initialValues(fields, prefill) {
  * @param {string} portal The portal slug, or ''.
  * @param {string} token The portal bearer, or ''.
  * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
+ * @param {{nonce: string, solution: string, expiresAt: number, signature: string}|null} proof The solved challenge, when the form carries one.
  * @return {Promise<{reference: string, confirmationText: string, errors: object}>} The outcome.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+ * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-bound-form-can-be-filled-in-on-a-site-page-req-icq-004
  */
 export async function submitIntake(
 	base,
@@ -258,10 +261,14 @@ export async function submitIntake(
 	portal,
 	token,
 	fetchImpl = null,
+	proof = null,
 ) {
 	const body = { route, answers: answers || {} }
 	if (portal) {
 		body.portal = portal
+	}
+	if (proof) {
+		Object.assign(body, proof)
 	}
 
 	const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/submit'), {
@@ -285,6 +292,34 @@ export async function submitIntake(
 		reference: String(parsed.reference),
 		confirmationText: String(parsed.confirmationText || ''),
 		errors: {},
+	}
+}
+
+/**
+ * Solve the challenge a form was issued with, as the submit route checks it
+ * (PortalChallengeService::accepts()): the nonce, its expiry and signature
+ * travel back unchanged with the solution.
+ *
+ * @param {{nonce: string, difficulty: number, expiresAt: number, signature: string}|null|undefined} challenge The issued challenge.
+ * @param {SubtleCrypto} subtle The browser's digest.
+ * @return {Promise<{nonce: string, solution: string, expiresAt: number, signature: string}|null>} The proof, or null without a challenge.
+ *
+ * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-bound-form-can-be-filled-in-on-a-site-page-req-icq-004
+ */
+export async function challengeProof(challenge, subtle = globalThis.crypto?.subtle) {
+	if (!challenge || !challenge.nonce) {
+		return null
+	}
+
+	return {
+		nonce: String(challenge.nonce),
+		solution: await solveChallenge(
+			String(challenge.nonce),
+			Number(challenge.difficulty) || 0,
+			subtle,
+		),
+		expiresAt: Number(challenge.expiresAt) || 0,
+		signature: String(challenge.signature || ''),
 	}
 }
 
