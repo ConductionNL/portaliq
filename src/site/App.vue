@@ -68,6 +68,7 @@
 				:breadcrumbs="breadcrumbs"
 				:session="session"
 				:sessionLabel="sessionLabel"
+				:accountLink="ownAreaLink"
 				:signInRoutes="signInRoutes"
 				:registerRoute="registerRoute"
 				:signinFailedMessage="signinFailed ? signinFailedMessage : ''"
@@ -223,6 +224,8 @@
 					:t="t"
 					:locale="locale"
 					:portal="site"
+					:menuGroups="residentMenu"
+					:currentRoute="route"
 					@devlogin="devLogin"
 					@navigate="goSection"
 					@unread="unreadOverride = $event"
@@ -448,12 +451,7 @@ import {
 } from '../shared/portalNav.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
-import {
-	accountCrumbs,
-	accountMenu,
-	accountRedirect,
-	loggedInAs,
-} from './lib/accountArea.js'
+import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
@@ -479,6 +477,11 @@ import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
+import {
+	ownAreaLink as ownAreaLinkFor,
+	residentMenuGroups,
+	showsResidentMenu,
+} from './lib/residentMenu.js'
 import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js'
 import {
 	footerMenusOf,
@@ -820,7 +823,8 @@ export default {
 		},
 
 		/**
-		 * The menus shown in the header bar.
+		 * The menus shown in the header bar: the website's own pages, never
+		 * the resident's items.
 		 *
 		 * PLACEMENT COMES FROM `position`, WHICH IS WHAT THAT FIELD IS FOR — the
 		 * register describes it as "ordering of this menu relative to others on
@@ -831,22 +835,48 @@ export default {
 		 *
 		 * Position 0 is the header. Everything else is a footer column.
 		 *
+		 * THE SIGNED-IN NAVIGATION USED TO BE ONE MORE MENU HERE, and a resident
+		 * with a few apps installed got a bar of twenty links: the website's
+		 * pages and every app's pages in one row. It now sits beside the content
+		 * on the `/mijn` pages (residentMenu below, site-resident-menu).
+		 *
 		 * @return {Array} The header menus.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-blue-bar-must-carry-the-websites-pages-only-req-srm-001
 		 */
 		headerMenus() {
-			const menus = headerMenusOf(this.menus)
-			if (!this.session || this.nav.length === 0) {
-				return menus
+			return headerMenusOf(this.menus)
+		},
+
+		/**
+		 * The resident's own menu in groups, shown beside the content on the
+		 * `/mijn` pages only (AccountArea); empty when signed out.
+		 *
+		 * @return {Array<object>} The groups.
+		 *
+		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+		 */
+		residentMenu() {
+			if (!showsResidentMenu(this.session, this.route, this.nav)) {
+				return []
 			}
-			// The signed-in navigation is one more header menu, after the
-			// portal's own, so it gets the same bar, styling and keyboard
-			// handling (SiteMenu) rather than a second kind of menu.
-			return [
-				...menus,
-				accountMenu(this.nav, this.t, this.unreadCount, this.hrefForRoute),
-			]
+			return residentMenuGroups(
+				this.nav,
+				this.t,
+				this.unreadCount,
+				this.hrefForRoute,
+			)
+		},
+
+		/**
+		 * The top right link to the resident's own area, null when signed out.
+		 *
+		 * @return {object|null} The link.
+		 *
+		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-header-must-hold-the-name-the-way-to-the-own-area-and-sign-out-req-srm-003
+		 */
+		ownAreaLink() {
+			return ownAreaLinkFor(this.session, this.t, this.hrefForRoute)
 		},
 
 		/**
@@ -1485,7 +1515,7 @@ export default {
 			// The page's search title first (site-page-seo-history-and-media),
 			// so the tab reads what the server already put in the head.
 			let pageName = this.accountRoute
-				? this.accountEntry?.label || this.t('My overview')
+				? this.accountEntry?.label || this.t('My area')
 				: this.page?.seo?.title || this.page?.title
 			if (this.sharedDossierRoute) {
 				pageName = this.sharedDossierTitle || this.t('Shared dossier')
