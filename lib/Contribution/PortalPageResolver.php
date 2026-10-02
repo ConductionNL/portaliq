@@ -38,6 +38,11 @@ namespace OCA\Portaliq\Contribution;
  */
 class PortalPageResolver {
 	/**
+	 * The longest menu group a page may name.
+	 */
+	private const MAX_GROUP_LENGTH = 80;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalBlockResolver $blocks The block-level registry + reference rules.
@@ -125,6 +130,11 @@ class PortalPageResolver {
 			}
 		}
 
+		$group = $this->menuGroup(group: ($page['group'] ?? null));
+		if ($group !== null) {
+			$entry['group'] = $group;
+		}
+
 		// The record page of a collection (contribution-record-page).
 		$record = (new RecordBlockNormaliser())->pageRecord(record: ($page['record'] ?? null), collectionIds: $collectionIds);
 		if ($record !== null) {
@@ -133,6 +143,32 @@ class PortalPageResolver {
 
 		return $entry;
 	}//end normalisePage()
+
+	/**
+	 * The menu group a page names, trimmed, or null when it names none.
+	 *
+	 * Pages of several apps that name the same group share one heading in the
+	 * site's resident menu. A blank, non-string or overlong value is dropped,
+	 * and the page then sits under its app's name.
+	 *
+	 * @param mixed $group The declared group.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to
+	 */
+	private function menuGroup(mixed $group): ?string {
+		if (is_string($group) === false) {
+			return null;
+		}
+
+		$group = trim($group);
+		if ($group === '' || mb_strlen($group) > self::MAX_GROUP_LENGTH) {
+			return null;
+		}
+
+		return $group;
+	}//end menuGroup()
 
 	/**
 	 * Synthesise one default page per listable collection (v2 rendering): the

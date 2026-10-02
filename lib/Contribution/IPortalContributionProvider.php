@@ -61,10 +61,13 @@
  *   `{type: collection, register, schema, labelField, valueField}` — a collection
  *   dropdown is populated through the SUBJECT-SCOPED collection endpoint, so it can
  *   only offer values the subject may already read), `submitLabel`, `successMessage`.
- * - Contributions: `pages` (`[{id, label?, icon?, blocks[]}]`) composing typed
+ * - Contributions: `pages` (`[{id, label?, icon?, group?, blocks[]}]`) composing typed
  *   blocks (`collection`/`action`/`detail`/`richText`/`cta`) whose references
  *   resolve within the SAME contribution; absent → one default page per listable
- *   collection is synthesised (v2 rendering preserved).
+ *   collection is synthesised (v2 rendering preserved). A page's `group` is a
+ *   short label in the reader's language; pages of any app with the same group
+ *   share one heading in the site's resident menu, and a page without one sits
+ *   under its app's name.
  *
  * portal-page-provisioning adds one further optional, duck-typed field, on
  * BOTH collections and actions:
