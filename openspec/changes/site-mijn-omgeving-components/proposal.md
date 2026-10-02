@@ -53,6 +53,10 @@ This change specifies all of these. The action keys (`steps`, `draft`, `confirma
 
 After alignment (learniq#1641 at 87e44aeb, dossiq#3249 at 9c7ccddcf) both lanes found more the mockups need. Checked on `development` and added: a `cta` to a page or route with the record preset and `{title}` in its label (`normaliseCtaBlock()` takes an action only); `range: day`; record scope, lookups and `excludeWhen` on `tasks` (the collection block already has scope and lookups); `recordField` on `inbox`; a switcher subtitle from a one-hop lookup; a `richText` filled from the record; cards with a progress figure; and opening a record on its record page (`navKeyFor` matches list blocks only).
 
+### "Bericht sturen aan de juf": no route starts a message
+
+Learniq asked which portaliq route starts a message to a teacher. None does on `development`. The API exists (`POST /api/messages/threads` with a `staffRef`, `MessageGuardianController::createThread`), but no site page calls it: `portalApi.js` only lists threads and posts into an existing one. The tile therefore opens the messages list, `/mijn/messages` (`routeForNav` of the `messages` section), as a `cta` with `route: "/mijn/messages"` (REQ-SMO-024). One caveat: the menu lists that section only when the guardian has at least one thread (`portalNav.js`), so the tile is the way in for a guardian without one. Starting a new thread from the site, with the choice of teacher, is not in this change.
+
 ### Names (lane pq decides; both app lanes follow)
 
 | Final | Replaces |
