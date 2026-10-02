@@ -25,12 +25,10 @@ updated". The badge on "Berichten" said 2.
 
 - The change notice is written in the language of the organisation's portal: its
   first locale, else Dutch. Never two languages in one string.
-- The portal inbox hands the unread count of the rows it loaded to the badge.
+- The inbox, on the React portal and on the Vue site, hands the unread count of the rows it loaded to the badge.
 
 ## Not in this change
 
 - Other writers still glue Dutch and English: `SubmissionReceiptService`,
   `NotificationDispatchJob` (e-mail), `PortalTaskDeliveryJob`. Same fix, separate
   code paths.
-- The Vue site's inbox (open PR #1026) starts its badge from the sign-in count
-  too. `src/shared/inboxUnread.js` is there for it to use.

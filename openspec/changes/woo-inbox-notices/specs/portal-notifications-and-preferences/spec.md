@@ -31,7 +31,7 @@ text in two languages.
 
 ### Requirement: The inbox badge counts the unread messages the inbox shows (REQ-NAP-011)
 
-When the portal inbox has loaded its rows, the unread badge SHALL show the number
+When the inbox has loaded its rows, on the React portal and on the Vue site, the unread badge SHALL show the number
 of loaded rows not marked read, also when notices arrived after sign-in.
 
 #### Scenario: Notices written after sign-in
@@ -39,4 +39,4 @@ of loaded rows not marked read, also when notices arrived after sign-in.
 - **AND** a background job writes 6 more notices for them
 - **WHEN** they open the inbox
 - **THEN** the badge says 8
-- @e2e exclude the React portal is frozen and the e2e drives the API; pinned by tests/inbox-unread.spec.mjs
+- @e2e exclude the e2e drives the API, not a renderer; pinned by tests/inbox-unread.spec.mjs (React portal) and tests/site-inbox-pages.spec.mjs (Vue site)
