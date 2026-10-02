@@ -11,7 +11,7 @@
 // the row under the subject's scope and the leaf app decides the rest.
 
 import { useEffect, useRef, useState } from 'react'
-import { rowNotice, runRowAction } from '../lib/rowAction.js'
+import { rowNotice, runRowAction } from '../../shared/rowAction.js'
 
 /**
  * The browser navigation, kept apart so a test can pass its own.

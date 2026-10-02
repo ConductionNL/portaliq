@@ -14,10 +14,10 @@
 // A field declared `type: file` (assignment-portal-file-upload) renders as a
 // file picker. It is never part of the create body: the record is created
 // first, then each picked file is uploaded into the field and the server
-// writes the reference (src/portal/lib/fileFieldSubmit.js).
+// writes the reference (src/shared/fileFieldSubmit.js).
 
 import React, { useEffect, useState } from 'react'
-import { DEFAULT_MAX_SIZE_MB, fileFields, oversizedFiles, submitWithFiles, uploadFiles } from '../lib/fileFieldSubmit.js'
+import { DEFAULT_MAX_SIZE_MB, fileFields, oversizedFiles, submitWithFiles, uploadFiles } from '../../shared/fileFieldSubmit.js'
 
 // Large/full fields render as a textarea; everything else a single-line input
 // (unless an optionsProvider makes it a select).

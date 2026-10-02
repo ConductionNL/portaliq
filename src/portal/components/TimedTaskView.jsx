@@ -15,7 +15,7 @@ import {
 	secondsLeft,
 	startAttempt,
 	submitAttempt,
-} from '../lib/timedTask.js'
+} from '../../shared/timedTask.js'
 import Loading from './Loading.jsx'
 import TimedTaskItem from './TimedTaskItem.jsx'
 

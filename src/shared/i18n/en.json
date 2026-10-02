@@ -301,5 +301,21 @@
 	"This dossier has no public documents right now.": "This dossier has no public documents right now.",
 	"This link no longer works. Ask the person who shared it for a new link.": "This link no longer works. Ask the person who shared it for a new link.",
 	"We cannot show this dossier right now. Try again later.": "We cannot show this dossier right now. Try again later.",
-	"Other": "Other"
+	"Other": "Other",
+	"Saved.": "Saved.",
+	"Saving did not work.": "Saving did not work.",
+	"{field} is required.": "{field} is required.",
+	"Choose an option": "Choose an option",
+	"Not everything is filled in yet. Check the fields below.": "Not everything is filled in yet. Check the fields below.",
+	"Propose a change": "Propose a change",
+	"Note": "Note",
+	"Send proposal": "Send proposal",
+	"Change at least one field before you send a proposal.": "Change at least one field before you send a proposal.",
+	"Sending the proposal did not work.": "Sending the proposal did not work.",
+	"Your proposals": "Your proposals",
+	"Withdraw": "Withdraw",
+	"Waiting for review": "Waiting for review",
+	"Accepted": "Accepted",
+	"Rejected": "Rejected",
+	"Withdrawn": "Withdrawn"
 }

@@ -18,7 +18,8 @@ import {
 	attachedBody,
 	fieldLabel,
 	runAttachedAction,
-} from '../src/portal/lib/attachedActions.js'
+} from '../src/shared/attachedActions.js'
+import { mountSfc } from './support/mount-sfc.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -128,6 +129,78 @@ test('the api sends actionApp and the detail card renders the actions', () => {
 		'utf8',
 	)
 	assert.match(page, /<AttachedActions\s/)
+})
+
+// The site's Vue port (site-reaches-portal-parity T13, REQ-SRP-028).
+
+test('the site shows one button per attached action and forwards with actionApp', async () => {
+	const calls = []
+	const api = {
+		forwardRowAction: async (...args) => {
+			calls.push(args)
+			return { ok: true, status: 201, body: {} }
+		},
+	}
+	const collection = {
+		id: 'mijnDossiers',
+		register: 'opencatalogi',
+		schema: 'collection',
+		attachedActions: [
+			ASK,
+			{ app: 'dossiq', id: 'startWoo', label: 'Start een Woo-verzoek' },
+		],
+	}
+	const block = await mountSfc('src/site/components/c/AttachedActions.vue', {
+		collection,
+		row: { id: 'dos-1' },
+		api,
+	})
+
+	assert.match(
+		block.text(),
+		/^Stel een vraag over dit dossier Start een Woo-verzoek/,
+	)
+	await block.fire(block.find('attached-action-askAboutDossier'), 'click')
+	const question = block.findAll(
+		(n) => n.props.id === 'attached-askAboutDossier-question',
+	)[0]
+	assert.equal(
+		block.textOf(
+			block.findAll(
+				(n) => n.tag === 'label' && n.props.for === question.props.id,
+			)[0],
+		),
+		'Uw vraag',
+	)
+	await block.fire(question, 'input', { value: ' Wanneer? ' })
+	await block.fire(block.findAll((n) => n.tag === 'form')[0], 'submit')
+
+	assert.deepEqual(calls[0].slice(1), [
+		'dos-1',
+		'askAboutDossier',
+		{ question: 'Wanneer?', title: '' },
+		'pipelinq',
+	])
+	assert.equal(block.textOf(block.find('attached-actions-status')), 'Done.')
+	assert.ok(
+		block.find('attached-action-askAboutDossier'),
+		'the buttons come back after sending',
+	)
+})
+
+test('the site renders nothing without attached actions or without a record', async () => {
+	const none = await mountSfc('src/site/components/c/AttachedActions.vue', {
+		collection: { id: 'x' },
+		row: { id: 'r' },
+		api: {},
+	})
+	assert.equal(none.text(), '')
+	const noRow = await mountSfc('src/site/components/c/AttachedActions.vue', {
+		collection: { id: 'x', attachedActions: [ASK] },
+		row: null,
+		api: {},
+	})
+	assert.equal(noRow.text(), '')
 })
 
 test('site: the detail card leaves a place for the attached actions (slice c fills it)', () => {

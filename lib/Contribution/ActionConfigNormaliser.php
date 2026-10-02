@@ -115,9 +115,13 @@ class ActionConfigNormaliser {
 				$whitelist = array_values(array_filter($action['fields'], static fn ($f) => is_string($f) === true));
 			}
 
-			$mandatory = $this->mandatoryFields(action: $action);
+			$definition = $this->schemaDefinition(action: $action);
+			$mandatory = $this->mandatoryFields(definition: $definition);
 			$action = $this->normaliseFieldConfigs(action: $action, whitelist: $whitelist, mandatory: $mandatory);
 			$action = $this->options->normaliseOptionsProviders(action: $action, whitelist: $whitelist);
+			// What the schema says a field holds (a date, a number, one of a
+			// list) shapes its input, after the manifest had its say.
+			$action = (new SchemaInputHintNormaliser())->apply(action: $action, whitelist: $whitelist, definition: $definition);
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
@@ -345,29 +349,41 @@ class ActionConfigNormaliser {
 	}//end applyFieldFlags()
 
 	/**
+	 * Read the action's schema definition once, or null when there is no
+	 * schema slug, no injected PortalSchemaReader, or no such schema.
+	 *
+	 * @param array<string, mixed> $action The action (reads its `schema` key).
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+	 */
+	private function schemaDefinition(array $action): ?array {
+		if ($this->schemaReader === null) {
+			return null;
+		}
+
+		$schemaSlug = ($action['schema'] ?? null);
+		if (is_string($schemaSlug) === false || $schemaSlug === '') {
+			return null;
+		}
+
+		return $this->schemaReader->readSchema(slug: $schemaSlug);
+	}//end schemaDefinition()
+
+	/**
 	 * Resolve an action's schema `required` set (the field names it genuinely
 	 * mandates), or an empty set when unresolvable — fail-closed, per the
 	 * WMEBV data-minimisation guard: a `required` flag is NEVER elevated on a
-	 * guess. Requires a schema slug on the action AND an injected
-	 * PortalSchemaReader; either being absent yields an empty set.
+	 * guess. An absent definition yields an empty set.
 	 *
-	 * @param array<string, mixed> $action The action (reads its `schema` key).
+	 * @param array<string, mixed>|null $definition The action's schema definition.
 	 *
 	 * @return array<int, string>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
 	 */
-	private function mandatoryFields(array $action): array {
-		if ($this->schemaReader === null) {
-			return [];
-		}
-
-		$schemaSlug = ($action['schema'] ?? null);
-		if (is_string($schemaSlug) === false || $schemaSlug === '') {
-			return [];
-		}
-
-		$definition = $this->schemaReader->readSchema(slug: $schemaSlug);
+	private function mandatoryFields(?array $definition): array {
 		if ($definition === null) {
 			return [];
 		}

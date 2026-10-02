@@ -148,17 +148,14 @@ import DetailCard from '../../components/collections/DetailCard.vue'
 import RichTextBlock from '../../components/collections/RichTextBlock.vue'
 import SlotHost from '../../components/collections/SlotHost.vue'
 import {
-	isEndpointRowAction,
-	offersRowAction,
-} from '../../../portal/lib/rowAction.js'
-import { dialogFor } from '../../../portal/lib/signing.js'
-import {
 	anyGrouped,
 	groupFieldOf,
 	groupLabelCollection,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
 import { consumeOpenTarget, forgetOpenTarget } from '../../../shared/openRecord.js'
+import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'
+import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
 import { createCollectionLoader, openRecordState } from './collectionLoader.js'
 import { resolveBlocks } from './pageBlocks.js'
