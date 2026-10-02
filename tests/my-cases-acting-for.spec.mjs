@@ -50,7 +50,7 @@ async function load(relative) {
 }
 
 compileLoading(OUT_DIR)
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 const myCases = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'myCases.js')).href)
 const { default: MyCasesPage } = await load('components/MyCasesPage.jsx')
 const { default: ActingForSwitcher } = await load('components/ActingForSwitcher.jsx')
@@ -171,7 +171,7 @@ test('the shell, the page, the case screen and both locales are wired', () => {
 		'This organisation has too many cases to list here. Choose a narrower mandate.': 'Deze organisatie heeft te veel zaken om hier te tonen. Kies een smallere machtiging.',
 	}
 	for (const locale of ['en', 'nl']) {
-		const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`), 'utf8'))
+		const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`), 'utf8'))
 		for (const [key, dutch] of Object.entries(nl)) {
 			assert.equal(bundle[key], locale === 'nl' ? dutch : key, `${locale}: ${key}`)
 		}

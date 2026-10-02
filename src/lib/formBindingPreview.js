@@ -53,6 +53,11 @@ export function noFormSentence(answer, translate) {
 			"This entry opens no form: this portal does not show its case type. Show it again under Case types on the portal's page.",
 		)
 	}
+	if (answer?.reason === 'unsupported_condition') {
+		return translate(
+			'This form uses a condition the portal cannot check. Change it to a condition on another answer.',
+		)
+	}
 	if (answer?.reason === 'named_form_not_published') {
 		return translate(
 			'This entry opens no form today. It asks for "{form}", and no form of that name is published to its audience.',

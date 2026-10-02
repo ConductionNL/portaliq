@@ -71,8 +71,17 @@
 				:signInRoutes="signInRoutes"
 				:registerRoute="registerRoute"
 				:signinFailedMessage="signinFailed ? signinFailedMessage : ''"
+				:registerLabel="t('Register')"
+				:signOutLabel="t('Sign out')"
+				:userMenuLabel="t('User menu')"
+				:breadcrumbLabel="t('Breadcrumb')"
+				:logoLabel="t('Logo')"
 				@navigate="go"
-				@signout="signOut" />
+				@signout="signOut">
+				<template #account>
+					<ActingForSwitcher :t="t" />
+				</template>
+			</BrandHeader>
 			<WidgetGrid
 				v-else
 				:widgets="[block]"
@@ -85,7 +94,7 @@
 		<IdleWarningDialog
 			v-if="session && idleWarning && idleTimes"
 			:times="idleTimes"
-			:locale="site.locale || 'nl'"
+			:locale="locale"
 			@stay="staySignedIn"
 			@signout="signOut" />
 		<p
@@ -96,11 +105,28 @@
 			{{ idleSignedOutMessage }}
 		</p>
 
+		<!-- The answer to a `#confirm-email=` link (identity-profile-page T08). -->
+		<p
+			v-if="confirmMessage"
+			class="container utrecht-paragraph"
+			:role="confirmMessage.role"
+			data-testid="site-confirm-email">
+			{{ confirmMessage.text }}
+		</p>
+
+		<!-- The ask for an e-mail address while the account has none. -->
+		<div v-if="session && contactPrompt" class="container">
+			<ContactPrompt
+				:t="t"
+				:navigate="goSection"
+				@dismiss="contactPrompt = false" />
+		</div>
+
 		<!-- Maintenance and warning notices running now (operate-maintenance-notice). -->
 		<SiteNotices
 			v-if="(site.notices || []).length > 0"
 			:notices="site.notices"
-			:locale="site.locale || 'nl'" />
+			:locale="locale" />
 
 		<!--
 			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
@@ -135,15 +161,72 @@
 				<!-- THE HERO REGION: the page's own hero band, else the
 				     portal's, unless the page clears it (REQ-PTB-009). -->
 				<WidgetGrid
-					v-if="!loading && !error && page && regions.hero.length"
+					v-if="
+						!guestLink
+						&& !loading
+						&& !error
+						&& page
+						&& regions.hero.length
+					"
 					data-testid="site-region-hero"
 					:widgets="regions.hero"
 					v-bind="gridContext"
 					@navigate="go"
 					@search="goSearch" />
 
-				<p v-if="loading" class="container" data-testid="site-loading">
-					Bezig met laden…
+				<!-- A signed link opens its one act before any page (REQ-GST-002). -->
+				<GuestActionPage
+					v-if="guestLink"
+					:authBase="guestAuthBase"
+					:portal="site.slug || portalSlug" />
+
+				<!-- A mailed way in (an activation, an invitation, one case by
+				     its number) opens before any page (identity-ways-in-screens). -->
+				<WayInLink
+					v-else-if="wayInLink"
+					:authBase="guestAuthBase"
+					:portal="site.slug || portalSlug"
+					:portalName="site.title || ''"
+					:emailSignIn="waysIn.emailSignIn"
+					:t="waysInT" />
+
+				<!-- The signed-in area owns every `/mijn` route; no CMS page is
+				     read for it (src/shared/portalNav.js). -->
+				<AccountArea
+					v-else-if="accountRoute || (signInNeeded && !session)"
+					:sessionKnown="sessionKnown"
+					:session="session"
+					:loading="account.loading"
+					:nav="nav"
+					:entry="accountEntry"
+					:contributions="account.contributions"
+					:api="api"
+					:signInRoutes="signInRoutes"
+					:ways="waysIn"
+					:waysT="waysInT"
+					:authBase="guestAuthBase"
+					:portalSlug="site.slug || portalSlug"
+					:devLogin="signinConfig.devLogin === true"
+					:devError="devError"
+					:t="t"
+					:locale="locale"
+					:portal="site"
+					@devlogin="devLogin"
+					@navigate="goSection"
+					@unread="unreadOverride = $event"
+					@refresh="loadAccount"
+					@signout="signOut" />
+
+				<!-- A shared dossier link is public: anyone who has it reads the
+				     documents in it that are public now (site-shared-dossier). -->
+				<SharedDossierPage
+					v-else-if="sharedDossierRoute"
+					:token="sharedDossierToken"
+					:t="t"
+					@loaded="onSharedDossierLoaded" />
+
+				<p v-else-if="loading" class="container" data-testid="site-loading">
+					{{ t('Loading…') }}
 				</p>
 
 				<!-- A failed load says so. Rendering an empty page instead would
@@ -159,15 +242,15 @@
 					<h2>
 						{{
 							error.status === 404
-								? 'Pagina niet gevonden'
-								: 'Er ging iets mis'
+								? t('Page not found')
+								: t('Something went wrong')
 						}}
 					</h2>
 					<p>
 						{{
 							error.status === 404
-								? 'Deze pagina bestaat niet (meer).'
-								: 'De inhoud kon niet worden geladen.'
+								? t('This page does not exist (any more).')
+								: t('The content could not be loaded.')
 						}}
 					</p>
 				</div>
@@ -328,22 +411,39 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
+import AccountArea from './components/AccountArea.vue'
 import BrandHeader from './components/BrandHeader.vue'
 import FooterColumns from './components/FooterColumns.vue'
 import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
-import idleEn from '../portal/i18n/en.json'
-import idleNl from '../portal/i18n/nl.json'
-import { logoutTarget } from '../portal/lib/idleSession.js'
+import { createTranslator } from '../shared/i18n/index.js'
+import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
+import { consumeOpenTarget } from '../shared/openRecord.js'
+import { createPortalApi } from '../shared/portalApi.js'
+import {
+	ACCOUNT_ROUTE,
+	buildNav,
+	isAccountRoute,
+	navEntryForRoute,
+	routeForNav,
+	shellSections,
+} from '../shared/portalNav.js'
+import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
+import {
+	accountCrumbs,
+	accountMenu,
+	accountRedirect,
+	loggedInAs,
+} from './lib/accountArea.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
 	clearSessionToken,
 	fetchSession,
 	refreshSession,
-	SIGNIN_FAILED_MESSAGE,
 	signInRoutes,
+	storeSessionToken,
 	takeSigninFailed,
 } from './lib/authApi.js'
 import { withoutStyling } from './lib/blockProps.js'
@@ -361,6 +461,7 @@ import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
+import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js'
 import {
 	footerMenusOf,
 	headerMenusOf,
@@ -368,6 +469,9 @@ import {
 	legalLinksOf,
 	registerRouteOf,
 } from './lib/shellData.js'
+import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
+import { openRecordEntry } from './pages/collections/index.js'
+import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
@@ -392,6 +496,22 @@ const SiteNotices = defineAsyncComponent(
 	() => import('./components/SiteNotices.vue'),
 )
 
+// Loaded only when somebody opens a shared dossier link, so every other
+// visitor pays nothing for it in the site bundle (site-shared-dossier).
+const SharedDossierPage = defineAsyncComponent(
+	() => import('./components/SharedDossierPage.vue'),
+)
+
+// The guest page for a signed link (identity-guest-page-for-signed-links),
+// loaded only when the address carries one.
+const GuestActionPage = defineAsyncComponent(
+	() => import('./pages/GuestActionPage.vue'),
+)
+
+// What a mailed way-in link opens (identity-ways-in-screens), loaded only
+// when the address carries one.
+const WayInLink = defineAsyncComponent(() => import('./components/WayInLink.vue'))
+
 /**
  * The built-in site renderer.
  *
@@ -404,10 +524,16 @@ export default {
 	name: 'App',
 
 	components: {
+		AccountArea,
+		ActingForSwitcher,
+		ContactPrompt,
 		BrandHeader,
 		FooterColumns,
+		GuestActionPage,
+		WayInLink,
 		IdleWarningDialog,
 		MarkdownBlock,
+		SharedDossierPage,
 		SiteEditButton,
 		SiteNotices,
 		WidgetGrid,
@@ -425,7 +551,36 @@ export default {
 		return {
 			// A failed sign-in the edge sent back (REQ-BEL-006), read once.
 			signinFailed: takeSigninFailed(),
-			signinFailedMessage: SIGNIN_FAILED_MESSAGE,
+			// A bearer in the fragment means the resident just signed in;
+			// read before the session fetch strips it. A fresh sign-in on the
+			// home page opens the signed-in area, as `/portal` does.
+			freshSignIn: /[#&]token=/.test(String(window.location.hash || '')),
+			// Whether the session has been read yet: until then the
+			// signed-in area shows neither the way in nor a page.
+			sessionKnown: false,
+			// What the signed-in shell loaded for the session (the
+			// contributions aggregate, message threads and news feed); the
+			// navigation is built from it (src/shared/portalNav.js).
+			account: {
+				loading: false,
+				contributions: null,
+				threads: [],
+				news: [],
+			},
+
+			// The inbox's unread count after a page changed it, else null.
+			unreadOverride: null,
+			devError: '',
+			// The page on screen is behind the portal's sign-in.
+			signInNeeded: false,
+			// The answer to a `#confirm-email=` link, or null.
+			confirmMessage: null,
+			// Whether to ask for an e-mail address (slice e's ContactPrompt).
+			contactPrompt: false,
+			// A signed link for one guest act (`#guest/...`); the page reads it.
+			guestLink: String(window.location.hash).startsWith('#guest/'),
+			// A mailed way in (`#activate=`, `#invitation=`, `#reference=`).
+			wayInLink: hasWayInLink(window.location),
 			site: {},
 			menus: [],
 			glossary: [],
@@ -442,6 +597,8 @@ export default {
 			// page — the publication id in `/publicatie/<id>`. Empty for an
 			// ordinary page. See `loadRoute`.
 			routeParam: '',
+			// The title of the shared dossier on screen, once it is read.
+			sharedDossierTitle: '',
 			// Where the hero's search box sends a term. A constant rather than
 			// a portal field for now: the seeded portal puts search at
 			// `/zoeken`, matching the reference, and a portal that moves it
@@ -519,8 +676,26 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		breadcrumbs() {
+			if (this.accountRoute) {
+				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
+			}
+			// The token is not a word and no page sits at its parent.
+			if (this.sharedDossierRoute) {
+				return [
+					{
+						route: '/',
+						label: this.t('Home'),
+						href: this.hrefForRoute('/'),
+					},
+					{
+						route: this.route,
+						label: this.sharedDossierTitle || this.t('Shared dossier'),
+						href: this.hrefForRoute(this.route),
+					},
+				]
+			}
 			const crumbs = [
-				{ route: '/', label: 'Home', href: this.hrefForRoute('/') },
+				{ route: '/', label: this.t('Home'), href: this.hrefForRoute('/') },
 			]
 			const segments = String(this.route || '/')
 				.split('/')
@@ -635,7 +810,154 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		headerMenus() {
-			return headerMenusOf(this.menus)
+			const menus = headerMenusOf(this.menus)
+			if (!this.session || this.nav.length === 0) {
+				return menus
+			}
+			// The signed-in navigation is one more header menu, after the
+			// portal's own, so it gets the same bar, styling and keyboard
+			// handling (SiteMenu) rather than a second kind of menu.
+			return [
+				...menus,
+				accountMenu(this.nav, this.t, this.unreadCount, this.hrefForRoute),
+			]
+		},
+
+		/**
+		 * The site's language: the portal's, else the document's.
+		 *
+		 * @return {string} A language code, `nl` when nothing says otherwise.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		locale() {
+			const lang =
+				this.site.locale
+				|| (typeof document !== 'undefined' && document.documentElement.lang)
+				|| 'nl'
+			return String(lang).slice(0, 2).toLowerCase()
+		},
+
+		/**
+		 * The site translator: English source strings, Dutch and English
+		 * bundles shared with `/portal` (src/shared/i18n).
+		 *
+		 * @return {(key: string, vars?: object) => string} The translator.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		t() {
+			return createTranslator(this.locale)
+		},
+
+		/**
+		 * How a resident signs in here, from the shell (`site()` in
+		 * PortalPageController): dev login, silent sign-in, organisation.
+		 *
+		 * @return {object} The sign-in settings, possibly empty.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		signinConfig() {
+			return runtimeConfig().signin || {}
+		},
+
+		/**
+		 * The shared portal API, bound to this portal and to the bearer
+		 * this tab keeps (sessionStorage, per tab).
+		 *
+		 * @return {object} The API.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		api() {
+			return createPortalApi(
+				{
+					apiBase: authBaseFrom(resolveApiBase()),
+					organisationSlug: this.site.slug || this.portalSlug || '',
+					audience: this.signinConfig.audience || '',
+				},
+				{
+					getToken: () => adoptSessionToken() || null,
+					setToken: storeSessionToken,
+				},
+			)
+		},
+
+		/**
+		 * The signed-in navigation, empty when signed out.
+		 *
+		 * @return {Array<object>} The entries.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		nav() {
+			if (!this.session || !this.account.contributions) {
+				return []
+			}
+			return buildNav(
+				this.account.contributions.contributions,
+				this.t,
+				shellSections({ session: this.session, ...this.account }),
+			)
+		},
+
+		/**
+		 * @return {boolean} Whether the route on screen is in the signed-in area.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		accountRoute() {
+			return isAccountRoute(this.route)
+		},
+
+		/**
+		 * @return {boolean} Whether the route on screen is a shared dossier link.
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		sharedDossierRoute() {
+			return isSharedDossierRoute(this.route)
+		},
+
+		/**
+		 * @return {string} The share token of the route on screen, or ''.
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		sharedDossierToken() {
+			return sharedDossierToken(this.route)
+		},
+
+		/**
+		 * @return {object|null} The navigation entry the route names.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		accountEntry() {
+			return navEntryForRoute(this.nav, this.route)
+		},
+
+		/**
+		 * @return {number} The inbox's unread count.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		unreadCount() {
+			return (
+				this.unreadOverride ?? (this.account.contributions?.unreadCount || 0)
+			)
+		},
+
+		/**
+		 * @return {string} The one sentence a failed sign-in shows.
+		 *
+		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
+		 */
+		signinFailedMessage() {
+			return this.t(
+				'Signing in did not work. Try again or choose another way in.',
+			)
 		},
 
 		/**
@@ -684,6 +1006,40 @@ export default {
 		},
 
 		/**
+		 * The doors the site config opens besides the sign-in buttons.
+		 *
+		 * @return {object} See waysInFrom().
+		 *
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
+		 */
+		waysIn() {
+			return waysInFrom(this.signinConfig)
+		},
+
+		/**
+		 * The translator of the ways in: the site's, with their own strings
+		 * for the keys its bundle lacks.
+		 *
+		 * @return {Function}
+		 *
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T08
+		 */
+		waysInT() {
+			return waysInTranslator(this.t, this.locale)
+		},
+
+		/**
+		 * The portal API base the guest page posts to.
+		 *
+		 * @return {string} The base, `.../portal/api`.
+		 *
+		 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T03
+		 */
+		guestAuthBase() {
+			return authBaseFrom(resolveApiBase())
+		},
+
+		/**
 		 * The sign-in routes this portal offers, from its DECLARED modes.
 		 *
 		 * Derived from `/api/content/site`, so the decision travels on the
@@ -694,7 +1050,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		signInRoutes() {
-			return signInRoutes(this.site, authBaseFrom(resolveApiBase()))
+			return signInRoutes(this.site, authBaseFrom(resolveApiBase()), this.t)
 		},
 
 		/**
@@ -703,9 +1059,7 @@ export default {
 		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 		 */
 		idleSignedOutMessage() {
-			const key = 'You were signed out because you were inactive.'
-			const strings = this.site.locale === 'en' ? idleEn : idleNl
-			return strings[key] || key
+			return this.t('You were signed out because you were inactive.')
 		},
 
 		/**
@@ -714,12 +1068,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		sessionLabel() {
-			return (
-				this.session?.name
-				|| this.session?.subject
-				|| this.session?.sub
-				|| 'Ingelogd'
-			)
+			return loggedInAs(this.session, this.t)
 		},
 	},
 
@@ -742,6 +1091,10 @@ export default {
 		// the landing that brought them. The site fetch below repeats it
 		// under the slug the API answers with, which is the same one.
 		captureLanding(this.portalSlug || runtimeConfig().resolvedPortal || '')
+		// A notification's record link (`#open=<app>/<collection>/<id>`) is
+		// kept in sessionStorage before anything else reads the address, so
+		// it survives the sign-in and opens once the navigation has loaded.
+		this.keepOpenTarget()
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()
@@ -801,8 +1154,8 @@ export default {
 			try {
 				const [site, menus, glossary] = await Promise.all([
 					fetchSite(this.portalSlug),
-					fetchMenus(this.portalSlug),
-					fetchGlossary(this.portalSlug),
+					this.unlessSignInNeeded(fetchMenus(this.portalSlug), []),
+					this.unlessSignInNeeded(fetchGlossary(this.portalSlug), []),
 				])
 				this.site = site
 				this.menus = menus
@@ -829,9 +1182,237 @@ export default {
 			// the overwhelming majority of what it serves; `fetchSession`
 			// resolves null rather than throwing for exactly that reason.
 			this.session = await fetchSession(authBaseFrom(resolveApiBase()))
+			this.sessionKnown = true
 			this.watchIdle()
 
 			this.applyDocumentTitle()
+
+			// A confirmation link needs no session; it is read once, at boot.
+			this.confirmMessage = await confirmEmailFromLink({
+				api: this.api,
+				t: this.t,
+			})
+
+			if (this.session) {
+				await this.loadAccount()
+			} else {
+				this.trySilentSignIn()
+			}
+		},
+
+		/**
+		 * A content read that a portal behind a sign-in refuses to a visitor
+		 * without a session (401) or below its trust floor (403) answers the
+		 * fallback, so the door (title, theme, sign-in routes) still renders.
+		 * Any other failure stays a failure.
+		 *
+		 * @param {Promise<Array<object>>} read The content read.
+		 * @param {Array<object>} fallback What a refused read answers.
+		 * @return {Promise<Array<object>>} The read's answer, or the fallback.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		async unlessSignInNeeded(read, fallback) {
+			try {
+				return await read
+			} catch (error) {
+				if (error && (error.status === 401 || error.status === 403)) {
+					return fallback
+				}
+				throw error
+			}
+		},
+
+		/**
+		 * Read what the signed-in navigation is built from, as `/portal`
+		 * does: the contributions aggregate, the message threads and the
+		 * news feed, each fail-closed. Then follow the route the navigation
+		 * implies (the default page for a bare `/mijn`).
+		 *
+		 * @return {Promise<void>} Resolves when loaded.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		async loadAccount() {
+			if (!this.session) {
+				return
+			}
+			this.account = { ...this.account, loading: true }
+			const [contributions, threads, news] = await Promise.all([
+				this.api.getContributions(),
+				this.api.fetchThreads(),
+				this.api.fetchNewsFeed(),
+			])
+			this.unreadOverride = null
+			this.contactPrompt = await contactPromptWanted(this.session)
+			this.account = {
+				loading: false,
+				contributions,
+				threads: threads || [],
+				news: news || [],
+			}
+			this.followAccountRoute()
+		},
+
+		/**
+		 * Forget everything the signed-in shell loaded.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		forgetAccount() {
+			this.account = {
+				loading: false,
+				contributions: null,
+				threads: [],
+				news: [],
+			}
+			this.unreadOverride = null
+			this.contactPrompt = false
+		},
+
+		/**
+		 * Open the signed-in area after a fresh sign-in on the home page,
+		 * and replace a bare `/mijn` (or a page the navigation does not
+		 * offer) with the default page.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		followAccountRoute() {
+			if (!this.session || this.nav.length === 0) {
+				return
+			}
+			// A kept record link opens the page that shows its collection.
+			const opened = openRecordEntry(this.nav)
+			if (opened) {
+				this.freshSignIn = false
+				this.replaceRoute(routeForNav(opened))
+				return
+			}
+			if (this.freshSignIn && this.route === '/') {
+				this.freshSignIn = false
+				this.replaceRoute(ACCOUNT_ROUTE)
+			}
+			const target = accountRedirect(this.nav, this.route)
+			if (target) {
+				this.replaceRoute(target)
+			}
+		},
+
+		/**
+		 * Go to a section by its key (`__account__`, `account`) or to an
+		 * in-site route, the way pages and prompts ask for one.
+		 *
+		 * @param {string} target A navigation key, a section name or a route.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		goSection(target) {
+			const value = String(target || '')
+			if (value.startsWith('/')) {
+				this.go(value)
+				return
+			}
+			const entry = this.nav.find(
+				(candidate) =>
+					candidate.key === value || candidate.special === value,
+			)
+			if (entry) {
+				this.go(routeForNav(entry))
+			}
+		},
+
+		/**
+		 * Keep a record link from the address for after the sign-in.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 */
+		keepOpenTarget() {
+			let storage = null
+			try {
+				storage = window.sessionStorage
+			} catch {
+				// Without storage the link lives as long as this page view.
+			}
+			consumeOpenTarget(window.location, window.history, storage)
+		},
+
+		/**
+		 * Show another in-site route in place of this history entry.
+		 *
+		 * @param {string} route The route.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		replaceRoute(route) {
+			this.route = route
+			const url = new URL(window.location.href)
+			url.searchParams.set('route', route)
+			window.history.replaceState({}, '', url)
+			this.applyDocumentTitle()
+		},
+
+		/**
+		 * Mint a test session where the server accepts the dev login, and
+		 * carry on signed in.
+		 *
+		 * @return {Promise<void>} Resolves when signed in, or refused.
+		 *
+		 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T2
+		 */
+		async devLogin() {
+			this.devError = ''
+			const minted = await this.api.devLogin(
+				this.signinConfig.audience || undefined,
+			)
+			if (!minted) {
+				this.devError = this.t('Dev-login is disabled on this environment.')
+				return
+			}
+			this.session = await fetchSession(authBaseFrom(resolveApiBase()))
+			this.watchIdle()
+			await this.loadAccount()
+		},
+
+		/**
+		 * Try a silent sign-in once per browser session, where the
+		 * organisation turned it on, and never after a failed sign-in or an
+		 * inactivity sign-out. The login returns to this page.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
+		 */
+		trySilentSignIn() {
+			if (this.signinFailed || this.idleSignedOut) {
+				return
+			}
+			let store
+			try {
+				store = window.sessionStorage
+			} catch {
+				return
+			}
+			const url = silentSignInUrl(
+				{
+					apiBase: authBaseFrom(resolveApiBase()),
+					signinOrganisation: this.signinConfig.signinOrganisation || '',
+					silentSignIn: this.signinConfig.silentSignIn || '',
+					organisationSlug: this.site.slug || this.portalSlug || '',
+				},
+				store,
+			)
+			if (url) {
+				const back = window.location.pathname + window.location.search
+				window.location.assign(`${url}&returnTo=${encodeURIComponent(back)}`)
+			}
 		},
 
 		/**
@@ -860,7 +1441,12 @@ export default {
 
 			// The page's search title first (site-page-seo-history-and-media),
 			// so the tab reads what the server already put in the head.
-			const pageName = this.page?.seo?.title || this.page?.title
+			let pageName = this.accountRoute
+				? this.accountEntry?.label || this.t('My overview')
+				: this.page?.seo?.title || this.page?.title
+			if (this.sharedDossierRoute) {
+				pageName = this.sharedDossierTitle || this.t('Shared dossier')
+			}
 			document.title =
 				pageName && pageName !== portalName
 					? `${pageName} - ${portalName}`
@@ -907,6 +1493,7 @@ export default {
 			clearSessionToken()
 			this.endIdle()
 			this.session = null
+			this.forgetAccount()
 
 			// The broker's own sign-out, when it offers one
 			// (signin-session-idle-warning-and-sso T11).
@@ -942,6 +1529,7 @@ export default {
 					clearSessionToken()
 					this.endIdle()
 					this.session = null
+					this.forgetAccount()
 					this.idleSignedOut = true
 				},
 			})
@@ -980,6 +1568,19 @@ export default {
 		},
 
 		/**
+		 * Take the shared dossier's title for the tab and the breadcrumb.
+		 *
+		 * @param {string} title The dossier's title, or ''.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		onSharedDossierLoaded(title) {
+			this.sharedDossierTitle = title || ''
+			this.applyDocumentTitle()
+		},
+
+		/**
 		 * Load one page by route.
 		 *
 		 * @param {string} route The in-portal route.
@@ -988,6 +1589,31 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-unpublished-content-must-be-indistinguishable-from-absent-content
 		 */
 		async loadRoute(route) {
+			this.signInNeeded = false
+			// The signed-in area renders from the session, not from a CMS
+			// page, so no page is read for it.
+			if (isAccountRoute(route)) {
+				this.page = null
+				this.error = null
+				this.routeParam = ''
+				this.loading = false
+				this.followAccountRoute()
+				this.applyDocumentTitle()
+				return
+			}
+
+			// A shared dossier link renders from opencatalogi's answer, not
+			// from a CMS page, so it opens on every portal without one.
+			if (isSharedDossierRoute(route)) {
+				this.page = null
+				this.error = null
+				this.routeParam = ''
+				this.sharedDossierTitle = ''
+				this.loading = false
+				this.applyDocumentTitle()
+				return
+			}
+
 			this.loading = true
 			this.error = null
 			this.routeParam = ''
@@ -1023,6 +1649,11 @@ export default {
 				}
 
 				this.page = null
+				// A page behind the portal's sign-in shows the way in rather
+				// than an error: the signed-in area renders signed out.
+				this.signInNeeded = Boolean(
+					error && (error.status === 401 || error.status === 403),
+				)
 				// A 404 is information, not a fault — an unknown route and an
 				// unpublished page are answered identically by the API on
 				// purpose, and both belong on screen as "not found".
@@ -1198,7 +1829,15 @@ export default {
 		 */
 		goSearch(term) {
 			const url = new URL(window.location.href)
+			// The portal the page is served as stays on the address: on an
+			// instance with several portals, an address without it opens
+			// another portal, or none, after a reload or in a new tab.
+			const portal = url.searchParams.get('portal')
 			url.search = ''
+			url.hash = ''
+			if (portal) {
+				url.searchParams.set('portal', portal)
+			}
 			url.searchParams.set('route', this.searchRoute)
 			if (term) {
 				url.searchParams.set('_search', term)
@@ -1236,7 +1875,15 @@ export default {
 		 */
 		hrefForRoute(route) {
 			const url = new URL(window.location.href)
+			// The portal the page is served as stays on the address: on an
+			// instance with several portals, an address without it opens
+			// another portal, or none, after a reload or in a new tab.
+			const portal = url.searchParams.get('portal')
 			url.search = ''
+			url.hash = ''
+			if (portal) {
+				url.searchParams.set('portal', portal)
+			}
 			if (route && route !== '/') {
 				url.searchParams.set('route', route)
 			}

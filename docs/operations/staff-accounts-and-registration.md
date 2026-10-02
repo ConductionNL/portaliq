@@ -58,3 +58,22 @@ Under **Waiting for approval** you see the registrations of the portal's organis
 - **Refuse** asks for a reason and withdraws the account.
 
 Once decided, the registration leaves the list.
+
+## What visitors see on the sign-in screen
+
+The sign-in screen of the portal's site (under **My page**) shows extra ways in only when the path behind them works.
+
+- **Create an account** appears when the registration policy is not **Nobody** and the organisation offers the e-mail sign-in (the `generic` provider). DigiD, eHerkenning and eIDAS sign people in on a BSN, a KVK number or a foreign identity, never on an e-mail address, so an account made by registration could not sign in with them. Without the e-mail sign-in the door stays hidden.
+- **Follow a case with its case number** appears when at least one of the portal's published form bindings names a case type that admits the reference kind. The form lists exactly those case types.
+
+Registration passes the portal's challenge against automated sign-ups. If the portal names a honeypot field, the form carries it empty.
+
+Under **Anyone who confirms their e-mail address**, Portaliq mails an activation link. Following it activates the account and confirms the address. The link works once and for two days. Registering again with the same address sends a new link.
+
+After registration or an accepted invitation, the screen tells the person to sign in with the e-mail sign-in. Their first sign-in with that address finds the account.
+
+A case number and an e-mail address open one case only. The address must be the one recorded on the case. The mailed link works once, and the case opens read only for a short session. It does not show any other case.
+
+The activation, invitation and case-number mails link to the portal's site, where these screens are.
+
+To try it, set the policy to **Anyone who confirms their e-mail address**, add the e-mail sign-in, and open the site's **My page** signed out.

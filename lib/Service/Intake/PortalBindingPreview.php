@@ -98,6 +98,14 @@ class PortalBindingPreview {
 	public const REASON_HIDDEN_CASE_TYPE = 'hidden_case_type';
 
 	/**
+	 * A field of the form carries a condition the portal cannot check on
+	 * submit (intake-conditional-questions-and-drafts REQ-ICQ-003).
+	 *
+	 * @var string
+	 */
+	public const REASON_UNSUPPORTED_CONDITION = 'unsupported_condition';
+
+	/**
 	 * Wire the preview.
 	 *
 	 * @param PortalFormBindingResolver $resolver The resolution the render uses.
@@ -186,6 +194,10 @@ class PortalBindingPreview {
 			return self::REASON_HIDDEN_CASE_TYPE;
 		}
 
+		if ((string)($render['reason'] ?? '') === 'unsupportedCondition') {
+			return self::REASON_UNSUPPORTED_CONDITION;
+		}
+
 		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
 			return self::REASON_EXTERNAL_WITHOUT_ADDRESS;
 		}
@@ -212,6 +224,10 @@ class PortalBindingPreview {
 		if ((string)($render['reason'] ?? '') === 'hiddenCaseType') {
 			return 'This entry opens no form: this portal does not show its case type. '
 				."Show it again under Case types on the portal's page.";
+		}
+
+		if ((string)($render['reason'] ?? '') === 'unsupportedCondition') {
+			return 'This form uses a condition the portal cannot check. Change it to a condition on another answer.';
 		}
 
 		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {

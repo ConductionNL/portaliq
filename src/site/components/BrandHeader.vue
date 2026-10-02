@@ -46,11 +46,15 @@
 					class="ac-navigation pq-site__auth"
 					data-testid="site-auth">
 					<template v-if="session">
+						<!-- What the shell adds beside the signed-in name, such as
+						     whom the resident acts for. -->
+						<slot name="account" />
 						<span data-testid="site-auth-subject">{{
 							sessionLabel
 						}}</span>
 						<button
 							type="button"
+							class="utrecht-button utrecht-button--secondary-action pq-site__signout"
 							data-testid="site-signout"
 							@click="$emit('signout')">
 							{{ signOutLabel }}
@@ -202,3 +206,47 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/*
+ * THE SIGN-OUT BUTTON WAS IN THE DOM AND NOWHERE ON SCREEN.
+ *
+ * `nlds-app.css` carries `.ac-navigation button { display: none }`, a rule for
+ * the reference's mobile menu toggle, and this block's auth controls sit in an
+ * `.ac-navigation`. Measured on :8090 signed in as a guardian: the button had
+ * `display: none`, a 0x0 box, and was absent from the accessibility tree, so a
+ * resident could sign in and had no way to sign out. Two classes outrank the
+ * vendored rule's one class and one element.
+ */
+.pq-site__auth {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+}
+
+.pq-site__auth .pq-site__signout {
+	display: inline-flex;
+}
+
+/*
+ * THE BREADCRUMB IS ONE LINE. App.vue carried this rule scoped, and a scoped
+ * rule never reaches a child component's elements, so the trail rendered as
+ * three stacked lines on every page. It belongs with the markup it styles.
+ */
+.ac-breadcrumb__list {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.ac-breadcrumb__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+</style>

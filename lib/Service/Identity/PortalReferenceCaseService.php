@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-ways-in-screens/design.md
+ * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 /**
  * Finds the one case a reference link or a reference session may open.
  *
- * @spec openspec/changes/identity-ways-in-screens/design.md
+ * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
  */
 class PortalReferenceCaseService {
 	/**
@@ -85,7 +85,7 @@ class PortalReferenceCaseService {
 	 *
 	 * @return array{register: string, schema: string}|null
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the request's own
 	 * fields, each part of what must match before anything is issued.
@@ -130,7 +130,7 @@ class PortalReferenceCaseService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	public function read(array $reference): ?array {
 		$caseReference = (string)($reference['caseReference'] ?? '');

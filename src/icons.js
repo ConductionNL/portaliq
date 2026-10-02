@@ -54,8 +54,11 @@ import Menu from 'vue-material-design-icons/Menu.vue'
 import MessageText from 'vue-material-design-icons/MessageText.vue'
 import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
 import MotionPlayOutline from 'vue-material-design-icons/MotionPlayOutline.vue'
+import NewspaperVariantOutline from 'vue-material-design-icons/NewspaperVariantOutline.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import Palette from 'vue-material-design-icons/Palette.vue'
+import Pencil from 'vue-material-design-icons/Pencil.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import Pulse from 'vue-material-design-icons/Pulse.vue'
 import ShieldAccount from 'vue-material-design-icons/ShieldAccount.vue'
@@ -112,8 +115,12 @@ export default {
 	MotionPlayOutline,
 	MessageText,
 	MessageTextOutline,
+	NewspaperVariantOutline,
 	OpenInNew,
 	Palette,
+	// The News page's New news item and Change actions (staff-news-screen).
+	Pencil,
+	Plus,
 	PowerPlugOutline,
 	// ADR-077 Tier A: the concept "activity" (the `activityOffer` schema,
 	// extracurricular-activity-offer) is drawn with Pulse.

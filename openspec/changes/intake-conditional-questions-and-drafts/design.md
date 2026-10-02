@@ -45,7 +45,21 @@ names another hidden field is hidden too (evaluated in declared order).
 This is a second evaluator of one grammar, which is how grammars drift. It is
 pinned by a fixture file `tests/fixtures/visible-when-local.json` built from
 the cases in nextcloud-vue's `tests/utils/visibleWhen.spec.js`, run by both a
-PHPUnit test here and a Vitest test here against the imported JS function.
+PHPUnit test here and a `node --test` spec here against the imported JS
+function. (Changed while building: the design said Vitest, and portaliq has
+no Vitest. The node spec gives the predicate a window with empty storage and
+no signed-in user before importing it, which is the reader of a public form.)
+
+Built: three kinds of condition the screen can answer and the server cannot
+replay make `isDecidable()` false, and the form is refused under D3 with
+them: `endpoint` / `source`, a right-hand clock token (`@now`, `@today`,
+`@today+7d` and kin, resolved in the resident's time zone), and
+`appInstalled` (what a resident's page knows about installed apps). `@me` is
+nobody on a public form on both sides, and `@object.<answer>` reads another
+answer on both sides. One divergence is accepted: PHP decodes an empty JSON
+object as an empty list, so a malformed `{"all": {}, "any": []}` reads as
+`all` of nothing on the server and `any` of nothing on the screen; the
+fixture leaves it out.
 When openregister ships a server-side evaluator with the journey run API,
 portaliq calls it and deletes this class.
 

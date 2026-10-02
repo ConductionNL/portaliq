@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\NewsController;
+use OCA\Portaliq\Service\NewsAudienceOptions;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -192,4 +193,80 @@ class NewsControllerTest extends TestCase {
 		$this->assertSame('draft', $objectService->saved['status']);
 		$this->assertSame('X', $objectService->saved['title']);
 	}//end testUnpublishRevertsToADraftAndPreservesOtherFields()
+	/**
+	 * An edit changes the title, body and audience and nothing else; a bad
+	 * target is refused before any read.
+	 *
+	 * @spec openspec/changes/staff-news-screen/tasks.md#T1
+	 */
+	public function testUpdateChangesTheTextAndAudienceOnly(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ['id' => $id, 'title' => 'Old', 'body' => 'Old body', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'authorRef' => 'po-leerkracht-09'];
+			}//end find()
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				return $object;
+			}//end saveObject()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $controller->update('n1', 'New', 'New body', [])->getStatus());
+		$this->assertSame([], $objectService->saved);
+
+		$response = $controller->update('n1', 'New', 'New body', ['groupRefs' => ['groep-7']]);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('New', $objectService->saved['title']);
+		$this->assertSame('New body', $objectService->saved['body']);
+		$this->assertSame(['groupRefs' => ['groep-7']], $objectService->saved['target']);
+		$this->assertSame('published', $objectService->saved['status']);
+		$this->assertSame('po-leerkracht-09', $objectService->saved['authorRef']);
+	}//end testUpdateChangesTheTextAndAudienceOnly()
+
+	/**
+	 * Editing and the audience choices need a signed-in Nextcloud user, like
+	 * every other authoring endpoint.
+	 *
+	 * @spec openspec/changes/staff-news-screen/tasks.md#T1
+	 */
+	public function testUpdateAndAudiencesRefuseAnUnauthenticatedCaller(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
+		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+
+		$refused = 0;
+		foreach ([fn () => $controller->update('n1', 'T', 'B', ['schoolRef' => 's']), fn () => $controller->audiences()] as $call) {
+			try {
+				$call();
+			} catch (\OCP\AppFramework\OCS\OCSForbiddenException $e) {
+				$refused++;
+			}
+		}
+
+		$this->assertSame(2, $refused);
+	}//end testUpdateAndAudiencesRefuseAnUnauthenticatedCaller()
+
+	/**
+	 * The audience choices come from NewsAudienceOptions.
+	 *
+	 * @spec openspec/changes/staff-news-screen/tasks.md#T2
+	 */
+	public function testAudiencesListsTheSchoolAndGroupChoices(): void {
+		$options = $this->createMock(NewsAudienceOptions::class);
+		$options->method('options')->willReturn(['schools' => [], 'groups' => [['id' => 'g7', 'label' => 'Groep 7']]]);
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $options);
+
+		$this->assertSame(['schools' => [], 'groups' => [['id' => 'g7', 'label' => 'Groep 7']]], $controller->audiences()->getData());
+	}//end testAudiencesListsTheSchoolAndGroupChoices()
 }//end class

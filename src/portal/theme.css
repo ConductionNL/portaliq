@@ -149,6 +149,11 @@
 	box-shadow: inset 4px 0 0 var(--portaliq-color-accent);
 }
 
+/* A cell holding a list shows one value per line (array-cells-one-line-per-item). */
+.portaliq-cell-line {
+	display: block;
+}
+
 /* A case's declared history (portaliq#723), newest first. */
 .portaliq-timeline ol {
 	margin: var(--portaliq-space-sm) 0;

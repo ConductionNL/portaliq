@@ -130,7 +130,7 @@ test('an empty archive renders nothing', () => {
 })
 
 test('the News page reads the archive through the API and reloads it with the language', () => {
-	const api = readFileSync(join(ROOT, 'src', 'portal', 'lib', 'portalApi.js'), 'utf8')
+	const api = readFileSync(join(ROOT, 'src', 'shared', 'portalApi.js'), 'utf8')
 	assert.match(api, /async fetchNewsletterArchive\(\)[\s\S]*\/api\/newsletters\/archive/)
 	const page = readFileSync(join(ROOT, 'src', 'portal', 'components', 'NewsPage.jsx'), 'utf8')
 	assert.match(page, /api\.fetchNewsletterArchive\(\)/)
@@ -138,8 +138,8 @@ test('the News page reads the archive through the API and reloads it with the la
 })
 
 test('every new SPA string has a Dutch value and the check runs with the specs', () => {
-	const en = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'en.json'), 'utf8'))
-	const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'nl.json'), 'utf8'))
+	const en = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'en.json'), 'utf8'))
+	const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'))
 	for (const key of ['Newsletters', 'This newsletter has no items for you.']) {
 		assert.equal(en[key], key, `en identity for ${key}`)
 		assert.ok(nl[key] && nl[key] !== '', `nl value for ${key}`)

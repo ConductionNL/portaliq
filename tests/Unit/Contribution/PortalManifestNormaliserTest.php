@@ -432,6 +432,34 @@ class PortalManifestNormaliserTest extends TestCase {
 	}//end testAClosedFieldIsKeptOnlyWhenItNamesAProjectedField()
 
 	/**
+	 * collection-group-by-field T2: `groupByField` stays only when it names a
+	 * projected field, so the portal never groups on a field the rows lack.
+	 *
+	 * @spec openspec/changes/collection-group-by-field/tasks.md#T2
+	 */
+	public function testAGroupByFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'fields' => ['learnerRef', 'value'], 'groupByField' => 'learnerRef'],
+					['id' => 'c2', 'schema' => 's', 'fields' => ['value'], 'groupByField' => 'learnerRef'],
+					['id' => 'c3', 'schema' => 's', 'groupByField' => 'learnerRef'],
+					['id' => 'c4', 'schema' => 's', 'groupByField' => ['learnerRef']],
+					['id' => 'c5', 'schema' => 's', 'groupByField' => ''],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame('learnerRef', $byId['c1']['groupByField']);
+		$this->assertSame('learnerRef', $byId['c3']['groupByField']);
+		foreach (['c2', 'c4', 'c5'] as $id) {
+			$this->assertArrayNotHasKey('groupByField', $byId[$id], $id);
+		}
+
+	}//end testAGroupByFieldIsKeptOnlyWhenItNamesAProjectedField()
+
+	/**
 	 * signin-eherkenning-branch REQ-SEB-002 (T03): `branchField` stays only
 	 * when it names a projected field.
 	 */
@@ -722,4 +750,53 @@ class PortalManifestNormaliserTest extends TestCase {
 
 		$this->assertSame(['sign'], array_column($out['actions'], 'id'));
 	}//end testReservedScopeClaimNameIsDropped()
+
+	/**
+	 * A guest action without a `tokenField` has nowhere to carry the signed
+	 * token, and one aimed off the instance would forward it elsewhere: both
+	 * are dropped, a well-formed one keeps its guest keys.
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
+	 */
+	public function testGuestActionNeedsATokenField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [],
+				'actions' => [
+					['id' => 'withdraw', 'guest' => true, 'endpoint' => '/apps/shillinq/api/withdraw', 'tokenField' => 'token', 'label' => 'Withdraw from contract here', 'previewEndpoint' => '/apps/shillinq/api/withdraw/preview', 'confirmText' => 'Withdraw?'],
+					['id' => 'noToken', 'guest' => true, 'endpoint' => '/apps/shillinq/api/x'],
+					['id' => 'badToken', 'guest' => true, 'endpoint' => '/apps/shillinq/api/x', 'tokenField' => 'a b'],
+					['id' => 'remote', 'guest' => true, 'endpoint' => 'https://evil.example/x', 'tokenField' => 'token'],
+					['id' => 'remotePreview', 'guest' => true, 'endpoint' => '/apps/shillinq/api/x', 'tokenField' => 'token', 'previewEndpoint' => '//evil.example/p'],
+				],
+			]
+		);
+
+		$this->assertSame(['withdraw'], array_column($out['actions'], 'id'));
+		$this->assertTrue($out['actions'][0]['guest']);
+		$this->assertSame('token', $out['actions'][0]['tokenField']);
+		$this->assertSame('/apps/shillinq/api/withdraw/preview', $out['actions'][0]['previewEndpoint']);
+		$this->assertSame('Withdraw from contract here', $out['actions'][0]['label']);
+	}//end testGuestActionNeedsATokenField()
+
+	/**
+	 * A guest is never more than `low`: a guest action asking for more is
+	 * dropped, not offered to a visitor who cannot have it (REQ-GST-001).
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
+	 */
+	public function testGuestActionAboveLowTrustIsDropped(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [],
+				'actions' => [
+					['id' => 'withdraw', 'guest' => true, 'endpoint' => '/apps/shillinq/api/withdraw', 'tokenField' => 'token', 'minTrust' => 'substantial'],
+					['id' => 'pay', 'guest' => true, 'endpoint' => '/apps/shillinq/api/pay', 'tokenField' => 'payToken', 'minTrust' => 'low'],
+					['id' => 'resident', 'endpoint' => '/apps/shillinq/api/r', 'minTrust' => 'substantial'],
+				],
+			]
+		);
+
+		$this->assertSame(['pay', 'resident'], array_column($out['actions'], 'id'));
+	}//end testGuestActionAboveLowTrustIsDropped()
 }

@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.54.0"
+        "version": "0.55.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.54.0",
+                "version": "0.55.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -737,7 +737,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.13.0",
+                "version": "0.14.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -961,6 +961,19 @@
                         "format": "date-time",
                         "description": "When the confirmation link stops working.",
                         "example": "2026-09-19T09:00:00+00:00"
+                    },
+                    "activationTokenHash": {
+                        "title": "Activation token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret in the activation mail of a self-registration under the activation policy. Emptied when the link is followed.",
+                        "example": "9f86d0…"
+                    },
+                    "activationExpiresAt": {
+                        "title": "Activation expiry",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the activation link stops working.",
+                        "example": "2026-10-03T09:00:00+00:00"
                     },
                     "pendingEmailMode": {
                         "title": "Pending email mode",

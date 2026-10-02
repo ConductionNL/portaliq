@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
 use OCP\IConfig;
 use OCP\IRequest;
 
@@ -72,6 +73,8 @@ class PortalRuntimeConfigResolver {
 	 * @param PortalThemeResolver             $themeResolver  Maps a portal's theme reference onto a
 	 *                                                        real thematiq token stylesheet.
 	 * @param IConfig|null                    $config         Tells whether the dev login is accepted.
+	 * @param PortalWaysInResolver|null       $waysIn         The doors besides the sign-in buttons
+	 *                                                        (identity-ways-in-screens T07).
 	 *
 	 * @return void
 	 */
@@ -80,6 +83,7 @@ class PortalRuntimeConfigResolver {
 		private readonly PortalOrganisationConfigService $orgResolver,
 		private readonly PortalThemeResolver $themeResolver,
 		private readonly ?IConfig $config=null,
+		private readonly ?PortalWaysInResolver $waysIn=null,
 	) {
 	}//end __construct()
 
@@ -188,8 +192,15 @@ class PortalRuntimeConfigResolver {
 			$config['silentSignIn'] = (string)($resolved['silentSignIn'] ?? '');
 		}
 
+		// The doors besides the sign-in buttons (identity-ways-in-screens
+		// D3): closed unless a portal opens them.
+		$config['waysIn'] = ['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => []];
 		if ($portal === null) {
 			return $config;
+		}
+
+		if ($this->waysIn !== null) {
+			$config['waysIn'] = $this->waysIn->waysIn(portal: $portal, oidcProviders: (array)($config['oidcProviders'] ?? []));
 		}
 
 		return $this->applyPortalBranding(config: $config, portal: $portal);
