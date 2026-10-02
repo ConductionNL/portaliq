@@ -118,3 +118,56 @@ test('the editor bundle defines appName and appVersion for @nextcloud/vue', asyn
 	assert.equal(defined.appName, JSON.stringify('portaliq'), 'appName is defined as "portaliq"')
 	assert.ok(typeof defined.appVersion === 'string' && defined.appVersion.length > 2, 'appVersion is defined')
 })
+
+// THE EDITOR'S OWN TAB SHOWS WHAT IT JUST PUBLISHED (found on :8080 while
+// filming, 02 Oct 2026). A page is served `public, max-age=300` to a reader
+// without a resident bearer, so re-reading it after a publish answered from
+// the browser cache for five minutes. A fresh read goes to the server and
+// refreshes that cache; an ordinary read keeps using it.
+test('a fresh page read goes past the browser cache, an ordinary one does not', async () => {
+	const memory = () => {
+		const items = new Map()
+		return {
+			getItem: (k) => (items.has(k) ? items.get(k) : null),
+			setItem: (k, v) => items.set(k, String(v)),
+			removeItem: (k) => items.delete(k),
+		}
+	}
+	const calls = []
+	const saved = { window: globalThis.window, document: globalThis.document, fetch: globalThis.fetch }
+	globalThis.window = {
+		location: { origin: 'http://localhost:8080', hash: '', pathname: '/', search: '' },
+		history: { replaceState() {} },
+		sessionStorage: memory(),
+		localStorage: memory(),
+		PORTALIQ_SITE_CONFIG: { apiBase: '/apps/portaliq/api/content/site' },
+	}
+	globalThis.document = { getElementById: () => null, querySelector: () => null }
+	globalThis.fetch = async (url, init) => {
+		calls.push({ url, init })
+		return { ok: true, status: 200, json: async () => ({ id: 'p1' }) }
+	}
+	try {
+		const { fetchPage } = await import('../src/site/lib/contentApi.js')
+		await fetchPage('/over', 'demo')
+		await fetchPage('/over', 'demo', { fresh: true })
+	} finally {
+		Object.assign(globalThis, saved)
+	}
+	assert.equal(calls.length, 2)
+	assert.match(calls[0].url, /\/apps\/portaliq\/api\/content\/page\?route=%2Fover&portal=demo$/)
+	assert.equal(calls[0].init.cache, undefined, 'an ordinary read may use the cache')
+	assert.equal(calls[1].init.cache, 'reload', 'a fresh read goes to the server')
+})
+
+test('the editor tells the site it published, and the site re-reads the page fresh', () => {
+	const main = read('src/editor/siteEditorMain.js')
+	assert.match(main, /function mount\(element, \{ pageId, portal, onLeave, onSaved \}\)/)
+	assert.match(main, /h\(SiteEditMode, \{ pageId, portal, onLeave, onSaved \}\)/)
+	const mode = read('src/editor/SiteEditMode.vue')
+	assert.match(mode, /this\.\$emit\('saved'\)/)
+	const app = read('src/site/App.vue')
+	assert.match(app, /onSaved: \(\) => this\.refreshShownPage\(\)/)
+	assert.match(app, /await this\.loadRoute\(this\.route, \{ fresh: true \}\)/)
+	assert.match(app, /fetchPage\(route, this\.portalSlug, \{ fresh \}\)/)
+})

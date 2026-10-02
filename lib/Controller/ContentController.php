@@ -42,6 +42,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -93,6 +94,7 @@ class ContentController extends Controller {
 	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReader         $notices      The notices running on the site now.
+	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
 	 *
 	 * @return void
 	 */
@@ -108,6 +110,7 @@ class ContentController extends Controller {
 		private readonly TrafficConfigResolver $traffic,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReader $notices,
+		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -530,13 +533,21 @@ class ContentController extends Controller {
 	 * cannot pool it across visitors — that leak would happen at the edge,
 	 * where this installation's logs would never show it.
 	 *
+	 * A signed-in Nextcloud user (an editor reading the site) gets the
+	 * anonymous body, but never a cacheable one: served `public, max-age=300`,
+	 * the editor's own tab showed the page as it was before they published,
+	 * for five minutes (found on :8080, 02 Oct 2026). Anonymous visitors stay
+	 * cacheable.
+	 *
 	 * @param array $payload The response body.
 	 *
 	 * @return JSONResponse The response.
+	 *
+	 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
 	 */
 	private function publicJson(array $payload): JSONResponse {
 		$response = new JSONResponse($payload);
-		if ($this->audience() === 'anonymous') {
+		if ($this->audience() === 'anonymous' && $this->userSession->getUser() === null) {
 			$response->addHeader('Cache-Control', 'public, max-age=300, must-revalidate');
 
 			return $response;
