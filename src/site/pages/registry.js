@@ -43,6 +43,8 @@
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 
+// Slice c registers its forms and actions in slice b's places on import.
+import { pages as formPages } from './c/index.js'
 import { registerBlockSlot } from './collections/blockSlots.js'
 import { pages as collectionPages } from './collections/index.js'
 import { pages as accountPages } from './e/index.js'
@@ -59,6 +61,8 @@ export const CONTRIBUTION_PAGE = 'contribution'
 const BUILT_IN = {
 	// Slice b: collections, detail and timeline (the React portal's PageView).
 	...collectionPages,
+	// Slice c: no pages of its own; its forms and actions fill slice b's places.
+	...formPages,
 	// Slice e: my cases, access to cases, my details, my account.
 	cases: accountPages.__cases__,
 	access: accountPages.__access__,

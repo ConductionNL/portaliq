@@ -213,6 +213,26 @@ export async function postAction(
 }
 
 /**
+ * The `forwardAction` half of the portal api, on top of `postAction`, so an
+ * endpoint or cta action on a site page forwards the same way the save
+ * buttons do (`rowAction.runAction` takes it as its `api`).
+ *
+ * @param {string}   authBase  The portal API base (`.../portal/api`).
+ * @param {() => string} token Returns the current portal bearer.
+ * @param {typeof fetch} fetchImpl `fetch`, replaceable in tests.
+ * @return {{forwardAction: (appId: string, actionId: string, body: object) => Promise<object>}} The adapter.
+ *
+ * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
+ */
+export function forwardApi(authBase, token, fetchImpl = fetch) {
+	return {
+		forwardAction(appId, actionId, body) {
+			return postAction(authBase, appId, actionId, body, token(), fetchImpl)
+		},
+	}
+}
+
+/**
  * Read one of the resident's portal endpoints, or null on any failure.
  *
  * @param {string}   url       The URL.

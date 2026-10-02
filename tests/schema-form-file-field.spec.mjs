@@ -9,7 +9,7 @@
 // Usage:
 //   node --test tests/schema-form-file-field.spec.mjs
 //
-// The submit flow lives in src/portal/lib/fileFieldSubmit.js so it can be
+// The submit flow lives in src/shared/fileFieldSubmit.js so it can be
 // driven here against a fake api: the live attach fails on a fresh instance
 // (portaliq#29), so a browser run would prove the instance, not the form.
 // SchemaForm is JSX; it is compiled with the same Babel preset
@@ -22,6 +22,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { mountSfc } from './support/mount-sfc.mjs'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -32,7 +33,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests')
 mkdirSync(OUT_DIR, { recursive: true })
 
-const SUBMIT_SOURCE = join(ROOT, 'src', 'portal', 'lib', 'fileFieldSubmit.js')
+const SUBMIT_SOURCE = join(ROOT, 'src', 'shared', 'fileFieldSubmit.js')
 const SUBMIT_OUT = join(OUT_DIR, 'fileFieldSubmit.mjs')
 writeFileSync(SUBMIT_OUT, readFileSync(SUBMIT_SOURCE, 'utf8'))
 
@@ -44,7 +45,13 @@ const compiled = babel.transformSync(readFileSync(FORM_SOURCE, 'utf8'), {
 	configFile: false,
 	presets: [['@babel/preset-react', { runtime: 'automatic' }]],
 })
-writeFileSync(FORM_OUT, compiled.code.replace("'../lib/fileFieldSubmit.js'", "'./fileFieldSubmit.mjs'"))
+writeFileSync(
+	FORM_OUT,
+	compiled.code.replace(
+		"'../../shared/fileFieldSubmit.js'",
+		"'./fileFieldSubmit.mjs'",
+	),
+)
 
 const { default: SchemaForm } = await import(pathToFileURL(FORM_OUT).href)
 const submit = await import(pathToFileURL(SUBMIT_OUT).href)
@@ -58,7 +65,14 @@ const action = {
 	fields: ['assignmentId', 'attachmentRefs'],
 	fieldConfigs: {
 		assignmentId: { label: 'Assignment', size: 'medium' },
-		attachmentRefs: { label: 'Your work', type: 'file', multiple: true, accept: ['.pdf'], maxSizeMb: 1, size: 'medium' },
+		attachmentRefs: {
+			label: 'Your work',
+			type: 'file',
+			multiple: true,
+			accept: ['.pdf'],
+			maxSizeMb: 1,
+			size: 'medium',
+		},
 	},
 }
 
@@ -87,11 +101,15 @@ function fakeApi({ createOk = true, failNames = [] } = {}) {
 		calls,
 		async createObject(a, body) {
 			calls.created.push(body)
-			return createOk ? { ok: true, object: { id: 'submission-1', ...body } } : { ok: false, status: 502, object: null }
+			return createOk
+				? { ok: true, object: { id: 'submission-1', ...body } }
+				: { ok: false, status: 502, object: null }
 		},
 		async uploadFieldFile(a, id, field, f) {
 			calls.uploads.push({ action: a.id, id, field, name: f.name })
-			return failNames.includes(f.name) ? { ok: false, status: 502, error: 'upload_failed' } : { ok: true, file: { id: '4711' } }
+			return failNames.includes(f.name)
+				? { ok: false, status: 502, error: 'upload_failed' }
+				: { ok: true, file: { id: '4711' } }
 		},
 		async fetchOptions() {
 			return []
@@ -100,10 +118,22 @@ function fakeApi({ createOk = true, failNames = [] } = {}) {
 }
 
 test('renders a file input for a file field', () => {
-	const html = renderToStaticMarkup(React.createElement(SchemaForm, { action, api: fakeApi(), t: (key, vars) => `${key}|${JSON.stringify(vars || {})}` }))
+	const html = renderToStaticMarkup(
+		React.createElement(SchemaForm, {
+			action,
+			api: fakeApi(),
+			t: (key, vars) => `${key}|${JSON.stringify(vars || {})}`,
+		}),
+	)
 
-	assert.match(html, /<label for="f-createSubmission-attachmentRefs">Your work<\/label>/)
-	assert.match(html, /<input id="f-createSubmission-attachmentRefs" type="file" multiple="" accept="\.pdf"\/>/)
+	assert.match(
+		html,
+		/<label for="f-createSubmission-attachmentRefs">Your work<\/label>/,
+	)
+	assert.match(
+		html,
+		/<input id="f-createSubmission-attachmentRefs" type="file" multiple="" accept="\.pdf"\/>/,
+	)
 	// The size limit is shown through the translator.
 	assert.match(html, /Up to \{size\} MB per file\|\{&quot;size&quot;:1\}/)
 	// The other field is still a text box.
@@ -111,16 +141,26 @@ test('renders a file input for a file field', () => {
 })
 
 test('a form without a translator still renders the English source', () => {
-	const html = renderToStaticMarkup(React.createElement(SchemaForm, { action, api: fakeApi() }))
+	const html = renderToStaticMarkup(
+		React.createElement(SchemaForm, { action, api: fakeApi() }),
+	)
 
 	assert.match(html, /Up to 1 MB per file/)
 })
 
 test('a single file field renders without multiple', () => {
-	const single = { ...action, fieldConfigs: { attachmentRefs: { type: 'file', size: 'medium' } } }
-	const html = renderToStaticMarkup(React.createElement(SchemaForm, { action: single, api: fakeApi() }))
+	const single = {
+		...action,
+		fieldConfigs: { attachmentRefs: { type: 'file', size: 'medium' } },
+	}
+	const html = renderToStaticMarkup(
+		React.createElement(SchemaForm, { action: single, api: fakeApi() }),
+	)
 
-	assert.match(html, /<input id="f-createSubmission-attachmentRefs" type="file"\/>/)
+	assert.match(
+		html,
+		/<input id="f-createSubmission-attachmentRefs" type="file"\/>/,
+	)
 	assert.match(html, /Up to 20 MB per file/)
 })
 
@@ -138,15 +178,33 @@ test('creates then uploads each file and names a failed one', async () => {
 	// The file field never travels in the create body.
 	assert.deepEqual(api.calls.created, [{ assignmentId: 'assignment-1' }])
 	assert.deepEqual(api.calls.uploads, [
-		{ action: 'createSubmission', id: 'submission-1', field: 'attachmentRefs', name: 'essay.pdf' },
-		{ action: 'createSubmission', id: 'submission-1', field: 'attachmentRefs', name: 'bijlage.pdf' },
+		{
+			action: 'createSubmission',
+			id: 'submission-1',
+			field: 'attachmentRefs',
+			name: 'essay.pdf',
+		},
+		{
+			action: 'createSubmission',
+			id: 'submission-1',
+			field: 'attachmentRefs',
+			name: 'bijlage.pdf',
+		},
 	])
-	assert.deepEqual(result.failed.map((f) => f.file.name), ['bijlage.pdf'])
+	assert.deepEqual(
+		result.failed.map((f) => f.file.name),
+		['bijlage.pdf'],
+	)
 })
 
 test('a failed create uploads nothing', async () => {
 	const api = fakeApi({ createOk: false })
-	const result = await submit.submitWithFiles(api, action, { assignmentId: 'assignment-1' }, { attachmentRefs: [file('essay.pdf')] })
+	const result = await submit.submitWithFiles(
+		api,
+		action,
+		{ assignmentId: 'assignment-1' },
+		{ attachmentRefs: [file('essay.pdf')] },
+	)
 
 	assert.equal(result.ok, false)
 	assert.deepEqual(api.calls.uploads, [])
@@ -154,7 +212,12 @@ test('a failed create uploads nothing', async () => {
 
 test('a form with no picked file only creates', async () => {
 	const api = fakeApi()
-	const result = await submit.submitWithFiles(api, action, { assignmentId: 'assignment-1' }, {})
+	const result = await submit.submitWithFiles(
+		api,
+		action,
+		{ assignmentId: 'assignment-1' },
+		{},
+	)
 
 	assert.equal(result.ok, true)
 	assert.deepEqual(result.failed, [])
@@ -162,7 +225,9 @@ test('a form with no picked file only creates', async () => {
 })
 
 test('oversized files are named before anything is saved', () => {
-	const tooLarge = submit.oversizedFiles(action, { attachmentRefs: [file('small.pdf', 1024), file('huge.pdf', (2 * 1024 * 1024))] })
+	const tooLarge = submit.oversizedFiles(action, {
+		attachmentRefs: [file('small.pdf', 1024), file('huge.pdf', 2 * 1024 * 1024)],
+	})
 
 	assert.deepEqual(tooLarge, ['huge.pdf'])
 	assert.deepEqual(submit.fileFields(action), ['attachmentRefs'])
@@ -173,4 +238,80 @@ test('the saved id is read wherever the server put it', () => {
 	assert.equal(submit.objectIdOf({ uuid: 'b' }), 'b')
 	assert.equal(submit.objectIdOf({ '@self': { id: 'c' } }), 'c')
 	assert.equal(submit.objectIdOf(null), '')
+})
+
+// The site's Vue port (site-reaches-portal-parity T11, REQ-SRP-023) runs the
+// same shared flow from src/shared/fileFieldSubmit.js.
+
+test('the site form renders a file picker with its limit', async () => {
+	const form = await mountSfc('src/site/components/c/SchemaForm.vue', {
+		action,
+		api: fakeApi(),
+	})
+	const picker = form.findAll(
+		(n) => n.props.id === 'f-createSubmission-attachmentRefs',
+	)[0]
+
+	assert.equal(picker.props.type, 'file')
+	assert.equal(picker.props.multiple, true)
+	assert.equal(picker.props.accept, '.pdf')
+	assert.match(
+		form.textOf(form.find('schema-field-attachmentRefs')),
+		/Your work Up to 1 MB per file/,
+	)
+})
+
+test('the site form creates, uploads, names the failed file and retries only that one', async () => {
+	const api = fakeApi({ failNames: ['bijlage.pdf'] })
+	const form = await mountSfc('src/site/components/c/SchemaForm.vue', {
+		action,
+		api,
+	})
+	const field = (name) =>
+		form.findAll((n) => n.props.id === `f-createSubmission-${name}`)[0]
+	await form.fire(field('assignmentId'), 'input', { value: 'assignment-1' })
+	await form.fire(field('attachmentRefs'), 'change', {
+		files: [file('essay.pdf'), file('bijlage.pdf')],
+	})
+	await form.fire(form.find('schema-form'), 'submit')
+
+	assert.deepEqual(api.calls.created, [{ assignmentId: 'assignment-1' }])
+	assert.deepEqual(
+		api.calls.uploads.map((u) => u.name),
+		['essay.pdf', 'bijlage.pdf'],
+	)
+	assert.equal(
+		form.textOf(form.find('schema-form-error')),
+		'Saved, but these files were not attached: bijlage.pdf',
+	)
+
+	await form.fire(form.find('schema-form-retry'), 'click')
+	assert.deepEqual(
+		api.calls.uploads.map((u) => u.name),
+		['essay.pdf', 'bijlage.pdf', 'bijlage.pdf'],
+	)
+	assert.equal(
+		api.calls.created.length,
+		1,
+		'a retry never creates the record again',
+	)
+})
+
+test('the site form refuses an oversized file before saving', async () => {
+	const api = fakeApi()
+	const form = await mountSfc('src/site/components/c/SchemaForm.vue', {
+		action,
+		api,
+	})
+	const picker = form.findAll(
+		(n) => n.props.id === 'f-createSubmission-attachmentRefs',
+	)[0]
+	await form.fire(picker, 'change', { files: [file('huge.pdf', 2 * 1024 * 1024)] })
+	await form.fire(form.find('schema-form'), 'submit')
+
+	assert.deepEqual(api.calls.created, [])
+	assert.equal(
+		form.textOf(form.find('schema-form-error')),
+		'These files are too large: huge.pdf',
+	)
 })
