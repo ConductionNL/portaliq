@@ -16,6 +16,11 @@
  *   `message.created` (REQ-NAP-004). A new record in it is a message to the
  *   resident at its scope field.
  *
+ * A change rule that names its recipients by a claim
+ * (claim-addressed-change-notices) carries `recipientField` and
+ * `recipientClaim`; its collection and declared message texts are kept beside
+ * the entry and read through details().
+ *
  * Collections name their register and schema by slug, while an OpenRegister
  * object carries numeric ids. The index maps the object's ids to slugs through
  * OpenRegister's own id-to-slug maps, and matches either form.
@@ -82,6 +87,13 @@ class PortalChangeRuleIndex {
 	private ?array $slugs = null;
 
 	/**
+	 * Per change rule (`app|collection|ruleKey`): its collection and messages.
+	 *
+	 * @var array<string, array{collection: array<string, mixed>, messages: array<string, mixed>}>
+	 */
+	private array $details = [];
+
+	/**
 	 * Wire the index.
 	 *
 	 * @param PortalContributionRegistry $registry  Every app's contribution.
@@ -101,13 +113,28 @@ class PortalChangeRuleIndex {
 	 * @param string $register The object's register id or slug.
 	 * @param string $schema   The object's schema id or slug.
 	 *
-	 * @return array<int, array<string, string>> Entries with app, ruleKey, collection, label, scopeField, field and titleField.
+	 * @return array<int, array<string, string>> Entries with app, ruleKey, collection, label, scopeField, field, titleField, recipientField and recipientClaim.
 	 *
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
 	 */
 	public function changeRulesFor(string $register, string $schema): array {
 		return $this->matching(kind: 'change', register: $register, schema: $schema);
 	}//end changeRulesFor()
+
+	/**
+	 * A change rule's collection and the message texts it declares per value.
+	 *
+	 * @param array<string, string> $entry An entry changeRulesFor() returned.
+	 *
+	 * @return array{collection: array<string, mixed>, messages: array<string, mixed>}
+	 *
+	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 */
+	public function details(array $entry): array {
+		$this->entries();
+
+		return ($this->details[$this->detailKey(app: ($entry['app'] ?? ''), collection: ($entry['collection'] ?? ''), ruleKey: ($entry['ruleKey'] ?? ''))] ?? ['collection' => [], 'messages' => []]);
+	}//end details()
 
 	/**
 	 * The inbox collections a new record of this register and schema lands in.
@@ -306,15 +333,56 @@ class PortalChangeRuleIndex {
 				continue;
 			}
 
-			$entries[] = $this->entry(kind: 'change', app: $app, collection: $collections[(string)$rule['collection']]) + [
-				'ruleKey' => (string)$rule['ruleKey'],
+			$collection = $collections[(string)$rule['collection']];
+			$recipientClaim = (string)($rule['recipients']['claim'] ?? '');
+			if ($recipientClaim === '' && $this->scopedBySomethingElse(collection: $collection) === true) {
+				// The normaliser already drops this; a record of a claim or
+				// via collection does not say whose it is.
+				continue;
+			}
+
+			$ruleKey = (string)($rule['ruleKey'] ?? '');
+			$this->details[$this->detailKey(app: $app, collection: (string)$collection['id'], ruleKey: $ruleKey)] = [
+				'collection' => $collection,
+				'messages' => (array)($rule['messages'] ?? []),
+			];
+			$entries[] = $this->entry(kind: 'change', app: $app, collection: $collection) + [
+				'ruleKey' => $ruleKey,
 				'field' => (string)($rule['on']['field'] ?? ''),
 				'titleField' => (string)($rule['titleField'] ?? ''),
+				'recipientField' => (string)($rule['recipients']['field'] ?? ''),
+				'recipientClaim' => $recipientClaim,
 			];
-		}
+		}//end foreach
 
 		return $entries;
 	}//end changeEntries()
+
+	/**
+	 * Whether a collection is scoped through a claim or a join rather than
+	 * by the subject reference on the record.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return bool
+	 */
+	private function scopedBySomethingElse(array $collection): bool {
+		return in_array(($collection['scopeClaim'] ?? null), [null, '', []], true) === false
+			|| in_array(($collection['via'] ?? null), [null, '', []], true) === false;
+	}//end scopedBySomethingElse()
+
+	/**
+	 * The key of a change rule's details.
+	 *
+	 * @param string $app        The app.
+	 * @param string $collection The collection id.
+	 * @param string $ruleKey    The rule key.
+	 *
+	 * @return string
+	 */
+	private function detailKey(string $app, string $collection, string $ruleKey): string {
+		return $app.'|'.$collection.'|'.$ruleKey;
+	}//end detailKey()
 
 	/**
 	 * The inbox collections of one contribution that declares `message.created`
