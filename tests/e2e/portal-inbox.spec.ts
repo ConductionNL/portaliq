@@ -201,6 +201,6 @@ test.describe('portal-inbox-v2', () => {
 		await expect(unreadRow).not.toHaveClass(/pq-inbox-row--unread/)
 
 		// The menu badge disappears once nothing is unread.
-		await expect(inboxNav.getByTestId('site-menu-badge')).toHaveCount(0)
+		await expect(inboxNav.getByTestId('site-resident-menu-badge')).toHaveCount(0)
 	})
 })

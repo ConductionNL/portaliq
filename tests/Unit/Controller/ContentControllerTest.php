@@ -32,6 +32,8 @@ use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -80,6 +82,13 @@ class ContentControllerTest extends TestCase {
 	 * @var PortalNoticeReader|null
 	 */
 	private ?PortalNoticeReader $notices = null;
+
+	/**
+	 * The Nextcloud session, when a test signs someone in.
+	 *
+	 * @var IUserSession|null
+	 */
+	private ?IUserSession $userSession = null;
 
 	/**
 	 * The incoming request.
@@ -141,7 +150,8 @@ class ContentControllerTest extends TestCase {
 			session: ($this->session ?? $this->createMock(PortalSessionService::class)),
 			traffic: new TrafficConfigResolver(),
 			urlGenerator: $this->urlGenerator(),
-			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class))
+			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class)),
+			userSession: ($this->userSession ?? $this->createMock(IUserSession::class))
 		);
 	}//end controller()
 
@@ -359,6 +369,45 @@ class ContentControllerTest extends TestCase {
 		$this->assertStringContainsString('no-store', $headers['Cache-Control']);
 		$this->assertStringNotContainsString('public', $headers['Cache-Control']);
 	}//end testAnAuthenticatedResponseIsNeverShared()
+
+
+	/**
+	 * A page read by a signed-in Nextcloud user is never cached.
+	 *
+	 * An editor reads the site with their Nextcloud session and no resident
+	 * bearer, so the body is the anonymous one. Served `public, max-age=300`,
+	 * the editor's own tab answered from its browser cache for five minutes
+	 * after they published (found on :8080, 02 Oct 2026).
+	 *
+	 * @return void
+	 */
+	public function testAPageReadBySignedInNextcloudUserIsNeverCached(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->reader->method('page')->willReturn(['id' => 'p1', 'route' => '/over']);
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->userSession->method('getUser')->willReturn($this->createMock(IUser::class));
+
+		$headers = $this->controller()->page(route: '/over')->getHeaders();
+
+		$this->assertSame('private, no-store', $headers['Cache-Control']);
+	}//end testAPageReadBySignedInNextcloudUserIsNeverCached()
+
+
+	/**
+	 * A page read by an anonymous visitor stays publicly cacheable.
+	 *
+	 * @return void
+	 */
+	public function testAPageReadByAnonymousVisitorStaysCacheable(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->reader->method('page')->willReturn(['id' => 'p1', 'route' => '/over']);
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->userSession->method('getUser')->willReturn(null);
+
+		$headers = $this->controller()->page(route: '/over')->getHeaders();
+
+		$this->assertSame('public, max-age=300, must-revalidate', $headers['Cache-Control']);
+	}//end testAPageReadByAnonymousVisitorStaysCacheable()
 
 
 	/**

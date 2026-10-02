@@ -68,6 +68,7 @@
 				:breadcrumbs="breadcrumbs"
 				:session="session"
 				:sessionLabel="sessionLabel"
+				:accountLink="ownAreaLink"
 				:signInRoutes="signInRoutes"
 				:registerRoute="registerRoute"
 				:signinFailedMessage="signinFailed ? signinFailedMessage : ''"
@@ -223,6 +224,8 @@
 					:t="t"
 					:locale="locale"
 					:portal="site"
+					:menuGroups="residentMenu"
+					:currentRoute="route"
 					@devlogin="devLogin"
 					@navigate="goSection"
 					@unread="unreadOverride = $event"
@@ -448,12 +451,7 @@ import {
 } from '../shared/portalNav.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
-import {
-	accountCrumbs,
-	accountMenu,
-	accountRedirect,
-	loggedInAs,
-} from './lib/accountArea.js'
+import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
@@ -479,6 +477,11 @@ import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
+import {
+	ownAreaLink as ownAreaLinkFor,
+	residentMenuGroups,
+	showsResidentMenu,
+} from './lib/residentMenu.js'
 import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js'
 import {
 	footerMenusOf,
@@ -820,7 +823,8 @@ export default {
 		},
 
 		/**
-		 * The menus shown in the header bar.
+		 * The menus shown in the header bar: the website's own pages, never
+		 * the resident's items.
 		 *
 		 * PLACEMENT COMES FROM `position`, WHICH IS WHAT THAT FIELD IS FOR — the
 		 * register describes it as "ordering of this menu relative to others on
@@ -831,22 +835,48 @@ export default {
 		 *
 		 * Position 0 is the header. Everything else is a footer column.
 		 *
+		 * THE SIGNED-IN NAVIGATION USED TO BE ONE MORE MENU HERE, and a resident
+		 * with a few apps installed got a bar of twenty links: the website's
+		 * pages and every app's pages in one row. It now sits beside the content
+		 * on the `/mijn` pages (residentMenu below, site-resident-menu).
+		 *
 		 * @return {Array} The header menus.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-blue-bar-must-carry-the-websites-pages-only-req-srm-001
 		 */
 		headerMenus() {
-			const menus = headerMenusOf(this.menus)
-			if (!this.session || this.nav.length === 0) {
-				return menus
+			return headerMenusOf(this.menus)
+		},
+
+		/**
+		 * The resident's own menu in groups, shown beside the content on the
+		 * `/mijn` pages only (AccountArea); empty when signed out.
+		 *
+		 * @return {Array<object>} The groups.
+		 *
+		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+		 */
+		residentMenu() {
+			if (!showsResidentMenu(this.session, this.route, this.nav)) {
+				return []
 			}
-			// The signed-in navigation is one more header menu, after the
-			// portal's own, so it gets the same bar, styling and keyboard
-			// handling (SiteMenu) rather than a second kind of menu.
-			return [
-				...menus,
-				accountMenu(this.nav, this.t, this.unreadCount, this.hrefForRoute),
-			]
+			return residentMenuGroups(
+				this.nav,
+				this.t,
+				this.unreadCount,
+				this.hrefForRoute,
+			)
+		},
+
+		/**
+		 * The top right link to the resident's own area, null when signed out.
+		 *
+		 * @return {object|null} The link.
+		 *
+		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-header-must-hold-the-name-the-way-to-the-own-area-and-sign-out-req-srm-003
+		 */
+		ownAreaLink() {
+			return ownAreaLinkFor(this.session, this.t, this.hrefForRoute)
 		},
 
 		/**
@@ -919,6 +949,7 @@ export default {
 					apiBase: authBaseFrom(resolveApiBase()),
 					organisationSlug: this.site.slug || this.portalSlug || '',
 					audience: this.signinConfig.audience || '',
+					language: this.locale,
 				},
 				{
 					getToken: () => adoptSessionToken() || null,
@@ -1485,7 +1516,7 @@ export default {
 			// The page's search title first (site-page-seo-history-and-media),
 			// so the tab reads what the server already put in the head.
 			let pageName = this.accountRoute
-				? this.accountEntry?.label || this.t('My overview')
+				? this.accountEntry?.label || this.t('My area')
 				: this.page?.seo?.title || this.page?.title
 			if (this.sharedDossierRoute) {
 				pageName = this.sharedDossierTitle || this.t('Shared dossier')
@@ -1627,11 +1658,13 @@ export default {
 		 * Load one page by route.
 		 *
 		 * @param {string} route The in-portal route.
+		 * @param {{fresh?: boolean}} [options] `fresh` to read past the browser cache.
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-unpublished-content-must-be-indistinguishable-from-absent-content
+		 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
 		 */
-		async loadRoute(route) {
+		async loadRoute(route, { fresh = false } = {}) {
 			this.signInNeeded = false
 			// The signed-in area renders from the session, not from a CMS
 			// page, so no page is read for it.
@@ -1661,7 +1694,7 @@ export default {
 			this.error = null
 			this.routeParam = ''
 			try {
-				this.page = await fetchPage(route, this.portalSlug)
+				this.page = await fetchPage(route, this.portalSlug, { fresh })
 			} catch (error) {
 				// A ROUTE CAN ADDRESS A THING RATHER THAN A PAGE.
 				//
@@ -1679,7 +1712,9 @@ export default {
 				const parent = this.parentRoute(route)
 				if (this.isNotFound(error) === true && parent !== null) {
 					try {
-						this.page = await fetchPage(parent, this.portalSlug)
+						this.page = await fetchPage(parent, this.portalSlug, {
+							fresh,
+						})
 						this.routeParam = route.slice(parent.length + 1)
 						this.loading = false
 						return
@@ -1724,7 +1759,32 @@ export default {
 				this.unmountEditor = null
 			}
 			this.editMode = false
-			await this.loadRoute(this.route)
+			// Fresh: the page may have been published a moment ago, and an
+			// ordinary read answers from the browser cache for five minutes.
+			await this.loadRoute(this.route, { fresh: true })
+		},
+
+		/**
+		 * After the editor published, read the page on screen again past the
+		 * browser cache, quietly: the editor stays open, and leaving it shows
+		 * the published page, not the copy the cache still held.
+		 *
+		 * @return {Promise<void>} Resolves when the page is read.
+		 *
+		 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
+		 */
+		async refreshShownPage() {
+			if (this.routeParam !== '') {
+				return
+			}
+			try {
+				this.page = await fetchPage(this.route, this.portalSlug, {
+					fresh: true,
+				})
+			} catch {
+				// Leaving edit mode reads the page again anyway; a failed
+				// refresh here must not disturb the editor.
+			}
 		},
 
 		/**
@@ -1747,6 +1807,7 @@ export default {
 					pageId: this.editing.pageId,
 					portal: (this.site && this.site.slug) || this.portalSlug || '',
 					onLeave: () => this.leaveEditMode(),
+					onSaved: () => this.refreshShownPage(),
 				})
 				this.editorStatus = ''
 			} catch {

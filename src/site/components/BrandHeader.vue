@@ -52,6 +52,16 @@
 						<span data-testid="site-auth-subject">{{
 							sessionLabel
 						}}</span>
+						<!-- The way to the resident's own area, on every page
+						     (site-resident-menu REQ-SRM-003). -->
+						<a
+							v-if="accountLink"
+							class="utrecht-link pq-site__own-area"
+							:href="accountLink.href"
+							data-testid="site-own-area"
+							@click.prevent="$emit('navigate', accountLink.route)">
+							{{ accountLink.label }}
+						</a>
 						<button
 							type="button"
 							class="utrecht-button utrecht-button--secondary-action pq-site__signout"
@@ -172,6 +182,8 @@ export default {
 		session: { type: Object, default: null },
 		/** How to name the signed-in visitor. */
 		sessionLabel: { type: String, default: '' },
+		/** `{route, href, label}` of the resident's own area, or null. */
+		accountLink: { type: Object, default: null },
 		/** The sign-in routes the portal declares. */
 		signInRoutes: { type: Array, default: () => [] },
 		/** The message for a sign-in the edge refused; empty shows nothing. */
@@ -227,6 +239,27 @@ export default {
 
 .pq-site__auth .pq-site__signout {
 	display: inline-flex;
+}
+
+/*
+ * ON A PHONE THE MASTHEAD WRAPS. Its height is fixed by the design system,
+ * and signed in it holds the name, "Mijn omgeving" and "Uitloggen" beside
+ * the logo. Measured at 390 px: the site name was cut to "N TILB" and the
+ * sign-out button sat over the blue bar. Below tablet width the controls
+ * take their own row under the logo instead.
+ */
+@media (max-width: 767px) {
+	.pq-site__header .ac-header__navigation-main {
+		flex-wrap: wrap;
+		block-size: auto;
+		min-block-size: var(--navigation-bar-height, 72px);
+		row-gap: 8px;
+		padding-block-end: 8px;
+	}
+
+	.pq-site__header .ac-header__right-section {
+		margin-inline: 16px;
+	}
 }
 
 /*
