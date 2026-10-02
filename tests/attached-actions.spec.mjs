@@ -3,7 +3,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // attached-actions.spec.mjs: another app's action on a collection's detail in
-// the signed-in portal (woo-journey-entry-points, REQ-WJE-004).
+// the signed-in site (woo-journey-entry-points, REQ-WJE-004).
 //
 // Usage:
 //   node --test tests/attached-actions.spec.mjs
@@ -118,17 +118,17 @@ test('the forward names the action app', async () => {
 	assert.equal(refused.messageKey, 'This can no longer be done for this item.')
 })
 
-test('the api sends actionApp and the detail card renders the actions', () => {
+test('the api sends actionApp and the site fills the detail slot with the actions', () => {
 	const api = readFileSync(join(ROOT, 'src/shared/portalApi.js'), 'utf8')
 	assert.match(
 		api,
 		/actionApp\s*\?\s*`&actionApp=\$\{encodeURIComponent\(actionApp\)\}`\s*:\s*''/,
 	)
-	const page = readFileSync(
-		join(ROOT, 'src/portal/components/PageView.jsx'),
-		'utf8',
+	const sliceC = readFileSync(join(ROOT, 'src/site/pages/c/index.js'), 'utf8')
+	assert.match(
+		sliceC,
+		/registerBlockSlot\(\s*'attachedActions',\s*\(\) => import\('\.\.\/\.\.\/components\/c\/AttachedActions\.vue'\)/,
 	)
-	assert.match(page, /<AttachedActions\s/)
 })
 
 // The site's Vue port (site-reaches-portal-parity T13, REQ-SRP-028).
@@ -203,7 +203,7 @@ test('the site renders nothing without attached actions or without a record', as
 	assert.equal(noRow.text(), '')
 })
 
-test('site: the detail card leaves a place for the attached actions (slice c fills it)', () => {
+test('site: the detail card leaves a place for the attached actions', () => {
 	const card = readFileSync(
 		join(ROOT, 'src/site/components/collections/DetailCard.vue'),
 		'utf8',
