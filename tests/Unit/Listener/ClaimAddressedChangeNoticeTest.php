@@ -11,8 +11,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Listener\PortalRecordChangeListener;
 use OCA\Portaliq\Service\Identity\PortalAccountsByClaim;
 use OCA\Portaliq\Service\NotificationDispatchService;
-use OCA\Portaliq\Service\Notifications\ChangeNoticeText;
-use OCA\Portaliq\Service\Notifications\ClaimAddressedRecipients;
+use OCA\Portaliq\Service\Notifications\ChangeRuleNotices;
 use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -186,8 +185,7 @@ class ClaimAddressedChangeNoticeTest extends TestCase {
 			language: new PortalNoticeLanguage(l10nFactory: $factory, portals: $portals),
 			logger: $this->createMock(LoggerInterface::class),
 			messageBox: null,
-			claimRecipients: new ClaimAddressedRecipients(accounts: $this->accountsByClaim(), reader: $this->reader()),
-			noticeText: new ChangeNoticeText(timeZone: $timeZone),
+			ruleNotices: new ChangeRuleNotices(accounts: $this->accountsByClaim(), reader: $this->reader(), timeZone: $timeZone),
 		);
 	}//end listener()
 

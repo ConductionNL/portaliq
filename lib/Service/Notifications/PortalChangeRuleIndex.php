@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use Psr\Container\ContainerInterface;
@@ -113,7 +114,8 @@ class PortalChangeRuleIndex {
 	 * @param string $register The object's register id or slug.
 	 * @param string $schema   The object's schema id or slug.
 	 *
-	 * @return array<int, array<string, string>> Entries with app, ruleKey, collection, label, scopeField, field, titleField, recipientField and recipientClaim.
+	 * @return array<int, array<string, string>> Entries with app, ruleKey, collection, label, scopeField, field,
+	 *                                           titleField, recipientField and recipientClaim.
 	 *
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
 	 */
@@ -133,7 +135,7 @@ class PortalChangeRuleIndex {
 	public function details(array $entry): array {
 		$this->entries();
 
-		return ($this->details[$this->detailKey(app: ($entry['app'] ?? ''), collection: ($entry['collection'] ?? ''), ruleKey: ($entry['ruleKey'] ?? ''))] ?? ['collection' => [], 'messages' => []]);
+		return ($this->details[$this->detailKey(entry: $entry)] ?? ['collection' => [], 'messages' => []]);
 	}//end details()
 
 	/**
@@ -335,53 +337,35 @@ class PortalChangeRuleIndex {
 
 			$collection = $collections[(string)$rule['collection']];
 			$recipientClaim = (string)($rule['recipients']['claim'] ?? '');
-			if ($recipientClaim === '' && $this->scopedBySomethingElse(collection: $collection) === true) {
+			if ($recipientClaim === '' && (new NotificationRuleNormaliser())->scopedElsewhere(collection: $collection) === true) {
 				// The normaliser already drops this; a record of a claim or
 				// via collection does not say whose it is.
 				continue;
 			}
 
-			$ruleKey = (string)($rule['ruleKey'] ?? '');
-			$this->details[$this->detailKey(app: $app, collection: (string)$collection['id'], ruleKey: $ruleKey)] = [
-				'collection' => $collection,
-				'messages' => (array)($rule['messages'] ?? []),
-			];
-			$entries[] = $this->entry(kind: 'change', app: $app, collection: $collection) + [
-				'ruleKey' => $ruleKey,
+			$entry = $this->entry(kind: 'change', app: $app, collection: $collection) + [
+				'ruleKey' => (string)$rule['ruleKey'],
 				'field' => (string)($rule['on']['field'] ?? ''),
 				'titleField' => (string)($rule['titleField'] ?? ''),
 				'recipientField' => (string)($rule['recipients']['field'] ?? ''),
 				'recipientClaim' => $recipientClaim,
 			];
+			$this->details[$this->detailKey(entry: $entry)] = ['collection' => $collection, 'messages' => (array)($rule['messages'] ?? [])];
+			$entries[] = $entry;
 		}//end foreach
 
 		return $entries;
 	}//end changeEntries()
 
 	/**
-	 * Whether a collection is scoped through a claim or a join rather than
-	 * by the subject reference on the record.
-	 *
-	 * @param array<string, mixed> $collection The collection.
-	 *
-	 * @return bool
-	 */
-	private function scopedBySomethingElse(array $collection): bool {
-		return in_array(($collection['scopeClaim'] ?? null), [null, '', []], true) === false
-			|| in_array(($collection['via'] ?? null), [null, '', []], true) === false;
-	}//end scopedBySomethingElse()
-
-	/**
 	 * The key of a change rule's details.
 	 *
-	 * @param string $app        The app.
-	 * @param string $collection The collection id.
-	 * @param string $ruleKey    The rule key.
+	 * @param array<string, string> $entry The change rule entry.
 	 *
 	 * @return string
 	 */
-	private function detailKey(string $app, string $collection, string $ruleKey): string {
-		return $app.'|'.$collection.'|'.$ruleKey;
+	private function detailKey(array $entry): string {
+		return implode('|', [($entry['app'] ?? ''), ($entry['collection'] ?? ''), ($entry['ruleKey'] ?? '')]);
 	}//end detailKey()
 
 	/**

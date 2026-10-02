@@ -1,9 +1,12 @@
 <?php
 
 /**
- * Portaliq Claim Addressed Recipients
+ * Portaliq Change Rule Notices
  *
- * Who hears about a change when the rule names its recipients by a claim
+ * Who hears about a change, and in which words, when a change rule says so
+ * itself (claim-addressed-change-notices).
+ *
+ * Who: when the rule names its recipients by a claim
  * (claim-addressed-change-notices): the active portal accounts whose claim of
  * the contributing app holds the value the record has at the rule's
  * recipient field, and of those only the accounts that may read the record.
@@ -15,6 +18,9 @@
  * refuse them the record, and so hears nothing. The row that read returns is
  * already projected to the resident, so a notice built from it can only print
  * what the resident may see.
+ *
+ * Which words: the rule's own text for the new value, rendered by
+ * ChangeNoticeText in the portal's language.
  *
  * @category Service
  * @package  OCA\Portaliq\Service\Notifications
@@ -37,36 +43,57 @@ namespace OCA\Portaliq\Service\Notifications;
 
 use OCA\Portaliq\Service\Identity\PortalAccountsByClaim;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCP\IDateTimeZone;
 
 /**
- * Resolves the accounts a claim-addressed change rule reaches.
+ * Resolves the accounts a claim-addressed change rule reaches, and the words
+ * a rule declares.
  *
  * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
  */
-class ClaimAddressedRecipients {
+class ChangeRuleNotices {
 
 	/**
 	 * Constructor.
 	 *
 	 * @param PortalAccountsByClaim $accounts Finds the accounts holding the claim.
 	 * @param PortalObjectReader    $reader   Reads the record as each of them.
+	 * @param IDateTimeZone|null    $timeZone The instance time zone, for date-time placeholders.
 	 */
 	public function __construct(
 		private readonly PortalAccountsByClaim $accounts,
 		private readonly PortalObjectReader $reader,
+		private readonly ?IDateTimeZone $timeZone = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The rule's own subject and body for the new value, or null when it has
+	 * no words for it.
+	 *
+	 * @param array<string, mixed> $messages The rule's messages, by value.
+	 * @param string               $value    The field's new value.
+	 * @param array<string, mixed> $row      The record as the resident may read it.
+	 * @param string               $language The portal's language.
+	 *
+	 * @return array{subject: string, body: string}|null
+	 *
+	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 */
+	public function text(array $messages, string $value, array $row, string $language): ?array {
+		return (new ChangeNoticeText(timeZone: $this->timeZone))->render(messages: $messages, value: $value, row: $row, language: $language);
+	}//end text()
 
 	/**
 	 * The accounts that hear about this record, each with the record as they
 	 * may read it.
 	 *
-	 * @param string               $appId         The contributing app.
-	 * @param string               $field         The record field holding the claim value.
-	 * @param string               $claim         The app's claim name.
-	 * @param array<string, mixed> $collection    The rule's collection.
-	 * @param array<string, mixed> $data          The record after the change.
-	 * @param string               $recordId      The record's uuid.
+	 * @param string               $appId      The contributing app.
+	 * @param string               $field      The record field holding the claim value.
+	 * @param string               $claim      The app's claim name.
+	 * @param array<string, mixed> $collection The rule's collection.
+	 * @param array<string, mixed> $data       The record after the change.
+	 * @param string               $recordId   The record's uuid.
 	 *
 	 * @return array<int, array{account: array<string, mixed>, row: array<string, mixed>}>
 	 *

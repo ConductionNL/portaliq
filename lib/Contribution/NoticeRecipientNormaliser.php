@@ -142,9 +142,8 @@ class NoticeRecipientNormaliser {
 			return null;
 		}
 
-		$field = ($recipients['field'] ?? null);
 		$claim = ($recipients['claim'] ?? null);
-		if (is_string($field) === false || preg_match(self::NAME, $field) !== 1 || is_string($claim) === false) {
+		if ($this->isName(value: ($recipients['field'] ?? null)) === false || is_string($claim) === false) {
 			return null;
 		}
 
@@ -153,12 +152,23 @@ class NoticeRecipientNormaliser {
 			$parts = [$parts[1]];
 		}
 
-		if (count($parts) !== 1 || preg_match(self::NAME, $parts[0]) !== 1) {
+		if (count($parts) !== 1 || $this->isName(value: $parts[0]) === false) {
 			return null;
 		}
 
 		return $parts[0];
 	}//end claimOf()
+
+	/**
+	 * Whether a value is a field or claim name.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return bool
+	 */
+	private function isName(mixed $value): bool {
+		return is_string($value) === true && preg_match(self::NAME, $value) === 1;
+	}//end isName()
 
 	/**
 	 * Why one message cannot be kept, or null.

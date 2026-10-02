@@ -29,7 +29,7 @@
  *
  * Such a rule may sit on a `scopeClaim` or `via` collection: the record holds
  * the value of the recipients' claim, and the listener still reads the record
- * as each recipient before telling them (ClaimAddressedRecipients).
+ * as each recipient before telling them (ChangeRuleNotices).
  *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
@@ -164,14 +164,28 @@ class NotificationRuleNormaliser {
 
 		// A record of a claim or via collection does not say whose it is,
 		// unless the rule names its recipients by a claim the record holds.
-		$addressed = array_key_exists('recipients', $rule);
-		if ($addressed === false && ($this->filled(value: ($collection['scopeClaim'] ?? null)) === true || $this->filled(value: ($collection['via'] ?? null)) === true)) {
+		if ($this->scopedElsewhere(collection: $collection) === true && array_key_exists('recipients', $rule) === false) {
 			return $label.': the collection is not scoped by the subject reference on the record';
 		}
 
 		return ($this->conditionRefusal(rule: $rule, collection: $collection, label: $label)
 			?? (new NoticeRecipientNormaliser())->refusal(rule: $rule, collection: $collection, appId: $appId, label: $label));
 	}//end refusal()
+
+	/**
+	 * Whether a collection is scoped through a claim or a join rather than by
+	 * the subject reference on the record. The change rule index asks the
+	 * same question, so a rule the normaliser would drop is never acted on.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 */
+	public function scopedElsewhere(array $collection): bool {
+		return $this->filled(value: ($collection['scopeClaim'] ?? null)) || $this->filled(value: ($collection['via'] ?? null));
+	}//end scopedElsewhere()
 
 	/**
 	 * Why a rule's `on` condition cannot be kept, or null when it can.

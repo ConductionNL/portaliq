@@ -52,8 +52,7 @@ namespace OCA\Portaliq\Listener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Service\NotificationDispatchService;
-use OCA\Portaliq\Service\Notifications\ChangeNoticeText;
-use OCA\Portaliq\Service\Notifications\ClaimAddressedRecipients;
+use OCA\Portaliq\Service\Notifications\ChangeRuleNotices;
 use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
 use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
@@ -71,6 +70,12 @@ use Throwable;
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
  *
  * @template-implements IEventListener<Event>
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the one listener for
+ * every OpenRegister create and update meets OpenRegister's two events and
+ * each delivery path a notice can take (inbox write, dispatch, message box,
+ * claim-addressed recipients). Splitting it would mean two listeners reading
+ * the same event and the same rule index, and a notice could be sent twice.
  */
 class PortalRecordChangeListener implements IEventListener {
 
@@ -99,8 +104,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 * @param PortalNoticeLanguage        $language     The message text, in the portal's language.
 	 * @param LoggerInterface             $logger       The logger.
 	 * @param MessageBoxChannel|null      $messageBox   Queues the government message box send.
-	 * @param ClaimAddressedRecipients|null $claimRecipients Finds who a claim-addressed rule reaches.
-	 * @param ChangeNoticeText|null       $noticeText   Renders a rule's own message text.
+	 * @param ChangeRuleNotices|null      $ruleNotices  Who a claim-addressed rule reaches, and a rule's own words.
 	 */
 	public function __construct(
 		private readonly PortalChangeRuleIndex $rules,
@@ -111,8 +115,7 @@ class PortalRecordChangeListener implements IEventListener {
 		private readonly PortalNoticeLanguage $language,
 		private readonly LoggerInterface $logger,
 		private readonly ?MessageBoxChannel $messageBox = null,
-		private readonly ?ClaimAddressedRecipients $claimRecipients = null,
-		private readonly ?ChangeNoticeText $noticeText = null,
+		private readonly ?ChangeRuleNotices $ruleNotices = null,
 	) {
 	}//end __construct()
 
@@ -177,7 +180,7 @@ class PortalRecordChangeListener implements IEventListener {
 			// A rule that declares its own words speaks only for the values
 			// it has words for (claim-addressed-change-notices).
 			$messages = $this->rules->details(entry: $rule)['messages'];
-			$value = $this->text(value: ($newData[$field] ?? null));
+			$value = $this->text(data: $newData, field: $field);
 			if ($messages !== [] && isset($messages[$value]) === false) {
 				continue;
 			}
@@ -196,13 +199,13 @@ class PortalRecordChangeListener implements IEventListener {
 	 * @param array<string, mixed>  $data     The record after the change.
 	 * @param string                $recordId The record's uuid.
 	 *
-	 * @return array<int, array{account: array<string, mixed>, row: array<string, mixed>}>
+	 * @return array<int, array<string, array<string, mixed>>> Each with `account` and `row`.
 	 *
 	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
 	 */
 	private function recipients(array $rule, array $data, string $recordId): array {
 		if (($rule['recipientClaim'] ?? '') !== '') {
-			return ($this->claimRecipients?->recipients(
+			return ($this->ruleNotices?->recipients(
 				appId: $rule['app'],
 				field: $rule['recipientField'],
 				claim: $rule['recipientClaim'],
@@ -235,7 +238,7 @@ class PortalRecordChangeListener implements IEventListener {
 		$text = null;
 		$messages = $this->rules->details(entry: $rule)['messages'];
 		if ($messages !== []) {
-			$text = ($this->noticeText ?? new ChangeNoticeText())->render(
+			$text = $this->ruleNotices?->text(
 				messages: $messages,
 				value: $value,
 				row: $row,
@@ -258,13 +261,15 @@ class PortalRecordChangeListener implements IEventListener {
 	}//end tell()
 
 	/**
-	 * A scalar field value as text; anything else is ''.
+	 * A scalar field value of the record as text; anything else is ''.
 	 *
-	 * @param mixed $value The value.
+	 * @param array<string, mixed> $data  The record.
+	 * @param string               $field The field.
 	 *
 	 * @return string
 	 */
-	private function text(mixed $value): string {
+	private function text(array $data, string $field): string {
+		$value = ($data[$field] ?? null);
 		if (is_string($value) === true || is_int($value) === true) {
 			return (string)$value;
 		}
@@ -415,7 +420,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 * @param array<string, mixed>  $account    The account.
 	 * @param string                $title      The record's title.
 	 * @param array<string, string> $recordLink The record the message is about.
-	 * @param array{subject: string, body: string}|null $text The app's own words, or null for portaliq's.
+	 * @param array<string, string>|null $text The app's own words, or null for portaliq's.
 	 *
 	 * @return void
 	 */
