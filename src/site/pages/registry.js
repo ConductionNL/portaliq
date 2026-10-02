@@ -48,6 +48,7 @@ import { pages as formPages } from './c/index.js'
 import { registerBlockSlot } from './collections/blockSlots.js'
 import { pages as collectionPages } from './collections/index.js'
 import { pages as accountPages } from './e/index.js'
+import { pages as inboxPages, components as inboxParts } from './inbox/index.js'
 
 /** The key every contribution page falls back to. */
 export const CONTRIBUTION_PAGE = 'contribution'
@@ -67,10 +68,17 @@ const BUILT_IN = {
 	access: accountPages.__access__,
 	details: accountPages.__details__,
 	account: accountPages.__account__,
+	// Slice d: inbox, my tasks, messages and news.
+	inbox: inboxPages.inbox,
+	tasks: inboxPages.tasks,
+	messages: inboxPages.messages,
+	news: inboxPages.news,
 }
 
 // Slice e's own case fills slice b's `citizenCase` place on a contribution page.
 registerBlockSlot('citizenCase', () => import('../components/e/CitizenCase.vue'))
+// Slice d's timed test fills slice b's `timedTask` place.
+registerBlockSlot('timedTask', inboxParts.timedTask)
 
 const loaders = new Map(Object.entries(BUILT_IN))
 
