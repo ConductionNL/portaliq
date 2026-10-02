@@ -6,3 +6,5 @@
   - PHPUnit `SubmissionReceiptServiceTest::testTheReceiptIsInThePortalsLanguageOnly`, `NotificationDispatchJobTest::testTheEmailIsInThePortalsLanguageOnly`, `PortalTaskDeliveryJobTest::testAnInboxNoticeIsInThePortalsLanguageOnly`, `::testAskMailIsInThePortalsLanguageOnly`
 - [x] **T3**: a collection keeps well-formed `fieldConfigs.<field>.{label,valueLabels}`; the site's detail card and a column without its own labels use them
   - PHPUnit `CollectionFieldConfigsTest`; `node --test tests/value-labels.spec.mjs`
+- [x] **T4**: the session endpoint and the site header never name a person by a number (subject reference, identity number, digits only)
+  - PHPUnit `SessionControllerTest::testIndexNamesThePersonNeverTheReference`; `node --test tests/site-signed-in-shell.spec.mjs`
