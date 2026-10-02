@@ -280,7 +280,7 @@ export function valueLabel(value, valueLabels) {
 		return undefined
 	}
 	const key = String(value)
-	if (!Object.prototype.hasOwnProperty.call(valueLabels, key)) {
+	if (!Object.hasOwn(valueLabels, key)) {
 		return undefined
 	}
 	const label = valueLabels[key]
@@ -302,7 +302,10 @@ function labelled(value, valueLabels, context) {
 			return undefined
 		}
 		return value
-			.map((item) => valueLabel(item, valueLabels) ?? readable(item, context, 1))
+			.map(
+				(item) =>
+					valueLabel(item, valueLabels) ?? readable(item, context, 1),
+			)
 			.filter((text) => text !== '')
 			.join('\n')
 	}

@@ -97,15 +97,12 @@ test('the table shows the label in the status cell', async () => {
 })
 
 test('the detail card shows the label', async () => {
-	const html = await renderSfc(
-		'src/site/components/collections/DetailCard.vue',
-		{
-			collection: { ...excuses, detail: { fields: ['reason', 'lifecycle'] } },
-			row: { id: 'r1', reason: 'Griep', lifecycle: 'approved' },
-			t,
-			locale: 'nl',
-		},
-	)
+	const html = await renderSfc('src/site/components/collections/DetailCard.vue', {
+		collection: { ...excuses, detail: { fields: ['reason', 'lifecycle'] } },
+		row: { id: 'r1', reason: 'Griep', lifecycle: 'approved' },
+		t,
+		locale: 'nl',
+	})
 	assert.match(html, /Goedgekeurd/)
 	assert.doesNotMatch(html, />\s*approved\s*</)
 })
