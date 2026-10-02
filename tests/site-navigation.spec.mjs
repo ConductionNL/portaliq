@@ -16,6 +16,7 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { buildNav } from '../src/shared/portalNav.js'
+import { residentMenuGroups } from '../src/site/lib/residentMenu.js'
 import {
 	hasNavigationBlock,
 	NAVIGATION_BLOCK,
@@ -69,63 +70,42 @@ function hrefFor(route) {
 	return `/apps/portaliq/site?portal=wilgenboom&route=${encodeURIComponent(route)}`
 }
 
-test('the groups hold every header item: the app, the own sections, the site pages', () => {
-	const groups = navigationGroups({
-		menus: MENUS,
-		nav: NAV,
-		t: nl,
-		unread: 2,
-		hrefFor,
-	})
+test("the groups: the resident menu's groups first, then the site pages", () => {
+	const resident = residentMenuGroups(NAV, nl, 2, hrefFor)
+	const groups = navigationGroups({ residentGroups: resident, menus: MENUS })
 
 	assert.deepEqual(
 		groups.map((group) => group.title),
-		['School', 'Mijn overzicht', 'Hoofdmenu'],
+		[...resident.map((group) => group.title), 'Hoofdmenu'],
 	)
+	const school = groups.find((group) => group.title === 'School')
 	assert.deepEqual(
-		groups[0].items.map((item) => [item.name, item.link]),
+		school.items.map((item) => [item.name, item.link]),
 		[
 			['Mijn kind', '/mijn/learniq/child'],
 			['Afwezigheid', '/mijn/learniq/absence'],
 			['Rapporten', '/mijn/learniq/reports'],
 		],
 	)
-	assert.deepEqual(
-		groups[1].items.map((item) => item.name),
-		[
-			'Nieuws',
-			'Berichten',
-			'Toegang tot zaken',
-			'Mijn gegevens',
-			'Mijn account',
-		],
-	)
-	const inbox = groups[1].items.find((item) => item.link === '/mijn/inbox')
+	assert.equal(school.items[0].href, hrefFor('/mijn/learniq/child'))
+	const inbox = groups
+		.flatMap((group) => group.items)
+		.find((item) => item.link === '/mijn/inbox')
 	assert.equal(inbox.badge, '2')
-	assert.equal(groups[0].items[0].href, hrefFor('/mijn/learniq/child'))
-	// A child page follows its parent, so nothing the header offered is lost.
+	// A child page follows its parent, so nothing the header offers is lost.
 	assert.deepEqual(
-		groups[2].items.map((item) => item.name),
+		groups.at(-1).items.map((item) => item.name),
 		['Home', 'Over de school', 'Team'],
 	)
 })
 
 test('signed out, only the site pages are there, and an empty group is left out', () => {
-	const groups = navigationGroups({
-		menus: MENUS,
-		nav: [],
-		t: nl,
-		unread: 0,
-		hrefFor,
-	})
+	const groups = navigationGroups({ residentGroups: [], menus: MENUS })
 	assert.deepEqual(
 		groups.map((group) => group.title),
 		['Hoofdmenu'],
 	)
-	assert.deepEqual(
-		navigationGroups({ menus: [], nav: [], t: nl, unread: 0, hrefFor }),
-		[],
-	)
+	assert.deepEqual(navigationGroups({ residentGroups: [], menus: [] }), [])
 })
 
 test('a menu block in the side region or the grid leaves the header menu out', () => {
@@ -144,11 +124,8 @@ test('a menu block in the side region or the grid leaves the header menu out', (
 
 test('the block is a named landmark with headed groups, the current page marked, and a button for phones', async () => {
 	const groups = navigationGroups({
+		residentGroups: residentMenuGroups(NAV, nl, 0, hrefFor),
 		menus: MENUS,
-		nav: NAV,
-		t: nl,
-		unread: 0,
-		hrefFor,
 	})
 	const html = await renderSfc('src/site/components/SiteNavigationBlock.vue', {
 		groups,
@@ -162,7 +139,7 @@ test('the block is a named landmark with headed groups, the current page marked,
 		html,
 		/<button[^>]*aria-expanded="false"[^>]*aria-controls="pq-sitenav-\d+"/,
 	)
-	assert.equal((html.match(/<h2/g) || []).length, 3)
+	assert.equal((html.match(/<h2/g) || []).length, groups.length)
 	assert.match(
 		html,
 		/aria-current="page"[^>]*>(?:<!--\[-->)?<span>Afwezigheid<\/span>/,
@@ -204,4 +181,8 @@ test('the block is public, and the shell hands it its data', () => {
 	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
 	assert.match(app, /navigation: this\.navigation,/)
 	assert.match(app, /:showNavigation="!menuOnPage"/)
+	// The signed-in area keeps its own menu beside the content
+	// (site-resident-menu), so the block's column is for CMS pages only.
+	assert.match(app, /hasNavigationBlock\(this\.regions\) && !this\.accountRoute/)
+	assert.match(app, /&& this\.page !== null\s+&& !this\.accountRoute/)
 })

@@ -12,8 +12,6 @@
  * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
  */
 
-import { routeForNav } from '../../shared/portalNav.js'
-
 /** The menu block's widget key. */
 export const NAVIGATION_BLOCK = 'siteNavigation'
 
@@ -25,54 +23,24 @@ export const NAVIGATION_BLOCK = 'siteNavigation'
 const MENU_REGIONS = ['aside', 'main']
 
 /**
- * The navigation in groups:
- *
- * 1. each signed-in app's pages under that app's name,
- * 2. the shell's own sections (cases, tasks, messages, news, inbox, account)
- *    under "My overview",
- * 3. each portal menu (the site's own pages) under its title.
- *
- * A group without items is left out, and a portal menu item's children
- * follow it in the same group, so every page the header offered is here.
+ * The navigation in groups: the resident's own items first, in the groups of
+ * the menu beside `/mijn` (residentMenuGroups, site-resident-menu), then
+ * each header menu (the site's own pages) under its title. A portal menu
+ * item's children follow it in the same group, so every page the header
+ * offers is here. A group without items is left out.
  *
  * @param {object} input What the shell holds.
+ * @param {Array<object>} input.residentGroups `{key, title, items}` groups from residentMenuGroups, or [] signed out.
  * @param {Array<object>} input.menus The header menus (position 0).
- * @param {Array<object>} input.nav The signed-in navigation (portalNav.js).
- * @param {(key: string, vars?: object) => string} input.t The translator.
- * @param {number} input.unread The inbox's unread count.
- * @param {(route: string) => string} input.hrefFor A real address for a route.
  * @return {Array<{id: string, title: string, items: Array<object>}>} The groups.
  * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
  */
-export function navigationGroups({ menus, nav, t, unread, hrefFor }) {
-	const groups = []
-	const byApp = new Map()
-	const own = { id: 'my-overview', title: t('My overview'), items: [] }
-
-	for (const entry of nav || []) {
-		const link = routeForNav(entry)
-		const item = { name: entry.label, link, href: hrefFor(link) }
-		if (entry.special === 'inbox' && Number(unread) > 0) {
-			item.badge = String(unread)
-			item.badgeLabel = t('{count} unread', { count: unread })
-		}
-		if (entry.special || !entry.contribution) {
-			own.items.push(item)
-			continue
-		}
-		const app = String(entry.contribution.app || '')
-		if (!byApp.has(app)) {
-			const group = {
-				id: `app-${app}`,
-				title: String(entry.contribution.label || app),
-				items: [],
-			}
-			byApp.set(app, group)
-			groups.push(group)
-		}
-		byApp.get(app).items.push(item)
-	}
-	groups.push(own)
+export function navigationGroups({ residentGroups, menus }) {
+	const groups = (residentGroups || []).map((group) => ({
+		id: String(group.key || group.id || group.title),
+		title: String(group.title || ''),
+		items: group.items || [],
+	}))
 
 	;(menus || []).forEach((menu, index) => {
 		const items = []

@@ -318,5 +318,12 @@
 	"Accepted": "Accepted",
 	"Rejected": "Rejected",
 	"Withdrawn": "Withdrawn",
+	"My area": "My area",
+	"Menu of my area": "Menu of my area",
+	"Close the menu": "Close the menu",
+	"Cases and tasks": "Cases and tasks",
+	"Messages and news": "Messages and news",
+	"Your details and account": "Your details and account",
+	"{label} ({source})": "{label} ({source})",
 	"Menu": "Menu"
 }

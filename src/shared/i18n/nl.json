@@ -318,5 +318,12 @@
 	"Accepted": "Overgenomen",
 	"Rejected": "Afgewezen",
 	"Withdrawn": "Ingetrokken",
+	"My area": "Mijn omgeving",
+	"Menu of my area": "Menu mijn omgeving",
+	"Close the menu": "Menu sluiten",
+	"Cases and tasks": "Zaken en taken",
+	"Messages and news": "Berichten en nieuws",
+	"Your details and account": "Uw gegevens en account",
+	"{label} ({source})": "{label} ({source})",
 	"Menu": "Menu"
 }

@@ -8,9 +8,10 @@
  * The React portal is gone: its old address only redirects to the site
  * (REQ-SRP-048). The signed-in area lives on the site under the `/mijn/...`
  * routes (src/shared/portalNav.js `routeForNav`), reached through the
- * `?route=` query parameter. Its navigation is one more header menu, titled
- * "Mijn overzicht" / "My overview", whose items are LINKS (SiteMenu.vue), not
- * the buttons the React portal rendered.
+ * `?route=` query parameter. Its navigation is the menu beside the content,
+ * "Mijn omgeving" / "My area" (ResidentMenu.vue, site-resident-menu), whose
+ * items are LINKS, not the buttons the React portal rendered. The blue bar
+ * holds the website's pages only.
  *
  * The signed-in navigation is built by iterating every installed app's
  * contribution in `IAppManager::getInstalledApps()` order. Measured on a dev
@@ -130,18 +131,22 @@ export function oneOf(...texts: string[]): RegExp {
  */
 export function accountLink(page: Page, path: string): Locator {
 	const route = encodeURIComponent(`${ACCOUNT_ROUTE}/${path}`)
-	return page.locator(`[data-testid="site-menu"] a[href*="route=${route}"]`)
+	return page.locator(
+		`[data-testid="site-resident-menu"] a[href*="route=${route}"]`,
+	)
 }
 
 /**
- * The unread count shown beside a menu link (SiteMenu.vue): the visible
+ * The unread count shown beside a menu link (ResidentMenu.vue): the visible
  * number, without the screen-reader label beside it.
  *
  * @param link the menu link
  * @return the count's locator
  */
 export function menuBadgeCount(link: Locator): Locator {
-	return link.locator('[data-testid="site-menu-badge"] [aria-hidden="true"]')
+	return link.locator(
+		'[data-testid="site-resident-menu-badge"] [aria-hidden="true"]',
+	)
 }
 
 /**
@@ -155,7 +160,7 @@ export function menuBadgeCount(link: Locator): Locator {
  */
 export async function openPortaliqDemoPage(page: Page): Promise<void> {
 	const navItem = page
-		.getByTestId('site-menu')
+		.getByTestId('site-resident-menu')
 		.getByRole('link', { name: PORTALIQ_DEMO_PAGE, exact: true })
 	await expect(
 		navItem,

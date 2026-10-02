@@ -161,6 +161,45 @@ export function collectionProviders(action) {
 }
 
 /**
+ * The values with every required select that offers exactly one option set to
+ * that option, when it is still empty. A guardian with one child does not have
+ * to pick that child; the select stays visible and can still be changed. A
+ * value the resident already chose is never overwritten.
+ *
+ * @param {object} action The action.
+ * @param {Record<string, string>} values The current values.
+ * @param {Record<string, Array<{value: string, label: string}>>} options The resolved options per field.
+ * @return {Record<string, string>} The values, with the single options filled in.
+ *
+ * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ */
+export function withSingleOptions(action, values, options) {
+	const out = { ...(values || {}) }
+	for (const field of formFields(action)) {
+		const list = (options || {})[field]
+		if (
+			fieldConfig(action, field).required !== true
+			|| fieldInput(action, field, list) !== 'select'
+			|| !Array.isArray(list)
+			|| list.length !== 1
+		) {
+			continue
+		}
+		const current = out[field]
+		const only = list[0] && list[0].value
+		if (
+			(current === undefined || current === null || String(current) === '')
+			&& only !== undefined
+			&& only !== null
+			&& String(only) !== ''
+		) {
+			out[field] = String(only)
+		}
+	}
+	return out
+}
+
+/**
  * The value one input sends. A `datetime-local` value has no zone, so it is
  * sent as the ISO instant the resident meant in their own time.
  *
