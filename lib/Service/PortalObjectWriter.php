@@ -285,7 +285,7 @@ class PortalObjectWriter {
 		}
 
 		// (4) RE-STAMP the scope field AFTER the merge, so a client value can
-		// never win — a patch can never move the row out of scope. A verified
+		// never win: a patch can never move the row out of scope. A verified
 		// membership list is re-stamped with the stored list itself: it
 		// already contains the subject, and portaliq never edits who else is
 		// on it.
