@@ -1,32 +1,46 @@
 // SPDX-License-Identifier: EUPL-1.2
 //
-// parent-pwa-installability: caches the portal SPA's own shell (its JS
-// bundle and the HTML entry) so a repeat visit, and an installed app's
-// launch, are fast and survive a flaky connection. Deliberately narrow:
+// parent-pwa-installability: caches the site's own shell (its JS bundle and
+// the HTML entry) so a repeat visit, and an installed app's launch, are fast
+// and survive a flaky connection. It caches the React portal's shell too,
+// until that portal is retired (site-reaches-portal-parity REQ-SRP-045). Deliberately narrow:
 // this is shell caching for installability, not an offline-capable app —
 // no portal DATA is ever cached here.
 //
 // Plain, unbundled JavaScript on purpose: `/js/` is entirely gitignored
-// build output (webpack.portal.js only builds src/portal/main.jsx), so a
-// hand-written service worker cannot live there and be reviewable in
-// version control. `PortalManifestController::serviceWorker()` serves
+// build output, so a hand-written service worker cannot live there and be
+// reviewable in version control. It lives in src/shared/ so it outlives
+// src/portal/. `PortalManifestController::serviceWorker()` serves
 // this file's contents as-is; nothing here is a webpack entry.
 //
 // THE ONE RULE THAT MUST NEVER REGRESS (design.md D-1, proposal.md Risk 1):
-// a request whose path contains "/portal/api/" is ALWAYS forwarded to the
+// a request whose path contains "/api/" is ALWAYS forwarded to the
 // network, with NO cache read and NO cache write, in every code path
 // below. That check runs FIRST, before the shell-asset check, so an
 // unlisted or unanticipated path is uncached BY CONSTRUCTION — not by an
 // exclusion list that has to stay correct forever. Caching an
 // authenticated response here would let a later, differently-authenticated
 // load of the same URL serve someone else's cached data.
+//
+// "/api/", not "/portal/api/", since the worker also serves the site: the
+// site's content API lives at "/api/content/…", and its "/api/content/site"
+// ends in "/site" exactly like the site's own page. The narrower test would
+// have cached that API answer as if it were the shell.
 
-const CACHE_VERSION = 'portaliq-portal-shell-v1'
+const CACHE_VERSION = 'portaliq-shell-v2'
 
 // Bump CACHE_VERSION on any change to this list, or to the caching logic
 // below — the activate handler then deletes the old cache on next launch
 // rather than accumulating caches forever (proposal.md Risk 2).
-const SHELL_ASSET_SUFFIXES = ['/js/portaliq-portal.js', '/portal']
+//
+// The site's lazy page chunks are NOT listed: they are only loaded on the
+// route that needs them, and their file names change with every build.
+const SHELL_ASSET_SUFFIXES = [
+	'/js/portaliq-site.js',
+	'/site',
+	'/js/portaliq-portal.js',
+	'/portal',
+]
 
 self.addEventListener('install', () => {
 	self.skipWaiting()
@@ -54,7 +68,7 @@ self.addEventListener('fetch', (event) => {
 	// and deliberately a plain substring test, independent of whichever
 	// Nextcloud base path (/index.php/apps/... or a rewritten one) is in
 	// front of it.
-	if (url.pathname.includes('/portal/api/')) {
+	if (url.pathname.includes('/api/')) {
 		return
 	}
 

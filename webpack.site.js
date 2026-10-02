@@ -147,4 +147,33 @@ const editor = {
 	},
 }
 
-module.exports = [site, editor]
+/**
+ * THE EMBED FRAME IS ITS OWN BUNDLE TOO (site-reaches-portal-parity REQ-SRP-047).
+ *
+ * templates/embed.php frames one intake form on somebody else's website. It
+ * used to load the whole React portal for that; it now loads `src/embed/main.js`
+ * only: Vue, the frame, the form and the Utrecht CSS it uses, and neither the
+ * site nor the portal. Own chunk prefix and runtime global, for the reason the
+ * editor gives above.
+ *
+ * Its own budget, well under the site's: a visitor of a municipality's page
+ * downloads this for one form.
+ */
+const embed = {
+	...site,
+	entry: {
+		'portaliq-embed': path.join(__dirname, 'src', 'embed', 'main.js'),
+	},
+	output: {
+		...site.output,
+		chunkFilename: 'portaliq-embed-[name].js',
+		uniqueName: 'portaliqEmbed',
+	},
+	performance: {
+		hints: isDev ? false : 'error',
+		maxAssetSize: 160 * 1024,
+		maxEntrypointSize: 160 * 1024,
+	},
+}
+
+module.exports = [site, editor, embed]

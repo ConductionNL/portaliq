@@ -16,7 +16,9 @@
 
 import { createApp } from 'vue'
 import App from './App.vue'
-import { runtimeConfig } from './lib/contentApi.js'
+import { authBaseFrom } from './lib/authApi.js'
+import { resolveApiBase, runtimeConfig } from './lib/contentApi.js'
+import { registerSiteServiceWorker } from './lib/pwa.js'
 
 // NL DESIGN SYSTEM, NOT NEXTCLOUD. The public site is a government portal and
 // must look like one, so it renders Utrecht/NLDS components — the same set the
@@ -71,6 +73,11 @@ const element = document.getElementById(MOUNT_ID)
 if (element) {
 	const config = runtimeConfig()
 	createApp(App, { portalSlug: config.portal || '' }).mount(element)
+
+	// Installability (site-reaches-portal-parity REQ-SRP-045): the worker that
+	// caches the site shell. After the mount, and fail-silent: a browser that
+	// refuses service workers still gets the whole site.
+	registerSiteServiceWorker(authBaseFrom(resolveApiBase()))
 } else {
 	// Say so. A missing mount point is how a bundle ends up "loaded and doing
 	// nothing", which reads on screen as a blank page with no console output

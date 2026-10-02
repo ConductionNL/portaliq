@@ -294,6 +294,17 @@ if ($favicon === '') {
     // way.
     ?>
     <link rel="icon" href="<?php p($favicon); ?>">
+    <?php
+    // THE WEB APP MANIFEST (site-reaches-portal-parity REQ-SRP-044), for the
+    // portal named in the address, so an installed app opens on this site with
+    // the same portal. Without a `?portal=` the manifest resolves the portal by
+    // host, the same way this page does.
+    $manifestParams = [];
+    if ((string)($portalConfig['portal'] ?? '') !== '') {
+        $manifestParams['portal'] = (string)$portalConfig['portal'];
+    }
+    ?>
+    <link rel="manifest" href="<?php p($url->linkToRoute('portaliq.portalManifest.manifest', $manifestParams)); ?>">
     <?php foreach ($stylesheets as $href) { ?>
     <link rel="stylesheet" href="<?php p($href); ?>">
     <?php } ?>

@@ -122,6 +122,12 @@
 				@dismiss="contactPrompt = false" />
 		</div>
 
+		<!--
+			The install offer (REQ-SRP-046). Renders nothing until the browser
+			offers installation, so no empty box stands here otherwise.
+		-->
+		<InstallBanner class="container" :t="t" />
+
 		<!-- Maintenance and warning notices running now (operate-maintenance-notice). -->
 		<SiteNotices
 			v-if="(site.notices || []).length > 0"
@@ -430,6 +436,7 @@ import {
 	shellSections,
 } from '../shared/portalNav.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
+import { InstallBanner } from './components/f/index.js'
 import {
 	accountCrumbs,
 	accountMenu,
@@ -532,6 +539,7 @@ export default {
 		GuestActionPage,
 		WayInLink,
 		IdleWarningDialog,
+		InstallBanner,
 		MarkdownBlock,
 		SharedDossierPage,
 		SiteEditButton,
