@@ -323,7 +323,7 @@ class PortalJwtService {
 	 *
 	 * @return string Compact JWT string.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	public function createReferenceSession(
 		string $subjectRef,

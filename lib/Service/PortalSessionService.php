@@ -566,7 +566,7 @@ class PortalSessionService {
 	 * @return array{token: string, jti: string, expiresAt: string}|null Null
 	 *         when the auth edge is not configured or a field is empty.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	public function issueReferenceSession(string $linkId, string $caseReference, string $organisation, string $register, string $schema): ?array {
 		if ($this->jwt === null || in_array('', [$linkId, $caseReference, $organisation, $register, $schema], true) === true) {
@@ -626,7 +626,7 @@ class PortalSessionService {
 	 *
 	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	public function resolveReferenceFromBearer(?string $authorizationHeader): ?array {
 		if ($this->jwt === null || $authorizationHeader === null || str_starts_with($authorizationHeader, self::BEARER_PREFIX) === false) {

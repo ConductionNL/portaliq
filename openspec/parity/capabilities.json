@@ -1131,7 +1131,7 @@
 			"id": "id-self-registration-form",
 			"area": "identity",
 			"name": "Fill in a self-registration form to create your own portal account.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
@@ -1145,12 +1145,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/user-authentication 'Allow strangers to create accounts? Enable/Disable account creation by unauthenticated guest users. If running an Internet site, leave this enabled so visitors can create accounts.' [was partial]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalIdentityController.php:210 register(); appinfo/routes.php:197 POST /portal/api/identity/register; backed by lib/Service/Identity/PortalRegistrationPolicyService.php and PortalChallengeService.php (proof-of-work/honeypot)",
-				"reachedOn": "nothing reaches it: no reference to 'identity' anywhere in src/portal or src/site (grep confirmed); the only exerciser is tests/e2e/portal-identity-and-the-organisations-cases.spec.ts, which calls the API directly with Playwright's `request` fixture (line ~for register-equivalent flows), never `page.goto` into a form",
+				"state": "built",
+				"evidence": "src/site/components/WaysIn.vue 'Create an account' on the site's signed-out My page (AccountArea.vue), shown when the site config's signin.waysIn.register is true (PortalPageController::siteSignin from PortalWaysInResolver: policy not off and the generic e-mail sign-in offered); challenge solved in the browser (src/site/lib/waysIn.js solveChallenge, the sha256 leading-zero-bits check PortalChallengeService::solves makes), honeypot carried empty; POST /portal/api/identity/register; under activation PortalAccountActivationService mails a /site link and WayInLink.vue posts '#activate=' to /portal/api/identity/activate; tests/ways-in-screens.spec.mjs, PortalPageControllerTest::testSiteCarriesTheWaysIn, PortalIdentityMailerTest::testTheWaysInOpenOnTheSite, PortalAccountActivationServiceTest (Opis against portalAccount), PortalWaysInResolverTest, tests/e2e/identity-ways-in-screens.spec.ts",
+				"reachedOn": "site sign-in screen (My page, signed out): 'Create an account'; mailed '#activate=' link to /site",
 				"owner": "ConductionNL/portaliq",
-				"note": "Fully implemented backend with PHPUnit and an 'e2e' spec, but the e2e spec is API-only, not a browser walking a real form, so no visitor can actually reach this. Specified in openspec/changes/identity-ways-in-screens (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-10-02 on the Vue site (identity-ways-in-screens; server half #1041). provision() no longer writes identityType '' (the enum refused every address-only account).",
+				"origin": "code",
+				"change": "2026-10-02-identity-ways-in-screens"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1161,7 +1162,7 @@
 			"id": "id-reference-link",
 			"area": "identity",
 			"name": "Claim access to one case with the case number and a verified e-mail address, with no account.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -1175,12 +1176,13 @@
 				"liferay-dxp": "not settled from docs: no case-number plus verified e-mail access claim was found in the user authentication, account users, guest object entry or forms pages read today; there is no case concept out of the box."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalIdentityController.php:126 requestReferenceLink(), :182 redeemReferenceLink(); appinfo/routes.php:195-196; lib/Service/Identity/PortalReferenceLinkService.php",
-				"reachedOn": "nothing reaches it: no frontend in src/ references /portal/api/identity/reference-link",
+				"state": "built",
+				"evidence": "src/site/components/WaysIn.vue reference form (case types from waysIn.referenceCaseTypes: the portal's bound case types admitting 'reference') -> POST /portal/api/identity/reference-link; the mailed /site '#reference=' link is consumed once by WayInLink.vue -> redeem -> GET /portal/api/identity/reference-case with the short reference session, shown read only; every protected route refuses the session (PortalAuthMiddlewareTest); tests/ways-in-screens.spec.mjs, PortalReferenceCaseServiceTest, tests/e2e/identity-ways-in-screens.spec.ts",
+				"reachedOn": "site sign-in screen (My page, signed out): 'Follow a case with its case number'; mailed '#reference=' link to /site",
 				"owner": "ConductionNL/portaliq",
-				"note": "Backend-complete (task T02 'the reference route' in portal-identity-and-the-organisations-cases/tasks.md marked done) but no page in this repo offers the one-time-link form. Specified in openspec/changes/identity-ways-in-screens (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-10-02 on the Vue site (identity-ways-in-screens); the server half was #822.",
+				"origin": "code",
+				"change": "2026-10-02-identity-ways-in-screens"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1191,7 +1193,7 @@
 			"id": "id-invitation-accept",
 			"area": "identity",
 			"name": "Accept an e-mailed invitation into the portal.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
@@ -1205,12 +1207,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/accounts/account-users 'Inviting a New User by Email (7.4 U55+) ... Each recipient can click Create Account in the email to register for a new user on the Liferay instance. Upon creation, the user is associated with the account and has the assigned account role.' [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalIdentityController.php:280 acceptInvitation(); appinfo/routes.php:198; lib/Service/Identity/PortalInvitationService.php",
-				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/invitation/accept",
+				"state": "built",
+				"evidence": "src/site/components/WayInLink.vue: '#invitation=' consumed once, the portal's name and 'Accept' -> POST /portal/api/identity/invitation/accept; 'This invitation is no longer valid.' for a used, expired or withdrawn one; then 'Sign in with' the e-mail sign-in; the invitation mail links to /site (PortalIdentityMailerTest::testTheWaysInOpenOnTheSite); tests/ways-in-screens.spec.mjs, PortalIdentityControllerTest, tests/e2e/identity-ways-in-screens.spec.ts",
+				"reachedOn": "mailed invitation link to /site (identity-staff-account-screens 'Invite someone')",
 				"owner": "ConductionNL/portaliq",
-				"note": "Pairs with id-staff-invite, also unreached on the staff side, so both ends of the invitation flow are dark. Specified in openspec/changes/identity-ways-in-screens (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-10-02 on the Vue site (identity-ways-in-screens).",
+				"origin": "code",
+				"change": "2026-10-02-identity-ways-in-screens"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1531,7 +1534,7 @@
 			"id": "sib-dossiq-q1-14",
 			"area": "identity",
 			"name": "Can an external party file and follow a case with an identity that is not a staff account.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "partial",
 			"xxllnc-pip": "yes",
@@ -1545,13 +1548,14 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account 'Business account users must open claims without seeing claims made by other accounts'; guest users can be granted 'Add Object Entry' (https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/managing-guest-user-entries). A case object and its follow-up screens are custom low-code builds. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
+				"state": "built",
 				"evidence": "id-auto-provision-on-login (SessionController.php:429-438, PortalAccountLookup.php) creates a non-staff portalAccount on first broker login; lib/Controller/CitizenCaseController.php:show/amend/addDocument reached from the portal SPA scope the case to that subjectRef via the mandate",
-				"reachedOn": "portal SPA (src/portal/lib/portalApi.js:314,331,368) -> /portal/api/citizen/cases/{register}/{schema}/{id} for an already-known case id; but /portal/api/my-cases (the index that would let a new external party FIND their cases without already knowing the id) has no frontend caller anywhere in this repo",
+				"reachedOn": "site: the signed-out My page offers 'Create an account' and 'Follow a case with its case number', a mailed invitation opens on /site, and signed in the My cases page (/portal/api/my-cases) lists the party's cases",
 				"owner": "ConductionNL/portaliq",
-				"note": "Kept dossiq's selfRating (partial): filing/following an already-known case works end to end for a non-staff broker identity, but the discovery step (my-cases index, or self-registration/reference-link to attach a case before first login) is unreached, so a party who does not already have a case id or a broker-matched identity has no way in. Specified in openspec/changes/identity-ways-in-screens (OpenSpec pass 2026-09-27).",
+				"note": "Built 2026-10-02 (identity-ways-in-screens, on the Vue site): the discovery step this row lacked now exists, by self-registration, an invitation, or a reference link to one case, beside the broker login and the My cases page.",
 				"sourceId": "Q1.14",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "2026-10-02-identity-ways-in-screens"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

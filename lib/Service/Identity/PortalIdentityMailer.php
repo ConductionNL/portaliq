@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
  * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
  * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
  */
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Mails the identity secrets, each inside its own link.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
  */
 class PortalIdentityMailer {
 	/**
@@ -66,13 +66,20 @@ class PortalIdentityMailer {
 	public const TEMPLATE_EMAIL_CONFIRMATION = 'email-confirmation';
 
 	/**
+	 * The activation link of a self-registration (identity-ways-in-screens D4).
+	 */
+	public const TEMPLATE_REGISTRATION_ACTIVATION = 'registration-activation';
+
+	/**
 	 * Per template: the fragment key the portal consumes, and the English
 	 * source keys of the mail (l10n/nl.json carries the Dutch). `%1$s` is the
-	 * portal's name in every line that takes one.
+	 * portal's name in every line that takes one. `site` sends the link to
+	 * the Vue site, where the ways-in screens live.
 	 */
 	private const TEMPLATES = [
 		self::TEMPLATE_REFERENCE_LINK => [
 			'fragment' => 'reference',
+			'site' => true,
 			'subject' => 'Your link to follow your case at %1$s',
 			'heading' => 'Follow your case',
 			'intro' => 'You asked for a link to follow your case at %1$s.',
@@ -80,6 +87,7 @@ class PortalIdentityMailer {
 		],
 		self::TEMPLATE_INVITATION => [
 			'fragment' => 'invitation',
+			'site' => true,
 			'subject' => 'You are invited to the portal of %1$s',
 			'heading' => 'You are invited',
 			'intro' => 'Accept the invitation to create your account at %1$s.',
@@ -91,6 +99,14 @@ class PortalIdentityMailer {
 			'heading' => 'Confirm your e-mail address',
 			'intro' => 'You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.',
 			'button' => 'Confirm this address',
+		],
+		self::TEMPLATE_REGISTRATION_ACTIVATION => [
+			'fragment' => 'activate',
+			'site' => true,
+			'subject' => 'Activate your account at %1$s',
+			'heading' => 'Activate your account',
+			'intro' => 'You created an account at %1$s. Follow the link to make it ready for use.',
+			'button' => 'Activate your account',
 		],
 	];
 
@@ -150,7 +166,7 @@ class PortalIdentityMailer {
 	 *
 	 * @return bool True when the mail left.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
 	public function send(string $template, string $email, string $secret, string $organisation, ?array $portal = null): bool {
 		$keys = (self::TEMPLATES[$template] ?? null);
@@ -161,7 +177,7 @@ class PortalIdentityMailer {
 
 		$portal = ($portal ?? $this->portalOf(organisation: $organisation));
 		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
-		$link   = $this->deepLinks->forPortal(portalSlug: trim((string)($portal['slug'] ?? '')), organisation: $organisation);
+		$link   = $this->linkFor(keys: $keys, portalSlug: trim((string)($portal['slug'] ?? '')), organisation: $organisation);
 		$link  .= '#' . $keys['fragment'] . '=' . rawurlencode($secret);
 
 		try {
@@ -194,6 +210,26 @@ class PortalIdentityMailer {
 
 		return true;
 	}//end send()
+
+	/**
+	 * The page a template's link opens: the Vue site for the ways in, whose
+	 * screens live only there (portaliq#1021), else the portal.
+	 *
+	 * @param array<string, mixed> $keys         The template's keys.
+	 * @param string               $portalSlug   The portal's slug, or ''.
+	 * @param string               $organisation The tenant slug.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+	 */
+	private function linkFor(array $keys, string $portalSlug, string $organisation): string {
+		if (($keys['site'] ?? false) === true) {
+			return $this->deepLinks->forSite(portalSlug: $portalSlug, organisation: $organisation);
+		}
+
+		return $this->deepLinks->forPortal(portalSlug: $portalSlug, organisation: $organisation);
+	}//end linkFor()
 
 	/**
 	 * The two closing lines: once only, and what to do if you never asked.

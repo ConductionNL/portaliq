@@ -34,6 +34,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalReferenceCaseService;
@@ -78,6 +79,7 @@ class PortalIdentityController extends Controller {
 	 * @param PortalIdentityMailer $mailer Mails the reference link to its address.
 	 * @param PortalReferenceCaseService $referenceCases The case behind a reference link.
 	 * @param PortalSessionService $sessions Mints and resolves the reference session.
+	 * @param PortalAccountActivationService $activation Mints and spends the activation link (identity-ways-in-screens T03).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -92,6 +94,7 @@ class PortalIdentityController extends Controller {
 		private readonly PortalIdentityMailer $mailer,
 		private readonly PortalReferenceCaseService $referenceCases,
 		private readonly PortalSessionService $sessions,
+		private readonly PortalAccountActivationService $activation,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -114,7 +117,15 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		return new JSONResponse($this->challenge->issue(site: $site, surface: $surface));
+		$issued = $this->challenge->issue(site: $site, surface: $surface);
+		// The form carries the honeypot empty, so it must know its name
+		// (identity-ways-in-screens T02). A bot that fills every field fills it.
+		$honeypot = (string)(((array)(((array)($site['authentication'] ?? []))['challenge'] ?? []))['honeypotField'] ?? '');
+		if ($honeypot !== '') {
+			$issued['honeypotField'] = $honeypot;
+		}
+
+		return new JSONResponse($issued);
 	}//end challenge()
 
 	/**
@@ -129,7 +140,7 @@ class PortalIdentityController extends Controller {
 	 * @return JSONResponse Whether a link was issued, or a refusal.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -219,7 +230,7 @@ class PortalIdentityController extends Controller {
 	 * @return JSONResponse The case the link admits to with its bearer, or a refusal.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -262,7 +273,7 @@ class PortalIdentityController extends Controller {
 	 * @return JSONResponse The case, 401 without a reference session, 404 when
 	 *                      the case is not found.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -351,10 +362,62 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
+		if ($decision['reason'] === PortalRegistrationPolicyService::POLICY_ACTIVATION) {
+			$this->mailActivation(subjectRef: $account['subjectRef'], email: $email, site: $site);
+		}
+
 		// The subjectRef is deliberately not answered: the account cannot sign
 		// in yet, and handing out its reference would only make it guessable.
 		return new JSONResponse(['status' => $account['status'], 'awaiting' => $decision['reason']]);
 	}//end register()
+
+	/**
+	 * Follow the activation link of a self-registration: the account becomes
+	 * active with a verified address (identity-ways-in-screens D4).
+	 *
+	 * @param string $token The secret from the activation mail.
+	 *
+	 * @return JSONResponse Whether the account is ready.
+	 *
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function activate(string $token): JSONResponse {
+		if ($this->activation->activate(token: $token) === null) {
+			// Used, expired and unknown are one answer.
+			return new JSONResponse(['error' => 'activation_not_valid'], Http::STATUS_FORBIDDEN);
+		}
+
+		return new JSONResponse(['activated' => true]);
+	}//end activate()
+
+	/**
+	 * Mail the activation link of a new self-registration. The secret goes
+	 * out by mail only; a pending account that is not a self-registration
+	 * gets no link, and a mail that did not leave answers the same.
+	 *
+	 * @param string $subjectRef The account.
+	 * @param string $email The address it registered with.
+	 * @param array<string, mixed> $site The portal being visited.
+	 *
+	 * @return void
+	 */
+	private function mailActivation(string $subjectRef, string $email, array $site): void {
+		$token = $this->activation->issue(subjectRef: $subjectRef);
+		if ($token === null) {
+			return;
+		}
+
+		$this->mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION,
+			email: $email,
+			secret: $token,
+			organisation: (string)($site['organisation'] ?? ''),
+			portal: $site
+		);
+	}//end mailActivation()
 
 	/**
 	 * Accept an invitation, which provisions the account for its address.
@@ -385,6 +448,14 @@ class PortalIdentityController extends Controller {
 	 * @return array<string, mixed>|null
 	 */
 	private function site(): ?array {
-		return $this->portals->resolve(request: $this->request);
+		// The SPA names the portal it is served as, the way `/site` and the
+		// runtime config do; on a shared host the host alone names none.
+		// A named portal that does not exist is a miss, never the host's.
+		$named = $this->request->getParam('portal', '');
+		if (is_string($named) === false) {
+			$named = '';
+		}
+
+		return $this->portals->resolve(request: $this->request, portalSlug: trim($named));
 	}//end site()
 }//end class

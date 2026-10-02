@@ -153,6 +153,13 @@ class ActionConfigNormaliser {
 				continue;
 			}
 
+			// A guest action (identity-guest-page-for-signed-links) without a
+			// token field, local endpoints and `low` trust is removed whole.
+			$guarded = (new GuestActionConfigNormaliser())->normaliseAction(action: $guarded);
+			if ($guarded === null) {
+				continue;
+			}
+
 			$out[] = $guarded;
 		}//end foreach
 

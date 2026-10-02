@@ -540,4 +540,110 @@ class PortalRowActionControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $result->getStatus());
 	}//end testAnUnlistedAttachedActionIsForbidden()
+
+	/**
+	 * The question every own-collection test acts on.
+	 */
+	private const QUESTION_ID = '00000000-0000-0000-0000-0000000a5c00';
+
+	/**
+	 * pipelinq's reply, attached to its own `myQuestions` only.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function replyToQuestion(): array {
+		return [
+			'id' => 'replyToQuestion',
+			'label' => 'Reageren op het antwoord',
+			'endpoint' => '/index.php/apps/pipelinq/api/portal/questions/reply',
+			'method' => 'POST',
+			'fields' => ['ticket', 'message'],
+			'rowField' => 'ticket',
+			'rowWhen' => ['field' => 'status', 'in' => ['awaiting_customer']],
+			'attachTo' => ['app' => 'pipelinq', 'schema' => 'ticket', 'collection' => 'myQuestions'],
+		];
+	}//end replyToQuestion()
+
+	/**
+	 * A controller over pipelinq's own questions with the reply attached to
+	 * them, resolved the way the registry resolves them. The browser sends a
+	 * forged `ticket`; the proven row id must win.
+	 *
+	 * @param PortalObjectReader    $reader    The reader double.
+	 * @param PortalActionForwarder $forwarder The forwarder double.
+	 *
+	 * @return PortalRowActionController
+	 */
+	private function questionController(PortalObjectReader $reader, PortalActionForwarder $forwarder): PortalRowActionController {
+		$params = ['collection' => 'myQuestions', 'actionApp' => 'pipelinq', 'message' => 'Dank u, nog een vraag.', 'ticket' => 'someone-elses'];
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null) => ($params[$key] ?? $default));
+
+		$aggregate = (new AttachedActionResolver())->resolve(contributions: [
+			[
+				'app' => 'pipelinq',
+				'collections' => [
+					['id' => 'ownRequests', 'register' => 'pipelinq', 'schema' => 'ticket', 'scopeField' => 'portalSubject'],
+					['id' => 'myQuestions', 'register' => 'pipelinq', 'schema' => 'ticket', 'scopeField' => 'portalSubject'],
+				],
+				'actions' => [$this->replyToQuestion()],
+			],
+		]);
+		$registry = $this->createMock(PortalContributionRegistry::class);
+		$registry->method('aggregateFor')->willReturn(['contributions' => $aggregate]);
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+	}//end questionController()
+
+	/**
+	 * An app answers on its own collection: the reply is forwarded to pipelinq
+	 * with the proven question id, without the collection listing it as a row
+	 * action (which would add a table button that cannot ask the message).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+	 */
+	public function testAnActionAttachedToItsOwnCollectionForwards(): void {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->once())->method('readObject')
+			->with('pipelinq', 'ticket', 'portalSubject', 'guardian-1', self::QUESTION_ID, 'school-1', '', 'pipelinq')
+			->willReturn(['id' => self::QUESTION_ID, 'status' => 'awaiting_customer']);
+
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(200);
+		$forwarder = $this->createMock(PortalActionForwarder::class);
+		$forwarder->method('isForwardable')->willReturn(true);
+		$forwarder->expects($this->once())->method('forward')
+			->with($this->replyToQuestion(), self::SUBJECT, ['ticket' => self::QUESTION_ID, 'message' => 'Dank u, nog een vraag.'])
+			->willReturn($response);
+		$forwarder->method('decodeBody')->willReturn(['status' => 'in_progress']);
+
+		$result = $this->questionController($reader, $forwarder)->forward('pipelinq', 'ticket', self::QUESTION_ID, 'replyToQuestion');
+
+		$this->assertSame(200, $result->getStatus());
+		$this->assertSame(['status' => 'in_progress'], $result->getData());
+	}//end testAnActionAttachedToItsOwnCollectionForwards()
+
+	/**
+	 * A row outside the attached action's `rowWhen` is refused with 409 and
+	 * nothing is forwarded: no reply while the question is not waiting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+	 */
+	public function testAnAttachedActionOutsideItsRowWhenIs409(): void {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readObject')->willReturn(['id' => self::QUESTION_ID, 'status' => 'converted']);
+
+		$result = $this->questionController($reader, $this->forwarderThatMustNotForward())
+			->forward('pipelinq', 'ticket', self::QUESTION_ID, 'replyToQuestion');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $result->getStatus());
+	}//end testAnAttachedActionOutsideItsRowWhenIs409()
 }//end class

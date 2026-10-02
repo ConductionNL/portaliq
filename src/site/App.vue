@@ -161,17 +161,39 @@
 				<!-- THE HERO REGION: the page's own hero band, else the
 				     portal's, unless the page clears it (REQ-PTB-009). -->
 				<WidgetGrid
-					v-if="!loading && !error && page && regions.hero.length"
+					v-if="
+						!guestLink
+						&& !loading
+						&& !error
+						&& page
+						&& regions.hero.length
+					"
 					data-testid="site-region-hero"
 					:widgets="regions.hero"
 					v-bind="gridContext"
 					@navigate="go"
 					@search="goSearch" />
 
+				<!-- A signed link opens its one act before any page (REQ-GST-002). -->
+				<GuestActionPage
+					v-if="guestLink"
+					:authBase="guestAuthBase"
+					:portal="site.slug || portalSlug" />
+
+				<!-- A mailed way in (an activation, an invitation, one case by
+				     its number) opens before any page (identity-ways-in-screens). -->
+				<WayInLink
+					v-else-if="wayInLink"
+					:authBase="guestAuthBase"
+					:portal="site.slug || portalSlug"
+					:portalName="site.title || ''"
+					:emailSignIn="waysIn.emailSignIn"
+					:t="waysInT" />
+
 				<!-- The signed-in area owns every `/mijn` route; no CMS page is
 				     read for it (src/shared/portalNav.js). -->
 				<AccountArea
-					v-if="accountRoute || (signInNeeded && !session)"
+					v-else-if="accountRoute || (signInNeeded && !session)"
 					:sessionKnown="sessionKnown"
 					:session="session"
 					:loading="account.loading"
@@ -180,6 +202,10 @@
 					:contributions="account.contributions"
 					:api="api"
 					:signInRoutes="signInRoutes"
+					:ways="waysIn"
+					:waysT="waysInT"
+					:authBase="guestAuthBase"
+					:portalSlug="site.slug || portalSlug"
 					:devLogin="signinConfig.devLogin === true"
 					:devError="devError"
 					:t="t"
@@ -190,6 +216,14 @@
 					@unread="unreadOverride = $event"
 					@refresh="loadAccount"
 					@signout="signOut" />
+
+				<!-- A shared dossier link is public: anyone who has it reads the
+				     documents in it that are public now (site-shared-dossier). -->
+				<SharedDossierPage
+					v-else-if="sharedDossierRoute"
+					:token="sharedDossierToken"
+					:t="t"
+					@loaded="onSharedDossierLoaded" />
 
 				<p v-else-if="loading" class="container" data-testid="site-loading">
 					{{ t('Loading…') }}
@@ -427,6 +461,7 @@ import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
+import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js'
 import {
 	footerMenusOf,
 	headerMenusOf,
@@ -434,6 +469,7 @@ import {
 	legalLinksOf,
 	registerRouteOf,
 } from './lib/shellData.js'
+import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
 
@@ -460,6 +496,22 @@ const SiteNotices = defineAsyncComponent(
 	() => import('./components/SiteNotices.vue'),
 )
 
+// Loaded only when somebody opens a shared dossier link, so every other
+// visitor pays nothing for it in the site bundle (site-shared-dossier).
+const SharedDossierPage = defineAsyncComponent(
+	() => import('./components/SharedDossierPage.vue'),
+)
+
+// The guest page for a signed link (identity-guest-page-for-signed-links),
+// loaded only when the address carries one.
+const GuestActionPage = defineAsyncComponent(
+	() => import('./pages/GuestActionPage.vue'),
+)
+
+// What a mailed way-in link opens (identity-ways-in-screens), loaded only
+// when the address carries one.
+const WayInLink = defineAsyncComponent(() => import('./components/WayInLink.vue'))
+
 /**
  * The built-in site renderer.
  *
@@ -477,8 +529,11 @@ export default {
 		ContactPrompt,
 		BrandHeader,
 		FooterColumns,
+		GuestActionPage,
+		WayInLink,
 		IdleWarningDialog,
 		MarkdownBlock,
+		SharedDossierPage,
 		SiteEditButton,
 		SiteNotices,
 		WidgetGrid,
@@ -522,6 +577,10 @@ export default {
 			confirmMessage: null,
 			// Whether to ask for an e-mail address (slice e's ContactPrompt).
 			contactPrompt: false,
+			// A signed link for one guest act (`#guest/...`); the page reads it.
+			guestLink: String(window.location.hash).startsWith('#guest/'),
+			// A mailed way in (`#activate=`, `#invitation=`, `#reference=`).
+			wayInLink: hasWayInLink(window.location),
 			site: {},
 			menus: [],
 			glossary: [],
@@ -538,6 +597,8 @@ export default {
 			// page — the publication id in `/publicatie/<id>`. Empty for an
 			// ordinary page. See `loadRoute`.
 			routeParam: '',
+			// The title of the shared dossier on screen, once it is read.
+			sharedDossierTitle: '',
 			// Where the hero's search box sends a term. A constant rather than
 			// a portal field for now: the seeded portal puts search at
 			// `/zoeken`, matching the reference, and a portal that moves it
@@ -617,6 +678,21 @@ export default {
 		breadcrumbs() {
 			if (this.accountRoute) {
 				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
+			}
+			// The token is not a word and no page sits at its parent.
+			if (this.sharedDossierRoute) {
+				return [
+					{
+						route: '/',
+						label: this.t('Home'),
+						href: this.hrefForRoute('/'),
+					},
+					{
+						route: this.route,
+						label: this.sharedDossierTitle || this.t('Shared dossier'),
+						href: this.hrefForRoute(this.route),
+					},
+				]
 			}
 			const crumbs = [
 				{ route: '/', label: this.t('Home'), href: this.hrefForRoute('/') },
@@ -836,6 +912,24 @@ export default {
 		},
 
 		/**
+		 * @return {boolean} Whether the route on screen is a shared dossier link.
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		sharedDossierRoute() {
+			return isSharedDossierRoute(this.route)
+		},
+
+		/**
+		 * @return {string} The share token of the route on screen, or ''.
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		sharedDossierToken() {
+			return sharedDossierToken(this.route)
+		},
+
+		/**
 		 * @return {object|null} The navigation entry the route names.
 		 *
 		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
@@ -909,6 +1003,40 @@ export default {
 		 */
 		legalLinks() {
 			return legalLinksOf(this.site, this.menus)
+		},
+
+		/**
+		 * The doors the site config opens besides the sign-in buttons.
+		 *
+		 * @return {object} See waysInFrom().
+		 *
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
+		 */
+		waysIn() {
+			return waysInFrom(this.signinConfig)
+		},
+
+		/**
+		 * The translator of the ways in: the site's, with their own strings
+		 * for the keys its bundle lacks.
+		 *
+		 * @return {Function}
+		 *
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T08
+		 */
+		waysInT() {
+			return waysInTranslator(this.t, this.locale)
+		},
+
+		/**
+		 * The portal API base the guest page posts to.
+		 *
+		 * @return {string} The base, `.../portal/api`.
+		 *
+		 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T03
+		 */
+		guestAuthBase() {
+			return authBaseFrom(resolveApiBase())
 		},
 
 		/**
@@ -1313,9 +1441,12 @@ export default {
 
 			// The page's search title first (site-page-seo-history-and-media),
 			// so the tab reads what the server already put in the head.
-			const pageName = this.accountRoute
+			let pageName = this.accountRoute
 				? this.accountEntry?.label || this.t('My overview')
 				: this.page?.seo?.title || this.page?.title
+			if (this.sharedDossierRoute) {
+				pageName = this.sharedDossierTitle || this.t('Shared dossier')
+			}
 			document.title =
 				pageName && pageName !== portalName
 					? `${pageName} - ${portalName}`
@@ -1437,6 +1568,19 @@ export default {
 		},
 
 		/**
+		 * Take the shared dossier's title for the tab and the breadcrumb.
+		 *
+		 * @param {string} title The dossier's title, or ''.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		onSharedDossierLoaded(title) {
+			this.sharedDossierTitle = title || ''
+			this.applyDocumentTitle()
+		},
+
+		/**
 		 * Load one page by route.
 		 *
 		 * @param {string} route The in-portal route.
@@ -1454,6 +1598,18 @@ export default {
 				this.routeParam = ''
 				this.loading = false
 				this.followAccountRoute()
+				this.applyDocumentTitle()
+				return
+			}
+
+			// A shared dossier link renders from opencatalogi's answer, not
+			// from a CMS page, so it opens on every portal without one.
+			if (isSharedDossierRoute(route)) {
+				this.page = null
+				this.error = null
+				this.routeParam = ''
+				this.sharedDossierTitle = ''
+				this.loading = false
 				this.applyDocumentTitle()
 				return
 			}

@@ -349,7 +349,9 @@ class SessionControllerTest extends TestCase {
 		)->oidcStart(provider: 'digid', portal: 'venray');
 
 		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
-		$this->assertSame('/portaliq.brokerSession.start?org=gemeente-x&provider=digid', $response->getRedirectURL());
+		// The resolved portal rides along, so the broker login returns to it
+		// (portal-broker-login-keeps-the-portal).
+		$this->assertSame('/portaliq.brokerSession.start?org=gemeente-x&provider=digid&portal=venray', $response->getRedirectURL());
 	}//end testOidcStartForwardsABrokerRoutedProvider()
 
 	public function testOidcStartRefusesBeforeResolvingAnySecretWhenThePolicyDeclines(): void {
