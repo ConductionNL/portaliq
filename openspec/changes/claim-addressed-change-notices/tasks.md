@@ -1,0 +1,7 @@
+# Tasks: claim-addressed-change-notices
+
+- [x] **T01**: `NotificationRuleNormaliser` + `NoticeRecipientNormaliser`: keep `recipients` (own claim only) and `messages` (projected placeholders only); a rule with recipients may sit on a `scopeClaim`/`via` collection (REQ-NAP-012, REQ-NAP-013). Verification: PHPUnit `NotificationRuleNormaliserTest::testKeepsAClaimAddressedRuleOnAViaCollection`, `::testDropsAForeignClaimAMalformedRecipientAndAnUnprojectedPlaceholder`, `::testDropsARuleOnAViaCollection`.
+- [x] **T02**: `PortalAccountsByClaim`, `ClaimAddressedRecipients`, `PortalChangeRuleIndex::details()` and `PortalRecordChangeListener`: tell the accounts whose claim the record holds and that may read it (REQ-NAP-012). Verification: PHPUnit `ClaimAddressedChangeNoticeTest::testTheGuardianWhoseClaimTheRecordHoldsIsTold`, `::testAnAccountThatMayNotReadTheRecordIsNotTold`, `::testNoClaimValueNoMessage`, `::testWithoutRecipientsAViaRuleStaysSilent`.
+- [x] **T03**: `ChangeNoticeText` and `PortalNoticeLanguage::languageFor()`: the app's own words in the portal's language (REQ-NAP-013). Verification: PHPUnit `ClaimAddressedChangeNoticeTest::testTheGuardianWhoseClaimTheRecordHoldsIsTold`, `::testADeclineCarriesTheTeachersNote`, `::testAValueWithoutAMessageIsNotReported`.
+- [x] **T04**: `docs/operations/notices-on-a-case.md` describes recipients and messages.
+- [x] **T05**: `openspec validate claim-addressed-change-notices --strict`.
