@@ -2,9 +2,9 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The site's signed-in shell in plain functions: the account menu in the
- * shape SiteMenu renders, the "logged in as" line, the breadcrumb of a
- * signed-in page and which route to open. Imports only shared code, so
+ * The site's signed-in shell in plain functions: the "logged in as" line,
+ * the breadcrumb of a signed-in page and which route to open. The resident's
+ * own menu is lib/residentMenu.js. Imports only shared code, so
  * tests/site-signed-in-shell.spec.mjs runs it as node.
  *
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
@@ -17,31 +17,6 @@ import {
 	navEntryForRoute,
 	routeForNav,
 } from '../../shared/portalNav.js'
-
-/**
- * The signed-in navigation as one SiteMenu menu.
- *
- * @param {Array<object>} nav The navigation (src/shared/portalNav.js).
- * @param {(key: string, vars?: object) => string} t The translator.
- * @param {number} unread The inbox's unread count.
- * @param {(route: string) => string} hrefFor A real address for a route.
- * @return {{title: string, items: Array<object>}} The menu.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
- */
-export function accountMenu(nav, t, unread, hrefFor) {
-	return {
-		title: t('My overview'),
-		items: (nav || []).map((entry) => {
-			const link = routeForNav(entry)
-			const item = { name: entry.label, link, href: hrefFor(link) }
-			if (entry.special === 'inbox' && Number(unread) > 0) {
-				item.badge = String(unread)
-				item.badgeLabel = t('{count} unread', { count: unread })
-			}
-			return item
-		}),
-	}
-}
 
 /**
  * The "logged in as" line for a session.
@@ -104,7 +79,7 @@ export function accountCrumbs(entry, t, hrefFor) {
 		{ route: '/', label: t('Home'), href: hrefFor('/') },
 		{
 			route: ACCOUNT_ROUTE,
-			label: t('My overview'),
+			label: t('My area'),
 			href: hrefFor(ACCOUNT_ROUTE),
 		},
 	]

@@ -125,6 +125,12 @@ class PortalPageResolver {
 			}
 		}
 
+		// The record page of a collection (contribution-record-page).
+		$record = (new RecordBlockNormaliser())->pageRecord(record: ($page['record'] ?? null), collectionIds: $collectionIds);
+		if ($record !== null) {
+			$entry['record'] = $record;
+		}
+
 		return $entry;
 	}//end normalisePage()
 

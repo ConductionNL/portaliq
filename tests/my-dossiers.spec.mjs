@@ -121,6 +121,58 @@ test('answer link', async () => {
 	assert.equal(outcome.link, 'https://gemeente.example/shared/abc')
 })
 
+// opencatalogi's shareDossier answers an absolute link on the instance itself,
+// which on a dev or intranet instance is plain http. It is this site's own
+// origin, so it is instance-local; a foreign http link still is not.
+test('answer link on the site\'s own origin', async () => {
+	const own = 'http://localhost:8080'
+	const shared = `${own}/index.php/apps/portaliq/site?route=/gedeeld-dossier/tok-1`
+	assert.equal(answerLink({ ok: true, body: { link: shared } }, own), shared)
+	assert.equal(
+		answerLink({ ok: true, body: { link: 'http://evil.example/x' } }, own),
+		'',
+	)
+	assert.equal(
+		answerLink({ ok: true, body: { link: 'http://localhost:8081/x' } }, own),
+		'',
+		'another port is another origin',
+	)
+	assert.equal(
+		answerLink({ ok: true, body: { link: shared } }, ''),
+		'',
+		'without a known origin an http link is refused',
+	)
+	assert.equal(
+		answerLink(
+			{ ok: true, body: { link: 'https://gemeente.example/s/1' } },
+			own,
+		),
+		'https://gemeente.example/s/1',
+	)
+
+	const previous = globalThis.location
+	globalThis.location = { origin: own }
+	try {
+		const api = {
+			forwardRowAction: async () => ({
+				ok: true,
+				status: 200,
+				body: { link: shared },
+			}),
+		}
+		const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', {
+			action: { id: 'share', label: 'Delen' },
+			collection: { id: 'mijnDossiers' },
+			row: { id: 'dos-1' },
+			api,
+		})
+		await step.fire(step.find('rowaction-continue'), 'click')
+		assert.equal(step.find('rowaction-link').props.value, shared)
+	} finally {
+		globalThis.location = previous
+	}
+})
+
 test('the site confirm step shows the link the action answered', async () => {
 	const api = {
 		forwardRowAction: async () => ({

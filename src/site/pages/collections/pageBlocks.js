@@ -15,7 +15,9 @@
 //   - a `detail` block is the detail card of the row selected in that
 //     collection's table, with the collection's propose-change action;
 //   - `citizenCase`, `action` and `cta` blocks belong to other slices and are
-//     handed to their slot.
+//     handed to their slot;
+//   - `kpi`, `calendar` and `news` blocks are the record page's figure cards,
+//     calendar and news (contribution-record-page).
 //
 // @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
@@ -67,6 +69,7 @@ export function rowActionsOf(contribution, collection) {
  * Each entry is `{index, block, kind, collection?, action?, rowActions?,
  * tableActions?, proposeAction?, viewAction?}`, where `kind` is one of
  * `richText`, `table`, `timedTask`, `detail`, `citizenCase`, `action`, `cta`,
+ * `kpi`, `calendar`, `news`,
  * or `none` for a block that renders nothing.
  *
  * @param {object} page The contribution page.
@@ -120,6 +123,24 @@ export function resolveBlocks(page, contribution) {
 						(a) => a.id === 'viewDocument' && isEndpointRowAction(a),
 					) || null,
 			}
+		}
+		if (type === 'kpi') {
+			// contribution-record-page: figure cards from one row.
+			const collection = findCollection(contribution, block.collection)
+			return collection
+				? { index, block, kind: 'kpi', collection }
+				: { index, block, kind: 'none' }
+		}
+		if (type === 'calendar') {
+			const sources = (block.sources || []).filter((source) =>
+				findCollection(contribution, source?.collection),
+			)
+			return sources.length > 0
+				? { index, block: { ...block, sources }, kind: 'calendar' }
+				: { index, block, kind: 'none' }
+		}
+		if (type === 'news') {
+			return { index, block, kind: 'news' }
 		}
 		if (type === 'action' || type === 'cta') {
 			const action = findAction(contribution, block.action)

@@ -265,9 +265,14 @@ class CollectionConfigNormaliser {
 	/**
 	 * Sanitise ONE column entry, or null when it carries no usable `field`.
 	 *
+	 * Keeps `field`, a string `label`, the `render` kind and a well-formed
+	 * `valueLabels` map; every other key is dropped.
+	 *
 	 * @param mixed $column The declared column.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 */
 	private function normaliseColumn(mixed $column): ?array {
 		if (is_array($column) === false) {
@@ -285,7 +290,9 @@ class CollectionConfigNormaliser {
 		}
 
 		$entry['render'] = $this->values->oneOf(value: ($column['render'] ?? null), allowed: self::RENDER_KINDS, default: 'text');
-		return $entry;
+		// How each value reads ("approved" as "Goedgekeurd"); the cell falls
+		// back to the raw value for one the app did not label.
+		return (new ValueLabelsNormaliser())->apply(entry: $entry, source: $column);
 	}//end normaliseColumn()
 
 	/**

@@ -28,7 +28,6 @@ import {
 } from '../src/shared/portalNav.js'
 import {
 	accountCrumbs,
-	accountMenu,
 	accountRedirect,
 	loggedInAs,
 } from '../src/site/lib/accountArea.js'
@@ -143,20 +142,9 @@ test('the page registry resolves the entry key, then the section, then any contr
 	assert.throws(() => registerSitePage('news', null), TypeError)
 })
 
-test('the account menu is SiteMenu-shaped, carries real addresses and the unread count on the inbox', () => {
+test('the breadcrumb of a signed-in page leads home, then to the own area', () => {
 	const nav = buildNav(CONTRIBUTIONS.contributions, identity, { cases: true })
-	const href = (route) => `/apps/portaliq/site?portal=wilgenboom&route=${encodeURIComponent(route)}`
-	const menu = accountMenu(nav, identity, 3, href)
-	assert.equal(menu.title, 'My overview')
-	assert.equal(menu.items[1].name, 'My children')
-	assert.equal(menu.items[1].link, '/mijn/learniq/children')
-	assert.equal(menu.items[1].href, href('/mijn/learniq/children'))
-	const inbox = menu.items.find((item) => item.link === '/mijn/inbox')
-	assert.equal(inbox.badge, '3')
-	assert.equal(inbox.badgeLabel, '3 unread')
-	assert.equal(accountMenu(nav, identity, 0, href).items.find((item) => item.link === '/mijn/inbox').badge, undefined)
-
-	assert.deepEqual(accountCrumbs(nav[1], identity, (route) => route).map((crumb) => crumb.label), ['Home', 'My overview', 'My children'])
+	assert.deepEqual(accountCrumbs(nav[1], identity, (route) => route).map((crumb) => crumb.label), ['Home', 'My area', 'My children'])
 	assert.equal(accountCrumbs(null, identity, (route) => route).length, 2)
 })
 

@@ -9,7 +9,9 @@
 // `[object Object]` (site-parity finding F21). Here a column takes the label
 // the app declared, a field without one is written as words, an identifier
 // alone in a cell is left out, a date reads as a date, and a nested value
-// reads as the readable parts it holds.
+// reads as the readable parts it holds. A value the app labelled in the
+// column's `valueLabels` reads as that label ("approved" as "Goedgekeurd");
+// any other value reads as before (contribution-value-labels).
 //
 // Imports nothing, so tests/site-collections.spec.mjs runs it as node.
 //
@@ -147,7 +149,7 @@ export function deriveColumns(collection, objects) {
  *
  * @param {object} collection The collection.
  * @param {object} row The record.
- * @return {Array<{field: string, label: string, render: string, declared: boolean}>}
+ * @return {Array<{field: string, label: string, render: string, valueLabels?: object, declared: boolean}>}
  */
 export function detailFields(collection, row) {
 	const byField = new Map()
@@ -171,6 +173,7 @@ export function detailFields(collection, row) {
 			field,
 			label: columnLabel(column),
 			render: column.render || 'text',
+			valueLabels: column.valueLabels,
 			declared: declared.length > 0,
 		}
 	})
@@ -262,18 +265,72 @@ export function readable(value, { locale, t }, depth = 0) {
 }
 
 /**
- * The text of one cell, following the column's `render`.
+ * The label the app declared for a value, if it declared one.
+ *
+ * @param {unknown} value The value.
+ * @param {Record<string, string>|undefined} valueLabels The column's labels.
+ * @return {string|undefined} The label, or undefined for an unlabelled value.
+ * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+ */
+export function valueLabel(value, valueLabels) {
+	if (!valueLabels || typeof valueLabels !== 'object') {
+		return undefined
+	}
+	if (typeof value !== 'string' && typeof value !== 'number') {
+		return undefined
+	}
+	const key = String(value)
+	if (!Object.hasOwn(valueLabels, key)) {
+		return undefined
+	}
+	const label = valueLabels[key]
+	return typeof label === 'string' && label.trim() !== '' ? label : undefined
+}
+
+/**
+ * A value read through the column's labels: the label when the app declared
+ * one, each item of a list on its own line, else undefined.
+ *
+ * @param {unknown} value The value.
+ * @param {Record<string, string>|undefined} valueLabels The column's labels.
+ * @param {object} context How to write an unlabelled list item.
+ * @return {string|undefined}
+ */
+function labelled(value, valueLabels, context) {
+	if (Array.isArray(value)) {
+		if (!value.some((item) => valueLabel(item, valueLabels) !== undefined)) {
+			return undefined
+		}
+		return value
+			.map(
+				(item) =>
+					valueLabel(item, valueLabels) ?? readable(item, context, 1),
+			)
+			.filter((text) => text !== '')
+			.join('\n')
+	}
+	return valueLabel(value, valueLabels)
+}
+
+/**
+ * The text of one cell, following the column's `render`. A value the column
+ * labels reads as its label, whatever the render kind.
  *
  * @param {unknown} value The value.
  * @param {string} render The column's render kind.
  * @param {object} context How to write it.
  * @param {string} context.locale The language.
  * @param {(key: string) => string} context.t The translator.
+ * @param {Record<string, string>} [context.valueLabels] The column's labels.
  * @return {string}
  */
-export function formatCell(value, render, { locale, t }) {
+export function formatCell(value, render, { locale, t, valueLabels }) {
 	if (value === null || value === undefined || value === '') {
 		return ''
+	}
+	const label = labelled(value, valueLabels, { locale, t })
+	if (label !== undefined) {
+		return label
 	}
 	switch (render) {
 		case 'boolean':

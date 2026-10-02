@@ -35,7 +35,6 @@ the detail card (REQ-WJE-004). Three gaps keep pipelinq from using it:
 
 ## Out of scope
 
-- The Vue site's `AttachedActions.vue` lives in the open slice-c PR
-  (portaliq#1029). After it lands, it passes the row to
-  `attachedActionsOf(collection, row)`, one line. Until then the site shows the
-  action on every row and the server refuses the wrong row with 409.
+- The Vue site's `AttachedActions.vue` came with the slice-c PR
+  (portaliq#1029) and passes the row to `attachedActionsOf(collection, row)`
+  since T04.
