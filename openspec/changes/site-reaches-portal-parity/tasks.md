@@ -29,9 +29,9 @@ screenshot. `design.md` has the file-by-file map.
 
 ## Slice c: forms and actions
 
-- [ ] **T11**: `SchemaForm.vue` (absorbs `ActionFieldsForm`) with file fields through the shared `fileFieldSubmit.js` (REQ-SRP-022, REQ-SRP-023). Verification: new `tests/schema-form.spec.mjs`, `tests/schema-form-file-field.spec.mjs`.
-- [ ] **T12**: `ProposeChangeForm.vue`, status transitions, endpoint and cta actions (REQ-SRP-024, REQ-SRP-025, REQ-SRP-027). Verification: new `tests/propose-change.spec.mjs`, `tests/row-action.spec.mjs`.
-- [ ] **T13**: `RowActionConfirm.vue`, `AttachedActions.vue`, `SigningDialog.vue`, `DeclineDialog.vue` (REQ-SRP-026, REQ-SRP-028, REQ-SRP-029). Verification: `tests/row-action.spec.mjs`, `tests/attached-actions.spec.mjs`, `tests/signing-dialog.spec.mjs`.
+- [x] **T11**: `SchemaForm.vue` (absorbs `ActionFieldsForm`) with file fields through the shared `fileFieldSubmit.js` (REQ-SRP-022, REQ-SRP-023). Verification: new `tests/schema-form.spec.mjs`, `tests/schema-form-file-field.spec.mjs`.
+- [x] **T12**: `ProposeChangeForm.vue`, status transitions, endpoint and cta actions (REQ-SRP-024, REQ-SRP-025, REQ-SRP-027). Verification: new `tests/propose-change.spec.mjs`, `tests/row-action.spec.mjs`.
+- [x] **T13**: `RowActionConfirm.vue`, `AttachedActions.vue`, `SigningDialog.vue`, `DeclineDialog.vue` (REQ-SRP-026, REQ-SRP-028, REQ-SRP-029). Verification: `tests/row-action.spec.mjs`, `tests/attached-actions.spec.mjs`, `tests/signing-dialog.spec.mjs`.
 
 ## Slice d: inbox, messages, news, notification settings, tasks, timed tasks
 

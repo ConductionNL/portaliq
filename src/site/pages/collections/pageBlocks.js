@@ -19,9 +19,9 @@
 //
 // @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
-import { isEndpointRowAction } from '../../../portal/lib/rowAction.js'
-import { tableRowActions } from '../../../portal/lib/signing.js'
 import { withoutRemoveAction } from '../../../shared/itemList.js'
+import { isEndpointRowAction } from '../../../shared/rowAction.js'
+import { tableRowActions } from '../../../shared/signing.js'
 
 /** The block types that read a collection. */
 export const COLLECTION_BLOCKS = ['collection', 'detail', 'citizenCase']

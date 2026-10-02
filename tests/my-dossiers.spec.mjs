@@ -13,12 +13,9 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { answerLink, runRowAction } from '../src/portal/lib/rowAction.js'
-import {
-	itemRows,
-	removeItem,
-	withoutRemoveAction,
-} from '../src/shared/itemList.js'
+import { itemRows, removeItem, withoutRemoveAction } from '../src/shared/itemList.js'
+import { answerLink, runRowAction } from '../src/shared/rowAction.js'
+import { mountSfc } from './support/mount-sfc.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -138,13 +135,37 @@ test('the detail card renders the item list and the confirm shows the link', () 
 	assert.match(confirm, /data-testid="rowaction-link"/)
 })
 
+test('the site confirm step shows the link the action answered', async () => {
+	const api = {
+		forwardRowAction: async () => ({
+			ok: true,
+			status: 200,
+			body: { link: 'https://gemeente.example/shared/abc' },
+		}),
+	}
+	const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', {
+		action: { id: 'share', label: 'Delen' },
+		collection: { id: 'mijnDossiers' },
+		row: { id: 'dos-1' },
+		api,
+	})
+	await step.fire(step.find('rowaction-continue'), 'click')
+	assert.equal(
+		step.find('rowaction-link').props.value,
+		'https://gemeente.example/shared/abc',
+	)
+})
+
 // The same promises, held by the site's Vue pages (site-reaches-portal-parity
 // slice b, REQ-SRP-017, REQ-SRP-020). The React half above goes when /portal
 // retires.
 
 const { loadSfc, renderSfc } = await import('./support/render-sfc.mjs')
 const VUE_ITEMS = 'src/site/components/collections/ItemList.vue'
-const dossier = { id: 'mijnDossiers', itemList: { label: 'In dit dossier', removeAction: 'removeItem' } }
+const dossier = {
+	id: 'mijnDossiers',
+	itemList: { label: 'In dit dossier', removeAction: 'removeItem' },
+}
 const answer = {
 	items: [
 		{ id: 'i1', title: 'Besluit fietspad', url: 'https://example.org/p/1' },
@@ -153,10 +174,18 @@ const answer = {
 }
 
 test('site: the item list marks an item that is no longer public and offers remove per item', async () => {
-	const html = await renderSfc(VUE_ITEMS, { collection: dossier, row: { id: 'dos-1' }, t: (key, vars) => (vars ? `${key}:${vars.title}` : key), initialAnswer: answer })
+	const html = await renderSfc(VUE_ITEMS, {
+		collection: dossier,
+		row: { id: 'dos-1' },
+		t: (key, vars) => (vars ? `${key}:${vars.title}` : key),
+		initialAnswer: answer,
+	})
 
 	assert.equal((html.match(/data-testid="item-list-item"/g) || []).length, 2)
-	assert.match(html, /<a class="utrecht-link" href="https:\/\/example.org\/p\/1">Besluit fietspad<\/a>/)
+	assert.match(
+		html,
+		/<a class="utrecht-link" href="https:\/\/example.org\/p\/1">Besluit fietspad<\/a>/,
+	)
 	assert.equal((html.match(/data-testid="item-not-public"/g) || []).length, 1)
 	assert.equal((html.match(/data-testid="item-list-remove"/g) || []).length, 2)
 	assert.match(html, /aria-label="Remove \{title\}:Oude notitie"/)
@@ -186,9 +215,15 @@ test('site: removing one item forwards the remove action and reads the list agai
 })
 
 test('site: the detail card renders the item list, the table drops the remove action', () => {
-	const card = readFileSync(join(ROOT, 'src/site/components/collections/DetailCard.vue'), 'utf8')
+	const card = readFileSync(
+		join(ROOT, 'src/site/components/collections/DetailCard.vue'),
+		'utf8',
+	)
 	assert.match(card, /<ItemList\s/)
-	const blocks = readFileSync(join(ROOT, 'src/site/pages/collections/pageBlocks.js'), 'utf8')
+	const blocks = readFileSync(
+		join(ROOT, 'src/site/pages/collections/pageBlocks.js'),
+		'utf8',
+	)
 	assert.match(blocks, /withoutRemoveAction\(\s*collection,/)
 })
 
