@@ -60,21 +60,30 @@
       "label": "Portals",
       "icon": "Web",
       "route": "Portals",
-      "order": 20
+      "order": 20,
+      "visibleIf": {
+        "access.pages": true
+      }
     },
     {
       "id": "MediaMenu",
       "label": "Media",
       "icon": "FolderOutline",
       "route": "Media",
-      "order": 25
+      "order": 25,
+      "visibleIf": {
+        "access.pages": true
+      }
     },
     {
       "id": "NoticesMenu",
       "label": "Notices",
       "icon": "AlertCircleOutline",
       "route": "Notices",
-      "order": 26
+      "order": 26,
+      "visibleIf": {
+        "access.pages": true
+      }
     },
     {
       "id": "NewsMenu",
@@ -88,42 +97,60 @@
       "label": "Accounts",
       "icon": "Account",
       "route": "PortalAccounts",
-      "order": 30
+      "order": 30,
+      "visibleIf": {
+        "access.accounts": true
+      }
     },
     {
       "id": "InvitationsMenu",
       "label": "Invitations",
       "icon": "EmailOutline",
       "route": "Invitations",
-      "order": 31
+      "order": 31,
+      "visibleIf": {
+        "access.accounts": true
+      }
     },
     {
       "id": "AccessRequestsMenu",
       "label": "Access requests",
       "icon": "AccountKey",
       "route": "AccessRequests",
-      "order": 32
+      "order": 32,
+      "visibleIf": {
+        "access.accessRequests": true
+      }
     },
     {
       "id": "PortalSubmissionsMenu",
       "label": "Submissions",
       "icon": "FileCheckOutline",
       "route": "PortalSubmissions",
-      "order": 35
+      "order": 35,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "FormBindingsMenu",
       "label": "Request forms",
       "icon": "FormSelect",
       "route": "FormBindings",
-      "order": 36
+      "order": 36,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "Themes",
       "label": "Themes",
       "icon": "Palette",
       "route": "Themes",
-      "order": 40
+      "order": 40,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "Documentation",
@@ -139,7 +166,10 @@
       "icon": "StoreOutline",
       "route": "Store",
       "section": "footer",
-      "order": 92
+      "order": 92,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "ReportsMenu",
@@ -147,7 +177,10 @@
       "icon": "ChartBoxOutline",
       "route": "Reports",
       "section": "footer",
-      "order": 95
+      "order": 95,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "FeaturesRoadmapMenu",
@@ -155,7 +188,10 @@
       "icon": "MapMarkerPath",
       "route": "FeaturesRoadmap",
       "section": "footer",
-      "order": 100
+      "order": 100,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "FlowsMenu",
@@ -163,7 +199,10 @@
       "icon": "Sitemap",
       "route": "Flows",
       "section": "settings",
-      "order": 96
+      "order": 96,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "IntegrationsMenu",
@@ -177,7 +216,8 @@
       "order": 98,
       "permission": "admin",
       "visibleIf": {
-        "appInstalled": "integriq"
+        "appInstalled": "integriq",
+        "access.admin": true
       }
     }
   ],
