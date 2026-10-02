@@ -125,11 +125,7 @@ class ContributionLanguage {
 			return $call();
 		}
 
-		$before = $this->request->urlParams;
-		if (is_array($before) === false) {
-			$before = [];
-		}
-
+		$before = $this->urlParameters(request: $this->request);
 		$this->request->setUrlParameters(array_merge($before, [self::PARAMETER => $language]));
 		try {
 			return $call();
@@ -140,6 +136,29 @@ class ContributionLanguage {
 			$this->request->setUrlParameters(array_merge($before, [self::PARAMETER => null]));
 		}
 	}//end speak()
+
+	/**
+	 * The request's URL parameters as they are now, to put back afterwards.
+	 * IRequest documents them as the magic `urlParams` property, which the
+	 * static analysers do not read on an interface, so the magic getter is
+	 * called by name.
+	 *
+	 * @param IRequest $request The request.
+	 *
+	 * @return array<array-key, mixed>
+	 */
+	private function urlParameters(IRequest $request): array {
+		if (method_exists($request, '__get') === false) {
+			return [];
+		}
+
+		$parameters = $request->__get('urlParams');
+		if (is_array($parameters) === false) {
+			return [];
+		}
+
+		return $parameters;
+	}//end urlParameters()
 
 	/**
 	 * The portal's declared locales, non-empty strings only.
