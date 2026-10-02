@@ -479,7 +479,7 @@ import WidgetGrid from './components/WidgetGrid.vue'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
 import { noticesFor } from '../shared/notices.js'
-import { consumeOpenTarget } from '../shared/openRecord.js'
+import { consumeOpenTarget, OPEN_STORAGE_KEY } from '../shared/openRecord.js'
 import { createPortalApi } from '../shared/portalApi.js'
 import {
 	ACCOUNT_ROUTE,
@@ -489,6 +489,7 @@ import {
 	routeForNav,
 	shellSections,
 } from '../shared/portalNav.js'
+import { forgetActingFor } from './components/e/actingFor.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
 import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
@@ -539,6 +540,7 @@ import {
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
+import { TASK_STORAGE_KEY } from './pages/inbox/inbox.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
@@ -1452,7 +1454,10 @@ export default {
 		},
 
 		/**
-		 * Forget everything the signed-in shell loaded.
+		 * Forget everything the signed-in shell loaded, and what this tab
+		 * kept for the resident: whom they acted for, the record link and the
+		 * task they were opening. On a shared device the next resident starts
+		 * from none of it.
 		 *
 		 * @return {void}
 		 *
@@ -1467,6 +1472,13 @@ export default {
 			}
 			this.unreadOverride = null
 			this.contactPrompt = false
+			forgetActingFor()
+			try {
+				window.sessionStorage.removeItem(OPEN_STORAGE_KEY)
+				window.sessionStorage.removeItem(TASK_STORAGE_KEY)
+			} catch {
+				// Without storage nothing was kept.
+			}
 		},
 
 		/**

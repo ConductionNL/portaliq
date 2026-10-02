@@ -11,6 +11,8 @@
 
 import { reactive } from 'vue'
 import {
+	ACTING_FOR_KEY,
+	ACTING_FOR_SELF,
 	actingForHeld,
 	keepActingFor,
 	readActingFor,
@@ -68,4 +70,24 @@ export function learnMandates(answer) {
 	}
 	actingFor.mandates = Array.isArray(answer.mandates) ? answer.mandates : []
 	actingFor.id = actingForHeld(actingFor.id, answer.mandates)
+}
+
+/**
+ * Forget the choice and the mandates held, at sign-out: on a shared device
+ * the next resident starts as themselves and sees none of the previous
+ * resident's mandate labels.
+ *
+ * @param {object} [store] The store the choice is kept in (test seam).
+ * @return {void}
+ *
+ * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+ */
+export function forgetActingFor(store = sessionStore()) {
+	try {
+		store?.removeItem(ACTING_FOR_KEY)
+	} catch {
+		// Without storage nothing was kept.
+	}
+	actingFor.id = ACTING_FOR_SELF
+	actingFor.mandates = []
 }

@@ -218,6 +218,23 @@ test('site: the store learns the mandates from "My cases", keeps the choice for 
 	)
 })
 
+test('site: sign-out forgets whom the resident acted for and the mandates held', () => {
+	const kept = storage()
+	store.learnMandates({ ok: true, mandates: MANDATES })
+	store.chooseActingFor('mandate-1', kept)
+	store.forgetActingFor(kept)
+	assert.equal(store.actingFor.id, 'self')
+	assert.deepEqual(store.actingFor.mandates, [])
+	assert.equal(kept.getItem(myCases.ACTING_FOR_KEY), null)
+
+	const shell = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
+	const forget = shell.slice(shell.indexOf('forgetAccount() {'))
+	assert.match(
+		forget,
+		/forgetActingFor\(\)[\s\S]*?removeItem\(OPEN_STORAGE_KEY\)[\s\S]*?removeItem\(TASK_STORAGE_KEY\)/,
+	)
+})
+
 test('site: the header switcher with only `t` follows the store', async () => {
 	store.learnMandates({ ok: true, mandates: MANDATES })
 	store.chooseActingFor('mandate-1', storage())
