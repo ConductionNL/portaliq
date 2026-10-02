@@ -15,21 +15,30 @@
 import { rowFor } from '../../../shared/openRecord.js'
 
 /**
- * The ids of the collections a page's blocks read: every `collection` and
- * `detail` block, as the React portal loads them.
+ * The ids of the collections a page's blocks read: every `collection`,
+ * `detail` and `kpi` block, every calendar source, and a record page's
+ * record collection.
  *
  * @param {object} page The contribution page.
  * @return {Array<string>}
  */
 export function collectionIdsFor(page) {
 	const ids = []
+	const add = (id) => {
+		if (typeof id === 'string' && id !== '' && !ids.includes(id)) {
+			ids.push(id)
+		}
+	}
+	// A record page reads its record collection first (contribution-record-page).
+	add(page?.record?.collection)
 	for (const block of page?.blocks || []) {
-		if (
-			(block?.type === 'collection' || block?.type === 'detail')
-			&& block.collection
-			&& !ids.includes(block.collection)
-		) {
-			ids.push(block.collection)
+		if (['collection', 'detail', 'kpi'].includes(block?.type)) {
+			add(block.collection)
+		}
+		if (block?.type === 'calendar') {
+			for (const source of block.sources || []) {
+				add(source?.collection)
+			}
 		}
 	}
 	return ids

@@ -40,7 +40,7 @@ class PortalBlockResolver {
 	/**
 	 * The block-type registry. A block of any other type is dropped.
 	 */
-	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta', 'citizenCase'];
+	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta', 'citizenCase', 'kpi', 'calendar', 'news'];
 
 	/**
 	 * The block types whose whole body is a reference to a collection.
@@ -99,12 +99,23 @@ class PortalBlockResolver {
 		}
 
 		if (in_array($type, self::COLLECTION_BLOCK_TYPES, true) === true) {
-			return $this->referenceBlock(
+			$entry = $this->referenceBlock(
 				type: $type,
 				key: 'collection',
 				ref: ($block['collection'] ?? null),
 				allowed: $collectionIds
 			);
+			if ($entry === null) {
+				return null;
+			}
+
+			// A block on a record page may narrow its rows to the open record
+			// (contribution-record-page).
+			return (new RecordBlockNormaliser())->withRecordScope(declared: $block, entry: $entry);
+		}
+
+		if (in_array($type, ['kpi', 'calendar', 'news'], true) === true) {
+			return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);
 		}
 
 		if ($type === 'action') {
@@ -122,6 +133,31 @@ class PortalBlockResolver {
 
 		return $this->richTextBlock(block: $block);
 	}//end normaliseBlock()
+
+	/**
+	 * A `kpi`, `calendar` or `news` block (contribution-record-page), or null
+	 * when its collections do not resolve.
+	 *
+	 * @param string $type The block type.
+	 * @param array<string, mixed> $block The declared block.
+	 * @param array<int, string> $collectionIds The valid collection ids.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/contribution-record-page/tasks.md#T1
+	 */
+	private function recordPageBlock(string $type, array $block, array $collectionIds): ?array {
+		$blocks = new RecordBlockNormaliser();
+		if ($type === 'kpi') {
+			return $blocks->kpiBlock(block: $block, collectionIds: $collectionIds);
+		}
+
+		if ($type === 'calendar') {
+			return $blocks->calendarBlock(block: $block, collectionIds: $collectionIds);
+		}
+
+		return $blocks->newsBlock(block: $block);
+	}//end recordPageBlock()
 
 	/**
 	 * The richText block, or null when it carries no markdown to render.
