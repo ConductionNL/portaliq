@@ -22,6 +22,9 @@
  *
  * 🔴 NO OLD RECORD, NO NOTICE. A change it cannot see is not reported.
  *
+ * The message is in ONE language: the first locale of the organisation's
+ * portal, else Dutch. Never Dutch and English glued into one string.
+ *
  * 🔴 NOT THE RESIDENT'S OWN WRITE. Saves portaliq makes on the resident's
  * behalf run inside PortalWriteContext and are skipped (REQ-NAP-003).
  *
@@ -53,6 +56,7 @@ use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
 use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalWriteContext;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -84,6 +88,13 @@ class PortalRecordChangeListener implements IEventListener {
 	public const BODY_KEY = 'Open it to see what changed.';
 
 	/**
+	 * The language of a notice when the portal names none.
+	 *
+	 * @var string
+	 */
+	private const DEFAULT_LANGUAGE = 'nl';
+
+	/**
 	 * Wire the listener.
 	 *
 	 * @param PortalChangeRuleIndex       $rules        Which apps want a notice for a record.
@@ -91,9 +102,10 @@ class PortalRecordChangeListener implements IEventListener {
 	 * @param PortalAccountService        $accounts     Finds the resident's account.
 	 * @param PortalObjectWriter          $writer       Writes the inbox message.
 	 * @param NotificationDispatchService $dispatch     Dispatches the rule's key.
-	 * @param IFactory                    $l10nFactory  The message text, Dutch and English.
+	 * @param IFactory                    $l10nFactory  The message text, in the portal's language.
 	 * @param LoggerInterface             $logger       The logger.
 	 * @param MessageBoxChannel|null      $messageBox   Queues the government message box send.
+	 * @param PortalResolver|null         $portals      Finds the organisation's portal, for its language.
 	 */
 	public function __construct(
 		private readonly PortalChangeRuleIndex $rules,
@@ -104,6 +116,7 @@ class PortalRecordChangeListener implements IEventListener {
 		private readonly IFactory $l10nFactory,
 		private readonly LoggerInterface $logger,
 		private readonly ?MessageBoxChannel $messageBox = null,
+		private readonly ?PortalResolver $portals = null,
 	) {
 	}//end __construct()
 
@@ -319,8 +332,7 @@ class PortalRecordChangeListener implements IEventListener {
 	}//end title()
 
 	/**
-	 * Write the inbox message, Dutch first and English second, as every
-	 * portaliq message is.
+	 * Write the inbox message in the portal's language.
 	 *
 	 * @param array<string, mixed>  $account    The account.
 	 * @param string                $title      The record's title.
@@ -329,8 +341,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 * @return void
 	 */
 	private function writeMessage(array $account, string $title, array $recordLink): void {
-		$dutch = $this->l10nFactory->get('portaliq', 'nl');
-		$english = $this->l10nFactory->get('portaliq', 'en');
+		$l10n = $this->l10nFactory->get('portaliq', $this->language(organisation: (string)($account['organisation'] ?? '')));
 		$written = $this->writer->createObject(
 			register: 'portaliq',
 			schema: 'portalMessage',
@@ -338,8 +349,8 @@ class PortalRecordChangeListener implements IEventListener {
 			subjectRef: (string)($account['subjectRef'] ?? ''),
 			organisation: (string)($account['organisation'] ?? ''),
 			data: [
-				'subject' => $dutch->t(self::SUBJECT_KEY, [$title]).' / '.$english->t(self::SUBJECT_KEY, [$title]),
-				'body' => $dutch->t(self::BODY_KEY)."\n\n".$english->t(self::BODY_KEY),
+				'subject' => $l10n->t(self::SUBJECT_KEY, [$title]),
+				'body' => $l10n->t(self::BODY_KEY),
 				'read' => false,
 				'receivedAt' => gmdate('c'),
 				'recordLink' => $recordLink,
@@ -349,4 +360,28 @@ class PortalRecordChangeListener implements IEventListener {
 			$this->logger->warning('Portaliq: change message was not written', ['app' => $recordLink['app'], 'collection' => $recordLink['collection']]);
 		}
 	}//end writeMessage()
+
+	/**
+	 * The language of the organisation's portal: its first locale, else Dutch.
+	 *
+	 * @param string $organisation The resident's organisation.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
+	 */
+	private function language(string $organisation): string {
+		try {
+			$locales = ($this->portals?->resolveByOrganisation(organisation: $organisation)['locales'] ?? null);
+		} catch (Throwable) {
+			// No portal to ask is no reason to lose the notice.
+			$locales = null;
+		}
+
+		if (is_array($locales) === true && is_string($locales[0] ?? null) === true && trim($locales[0]) !== '') {
+			return trim($locales[0]);
+		}
+
+		return self::DEFAULT_LANGUAGE;
+	}//end language()
 }//end class

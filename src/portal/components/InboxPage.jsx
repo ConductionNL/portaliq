@@ -9,7 +9,8 @@
 // readiness fields (nature/rechtsgevolg/term) — absent fields render nothing,
 // never an empty placeholder.
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { unreadIn } from '../../shared/inboxUnread.js'
 import { deliveryLine } from '../lib/messageBox.js'
 import Loading from './Loading.jsx'
 import NotificationSettings from './NotificationSettings.jsx'
@@ -40,15 +41,24 @@ function formatDateTime(value, locale) {
  * @param root0.onRead
  * @param root0.onOpenTask
  * @param {Function} root0.onOpenRecord Opens the record a message is about (REQ-NAP-005).
+ * @param {Function} root0.onLoaded Gets the unread count of the loaded rows, for the badge (woo-inbox-notices).
  */
-export default function InboxPage({ api, t, locale, onRead, onOpenTask, onOpenRecord }) {
+export default function InboxPage({ api, t, locale, onRead, onOpenTask, onOpenRecord, onLoaded }) {
 	const [state, setState] = useState({ loading: true, messages: [] })
 	const [busyId, setBusyId] = useState(null)
+	// Held in a ref so a new callback each render never reloads the inbox.
+	const onLoadedRef = useRef(onLoaded)
+	onLoadedRef.current = onLoaded
 
 	const load = useCallback(async () => {
 		setState((s) => ({ ...s, loading: true }))
 		const messages = await api.fetchInbox()
 		setState({ loading: false, messages })
+		// A notice written after sign-in is not in the badge yet: the
+		// rows just loaded are the truth.
+		if (onLoadedRef.current) {
+			onLoadedRef.current(unreadIn(messages))
+		}
 	}, [api])
 
 	useEffect(() => { load() }, [load])

@@ -168,7 +168,13 @@ class PortalRecordChangeListenerTest extends TestCase {
 
 		$portals = $this->createMock(PortalResolver::class);
 		$portals->method('resolveByOrganisation')->willReturnCallback(
-			static fn (string $organisation): ?array => ($organisation === 'venray' ? $portal : null)
+			static function (string $organisation) use ($portal): ?array {
+				if (($portal['throws'] ?? false) === true) {
+					throw new RuntimeException('portals unreadable');
+				}
+
+				return ($organisation === 'venray' ? $portal : null);
+			}
 		);
 
 		return new PortalRecordChangeListener(
@@ -491,7 +497,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only
+	 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
 	 */
 	public function testTheNoticeIsInThePortalsLanguageOnly(): void {
 		$old = $this->object(schema: '12', data: ['initiator' => 'bsn-1', 'identifier' => 'Z-2026-1', 'status' => 'Ontvangen']);
@@ -508,15 +514,19 @@ class PortalRecordChangeListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only
+	 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
 	 */
 	public function testWithoutAPortalLanguageTheNoticeIsDutch(): void {
 		$old = $this->object(schema: '12', data: ['initiator' => 'bsn-1', 'identifier' => 'Z-2026-1', 'status' => 'Ontvangen']);
 		$new = $this->object(schema: '12', data: ['initiator' => 'bsn-1', 'identifier' => 'Z-2026-1', 'status' => 'Afgewezen']);
 
 		$this->listener(portal: ['slug' => 'venray', 'locales' => []])->handle(new ObjectUpdatedEvent($new, $old));
+		$this->listener(portal: ['throws' => true])->handle(new ObjectUpdatedEvent($new, $old));
 
-		$this->assertSame('[nl] Z-2026-1 has been updated', $this->written[0]['data']['subject']);
-		$this->assertStringNotContainsString('[en]', $this->written[0]['data']['subject'].$this->written[0]['data']['body']);
+		$this->assertCount(2, $this->written, 'an unreadable portal does not lose the notice');
+		foreach ($this->written as $written) {
+			$this->assertSame('[nl] Z-2026-1 has been updated', $written['data']['subject']);
+			$this->assertStringNotContainsString('[en]', $written['data']['subject'].$written['data']['body']);
+		}
 	}//end testWithoutAPortalLanguageTheNoticeIsDutch()
 }//end class
