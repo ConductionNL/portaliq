@@ -466,7 +466,9 @@ Canonical contract text: ADR-046 amendment 2026-07-06 + ADR-063 (hydra) + the
 - **Old `/portal` links keep working.** `/portal` answers 302 to `/site` with
   the same query string, and the browser keeps the fragment. If your OIDC broker
   checks `post_logout_redirect_uri` against a list, add the `/site` address:
-  sign-out now returns there.
+  sign-out now returns there. Integriq takes no sign-out address. Every
+  address a broker must know is listed in
+  [`docs/operations/signing-in-through-integriq.md`](docs/operations/signing-in-through-integriq.md).
 - **`portalAccount` claims schema.** `scopeClaim`/`via` scoping resolves the
   subject's claims from a `portalAccount` object carrying `subjectRef`,
   `audience` and `claims` (`{appId: {claimName: value}}`). Ensure the deployed
