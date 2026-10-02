@@ -33,12 +33,19 @@ New, for create and update actions (`SchemaField.vue`, the only renderer with fi
 - A styled file input: a button-like label on a real file input, a hint with the size limit, and the chosen file listed by name with a way to remove it.
 - `fieldConfigs.<field>.widget`, a presentation hint the learniq absence form needs (learniq `site-guardian-portal-design`). Two values: `choices` draws a field with options as radio cards instead of a select. `dateChoices` offers a few named days ("Vandaag, vrijdag 2 oktober") plus "Een andere dag", which opens the date group. Verified on `development`: `ActionConfigNormaliser` keeps `label`, `placeholder`, `help`, `size`, `input`, `type` and `valueLabels` on a field config, and drops `widget`.
 
-New, for published forms (`IntakeFormBlock.vue`):
+New, for published forms (`IntakeFormBlock.vue`) and for create actions (`SchemaForm.vue`):
+
+The dossiq lane's Woo request (`site-woo-request-in-steps`, dossiq PR #3249) is a create action, not a published form. It declares `steps`, `draft: { retentionDays: 30 }` and `confirmation` on the action. Checked on `development`: `ActionConfigNormaliser` and `AttachedActionResolver` keep none of these (`submitLabel` and `successMessage` are the only texts kept). So both renderers get the same flow:
 
 - Steps. When the published form declares `steps`, the block shows one step at a time with a progress indicator, "Vorige stap" and "Volgende stap". Each step validates before the next one opens.
 - A review step, "Controleren en versturen", listing every answer per step with a link back to that step.
 - A confirmation page: a heading, the reference, the form's own next-steps text and how to reach the organisation. Focus moves to its heading.
-- A place for "Opslaan en later verdergaan" in the step navigation. Its behaviour belongs to `intake-conditional-questions-and-drafts` (T06, T07).
+- "Opslaan en later verdergaan" in the step navigation. On a published form its store is `intake-conditional-questions-and-drafts` (T06, T07, openregister journey runs). On a create action the store is new and portaliq's: a `portalDraft` object per signed-in subject and action, holding the visible answers and the step reached, removed when sent or when `retentionDays` passes. The app stores nothing until the request is sent.
+- Action keys: `steps` (`[{ id, title, description?, fields[], review? }]`, the shape published forms use), `draft` (`{ retentionDays }`, 1 to 90) and `confirmation` (`{ title, body, next }` with `{identifier}` and `{deadline}` filled from the action's answer, a sentence with an empty value dropped). Dossiq writes `hint` on a step; the final key is `description`, as in `CnFormPage` and published forms.
+
+### Open decision: a form stricter than its server
+
+Dossiq wants fields required in the form that the server keeps optional (`periodeVan`, `documentSoorten`, the requester's name and address), so a call taken by phone can still be saved by staff. Portaliq forbids that today: `ActionConfigNormaliser` honours `fieldConfigs.required: true` only for fields in the schema's `required` set (`supplier-portal`, "Form data minimisation: no non-mandatory field may be required"). This change does not lift that rule. Either dossiq makes those fields required on its portal route, or Ruben relaxes the rule for actions that declare their own server check. Listed for Ruben.
 
 ## Existing work this builds on, and does not redo
 
@@ -60,5 +67,5 @@ New, for published forms (`IntakeFormBlock.vue`):
 
 ## Affected projects
 
-- portaliq: `src/site/components/IntakeFormBlock.vue`, `FormBlock.vue`, `c/SchemaForm.vue`, `c/SchemaField.vue`, a shared field layer under `src/site/components/forms/`, `lib/Service/Intake/PortalFormBindingResolver.php` (pass `steps`), strings.
+- portaliq: `src/site/components/IntakeFormBlock.vue`, `FormBlock.vue`, `c/SchemaForm.vue`, `c/SchemaField.vue`, a shared field layer under `src/site/components/forms/`, `lib/Service/Intake/PortalFormBindingResolver.php` (pass `steps`), `lib/Contribution/ActionConfigNormaliser.php` (`widget`, `steps`, `draft`, `confirmation`), a `portalDraft` schema with its routes and purge job, strings.
 - buildiq / openregister: none for this change. Steps already exist in the form shape.

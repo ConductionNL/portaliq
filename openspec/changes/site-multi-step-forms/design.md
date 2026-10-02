@@ -53,8 +53,9 @@ NL Design System: mark the non-required field, not the required one. Use "(niet 
 - `dateChoices` on a date field draws today and the next school or working days the action names in `fieldConfigs.<field>.dateChoices` (a count, 1 to 5, default 2), plus "Een andere dag". The last opens `DateInputGroup`. Day names come from the site's locale.
 - Presentation only. The value and its validation are unchanged.
 
-## D6. Steps on a published form
+## D6. Steps on a published form and on a create action
 
+- A create action MAY declare `steps` in the same shape. `ActionConfigNormaliser` keeps a step whose `fields` are all in the action's `fields`, drops the rest, and puts loose fields in a last step. A step with `review: true` is the review step (D7) and carries no fields. `SchemaForm.vue` renders the steps as `IntakeFormBlock.vue` does.
 - `PortalFormBindingResolver` passes the form's `steps` (`[{ id, title, description?, fields[] }]`, the shape `CnFormPage` reads) through in the form render, after keeping only steps whose `fields` name known fields. A field in no step goes in a last step of its own. Without `steps` the block renders as today, one page, no progress.
 - The block shows one step at a time. `FormProgress` lists every step with its state: done, current (`aria-current="step"`), to do. On a phone it collapses to "Stap 2 van 4" with the list behind a button.
 - "Volgende stap" validates the step's visible fields (required, the date group) before moving. "Vorige stap" never validates.
@@ -70,12 +71,22 @@ NL Design System: mark the non-required field, not the required one. Use "(niet 
 
 ## D8. Save and resume
 
-Owned by `intake-conditional-questions-and-drafts` (REQ-ICQ-005, tasks T06 and T07, blocked on openregister). This change fixes two things only:
+Two stores, one button.
+
+- A published form: owned by `intake-conditional-questions-and-drafts` (REQ-ICQ-005, tasks T06 and T07, blocked on openregister journey runs).
+- A create action with `draft: { retentionDays }` (1 to 90): a new `portalDraft` schema in portaliq's register. One object per signed-in subject, contribution and action: the visible answers, the step reached, `expiresAt`. Read and written only through portaliq's own routes, scoped to the subject, never forwarded to the app. Deleted on a successful send. A background job deletes expired drafts. A signed-out visitor gets no draft. File answers are not kept in a draft; the step with the file asks again.
+- Ruben may later fold both into journey runs once openregister ships them. Listed as a decision.
+
+The button and the landing step are the same for both:
 
 - The button "Opslaan en later verdergaan" sits in the step navigation, after "Volgende stap", styled subtle (`DossiqWoo.dc.html`).
 - A resumed draft opens on the first step that has a missing required answer, else on the review.
 
-The retention sentence ("Wij bewaren uw antwoorden 30 dagen") shows the run's own date, never a fixed number.
+The retention sentence ("Wij bewaren uw antwoorden 30 dagen. U kunt later verdergaan.") reads the declared `retentionDays` or the run's own date, never a number in the renderer.
+
+## D9. Confirmation from the action
+
+A create action MAY declare `confirmation: { title, body?, next? }`. `{identifier}` and `{deadline}` are filled from the action's answer (dossiq's `start()` returns `identifier` and `deadline`). A sentence whose placeholder has no value is left out. Without `confirmation` the action keeps `successMessage`, as today.
 
 ## Risks
 

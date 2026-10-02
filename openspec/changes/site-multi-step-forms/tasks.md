@@ -17,17 +17,23 @@ Four waves. Each wave is one PR to `development`. Every PR runs `npm run build:s
   - PHPUnit `ActionConfigNormaliserTest::testAWidgetHintIsKeptOnlyWhenKnown`
   - Mutation: dropping the allow-list lets `slider` through and fails the test
 
-## Wave 3: steps, review, confirmation (REQ-SMF-010, REQ-SMF-011)
+## Wave 3: steps, review, confirmation (REQ-SMF-010, REQ-SMF-011, REQ-SMF-020, REQ-SMF-022)
 
 - [ ] **T5**: `PortalFormBindingResolver` passes `steps` (design D6), keeping steps that name known fields and putting loose fields in a last step.
   - PHPUnit `PortalFormBindingResolverTest::testStepsTravelWithTheForm`, `::testAStepNamingAnUnknownFieldIsDropped`, `::testLooseFieldsGetALastStep`
 - [ ] **T6**: `FormProgress.vue`, step navigation, per-step validation, skip of all-hidden steps, focus on the step heading, in `IntakeFormBlock.vue`.
 - [ ] **T7**: `ReviewList.vue`, the review step with "Wijzigen" links, the confirmation with focus on its heading (design D7).
   - e2e: a four-step form from start to confirmation, keyboard only; the "Stap 2 wijzigen" round trip
+- [ ] **T7b**: `ActionConfigNormaliser` keeps `steps`, `draft` and `confirmation` on a create action (REQ-SMF-020, REQ-SMF-022); `SchemaForm.vue` runs the same step flow; the confirmation fills `{identifier}` and `{deadline}`.
+  - PHPUnit `ActionConfigNormaliserTest::testStepsNamingUnknownFieldsAreDropped`, `::testDraftRetentionIsClampedTo1To90`, `::testConfirmationKeepsOnlyText`
+  - node test: a confirmation sentence with an empty placeholder is left out
 
-## Wave 4: save and resume placement (REQ-SMF-012)
+## Wave 4: drafts (REQ-SMF-012, REQ-SMF-021)
 
-- [ ] **T8**: After `intake-conditional-questions-and-drafts` T06 lands: the button in the step navigation and the resume landing step. Blocked on openregister `or-form-and-journey-registry` tasks 2 and 3.
+- [ ] **T8**: `portalDraft` schema in `lib/Settings/portaliq_register.json`; routes to save, read and delete a draft for the signed-in subject; a purge job; the button and resume landing step in `SchemaForm.vue` (design D8).
+  - PHPUnit `PortalDraftControllerTest::testADraftIsOnlyItsOwnersToRead`, `::testSendingDeletesTheDraft`, `::testFileAnswersAreNotKept`; `PortalDraftPurgeJobTest::testAnExpiredDraftIsDeleted`
+  - Route auth and IDOR gates green on the new controller
+- [ ] **T8b**: After `intake-conditional-questions-and-drafts` T06 lands: the same button and landing step on published forms. Blocked on openregister `or-form-and-journey-registry` tasks 2 and 3.
 
 ## Validation
 
