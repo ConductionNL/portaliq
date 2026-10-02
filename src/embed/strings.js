@@ -3,7 +3,7 @@
 //
 // What the embed frame says, in Dutch and English (site-reaches-portal-parity
 // REQ-SRP-047). The key is the English source string; the Dutch texts are the
-// React frame's own (src/portal/components/EmbeddedForm.jsx and
+// React frame's own (the React portal's EmbeddedForm.jsx and
 // src/shared/embedCopy.js). tests/embed-frame.spec.mjs checks the Dutch
 // refusals stay word for word what embedCopy.js says.
 //

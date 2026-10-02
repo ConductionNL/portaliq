@@ -26,7 +26,7 @@ linked from the portal's own `<head>`.
 - **GIVEN** the portal shell page
 - **WHEN** its HTML is rendered
 - **THEN** a `<link rel="manifest">` element points at the manifest route
-- @e2e exclude head-element assertion — covered by PHPUnit/manual review of `templates/portal.php`; no distinct browser behaviour to test beyond what the manifest scenario above already covers
+- @e2e exclude head-element assertion — covered by PHPUnit/manual review of `templates/site.php`, which links the manifest since the React portal (`templates/portal.php`) retired; no distinct browser behaviour to test beyond what the manifest scenario above already covers
 
 ### Requirement: The service worker caches the app shell and never the API
 

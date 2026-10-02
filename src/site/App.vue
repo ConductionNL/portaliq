@@ -80,6 +80,12 @@
 				@signout="signOut">
 				<template #account>
 					<ActingForSwitcher :t="t" />
+					<!-- The eHerkenning branch in effect, or the choice of one (REQ-SRP-011). -->
+					<BranchSwitcher
+						v-if="session"
+						:t="t"
+						:api="api"
+						:session="session" />
 				</template>
 			</BrandHeader>
 			<WidgetGrid
@@ -130,8 +136,8 @@
 
 		<!-- Maintenance and warning notices running now (operate-maintenance-notice). -->
 		<SiteNotices
-			v-if="(site.notices || []).length > 0"
-			:notices="site.notices"
+			v-if="shownNotices.length > 0"
+			:notices="shownNotices"
 			:locale="locale" />
 
 		<!--
@@ -231,7 +237,11 @@
 					:t="t"
 					@loaded="onSharedDossierLoaded" />
 
-				<p v-else-if="loading" class="container" data-testid="site-loading">
+				<p
+					v-else-if="loading"
+					class="container"
+					role="status"
+					data-testid="site-loading">
 					{{ t('Loading…') }}
 				</p>
 
@@ -425,6 +435,7 @@ import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
+import { noticesFor } from '../shared/notices.js'
 import { consumeOpenTarget } from '../shared/openRecord.js'
 import { createPortalApi } from '../shared/portalApi.js'
 import {
@@ -497,6 +508,12 @@ const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
 )
 
+// The branch line in the header, loaded only for a signed-in session, so an
+// anonymous visitor pays nothing for it (site-reaches-portal-parity REQ-SRP-011).
+const BranchSwitcher = defineAsyncComponent(
+	() => import('./components/BranchSwitcher.vue'),
+)
+
 // Loaded only when a notice is running, so a portal without one pays nothing
 // for it in the site bundle (operate-maintenance-notice).
 const SiteNotices = defineAsyncComponent(
@@ -533,6 +550,7 @@ export default {
 	components: {
 		AccountArea,
 		ActingForSwitcher,
+		BranchSwitcher,
 		ContactPrompt,
 		BrandHeader,
 		FooterColumns,
@@ -829,6 +847,23 @@ export default {
 				...menus,
 				accountMenu(this.nav, this.t, this.unreadCount, this.hrefForRoute),
 			]
+		},
+
+		/**
+		 * The notices above every page: the public ones, and once a resident
+		 * is signed in also the signed-in ones the shell carries, each once
+		 * (operate-maintenance-notice, REQ-SRP-010).
+		 *
+		 * @return {Array<object>} The notices.
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
+		 */
+		shownNotices() {
+			return noticesFor(
+				this.site.notices,
+				runtimeConfig().portalNotices,
+				this.session !== null,
+			)
 		},
 
 		/**

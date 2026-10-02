@@ -5,17 +5,20 @@
  *
  * The ONE place a mail (task delivery, notification dispatch) turns "send the
  * resident to the portal" into an absolute URL. Built from the route table
- * (`linkToRoute('portaliq.portalPage.index')` + `getAbsoluteURL()`), never
+ * (`linkToRoute('portaliq.portalPage.site')` + `getAbsoluteURL()`), never
  * from a bare path: `getAbsoluteURL('/portal')` produced `https://host/portal`,
- * a path that exists on no deployment at all (the route is
- * `/apps/portaliq/portal`, with `index.php` in front on instances without
- * pretty URLs), so the only call-to-action in every notification mail was a
- * 404 (WOO-570).
+ * a path that exists on no deployment at all, so the only call-to-action in
+ * every notification mail was a 404 (WOO-570).
  *
- * The tenant parameter is passed through as `?org=<organisation>` exactly as
- * the two jobs did before this class existed. Which tenant identifier the
- * public portal should resolve on (OpenRegister organisation slug vs. portal
- * object) is WOO-566's decision and is deliberately NOT changed here.
+ * Every link opens the Vue site (`/site`). It opened the React portal
+ * (`/portal`) until the site replaced it (site-reaches-portal-parity
+ * REQ-SRP-049); `/portal` now redirects, so a mail sent before keeps working,
+ * but no new mail depends on that redirect.
+ *
+ * The tenant parameter is passed through as `?org=<organisation>`, which the
+ * site resolves to the organisation's one published portal, exactly as the
+ * React portal did. Which tenant identifier a mail should carry (organisation
+ * vs. portal) is WOO-566's decision and is deliberately NOT changed here.
  *
  * @category Service
  * @package  OCA\Portaliq\Service
@@ -40,31 +43,27 @@ namespace OCA\Portaliq\Service;
 use OCP\IURLGenerator;
 
 /**
- * Builds the absolute deep link into the public portal for out-of-band mail.
+ * Builds the absolute deep link into the site for out-of-band mail.
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */
 class PortalDeepLinkBuilder {
 	/**
-	 * The public portal shell's route name (appinfo/routes.php `portalPage#index`).
-	 */
-	private const PORTAL_ROUTE = 'portaliq.portalPage.index';
-
-	/**
-	 * The Vue site's route (site-reaches-portal-parity).
+	 * The site's route name (appinfo/routes.php `portalPage#site`), where
+	 * every mail link lands (site-reaches-portal-parity REQ-SRP-049).
 	 */
 	private const SITE_ROUTE = 'portaliq.portalPage.site';
 
 	/**
-	 * The query parameter the portal shell reads a named portal from
-	 * (PortalRuntimeConfigResolver::resolvePortal(), `?portal=`). It wins over
-	 * `?org=`, and a slug that names no portal is a miss, never a fallback.
+	 * The query parameter the site reads a named portal from
+	 * (PortalPageController::site(), `?portal=`). It wins over `?org=`, and a
+	 * slug that names no portal is a miss, never a fallback.
 	 */
 	private const PORTAL_PARAMETER = 'portal';
 
 	/**
-	 * The query parameter the portal shell reads the tenant from
-	 * (PortalPageController::index(), `?org=`). See WOO-566 before changing it.
+	 * The query parameter the site reads the tenant from
+	 * (PortalPageController::site(), `?org=`). See WOO-566 before changing it.
 	 */
 	private const TENANT_PARAMETER = 'org';
 
@@ -94,7 +93,7 @@ class PortalDeepLinkBuilder {
 			$parameters[self::TENANT_PARAMETER] = $organisation;
 		}
 
-		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute(self::PORTAL_ROUTE, $parameters));
+		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute(self::SITE_ROUTE, $parameters));
 	}//end forOrganisation()
 
 	/**
@@ -116,14 +115,15 @@ class PortalDeepLinkBuilder {
 			return $this->forOrganisation(organisation: $organisation);
 		}
 
-		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute(self::PORTAL_ROUTE, [self::PORTAL_PARAMETER => $portalSlug]));
+		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute(self::SITE_ROUTE, [self::PORTAL_PARAMETER => $portalSlug]));
 	}//end forPortal()
 
 	/**
-	 * The absolute link to one portal's Vue site, `?portal=<slug>`, for a
-	 * screen that lives only there (the ways in of identity-ways-in-screens).
-	 * Without a slug it falls back to the organisation's portal link, because
-	 * the site does not resolve `?org=` yet.
+	 * The absolute link to one portal's site, `?portal=<slug>` (the ways in
+	 * of identity-ways-in-screens). Without a slug it falls back to the
+	 * organisation's link, `?org=`, which the site resolves too. The same
+	 * address as forPortal() since `/portal` became a redirect to the site;
+	 * kept so its callers keep their names.
 	 *
 	 * @param string $portalSlug   The portal's slug, or ''.
 	 * @param string $organisation The tenant slug, for the fallback.

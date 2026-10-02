@@ -3,31 +3,26 @@
 /**
  * Portaliq PortalPageController
  *
- * Serves the PUBLIC, white-label portal SPA (React + NL Design System) to the
- * two external audiences — clients and suppliers — who are NOT Nextcloud users.
- * The page renders with the public chrome (no Nextcloud navigation) and boots
- * the `portaliq-portal` bundle, which authenticates against the portal's own
- * auth edge (see the supplier-portal change) rather than a Nextcloud session.
+ * Serves the PUBLIC, white-label site (`/site`, the Vue renderer with NL
+ * Design System styling) to visitors and to the two signed-in audiences,
+ * clients and suppliers, who are NOT Nextcloud users. The page boots the
+ * `portaliq-site` bundle, which signs residents in against the portal's own
+ * auth edge (`/portal/api/*`) rather than a Nextcloud session.
  *
- * White-label resolution: the visitor is unauthenticated at this point (no
- * bearer, no session claim to resolve a tenant from), so the tenant is named
- * by the request itself — `?portal={slug}` primarily, `?org={value}` as a
- * strict alias, or the verified request host — and resolved to a `portal`
- * object via {@see PortalRuntimeConfigResolver}. A missing or unknown tenant
- * renders the safe neutral default shell, never a 500 and never another
- * tenant's branding.
+ * `/portal` served the React portal until the site reached parity with it
+ * (site-reaches-portal-parity). It now answers with a redirect to `/site`,
+ * keeping its query string, so old links, installed apps and mails keep
+ * working. The auth edge under `/portal/api/*`, the manifest, the service
+ * worker and the embed frame keep their addresses.
  *
- * THE TENANT SOURCE MOVED (WOO-566, 2026-09-22). It used to be an
- * OpenRegister Organisation plus an `org_presentation_<uuid>` blob that
- * nothing in the fleet ever wrote, so this route served the neutral default
- * to every tenant on every request while `/site` — the same public page,
- * rendered differently — read the portal object and got it right. It is now
- * the portal object here too, because an organisation may run several portals
- * that look different and an org-keyed blob cannot express that. The OIDC
- * broker stays on the Organisation: see PortalOrganisationConfigService.
+ * White-label resolution: the visitor is unauthenticated at this point, so
+ * the portal is named by the request itself: `?portal={slug}`, `?org={value}`
+ * as a strict alias, or the verified request host. A missing or unknown
+ * portal renders the neutral shell, never a 500 and never another tenant's
+ * branding.
  *
- * The CSP `frame-ancestors` is built from the resolved portal's declared
- * `frameAncestors` — `'none'` when empty, NEVER the previous hard-coded `'*'`.
+ * The CSP `frame-ancestors` is `'none'`: the site is never framed. The embed
+ * frame (`PortalEmbedController`) has its own policy.
  *
  * @category Controller
  * @package  OCA\Portaliq\Controller
@@ -55,14 +50,15 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
-use OCA\Portaliq\Service\Cms\SiteHead;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
+use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -73,6 +69,18 @@ use OCP\IURLGenerator;
  * @spec openspec/changes/supplier-portal/tasks.md#T08
  */
 class PortalPageController extends Controller {
+	/**
+	 * The portal slug this request names, once read (see requestedPortalSlug()).
+	 *
+	 * @var string|null
+	 */
+	private ?string $requestedSlug = null;
+
+	/**
+	 * HTTP 302 Found: what `/portal` answers (REQ-SRP-048).
+	 */
+	private const STATUS_FOUND = 302;
+
 	/**
 	 * Constructor.
 	 *
@@ -88,7 +96,7 @@ class PortalPageController extends Controller {
 	 *                                           reference to a real themiq
 	 *                                           token stylesheet.
 	 * @param SiteHead $siteHead The head of the page a site request asks for.
-	 * @param PortalNoticeReader $notices The notices running on the signed-in portal now.
+	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -103,124 +111,105 @@ class PortalPageController extends Controller {
 	}//end __construct()
 
 	/**
-	 * Render the public portal shell.
+	 * The portal this request names, read once: `?portal=`, else the one
+	 * published portal of the organisation `?org=` names, else '' (the host
+	 * decides). Mails built for an organisation carry `?org=`, and so did
+	 * every `/portal` link, so the site reads it too (REQ-SRP-048).
 	 *
-	 * The white-label runtime config (organisation name, theme, logo, IdP,
-	 * feature flags) is resolved server-side from the `?org={slug}` query
-	 * parameter and injected via IInitialStateService (see
-	 * `templates/portal.php`; `src/portal/main.jsx` reads it back with
-	 * `loadState('portaliq', 'runtimeConfig', ...)`). The React bundle takes
-	 * over routing client-side; deep links are handled by catchAll(), which
-	 * renders through this same method so every portal URL carries the
-	 * resolved config.
+	 * Only a resolved portal's slug comes out of `?org=`, never the raw value.
 	 *
-	 * This is the one genuinely public HTML page in the fleet (ADR-081). The
-	 * rate-limit ceiling below is generous on purpose: a citizen reloading a
-	 * form must never be the thing that trips it.
+	 * @return string The slug, or ''.
 	 *
-	 * @return TemplateResponse
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 */
+	private function requestedPortalSlug(): string {
+		if ($this->requestedSlug !== null) {
+			return $this->requestedSlug;
+		}
+
+		$slug = trim((string)$this->request->getParam('portal', ''));
+		$org = trim((string)$this->request->getParam('org', ''));
+		if ($slug === '' && $org !== '') {
+			try {
+				$portal = $this->portalResolver->resolveByOrganisation(organisation: $org);
+				$slug = (string)($portal['slug'] ?? '');
+			} catch (\Throwable) {
+				$slug = '';
+			}
+		}
+
+		$this->requestedSlug = $slug;
+		return $slug;
+	}//end requestedPortalSlug()
+
+	/**
+	 * The retired React portal's address: a redirect to the site.
 	 *
-	 * @spec openspec/changes/supplier-portal/tasks.md#T08
-	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.1
-	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.1
-	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.4
-	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 * `/portal` served the React portal until the Vue site reached parity
+	 * with it (site-reaches-portal-parity). Old bookmarks, installed apps and
+	 * mails still carry this address, so it answers 302 to the site with the
+	 * same query string: `?portal=` and `?org=` keep naming the same portal,
+	 * because `site()` reads both.
+	 *
+	 * The fragment (`#token=`, `#open=`, `#confirm-email=`, `#signin=failed`)
+	 * never reaches the server, and it does not have to: a browser applies the
+	 * original fragment to a redirect whose `Location` carries none
+	 * (RFC 9110 section 10.2.2), so the site still reads it.
+	 *
+	 * @return RedirectResponse
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
-	public function index(): TemplateResponse {
-		$orgValue = (string)$this->request->getParam('org', '');
-		$portalSlug = (string)$this->request->getParam('portal', '');
-		$locale = $this->resolveLocale();
-
-		// Resolved ONCE and passed down. The runtime config and the stylesheet
-		// tag have to describe the same portal — resolving twice is how a page
-		// ends up announcing one tenant in its initial state and linking
-		// another one's tokens.
-		$portal = $this->configResolver->resolvePortal(
-			request: $this->request,
-			portalSlug: $portalSlug,
-			orgValue: $orgValue
-		);
-
-		$runtimeConfig = $this->configResolver->runtimeConfigFor(
-			portal: $portal,
-			orgValue: $orgValue,
-			locale: $locale
-		);
-		// Maintenance and warning notices running now on the signed-in
-		// portal (operate-maintenance-notice). No portal, no notices.
-		$runtimeConfig['notices'] = [];
-		if ($portal !== null) {
-			$runtimeConfig['notices'] = $this->notices->active(portal: (string)($portal['slug'] ?? ''), surface: 'portal');
-		}
-
-		$response = new TemplateResponse(
-			Application::APP_ID,
-			'portal',
-			[
-				'runtimeConfig' => $runtimeConfig,
-				// The token set to link, resolved server-side for the same
-				// reason `/site` does it: resolving colours client-side means
-				// the first paint is unthemed and the page visibly repaints
-				// into its brand a moment later.
-				'themeStylesheet' => $this->configResolver->themeStylesheetFor(portal: $portal),
-				// PWA installability: the SAME org/portal reference this page
-				// was just resolved with, so PortalManifestController::
-				// manifest() names the identical tenant (templates/portal.php).
-				'manifestUrl' => $this->manifestUrl(orgValue: $orgValue, portalSlug: $portalSlug),
-			],
-			// BASE, NOT PUBLIC — same leak, same reasoning as site() below.
-			// This route's own docblock calls it "the one genuinely public HTML
-			// page in the fleet" and it is governed by
-			// portal-white-label-runtime-config, which makes Nextcloud's header
-			// bar sitting above it the plainest contradiction of its spec.
-			// Fixed here as well as in site() because /portal is still served
-			// while parity with /site is measured, and a leak on the route
-			// being retired is still a leak today.
-			TemplateResponse::RENDER_AS_BASE
-		);
-
-		// Per-tenant frame-ancestors: the portal carries a bearer token and
-		// renders authenticated actions, so an unrestricted '*' is a
-		// clickjacking exposure. Default-deny; an explicit tenant opts into
-		// embedding via the `frameAncestors` on its own portal object.
-		// ContentSecurityPolicy() defaults `frame-ancestors` to 'self' — that
-		// default must be cleared first, or an empty-origins tenant would
-		// still (wrongly) allow same-origin framing instead of 'none'.
-		$csp = new ContentSecurityPolicy();
-		$csp->disallowFrameAncestorDomain('\'self\'');
-		foreach ((array)($runtimeConfig['allowedEmbedOrigins'] ?? []) as $origin) {
-			$csp->addAllowedFrameAncestorDomain((string)$origin);
-		}
-
-		$response->setContentSecurityPolicy($csp);
-
+	public function index(): RedirectResponse {
+		$response = new RedirectResponse($this->siteAddress());
+		// 302, not RedirectResponse's own 303: the address moved, the
+		// request did not change meaning.
+		$response->setStatus(self::STATUS_FOUND);
 		return $response;
 	}//end index()
 
 	/**
-	 * Client-side-routed deep links (e.g. /portal/contracts/123) resolve to the
-	 * same shell; the React router renders the correct view.
+	 * A deep link under the retired portal (`/portal/<anything>`) lands on the
+	 * site with its query string. The React portal kept its screens in state,
+	 * never in the path, so the path names nothing the site could open.
 	 *
-	 * @param string $path The deep-link path (unused server-side).
+	 * @param string $path The deep-link path (unused).
 	 *
-	 * @return TemplateResponse
+	 * @return RedirectResponse
 	 *
-	 * @spec openspec/changes/supplier-portal/tasks.md#T08
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- $path is bound by the
-	 * route definition; the SPA router consumes it client-side.
+	 * route definition and carries nothing the site can use.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
-	public function catchAll(string $path = ''): TemplateResponse {
+	public function catchAll(string $path = ''): RedirectResponse {
 		return $this->index();
 	}//end catchAll()
+
+	/**
+	 * The site's address with this request's query string, unchanged.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 */
+	private function siteAddress(): string {
+		$site = $this->urlGenerator->linkToRoute('portaliq.portalPage.site');
+		$query = (string)parse_url($this->request->getRequestUri(), PHP_URL_QUERY);
+		if ($query === '') {
+			return $site;
+		}
+
+		return $site . '?' . $query;
+	}//end siteAddress()
 
 	/**
 	 * The built-in SITE renderer shell (ADR-084).
@@ -248,23 +237,22 @@ class PortalPageController extends Controller {
 			Application::APP_ID,
 			'site',
 			[
-				// The ONLY things resolved server-side: which site, when the
-				// caller named one, and which token stylesheet to load.
-				// Host resolution — the normal path — needs nothing here.
+				// The ONLY things resolved server-side: which site, when the caller
+				// named one (`?portal=` or `?org=`), and which token stylesheet to
+				// load. Host resolution, the normal path, needs nothing here.
 				'portalConfig' => [
-					'portal'  => (string)$this->request->getParam('portal', ''),
+					'portal'  => $this->requestedPortalSlug(),
 					'apiBase' => $this->urlGenerator->linkToRoute('portaliq.content.site'),
 					// The serving portal's slug, resolved the same way the theme
-					// above is (host, or the named site). The renderer keeps
-					// resolving CONTENT through the API exactly as before; this
-					// only lets first-party campaign capture key its storage
-					// by portal at boot, synchronously, instead of after the
-					// site fetch, where a visitor who moved on quickly lost the
-					// landing that brought them.
+					// above is (host, or the named site). Content still comes from
+					// the API; this only lets first-party campaign capture key its
+					// storage by portal at boot, synchronously, instead of after
+					// the site fetch, where a quick visitor lost the landing.
 					'resolvedPortal' => $this->siteResolvedSlug(),
-					// The document title, server-rendered; the why is on siteTitle().
+					// Title: see siteTitle(). Signed-in notices: see sitePortalNotices().
 					'title' => $this->siteTitle(),
 					'signin' => $this->siteSignin(),
+					'portalNotices' => $this->sitePortalNotices(),
 				],
 				// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.
 				// Everything else this renderer shows is fetched after boot,
@@ -378,7 +366,7 @@ class PortalPageController extends Controller {
 	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	private function siteHead(): array {
-		$portalSlug = (string)$this->request->getParam('portal', '');
+		$portalSlug = $this->requestedPortalSlug();
 		try {
 			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $portalSlug);
 		} catch (\Throwable) {
@@ -412,7 +400,7 @@ class PortalPageController extends Controller {
 	private function siteSignin(): array {
 		$portal = $this->configResolver->resolvePortal(
 			request: $this->request,
-			portalSlug: (string)$this->request->getParam('portal', ''),
+			portalSlug: $this->requestedPortalSlug(),
 			orgValue: ''
 		);
 		$config = $this->configResolver->runtimeConfigFor(portal: $portal, orgValue: '', locale: $this->siteLocale());
@@ -429,6 +417,30 @@ class PortalPageController extends Controller {
 
 
 	/**
+	 * The notices running now on the signed-in surface of the serving portal,
+	 * or none when the request resolves no portal. The site shows them next
+	 * to the public ones once a resident is signed in, as `/portal` did
+	 * (operate-maintenance-notice, site-reaches-portal-parity REQ-SRP-010).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
+	 */
+	private function sitePortalNotices(): array {
+		$slug = $this->siteResolvedSlug();
+		if ($slug === '') {
+			return [];
+		}
+
+		try {
+			return $this->notices->active(portal: $slug, surface: 'portal');
+		} catch (\Throwable) {
+			return [];
+		}
+	}//end sitePortalNotices()
+
+
+	/**
 	 * The serving portal's slug, or '' when the request resolves to none.
 	 *
 	 * @return string The slug.
@@ -439,7 +451,7 @@ class PortalPageController extends Controller {
 		try {
 			$portal = $this->portalResolver->resolve(
 				request: $this->request,
-				portalSlug: (string)$this->request->getParam('portal', '')
+				portalSlug: $this->requestedPortalSlug()
 			);
 		} catch (\Throwable) {
 			return '';
@@ -466,7 +478,7 @@ class PortalPageController extends Controller {
 		try {
 			$portal = $this->portalResolver->resolve(
 				request: $this->request,
-				portalSlug: (string)$this->request->getParam('portal', '')
+				portalSlug: $this->requestedPortalSlug()
 			);
 		} catch (\Throwable) {
 			return '';
@@ -498,7 +510,7 @@ class PortalPageController extends Controller {
 		try {
 			$portal = $this->portalResolver->resolve(
 				request: $this->request,
-				portalSlug: (string)$this->request->getParam('portal', '')
+				portalSlug: $this->requestedPortalSlug()
 			);
 		} catch (\Throwable) {
 			return '';
@@ -587,7 +599,7 @@ class PortalPageController extends Controller {
 		try {
 			$portal = $this->portalResolver->resolve(
 				request: $this->request,
-				portalSlug: (string)$this->request->getParam('portal', '')
+				portalSlug: $this->requestedPortalSlug()
 			);
 		} catch (\Throwable) {
 			return '';
@@ -625,27 +637,4 @@ class PortalPageController extends Controller {
 
 		return trim($first);
 	}//end resolveLocale()
-
-	/**
-	 * The manifest URL for the SAME org/portal reference this page resolved,
-	 * so the installed app and the page installing it can never name two
-	 * different tenants (parent-pwa-installability).
-	 *
-	 * @param string $orgValue The `?org=` value, or ''.
-	 * @param string $portalSlug The `?portal=` value, or ''.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-portal-serves-a-web-app-manifest-naming-the-resolved-portal
-	 */
-	private function manifestUrl(string $orgValue, string $portalSlug): string {
-		$params = [];
-		if ($portalSlug !== '') {
-			$params['portal'] = $portalSlug;
-		} elseif ($orgValue !== '') {
-			$params['org'] = $orgValue;
-		}
-
-		return $this->urlGenerator->linkToRoute('portaliq.portalManifest.manifest', $params);
-	}//end manifestUrl()
 }//end class

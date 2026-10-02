@@ -3,8 +3,8 @@
 /**
  * Portaliq Portal Organisation Config Service
  *
- * Resolves the white-label `RUNTIME_CONFIG` PortalPageController injects for
- * the public, unauthenticated `/portal` shell (portal-white-label-runtime-config):
+ * Resolves the white-label `RUNTIME_CONFIG` PortalPageController hands
+ * the public, unauthenticated site (portal-white-label-runtime-config):
  * the visitor has no bearer yet, so the tenant is identified by a `?org={slug}`
  * query parameter (design.md, option 2 — no routing rework) and resolved
  * against OpenRegister's own Organisation entity (ADR-022 — no new parallel
@@ -101,8 +101,8 @@ class PortalOrganisationConfigService {
 	];
 
 	/**
-	 * Locales the portal SPA ships a translation bundle for
-	 * (`src/portal/i18n/{locale}.json`). Anything else falls back to `nl`
+	 * Locales the site ships a translation bundle for
+	 * (`src/shared/i18n/{locale}.json`). Anything else falls back to `nl`
 	 * (the current de-facto default) — never a blank/unsupported locale.
 	 */
 	private const SUPPORTED_LOCALES = ['nl', 'en'];

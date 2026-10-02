@@ -4,7 +4,7 @@
 // The history of one object, as its contributing app declared it through a
 // collection's `timeline` (portaliq#723). The app decided what is public, so
 // nothing here filters or adds: it only orders the entries newest first.
-// The same rules as src/portal/components/TimelineList.jsx, without React.
+// The same rules as the React portal's TimelineList.jsx, without React.
 //
 // Imports nothing, so tests/case-timeline.spec.mjs runs it as node.
 //

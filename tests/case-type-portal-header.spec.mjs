@@ -8,42 +8,8 @@
  */
 
 import assert from 'node:assert/strict'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
 import { test } from 'node:test'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-
-const require = createRequire(import.meta.url)
-const babel = require('@babel/core')
-
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests')
-
-/**
- * Compile one portal source file and import it.
- *
- * @param {string} relative The path under src/portal.
- * @return {Promise<object>} The module.
- */
-async function load(relative) {
-	const source = join(ROOT, 'src', 'portal', relative)
-	const compiled = babel.transformSync(readFileSync(source, 'utf8'), {
-		filename: source,
-		babelrc: false,
-		configFile: false,
-		presets: [['@babel/preset-react', { runtime: 'automatic' }]],
-	})
-	mkdirSync(OUT_DIR, { recursive: true })
-	const out = join(
-		OUT_DIR,
-		'case-type_' + relative.replace(/[\\/]/g, '_').replace(/\.jsx?$/, '.mjs'),
-	)
-	writeFileSync(out, compiled.code)
-	return import(pathToFileURL(out).href)
-}
-
-const { createPortalApi } = await load('../shared/portalApi.js')
+import { createPortalApi } from '../src/shared/portalApi.js'
 
 /**
  * Stub the browser: a stored bearer and a recording fetch.
@@ -99,14 +65,26 @@ test('a portal that resolved to none sends no portal header', async () => {
 
 test('site: the citizen case block reads the case through the adapter, which names the serving portal', async () => {
 	const calls = stubBrowser()
-	const api = createPortalApi({ apiBase: '/api', organisationSlug: 'mijn-alkmaar' })
+	const api = createPortalApi({
+		apiBase: '/api',
+		organisationSlug: 'mijn-alkmaar',
+	})
 	await api.fetchCitizenCase(CASES, 'case-1')
 	assert.equal(calls[0].url, '/api/citizen/cases/dossiq/case/case-1')
 	assert.equal(calls[0].headers['X-Portaliq-Portal'], 'mijn-alkmaar')
 
 	const { loadSfc } = await import('./support/render-sfc.mjs')
 	const screen = await loadSfc('src/site/components/e/CitizenCase.vue')
-	await screen.methods.load.call({ caseId: 'case-2', mandateId: '', collection: CASES, api })
+	await screen.methods.load.call({
+		caseId: 'case-2',
+		mandateId: '',
+		collection: CASES,
+		api,
+	})
 	assert.equal(calls[1].url, '/api/citizen/cases/dossiq/case/case-2')
-	assert.equal(calls[1].headers['X-Portaliq-Portal'], 'mijn-alkmaar', 'the block reads through the adapter')
+	assert.equal(
+		calls[1].headers['X-Portaliq-Portal'],
+		'mijn-alkmaar',
+		'the block reads through the adapter',
+	)
 })

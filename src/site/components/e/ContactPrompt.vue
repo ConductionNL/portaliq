@@ -5,7 +5,7 @@
 
 <!--
 	The prompt for a missing e-mail address (identity-profile-page T09), ported
-	from ContactPrompt in src/portal/components/AccountPage.jsx. The shell shows
+	from ContactPrompt in the React portal's AccountPage.jsx. The shell shows
 	it above the page while `contactPromptWanted(session)` from
 	src/site/pages/e/index.js holds. "Not now" hides it for the session.
 -->

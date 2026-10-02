@@ -5,7 +5,7 @@
 
 <!--
 	"My account" on the site (identity-profile-page T07, T10), ported from
-	src/portal/components/AccountPage.jsx. The signed-in person's own name,
+	the React portal's AccountPage.jsx. The signed-in person's own name,
 	e-mail addresses and phone numbers with the preferred one of each kind
 	marked, how the organisation contacts them, and removing the account. After
 	a removal the page emits `removed`: the shell listens and signs out.

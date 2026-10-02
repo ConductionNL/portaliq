@@ -5,7 +5,7 @@
 
 <!--
 	"My cases" on the site (cases-my-cases-page), ported from
-	src/portal/components/MyCasesPage.jsx. Every case the signed-in person may
+	the React portal's MyCasesPage.jsx. Every case the signed-in person may
 	read, from every app that contributes cases, in one list, newest first. Each
 	row names the app it comes from, and the mandate it is read under when there
 	is one. Open and closed cases sit on their own tabs; the "Closed" tab is only
@@ -13,7 +13,7 @@
 	contributions answer's `cases.closedMarker`, handed in as `closedMarker`).
 
 	Opening a case needs the shell's page lookup (`navKeyFor` in
-	src/portal/lib/openRecord.js): the shell passes `canOpen(target)` and
+	src/shared/openRecord.js): the shell passes `canOpen(target)` and
 	`openCase(target, row)`. Without them a case title is plain text, exactly as
 	the React page shows a case no page can open.
 -->

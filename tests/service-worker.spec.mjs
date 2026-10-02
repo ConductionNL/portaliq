@@ -88,12 +88,19 @@ test('the site shell is cached: its bundle and its page', () => {
 	)
 })
 
-test('the React portal shell stays cached until it is retired', () => {
+test('the retired portal address is not cached: it redirects to the site', () => {
+	assert.equal(workerAnswers('/index.php/apps/portaliq/portal'), false)
 	assert.equal(
-		workerAnswers('/index.php/apps/portaliq/js/portaliq-portal.js'),
-		true,
+		workerAnswers('/index.php/apps/portaliq/portal?portal=wilgenboom'),
+		false,
 	)
-	assert.equal(workerAnswers('/index.php/apps/portaliq/portal'), true)
+})
+
+test('the cache name moved on, so the old shell cache is deleted', () => {
+	assert.match(
+		readFileSync(join(ROOT, 'src', 'shared', 'serviceWorker.js'), 'utf8'),
+		/const CACHE_VERSION = 'portaliq-shell-v3'/,
+	)
 })
 
 // 🔴 THE ONE RULE. A cached authenticated answer could be served to the next
