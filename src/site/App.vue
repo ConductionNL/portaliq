@@ -949,6 +949,7 @@ export default {
 					apiBase: authBaseFrom(resolveApiBase()),
 					organisationSlug: this.site.slug || this.portalSlug || '',
 					audience: this.signinConfig.audience || '',
+					language: this.locale,
 				},
 				{
 					getToken: () => adoptSessionToken() || null,
