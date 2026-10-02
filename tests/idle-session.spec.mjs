@@ -28,8 +28,16 @@ import {
 } from '../src/shared/idleSession.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const t = (key, vars = {}) =>
-	key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
+/**
+ * A translator that only fills placeholders.
+ *
+ * @param {string} key The string.
+ * @param {object} vars The placeholder values.
+ * @return {string} The filled string.
+ */
+function t(key, vars = {}) {
+	return key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
+}
 
 /**
  * An in-memory Storage.
