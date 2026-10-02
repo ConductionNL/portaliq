@@ -50,7 +50,8 @@ import CustomExample from './views/CustomExample.vue'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
 import { createFormBindingPreview } from './lib/formBindingPreview.js'
-import { createNewsApi, createNewsHandlers } from './lib/newsAuthoring.js'
+import { refreshList } from './lib/listRefresh.js'
+import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
 import {
 	createStaffAccountActions,
@@ -165,8 +166,10 @@ const newsHandlers = createNewsHandlers({
 	translate: (text, vars) => t('portaliq', text, vars),
 	notify: showSuccess,
 	notifyError: showError,
-	// A header or row handler gets no handle on the list, so the page reloads.
-	reload: () => window.location.reload(),
+	// A handler gets no handle on the list, so the list is fetched again with
+	// the page, sort and filters it had (news-list-keeps-its-page). Only a
+	// list that was never fetched here falls back to reloading the page.
+	reload: () => refreshList(NEWS_LIST) || window.location.reload(),
 })
 // Features & Roadmap page — thin wrapper around the lib's
 // CnFeaturesAndRoadmapView (in-product roadmap surface powered by

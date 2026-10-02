@@ -39,6 +39,7 @@ import {
 	registerIcons,
 	registerLeafIntegrations,
 	registerTranslations,
+	useObjectStore,
 } from '@conduction/nextcloud-vue'
 import { loadState } from '@nextcloud/initial-state'
 import {
@@ -56,6 +57,7 @@ import customComponents from './customComponents.js'
 import appIcons from './icons.js'
 import { registerProposalQueueLeaf } from './integrations/registerProposalQueueLeaf.js'
 import { normaliseAccess, routeAllowed, withAccess } from './lib/adminAccess.js'
+import { recordListFetches } from './lib/listRefresh.js'
 import bundledManifest from './manifest.json'
 import pinia from './pinia.js'
 // v2 five-kind registry — the replacement for customComponents.
@@ -248,5 +250,8 @@ const app = createApp(App, {
 // gone from the Vue 3 bootstrap entirely.
 app.mixin({ methods: { t, n } })
 app.use(pinia)
+// Remember what each list last fetched, so a handler can refresh its list in
+// place on the same page (news-list-keeps-its-page).
+recordListFetches(useObjectStore(pinia))
 app.use(router)
 app.mount('#content')
