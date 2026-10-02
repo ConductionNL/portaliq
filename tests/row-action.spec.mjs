@@ -112,6 +112,72 @@ test('the table without offers keeps showing every action on every row', async (
 	assert.equal(html.split('>Close</button>').length - 1, 2)
 })
 
+// update-row-action-condition: learniq's cancel on the guardian's conference
+// times, a `type: update` row action with a rowWhen on the slot's lifecycle.
+const cancelTime = {
+	id: 'cancelConferenceTime',
+	label: 'Cancel this time',
+	type: 'update',
+	set: { lifecycle: 'cancelled' },
+	rowWhen: { field: 'lifecycle', in: ['booked', 'acknowledged'] },
+}
+const conferenceSlots = {
+	id: 'parentConferenceSlots',
+	register: 'learniq',
+	schema: 'conference-slot',
+	columns: [
+		{ field: 'startsAt', label: 'Starts' },
+		{ field: 'lifecycle', label: 'Status' },
+	],
+}
+const slotRows = ['booked', 'acknowledged', 'completed', 'cancelled', 'declined'].map(
+	(lifecycle, index) => ({
+		id: `slot-${index}`,
+		startsAt: `2026-10-1${index}T15:00:00+02:00`,
+		lifecycle,
+	}),
+)
+
+test('an update row action follows its rowWhen too', () => {
+	const offered = slotRows.filter((row) =>
+		rowAction.offersRowAction(cancelTime, row),
+	)
+	assert.deepEqual(
+		offered.map((row) => row.lifecycle),
+		['booked', 'acknowledged'],
+	)
+	assert.equal(rowAction.offersRowAction(cancelTime, {}), false)
+	assert.equal(
+		rowAction.offersRowAction(
+			{ ...cancelTime, rowWhen: { field: 'lifecycle' } },
+			slotRows[0],
+		),
+		false,
+	)
+	assert.equal(
+		rowAction.offersRowAction({ ...cancelTime, rowWhen: undefined }, slotRows[3]),
+		true,
+	)
+})
+
+test('the table shows the cancel button only on a booked or acknowledged time', async () => {
+	const html = await renderSfc(VUE_TABLE, {
+		collection: conferenceSlots,
+		objects: slotRows,
+		rowActions: [cancelTime],
+		offers: rowAction.offersRowAction,
+		loading: false,
+		t: (key) => key,
+		locale: 'en',
+	})
+	const rows = html.split('<tr').slice(2)
+	assert.equal(rows.length, 5)
+	assert.deepEqual(
+		rows.map((row) => />Cancel this time</.test(row)),
+		[true, true, false, false, false],
+	)
+})
+
 test('the confirm step shows the notice on a voluntary contribution, and none otherwise', async () => {
 	const render = (row) =>
 		renderSfc(VUE_CONFIRM, {
