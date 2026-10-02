@@ -15,6 +15,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+	formatDate,
+	formatDateTime,
 	keepTaskToOpen,
 	takeTaskToOpen,
 	TASK_STORAGE_KEY,
@@ -320,4 +322,12 @@ test('the list shows each open task with its due date, and an empty list says so
 	)
 	assert.match(empty, /<em>U heeft geen open taken\.<\/em>/)
 	assert.equal(typeof pages.tasks, 'function')
+})
+
+test('a due date reads in Dutch time on every device, whatever the process zone', () => {
+	// 22:30 UTC on 14 October is already 15 October in Amsterdam (CEST, +02:00).
+	assert.equal(formatDate('2026-10-14T22:30:00Z', 'en'), '15/10/2026')
+	assert.equal(formatDate('2026-10-14T22:30:00Z', 'nl'), '15-10-2026')
+	assert.match(formatDateTime('2026-10-14T22:30:00Z', 'en'), /^15\/10\/2026, 00:30:00$/)
+	assert.equal(formatDate('', 'en'), '')
 })

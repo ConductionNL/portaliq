@@ -71,6 +71,29 @@ test('the template owns its document and loads the embed entry, not the portal',
 	assert.doesNotMatch(template, /-(portal|site)\.js/)
 })
 
+test('the frame has a skip link to a target the template itself renders (WCAG 2.4.1)', () => {
+	const template = readFileSync(join(ROOT, 'templates', 'embed.php'), 'utf8')
+		.split('\n')
+		.filter((line) => !line.trim().startsWith('//'))
+		.join('\n')
+
+	const link = template.match(/<a\b[^>]*\bid="skip-link"[^>]*>([\s\S]*?)<\/a>/)
+	assert.ok(link, 'the document carries an <a id="skip-link">')
+	const href = link[0].match(/href="#([\w-]+)"/)
+	assert.ok(href, 'the skip link points at a fragment')
+	// The target is in the template, not rendered by the bundle: the link works
+	// before the frame has booted and when it never boots.
+	const target = new RegExp(`<main\\b[^>]*\\bid="${href[1]}"[^>]*\\btabindex="-1"`)
+	assert.match(template, target, 'the fragment is a focusable <main> in the template')
+	assert.ok(
+		template.indexOf(link[0]) < template.indexOf(`id="${href[1]}"`),
+		'the link comes before the content it skips to',
+	)
+	assert.match(template, /id="portaliq-embed"/, 'the mount point stays inside the document')
+	// The link text is in the page language.
+	assert.match(link[1], /\$locale === 'en' \? 'Skip to content' : 'Direct naar de inhoud'/)
+})
+
 test('the embed entry pulls in neither the site nor the React portal', () => {
 	const dir = join(ROOT, 'src', 'embed')
 	for (const file of readdirSync(dir)) {

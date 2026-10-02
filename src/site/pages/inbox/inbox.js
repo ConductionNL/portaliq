@@ -31,7 +31,13 @@ export function rowId(row, fallback = null) {
 }
 
 /**
- * A date and time in the page language, '' when absent.
+ * The zone every inbox date reads in. A deadline is a Dutch municipal one, so
+ * it reads the same on every device and on a server or CI runner in UTC.
+ */
+export const SITE_TIME_ZONE = 'Europe/Amsterdam'
+
+/**
+ * A date and time in the page language and SITE_TIME_ZONE, '' when absent.
  *
  * @param {string} value An ISO date-time.
  * @param {string} locale `nl` or `en`.
@@ -46,11 +52,11 @@ export function formatDateTime(value, locale) {
 	if (Number.isNaN(date.getTime())) {
 		return String(value)
 	}
-	return date.toLocaleString(locale === 'en' ? 'en-GB' : 'nl-NL')
+	return date.toLocaleString(locale === 'en' ? 'en-GB' : 'nl-NL', { timeZone: SITE_TIME_ZONE })
 }
 
 /**
- * A date in the page language, '' when absent.
+ * A date in the page language and SITE_TIME_ZONE, '' when absent.
  *
  * @param {string} value An ISO date-time.
  * @param {string} locale `nl` or `en`.
@@ -65,7 +71,7 @@ export function formatDate(value, locale) {
 	if (Number.isNaN(date.getTime())) {
 		return String(value)
 	}
-	return date.toLocaleDateString(locale === 'en' ? 'en-GB' : 'nl-NL')
+	return date.toLocaleDateString(locale === 'en' ? 'en-GB' : 'nl-NL', { timeZone: SITE_TIME_ZONE })
 }
 
 /**
