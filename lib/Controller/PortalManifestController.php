@@ -160,8 +160,7 @@ class PortalManifestController extends Controller {
 	 * The plain-JS source file's path on disk. Not a webpack entry — `/js/`
 	 * is entirely gitignored build output, so a hand-written service worker
 	 * cannot live there (design.md Trade-offs). It lives in `src/shared/`,
-	 * outside the React portal, so retiring `src/portal/` does not take the
-	 * site's worker with it (REQ-SRP-045).
+	 * where it moved from the retired React portal's sources (REQ-SRP-045).
 	 *
 	 * @return string
 	 *
