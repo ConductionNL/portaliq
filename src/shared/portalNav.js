@@ -80,7 +80,7 @@ export function buildNav(contributions, t, enabled = {}) {
 	if (enabled.messages === true) {
 		nav.push({
 			key: NAV_KEYS.messages,
-			label: t('Messages'),
+			label: t('Conversations'),
 			icon: 'MessageText',
 			special: 'messages',
 		})

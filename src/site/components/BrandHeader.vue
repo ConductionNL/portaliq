@@ -52,6 +52,16 @@
 						<span data-testid="site-auth-subject">{{
 							sessionLabel
 						}}</span>
+						<!-- The way to the resident's own area, on every page
+						     (site-resident-menu REQ-SRM-003). -->
+						<a
+							v-if="accountLink"
+							class="utrecht-link pq-site__own-area"
+							:href="accountLink.href"
+							data-testid="site-own-area"
+							@click.prevent="$emit('navigate', accountLink.route)">
+							{{ accountLink.label }}
+						</a>
 						<button
 							type="button"
 							class="utrecht-button utrecht-button--secondary-action pq-site__signout"
@@ -172,6 +182,8 @@ export default {
 		session: { type: Object, default: null },
 		/** How to name the signed-in visitor. */
 		sessionLabel: { type: String, default: '' },
+		/** `{route, href, label}` of the resident's own area, or null. */
+		accountLink: { type: Object, default: null },
 		/** The sign-in routes the portal declares. */
 		signInRoutes: { type: Array, default: () => [] },
 		/** The message for a sign-in the edge refused; empty shows nothing. */

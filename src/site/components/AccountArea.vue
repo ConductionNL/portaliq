@@ -11,7 +11,22 @@
 		pages/registry.js, so a section whose page is not built yet still shows
 		up and says so.
 	-->
-	<section class="container pq-account" data-testid="site-account">
+	<section
+		class="container pq-account"
+		:class="{ 'pq-account--with-menu': withMenu }"
+		data-testid="site-account">
+		<!-- The resident's own menu, beside the content on every page of this
+		     area once signed in (site-resident-menu REQ-SRM-002). -->
+		<ResidentMenu
+			v-if="withMenu"
+			class="pq-account__menu"
+			:groups="menuGroups"
+			:currentRoute="currentRoute"
+			:label="t('My area')"
+			:showLabel="t('Menu of my area')"
+			:hideLabel="t('Close the menu')"
+			@navigate="$emit('navigate', $event)" />
+		<div class="pq-account__content">
 		<p v-if="!sessionKnown" class="utrecht-paragraph" role="status">
 			{{ t('Loading…') }}
 		</p>
@@ -90,12 +105,14 @@
 				@refresh="$emit('refresh')"
 				@removed="$emit('signout')" />
 		</template>
+		</div>
 	</section>
 </template>
 
 <script>
 import { markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
+import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
 import { navKeyFor, OPEN_STORAGE_KEY } from '../../shared/openRecord.js'
 import { routeForNav } from '../../shared/portalNav.js'
@@ -123,7 +140,7 @@ function declaredProps(component) {
 export default {
 	name: 'AccountArea',
 
-	components: { WaysIn },
+	components: { ResidentMenu, WaysIn },
 
 	props: {
 		/** Whether the session has been read; until then nothing is decided. */
@@ -169,6 +186,10 @@ export default {
 		locale: { type: String, default: 'nl' },
 		/** The portal record from the content API. */
 		portal: { type: Object, default: null },
+		/** The resident menu's groups, from residentMenuGroups(); empty shows none. */
+		menuGroups: { type: Array, default: () => [] },
+		/** The route on screen, to mark the current item in the menu. */
+		currentRoute: { type: String, default: '' },
 	},
 
 	emits: ['devlogin', 'navigate', 'unread', 'refresh', 'signout'],
@@ -185,6 +206,18 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Whether the resident menu shows: signed in, with groups to show.
+		 * Signed out this area is the way in and keeps its full width.
+		 *
+		 * @return {boolean} True when the menu shows.
+		 *
+		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+		 */
+		withMenu() {
+			return Boolean(this.session) && this.menuGroups.length > 0
+		},
+
 		/**
 		 * @return {boolean} Whether the page on screen shows its own h1.
 		 *
@@ -305,6 +338,26 @@ export default {
 <style scoped>
 .pq-account {
 	padding-block: 24px;
+}
+
+/* The menu beside the content from tablet width up; on a phone the menu
+   stands above it and folds behind its button (ResidentMenu.vue). */
+.pq-account--with-menu {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 16px;
+}
+
+.pq-account__content {
+	min-inline-size: 0;
+}
+
+@media (min-width: 768px) {
+	.pq-account--with-menu {
+		grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+		gap: 40px;
+		align-items: start;
+	}
 }
 
 .pq-account__ways-in {
