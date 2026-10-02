@@ -119,7 +119,7 @@ class PortalContributionRegistry {
 			}
 
 			try {
-				$contribution = $provider->getContribution($subject);
+				$contribution = $this->locator->contributionOf(provider: $provider, subject: $subject);
 			} catch (Throwable $e) {
 				$this->logger->error('Portaliq: contribution provider failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 				continue;
@@ -235,7 +235,7 @@ class PortalContributionRegistry {
 	 */
 	private function anonymousContributionsFor(object $provider, string $appId, string $audience): array {
 		try {
-			$contribution = $provider->getContribution(['audience' => $audience]);
+			$contribution = $this->locator->contributionOf(provider: $provider, subject: ['audience' => $audience]);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: contribution provider failed (anonymous aggregation)',

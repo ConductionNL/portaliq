@@ -160,7 +160,6 @@ import {
 	rowId,
 	sessionStore,
 	TASKS_ROUTE,
-	unreadAfterRead,
 } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
@@ -184,7 +183,6 @@ export default {
 			busyId: null,
 			downloadingId: null,
 			downloadFailedFor: null,
-			unread: this.contributions?.unreadCount ?? null,
 		}
 	},
 
@@ -203,6 +201,19 @@ export default {
 		 */
 		tr() {
 			return withStrings(this.t, this.lang)
+		},
+
+		/**
+		 * The unread count, always from the rows on screen. The page used to
+		 * start from the sign-in count (`contributions.unreadCount`) and count
+		 * down from it; a page that mounted again after a read, before the
+		 * shell reloaded the contributions, counted down from that old number.
+		 *
+		 * @return {number} How many of the loaded rows are unread.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-badge-counts-the-unread-messages-the-inbox-shows-req-nap-011
+		 */
+		unread() {
+			return unreadIn(this.messages)
 		},
 	},
 
@@ -226,8 +237,10 @@ export default {
 			const messages = await this.api.fetchInbox()
 			this.messages = Array.isArray(messages) ? messages : []
 			this.loading = false
-			this.unread = unreadIn(this.messages)
-			this.$emit('unread', this.unread)
+			// A failed read says nothing about the count: the shell keeps its own.
+			if (Array.isArray(messages)) {
+				this.$emit('unread', this.unread)
+			}
 		},
 
 		/**
@@ -327,7 +340,6 @@ export default {
 			this.busyId = null
 			if (result?.ok) {
 				this.messages = markedRead(this.messages, id)
-				this.unread = unreadAfterRead(this.unread)
 				this.$emit('unread', this.unread)
 			}
 		},
