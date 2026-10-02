@@ -6,7 +6,7 @@
 // the dialog open with the answer in words.
 
 import { useEffect, useRef, useState } from 'react'
-import { outcome } from '../lib/signing.js'
+import { outcome } from '../../shared/signing.js'
 
 /**
  * The decline dialog for one row.

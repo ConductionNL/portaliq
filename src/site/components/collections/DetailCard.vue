@@ -119,7 +119,7 @@
 import ItemList from './ItemList.vue'
 import SlotHost from './SlotHost.vue'
 import TimelineList from './TimelineList.vue'
-import { rowNotice } from '../../../portal/lib/rowAction.js'
+import { rowNotice } from '../../../shared/rowAction.js'
 import { detailFields, formatCell, rowIdOf } from './cells.js'
 
 let uploadCounter = 0
