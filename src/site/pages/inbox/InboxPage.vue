@@ -115,6 +115,7 @@
 import BusyStatus from '../../components/inbox/BusyStatus.vue'
 import NotificationSettings from '../../components/inbox/NotificationSettings.vue'
 import TranslatedText from '../../components/inbox/TranslatedText.vue'
+import { unreadIn } from '../../../shared/inboxUnread.js'
 import { deliveryLine } from '../../../shared/messageBox.js'
 import {
 	formatDateTime,
@@ -178,14 +179,20 @@ export default {
 		/**
 		 * Read the merged inbox.
 		 *
+		 * Then tell the shell how many of the loaded rows are unread: a notice
+		 * a job wrote after sign-in is not in the sign-in count.
+		 *
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-badge-counts-the-unread-messages-the-inbox-shows-req-nap-011
 		 */
 		async load() {
 			this.loading = true
 			const messages = await this.api.fetchInbox()
 			this.messages = Array.isArray(messages) ? messages : []
 			this.loading = false
+			this.unread = unreadIn(this.messages)
+			this.$emit('unread', this.unread)
 		},
 
 		/**
