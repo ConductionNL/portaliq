@@ -26,7 +26,7 @@
 			</div>
 
 			<div
-				v-if="single"
+				v-if="single && showNavigation"
 				class="ac-c-navigation__container pq-site__header-nav"
 				data-testid="site-header-nav">
 				<SiteMenu
@@ -90,7 +90,11 @@
 			</div>
 		</div>
 
-		<div v-if="!single" class="ac-header__navigation-secondary">
+		<!-- No navigation bar when the page carries a menu block, so every
+		     link is on the page once (site-navigation-block). -->
+		<div
+			v-if="!single && showNavigation"
+			class="ac-header__navigation-secondary">
 			<div class="container">
 				<div class="ac-c-navigation__container">
 					<SiteMenu
@@ -164,6 +168,8 @@ export default {
 		variant: { type: String, default: 'double' },
 		/** The header menus. */
 		menus: { type: Array, default: () => [] },
+		/** False when the page carries a menu block: the header shows no menu. */
+		showNavigation: { type: Boolean, default: true },
 		/** The route on screen, to mark the current menu item. */
 		currentRoute: { type: String, default: '/' },
 		/** `{route, label, href}` crumbs, home first. */

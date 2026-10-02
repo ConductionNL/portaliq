@@ -64,6 +64,7 @@
 				:title="site.title || ''"
 				:variant="headerVariant"
 				:menus="headerMenus"
+				:showNavigation="!menuOnPage"
 				:currentRoute="route"
 				:breadcrumbs="breadcrumbs"
 				:session="session"
@@ -186,92 +187,118 @@
 					@navigate="go"
 					@search="goSearch" />
 
-				<!-- A signed link opens its one act before any page (REQ-GST-002). -->
-				<GuestActionPage
-					v-if="guestLink"
-					:authBase="guestAuthBase"
-					:portal="site.slug || portalSlug" />
+				<!--
+					THE SIDE MENU (site-navigation-block). When the side region
+					holds a menu block it renders as a column LEFT of the content,
+					and first in the document, so the reading order and the tab
+					order match what is seen. On a phone the column stacks above
+					the content and the block collapses behind its own button.
+				-->
+				<div
+					class="pq-site__layout"
+					:class="{ 'pq-site__layout--side-menu': showSideMenu }"
+					data-testid="site-layout">
+					<aside
+						v-if="showSideMenu"
+						class="pq-site__aside pq-site__aside--menu"
+						data-testid="site-region-aside">
+						<WidgetGrid
+							:widgets="regions.aside"
+							v-bind="gridContext"
+							@navigate="go"
+							@search="goSearch" />
+					</aside>
+					<div class="pq-site__content">
+						<!-- A signed link opens its one act before any page (REQ-GST-002). -->
+						<GuestActionPage
+							v-if="guestLink"
+							:authBase="guestAuthBase"
+							:portal="site.slug || portalSlug" />
 
-				<!-- A mailed way in (an activation, an invitation, one case by
+						<!-- A mailed way in (an activation, an invitation, one case by
 				     its number) opens before any page (identity-ways-in-screens). -->
-				<WayInLink
-					v-else-if="wayInLink"
-					:authBase="guestAuthBase"
-					:portal="site.slug || portalSlug"
-					:portalName="site.title || ''"
-					:emailSignIn="waysIn.emailSignIn"
-					:t="waysInT" />
+						<WayInLink
+							v-else-if="wayInLink"
+							:authBase="guestAuthBase"
+							:portal="site.slug || portalSlug"
+							:portalName="site.title || ''"
+							:emailSignIn="waysIn.emailSignIn"
+							:t="waysInT" />
 
-				<!-- The signed-in area owns every `/mijn` route; no CMS page is
+						<!-- The signed-in area owns every `/mijn` route; no CMS page is
 				     read for it (src/shared/portalNav.js). -->
-				<AccountArea
-					v-else-if="accountRoute || (signInNeeded && !session)"
-					:sessionKnown="sessionKnown"
-					:session="session"
-					:loading="account.loading"
-					:nav="nav"
-					:entry="accountEntry"
-					:contributions="account.contributions"
-					:api="api"
-					:signInRoutes="signInRoutes"
-					:ways="waysIn"
-					:waysT="waysInT"
-					:authBase="guestAuthBase"
-					:portalSlug="site.slug || portalSlug"
-					:devLogin="signinConfig.devLogin === true"
-					:devError="devError"
-					:t="t"
-					:locale="locale"
-					:portal="site"
-					@devlogin="devLogin"
-					@navigate="goSection"
-					@unread="unreadOverride = $event"
-					@refresh="loadAccount"
-					@signout="signOut" />
+						<AccountArea
+							v-else-if="accountRoute || (signInNeeded && !session)"
+							:sessionKnown="sessionKnown"
+							:session="session"
+							:loading="account.loading"
+							:nav="nav"
+							:entry="accountEntry"
+							:contributions="account.contributions"
+							:api="api"
+							:signInRoutes="signInRoutes"
+							:ways="waysIn"
+							:waysT="waysInT"
+							:authBase="guestAuthBase"
+							:portalSlug="site.slug || portalSlug"
+							:devLogin="signinConfig.devLogin === true"
+							:devError="devError"
+							:t="t"
+							:locale="locale"
+							:portal="site"
+							@devlogin="devLogin"
+							@navigate="goSection"
+							@unread="unreadOverride = $event"
+							@refresh="loadAccount"
+							@signout="signOut" />
 
-				<!-- A shared dossier link is public: anyone who has it reads the
+						<!-- A shared dossier link is public: anyone who has it reads the
 				     documents in it that are public now (site-shared-dossier). -->
-				<SharedDossierPage
-					v-else-if="sharedDossierRoute"
-					:token="sharedDossierToken"
-					:t="t"
-					@loaded="onSharedDossierLoaded" />
+						<SharedDossierPage
+							v-else-if="sharedDossierRoute"
+							:token="sharedDossierToken"
+							:t="t"
+							@loaded="onSharedDossierLoaded" />
 
-				<p
-					v-else-if="loading"
-					class="container"
-					role="status"
-					data-testid="site-loading">
-					{{ t('Loading…') }}
-				</p>
+						<p
+							v-else-if="loading"
+							class="container"
+							role="status"
+							data-testid="site-loading">
+							{{ t('Loading…') }}
+						</p>
 
-				<!-- A failed load says so. Rendering an empty page instead would
+						<!-- A failed load says so. Rendering an empty page instead would
 			     make a broken deployment look exactly like an empty site — the
 			     one confusion this surface can least afford. -->
-				<div
-					v-else-if="error"
-					class="container"
-					role="alert"
-					data-testid="site-error"
-					:data-portaliq-status="error.status === 404 ? '404' : null"
-					:data-portaliq-path="error.status === 404 ? route : null">
-					<h2>
-						{{
-							error.status === 404
-								? t('Page not found')
-								: t('Something went wrong')
-						}}
-					</h2>
-					<p>
-						{{
-							error.status === 404
-								? t('This page does not exist (any more).')
-								: t('The content could not be loaded.')
-						}}
-					</p>
-				</div>
+						<div
+							v-else-if="error"
+							class="container"
+							role="alert"
+							data-testid="site-error"
+							:data-portaliq-status="
+								error.status === 404 ? '404' : null
+							"
+							:data-portaliq-path="
+								error.status === 404 ? route : null
+							">
+							<h2>
+								{{
+									error.status === 404
+										? t('Page not found')
+										: t('Something went wrong')
+								}}
+							</h2>
+							<p>
+								{{
+									error.status === 404
+										? t('This page does not exist (any more).')
+										: t('The content could not be loaded.')
+								}}
+							</p>
+						</div>
 
-				<!--
+						<!--
 					`utrecht-article` IS A PROSE MEASURE, so a grid does not get
 					one.
 
@@ -289,20 +316,20 @@
 					self-contained document, which is a question about semantics
 					and not about line length.
 				-->
-				<!-- Edit mode: the editor bundle mounts in place of the page. -->
-				<div
-					v-else-if="editMode && editing && editing.pageId"
-					data-testid="site-edit-host">
-					<p v-if="editorStatus" class="container" role="status">
-						{{ editorStatus }}
-					</p>
-					<div ref="editorHost" />
-				</div>
-				<article
-					v-else-if="page"
-					:class="bodyIsGrid ? null : 'utrecht-article'"
-					data-testid="site-page">
-					<!--
+						<!-- Edit mode: the editor bundle mounts in place of the page. -->
+						<div
+							v-else-if="editMode && editing && editing.pageId"
+							data-testid="site-edit-host">
+							<p v-if="editorStatus" class="container" role="status">
+								{{ editorStatus }}
+							</p>
+							<div ref="editorHost" />
+						</div>
+						<article
+							v-else-if="page"
+							:class="bodyIsGrid ? null : 'utrecht-article'"
+							data-testid="site-page">
+							<!--
 						THE RENDERER'S OWN TITLE HEADING IS A FALLBACK, not a
 						fixture. A page whose body opens with a hero already
 						declares its heading, and emitting this one as well
@@ -313,45 +340,57 @@
 						the duplication is a property of what the page actually
 						renders, not of what an author remembered to tick.
 					-->
-					<div v-if="!bodyProvidesHeading" class="container">
-						<!-- The page's own heading is the h1: the site name in the
+							<div v-if="!bodyProvidesHeading" class="container">
+								<!-- The page's own heading is the h1: the site name in the
 						     header is not a heading (REQ-PTB-004). The class keeps
 						     the size it had as an h2. -->
-						<h1 class="utrecht-heading-2" data-testid="page-title">
-							{{ page.title }}
-						</h1>
-					</div>
+								<h1
+									class="utrecht-heading-2"
+									data-testid="page-title">
+									{{ page.title }}
+								</h1>
+							</div>
 
-					<!-- The page's hero image, from the portal's media library or
+							<!-- The page's hero image, from the portal's media library or
 					     an address (site-page-seo-history-and-media T08). The
 					     content API resolves media:<id> and carries the item's
 					     alternative text with it. -->
-					<div v-if="page.hero && page.hero.url" class="container">
-						<img
-							class="pq-site-hero"
-							data-testid="page-hero"
-							:src="page.hero.url"
-							:alt="page.hero.alt" />
-					</div>
+							<div v-if="page.hero && page.hero.url" class="container">
+								<img
+									class="pq-site-hero"
+									data-testid="page-hero"
+									:src="page.hero.url"
+									:alt="page.hero.alt" />
+							</div>
 
-					<!-- The main region: the page's own widgets outside the other
+							<!-- The main region: the page's own widgets outside the other
 					     four regions (REQ-PTB-008). -->
-					<WidgetGrid
-						v-if="page.body && page.body.type === 'grid'"
-						:widgets="regions.main"
-						v-bind="gridContext"
-						@navigate="go"
-						@search="goSearch" />
+							<WidgetGrid
+								v-if="page.body && page.body.type === 'grid'"
+								:widgets="regions.main"
+								v-bind="gridContext"
+								@navigate="go"
+								@search="goSearch" />
 
-					<div v-else class="container">
-						<MarkdownBlock
-							data-testid="page-markdown"
-							:source="(page.body && page.body.markdown) || ''" />
+							<div v-else class="container">
+								<MarkdownBlock
+									data-testid="page-markdown"
+									:source="
+										(page.body && page.body.markdown) || ''
+									" />
+							</div>
+						</article>
 					</div>
-				</article>
+				</div>
 
 				<aside
-					v-if="!loading && !error && page && regions.aside.length"
+					v-if="
+						!showSideMenu
+						&& !loading
+						&& !error
+						&& page
+						&& regions.aside.length
+					"
 					class="pq-site__aside"
 					data-testid="site-region-aside">
 					<WidgetGrid
@@ -487,6 +526,11 @@ import {
 	legalLinksOf,
 	registerRouteOf,
 } from './lib/shellData.js'
+import {
+	hasNavigationBlock,
+	navigationGroups,
+	sideMenuOf,
+} from './lib/siteNavigation.js'
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
@@ -816,7 +860,66 @@ export default {
 				routeParam: this.routeParam,
 				portal: this.site.slug || '',
 				signedIn: this.session !== null,
+				navigation: this.navigation,
 			}
+		},
+
+		/**
+		 * The menu block's data: the header menus and the signed-in
+		 * navigation in groups, the route on screen, and the labels in the
+		 * site's language (site-navigation-block).
+		 *
+		 * @return {object} `{groups, currentRoute, label, toggleLabel}`.
+		 *
+		 * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
+		 */
+		navigation() {
+			return {
+				groups: navigationGroups({
+					menus: headerMenusOf(this.menus),
+					nav: this.nav,
+					t: this.t,
+					unread: this.unreadCount,
+					hrefFor: this.hrefForRoute,
+				}),
+
+				currentRoute: this.route,
+				label: this.t('Menu'),
+				toggleLabel: this.t('Menu'),
+			}
+		},
+
+		/**
+		 * Whether the page carries a menu block, so the header leaves its
+		 * own menu out and every link is on the page once.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
+		 */
+		menuOnPage() {
+			return hasNavigationBlock(this.regions)
+		},
+
+		/**
+		 * Whether the side region renders as a menu column left of the
+		 * content: it holds a menu block, and the screen is a page or the
+		 * signed-in area rather than a one-off link or the editor.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
+		 */
+		showSideMenu() {
+			return (
+				sideMenuOf(this.regions)
+				&& !this.guestLink
+				&& !this.wayInLink
+				&& !this.sharedDossierRoute
+				&& !this.error
+				&& !(this.editMode && this.editing && this.editing.pageId)
+				&& (this.page !== null || this.accountRoute)
+			)
 		},
 
 		/**
@@ -1999,6 +2102,42 @@ body.layout-base #content.app-public {
 body.layout-base .pq-site {
 	width: 100%;
 	min-height: 100vh;
+}
+/*
+ * THE SIDE MENU LAYOUT (site-navigation-block). The layout row is the
+ * reading column the header and footer use, split into a menu column and
+ * the content. Inside it, the content's own `.container`s would add a second
+ * margin, so they stretch to the column instead.
+ */
+.pq-site__layout--side-menu {
+	max-width: 1200px;
+	margin-inline: auto;
+	padding-inline: 16px;
+	display: grid;
+	grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+	gap: 2rem;
+	align-items: start;
+}
+
+.pq-site__layout--side-menu .container {
+	max-width: none;
+	margin-inline: 0;
+	padding-inline: 0;
+}
+
+.pq-site__aside--menu {
+	padding-block: 1.5rem;
+}
+
+@media (width < 768px) {
+	.pq-site__layout--side-menu {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
+	}
+
+	.pq-site__aside--menu {
+		padding-block: 1rem 0;
+	}
 }
 </style>
 
