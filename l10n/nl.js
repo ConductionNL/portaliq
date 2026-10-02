@@ -2011,7 +2011,22 @@ OC.L10N.register(
         "Choose at least one group.": "Kies minstens een groep.",
         "Choose the school.": "Kies de school.",
         "For": "Voor",
-        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "Dit formulier gebruikt een voorwaarde die het portaal niet kan controleren. Maak er een voorwaarde op een ander antwoord van."
+        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "Dit formulier gebruikt een voorwaarde die het portaal niet kan controleren. Maak er een voorwaarde op een ander antwoord van.",
+        "Amount": "Bedrag",
+        "Currency": "Valuta",
+        "Pay action": "Betaalactie",
+        "Paying app": "Betalende app",
+        "Payment hosts": "Betaaldomeinen",
+        "Payment intent": "Betaling",
+        "Portal fee": "Leges op het portaal",
+        "The ISO 4217 currency code.": "De ISO 4217-valutacode.",
+        "The app whose portal contribution declares the pay action, normally the case app itself.": "De app waarvan de portaalbijdrage de betaalactie declareert, meestal de zaakapp zelf.",
+        "The fee, as a decimal text with a point, more than zero.": "Het bedrag, als decimale tekst met een punt, groter dan nul.",
+        "The host names a resident may be sent to for paying a request fee, such as `www.mollie.com` (intake-pay-on-submit REQ-IPS-004). A checkout on any other host, or over plain http, is refused. Empty by default, so nothing redirects until an administrator names the provider's host.": "De hostnamen waar een inwoner heen mag om leges te betalen, zoals `www.mollie.com` (intake-pay-on-submit REQ-IPS-004). Een betaalpagina op een andere host, of over gewone http, wordt geweigerd. Standaard leeg, zodat niets doorverwijst tot een beheerder de host van de betaalprovider noemt.",
+        "The id of integriq's payment record for this request's fee, once the resident started paying (intake-pay-on-submit REQ-IPS-005). The reference page reads the payment state from that record, never from a query string.": "Het id van de betaling in integriq voor de leges van deze aanvraag, zodra de inwoner begon te betalen (intake-pay-on-submit REQ-IPS-005). De referentiepagina leest de betaalstatus uit die betaling, nooit uit een querystring.",
+        "The id of the endpoint action in that app's contribution that starts the payment and answers with `checkoutUrl` and `paymentIntentId`.": "Het id van de endpointactie in de bijdrage van die app die de betaling start en antwoordt met `checkoutUrl` en `paymentIntentId`.",
+        "What a resident pays for a request of this type, and which of the case app's own actions takes the payment (intake-pay-on-submit REQ-IPS-001). The portal reads the amount only from here and forwards exactly this amount; an amount in a request body is ignored. Absent means the request is free. A case type with a fee needs a signed-in resident at trust substantial.": "Wat een inwoner betaalt voor een aanvraag van dit type, en welke actie van de zaakapp de betaling afhandelt (intake-pay-on-submit REQ-IPS-001). Het portaal leest het bedrag alleen hier en stuurt precies dit bedrag door; een bedrag in de aanvraag wordt genegeerd. Ontbreekt het, dan is de aanvraag gratis. Een zaaktype met leges vraagt een ingelogde inwoner op niveau substantieel.",
+        "What the payment is for, as the payment provider shows it.": "Waarvoor de betaling is, zoals de betaalprovider het toont."
     },
     "nplurals=2; plural=(n != 1);"
 )

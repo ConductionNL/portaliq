@@ -318,8 +318,20 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.55.0 (portalAccount 0.14.0): `activationTokenHash` and
 		// `activationExpiresAt`, the activation link of a self-registration
 		// (identity-ways-in-screens T03). Additive.
-		$this->assertSame('0.55.0', self::$register['info']['version']);
-		$this->assertSame('0.55.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.56.0 (portalCaseType 0.3.0, portalIntakeSubmission 0.2.0, portal
+		// 0.10.0): a case type's `portalFee`, a submission's
+		// `paymentIntentId` and a portal's `paymentHosts`
+		// (intake-pay-on-submit T02). Additive.
+		$this->assertSame('0.56.0', self::$register['info']['version']);
+		$this->assertSame('0.56.0', self::$register['components']['registers']['portaliq']['version']);
+		$schemas = self::$register['components']['schemas'];
+		$this->assertSame('0.3.0', $schemas['portalCaseType']['version']);
+		$this->assertSame(['amount', 'payApp', 'payAction'], $schemas['portalCaseType']['properties']['portalFee']['required']);
+		$this->assertSame('^\\d{1,7}(\\.\\d{1,2})?$', $schemas['portalCaseType']['properties']['portalFee']['properties']['amount']['pattern']);
+		$this->assertSame('0.2.0', $schemas['portalIntakeSubmission']['version']);
+		$this->assertSame('string', $schemas['portalIntakeSubmission']['properties']['paymentIntentId']['type']);
+		$this->assertSame('0.10.0', $schemas['portal']['version']);
+		$this->assertSame([], $schemas['portal']['properties']['paymentHosts']['default']);
 		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
@@ -348,7 +360,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsItem']['properties']['translations']['description']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsItem']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalReporterContact']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCaseType']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertArrayHasKey('handlerGroup', self::$register['components']['schemas']['portalCaseType']['properties']['portalReportDeclaration']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['guardianMessage']['version']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['guardianMessage']['properties']);
@@ -370,7 +382,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.10.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);

@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.55.0"
+        "version": "0.56.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.55.0",
+                "version": "0.56.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1973,7 +1973,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.9.0",
+                "version": "0.10.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3426,6 +3426,18 @@
                         },
                         "default": {},
                         "example": {}
+                    },
+                    "paymentHosts": {
+                        "title": "Payment hosts",
+                        "type": "array",
+                        "default": [],
+                        "description": "The host names a resident may be sent to for paying a request fee, such as `www.mollie.com` (intake-pay-on-submit REQ-IPS-004). A checkout on any other host, or over plain http, is refused. Empty by default, so nothing redirects until an administrator names the provider's host.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "www.mollie.com"
+                        ]
                     }
                 }
             },
@@ -5693,7 +5705,7 @@
                     ]
                 },
                 "icon": "FileTreeOutline",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Case Type",
                 "description": "What a citizen may change on a case of this type, and until when. The flag lives on the field, so `portalWritable` carries one entry per field; the two windows say in which statuses an amendment and a document are still accepted; `portalStatusLabels` carries the words the citizen reads. A case app owns all four and the portal renders them without adding a vocabulary of its own.",
                 "type": "object",
@@ -5903,6 +5915,51 @@
                             "acknowledgementDays": 7,
                             "feedbackDays": 90,
                             "excludeFromAnalytics": true
+                        }
+                    },
+                    "portalFee": {
+                        "title": "Portal fee",
+                        "type": "object",
+                        "description": "What a resident pays for a request of this type, and which of the case app's own actions takes the payment (intake-pay-on-submit REQ-IPS-001). The portal reads the amount only from here and forwards exactly this amount; an amount in a request body is ignored. Absent means the request is free. A case type with a fee needs a signed-in resident at trust substantial.",
+                        "required": [
+                            "amount",
+                            "payApp",
+                            "payAction"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "title": "Amount",
+                                "type": "string",
+                                "pattern": "^\\d{1,7}(\\.\\d{1,2})?$",
+                                "description": "The fee, as a decimal text with a point, more than zero.",
+                                "example": "45.00"
+                            },
+                            "currency": {
+                                "title": "Currency",
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$",
+                                "default": "EUR",
+                                "description": "The ISO 4217 currency code.",
+                                "example": "EUR"
+                            },
+                            "description": {
+                                "title": "Description",
+                                "type": "string",
+                                "description": "What the payment is for, as the payment provider shows it.",
+                                "example": "Parkeervergunning bewoners"
+                            },
+                            "payApp": {
+                                "title": "Paying app",
+                                "type": "string",
+                                "description": "The app whose portal contribution declares the pay action, normally the case app itself.",
+                                "example": "dossiq"
+                            },
+                            "payAction": {
+                                "title": "Pay action",
+                                "type": "string",
+                                "description": "The id of the endpoint action in that app's contribution that starts the payment and answers with `checkoutUrl` and `paymentIntentId`.",
+                                "example": "pay-intake-fee"
+                            }
                         }
                     }
                 }
@@ -6506,7 +6563,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Intake Submission",
                 "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
                 "type": "object",
@@ -6590,6 +6647,12 @@
                         "format": "date-time",
                         "description": "When the case was created.",
                         "example": ""
+                    },
+                    "paymentIntentId": {
+                        "title": "Payment intent",
+                        "type": "string",
+                        "description": "The id of integriq's payment record for this request's fee, once the resident started paying (intake-pay-on-submit REQ-IPS-005). The reference page reads the payment state from that record, never from a query string.",
+                        "example": "5b0f8a1e-3c1d-4b8e-9f20-1a2b3c4d5e6f"
                     }
                 }
             },

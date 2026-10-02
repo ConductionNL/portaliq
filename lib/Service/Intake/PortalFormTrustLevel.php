@@ -67,11 +67,18 @@ class PortalFormTrustLevel {
 	 *                     null when an anonymous visitor may fill the form in.
 	 *
 	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-a-fee-bearing-form-asks-the-visitor-to-sign-in-first-req-ips-002
 	 */
 	public function required(array $site, array $binding, array $render): ?string {
 		$levels = [];
 		if (($site['authentication']['requiresIdentifiedIntake'] ?? false) === true) {
 			$levels[] = 'low';
+		}
+
+		if (is_array($render['fee'] ?? null) === true) {
+			// A request with a fee needs somebody to receipt and refund it
+			// (intake-pay-on-submit REQ-IPS-002).
+			$levels[] = 'substantial';
 		}
 
 		foreach ([($binding['minTrust'] ?? null), ($render['minTrust'] ?? null)] as $declared) {

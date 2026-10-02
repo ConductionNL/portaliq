@@ -10,6 +10,7 @@ use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
+use OCA\Portaliq\Service\Intake\PortalIntakePayment;
 use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -126,6 +127,105 @@ class PortalIntakeControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->status(reference: 'AANVRAAG-NOPE')->getStatus());
 
 	}//end testAnUnknownReferenceIsNotFound()
+
+	/**
+	 * intake-pay-on-submit REQ-IPS-003: paying needs a session, and nothing
+	 * else is asked before it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-only-the-submitter-can-pay-once-req-ips-003
+	 */
+	public function testPayNeedsASession(): void {
+		$controller = $this->controller(render: $this->hostedForm());
+		$this->doubles['payments']->expects($this->never())->method('pay');
+
+		$response = $controller->pay(reference: 'AANVRAAG-ABC123');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(['error' => 'sign_in_required'], $response->getData());
+
+	}//end testPayNeedsASession()
+
+	/**
+	 * The route answers what the payment service decided, for the portal and
+	 * the resident the server resolved.
+	 *
+	 * @return void
+	 */
+	public function testPayAnswersWhatThePaymentDecided(): void {
+		$subject = ['subjectRef' => 'bsn-1', 'trust' => 'substantial'];
+		$controller = $this->controller(render: $this->hostedForm(), subject: $subject);
+		$this->doubles['payments']->expects($this->once())->method('pay')
+			->with(['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'], $subject, 'AANVRAAG-ABC123')
+			->willReturn(['status' => Http::STATUS_BAD_GATEWAY, 'body' => ['error' => 'payment_unavailable']]);
+
+		$response = $controller->pay(reference: 'AANVRAAG-ABC123');
+
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+		$this->assertSame(['error' => 'payment_unavailable'], $response->getData());
+
+	}//end testPayAnswersWhatThePaymentDecided()
+
+	/**
+	 * REQ-IPS-005: the reference page reads the payment state from integriq's
+	 * record behind the submission.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-result-is-read-from-the-payment-record-req-ips-005
+	 */
+	public function testStatusReadsPaymentFromTheIntent(): void {
+		$controller = $this->controller(render: $this->hostedForm());
+		$this->doubles['queue']->method('status')->willReturn(['reference' => 'AANVRAAG-ABC123', 'state' => 'registered', 'caseId' => 'zaak-1', 'failureReason' => '', 'submittedAt' => '']);
+		$this->doubles['queue']->method('paymentIntentOf')->willReturn('intent-1');
+		$this->doubles['payments']->expects($this->once())->method('stateOf')->with('intent-1')->willReturn(PortalIntakePayment::STATE_PAID);
+
+		$data = $controller->status(reference: 'AANVRAAG-ABC123')->getData();
+
+		$this->assertSame(['state' => 'paid'], $data['payment']);
+		$this->assertSame('registered', $data['state']);
+
+	}//end testStatusReadsPaymentFromTheIntent()
+
+	/**
+	 * REQ-IPS-005: a return address with `?status=paid` shows what the record
+	 * says, and a request nobody started paying carries no payment at all.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-result-is-read-from-the-payment-record-req-ips-005
+	 */
+	public function testQueryStringDoesNotSetPaymentState(): void {
+		$controller = $this->controller(render: $this->hostedForm());
+		$this->doubles['queue']->method('status')->willReturn(['reference' => 'AANVRAAG-ABC123', 'state' => 'queued', 'caseId' => '', 'failureReason' => '', 'submittedAt' => '']);
+		$this->doubles['queue']->method('paymentIntentOf')->willReturnOnConsecutiveCalls('intent-1', '');
+		$this->doubles['payments']->method('stateOf')->willReturn(PortalIntakePayment::STATE_FAILED);
+
+		$this->assertSame(['state' => 'failed'], $controller->status(reference: 'AANVRAAG-ABC123')->getData()['payment']);
+		$this->assertArrayNotHasKey('payment', $controller->status(reference: 'AANVRAAG-ABC123')->getData());
+		$this->assertNotContains('status', array_map(static fn (\ReflectionParameter $param): string => $param->getName(), (new \ReflectionMethod(PortalIntakeController::class, 'status'))->getParameters()));
+
+	}//end testQueryStringDoesNotSetPaymentState()
+
+	/**
+	 * REQ-IPS-002: an anonymous visitor on a fee-bearing form is asked to
+	 * sign in, and told the fee, before the first question.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-a-fee-bearing-form-asks-the-visitor-to-sign-in-first-req-ips-002
+	 */
+	public function testAFeeBearingFormAsksAnAnonymousVisitorToSignIn(): void {
+		$fee = ['amount' => '45.00', 'currency' => 'EUR', 'description' => 'Parkeervergunning'];
+		$controller = $this->controller(render: $this->hostedForm() + ['fee' => $fee]);
+
+		$response = $controller->form(route: 'aanvragen/parkeren');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(['error' => 'sign_in_required', 'minTrust' => 'substantial', 'fee' => $fee], $response->getData());
+
+	}//end testAFeeBearingFormAsksAnAnonymousVisitorToSignIn()
 
 	public function testTheEntryPointListsWhatTheCatalogueSaysToday(): void {
 		$controller = $this->controller(render: $this->hostedForm());
@@ -287,7 +387,8 @@ class PortalIntakeControllerTest extends TestCase {
 
 		$this->doubles = [
 			'portals' => $portals,
-			'queue' => $this->double(PortalIntakeQueue::class, ['accept', 'status']),
+			'queue' => $this->double(PortalIntakeQueue::class, ['accept', 'status', 'paymentIntentOf']),
+			'payments' => $this->double(PortalIntakePayment::class, ['pay', 'stateOf']),
 			'prefill' => $this->double(PortalApplicantPrefill::class, ['forSubject']),
 			'challenge' => $this->double(PortalChallengeService::class, ['issue', 'accepts']),
 			'catalogue' => $this->double(PortalCatalogueReader::class, ['topicsFor']),
@@ -302,7 +403,8 @@ class PortalIntakeControllerTest extends TestCase {
 			new PortalFormValidator($l10n),
 			$this->doubles['queue'],
 			$this->doubles['challenge'],
-			$this->doubles['catalogue']
+			$this->doubles['catalogue'],
+			$this->doubles['payments']
 		);
 	}//end controller()
 

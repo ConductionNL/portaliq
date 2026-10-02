@@ -82,11 +82,15 @@ class PortalFormBindingResolver {
 	 *                                           Absent hides nothing.
 	 * @param VisibleWhenLocal $visibleWhen Which field conditions the portal
 	 *                                      can check on submit.
+	 * @param PortalIntakeFee|null $fees The fee a case type declares
+	 *                                   (intake-pay-on-submit). Absent charges
+	 *                                   nothing.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
+		private readonly ?PortalIntakeFee $fees = null,
 	) {
 	}//end __construct()
 
@@ -244,6 +248,7 @@ class PortalFormBindingResolver {
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
+	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-fee-comes-from-the-case-type-req-ips-001
 	 */
 	public function render(array $binding): array {
 		$settings = [
@@ -320,6 +325,9 @@ class PortalFormBindingResolver {
 			// The sign-in level the maker chose for this form (buildiq#935).
 			// Carried as declared; requiredTrust() decides what it means.
 			'minTrust' => ($form['minTrust'] ?? null),
+			// The fee the case type declares, without the action that takes
+			// it (intake-pay-on-submit REQ-IPS-001); null when it is free.
+			'fee' => $this->fees?->publicFeeFor(binding: $binding),
 		];
 	}//end render()
 
