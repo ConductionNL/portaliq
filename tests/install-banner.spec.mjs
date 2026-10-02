@@ -13,7 +13,7 @@
 // its methods with a stand-in `this`, the same way the slice-e specs do.
 
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -149,10 +149,7 @@ test('every string the banner uses is in Dutch and English, as the portal said i
 	const keys = [...source.matchAll(/\bt\('([^']+)'\)/g)].map((m) => m[1])
 	assert.ok(keys.length >= 4, 'the banner uses its strings through t()')
 
-	// The shared bundle moves to src/shared/i18n with slice a; read whichever exists.
-	const i18nDir = ['src/shared/i18n', 'src/portal/i18n']
-		.map((dir) => join(ROOT, dir))
-		.find((dir) => existsSync(join(dir, 'nl.json')))
+	const i18nDir = join(ROOT, 'src', 'shared', 'i18n')
 
 	for (const locale of ['nl', 'en']) {
 		const shared = JSON.parse(
