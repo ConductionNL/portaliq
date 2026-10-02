@@ -124,14 +124,32 @@ export function outcomeKey(result) {
 }
 
 /**
+ * The origin of the page the resident is on, or '' outside a browser.
+ *
+ * @return {string} For example `https://gemeente.example`.
+ */
+function pageOrigin() {
+	const location = globalThis.location
+	return location && typeof location.origin === 'string' ? location.origin : ''
+}
+
+/**
  * The link an action answered with (my-dossiers REQ-MYD-004), for example a
- * dossier's share link: https or a path on this instance, else ''.
+ * dossier's share link, else ''.
+ *
+ * The resident is asked to copy and pass this link on, so it must lead
+ * somewhere safe: an https link, a path on this instance, or an absolute link
+ * on the page's own origin. The last one is how opencatalogi answers a share
+ * link (`http://localhost:8080/index.php/apps/portaliq/site?route=…` on a dev
+ * or intranet instance), and it is instance-local just like a path. A
+ * `javascript:` link, a foreign http link and anything malformed stay refused.
  *
  * @param {object} result `{ok, body}` from a forward.
+ * @param {string} [origin] The page's own origin; defaults to the current page.
  * @return {string} The link, or ''.
  * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-link-in-an-actions-answer-must-be-shown-to-the-resident-req-myd-004
  */
-export function answerLink(result) {
+export function answerLink(result, origin = pageOrigin()) {
 	if (
 		!result
 		|| !result.ok
@@ -143,6 +161,15 @@ export function answerLink(result) {
 	const link = result.body.link.trim()
 	if (/^https:\/\/\S+$/i.test(link) || /^\/(?!\/)\S*$/.test(link)) {
 		return link
+	}
+	if (origin !== '' && /^http:\/\/\S+$/i.test(link)) {
+		let url
+		try {
+			url = new URL(link)
+		} catch {
+			return ''
+		}
+		return url.origin === origin ? link : ''
 	}
 	return ''
 }

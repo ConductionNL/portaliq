@@ -104,14 +104,15 @@ function describe(violations: AxeViolation[]): string {
 }
 
 /**
- * The signed-in menu ("Mijn overzicht" / "My overview").
+ * The resident's own menu beside the content ("Mijn omgeving" / "My area",
+ * site-resident-menu REQ-SRM-002).
  *
  * @param page The page.
  * @return The menu.
  */
 function accountMenu(page: Page) {
 	return page.getByRole('navigation', {
-		name: oneOf('Mijn overzicht', 'My overview'),
+		name: oneOf('Mijn omgeving', 'My area'),
 	})
 }
 
@@ -168,7 +169,7 @@ test.describe('signed-in portal: accessibility', () => {
 				return (
 					!!el
 					&& el.tagName === 'A'
-					&& !!el.closest('[data-testid="site-menu"]')
+					&& !!el.closest('[data-testid="site-resident-menu"]')
 					&& (el.getAttribute('href') || '').includes(`route=${route}`)
 				)
 			}, inboxRoute)

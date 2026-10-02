@@ -196,6 +196,7 @@ export default {
 					text: formatCell(row[field.field], field.render, {
 						locale: this.locale,
 						t: this.t,
+						valueLabels: field.valueLabels,
 					}),
 				}))
 				.filter((field) => field.declared || field.text !== '')

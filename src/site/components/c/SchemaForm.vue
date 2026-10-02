@@ -79,6 +79,7 @@ import {
 	formFields,
 	staticOptions,
 	translatorOr,
+	withSingleOptions,
 } from './forms.js'
 
 /**
@@ -108,9 +109,10 @@ export default {
 	emits: ['submitted'],
 
 	data() {
+		const options = staticOptions(this.action)
 		return {
-			values: this.emptyValues(),
-			options: staticOptions(this.action),
+			values: withSingleOptions(this.action, this.emptyValues(), options),
+			options,
 			files: {},
 			fileKey: 0,
 			errors: {},
@@ -141,8 +143,8 @@ export default {
 
 	watch: {
 		'action.id': function () {
-			this.values = this.emptyValues()
 			this.options = staticOptions(this.action)
+			this.values = this.startValues()
 			this.loadOptions()
 		},
 	},
@@ -166,6 +168,16 @@ export default {
 		},
 
 		/**
+		 * The values a fresh form starts from: empty, except a required select
+		 * with exactly one option, which starts on that option.
+		 *
+		 * @return {Record<string, string>} The values.
+		 */
+		startValues() {
+			return withSingleOptions(this.action, this.emptyValues(), this.options)
+		},
+
+		/**
 		 * Fetch every `collection` provider's options.
 		 *
 		 * @return {Promise<void>}
@@ -182,6 +194,11 @@ export default {
 							...this.options,
 							[field]: Array.isArray(fetched) ? fetched : [],
 						}
+						this.values = withSingleOptions(
+							this.action,
+							this.values,
+							this.options,
+						)
 					}
 				}),
 			)
@@ -314,7 +331,7 @@ export default {
 				return
 			}
 
-			this.values = this.emptyValues()
+			this.values = this.startValues()
 			this.files = {}
 			this.fileKey++
 			this.reportFailed(result.id, result.failed)
