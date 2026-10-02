@@ -16,7 +16,7 @@ export const PAGE_PROPS = {
 	api: { type: Object, required: true },
 	/** The shell's translator. */
 	t: { type: Function, default: null },
-	/** `navigate(key, params)`; without it the page emits `navigate` with a route. */
+	/** `navigate(route)` with an in-site route; without it the page emits `navigate`. */
 	navigate: { type: Function, default: null },
 	/** The page language. */
 	locale: { type: String, default: '' },

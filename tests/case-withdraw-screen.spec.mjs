@@ -49,7 +49,7 @@ async function load(relative) {
 }
 
 compileLoading(OUT_DIR)
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 const { withdrawalView, caseFieldNames } = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'withdrawal.js')).href)
 const { default: WithdrawCaseConfirm } = await load('components/WithdrawCaseConfirm.jsx')
 const { createElement } = await import('react')
@@ -140,7 +140,7 @@ test('the case screen uses them, and both locales carry the strings', () => {
 		'Your reason: {reason}': 'Uw reden: {reason}',
 	}
 	for (const locale of ['en', 'nl']) {
-		const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`), 'utf8'))
+		const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`), 'utf8'))
 		for (const [key, dutch] of Object.entries(nl)) {
 			assert.equal(bundle[key], locale === 'nl' ? dutch : key, `${locale}: ${key}`)
 		}

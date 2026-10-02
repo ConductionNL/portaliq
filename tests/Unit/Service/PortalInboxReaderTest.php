@@ -68,6 +68,11 @@ class PortalInboxReaderTest extends TestCase {
 					return [['id' => 'q1', 'subject' => 'Nieuw bericht', 'receivedAt' => '2026-07-20T00:00:00Z', 'read' => false]];
 				}
 
+				// Portaliq's own notices are always an inbox source; none here.
+				if ($register === 'portaliq' && $schema === 'portalMessage') {
+					return [];
+				}
+
 				// The non-inbox collection must never even be READ.
 				$this->fail('Only kind:inbox collections may be read.');
 			}
@@ -126,8 +131,9 @@ class PortalInboxReaderTest extends TestCase {
 	}//end testRowsWithoutReceivedAtSortLast()
 
 	/**
-	 * No `kind: inbox` collection anywhere → an empty inbox (fail-closed
-	 * default, not an error).
+	 * No `kind: inbox` collection anywhere: only portaliq's own notices are
+	 * read, so a resident with none has an empty inbox (not an error), and a
+	 * non-inbox collection is never read.
 	 */
 	public function testNoInboxCollectionsYieldsAnEmptyInbox(): void {
 		$aggregate = [
@@ -143,7 +149,9 @@ class PortalInboxReaderTest extends TestCase {
 		];
 
 		$reader = $this->createMock(PortalObjectReader::class);
-		$reader->expects($this->never())->method('readCollection');
+		$reader->expects($this->once())->method('readCollection')
+			->with('portaliq', 'portalMessage', 'subjectRef', 's1')
+			->willReturn([]);
 
 		$inboxReader = new PortalInboxReader($reader);
 		$this->assertSame([], $inboxReader->aggregateInbox(self::SUBJECT, $aggregate));
@@ -246,9 +254,13 @@ class PortalInboxReaderTest extends TestCase {
 			],
 		];
 
+		// Only portaliq's own, subjectRef-scoped notices may be read; the
+		// unscoped rogue collection never is.
 		$reader = $this->createMock(PortalObjectReader::class);
-		$reader->expects($this->never())
-			->method('readCollection');
+		$reader->expects($this->once())
+			->method('readCollection')
+			->with('portaliq', 'portalMessage', 'subjectRef', 's1')
+			->willReturn([]);
 
 		$inboxReader = new PortalInboxReader($reader);
 
@@ -326,8 +338,8 @@ class PortalInboxReaderTest extends TestCase {
 		$messages = $inboxReader->aggregateInbox(self::SUBJECT, $aggregate);
 
 		sort($seen);
-		$this->assertSame(['message', 'note'], $seen, 'scopeClaim and via must still be read');
-		$this->assertCount(2, $messages);
+		$this->assertSame(['message', 'note', 'portalMessage'], $seen, 'scopeClaim and via must still be read');
+		$this->assertCount(3, $messages);
 
 	}//end testScopeClaimAndViaAreStillReadWithoutAScopeField()
 
@@ -403,4 +415,121 @@ class PortalInboxReaderTest extends TestCase {
 		$this->assertSame(0, $logReads, 'no channel, no log read');
 		$this->assertArrayNotHasKey('_deliveries', $rows[0]);
 	}//end testOnlyADeliveredMessageBoxSendIsShown()
+
+	/**
+	 * A resident sees the notices portaliq writes itself (an answered question,
+	 * a matched saved search, a published decision, a receipt) even when no
+	 * contribution declares a `kind: inbox` collection over `portalMessage`.
+	 * They are read through the same scoped reader as every inbox source: on
+	 * `subjectRef`, with the subject's own reference and organisation. A
+	 * contributed inbox source (dossiq) still merges alongside them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	public function testAResidentSeesTheirOwnPortalMessagesAlongsideAContributedInbox(): void {
+		$aggregate = ['contributions' => [[
+			'app' => 'dossiq',
+			'label' => 'Dossiq',
+			'collections' => [['id' => 'portaalBericht', 'kind' => 'inbox', 'register' => 'zaken', 'schema' => 'portaalBericht', 'scopeField' => 'ontvanger']],
+		]]];
+
+		$calls = [];
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation = '') use (&$calls): array {
+				$calls[] = [$register, $schema, $scopeField, $subjectRef, $organisation];
+				if ($schema === 'portaalBericht') {
+					return [['id' => 'd1', 'subject' => 'Uw zaak', 'receivedAt' => '2026-09-01T00:00:00Z']];
+				}
+
+				if ($register === 'portaliq' && $schema === 'portalMessage') {
+					return [[
+						'id' => 'm1',
+						'subject' => 'Uw vraag is beantwoord',
+						'body' => 'Bekijk het antwoord.',
+						'read' => false,
+						'receivedAt' => '2026-10-01T09:00:00Z',
+						'recordLink' => ['app' => 'pipelinq', 'collection' => 'myQuestions', 'id' => 't1'],
+					]];
+				}
+
+				return [];
+			}
+		);
+
+		$messages = (new PortalInboxReader($reader))->aggregateInbox(self::SUBJECT, $aggregate);
+
+		$this->assertContains(['portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1'], $calls, 'read on the subject\'s own reference and organisation');
+		$this->assertSame(['m1', 'd1'], array_column($messages, 'id'));
+		$this->assertSame('Uw vraag is beantwoord', $messages[0]['subject']);
+		$this->assertSame('Bekijk het antwoord.', $messages[0]['body']);
+		$this->assertFalse($messages[0]['read']);
+		$this->assertSame('2026-10-01T09:00:00Z', $messages[0]['receivedAt']);
+		$this->assertSame(['app' => 'pipelinq', 'collection' => 'myQuestions', 'id' => 't1'], $messages[0]['recordLink']);
+		$this->assertSame(
+			['appId' => 'portaliq', 'label' => '', 'register' => 'portaliq', 'schema' => 'portalMessage', 'collection' => 'portalMessages'],
+			$messages[0]['_source']
+		);
+		$this->assertSame('dossiq', $messages[1]['_source']['appId']);
+		$this->assertSame(2, (new PortalInboxReader($reader))->unreadCount(self::SUBJECT, $aggregate), 'the unread notice counts');
+	}//end testAResidentSeesTheirOwnPortalMessagesAlongsideAContributedInbox()
+
+	/**
+	 * Another subject's notice never appears: the read is scoped on the
+	 * bearer's own subjectRef, never a wider one, so a row the reader keeps for
+	 * someone else is never asked for.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	public function testAnotherSubjectsPortalMessageNeverAppears(): void {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			static function (string $register, string $schema, string $scopeField, string $subjectRef): array {
+				// The reader keeps one notice for s2 only, as OpenRegister would.
+				if ($schema === 'portalMessage' && $scopeField === 'subjectRef' && $subjectRef === 's2') {
+					return [['id' => 'not-yours', 'subject' => 'Voor iemand anders', 'subjectRef' => 's2']];
+				}
+
+				return [];
+			}
+		);
+
+		$this->assertSame([], (new PortalInboxReader($reader))->aggregateInbox(self::SUBJECT, ['contributions' => []]));
+		$this->assertSame(0, (new PortalInboxReader($reader))->unreadCount(self::SUBJECT, ['contributions' => []]));
+	}//end testAnotherSubjectsPortalMessageNeverAppears()
+
+	/**
+	 * A portal that already declares a `kind: inbox` collection over
+	 * `portalMessage` shows each notice once, under the declared collection
+	 * (whose id mark-read already addresses).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	public function testADeclaredPortalMessageInboxShowsEachNoticeOnce(): void {
+		$aggregate = ['contributions' => [[
+			'app' => 'portaliq',
+			'label' => 'Voorbeeld',
+			'collections' => [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'scopeField' => 'subjectRef']],
+		]]];
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn(
+			[
+				['@self' => ['id' => 'm1'], 'subject' => 'Een', 'receivedAt' => '2026-09-02'],
+				['uuid' => 'm2', 'subject' => 'Twee', 'receivedAt' => '2026-09-01'],
+				['subject' => 'Zonder id'],
+			]
+		);
+
+		$messages = (new PortalInboxReader($reader))->aggregateInbox(self::SUBJECT, $aggregate);
+
+		$this->assertSame(['Een', 'Twee', 'Zonder id'], array_column($messages, 'subject'));
+		$this->assertSame(['inbox', 'inbox', 'inbox'], array_column(array_column($messages, '_source'), 'collection'));
+	}//end testADeclaredPortalMessageInboxShowsEachNoticeOnce()
 }//end class

@@ -142,7 +142,7 @@ test('the shell, the inbox and the page view are wired to it', () => {
 	for (const locale of ['en', 'nl']) {
 		const bundle = JSON.parse(
 			readFileSync(
-				new URL(`../src/portal/i18n/${locale}.json`, import.meta.url),
+				new URL(`../src/shared/i18n/${locale}.json`, import.meta.url),
 				'utf8',
 			),
 		)

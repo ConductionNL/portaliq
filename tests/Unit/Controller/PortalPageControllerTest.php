@@ -359,6 +359,55 @@ class PortalPageControllerTest extends TestCase {
 
 
 	/**
+	 * The site boots with the same ways in as `/portal`: the dev login only
+	 * where the server accepts it, the silent sign-in provider, and the
+	 * organisation and audience a login starts with.
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	public function testSiteCarriesTheSigninSettings(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			resolved: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client'],
+			portal: ['slug' => 'wilgenboom', 'organisation' => 'school-org']
+		);
+
+		$signin = $controller->site()->getParams()['portalConfig']['signin'];
+
+		$this->assertSame(
+			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => []],
+			actual: $signin
+		);
+
+		$closed = $this->controller(orgSlug: '')->site()->getParams()['portalConfig']['signin'];
+		$this->assertFalse($closed['devLogin']);
+
+	}//end testSiteCarriesTheSigninSettings()
+
+
+	/**
+	 * The site's sign-in screen learns which ways in a portal opens from the
+	 * same runtime config as `/portal`, and gets none when it names none.
+	 *
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
+	 */
+	public function testSiteCarriesTheWaysIn(): void {
+		$ways = ['register' => true, 'reference' => false, 'emailSignIn' => 'E-mail', 'referenceCaseTypes' => []];
+		$controller = $this->controller(
+			orgSlug: '',
+			resolved: ['waysIn' => $ways],
+			portal: ['slug' => 'wilgenboom', 'organisation' => 'school-org']
+		);
+
+		$this->assertSame(expected: $ways, actual: $controller->site()->getParams()['portalConfig']['signin']['waysIn']);
+
+		$none = $this->controller(orgSlug: '')->site()->getParams()['portalConfig']['signin'];
+		$this->assertSame(expected: [], actual: $none['waysIn']);
+
+	}//end testSiteCarriesTheWaysIn()
+
+
+	/**
 	 * No resolved portal, or a resolver that throws, gives '' and still
 	 * renders: the capture then keys by the explicit slug or not at all.
 	 */

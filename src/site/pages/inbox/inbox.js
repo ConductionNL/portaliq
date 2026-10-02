@@ -10,9 +10,10 @@
  */
 
 import { navKeyFor, OPEN_STORAGE_KEY } from '../../../shared/openRecord.js'
+import { routeForNav } from '../../../shared/portalNav.js'
 
-/** The site route of "My tasks" in the signed-in area. */
-export const TASKS_ROUTE = '/mijn/tasks'
+/** The site route of "My tasks" in the signed-in area, as the shell builds it. */
+export const TASKS_ROUTE = routeForNav({ special: 'tasks' })
 
 /** Where the inbox leaves the task "My tasks" opens on arrival. */
 export const TASK_STORAGE_KEY = 'portaliq.openTask'
@@ -104,8 +105,8 @@ export function unreadAfterRead(count) {
 
 /**
  * The site route of the page that shows a message's record, or null when
- * none of the resident's pages shows that collection. The same route the
- * signed-in area gives a contribution page: `/mijn/<app>/<page id>`.
+ * none of the resident's pages shows that collection. The route is the
+ * shell's own (src/shared/portalNav.js `routeForNav`).
  *
  * @param {Array<object>} nav The navigation entries.
  * @param {{app: string, collection: string, id: string}} link The record link.
@@ -115,12 +116,7 @@ export function unreadAfterRead(count) {
 export function recordRoute(nav, link) {
 	const key = navKeyFor(nav, link)
 	const entry = key ? (nav || []).find((n) => n.key === key) : null
-	if (!entry) {
-		return null
-	}
-	const app = encodeURIComponent(entry.contribution?.app || '')
-	const page = encodeURIComponent(entry.page?.id || '')
-	return `/mijn/${app}/${page}`
+	return entry ? routeForNav(entry) : null
 }
 
 /**

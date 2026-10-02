@@ -18,14 +18,18 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { OPEN_STORAGE_KEY } from '../src/shared/openRecord.js'
+import { buildNav, routeForNav } from '../src/shared/portalNav.js'
+import { blockSlotLoader } from '../src/site/pages/collections/blockSlots.js'
 import {
 	markedRead,
 	recordRoute,
+	TASKS_ROUTE,
 	unreadAfterRead,
 } from '../src/site/pages/inbox/inbox.js'
 import { components, pages } from '../src/site/pages/inbox/index.js'
 import strings from '../src/site/pages/inbox/strings.js'
 import { withStrings } from '../src/site/pages/inbox/translate.js'
+import { sitePageLoader } from '../src/site/pages/registry.js'
 import { instance, inState, t } from './support/page-instance.mjs'
 import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 
@@ -98,6 +102,18 @@ function portalBundle(locale) {
 	return JSON.parse(readFileSync(file, 'utf8'))
 }
 
+test('the shell renders these pages for their sections and the timed test in its place', () => {
+	for (const key of ['inbox', 'tasks', 'messages', 'news']) {
+		assert.equal(
+			sitePageLoader({ key: `__${key}__`, special: key }),
+			pages[key],
+			`${key} replaces the placeholder`,
+		)
+	}
+	assert.equal(blockSlotLoader('timedTask'), components.timedTask)
+	assert.equal(TASKS_ROUTE, routeForNav({ special: 'tasks' }))
+})
+
 test("the pages register lazily by the portal's section keys", () => {
 	assert.deepEqual(Object.keys(pages).sort(), [
 		'inbox',
@@ -123,12 +139,15 @@ test("the pages register lazily by the portal's section keys", () => {
 	}
 	assert.equal(typeof components.timedTask, 'function')
 	assert.match(index, /@typedef \{object\} SitePageProps/)
-	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
+	const sections = buildNav([], (key) => key, {
+		tasks: true,
+		messages: true,
+		news: true,
+	}).map((entry) => entry.special)
 	for (const key of Object.keys(pages)) {
-		assert.match(
-			app,
-			new RegExp(`special: '${key}'`),
-			`${key} is a section of the React portal`,
+		assert.ok(
+			sections.includes(key),
+			`${key} is a section of the shared navigation`,
 		)
 	}
 })

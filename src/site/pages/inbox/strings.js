@@ -4,7 +4,7 @@
  *
  * The strings of the inbox, messages, news, tasks and timed-task screens of
  * the site, in Dutch and English. The keys and texts are the React portal's
- * own (src/portal/i18n), so both front ends say the same thing until the
+ * own (src/shared/i18n), so both front ends say the same thing until the
  * portal retires. tests/site-inbox-pages.spec.mjs checks they still match.
  */
 

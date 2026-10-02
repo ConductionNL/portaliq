@@ -241,6 +241,12 @@ export default {
 	inline-size: 100%;
 }
 
+/* A header cell centres by browser default; the values below it start at the
+   inline edge, so the label sat over the gap between two columns. */
+.pq-collection-table .utrecht-table__header-cell {
+	text-align: start;
+}
+
 .pq-collection-table__row--selectable {
 	cursor: pointer;
 }
@@ -263,5 +269,11 @@ export default {
 
 .pq-collection-table__action + .pq-collection-table__action {
 	margin-inline-start: var(--utrecht-space-inline-sm, 0.5rem);
+}
+
+/* A cell holding a list reads one value per line (cells.js joins with a
+   line break; array-cells-one-line-per-item). */
+.pq-collection-table .utrecht-table__cell {
+	white-space: pre-line;
 }
 </style>

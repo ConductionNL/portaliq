@@ -15,9 +15,9 @@
  * @typedef {object} SitePageProps
  * @property {object|null} session The session as `/portal/api/session` returns it (`subjectRef`, `audience`, `organisation`).
  * @property {object|null} portal The portal record.
- * @property {object} api The shared portal API bound to the site's bearer (src/portal/lib/portalApi.js `createPortalApi`).
+ * @property {object} api The shared portal API bound to the site's bearer (src/shared/portalApi.js `createPortalApi`).
  * @property {(key: string, vars?: object) => string} t The site translator; a key it does not know falls back to strings.js.
- * @property {(key: string, params?: object) => void} [navigate] Opens another page by key; without it the page emits `navigate` with an in-site route.
+ * @property {(route: string) => void} [navigate] Opens an in-site route (the shell's `routeForNav`); without it the page emits `navigate` with that route.
  * @property {string} [locale] The page language, `nl` or `en`.
  * @property {object} [entry] The navigation entry on screen.
  * @property {object} [contributions] The contributions aggregate (`unreadCount`).
@@ -26,8 +26,6 @@
  * Events: `navigate` (an in-site route), `unread` (the inbox's new unread
  * count), `refresh` (read the contributions again, after a task is done).
  */
-
-export { default as strings } from './strings.js'
 
 /**
  * The pages, by section key.

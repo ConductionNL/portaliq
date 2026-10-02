@@ -30,6 +30,7 @@
 //
 // See hydra ADR-036 for the v2 registry design.
 
+import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import {
 	showConfirmation,
@@ -43,11 +44,13 @@ import { generateUrl } from '@nextcloud/router'
 import { spawnDialog } from '@nextcloud/vue/functions/dialog'
 import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
+import NewsItemDialog from './dialogs/NewsItemDialog.vue'
 import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
 import CustomExample from './views/CustomExample.vue'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
 import { createFormBindingPreview } from './lib/formBindingPreview.js'
+import { createNewsApi, createNewsHandlers } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
 import {
 	createStaffAccountActions,
@@ -145,6 +148,26 @@ const staffAccountHandlers = createStaffAccountHandlers({
 	// to show the new account or the withdrawn invitation.
 	reload: () => window.location.reload(),
 })
+/**
+ * `New news item`, `Change`, `Publish` and `Take back` on the News page
+ * (staff-news-screen). Each goes through NewsController's staff routes, never
+ * the object form; see src/lib/newsAuthoring.js.
+ */
+const newsHandlers = createNewsHandlers({
+	api: createNewsApi({
+		get: (url) => axios.get(url),
+		post: (url, body) => axios.post(url, body),
+		put: (url, body) => axios.put(url, body),
+		generateUrl,
+	}),
+	openDialog: (props) => spawnDialog(NewsItemDialog, props),
+	currentUser: () => getCurrentUser()?.uid || '',
+	translate: (text, vars) => t('portaliq', text, vars),
+	notify: showSuccess,
+	notifyError: showError,
+	// A header or row handler gets no handle on the list, so the page reloads.
+	reload: () => window.location.reload(),
+})
 // Features & Roadmap page — thin wrapper around the lib's
 // CnFeaturesAndRoadmapView (in-product roadmap surface powered by
 // OpenRegister's github-issue-proxy). Shipped wired-up so apps scaffolded
@@ -194,6 +217,11 @@ export default {
 	 * the secret.
 	 */
 	...staffAccountHandlers,
+	/**
+	 * The News page's actions (staff-news-screen): handlers, not the object
+	 * form, because news is written through NewsController's staff routes.
+	 */
+	...newsHandlers,
 	// Features & Roadmap page (lib's CnFeaturesAndRoadmapView) — wired up
 	// in src/manifest.json (the `FeaturesRoadmap` custom page + the
 	// `FeaturesRoadmapMenu` settings entry).

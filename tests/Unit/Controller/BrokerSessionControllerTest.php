@@ -41,7 +41,9 @@ class BrokerSessionControllerTest extends TestCase {
 	 */
 	private function controller(BrokerLogin $login, ?PortalResolver $portals = null): BrokerSessionController {
 		$urls = $this->createMock(IURLGenerator::class);
-		$urls->method('linkToRoute')->willReturn('/apps/portaliq/portal');
+		$urls->method('linkToRoute')->willReturnCallback(
+			static fn (string $name): string => $name === 'portaliq.portalPage.site' ? '/apps/portaliq/site' : '/apps/portaliq/portal'
+		);
 		$urls->method('linkToRouteAbsolute')->willReturn('https://portal.example/apps/portaliq/portal/api/session/broker/callback');
 		$urls->method('getAbsoluteURL')->willReturnCallback(static fn (string $path): string => 'https://portal.example' . $path);
 
@@ -83,7 +85,7 @@ class BrokerSessionControllerTest extends TestCase {
 		$portals->method('resolve')->willReturn(['slug' => 'venray', 'organisation' => 'gemeente-x']);
 		$login = $this->getMockBuilder(BrokerLogin::class)->disableOriginalConstructor()->onlyMethods(['start', 'complete'])->getMock();
 		$login->expects($this->once())->method('start')
-			->with('gemeente-x', 'digid', '/apps/portaliq/portal', 'https://portal.example/apps/portaliq/portal/api/session/broker/callback')
+			->with('gemeente-x', 'digid', '/apps/portaliq/portal?portal=venray', 'https://portal.example/apps/portaliq/portal/api/session/broker/callback')
 			->willReturn('https://integriq.example/idp/start?state=s');
 
 		$response = $this->controller(login: $login, portals: $portals)->start(provider: 'digid', portal: 'venray');
@@ -91,6 +93,104 @@ class BrokerSessionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
 		$this->assertSame('https://integriq.example/idp/start?state=s', $response->getRedirectURL());
 	}//end testStartResolvesOrganisationFromPortal()
+
+
+	/**
+	 * A login started on the public site returns to the page it came from,
+	 * and an address outside the site route to the portal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	public function testStartKeepsTheSitePageToReturnTo(): void {
+		$cases = [
+			'/apps/portaliq/site?portal=venray&route=/mijn' => '/apps/portaliq/site?portal=venray&route=/mijn',
+			'//evil.example/x' => '/apps/portaliq/portal',
+		];
+		foreach ($cases as $returnTo => $kept) {
+			$login = $this->getMockBuilder(BrokerLogin::class)->disableOriginalConstructor()->onlyMethods(['start', 'complete'])->getMock();
+			$login->expects($this->once())->method('start')
+				->with('gemeente-x', 'digid', $kept, $this->anything())
+				->willReturn('https://integriq.example/idp/start?state=s');
+
+			$this->controller(login: $login)->start(org: 'gemeente-x', provider: 'digid', returnTo: $returnTo);
+		}
+	}//end testStartKeepsTheSitePageToReturnTo()
+
+
+	/**
+	 * portal-broker-login-keeps-the-portal: a login started from a portal
+	 * returns to that portal's own address. Only the slug of the portal the
+	 * resolver found is echoed, URL-encoded; an unknown portal returns to the
+	 * plain portal address.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 */
+	public function testALoginStartedFromAPortalReturnsToIt(): void {
+		$cases = [
+			'wilgenboom' => [['slug' => 'wilgenboom', 'organisation' => 'gemeente-x'], '/apps/portaliq/portal?portal=wilgenboom'],
+			'de school' => [['slug' => 'de school&x=1', 'organisation' => 'gemeente-x'], '/apps/portaliq/portal?portal=de%20school%26x%3D1'],
+			'"><script>' => [['slug' => 'default', 'organisation' => 'gemeente-x'], '/apps/portaliq/portal?portal=default'],
+			'no-such-portal' => [null, '/apps/portaliq/portal'],
+		];
+		foreach ($cases as $asked => [$resolved, $returnTo]) {
+			$portals = $this->createMock(PortalResolver::class);
+			$portals->method('resolve')->willReturn($resolved);
+			$login = $this->getMockBuilder(BrokerLogin::class)->disableOriginalConstructor()->onlyMethods(['start', 'complete'])->getMock();
+			$login->expects($this->once())->method('start')
+				->with('gemeente-x', 'digid', $returnTo, $this->anything())
+				->willReturn('https://integriq.example/idp/start?relayState=s');
+
+			$this->controller(login: $login, portals: $portals)->start(org: 'gemeente-x', provider: 'digid', portal: (string)$asked);
+		}
+	}//end testALoginStartedFromAPortalReturnsToIt()
+
+
+	/**
+	 * portal-broker-login-keeps-the-portal: a failed start or callback lands
+	 * on the portal the login started from, still with the one failure
+	 * fragment. A stored address that is not a path on this server is not
+	 * followed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 */
+	public function testAFailedLoginLandsOnThePortalItStartedFrom(): void {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn(['slug' => 'wilgenboom', 'organisation' => 'gemeente-x']);
+		$start = $this->controller(login: $this->login(), portals: $portals)->start(provider: 'digid', portal: 'wilgenboom');
+		$this->assertSame('https://portal.example/apps/portaliq/portal?portal=wilgenboom#signin=failed', $start->getRedirectURL());
+
+		$spent = ['token' => '', 'returnTo' => '/apps/portaliq/portal?portal=wilgenboom'];
+		$callback = $this->controller(login: $this->login(complete: $spent))->callback(relayState: 's', code: 'c');
+		$this->assertSame('https://portal.example/apps/portaliq/portal?portal=wilgenboom#signin=failed', $callback->getRedirectURL());
+
+		$elsewhere = ['token' => '', 'returnTo' => '//evil.example/x'];
+		$callback = $this->controller(login: $this->login(complete: $elsewhere))->callback(relayState: 's', code: 'c');
+		$this->assertSame('https://portal.example/apps/portaliq/portal#signin=failed', $callback->getRedirectURL());
+	}//end testAFailedLoginLandsOnThePortalItStartedFrom()
+
+
+	/**
+	 * portal-broker-login-keeps-the-portal: integriq hands the relay state
+	 * back as `relayState`; `state` is still read when that is absent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 */
+	public function testTheCallbackReadsIntegriqsRelayState(): void {
+		foreach ([['relayState' => 'r-1', 'state' => ''], ['relayState' => '', 'state' => 'r-1'], ['relayState' => 'r-1', 'state' => 'other']] as $args) {
+			$login = $this->getMockBuilder(BrokerLogin::class)->disableOriginalConstructor()->onlyMethods(['start', 'complete'])->getMock();
+			$login->expects($this->once())->method('complete')->with('r-1', 'c')->willReturn(null);
+
+			$this->controller(login: $login)->callback(state: $args['state'], code: 'c', relayState: $args['relayState']);
+		}
+	}//end testTheCallbackReadsIntegriqsRelayState()
 
 
 	/**

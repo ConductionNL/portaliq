@@ -51,6 +51,11 @@ class PortalDeepLinkBuilder {
 	private const PORTAL_ROUTE = 'portaliq.portalPage.index';
 
 	/**
+	 * The Vue site's route (site-reaches-portal-parity).
+	 */
+	private const SITE_ROUTE = 'portaliq.portalPage.site';
+
+	/**
 	 * The query parameter the portal shell reads a named portal from
 	 * (PortalRuntimeConfigResolver::resolvePortal(), `?portal=`). It wins over
 	 * `?org=`, and a slug that names no portal is a miss, never a fallback.
@@ -104,7 +109,7 @@ class PortalDeepLinkBuilder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	public function forPortal(string $portalSlug, string $organisation = ''): string {
 		if ($portalSlug === '') {
@@ -113,6 +118,27 @@ class PortalDeepLinkBuilder {
 
 		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute(self::PORTAL_ROUTE, [self::PORTAL_PARAMETER => $portalSlug]));
 	}//end forPortal()
+
+	/**
+	 * The absolute link to one portal's Vue site, `?portal=<slug>`, for a
+	 * screen that lives only there (the ways in of identity-ways-in-screens).
+	 * Without a slug it falls back to the organisation's portal link, because
+	 * the site does not resolve `?org=` yet.
+	 *
+	 * @param string $portalSlug   The portal's slug, or ''.
+	 * @param string $organisation The tenant slug, for the fallback.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+	 */
+	public function forSite(string $portalSlug, string $organisation = ''): string {
+		if ($portalSlug === '') {
+			return $this->forOrganisation(organisation: $organisation);
+		}
+
+		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute(self::SITE_ROUTE, [self::PORTAL_PARAMETER => $portalSlug]));
+	}//end forSite()
 
 	/**
 	 * The portal address that opens one record (REQ-NAP-005).

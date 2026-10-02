@@ -270,7 +270,7 @@ export default {
 				return
 			}
 			keepRecordToOpen(sessionStore(), link)
-			this.go('contribution', { open: link }, route)
+			this.go(route)
 		},
 
 		/**
@@ -282,21 +282,19 @@ export default {
 		 */
 		openTask(uuid) {
 			keepTaskToOpen(sessionStore(), uuid)
-			this.go('tasks', { task: uuid }, TASKS_ROUTE)
+			this.go(TASKS_ROUTE)
 		},
 
 		/**
 		 * Go elsewhere in the signed-in area.
 		 *
-		 * @param {string} key The page key.
-		 * @param {object} params What the page needs.
 		 * @param {string} route The in-site route.
 		 * @return {void}
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
-		go(key, params, route) {
+		go(route) {
 			if (typeof this.navigate === 'function') {
-				this.navigate(key, params)
+				this.navigate(route)
 				return
 			}
 			this.$emit('navigate', route)

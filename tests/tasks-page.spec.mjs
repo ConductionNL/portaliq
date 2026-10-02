@@ -192,10 +192,10 @@ test('"View task" in the inbox opens My tasks with that task open', async () => 
 		const withNavigate = instance(InboxPage, {
 			api: {},
 			t,
-			navigate: (key, params) => asked.push([key, params]),
+			navigate: (route) => asked.push(route),
 		})
 		withNavigate.openTask('task-7')
-		assert.deepEqual(asked, [['tasks', { task: 'task-7' }]])
+		assert.deepEqual(asked, [TASKS_ROUTE])
 
 		const api = fakeApi()
 		const page = instance(TasksPage, { api, t, locale: 'en' })

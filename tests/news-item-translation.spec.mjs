@@ -15,6 +15,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { buildNav, shellSections } from '../src/shared/portalNav.js'
 import { pages } from '../src/site/pages/inbox/index.js'
 import strings from '../src/site/pages/inbox/strings.js'
 import { hasNews } from '../src/site/pages/inbox/translation.js'
@@ -97,6 +98,19 @@ test('the news page appears only when the feed holds an item, and reads the feed
 	assert.equal(hasNews(null), false)
 	assert.equal(hasNews([ITEM]), true)
 	assert.equal(typeof pages.news, 'function')
+	// The shared navigation offers News only when the feed holds an item.
+	assert.equal(shellSections({ news: [ITEM] }).news, true)
+	assert.equal(shellSections({ news: [] }).news, false)
+	assert.ok(
+		buildNav([], (key) => key, { news: true }).some(
+			(entry) => entry.special === 'news',
+		),
+	)
+	assert.ok(
+		!buildNav([], (key) => key, { news: false }).some(
+			(entry) => entry.special === 'news',
+		),
+	)
 	assert.match(
 		portalApiSource(),
 		/async fetchNewsFeed\(\)[\s\S]*\/api\/news\/feed/,

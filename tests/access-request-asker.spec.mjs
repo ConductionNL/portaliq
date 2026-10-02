@@ -16,6 +16,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { buildNav, defaultNavKey, shellSections } from '../src/shared/portalNav.js'
 import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
 
 const require = createRequire(import.meta.url)
@@ -51,7 +52,7 @@ async function load(relative) {
 	return import(pathToFileURL(out).href)
 }
 
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 const {
 	default: AccessRequestsPage,
 	newestFirst,
@@ -206,16 +207,21 @@ test('the portal offers the page to every signed-in user', () => {
 		app,
 		/import AccessRequestsPage from '@portal\/components\/AccessRequestsPage\.jsx'/,
 	)
-	assert.match(app, /special: 'access'/)
+	assert.equal(shellSections({ session: {}, contributions: {} }).access, true)
+	assert.equal(shellSections({ session: null, contributions: {} }).access, false)
+	// The shared navigation offers it, after the content pages, never first.
+	const nav = buildNav([{ app: 'a', pages: [{ id: 'p' }] }], (key) => key, { access: true })
+	assert.ok(nav.some((entry) => entry.special === 'access'))
+	assert.equal(defaultNavKey(nav), 'a:p')
 	assert.match(app, /active\.special === 'access' && \(\s*<AccessRequestsPage/)
 })
 
 test('every new string has a Dutch translation', () => {
 	const nl = JSON.parse(
-		readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'nl.json'), 'utf8'),
+		readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'),
 	)
 	const en = JSON.parse(
-		readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'en.json'), 'utf8'),
+		readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'en.json'), 'utf8'),
 	)
 	for (const key of [
 		'Access to cases',

@@ -3,7 +3,7 @@
 //
 // The strings of slice e (account, registered details, access requests, my
 // cases, citizen case), in Dutch and English. Keys and texts are the React
-// portal's own (src/portal/i18n/*.json): the key is the English source string.
+// portal's own (src/shared/i18n/*.json): the key is the English source string.
 // tests/account-page.spec.mjs checks every key the slice-e files use
 // is here, in both languages, without em-dashes.
 
