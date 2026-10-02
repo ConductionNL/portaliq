@@ -451,6 +451,55 @@ class PortalContributionRegistryTest extends TestCase {
 	}//end testTheAggregateResolvesAttachedActions()
 
 	/**
+	 * A malformed row condition is dropped from the aggregate, and logged with
+	 * the app (update-row-action-condition REQ-URC-002).
+	 *
+	 * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-a-malformed-row-condition-must-be-dropped-with-a-warning-req-urc-002
+	 */
+	public function testAMalformedRowConditionIsDroppedFromTheAggregate(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['parent'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'collections' => [['id' => 'times', 'register' => 'portaliq', 'schema' => 'collection', 'scopeField' => 'owner', 'rowActions' => ['cancel', 'withdraw']]],
+					'actions' => [
+						[
+							'id' => 'cancel',
+							'type' => 'update',
+							'schema' => 'collection',
+							'fields' => ['lifecycle'],
+							'set' => ['lifecycle' => 'cancelled'],
+							'rowWhen' => ['field' => 'lifecycle', 'in' => []],
+						],
+						[
+							'id' => 'withdraw',
+							'type' => 'update',
+							'schema' => 'collection',
+							'fields' => ['lifecycle'],
+							'set' => ['lifecycle' => 'withdrawn'],
+							'rowWhen' => ['field' => 'lifecycle', 'in' => ['booked']],
+						],
+					],
+				];
+			}
+		};
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')
+			->with('Portaliq: row condition dropped', $this->callback(static fn (array $context): bool => $context['app'] === 'portaliq'));
+
+		$registry = new PortalContributionRegistry($this->appManager(['portaliq']), $this->anyContainer($provider), $logger);
+
+		$actions = $registry->aggregateFor(['audience' => 'parent', 'organisation' => 'org-1', 'trust' => 'low'])['contributions'][0]['actions'];
+		$this->assertArrayNotHasKey('rowWhen', $actions[0]);
+		$this->assertSame(['field' => 'lifecycle', 'in' => ['booked']], $actions[1]['rowWhen']);
+	}//end testAMalformedRowConditionIsDroppedFromTheAggregate()
+
+	/**
 	 * @param array<int, string>    $installed  App ids `getInstalledApps()` reports.
 	 * @param array<string, string> $namespaces App id => `info.xml` `<namespace>`.
 	 */
