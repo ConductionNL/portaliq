@@ -98,6 +98,9 @@ class PortalManifestController extends Controller {
 			'name' => $name,
 			'short_name' => $this->shortName(name: $name),
 			'start_url' => $this->startUrl(orgValue: $orgValue, portalSlug: $portalSlug),
+			// The installed app stays on the site: a link it follows out of
+			// `/site` opens in the browser instead of inside the app window.
+			'scope' => $this->urlGenerator->linkToRoute('portaliq.portalPage.site'),
 			'display' => 'standalone',
 			'background_color' => '#ffffff',
 			'theme_color' => '#ffffff',
@@ -156,12 +159,16 @@ class PortalManifestController extends Controller {
 	/**
 	 * The plain-JS source file's path on disk. Not a webpack entry — `/js/`
 	 * is entirely gitignored build output, so a hand-written service worker
-	 * cannot live there (design.md Trade-offs).
+	 * cannot live there (design.md Trade-offs). It lives in `src/shared/`,
+	 * outside the React portal, so retiring `src/portal/` does not take the
+	 * site's worker with it (REQ-SRP-045).
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
 	 */
 	private function serviceWorkerSourcePath(): string {
-		return dirname(__DIR__, 2) . '/src/portal/serviceWorker.js';
+		return dirname(__DIR__, 2) . '/src/shared/serviceWorker.js';
 	}//end serviceWorkerSourcePath()
 
 	/**
@@ -189,10 +196,17 @@ class PortalManifestController extends Controller {
 	 * The URL the installed app opens to, carrying the same tenant reference
 	 * the visitor is looking at right now.
 	 *
+	 * The site (`/site`), not the React portal: the portal is being retired
+	 * in favour of the site (site-reaches-portal-parity REQ-SRP-044), so an
+	 * app installed today must not open on an address that will only
+	 * redirect.
+	 *
 	 * @param string $orgValue The `?org=` value, or ''.
 	 * @param string $portalSlug The `?portal=` value, or ''.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-site-must-be-installable-req-srp-044
 	 */
 	private function startUrl(string $orgValue, string $portalSlug): string {
 		$params = [];
@@ -202,6 +216,6 @@ class PortalManifestController extends Controller {
 			$params['org'] = $orgValue;
 		}
 
-		return $this->urlGenerator->linkToRoute('portaliq.portalPage.index', $params);
+		return $this->urlGenerator->linkToRoute('portaliq.portalPage.site', $params);
 	}//end startUrl()
 }//end class

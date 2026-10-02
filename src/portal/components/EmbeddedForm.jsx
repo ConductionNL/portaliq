@@ -19,7 +19,7 @@
 // controller can return has a sentence here.
 
 import { useState } from 'react'
-import { labelFor, refusalSentence } from '../embedCopy.js'
+import { labelFor, refusalSentence } from '../../shared/embedCopy.js'
 
 /**
  * The embedded form, or the reason there is not one.
