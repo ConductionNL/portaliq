@@ -21,11 +21,13 @@ text in two languages.
 - **GIVEN** an organisation whose portal has locales `en`, `nl`
 - **WHEN** a handler changes a field a change rule listens to on a resident's case
 - **THEN** the message subject is "Z-2026-1 has been updated" and holds no Dutch
+- @e2e exclude the portal language is per organisation config; pinned by tests/Unit/Listener/PortalRecordChangeListenerTest.php testTheNoticeIsInThePortalsLanguageOnly
 
 #### Scenario: A portal without a language
 - **GIVEN** an organisation whose portal names no locale, or whose portal cannot be read
 - **WHEN** the same change happens
 - **THEN** the message subject is "Z-2026-1 is bijgewerkt" and holds no English
+- @e2e exclude an unreadable portal cannot be staged on a live instance; pinned by tests/Unit/Listener/PortalRecordChangeListenerTest.php testWithoutAPortalLanguageTheNoticeIsDutch
 
 ### Requirement: The inbox badge counts the unread messages the inbox shows (REQ-NAP-011)
 
@@ -37,3 +39,4 @@ of loaded rows not marked read, also when notices arrived after sign-in.
 - **AND** a background job writes 6 more notices for them
 - **WHEN** they open the inbox
 - **THEN** the badge says 8
+- @e2e exclude the React portal is frozen and the e2e drives the API; pinned by tests/inbox-unread.spec.mjs

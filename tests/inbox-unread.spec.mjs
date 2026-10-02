@@ -21,12 +21,21 @@ test('the unread count is the number of loaded rows not marked read', () => {
 })
 
 test('the portal inbox hands its loaded unread count to the shell badge', () => {
-	const inbox = readFileSync(new URL('../src/portal/components/InboxPage.jsx', import.meta.url), 'utf8')
-	assert.match(inbox, /import \{ unreadIn \} from '\.\.\/\.\.\/shared\/inboxUnread\.js'/)
+	const inbox = readFileSync(
+		new URL('../src/portal/components/InboxPage.jsx', import.meta.url),
+		'utf8',
+	)
+	assert.match(
+		inbox,
+		/import \{ unreadIn \} from '\.\.\/\.\.\/shared\/inboxUnread\.js'/,
+	)
 	assert.match(inbox, /onLoadedRef\.current\(unreadIn\(messages\)\)/)
 	// The load must not depend on the callback, or a new arrow each render
 	// reloads the inbox for ever.
 	assert.match(inbox, /\}, \[api\]\)/)
-	const app = readFileSync(new URL('../src/portal/App.jsx', import.meta.url), 'utf8')
+	const app = readFileSync(
+		new URL('../src/portal/App.jsx', import.meta.url),
+		'utf8',
+	)
 	assert.match(app, /onLoaded=\{\(count\) => setUnreadOverride\(count\)\}/)
 })
