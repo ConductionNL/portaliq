@@ -82,3 +82,14 @@ The site MUST send its own language as `Accept-Language` on every read of the po
 - WHEN the site reads her contributions
 - THEN the request carries `Accept-Language: nl` and learniq's sections read "Mijn kinderen"
 - @e2e exclude pinned by `tests/portal-language.spec.mjs`; the live check reads the sections on the Wilgenboom site
+
+### Requirement: The portal API MUST ask contributing apps in the portal's language
+
+When portaliq asks an app for its contribution, the app MUST see the portal's language, without a change to `getContribution(array $subject)`. Of the portal's declared `locales`, the one the request asks for (`Accept-Language`, which the site sets to its own language) MUST be used; otherwise the portal's first locale. The portal is the one the site names (`X-Portaliq-Portal`), else the one for the host, else the subject's organisation's. Portaliq MUST set Nextcloud's `forceLanguage` request parameter to that language for the duration of the provider call only and MUST put it back afterwards, also when the provider throws. An instance-wide `force_language` and a `forceLanguage` the request carries itself MUST win. Without a portal or locales, Nextcloud MUST choose as before.
+
+#### Scenario: A Dutch portal asked from an English browser
+- GIVEN the Wilgenboom portal declares `locales: ['nl']`
+- AND a request for its contributions carries `Accept-Language: en-US`
+- WHEN learniq's provider translates its section labels
+- THEN it translates them to Dutch, and after the call the request no longer forces a language
+- @e2e exclude pinned by `ContributionLanguageTest::testTheRegistryAsksEachProviderInThePortalsLanguage`; the mechanism was checked against Nextcloud 34's own L10N factory (forced `nl` translates core "Settings" as "Instellingen", and the next lookup is English again)
