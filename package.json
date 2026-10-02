@@ -160,7 +160,7 @@
     "@utrecht/skip-link-css": "^3.0.1",
     "@utrecht/textarea-css": "^4.1.0",
     "@utrecht/textbox-css": "^4.1.0",
-    "@vueuse/core": "^14.3.0",
+    "@vueuse/core": "^15.0.0",
     "axios": "^1.20.0",
     "babel-loader": "^10.1.1",
     "dexie": "^4.4.6",
