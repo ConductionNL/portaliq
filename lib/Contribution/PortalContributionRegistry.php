@@ -98,6 +98,7 @@ class PortalContributionRegistry {
 	 * @return array<string, mixed> `{ audience, organisation, contributions[] }`.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-a-malformed-row-condition-must-be-dropped-with-a-warning-req-urc-002
 	 */
 	public function aggregateFor(array $subject): array {
 		$audience = (string)($subject['audience'] ?? '');
@@ -141,6 +142,15 @@ class PortalContributionRegistry {
 			} catch (Throwable $e) {
 				$this->logger->error('Portaliq: manifest normalisation failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 			}
+
+			// A row action's `rowWhen` (update-row-action-condition): an
+			// unknown operator or a malformed update condition is dropped and
+			// logged with the app that declared it.
+			$filtered = (new RowWhenNormaliser())->normaliseContribution(
+				contribution: $filtered,
+				appId: (string)$appId,
+				logger: $this->logger
+			);
 
 			$contributions[] = (new NotificationRuleNormaliser())->normaliseContribution(
 				contribution: $filtered,

@@ -130,13 +130,17 @@ const conferenceSlots = {
 		{ field: 'lifecycle', label: 'Status' },
 	],
 }
-const slotRows = ['booked', 'acknowledged', 'completed', 'cancelled', 'declined'].map(
-	(lifecycle, index) => ({
-		id: `slot-${index}`,
-		startsAt: `2026-10-1${index}T15:00:00+02:00`,
-		lifecycle,
-	}),
-)
+const slotRows = [
+	'booked',
+	'acknowledged',
+	'completed',
+	'cancelled',
+	'declined',
+].map((lifecycle, index) => ({
+	id: `slot-${index}`,
+	startsAt: `2026-10-1${index}T15:00:00+02:00`,
+	lifecycle,
+}))
 
 test('an update row action follows its rowWhen too', () => {
 	const offered = slotRows.filter((row) =>
@@ -155,7 +159,10 @@ test('an update row action follows its rowWhen too', () => {
 		false,
 	)
 	assert.equal(
-		rowAction.offersRowAction({ ...cancelTime, rowWhen: undefined }, slotRows[3]),
+		rowAction.offersRowAction(
+			{ ...cancelTime, rowWhen: undefined },
+			slotRows[3],
+		),
 		true,
 	)
 })

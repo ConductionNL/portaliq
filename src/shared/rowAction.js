@@ -4,7 +4,8 @@
 // no React and no fetch, so the decisions are tested on their own
 // (tests/row-action.spec.mjs):
 //
-// - which action a row offers (the resolved kind and the action's `rowWhen`),
+// - which action a row offers (the action's `rowWhen`, on an endpoint row
+//   action and on a `type: update` transition alike),
 // - where the browser may go after a forward (an absolute https URL only),
 // - which message a forward's answer gets.
 //
@@ -29,16 +30,22 @@ export function isEndpointRowAction(action) {
 }
 
 /**
- * Whether a row offers an action. An update action and an endpoint action
- * without `rowWhen` apply to every row; with `rowWhen`, only a row whose field
- * holds one of the listed values.
+ * Whether a row offers an action. A row action without `rowWhen` applies to
+ * every row; with `rowWhen`, only a row whose field holds one of the listed
+ * values. That holds for an endpoint row action and, since
+ * update-row-action-condition, for a `type: update` transition too. A
+ * malformed `rowWhen` applies to no row.
+ *
+ * For an update action this only decides the button: the leaf app's
+ * lifecycle still refuses a transition the row does not allow.
  *
  * @param {object} action A resolved row action.
  * @param {object} row The row.
  * @return {boolean}
+ * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-an-update-row-action-must-be-shown-only-on-the-rows-its-rowwhen-names-req-urc-001
  */
 export function offersRowAction(action, row) {
-	if (!isEndpointRowAction(action) || !action.rowWhen) {
+	if (!action || !action.rowWhen) {
 		return true
 	}
 	const { field, in: allowed } = action.rowWhen
