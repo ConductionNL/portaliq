@@ -70,15 +70,7 @@ class CollectionFieldConfigNormaliser {
 		$projected = ($collection['fields'] ?? null);
 		$configs = [];
 		foreach ($declared as $field => $config) {
-			if (is_string($field) === false || $field === '' || is_array($config) === false) {
-				continue;
-			}
-
-			if (is_array($projected) === true && in_array($field, $projected, true) === false) {
-				continue;
-			}
-
-			$entry = $this->entry(config: $config);
+			$entry = $this->fieldEntry(field: $field, config: $config, projected: $projected);
 			if ($entry !== []) {
 				$configs[$field] = $entry;
 			}
@@ -90,6 +82,29 @@ class CollectionFieldConfigNormaliser {
 
 		return $collection;
 	}//end normalise()
+
+	/**
+	 * The usable config of one declared field, or [] when the field is no
+	 * name, its config no map, or it is a field the collection does not
+	 * project.
+	 *
+	 * @param mixed $field     The declared field name.
+	 * @param mixed $config    The declared config.
+	 * @param mixed $projected The collection's projected `fields`, or null.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fieldEntry(mixed $field, mixed $config, mixed $projected): array {
+		if (is_string($field) === false || $field === '' || is_array($config) === false) {
+			return [];
+		}
+
+		if (is_array($projected) === true && in_array($field, $projected, true) === false) {
+			return [];
+		}
+
+		return $this->entry(config: $config);
+	}//end fieldEntry()
 
 	/**
 	 * The usable part of one field's config.
