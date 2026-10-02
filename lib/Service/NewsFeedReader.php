@@ -277,8 +277,55 @@ class NewsFeedReader {
 			}
 		}
 
-		return $matched;
+		return $this->newestFirst(items: $matched);
 	}//end itemsFor()
+
+	/**
+	 * The items newest first by their publication moment: OpenRegister's
+	 * `@self.published`, else `@self.created` (the news item schema carries no
+	 * date of its own). Storage order is oldest first, so without this a
+	 * consumer that shows the first few showed the oldest. An undated item
+	 * sorts last; equal moments keep storage order.
+	 *
+	 * @param array<int, array<string, mixed>> $items The matched rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+	 */
+	private function newestFirst(array $items): array {
+		usort($items, fn (array $left, array $right): int => $this->momentOf(row: $right) <=> $this->momentOf(row: $left));
+
+		return $items;
+	}//end newestFirst()
+
+	/**
+	 * When an item was published, as a Unix timestamp; PHP_INT_MIN when undated.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return int
+	 */
+	private function momentOf(array $row): int {
+		$self = [];
+		if (is_array($row['@self'] ?? null) === true) {
+			$self = $row['@self'];
+		}
+
+		foreach (['published', 'created'] as $field) {
+			$value = $self[$field] ?? null;
+			if (is_string($value) === false || $value === '') {
+				continue;
+			}
+
+			$time = strtotime($value);
+			if ($time !== false) {
+				return $time;
+			}
+		}
+
+		return PHP_INT_MIN;
+	}//end momentOf()
 
 	/**
 	 * The items in the reader's language, title and body in one entry. Runs on

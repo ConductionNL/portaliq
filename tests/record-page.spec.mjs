@@ -21,6 +21,7 @@ import {
 	itemsOnDay,
 	monthWeeks,
 	narrowToRecord,
+	newestNewsFirst,
 	newsForRecord,
 	pickRow,
 	recordGroups,
@@ -597,6 +598,45 @@ test('the news block shows the news for this child only', async () => {
 	assert.match(html, /Over Vera/)
 	assert.doesNotMatch(html, /Nieuws voor groep 4/)
 	assert.match(html, /data-testid="news-block-all"[^>]*>\s*Al het nieuws/)
+})
+
+test('the news block shows the newest three, whatever order the feed came in', async () => {
+	const at = (id, created, extra = {}) => ({
+		id,
+		title: `Bericht ${id}`,
+		body: id,
+		target: { groupRefs: [GROEP7] },
+		'@self': { created, ...extra },
+	})
+	// Storage order, oldest first, as OpenRegister answers it.
+	const stored = [
+		at('a', '2026-09-01T08:00:00+00:00'),
+		at('b', '2026-09-08T08:00:00+00:00'),
+		at('c', '2026-08-01T08:00:00+00:00', {
+			published: '2026-09-22T08:00:00+00:00',
+		}),
+		at('d', '2026-09-15T08:00:00+00:00'),
+		at('e', '2026-10-02T09:00:00+00:00'),
+	]
+	assert.deepEqual(
+		newestNewsFirst(stored).map((item) => item.id),
+		['e', 'c', 'd', 'b', 'a'],
+	)
+	assert.deepEqual(
+		newestNewsFirst([{ id: 'undated' }, stored[0]]).map((item) => item.id),
+		['a', 'undated'],
+		'an undated item sorts last',
+	)
+	const html = await renderSfc('src/site/components/collections/NewsBlock.vue', {
+		record: vera,
+		contribution,
+		groups: [GROEP7],
+		initialFeed: stored,
+		t,
+		locale: 'nl',
+	})
+	const titles = [...html.matchAll(/Bericht (\w)/g)].map((m) => m[1])
+	assert.deepEqual([...new Set(titles)], ['e', 'c', 'd'])
 })
 
 test('one child opens at once, without a way back', async () => {
