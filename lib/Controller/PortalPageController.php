@@ -53,7 +53,6 @@ use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -76,6 +75,11 @@ class PortalPageController extends Controller {
 	 * @var string|null
 	 */
 	private ?string $requestedSlug = null;
+
+	/**
+	 * HTTP 302 Found: what `/portal` answers (REQ-SRP-048).
+	 */
+	private const STATUS_FOUND = 302;
 
 	/**
 	 * Constructor.
@@ -161,7 +165,11 @@ class PortalPageController extends Controller {
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function index(): RedirectResponse {
-		return new RedirectResponse($this->siteAddress(), Http::STATUS_FOUND);
+		$response = new RedirectResponse($this->siteAddress());
+		// 302, not RedirectResponse's own 303: the address moved, the
+		// request did not change meaning.
+		$response->setStatus(self::STATUS_FOUND);
+		return $response;
 	}//end index()
 
 	/**
@@ -229,26 +237,21 @@ class PortalPageController extends Controller {
 			Application::APP_ID,
 			'site',
 			[
-				// The ONLY things resolved server-side: which site, when the
-				// caller named one, and which token stylesheet to load.
-				// Host resolution — the normal path — needs nothing here.
+				// The ONLY things resolved server-side: which site, when the caller
+				// named one (`?portal=` or `?org=`), and which token stylesheet to
+				// load. Host resolution, the normal path, needs nothing here.
 				'portalConfig' => [
 					'portal'  => $this->requestedPortalSlug(),
 					'apiBase' => $this->urlGenerator->linkToRoute('portaliq.content.site'),
 					// The serving portal's slug, resolved the same way the theme
-					// above is (host, or the named site). The renderer keeps
-					// resolving CONTENT through the API exactly as before; this
-					// only lets first-party campaign capture key its storage
-					// by portal at boot, synchronously, instead of after the
-					// site fetch, where a visitor who moved on quickly lost the
-					// landing that brought them.
+					// above is (host, or the named site). Content still comes from
+					// the API; this only lets first-party campaign capture key its
+					// storage by portal at boot, synchronously, instead of after
+					// the site fetch, where a quick visitor lost the landing.
 					'resolvedPortal' => $this->siteResolvedSlug(),
-					// The document title, server-rendered; the why is on siteTitle().
+					// Title: see siteTitle(). Signed-in notices: see sitePortalNotices().
 					'title' => $this->siteTitle(),
 					'signin' => $this->siteSignin(),
-					// The notices for signed-in residents (surface `portal`),
-					// which `/portal` showed; the content API carries the
-					// public ones (surface `site`) (REQ-SRP-010).
 					'portalNotices' => $this->sitePortalNotices(),
 				],
 				// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.
