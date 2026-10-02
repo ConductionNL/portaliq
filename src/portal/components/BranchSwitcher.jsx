@@ -7,7 +7,7 @@
 // only when the company has more than one branch; a session the login
 // restricted to a branch never gets here (App.jsx).
 
-import { branchOptions } from '../lib/branch.js'
+import { branchOptions } from '../../shared/branch.js'
 
 /**
  * The branch switcher.

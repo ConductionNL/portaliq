@@ -7,7 +7,7 @@
 // @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 
 import { useState } from 'react'
-import { closedNotices, closeNotice, sessionStore, visibleNotices } from '../lib/notices.js'
+import { closedNotices, closeNotice, sessionStore, visibleNotices } from '../../shared/notices.js'
 
 /**
  * @param {object} root0 Props.

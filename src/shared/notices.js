@@ -77,3 +77,27 @@ export function sessionStore() {
 		return null
 	}
 }
+
+/**
+ * The notices for this visitor: the public ones (surface `site`), and for a
+ * signed-in resident also the signed-in ones (surface `portal`), each once
+ * (site-reaches-portal-parity REQ-SRP-010).
+ *
+ * @param {Array<object>} publicOnes The public notices.
+ * @param {Array<object>|null} signedInOnes The signed-in notices.
+ * @param {boolean} signedIn Whether a resident is signed in.
+ * @return {Array<object>}
+ *
+ * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
+ */
+export function noticesFor(publicOnes, signedInOnes, signedIn) {
+	const shown = Array.isArray(publicOnes) ? publicOnes : []
+	if (!signedIn || !Array.isArray(signedInOnes) || signedInOnes.length === 0) {
+		return shown
+	}
+	const seen = new Set(shown.map((notice) => notice && notice.id))
+	return [
+		...shown,
+		...signedInOnes.filter((notice) => notice && !seen.has(notice.id)),
+	]
+}
