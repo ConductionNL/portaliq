@@ -67,23 +67,41 @@ export function caseTitle(row) {
 	return String(row?.id || row?.uuid || row?.['@self']?.id || '')
 }
 
+/** A uuid: an identifier, never words a resident reads. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 /**
  * What a case's status reads as in the list: the words the server stamped as
- * `_statusLabel` from the collection's `statusLabelField`, else the stored
- * status as before. The raw status stays on the row for everything that tells
- * statuses apart.
+ * `_statusLabel` from the collection's `statusLabelField`, else the status's
+ * public label when the app projects one (`statusPublicLabel`, else
+ * `statusLabel`), else the stored status, unless that is an identifier. A
+ * status type's uuid is how an app tells statuses apart and says nothing to a
+ * person, so it reads as no status at all. The raw status stays on the row
+ * for everything that tells statuses apart.
  *
  * @param {object} row The case row.
  * @return {string} The status to show, or ''.
  *
  * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+ * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
  */
 export function caseStatus(row) {
-	const label = row?._statusLabel
-	if (typeof label === 'string' && label.trim() !== '') {
-		return label
+	for (const field of [
+		'_statusLabel',
+		'statusPublicLabel',
+		'statusLabel',
+		'status',
+	]) {
+		const value = row?.[field]
+		if (
+			typeof value === 'string'
+			&& value.trim() !== ''
+			&& !UUID.test(value.trim())
+		) {
+			return value.trim()
+		}
 	}
-	return typeof row?.status === 'string' ? row.status : ''
+	return ''
 }
 
 // Whom the person acts for (REQ-CMC-004). "Yourself" is sent as `mandate=self`

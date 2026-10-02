@@ -71,7 +71,7 @@
 							:aria-pressed="item.id === state.selectedId"
 							:aria-label="
 								t('portaliq', 'Select the {key} widget', {
-									key: item.widgetKey,
+									key: labelOf(item.widgetKey),
 								})
 							"
 							:data-testid="`designer-widget-${item.id}`"
@@ -81,7 +81,7 @@
 							@keydown.space.prevent="editor.select(item.id)">
 							<header class="page-grid-editor__cell-bar">
 								<span class="page-grid-editor__cell-key">{{
-									item.widgetKey
+									labelOf(item.widgetKey)
 								}}</span>
 								<NcButton
 									variant="tertiary"
@@ -145,7 +145,7 @@
 
 				<template v-else>
 					<p class="page-grid-editor__hint">
-						<code>{{ selected.widgetKey }}</code>
+						{{ labelOf(selected.widgetKey) }}
 					</p>
 
 					<!-- The shared form, as every dashboard configures this widget. -->
@@ -224,6 +224,7 @@ import {
 	isPublicWidget,
 	previewComponentFor,
 } from '../lib/pageWidgetCatalogue.js'
+import { widgetLabel } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
 import {
 	formWidgetFor,
@@ -379,6 +380,18 @@ export default {
 		},
 
 		/**
+		 * The name an author reads for a widget key ("Tekst (markdown)",
+		 * never "markdown").
+		 *
+		 * @param {string} key The widget key.
+		 * @return {string} The name.
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
+		 */
+		labelOf(key) {
+			return widgetLabel(key, dashboardWidgetRegistry)
+		},
+
+		/**
 		 * The grid item's accessible name.
 		 *
 		 * @param {object} item The placement.
@@ -386,7 +399,9 @@ export default {
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		itemLabel(item) {
-			return this.t('portaliq', 'Widget {key}', { key: item.widgetKey })
+			return this.t('portaliq', 'Widget {key}', {
+				key: this.labelOf(item.widgetKey),
+			})
 		},
 
 		/**

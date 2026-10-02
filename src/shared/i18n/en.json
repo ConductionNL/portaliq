@@ -326,6 +326,13 @@
 	"Your details and account": "Your details and account",
 	"{label} ({source})": "{label} ({source})",
 	"Menu": "Menu",
+	"Publication date": "Publication date",
+	"Information category": "Information category",
+	"Themes": "Themes",
+	"Publication not found": "Publication not found",
+	"This publication does not exist (any more), or is not public.": "This publication does not exist (any more), or is not public.",
+	"This publication has no documents.": "This publication has no documents.",
+	"Untitled": "Untitled",
 	"Attachments": "Attachments",
 	"The download did not work.": "The download did not work."
 }

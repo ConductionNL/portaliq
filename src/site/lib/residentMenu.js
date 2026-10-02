@@ -93,15 +93,16 @@ function itemFor(entry, t, unread, hrefFor) {
 }
 
 /**
- * The resident menu in groups: cases and tasks first, then one group per app
- * that contributes pages (named as the app names itself), then messages and
- * news, then the resident's details and account. An empty group is left out.
+ * The resident menu in groups: cases and tasks first, then the groups of the
+ * contributed pages (a page's declared `group`, shared across apps, else one
+ * group per app named as the app names itself), then messages and news, then
+ * the resident's details and account. An empty group is left out.
  *
  * TWO ITEMS NEVER READ THE SAME. The shell's own sections and an app's pages
  * come from two sources, and both may use one name: the shell's "Mijn zaken"
  * lists cases from every app, an app's "Mijn zaken" only its own. Where a
- * name occurs more than once, the app's item carries its group's name too,
- * so a screen reader user hears two different links.
+ * name occurs more than once, the app's item carries its app's name too, so
+ * a screen reader user hears two different links.
  *
  * @param {Array<object>} nav The signed-in navigation (src/shared/portalNav.js).
  * @param {(key: string, vars?: object) => string} t The translator.
@@ -109,6 +110,7 @@ function itemFor(entry, t, unread, hrefFor) {
  * @param {(route: string) => string} hrefFor A real address for a route.
  * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
  * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
  */
 export function residentMenuGroups(nav, t, unread, hrefFor) {
 	const entries = Array.isArray(nav) ? nav : []
@@ -126,23 +128,21 @@ export function residentMenuGroups(nav, t, unread, hrefFor) {
 		if (entry.special) {
 			continue
 		}
-		const app = entry.contribution?.app || ''
-		let group = appGroups.find((candidate) => candidate.app === app)
+		const { key, title } = pageGroupOf(entry)
+		let group = appGroups.find((candidate) => candidate.key === key)
 		if (!group) {
-			group = {
-				key: `app:${app}`,
-				app,
-				title: entry.contribution?.label || app,
-				items: [],
-			}
+			group = { key, title, items: [] }
 			appGroups.push(group)
 		}
-		group.items.push(itemFor(entry, t, unread, hrefFor))
+		group.items.push({
+			...itemFor(entry, t, unread, hrefFor),
+			source: appNameOf(entry),
+		})
 	}
 
 	const groups = [
 		sectionGroup('cases', t('Cases and tasks'), CASE_SECTIONS),
-		...appGroups.map(({ key, title, items }) => ({ key, title, items })),
+		...appGroups,
 		sectionGroup('messages', t('Messages and news'), MESSAGE_SECTIONS),
 		sectionGroup('profile', t('Your details and account'), PROFILE_SECTIONS),
 	].filter((group) => group.items.length > 0)
@@ -155,17 +155,44 @@ export function residentMenuGroups(nav, t, unread, hrefFor) {
 		}
 	}
 	for (const group of groups) {
-		if (!group.key.startsWith('app:')) {
-			continue
-		}
 		for (const item of group.items) {
-			if (counts.get(item.name.toLowerCase()) > 1) {
-				item.name = t('{label} ({source})', {
-					label: item.name,
-					source: group.title,
-				})
+			const source = item.source
+			delete item.source
+			if (source !== undefined && counts.get(item.name.toLowerCase()) > 1) {
+				item.name = t('{label} ({source})', { label: item.name, source })
 			}
 		}
 	}
 	return groups
+}
+
+/**
+ * The name an app goes by in the menu: its display name, else its id.
+ *
+ * @param {object} entry A navigation entry of a contributed page.
+ * @return {string} The name.
+ */
+function appNameOf(entry) {
+	return entry.contribution?.label || entry.contribution?.app || ''
+}
+
+/**
+ * The group a contributed page sits in. A page that declares `group` shares
+ * one heading with every page of that group, from any app; a page without
+ * one sits under its app's name, as before.
+ *
+ * @param {object} entry A navigation entry of a contributed page.
+ * @return {{key: string, title: string}} The group's key and heading.
+ * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
+ */
+export function pageGroupOf(entry) {
+	const declared = entry.page?.group
+	if (typeof declared === 'string' && declared.trim() !== '') {
+		const title = declared.trim()
+		return { key: `group:${title.toLowerCase()}`, title }
+	}
+	return {
+		key: `app:${entry.contribution?.app || ''}`,
+		title: appNameOf(entry),
+	}
 }

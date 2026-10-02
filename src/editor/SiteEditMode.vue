@@ -427,14 +427,52 @@ body {
 	--color-primary-element-light: #e3eef8;
 	--color-primary-element-light-hover: #d0e2f3;
 	--color-primary-element-light-text: #0b5ea8;
-	--color-error: #c9302c;
+	/*
+	 * A status colour is a light tint UNDER text, and its `-text` colour is
+	 * the text and the edge drawn on it: NcNoteCard and NcButton paint
+	 * `--color-success` as the background behind the main text. The tint is
+	 * mixed from the text colour and the page background, so both read at AA
+	 * (tests/site-edit-mode.spec.mjs measures it).
+	 */
 	--color-error-text: #a8201a;
-	--color-success: #2d7b41;
+	--color-error: color-mix(
+		in srgb,
+		var(--color-error-text) 12%,
+		var(--color-main-background)
+	);
+	--color-error-hover: color-mix(
+		in srgb,
+		var(--color-error-text) 20%,
+		var(--color-main-background)
+	);
 	--color-success-text: #256a37;
-	--color-warning: #a36b00;
+	--color-success: color-mix(
+		in srgb,
+		var(--color-success-text) 12%,
+		var(--color-main-background)
+	);
+	--color-success-hover: color-mix(
+		in srgb,
+		var(--color-success-text) 20%,
+		var(--color-main-background)
+	);
 	--color-warning-text: #7a5000;
-	--color-info: #0b5ea8;
+	--color-warning: color-mix(
+		in srgb,
+		var(--color-warning-text) 12%,
+		var(--color-main-background)
+	);
+	--color-warning-hover: color-mix(
+		in srgb,
+		var(--color-warning-text) 20%,
+		var(--color-main-background)
+	);
 	--color-info-text: #0b5ea8;
+	--color-info: color-mix(
+		in srgb,
+		var(--color-info-text) 12%,
+		var(--color-main-background)
+	);
 	--border-radius: 3px;
 	--border-radius-element: 8px;
 	--border-radius-large: 10px;

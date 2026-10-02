@@ -106,10 +106,11 @@ test.describe('wmebv-submission-receipts', () => {
 		const rows = page.locator('.pq-inbox-row')
 		await expect(rows).toHaveCount(1)
 
-		// Bilingual (NL / EN) B1-level receipt text with a reference id — never
+		// A B1-level receipt text in the portal's language with a reference id, never
 		// the raw client input rendered as if it were the receipt itself.
 		await expect(rows.first()).toContainText('Bevestiging van ontvangst')
-		await expect(rows.first()).toContainText('Confirmation of receipt')
+		// One language, the portal's: no English line beside the Dutch one.
+		await expect(rows.first()).not.toContainText('Confirmation of receipt')
 		await expect(rows.first().locator('.pq-inbox-row__body')).toContainText(
 			'WMEBV-',
 		)

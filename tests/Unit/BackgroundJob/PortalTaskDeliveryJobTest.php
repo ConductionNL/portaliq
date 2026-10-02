@@ -12,10 +12,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 
 use OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -141,6 +143,7 @@ class FakeLedger {
  *
  * @covers \OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob
  * @uses \OCA\Portaliq\Service\PortalDeepLinkBuilder
+ * @uses \OCA\Portaliq\Service\Notifications\PortalNoticeLanguage
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */
@@ -495,18 +498,59 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	}//end testReminderMailSubject()
 
 	/**
-	 * The ask and re-ask mails stay exactly as they were.
+	 * The ask and re-ask mails are written once, in the portal's language:
+	 * Dutch when the portal names none.
 	 *
 	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
-	public function testAskMailIsUnchanged(): void {
+	public function testAskMailIsInThePortalsLanguageOnly(): void {
 		$expected = [
-			'subject' => '[nl] You have a new task in the portal of Gemeente Test / [en] You have a new task in the portal of Gemeente Test',
-			'body' => "[nl] You have a new task in the portal of Gemeente Test. Log in to view it: https://cloud.example/index.php/apps/portaliq/site?org=org-1\n\n[en] You have a new task in the portal of Gemeente Test. Log in to view it: https://cloud.example/index.php/apps/portaliq/site?org=org-1",
+			'subject' => '[nl] You have a new task in the portal of Gemeente Test',
+			'body' => '[nl] You have a new task in the portal of Gemeente Test. Log in to view it: https://cloud.example/index.php/apps/portaliq/site?org=org-1',
 		];
 		$this->assertSame($expected, $this->sentMail(kind: 'ask'));
 		$this->assertSame($expected, $this->sentMail(kind: 're-ask'));
-	}//end testAskMailIsUnchanged()
+
+		$english = $this->sentMail(kind: 'ask', portalLocale: 'en');
+		$this->assertSame('[en] You have a new task in the portal of Gemeente Test', $english['subject']);
+		$this->assertStringNotContainsString('[nl]', $english['body']);
+	}//end testAskMailIsInThePortalsLanguageOnly()
+
+	/**
+	 * The inbox notice of a task is written once, in the language of the
+	 * resident's portal, found through their account's organisation.
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
+	 */
+	public function testAnInboxNoticeIsInThePortalsLanguageOnly(): void {
+		$message = self::MESSAGE;
+		$message['reason'] = 'De foto was onleesbaar.';
+		$ledger = new FakeLedger(rows: [new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'portal-inbox', kind: 're-ask', message: $message)]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			static fn (string $register, string $schema) => $schema === 'portalAccount' ? [['id' => 'a-1', 'organisation' => 'org-1']] : []
+		);
+
+		$written = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$written) {
+				$written[] = $data;
+
+				return ['id' => 'm'];
+			}
+		);
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $writer, portalLocale: 'en');
+
+		$this->assertSame(['d-1'], $ledger->delivered);
+		$this->assertStringStartsWith('[en] ', $written[0]['subject']);
+		$this->assertStringNotContainsString('[nl]', $written[0]['subject'] . $written[0]['body']);
+		$this->assertStringNotContainsString(' / ', $written[0]['subject']);
+		$this->assertStringContainsString('De foto was onleesbaar.', $written[0]['body']);
+	}//end testAnInboxNoticeIsInThePortalsLanguageOnly()
 
 	/**
 	 * A kind the job does not know fails the row with its reason; nothing is
@@ -567,7 +611,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	 *
 	 * @return array<string, string> The subject and the body.
 	 */
-	private function sentMail(string $kind): array {
+	private function sentMail(string $kind, ?string $portalLocale = null): array {
 		$ledger = new FakeLedger(rows: [$this->deliveryRow(uuid: 'd-1', channel: 'mail', kind: $kind)]);
 
 		$reader = $this->createMock(PortalObjectReader::class);
@@ -591,7 +635,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 		$mailer->method('createMessage')->willReturn($message);
 		$mailer->expects($this->once())->method('send')->willReturn([]);
 
-		$this->runJob(ledger: $ledger, reader: $reader, writer: $this->createMock(PortalObjectWriter::class), mailer: $mailer);
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $this->createMock(PortalObjectWriter::class), mailer: $mailer, portalLocale: $portalLocale);
 		$this->assertSame(['d-1'], $ledger->delivered);
 
 		return $sent;
@@ -737,7 +781,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 			$writer,
 			$this->createMock(PortalOrganisationConfigService::class),
 			$this->createMock(IMailer::class),
-			$this->createMock(IFactory::class),
+			$this->createMock(PortalNoticeLanguage::class),
 			$this->deepLinks(),
 			$this->createMock(LoggerInterface::class)
 		);
@@ -796,7 +840,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	 * @param PortalObjectWriter $writer The writer mock.
 	 * @param IMailer|null $mailer The mailer mock (an inert default otherwise).
 	 */
-	private function runJob(?FakeLedger $ledger, PortalObjectReader $reader, PortalObjectWriter $writer, ?IMailer $mailer = null): void {
+	private function runJob(?FakeLedger $ledger, PortalObjectReader $reader, PortalObjectWriter $writer, ?IMailer $mailer = null, ?string $portalLocale = null): void {
 		$container = $this->createMock(ContainerInterface::class);
 		if ($ledger === null) {
 			$container->method('get')->willThrowException(
@@ -825,6 +869,9 @@ class PortalTaskDeliveryJobTest extends TestCase {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('resolve')->willReturn(['organisationName' => 'Gemeente Test']);
 
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolveByOrganisation')->willReturn($portalLocale === null ? null : ['locales' => [$portalLocale]]);
+
 		$job = new PortalTaskDeliveryJob(
 			$time,
 			$container,
@@ -832,7 +879,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 			$writer,
 			$orgConfig,
 			$mailer ?? $this->createMock(IMailer::class),
-			$l10nFactory,
+			new PortalNoticeLanguage($l10nFactory, $portals),
 			$this->deepLinks(),
 			$this->createMock(LoggerInterface::class)
 		);

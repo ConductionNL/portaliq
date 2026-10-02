@@ -8,14 +8,19 @@
 		<p
 			v-if="loading"
 			class="utrecht-paragraph"
+			role="status"
 			data-testid="publication-detail-loading">
-			Bezig met laden…
+			{{ t('Loading…') }}
 		</p>
 
 		<div v-else-if="error" role="alert" data-testid="publication-detail-error">
-			<h1 class="utrecht-heading-1">Publicatie niet gevonden</h1>
+			<h1 class="utrecht-heading-1">{{ t('Publication not found') }}</h1>
 			<p class="utrecht-paragraph">
-				Deze publicatie bestaat niet (meer), of is niet openbaar.
+				{{
+					t(
+						'This publication does not exist (any more), or is not public.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -30,18 +35,23 @@
 				:publication="subjectId"
 				:subject="title" />
 
-			<!--
-				EVERY FIELD, IN THE ORDER THE API RETURNS THEM, matching the
-				reference portal — including the ones that are empty, which it
-				renders as `-`.
+			<p
+				v-if="summary"
+				class="utrecht-paragraph pq-detail__summary"
+				data-testid="publication-detail-summary">
+				{{ summary }}
+			</p>
 
-				That is a faithful reproduction and NOT an endorsement: a
-				citizen-facing page that lists `Hidden: -` and `Downloads: -`
-				is showing internal bookkeeping. Making it readable is a
-				separate change, so that it can be judged on its own rather
-				than smuggled in under "match the reference".
+			<!--
+				WHAT A VISITOR NEEDS, IN WORDS (resident-sees-words-not-codes):
+				the date, the information category by name and the themes by
+				name. The archive's bookkeeping (Plooi, retention, the
+				organisation id, the status) stays off the page.
 			-->
-			<dl class="pq-detail__fields" data-testid="publication-detail-fields">
+			<dl
+				v-if="fields.length > 0"
+				class="pq-detail__fields"
+				data-testid="publication-detail-fields">
 				<div
 					v-for="field in fields"
 					:key="field.name"
@@ -50,46 +60,11 @@
 						<strong>{{ field.label }}:</strong>
 					</dt>
 					<dd class="pq-detail__value">
-						<!-- A URL is a link. -->
-						<a
-							v-if="field.kind === 'link'"
-							class="utrecht-link"
-							:href="field.value"
-							rel="noopener noreferrer"
-							target="_blank">
-							{{ field.value }}
-						</a>
-
-						<!-- An array is a list, one item per line. -->
-						<ul
-							v-else-if="field.kind === 'list'"
-							class="pq-detail__list">
+						<ul v-if="field.kind === 'list'" class="pq-detail__list">
 							<li v-for="(item, index) in field.value" :key="index">
 								{{ item }}
 							</li>
 						</ul>
-
-						<!-- An object is a nested group of label/value pairs. -->
-						<div
-							v-else-if="field.kind === 'group'"
-							class="pq-detail__group">
-							<div
-								v-for="entry in field.value"
-								:key="entry.name"
-								class="pq-detail__group-entry">
-								<strong>{{ entry.name }}</strong>
-								<a
-									v-if="entry.kind === 'link'"
-									class="utrecht-link"
-									:href="entry.value"
-									rel="noopener noreferrer"
-									target="_blank">
-									{{ entry.value }}
-								</a>
-								<span v-else>{{ entry.value }}</span>
-							</div>
-						</div>
-
 						<span v-else>{{ field.value }}</span>
 					</dd>
 				</div>
@@ -105,12 +80,12 @@
 				v-if="documents !== null"
 				class="pq-detail__documents"
 				data-testid="publication-documents">
-				<h2 class="utrecht-heading-2">Documenten</h2>
+				<h2 class="utrecht-heading-2">{{ t('Documents') }}</h2>
 				<p
 					v-if="documents.length === 0"
 					class="utrecht-paragraph"
 					data-testid="publication-documents-empty">
-					Deze publicatie heeft geen documenten.
+					{{ t('This publication has no documents.') }}
 				</p>
 				<ul v-else class="pq-detail__document-list">
 					<li
@@ -149,14 +124,18 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
+import { createTranslator } from '../../shared/i18n/index.js'
 import {
-	detailFields,
-	humaniseLabel,
+	publicationSummary,
+	themeIdsOf,
 	toDocuments,
+	visitorRows,
 } from '../lib/publicationDetail.js'
+import { pageLocale } from '../lib/wooCategories.js'
 
 /**
- * One publication, rendered as the reference portal renders it.
+ * One publication, as a visitor reads it: title, summary, date, category and
+ * theme names, documents.
  *
  * WHAT IT READS
  * -------------
@@ -212,11 +191,20 @@ export default {
 			type: String,
 			default: '/index.php/apps/opencatalogi/api/federation/publications',
 		},
+
+		/**
+		 * Where a theme's name is read, by id. Public on opencatalogi.
+		 */
+		themesEndpoint: {
+			type: String,
+			default: '/index.php/apps/opencatalogi/api/themes',
+		},
 	},
 
 	data() {
 		return {
 			publication: null,
+			themeNames: {},
 			documents: null,
 			loading: true,
 			error: false,
@@ -224,6 +212,33 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {string} The page's language.
+		 *
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 */
+		locale() {
+			return pageLocale()
+		},
+
+		/**
+		 * @return {(key: string) => string} The translator for the page's language.
+		 *
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 */
+		t() {
+			return createTranslator(this.locale)
+		},
+
+		/**
+		 * @return {string} The summary under the title, or ''.
+		 *
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 */
+		summary() {
+			return publicationSummary(this.publication)
+		},
+
 		/**
 		 * @return {string} The publication's title.
 		 *
@@ -233,16 +248,20 @@ export default {
 			const row = this.publication || {}
 			const self = row['@self'] || {}
 
-			return row.title || row.name || self.name || 'Zonder titel'
+			return row.title || row.name || self.name || this.t('Untitled')
 		},
 
 		/**
 		 * @return {Array<object>} The rendered field rows.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		fields() {
-			return detailFields(this.publication)
+			return visitorRows(this.publication, {
+				t: this.t,
+				locale: this.locale,
+				themeNames: this.themeNames,
+			})
 		},
 	},
 
@@ -327,6 +346,7 @@ export default {
 				} else {
 					this.publication = candidate
 					this.loadDocuments(url.toString())
+					this.loadThemeNames()
 				}
 			} catch {
 				// The reason is not surfaced: this runs at a public origin and
@@ -392,21 +412,55 @@ export default {
 		},
 
 		/**
-		 * Exposed for the template's benefit in tests.
+		 * Read the name of every theme the publication carries. A theme whose
+		 * name cannot be read is left off the page rather than shown as its
+		 * id; a failure never takes the publication down.
 		 *
-		 * @param {string} name A property name.
-		 * @return {string} Its human label.
+		 * @return {Promise<void>} Resolves once `themeNames` is set.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
-		humanise(name) {
-			return humaniseLabel(name)
+		async loadThemeNames() {
+			const asked = this.subjectId
+			this.themeNames = {}
+			const base = this.themesEndpoint.replace(/\/+$/, '')
+			const names = {}
+			await Promise.all(
+				themeIdsOf(this.publication).map(async (id) => {
+					try {
+						const response = await fetch(
+							new URL(
+								`${base}/${encodeURIComponent(id)}`,
+								window.location.origin,
+							).toString(),
+							{ headers: { Accept: 'application/json' } },
+						)
+						if (response.ok === false) {
+							return
+						}
+						const theme = await response.json()
+						const name = theme?.title || theme?.name
+						if (typeof name === 'string' && name.trim() !== '') {
+							names[id] = name.trim()
+						}
+					} catch {
+						// Left off: see above.
+					}
+				}),
+			)
+			if (asked === this.subjectId) {
+				this.themeNames = names
+			}
 		},
 	},
 }
 </script>
 
 <style scoped>
+.pq-detail__summary {
+	margin-block-end: 16px;
+}
+
 .pq-detail__fields {
 	margin: 0;
 }
@@ -431,11 +485,6 @@ export default {
 	vertical-align: top;
 }
 
-.pq-detail__group {
-	display: block;
-	padding-inline-start: 20px;
-}
-
 .pq-detail__documents {
 	margin-block-start: 24px;
 }
@@ -448,9 +497,5 @@ export default {
 .pq-detail__document-meta {
 	color: var(--nldesign-color-text-muted, #65757b);
 	margin-inline-start: 4px;
-}
-
-.pq-detail__group-entry > strong {
-	margin-inline-end: 4px;
 }
 </style>

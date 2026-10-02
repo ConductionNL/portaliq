@@ -695,6 +695,8 @@ class SessionControllerTest extends TestCase {
 			'a display name' => [['displayName' => ' Fatima Hulstkamp '], 'Fatima Hulstkamp'],
 			'no display name' => [['displayName' => ''], ''],
 			'the reference as a name' => [['displayName' => 's1'], ''],
+			'the BSN as a name' => [['displayName' => '999993653', 'identityRef' => '999993653'], ''],
+			'only digits as a name' => [['displayName' => ' 123456782 '], ''],
 			'no account' => [null, ''],
 		];
 		foreach ($cases as $label => [$account, $expected]) {

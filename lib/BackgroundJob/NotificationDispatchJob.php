@@ -46,6 +46,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -53,7 +54,6 @@ use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\IConfig;
-use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -144,8 +144,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 *                                   needsAlternativeContact flag.
 	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant's display name.
 	 * @param IMailer $mailer Sends the privacy-minimal email.
-	 * @param IFactory $l10nFactory Resolves NL/EN translators, independent
-	 *                              of any session locale.
+	 * @param PortalNoticeLanguage $language The translations in the language of the resident's portal.
 	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param IConfig $config Reads the configurable failure threshold.
 	 * @param LoggerInterface $logger The logger.
@@ -157,7 +156,7 @@ class NotificationDispatchJob extends QueuedJob {
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalOrganisationConfigService $orgConfig,
 		private readonly IMailer $mailer,
-		private readonly IFactory $l10nFactory,
+		private readonly PortalNoticeLanguage $language,
 		private readonly PortalDeepLinkBuilder $deepLinks,
 		private readonly IConfig $config,
 		private readonly LoggerInterface $logger,
@@ -336,8 +335,9 @@ class NotificationDispatchJob extends QueuedJob {
 		$organisationName = $this->organisationName(organisation: $attempt['organisation']);
 		$status = $channels->push(
 			subjectRef: $attempt['subjectRef'],
-			title: $this->subjectLine(organisationName: $organisationName, record: $record),
+			title: $this->subjectLine(organisation: $attempt['organisation'], organisationName: $organisationName, record: $record),
 			body: $this->bodyText(
+				organisation: $attempt['organisation'],
 				organisationName: $organisationName,
 				deepLink: $this->deepLink(organisation: $attempt['organisation'], record: $record),
 				record: $record
@@ -360,7 +360,7 @@ class NotificationDispatchJob extends QueuedJob {
 	}//end sendPush()
 
 	/**
-	 * Send the privacy-minimal, bilingual (NL first, EN second) email.
+	 * Send the privacy-minimal email, in the portal's language.
 	 *
 	 * @param string $email The validated recipient address.
 	 * @param string $organisation The subject's tenant (resolves the display name).
@@ -374,8 +374,8 @@ class NotificationDispatchJob extends QueuedJob {
 
 		try {
 			$message = $this->mailer->createMessage();
-			$message->setSubject($this->subjectLine(organisationName: $organisationName, record: $record));
-			$message->setPlainBody($this->bodyText(organisationName: $organisationName, deepLink: $deepLink, record: $record));
+			$message->setSubject($this->subjectLine(organisation: $organisation, organisationName: $organisationName, record: $record));
+			$message->setPlainBody($this->bodyText(organisation: $organisation, organisationName: $organisationName, deepLink: $deepLink, record: $record));
 			$message->setTo([$email]);
 
 			$failedRecipients = $this->mailer->send($message);
@@ -393,29 +393,30 @@ class NotificationDispatchJob extends QueuedJob {
 	}//end sendEmail()
 
 	/**
-	 * The bilingual (NL first, EN second) B1-level subject line. Privacy-minimal
+	 * The B1-level subject line, in the portal's language. Privacy-minimal
 	 * by construction: the ONLY variable is the organisation display name.
 	 *
+	 * @param string $organisation The subject's tenant: its portal picks the language.
 	 * @param string $organisationName The tenant's display name.
 	 * @param array<string, string> $record The record a change rule is about, or [].
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
-	private function subjectLine(string $organisationName, array $record = []): string {
+	private function subjectLine(string $organisation, string $organisationName, array $record = []): string {
 		$key = [self::SUBJECT_KEY, self::CHANGE_SUBJECT_KEY][(int)($record !== [])];
 
-		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t($key, [$organisationName]);
-		$enText = $this->l10nFactory->get('portaliq', 'en')->t($key, [$organisationName]);
-
-		return $nlText . ' / ' . $enText;
+		return $this->language->forOrganisation(organisation: $organisation)->t($key, [$organisationName]);
 	}//end subjectLine()
 
 	/**
-	 * The bilingual (NL first, EN second) B1-level body text. Privacy-minimal
+	 * The B1-level body text, in the portal's language. Privacy-minimal
 	 * by construction: the ONLY variables are the organisation display name and
 	 * the deep link — never the message subject, body, case identifiers, or any
 	 * data beyond the recipient address (design.md).
 	 *
+	 * @param string $organisation The subject's tenant: its portal picks the language.
 	 * @param string $organisationName The tenant's display name.
 	 * @param string $deepLink The deep link into the authenticated portal.
 	 * @param array<string, string> $record The record a change rule is about, or []. Only its
@@ -423,7 +424,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 *
 	 * @return string
 	 */
-	private function bodyText(string $organisationName, string $deepLink, array $record = []): string {
+	private function bodyText(string $organisation, string $organisationName, string $deepLink, array $record = []): string {
 		$key = self::BODY_KEY;
 		$parameters = [$organisationName, $deepLink];
 		if ($record !== []) {
@@ -431,10 +432,7 @@ class NotificationDispatchJob extends QueuedJob {
 			$parameters = [(string)($record['label'] ?? ''), $organisationName, $deepLink];
 		}
 
-		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t($key, $parameters);
-		$enText = $this->l10nFactory->get('portaliq', 'en')->t($key, $parameters);
-
-		return $nlText . "\n\n" . $enText;
+		return $this->language->forOrganisation(organisation: $organisation)->t($key, $parameters);
 	}//end bodyText()
 
 	/**

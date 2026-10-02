@@ -9,7 +9,9 @@ use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\Notifications\PushDeliveryService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IConfig;
@@ -76,6 +78,21 @@ class NotificationDispatchJobTest extends TestCase {
 
 		return $factory;
 	}//end l10nFactory()
+
+	/**
+	 * Portaliq's notice language over the stub translations, for an
+	 * organisation whose portal names the given locale first (or none).
+	 *
+	 * @param string|null $portalLocale The portal's first locale, or null for no portal.
+	 *
+	 * @return PortalNoticeLanguage
+	 */
+	private function language(?string $portalLocale = null): PortalNoticeLanguage {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolveByOrganisation')->willReturn($portalLocale === null ? null : ['locales' => [$portalLocale]]);
+
+		return new PortalNoticeLanguage($this->l10nFactory(), $portals);
+	}//end language()
 
 	private function timeFactory(): ITimeFactory {
 		$time = $this->createMock(ITimeFactory::class);
@@ -240,7 +257,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -264,16 +281,18 @@ class NotificationDispatchJobTest extends TestCase {
 		// the deep link (review of WOO-570 / #498).
 		$this->assertNotSame([], $this->translated);
 		foreach ($this->translated as [$locale, $key, $parameters]) {
-			$this->assertContains($locale, ['nl', 'en']);
+			$this->assertSame('nl', $locale);
 			$this->assertContains(
 				$parameters,
 				[['Test Org'], ['Test Org', 'https://cloud.example/index.php/apps/portaliq/site?org=org-1']],
 				'translation "' . $key . '" received a parameter that is neither the organisation name nor the deep link'
 			);
 		}
-		// Bilingual (NL first, EN second), mirroring SubmissionReceiptService.
-		$this->assertStringContainsString('[nl] ', $captured['body']);
-		$this->assertStringContainsString('[en] ', $captured['body']);
+		// One language, the portal's: Dutch when the portal names none.
+		$this->assertStringStartsWith('[nl] ', $captured['subject']);
+		$this->assertStringStartsWith('[nl] ', $captured['body']);
+		$this->assertStringNotContainsString('[en] ', $captured['subject'] . $captured['body']);
+		$this->assertStringNotContainsString(' / ', $captured['subject']);
 
 		$this->assertCount(1, $created);
 		$this->assertSame('portalNotification', $created[0]['schema']);
@@ -289,6 +308,37 @@ class NotificationDispatchJobTest extends TestCase {
 
 	}//end testSendsAContentFreeEmailAndLogsASentAttempt()
 
+	/**
+	 * The e-mail is written once, in the language of the resident's portal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
+	 */
+	public function testTheEmailIsInThePortalsLanguageOnly(): void {
+		$created = [];
+		$updated = [];
+		$captured = [];
+		$job = new NotificationDispatchJob(
+			$this->timeFactory(),
+			$this->reader(account: ['@self' => ['id' => 'account-1'], 'email' => 'supplier@example.org']),
+			$this->writer(created: $created, updated: $updated),
+			$this->orgConfig(),
+			$this->mailer(captured: $captured, outcome: true),
+			$this->language(portalLocale: 'en'),
+			$this->deepLinks(),
+			$this->config(),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$this->invokeRun($job, self::ARGUMENT);
+
+		$this->assertSame('[en] You have a new message in the portal of Test Org', $captured['subject']);
+		$this->assertStringStartsWith('[en] ', $captured['body']);
+		$this->assertStringNotContainsString('[nl] ', $captured['subject'] . $captured['body']);
+		$this->assertSame(['en'], array_values(array_unique(array_column($this->translated, 0))));
+	}//end testTheEmailIsInThePortalsLanguageOnly()
+
 	public function testNoAccountFoundSkipsSilentlyWithoutSendingOrLogging(): void {
 		$created = [];
 		$updated = [];
@@ -300,7 +350,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -334,7 +384,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -370,7 +420,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -397,7 +447,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -428,7 +478,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: false),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(threshold: 5),
 			$this->createMock(LoggerInterface::class)
@@ -459,7 +509,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: false),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(threshold: 3),
 			$this->createMock(LoggerInterface::class)
@@ -490,7 +540,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -515,7 +565,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -544,7 +594,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -582,7 +632,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class),
