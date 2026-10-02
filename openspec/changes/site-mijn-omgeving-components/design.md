@@ -81,7 +81,13 @@ A home page is still an ordinary page with its own route; the menu lists it unde
 - `cases`: `{ type: cases, collection, open?: true, limit? }`. Case cards; "Alle zaken" leads to the collection's page when there are more.
 - `steps`, `documents`, `timeline`: on a record page, each reads the collection's provider of the same name for the open record and renders `ProcessSteps`, `FileItem` rows or `ContactTimeline`. The existing `documents` and `timeline` providers (`DocumentsProviderMethod`, `TimelineProviderMethod`) are reused; `steps` is new (D7).
 - `collection` gains `limit` (1 to 50) and `sort` (`{ field, direction: asc|desc }`, the field must be projected). When rows exceed `limit`, a "Bekijk alle ..." link leads to the collection's own page.
-- `calendar` gains `range`: `week` (Monday to Sunday of this week, the portal's time zone), `month`, or absent for today's behaviour (everything from today).
+- `calendar` gains `range`: `day` (today), `week` (Monday to Sunday of this week, the portal's time zone), `month`, or absent for today's behaviour (everything from today).
+- `tasks` takes the same record scope (`recordField`, `recordKey`) and `lookups` as `collection` (`RecordScopeNormaliser`), plus `excludeWhen: { lookup, in }` to leave out rows by a lookup value (handed-in work). `inbox` takes `recordField`.
+- `cta` may name a `page` or an internal `route` instead of an `action`; `withRecord: true` presets the open record; `{title}` in the label is the record's title as plain text. Verified on `development`: `normaliseCtaBlock()` accepts an action id and a label only.
+- `richText` may carry a `template` with `{field}` placeholders from the open record, values as plain text, a sentence without a value left out or replaced by `whenEmpty` (the assessor's access notice with no end date).
+- `collection` may show `display: cards` with `progress: { valueField, totalField, label }` (the trainer's student cards, "120 van 400 uur").
+- `records` may take `subtitleLookup`, one hop (the child's group). Two hops are not offered; learniq stamps the name or shows none.
+- Opening a record (`navKeyFor` in `src/shared/openRecord.js`) also matches record pages on that collection; today it matches only `collection`, `detail` and `citizenCase` blocks.
 
 ## D7. Case progress
 

@@ -13,7 +13,7 @@ Four waves. Each wave is one PR to `development`. Every PR runs `npm run build:s
 ## Wave 2: file input, choice cards, named days (REQ-SMF-004, REQ-SMF-005)
 
 - [ ] **T3**: `FileUpload.vue` in `SchemaField.vue` (design D1). Size hint from the action's declared limit when present.
-- [ ] **T4**: `ActionConfigNormaliser` keeps `fieldConfigs.<field>.widget` (`choices`, `dateChoices`) and `dateChoices` count 1 to 5; `ChoiceCards.vue`; the named-day picker in `DateInputGroup.vue` (design D5). Adds `@utrecht/radio-button-css` to the form chunk only.
+- [ ] **T4**: `ActionConfigNormaliser` keeps `fieldConfigs.<field>.widget` (`choices`, `dateChoices`), `choiceOptions` (a subset of the options) and `otherLabel` and `dateChoices` count 1 to 5; `ChoiceCards.vue`; the named-day picker in `DateInputGroup.vue` (design D5). Adds `@utrecht/radio-button-css` to the form chunk only.
   - PHPUnit `ActionConfigNormaliserTest::testAWidgetHintIsKeptOnlyWhenKnown`
   - Mutation: dropping the allow-list lets `slider` through and fails the test
 
@@ -24,7 +24,7 @@ Four waves. Each wave is one PR to `development`. Every PR runs `npm run build:s
 - [ ] **T6**: `FormProgress.vue`, step navigation, per-step validation, skip of all-hidden steps, focus on the step heading, in `IntakeFormBlock.vue`.
 - [ ] **T7**: `ReviewList.vue`, the review step with "Wijzigen" links, the confirmation with focus on its heading (design D7).
   - e2e: a four-step form from start to confirmation, keyboard only; the "Stap 2 wijzigen" round trip
-- [ ] **T7b**: `ActionConfigNormaliser` keeps `steps`, `draft` and `confirmation` on a create action (REQ-SMF-020, REQ-SMF-022); `SchemaForm.vue` runs the same step flow; the confirmation fills `{identifier}` and `{deadline}`.
+- [ ] **T7b**: `ActionConfigNormaliser` keeps `steps`, `draft` and `confirmation` on a create action and on an endpoint action with `fields` (REQ-SMF-020, REQ-SMF-022); `required` stays dropped without a schema (REQ-SMF-023, PHPUnit `::testRequiredWithoutASchemaIsDropped`); `SchemaForm.vue` runs the same step flow; the confirmation fills `{identifier}` and `{deadline}`.
   - PHPUnit `ActionConfigNormaliserTest::testStepsNamingUnknownFieldsAreDropped`, `::testDraftRetentionIsClampedTo1To90`, `::testConfirmationKeepsOnlyText`
   - node test: a confirmation sentence with an empty placeholder is left out
 

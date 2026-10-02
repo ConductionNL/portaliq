@@ -51,10 +51,13 @@ NL Design System: mark the non-required field, not the required one. Use "(niet 
 - `ActionConfigNormaliser` keeps `widget` when it is `choices` or `dateChoices`, and drops any other value (fail to the default input, as `size` does).
 - `choices` on a field with options draws `ChoiceCards`: a fieldset with one radio per option, each in a card with its label. Same value as the select it replaces.
 - `dateChoices` on a date field draws today and the next school or working days the action names in `fieldConfigs.<field>.dateChoices` (a count, 1 to 5, default 2), plus "Een andere dag". The last opens `DateInputGroup`. Day names come from the site's locale.
+- `choices` may narrow the cards to `choiceOptions` plus an "other" card (`otherLabel`) that reveals the remaining options in a select. Learniq's absence kinds: six options, three cards in `LearniqAbsence.dc.html`.
 - Presentation only. The value and its validation are unchanged.
 
 ## D6. Steps on a published form and on a create action
 
+- A create action, or an endpoint action with `fields` (the dossiq Woo actions are endpoint actions), MAY declare `steps` in the same shape. `draft` and `confirmation` likewise.
+- `required` on an action that names no `schema` is dropped today (`ActionConfigNormaliser::applyFieldFlags()`: no schema, empty mandatory set). That stays; every field of such an action reads "(niet verplicht)" (REQ-SMF-023).
 - A create action MAY declare `steps` in the same shape. `ActionConfigNormaliser` keeps a step whose `fields` are all in the action's `fields`, drops the rest, and puts loose fields in a last step. A step with `review: true` is the review step (D7) and carries no fields. `SchemaForm.vue` renders the steps as `IntakeFormBlock.vue` does.
 - `PortalFormBindingResolver` passes the form's `steps` (`[{ id, title, description?, fields[] }]`, the shape `CnFormPage` reads) through in the form render, after keeping only steps whose `fields` name known fields. A field in no step goes in a last step of its own. Without `steps` the block renders as today, one page, no progress.
 - The block shows one step at a time. `FormProgress` lists every step with its state: done, current (`aria-current="step"`), to do. On a phone it collapses to "Stap 2 van 4" with the list behind a button.

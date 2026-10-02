@@ -51,6 +51,8 @@ The dossiq lane (dossiq PR #3249, `site-resident-portal-design`) declares more, 
 
 This change specifies all of these. The action keys (`steps`, `draft`, `confirmation`, `summary`, `audiences`) are in `site-multi-step-forms` and `site-nlds-widget-palette`. The mandate keys are a gap (see "Not in this change").
 
+After alignment (learniq#1641 at 87e44aeb, dossiq#3249 at 9c7ccddcf) both lanes found more the mockups need. Checked on `development` and added: a `cta` to a page or route with the record preset and `{title}` in its label (`normaliseCtaBlock()` takes an action only); `range: day`; record scope, lookups and `excludeWhen` on `tasks` (the collection block already has scope and lookups); `recordField` on `inbox`; a switcher subtitle from a one-hop lookup; a `richText` filled from the record; cards with a progress figure; and opening a record on its record page (`navKeyFor` matches list blocks only).
+
 ### Names (lane pq decides; both app lanes follow)
 
 | Final | Replaces |

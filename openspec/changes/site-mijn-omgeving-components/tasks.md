@@ -41,6 +41,15 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
 - [ ] **T12**: `RecordSwitcher.vue`, `ActingForBar.vue`, `QuickTiles.vue`, `FigureTiles.vue`; `/mijn` home (design D4) in `accountArea.js`.
   - e2e: the guardian switches child; Linda's bar on a phone width; a portal with nothing to do
 
+## Wave 6: what the app lanes found after alignment (REQ-SMO-010, REQ-SMO-024 to REQ-SMO-028, `range: day`)
+
+- [ ] **T14**: `cta` with `page`, `route`, `withRecord` and a `{title}` label; `richText` `template` with `whenEmpty`.
+  - PHPUnit `PortalBlockResolverTest::testACtaNamesExactlyOneTarget`, `::testAnOutsideRouteIsDropped`; node test: a template value is text, not markup
+- [ ] **T15**: record scope, `lookups` and `excludeWhen` on `tasks`; `recordField` on `inbox`; `range: day`; `display: cards` with `progress`; `subtitleLookup`.
+  - PHPUnit on the normalisers; node tests for the excluded row and the progress text
+- [ ] **T16**: `navKeyFor` matches record pages and opens the record route.
+  - `check:open-record` extended
+
 ## Validation
 
 - [ ] **T13**: `openspec validate site-mijn-omgeving-components --strict`

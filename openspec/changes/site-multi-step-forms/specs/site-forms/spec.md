@@ -59,12 +59,18 @@ A file field on a create or update action MUST render a real file input behind a
 
 ### Requirement: An action field MAY ask for choice cards or named days (REQ-SMF-005)
 
-The contribution contract MUST accept `fieldConfigs.<field>.widget` with the values `choices` and `dateChoices`, and drop any other value. `choices` on a field with options MUST render one radio card per option in a fieldset, sending the same value the select would. `dateChoices` on a date field MUST offer today and the next days the action names (1 to 5, default 2), named in the site's language, plus "Een andere dag", which opens the date group. Neither value changes what is sent or how it is validated.
+The contribution contract MUST accept `fieldConfigs.<field>.widget` with the values `choices` and `dateChoices`, and drop any other value. `choices` on a field with options MUST render one radio card per option in a fieldset, sending the same value the select would. `dateChoices` on a date field MUST offer today and the next days the action names (1 to 5, default 2), named in the site's language, plus "Een andere dag", which opens the date group. With `choices` the field MAY also declare `choiceOptions` (a subset of its option values, in order) and `otherLabel`: the cards then show only that subset plus one card with the `otherLabel`, and choosing it reveals the remaining options as a select. Values outside the field's options MUST be dropped from `choiceOptions`. Neither value changes what is sent or how it is validated.
 
 #### Scenario: The reason as three cards
 - GIVEN learniq's absence action declares `fieldConfigs.reasonKind.widget: choices`
 - WHEN the guardian opens the form
 - THEN "Waarom is Vera afwezig?" shows three radio cards: "Ziek", "Dokter of tandarts", "Een andere reden"
+
+#### Scenario: Three cards out of six kinds
+- GIVEN `reasonKind` has six options and declares `choiceOptions: [illness, medical-appointment]` and `otherLabel: "Een andere reden"`
+- WHEN the guardian chooses "Een andere reden"
+- THEN a select with the other four kinds appears
+- AND the chosen kind is sent as `reasonKind`
 
 #### Scenario: An unknown widget falls back
 - GIVEN an action declares `fieldConfigs.reasonKind.widget: slider`

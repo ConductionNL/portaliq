@@ -103,3 +103,13 @@ While a block loads, it MUST show a skeleton of its own shape, hidden from assis
 - GIVEN an inbox block with no messages
 - WHEN it renders
 - THEN it reads "U heeft nog geen berichten." and shows no empty list
+
+### Requirement: Opening a record MUST land on its record page with that record chosen (REQ-SMO-010)
+
+When a link opens a record of a collection (a notice, a message, a task, a case card), the site MUST also match pages whose `record` or `records` names that collection, not only pages with a `collection`, `detail` or `citizenCase` block on it. A matched record page MUST open on the route of that record, so its blocks show that record. A page with a list block on the collection MUST keep precedence, as today.
+
+#### Scenario: A message about a case opens the case page
+- GIVEN dossiq's case page `mijnZaken` is a record page on `mijnZaken` with `menu: false`
+- AND a message links to case 2026-0003
+- WHEN the resident follows the link
+- THEN the case page opens with case 2026-0003 chosen
