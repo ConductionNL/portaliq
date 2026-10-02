@@ -544,6 +544,7 @@ export default function App({ config, t: tProp }) {
 								api={api}
 								t={t}
 								locale={config.locale}
+								onLoaded={(count) => setUnreadOverride(count)}
 								onRead={() => setUnreadOverride((prev) => {
 									const current = prev ?? (state.contributions?.unreadCount || 0)
 									return Math.max(0, current - 1)
