@@ -489,6 +489,40 @@ export function allGroups(contribution, store) {
 }
 
 /**
+ * When a news item was published, for sorting: OpenRegister's
+ * `@self.published`, else `@self.created`; -Infinity when undated.
+ *
+ * @param {object} item A news item.
+ * @return {number} Milliseconds since the epoch, or -Infinity.
+ */
+function publishedMoment(item) {
+	const self = item?.['@self'] || {}
+	for (const value of [self.published, self.created]) {
+		const time = Date.parse(value || '')
+		if (!Number.isNaN(time)) {
+			return time
+		}
+	}
+	return -Infinity
+}
+
+/**
+ * The news newest first, without changing the list it was given. The server
+ * answers in this order already; the block sorts again so a feed from
+ * anywhere else (a server render, a test) still shows the latest.
+ *
+ * @param {Array<object>} items The news items.
+ * @return {Array<object>} A newest-first copy; undated items last, ties keep their order.
+ * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+ */
+export function newestNewsFirst(items) {
+	return (Array.isArray(items) ? items : [])
+		.map((item, index) => ({ item, index, at: publishedMoment(item) }))
+		.sort((a, b) => (b.at === a.at ? a.index - b.index : b.at > a.at ? 1 : -1))
+		.map(({ item }) => item)
+}
+
+/**
  * The news items that belong to the open record: an item whose target names
  * the record's school, one of its groups, or the record itself. An item that
  * carries no target is the subject's own feed and stays. Without a record
