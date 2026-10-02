@@ -24,7 +24,8 @@ This change is small. It is a few lines in `templates/site.php`, one resolver me
 
 ## Relation to other changes
 
-- `portal-theme-blocks-and-contributed-pages` task 2 links "bridge, set chain, vendored sheets, `site-theme.css`". This change takes over the bridge half of that task and corrects its position. The token-only `site-theme.css` half stays there.
+- `portal-theme-blocks-and-contributed-pages` task 2 already plans this link, as "bridge, set chain, vendored sheets, `site-theme.css`". This change builds on it rather than beside it: it takes the bridge half of that task as one small PR and corrects its position. This PR also amends that change's D1, its task 2 and REQ-PTB-001 to the corrected order and points them here. The set chain (task 3) and the token-only `site-theme.css` stay there.
+- thematiq#892 (`denhaag-component-tokens`, open) adds a generated `--denhaag-*` and `--nl-data-badge-*` section to the same `public-bridge.css`. Once both land, this one link also feeds the Den Haag components.
 - `site-mijn-omgeving-components` needs `--denhaag-*` tokens. Those are fed by the theme app, not by this change. This change is the precondition: without the bridge, no `--nldesign-*` value reaches any component role.
 
 ## Not in this change
