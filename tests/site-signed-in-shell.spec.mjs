@@ -162,8 +162,15 @@ test('the account menu is SiteMenu-shaped, carries real addresses and the unread
 
 test('the header says who is signed in, in the site language', () => {
 	const nl = createTranslator('nl')
-	assert.equal(loggedInAs({ subjectRef: '99930md1' }, nl), 'Ingelogd als 99930md1')
-	assert.equal(loggedInAs({ subjectRef: '99930md1' }, createTranslator('en')), 'Logged in as 99930md1')
+	const fatima = { subjectRef: '99930md1id6bp47', displayName: 'Fatima Hulstkamp' }
+	assert.equal(loggedInAs(fatima, nl), 'Ingelogd als Fatima Hulstkamp')
+	assert.equal(loggedInAs(fatima, createTranslator('en')), 'Logged in as Fatima Hulstkamp')
+	// The reference is never shown, not even when no name is known
+	// (site-header-names-the-person).
+	assert.equal(loggedInAs({ subjectRef: '99930md1id6bp47' }, nl), 'Ingelogd')
+	assert.equal(loggedInAs({ subjectRef: 's1', sub: 's1', subject: 's1' }, nl), 'Ingelogd')
+	assert.equal(loggedInAs({ subjectRef: 's1', displayName: '  ' }, nl), 'Ingelogd')
+	assert.equal(loggedInAs({ subjectRef: 's1', displayName: 's1' }, nl), 'Ingelogd')
 	assert.equal(loggedInAs({}, nl), 'Ingelogd')
 	assert.equal(loggedInAs(null, nl), '')
 })

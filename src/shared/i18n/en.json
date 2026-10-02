@@ -9,7 +9,7 @@
 	"Dev-login is disabled on this environment.": "Dev-login is disabled on this environment.",
 	"Dev-login request failed.": "Dev-login request failed.",
 	"My overview": "My overview",
-	"Logged in as {subjectRef}": "Logged in as {subjectRef}",
+	"Logged in as {name}": "Logged in as {name}",
 	"No contributions to show yet.": "No contributions to show yet.",
 	"No messages.": "No messages.",
 	"No items.": "No items.",

@@ -9,7 +9,7 @@
 	"Dev-login is disabled on this environment.": "Dev-login is uitgeschakeld op deze omgeving.",
 	"Dev-login request failed.": "Dev-login-verzoek is mislukt.",
 	"My overview": "Mijn overzicht",
-	"Logged in as {subjectRef}": "Ingelogd als {subjectRef}",
+	"Logged in as {name}": "Ingelogd als {name}",
 	"No contributions to show yet.": "Nog geen bijdragen om weer te geven.",
 	"No messages.": "Geen berichten.",
 	"No items.": "Geen items.",
