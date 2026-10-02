@@ -35,6 +35,20 @@ The secret is write-only. The screen says whether one is stored; typing a new on
 
 **Accounts do not carry over between routes.** Integriq gives each resident a pseudonym per organisation, and an organisation's own broker gives another identifier. A resident who signed in before gets a new account after the route changes.
 
+## The addresses a broker must know
+
+Both routes send the browser back to portaliq. A broker that checks those addresses against a list refuses any address you did not register. Put your server's address in front of each path below. Nextcloud adds `/index.php` unless pretty URLs are switched on. Register the form your residents see in their browser.
+
+| Route | The broker's name for it | Path |
+|---|---|---|
+| The organisation's own sign-in service (OIDC) | redirect URI | `/index.php/apps/portaliq/portal/api/session/oidc/callback` |
+| The organisation's own sign-in service (OIDC) | post-logout redirect URI | `/index.php/apps/portaliq/site` |
+| Integriq | return address (`--return-url`) | `/index.php/apps/portaliq/portal/api/session/broker/callback` |
+
+**Sign-out now returns to the site.** It used to return to `/index.php/apps/portaliq/portal`. That address now only forwards to the site, and portaliq no longer sends it. An OIDC broker that compares `post_logout_redirect_uri` with a list refuses the sign-out until you add the site's address. You can then remove the old one.
+
+**Integriq takes no sign-out address.** Signing out of a session that came through integriq ends the portal session. Integriq has no sign-out step yet, so there is nothing to register there. The integriq return address did not change.
+
 ## What a resident sees
 
 The login screen shows the same **Log in with DigiD** button on either route. A login through integriq ends on the portal, signed in, with the trust level integriq reported (low, substantial or high). A trust level portaliq does not know counts as low.
