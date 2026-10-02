@@ -132,7 +132,8 @@ class AvailabilityStore {
 			}
 
 			$offset += self::PAGE;
-		} while (count($rows) === self::PAGE);
+			$pageSize = count($rows);
+		} while ($pageSize === self::PAGE);
 
 		return null;
 	}//end openOutage()

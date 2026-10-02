@@ -143,7 +143,8 @@ class PendingPushService {
 			}
 
 			$offset += self::PAGE;
-		} while (count($rows) === self::PAGE);
+			$pageSize = count($rows);
+		} while ($pageSize === self::PAGE);
 
 		return $delivered;
 	}//end deliverDue()
@@ -172,7 +173,10 @@ class PendingPushService {
 			$due = new DateTimeImmutable($deliverAfter);
 		} catch (Throwable $e) {
 			// One malformed row is skipped; it must not stop the rows after it.
-			$this->logger->warning('Portaliq: pending push has an unreadable deliverAfter', ['id' => $this->rowId(row: $normalised), 'reason' => $e->getMessage()]);
+			$this->logger->warning(
+				'Portaliq: pending push has an unreadable deliverAfter',
+				['id' => $this->rowId(row: $normalised), 'reason' => $e->getMessage()]
+			);
 			return false;
 		}
 

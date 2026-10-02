@@ -75,16 +75,7 @@ class EventRsvpService {
 	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	public function rsvp(string $subjectRef, string $eventId, string $childRef, string $response): bool {
-		if ($subjectRef === '' || $eventId === '' || $childRef === '' || in_array($response, self::ALLOWED_RESPONSES, true) === false) {
-			return false;
-		}
-
-		$event = $this->feedReader->readOwnEvent(subjectRef: $subjectRef, id: $eventId);
-		if ($event === null || ($event['rsvpEnabled'] ?? false) !== true) {
-			return false;
-		}
-
-		if ($this->feedReader->isOwnChild(subjectRef: $subjectRef, childRef: $childRef) === false) {
+		if ($this->mayRsvp(subjectRef: $subjectRef, eventId: $eventId, childRef: $childRef, response: $response) === false) {
 			return false;
 		}
 
@@ -117,6 +108,31 @@ class EventRsvpService {
 
 		return true;
 	}//end rsvp()
+
+	/**
+	 * Whether this guardian may answer for this child on this event: a known
+	 * response, an event in their own audience with RSVP on, and their own
+	 * child.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $eventId The event id.
+	 * @param string $childRef The child the RSVP is for.
+	 * @param string $response The response.
+	 *
+	 * @return bool
+	 */
+	private function mayRsvp(string $subjectRef, string $eventId, string $childRef, string $response): bool {
+		if ($subjectRef === '' || $eventId === '' || $childRef === '' || in_array($response, self::ALLOWED_RESPONSES, true) === false) {
+			return false;
+		}
+
+		$event = $this->feedReader->readOwnEvent(subjectRef: $subjectRef, id: $eventId);
+		if ($event === null || ($event['rsvpEnabled'] ?? false) !== true) {
+			return false;
+		}
+
+		return $this->feedReader->isOwnChild(subjectRef: $subjectRef, childRef: $childRef);
+	}//end mayRsvp()
 
 	/**
 	 * The id of an existing RSVP for this guardian+child+event, if any.

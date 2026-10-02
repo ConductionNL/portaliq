@@ -45,6 +45,10 @@ use Throwable;
  * deliberately the ONE stateless match predicate every caller (this class,
  * NewsFeedReader) shares, so the rule can never fork between the enumeration
  * path here and the read path there.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- one reader over one
+ * interim fixture register (audience enumeration plus consent); it is
+ * replaced as a whole when the real audience source lands, so splitting it
+ * now would only spread the seam.
  */
 class GuardianAudienceFixtureReader {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
