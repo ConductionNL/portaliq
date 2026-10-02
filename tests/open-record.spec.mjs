@@ -129,7 +129,7 @@ test('the shell, the inbox and the page view are wired to it', () => {
 	assert.match(app, /consumeOpenTarget\(/)
 	assert.match(app, /onOpenRecord=/)
 	const inbox = readFileSync(
-		new URL('../src/portal/components/InboxPage.jsx', import.meta.url),
+		new URL('../src/site/pages/inbox/InboxPage.vue', import.meta.url),
 		'utf8',
 	)
 	assert.match(inbox, /recordLink/)

@@ -102,3 +102,16 @@ export async function loadSfc(file, stubs = {}) {
 	const compiled = compile(join(ROOT, file), stubs, dir)
 	return (await import(pathToFileURL(compiled).href)).default
 }
+
+/**
+ * Render compiled component options to an HTML string.
+ *
+ * @param {object} component The component options.
+ * @param {object} props     The props to render with.
+ * @return {Promise<string>} The rendered HTML.
+ */
+export async function renderComponent(component, props = {}) {
+	const { createSSRApp, h } = await import('vue')
+	const { renderToString } = await import('vue/server-renderer')
+	return renderToString(createSSRApp({ render: () => h(component, props) }))
+}
