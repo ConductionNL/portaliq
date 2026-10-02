@@ -324,7 +324,22 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$aggregate = $this->registry->aggregateFor($subject);
 		$aggregate['unreadCount'] = $this->inboxReader->unreadCount(subject: $subject, aggregate: $aggregate);
-		$aggregate['contributions'] = $this->portalNavigation(contributions: ($aggregate['contributions'] ?? []), audience: (string)($subject['audience'] ?? ''));
+		if ($this->portals !== null) {
+			// The serving portal's menu choice: presentation only, the
+			// collection routes read the registry unchanged
+			// (operate-pages-per-portal-and-client design D1).
+			$slug = (string)$this->request->getParam('portal', '');
+			$named = null;
+			if ($slug !== '') {
+				$named = $slug;
+			}
+
+			$aggregate['contributions'] = (new PortalPageChoice())->forPortal(
+				contributions: ($aggregate['contributions'] ?? []),
+				portal: $this->portals->resolve(request: $this->request, portalSlug: $named),
+				audience: (string)($subject['audience'] ?? '')
+			);
+		}
 		// Announce the "Mijn taken" surface (portal-task-delivery) for
 		// AUTHENTICATED subjects only — the anonymous aggregate above never
 		// carries it. Enabled only when the seam is actually reachable
@@ -338,33 +353,6 @@ class ContributionController extends Controller implements PortalProtected {
 		return new JSONResponse($aggregate);
 	}//end index()
 
-
-	/**
-	 * The serving portal's menu choice over the pages answered: presentation
-	 * only, so the collection routes, which read the registry, are unchanged
-	 * (operate-pages-per-portal-and-client design D1).
-	 *
-	 * @param array<int, array<string, mixed>> $contributions The aggregate's contributions.
-	 * @param string $audience The subject's audience.
-	 *
-	 * @return array<int, array<string, mixed>> The contributions, pages hidden and ordered.
-	 *
-	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
-	 */
-	private function portalNavigation(array $contributions, string $audience): array {
-		if ($this->portals === null) {
-			return $contributions;
-		}
-
-		$slug   = (string)$this->request->getParam('portal', '');
-		$portal = $this->portals->resolve(request: $this->request, portalSlug: ($slug === '' ? null : $slug));
-		$choice = new PortalPageChoice();
-
-		return $choice->applyNavigation(
-			contributions: $contributions,
-			navigation: $choice->navigationFor(portal: $portal, audience: $audience)
-		);
-	}//end portalNavigation()
 
 	/**
 	 * The subject's unified inbox: every `kind: inbox` collection across ALL

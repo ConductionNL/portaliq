@@ -36,7 +36,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -64,13 +63,6 @@ class PortalContributionRegistry {
 	private readonly PortalProviderLocator $locator;
 
 	/**
-	 * Hidden pages per subjectRef, for this request.
-	 *
-	 * @var array<string, array<int, string>>
-	 */
-	private array $hiddenPages = [];
-
-	/**
 	 * Constructor.
 	 *
 	 * `$container` is deliberately NOT promoted to a property: since the provider
@@ -85,8 +77,8 @@ class PortalContributionRegistry {
 	 * @param LoggerInterface $logger The logger.
 	 * @param PortalManifestNormaliser $normaliser The fail-closed v3 UI-config sanitiser.
 	 * @param PortalProviderLocator|null $locator Provider lookup; built from the above when null.
-	 * @param PortalAccountLookup|null $accounts Reads a client account's hidden pages
-	 *                                           (operate-pages-per-portal-and-client); none applied when null.
+	 * @param PortalAccountPageChoice|null $accountPages A client account's hidden pages
+	 *                                                  (operate-pages-per-portal-and-client); none applied when null.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -94,7 +86,7 @@ class PortalContributionRegistry {
 		private readonly LoggerInterface $logger,
 		private readonly PortalManifestNormaliser $normaliser = new PortalManifestNormaliser(),
 		?PortalProviderLocator $locator = null,
-		private readonly ?PortalAccountLookup $accounts = null,
+		private readonly ?PortalAccountPageChoice $accountPages = null,
 	) {
 		$this->locator = ($locator ?? new PortalProviderLocator($appManager, $container, $logger));
 	}//end __construct()
@@ -166,10 +158,9 @@ class PortalContributionRegistry {
 		// Pages staff hid on this client's account, and the collections only
 		// they showed, leave the aggregate every authorising route reads
 		// (operate-pages-per-portal-and-client REQ-PGC-002).
-		$contributions = (new PortalPageChoice())->hideForAccount(
-			contributions: $contributions,
-			hiddenPages: $this->hiddenPagesOf(subjectRef: (string)($subject['subjectRef'] ?? ''))
-		);
+		if ($this->accountPages !== null) {
+			$contributions = $this->accountPages->apply(contributions: $contributions, subjectRef: (string)($subject['subjectRef'] ?? ''));
+		}
 
 		return [
 			'audience' => $audience,
@@ -178,29 +169,6 @@ class PortalContributionRegistry {
 		];
 	}//end aggregateFor()
 
-
-	/**
-	 * The pages staff hid on the account of a subjectRef, read once per
-	 * request: one request may aggregate several times.
-	 *
-	 * @param string $subjectRef The subject's reference; '' reads nothing.
-	 *
-	 * @return array<int, string> The hidden pages, `<app>:<pageId>`.
-	 *
-	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
-	 */
-	private function hiddenPagesOf(string $subjectRef): array {
-		if ($subjectRef === '' || $this->accounts === null) {
-			return [];
-		}
-
-		if (array_key_exists($subjectRef, $this->hiddenPages) === false) {
-			$hidden = ($this->accounts->bySubjectRef(subjectRef: $subjectRef)['hiddenPages'] ?? []);
-			$this->hiddenPages[$subjectRef] = array_values(array_filter((is_array($hidden) === true ? $hidden : []), 'is_string'));
-		}
-
-		return $this->hiddenPages[$subjectRef];
-	}//end hiddenPagesOf()
 
 
 	/**

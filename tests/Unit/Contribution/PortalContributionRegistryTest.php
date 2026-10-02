@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Contribution;
 
+use OCA\Portaliq\Contribution\PortalAccountPageChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\PortalManifestNormaliser;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
@@ -484,7 +485,7 @@ class PortalContributionRegistryTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			new PortalManifestNormaliser(),
 			null,
-			$accounts
+			new PortalAccountPageChoice($accounts)
 		);
 
 		$subject = ['audience' => 'business', 'organisation' => 'org-1', 'subjectRef' => 'kvk-1'];
@@ -516,7 +517,7 @@ class PortalContributionRegistryTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			new PortalManifestNormaliser(),
 			null,
-			$accounts
+			new PortalAccountPageChoice($accounts)
 		);
 
 		$this->assertCount(1, $registry->aggregateFor(['audience' => 'business'])['contributions']);

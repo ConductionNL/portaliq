@@ -64,6 +64,21 @@ class PortalPageChoice {
 	}//end navigationFor()
 
 	/**
+	 * The serving portal's menu choice for one audience, applied.
+	 *
+	 * @param array<int, array<string, mixed>> $contributions The aggregate's contributions.
+	 * @param array<string, mixed>|null $portal The serving portal, or null.
+	 * @param string $audience The subject's audience.
+	 *
+	 * @return array<int, array<string, mixed>> The contributions.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
+	 */
+	public function forPortal(array $contributions, ?array $portal, string $audience): array {
+		return $this->applyNavigation(contributions: $contributions, navigation: $this->navigationFor(portal: $portal, audience: $audience));
+	}//end forPortal()
+
+	/**
 	 * Drop the hidden pages and order the rest by the portal's list.
 	 *
 	 * Pages are ordered inside each contribution, and the contributions by
@@ -133,7 +148,7 @@ class PortalPageChoice {
 
 		foreach ($contributions as $index => $contribution) {
 			$app   = (string)($contribution['app'] ?? '');
-			$pages = (is_array($contribution['pages'] ?? null) === true ? $contribution['pages'] : []);
+			$pages = $this->listOf(value: ($contribution['pages'] ?? null));
 			$kept  = $this->withoutPages(pages: $pages, app: $app, names: $names);
 			if (count($kept) === count($pages)) {
 				continue;
@@ -143,7 +158,7 @@ class PortalPageChoice {
 			$contributions[$index]['pages'] = $kept;
 			$contributions[$index]['collections'] = array_values(
 				array_filter(
-					(is_array($contribution['collections'] ?? null) === true ? $contribution['collections'] : []),
+					$this->listOf(value: ($contribution['collections'] ?? null)),
 					fn (mixed $collection): bool => in_array((string)($collection['id'] ?? ''), $closed, true) === false
 				)
 			);
@@ -220,7 +235,7 @@ class PortalPageChoice {
 	private function shownBy(array $pages): array {
 		$ids = [];
 		foreach ($pages as $page) {
-			foreach ((is_array($page['blocks'] ?? null) === true ? $page['blocks'] : []) as $block) {
+			foreach ($this->listOf(value: ($page['blocks'] ?? null)) as $block) {
 				$id = ($block['collection'] ?? null);
 				if (is_string($id) === true && $id !== '') {
 					$ids[] = $id;
@@ -230,4 +245,19 @@ class PortalPageChoice {
 
 		return array_values(array_unique($ids));
 	}//end shownBy()
+
+	/**
+	 * The value when it is a list, else [].
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function listOf(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		return [];
+	}//end listOf()
 }//end class
