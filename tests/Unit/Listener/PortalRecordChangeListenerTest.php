@@ -13,6 +13,7 @@ use OCA\Portaliq\BackgroundJob\MessageBoxDispatchJob;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
 use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -183,10 +184,9 @@ class PortalRecordChangeListenerTest extends TestCase {
 			accounts: $accounts,
 			writer: $writer,
 			dispatch: $dispatch,
-			l10nFactory: $factory,
+			language: new PortalNoticeLanguage(l10nFactory: $factory, portals: $portals),
 			logger: $this->createMock(LoggerInterface::class),
 			messageBox: $this->messageBoxChannel(offered: ($messageBox['offered'] ?? false)),
-			portals: $portals,
 		);
 	}//end listener()
 
