@@ -189,3 +189,41 @@ export function sessionStore() {
 		return null
 	}
 }
+
+/**
+ * The files that came with a message: the `_files` the server listed for an
+ * inbox collection that declares `filesDownload`, each with an id to fetch.
+ *
+ * @param {object} message The message.
+ * @return {Array<{id: (string|number), name: string, size?: number}>} The files, or `[]`.
+ * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+ */
+export function attachmentsOf(message) {
+	const files = Array.isArray(message?._files) ? message._files : []
+	return files.filter(
+		(file) =>
+			file &&
+			(typeof file.id === 'string' || typeof file.id === 'number') &&
+			String(file.id) !== '',
+	)
+}
+
+/**
+ * The collection a message's download goes through: its own source, so the
+ * server proves the message is the resident's before it serves a byte.
+ *
+ * @param {object} message The message.
+ * @return {{id: string, register: string, schema: string}|null} The collection, or null without a source.
+ * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+ */
+export function downloadCollection(message) {
+	const source = message?._source || {}
+	if (!source.register || !source.schema) {
+		return null
+	}
+	return {
+		id: source.collection || '',
+		register: source.register,
+		schema: source.schema,
+	}
+}

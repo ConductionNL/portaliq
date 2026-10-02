@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Service\Notifications\MessageBoxDeliveries;
 use Psr\Log\LoggerInterface;
 
@@ -81,11 +82,15 @@ class PortalInboxReader {
 	 *                                     unscoped read, never on a normal path.
 	 * @param MessageBoxDeliveries|null $deliveries Marks the messages that also reached the
 	 *                                             government message box (inbox-berichtenbox-channel).
+	 * @param PortalFileReader|null $files Lists a message's files for an inbox
+	 *                                     collection that declares `filesDownload`
+	 *                                     (inbox-reply-with-attachments REQ-IRA-004).
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?LoggerInterface $logger = null,
 		private readonly ?MessageBoxDeliveries $deliveries = null,
+		private readonly ?PortalFileReader $files = null,
 	) {
 	}//end __construct()
 
@@ -112,9 +117,12 @@ class PortalInboxReader {
 	 *
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T01
 	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
 	 */
 	public function aggregateInbox(array $subject, array $aggregate): array {
 		$rows = [];
+		$messageFields = new InboxMessageFields();
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			if (is_array($contribution) === false) {
 				continue;
@@ -129,6 +137,11 @@ class PortalInboxReader {
 				}
 
 				foreach ($this->readInboxCollection(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
+					// The app's own field names onto the inbox's (portaliq#702),
+					// before the sort and the unread count below read them.
+					$row = $messageFields->apply(row: $row, collection: $collection);
+					$row = $this->withFiles(row: $row, collection: $collection);
+
 					// Provenance envelope: appId/label per spec, plus the
 					// register/schema/collection id the SPA needs to address
 					// this exact row through the mark-read endpoint (which is
@@ -229,6 +242,33 @@ class PortalInboxReader {
 
 		return $rows;
 	}//end ownMessages()
+
+	/**
+	 * Add the message's files when its collection declares `filesDownload`,
+	 * the same opt-in the single-object read honours. The row was already
+	 * proven the subject's own by the scoped read it came from.
+	 *
+	 * @param array<string, mixed> $row        The verified row.
+	 * @param array<string, mixed> $collection The declared inbox collection.
+	 *
+	 * @return array<string, mixed> The row, with `_files` when opted in.
+	 *
+	 * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+	 */
+	private function withFiles(array $row, array $collection): array {
+		$rowId = $this->rowId(row: $row);
+		if ($this->files === null || ($collection['filesDownload'] ?? false) !== true || $rowId === '') {
+			return $row;
+		}
+
+		$row['_files'] = $this->files->listFiles(
+			register: (string)($collection['register'] ?? ''),
+			schema: (string)($collection['schema'] ?? ''),
+			id: $rowId
+		);
+
+		return $row;
+	}//end withFiles()
 
 	/**
 	 * A row's id, whichever key the reader returned it under.
