@@ -1161,6 +1161,33 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testTheCaseScreenReceivesOnlyTheDeclaredFields()
 
 	/**
+	 * The case screen reads the closed marker of the case's own collection,
+	 * the one "My cases" files it under Closed by: a closed case offers no
+	 * change, no document and no withdrawal, and refuses an amendment.
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function testACaseItsCollectionMarksClosedHasEnded(): void {
+		$closing = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'kind' => 'cases', 'closedField' => 'status']];
+		$caseType = $this->caseType(withdrawal: $this->withdrawalDeclaration());
+
+		$data = $this->controller(caseType: $caseType, collections: $closing)->show('zaken', 'zaak', self::CASE_ID)->getData();
+		$this->assertTrue($data['writableSet']['ended']);
+		$this->assertSame([], $data['writableSet']['writable']);
+		$this->assertFalse($data['writableSet']['documents']['open']);
+		$this->assertFalse($data['withdrawal']['open']);
+
+		$open = $this->controller(caseType: $caseType)->show('zaken', 'zaak', self::CASE_ID)->getData();
+		$this->assertFalse($open['writableSet']['ended']);
+		$this->assertTrue($open['withdrawal']['open']);
+
+		$amend = $this->controller(caseType: $caseType, fields: ['omschrijving' => 'een bedrijfspand'], collections: $closing)
+			->amend('zaken', 'zaak', self::CASE_ID);
+		$this->assertSame(Http::STATUS_CONFLICT, $amend->getStatus());
+		$this->assertSame([], $this->writes);
+	}//end testACaseItsCollectionMarksClosedHasEnded()
+
+	/**
 	 * The withdrawn case that comes back is projected the same way, and still
 	 * carries the withdrawal the screen shows.
 	 *

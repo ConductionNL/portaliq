@@ -134,6 +134,34 @@ test('the worker is served next to the auth edge and controls the whole app', ()
 	assert.equal(serviceWorkerAddress('/api/content'), null)
 })
 
+test('the scope the site registers is the scope the server allows, however the app is reached', () => {
+	// PortalManifestController::serviceWorkerScope() answers
+	// Service-Worker-Allowed with the worker's own request path minus
+	// `portal/sw.js`. The browser refuses a registration whose scope is not
+	// under that header, which is what happened for an app in custom_apps/
+	// while the header named the app's file path (/custom_apps/portaliq/).
+	const allowedFor = (workerUrl) =>
+		workerUrl.endsWith('/portal/sw.js')
+			? workerUrl.slice(0, -'portal/sw.js'.length)
+			: null
+	for (const base of [
+		'/apps/portaliq/portal/api',
+		'/index.php/apps/portaliq/portal/api',
+		'/nextcloud/index.php/apps/portaliq/portal/api',
+		'/nextcloud/apps/portaliq/portal/api/',
+	]) {
+		const address = serviceWorkerAddress(base)
+		assert.equal(address.scope, allowedFor(address.url), base)
+		assert.ok(!address.scope.includes('custom_apps'), base)
+	}
+	const controller = readFileSync(
+		join(ROOT, 'lib', 'Controller', 'PortalManifestController.php'),
+		'utf8',
+	)
+	assert.match(controller, /'Service-Worker-Allowed' => \$this->serviceWorkerScope\(\)/)
+	assert.match(controller, /\$suffix = 'portal\/sw\.js'/)
+})
+
 test('the site registers the worker with the app as its scope', async () => {
 	const calls = []
 	const registration = { scope: 'x' }

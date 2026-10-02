@@ -52,6 +52,24 @@ export function withdrawalView(withdrawal, caseRow) {
 }
 
 /**
+ * Whether the case is over: the server says so (`writableSet.ended`, a case
+ * withdrawn or marked closed by its collection), or the case carries its
+ * withdrawal. An ended case shows its state and nothing else: no sentence
+ * about a window that has closed, because the case type's sentences invite
+ * the resident to add to a case that is still running
+ * (citizen-case-ended-shows-only-its-state).
+ *
+ * @param {object|undefined} writableSet The server's writable set.
+ * @param {object} view What `withdrawalView()` answered.
+ * @return {boolean}
+ *
+ * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+ */
+export function caseHasEnded(writableSet, view) {
+	return writableSet?.ended === true || view?.kind === 'withdrawn'
+}
+
+/**
  * The answers the case screen lists: the fields the writable set names, in
  * its order, and nothing else (citizen-case-shows-only-its-fields).
  *

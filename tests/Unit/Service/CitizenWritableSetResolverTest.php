@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
+use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCP\IL10N;
@@ -200,6 +201,83 @@ class CitizenWritableSetResolverTest extends TestCase {
 		$this->assertSame('', $unlabelled['status']['label']);
 		$this->assertSame('', $unlabelled['status']['description']);
 	}//end testTheStatusLabelIsTheCaseAppsOwnOrNothing()
+
+	/**
+	 * A withdrawn case closes every window with the neutral sentence, not the
+	 * case type's invitation to send more, and says it has ended.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function testAWithdrawnCaseHasEndedAndInvitesNothing(): void {
+		$case = self::CASE_ROW;
+		$case['status'] = 'in_behandeling';
+		$case['withdrawnAt'] = '2026-10-02T20:00:24+00:00';
+
+		$set = $this->resolve(caseType: $this->caseType(), case: $case);
+
+		$neutral = 'This case is not open for changes from the portal.';
+		$this->assertTrue($set['ended']);
+		$this->assertSame([], $set['writable']);
+		$this->assertSame(['open' => false, 'reason' => $neutral], $set['window']);
+		$this->assertSame(['open' => false, 'reason' => $neutral], $set['documents']);
+		$this->assertSame(['writable' => false, 'reason' => $neutral], $set['fields']['omschrijving']);
+		$this->assertSame('', $set['status']['label'], 'the status words stay the case type\'s');
+	}//end testAWithdrawnCaseHasEndedAndInvitesNothing()
+
+	/**
+	 * A case its collection marks closed has ended too, even in a status the
+	 * case type still lists as open; without the marker it has not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function testACaseTheCollectionMarksClosedHasEnded(): void {
+		$case = self::CASE_ROW;
+		$case['isFinalStatus'] = true;
+
+		$closed = $this->resolver(caseType: $this->caseType())->resolve(
+			action: self::ACTION,
+			case: $case,
+			audience: 'client',
+			closedField: 'isFinalStatus'
+		);
+		$this->assertTrue($closed['ended']);
+		$this->assertFalse($closed['window']['open']);
+		$this->assertFalse($closed['documents']['open']);
+		$this->assertSame([], $closed['writable']);
+
+		$unmarked = $this->resolve(caseType: $this->caseType(), case: $case);
+		$this->assertFalse($unmarked['ended']);
+		$this->assertTrue($unmarked['window']['open']);
+		$this->assertSame(['omschrijving', 'toelichting'], $unmarked['writable']);
+
+		$running = $case;
+		$running['isFinalStatus'] = false;
+		$this->assertFalse((new CaseRowMarker())->hasEnded(row: $running, closedField: 'isFinalStatus'));
+		$running['withdrawnAt'] = '';
+		$this->assertFalse((new CaseRowMarker())->hasEnded(row: $running, closedField: ''));
+	}//end testACaseTheCollectionMarksClosedHasEnded()
+
+	/**
+	 * A running case keeps the case type's own sentences.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function testARunningCaseKeepsTheCaseTypesSentences(): void {
+		$case = self::CASE_ROW;
+		$case['status'] = 'in_behandeling';
+
+		$set = $this->resolve(caseType: $this->caseType(), case: $case);
+
+		$this->assertFalse($set['ended']);
+		$this->assertSame('De aanvraag is in behandeling genomen.', $set['window']['reason']);
+		$this->assertSame('De zaak neemt geen stukken meer aan.', $set['documents']['reason']);
+	}//end testARunningCaseKeepsTheCaseTypesSentences()
 
 	/**
 	 * A case type dossiq could ship today.
