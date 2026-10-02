@@ -124,18 +124,23 @@ class ViaJoinRowFilter {
 			return false;
 		}
 
-		if (is_array($when['in']) === false || $when['in'] === [] || array_is_list($when['in']) === false) {
+		return $this->isScalarList(values: $when['in']);
+	}//end isValidWhen()
+
+	/**
+	 * Whether a value is a non-empty list of scalars.
+	 *
+	 * @param mixed $values The declared `in`.
+	 *
+	 * @return bool
+	 */
+	private function isScalarList(mixed $values): bool {
+		if (is_array($values) === false || $values === [] || array_is_list($values) === false) {
 			return false;
 		}
 
-		foreach ($when['in'] as $value) {
-			if (is_scalar($value) === false) {
-				return false;
-			}
-		}
-
-		return true;
-	}//end isValidWhen()
+		return array_filter($values, static fn ($value): bool => is_scalar($value) === false) === [];
+	}//end isScalarList()
 
 	/**
 	 * Whether an end date still lets the row grant. Empty grants. A date

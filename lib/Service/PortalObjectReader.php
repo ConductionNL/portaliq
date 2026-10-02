@@ -68,6 +68,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use DateTimeImmutable;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -881,7 +882,7 @@ class PortalObjectReader {
 
 		$targets = [];
 		$liveRows = new ViaJoinRowFilter();
-		$now = new \DateTimeImmutable();
+		$now = new DateTimeImmutable();
 		foreach ($joinRows as $joinRow) {
 			$row = $this->normalise(row: $joinRow);
 			if ($row === null) {

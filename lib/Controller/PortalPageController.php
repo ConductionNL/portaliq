@@ -265,8 +265,6 @@ class PortalPageController extends Controller {
 				// contract withholds; it only decides which stylesheet tag to emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
 				'themeLogoUrl' => $this->siteThemeLogoUrl(),
-				// The theme app's public bridge, linked directly before the set
-				// and only with one (site-links-the-theme-bridge).
 				'themeBridgeStylesheet' => $this->siteThemeBridgeStylesheet(),
 				// The NLDS token set this app ships for the serving portal's
 				// theme, when it has one. Separate from the line above because

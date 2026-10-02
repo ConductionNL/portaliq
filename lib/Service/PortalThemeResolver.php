@@ -161,16 +161,7 @@ class PortalThemeResolver {
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
 	 */
 	public function bridgeStylesheet(): ?string {
-		$root = $this->themeAppPath();
-		if ($root === null) {
-			return null;
-		}
-
-		if (is_file($root . '/css/' . self::BRIDGE_STYLESHEET . '.css') === false) {
-			return null;
-		}
-
-		return self::BRIDGE_STYLESHEET;
+		return (new ThemeAppAsset())->stylesheetIfShipped(root: $this->themeAppPath(), name: self::BRIDGE_STYLESHEET);
 	}//end bridgeStylesheet()
 
 
