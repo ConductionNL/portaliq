@@ -38,7 +38,9 @@ const TASK = {
 	uuid: 'task-1',
 	title: 'Lever het formulier in',
 	description: 'Stuur het ingevulde formulier terug.',
-	dueAt: '2026-10-15T00:00:00+02:00',
+	// Midday, so the rendered date is 15/10 in any runner timezone (CI is
+	// UTC, where midnight +02:00 is still the 14th).
+	dueAt: '2026-10-15T12:00:00+02:00',
 	overdue: false,
 	metadata: {
 		upload: {
