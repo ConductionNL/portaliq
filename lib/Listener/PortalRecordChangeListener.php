@@ -22,6 +22,9 @@
  *
  * 🔴 NO OLD RECORD, NO NOTICE. A change it cannot see is not reported.
  *
+ * The message is in ONE language: the first locale of the organisation's
+ * portal, else Dutch. Never Dutch and English glued into one string.
+ *
  * 🔴 NOT THE RESIDENT'S OWN WRITE. Saves portaliq makes on the resident's
  * behalf run inside PortalWriteContext and are skipped (REQ-NAP-003).
  *
@@ -51,12 +54,12 @@ use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
 use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalWriteContext;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
-use OCP\L10N\IFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -91,7 +94,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 * @param PortalAccountService        $accounts     Finds the resident's account.
 	 * @param PortalObjectWriter          $writer       Writes the inbox message.
 	 * @param NotificationDispatchService $dispatch     Dispatches the rule's key.
-	 * @param IFactory                    $l10nFactory  The message text, Dutch and English.
+	 * @param PortalNoticeLanguage        $language     The message text, in the portal's language.
 	 * @param LoggerInterface             $logger       The logger.
 	 * @param MessageBoxChannel|null      $messageBox   Queues the government message box send.
 	 */
@@ -101,7 +104,7 @@ class PortalRecordChangeListener implements IEventListener {
 		private readonly PortalAccountService $accounts,
 		private readonly PortalObjectWriter $writer,
 		private readonly NotificationDispatchService $dispatch,
-		private readonly IFactory $l10nFactory,
+		private readonly PortalNoticeLanguage $language,
 		private readonly LoggerInterface $logger,
 		private readonly ?MessageBoxChannel $messageBox = null,
 	) {
@@ -319,8 +322,7 @@ class PortalRecordChangeListener implements IEventListener {
 	}//end title()
 
 	/**
-	 * Write the inbox message, Dutch first and English second, as every
-	 * portaliq message is.
+	 * Write the inbox message in the portal's language.
 	 *
 	 * @param array<string, mixed>  $account    The account.
 	 * @param string                $title      The record's title.
@@ -329,8 +331,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 * @return void
 	 */
 	private function writeMessage(array $account, string $title, array $recordLink): void {
-		$dutch = $this->l10nFactory->get('portaliq', 'nl');
-		$english = $this->l10nFactory->get('portaliq', 'en');
+		$l10n = $this->language->forOrganisation(organisation: (string)($account['organisation'] ?? ''));
 		$written = $this->writer->createObject(
 			register: 'portaliq',
 			schema: 'portalMessage',
@@ -338,8 +339,8 @@ class PortalRecordChangeListener implements IEventListener {
 			subjectRef: (string)($account['subjectRef'] ?? ''),
 			organisation: (string)($account['organisation'] ?? ''),
 			data: [
-				'subject' => $dutch->t(self::SUBJECT_KEY, [$title]).' / '.$english->t(self::SUBJECT_KEY, [$title]),
-				'body' => $dutch->t(self::BODY_KEY)."\n\n".$english->t(self::BODY_KEY),
+				'subject' => $l10n->t(self::SUBJECT_KEY, [$title]),
+				'body' => $l10n->t(self::BODY_KEY),
 				'read' => false,
 				'receivedAt' => gmdate('c'),
 				'recordLink' => $recordLink,
