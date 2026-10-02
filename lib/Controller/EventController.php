@@ -73,18 +73,22 @@ class EventController extends Controller {
 	 * FIRST, before any read or write (see `NewsController`'s identical
 	 * guard for the full rationale).
 	 *
-	 * @return void
+	 * @return string The staff member's user id.
 	 *
 	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
 	 */
-	private function requireAuthenticatedStaff(): void {
-		if ($this->userSession->getUser() === null) {
+	private function requireAuthenticatedStaff(): string {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
 			throw new OCSForbiddenException('Authentication required');
 		}
+
+		return $user->getUID();
 	}//end requireAuthenticatedStaff()
 
 	/**
-	 * Create a draft event.
+	 * Create a draft event. The author is the signed-in staff member, never
+	 * a value from the request.
 	 *
 	 * @param string $title The title.
 	 * @param string $start Start date-time (ISO 8601).
@@ -93,7 +97,6 @@ class EventController extends Controller {
 	 * @param string $end Optional end date-time.
 	 * @param bool $rsvpEnabled Whether guardians may RSVP.
 	 * @param array<int, array<string, mixed>> $signupRoles Optional volunteer/material roles.
-	 * @param string $authorRef The authoring staff subjectRef.
 	 *
 	 * @return JSONResponse The created object, or 400/500.
 	 *
@@ -112,9 +115,8 @@ class EventController extends Controller {
 		string $end = '',
 		bool $rsvpEnabled = false,
 		array $signupRoles = [],
-		string $authorRef = '',
 	): JSONResponse {
-		$this->requireAuthenticatedStaff();
+		$authorRef = $this->requireAuthenticatedStaff();
 
 		if ($title === '' || $start === '' || $this->hasAnyTarget(target: $target) === false) {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);

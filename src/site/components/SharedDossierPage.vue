@@ -105,6 +105,8 @@ export default {
 		t: { type: Function, required: true },
 		/** `fetch`, or a stand-in in a test. */
 		fetchImpl: { type: Function, default: null },
+		/** The Nextcloud instance root opencatalogi is reached under. */
+		instanceRoot: { type: String, default: '/index.php' },
 		/** The answer to start from, for a server render or a test. */
 		initialAnswer: { type: Object, default: null },
 	},
@@ -168,6 +170,7 @@ export default {
 			const answer = await fetchSharedDossier(
 				token,
 				this.fetchImpl || ((url, init) => window.fetch(url, init)),
+				this.instanceRoot,
 			)
 			if (token !== this.token) {
 				return

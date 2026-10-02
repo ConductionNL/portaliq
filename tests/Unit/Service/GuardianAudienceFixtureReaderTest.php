@@ -142,6 +142,16 @@ class GuardianAudienceFixtureReaderTest extends TestCase {
 		$this->assertFalse($reader->childPhotoConsentGranted('child-1', 'website'), 'a different purpose is not granted just because news is');
 	}//end testChildPhotoConsentFailsClosedForAnUnknownChildOrPurpose()
 
+	public function testChildPhotoConsentIsWithheldWhenOneGuardianWithholds(): void {
+		$granting = ['guardianRef' => 'g1', 'childRefs' => ['child-1'], 'photoConsent' => ['child-1' => ['news' => true]]];
+		$withholding = ['guardianRef' => 'g2', 'childRefs' => ['child-1'], 'photoConsent' => ['child-1' => ['news' => false]]];
+
+		foreach ([[$granting, $withholding], [$withholding, $granting]] as $rows) {
+			$reader = new GuardianAudienceFixtureReader($this->container($this->fakeObjectService($rows)), $this->createMock(LoggerInterface::class));
+			$this->assertFalse($reader->childPhotoConsentGranted('child-1'), 'the row order must not decide the consent');
+		}
+	}//end testChildPhotoConsentIsWithheldWhenOneGuardianWithholds()
+
 	public function testGuardiansMatchingEnumeratesEveryMatchingRowOnce(): void {
 		$os = $this->fakeObjectService([
 			['guardianRef' => 'guardian-anna-devries', 'schoolRef' => 'school-a', 'groupRefs' => ['groep-5a'], 'childRefs' => ['child-1']],

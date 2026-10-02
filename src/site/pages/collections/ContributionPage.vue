@@ -177,6 +177,7 @@
 				name="citizenCase"
 				:block="item.block"
 				:collection="item.collection"
+				:quietWhenEmpty="item.quietWhenEmpty === true"
 				:row="selected[item.collection.id] || null"
 				:api="api"
 				:t="tr"

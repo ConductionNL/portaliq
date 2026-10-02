@@ -1809,6 +1809,48 @@ class ContributionControllerTest extends TestCase {
 	}//end testMarkReadSetsOnlyTheReadFieldOnTheSubjectsOwnMessage()
 
 	/**
+	 * portaliq#702: a collection that names its own read date gets the current
+	 * time in that one field, never `read`, never anything from the body.
+	 *
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
+	 */
+	public function testMarkReadWritesTheDeclaredReadAtField(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				[
+					'id' => 'berichten',
+					'kind' => 'inbox',
+					'register' => 'dossiq',
+					'schema' => 'portaalBericht',
+					'scopeField' => 'recipientRef',
+					'messageFields' => ['body' => 'content', 'readAt' => 'readByRecipientAt'],
+				],
+			]
+		);
+
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+				$received = ['scopeField' => $scopeField, 'data' => $data];
+				return ['id' => $id];
+			}
+		);
+
+		$before = time();
+		$response = $this->controller(aggregate: $aggregate, writer: $writer)->markRead('dossiq', 'portaalBericht', 'b-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['readByRecipientAt'], array_keys($received['data']));
+		$this->assertSame('recipientRef', $received['scopeField']);
+		$written = strtotime($received['data']['readByRecipientAt']);
+		$this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $received['data']['readByRecipientAt']);
+		$this->assertGreaterThanOrEqual($before, $written);
+		$this->assertLessThanOrEqual(time(), $written);
+
+	}//end testMarkReadWritesTheDeclaredReadAtField()
+
+	/**
 	 * A foreign-owned or non-existent message id: the writer's own ownership
 	 * re-verification returns null (no write happened, identical to every
 	 * other scoped write), and the controller answers the SAME 404 — no

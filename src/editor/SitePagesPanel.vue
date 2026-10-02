@@ -188,7 +188,6 @@
 <script>
 import axios from '@nextcloud/axios'
 import { translate } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import {
 	buildPageTree,
@@ -200,6 +199,7 @@ import {
 	newPagePayload,
 	renamePagePayload,
 } from './index.js'
+import { instanceUrl } from './instanceUrl.js'
 
 export default {
 	name: 'SitePagesPanel',
@@ -228,7 +228,7 @@ export default {
 				put: (url, payload, config) => axios.put(url, payload, config),
 				del: (url) => axios.delete(url),
 				url: (schema, id) =>
-					generateUrl(
+					instanceUrl(
 						`/apps/openregister/api/objects/portaliq/${schema}${id ? '/' + encodeURIComponent(id) : ''}`,
 					),
 			}),

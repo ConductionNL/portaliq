@@ -28,6 +28,9 @@ const site = {
 	output: {
 		path: path.join(__dirname, 'js'),
 		filename: '[name].js',
+		// The site's lazy chunks carry its prefix, so the admin build's
+		// `clean.keep` (webpack.config.js) can tell them from its own files.
+		chunkFilename: 'portaliq-site-[name].js',
 		clean: false,
 	},
 	resolve: {

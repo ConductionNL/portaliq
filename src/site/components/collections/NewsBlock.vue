@@ -52,7 +52,7 @@
 
 <script>
 import NewsItem from '../inbox/NewsItem.vue'
-import { newsForRecord } from '../../../shared/recordPage.js'
+import { newestNewsFirst, newsForRecord } from '../../../shared/recordPage.js'
 import { withStrings } from '../../pages/inbox/translate.js'
 
 let counter = 0
@@ -108,11 +108,13 @@ export default {
 		},
 
 		items() {
-			return newsForRecord(
-				this.feed,
-				this.record,
-				this.contribution,
-				this.groups,
+			return newestNewsFirst(
+				newsForRecord(
+					this.feed,
+					this.record,
+					this.contribution,
+					this.groups,
+				),
 			).slice(0, this.limit)
 		},
 	},

@@ -1953,7 +1953,10 @@ OC.L10N.register(
         "Choose at least one group.": "Choose at least one group.",
         "Choose the school.": "Choose the school.",
         "For": "For",
-        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer."
+        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer.",
+        "This request has already been withdrawn.": "This request has already been withdrawn.",
+        "This request cannot be withdrawn from the portal.": "This request cannot be withdrawn from the portal.",
+        "The request could not be withdrawn. Please try again.": "The request could not be withdrawn. Please try again."
     },
     "nplurals=2; plural=(n != 1);"
 )

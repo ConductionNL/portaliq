@@ -332,5 +332,7 @@
 	"Publication not found": "Publication not found",
 	"This publication does not exist (any more), or is not public.": "This publication does not exist (any more), or is not public.",
 	"This publication has no documents.": "This publication has no documents.",
-	"Untitled": "Untitled"
+	"Untitled": "Untitled",
+	"Attachments": "Attachments",
+	"The download did not work.": "The download did not work."
 }

@@ -17,9 +17,12 @@
 	listed under a mandate is read under that mandate.
 -->
 <template>
-	<p v-if="!caseId" class="utrecht-paragraph pq-empty">
-		<em>{{ t('Select a case.') }}</em>
-	</p>
+	<template v-if="!caseId">
+		<!-- Under a detail card on the same collection, the card says it. -->
+		<p v-if="!quietWhenEmpty" class="utrecht-paragraph pq-empty">
+			<em>{{ t('Select a case.') }}</em>
+		</p>
+	</template>
 	<p
 		v-else-if="loading"
 		class="utrecht-paragraph"
@@ -199,6 +202,8 @@ export default {
 		collection: { type: Object, required: true },
 		/** The case row selected in the table; `_mandate.id` reads it under that mandate. */
 		row: { type: Object, default: null },
+		/** Say nothing until a case is chosen: a detail card on the page already asks. */
+		quietWhenEmpty: { type: Boolean, default: false },
 		/** The portal API adapter (`createPortalApi` shape). */
 		api: { type: Object, required: true },
 		/** The translator `t(key, vars)`. */
@@ -252,7 +257,7 @@ export default {
 		},
 
 		fields() {
-			return caseFieldNames(this.caseRow)
+			return caseFieldNames(this.caseRow, this.writableSet)
 		},
 
 		withdrawal() {

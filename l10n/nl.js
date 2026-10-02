@@ -2011,7 +2011,10 @@ OC.L10N.register(
         "Choose at least one group.": "Kies minstens een groep.",
         "Choose the school.": "Kies de school.",
         "For": "Voor",
-        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "Dit formulier gebruikt een voorwaarde die het portaal niet kan controleren. Maak er een voorwaarde op een ander antwoord van."
+        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "Dit formulier gebruikt een voorwaarde die het portaal niet kan controleren. Maak er een voorwaarde op een ander antwoord van.",
+        "This request has already been withdrawn.": "Deze aanvraag is al ingetrokken.",
+        "This request cannot be withdrawn from the portal.": "Deze aanvraag kunt u niet vanuit het portaal intrekken.",
+        "The request could not be withdrawn. Please try again.": "De aanvraag kon niet worden ingetrokken. Probeer het opnieuw."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -283,6 +283,37 @@ test("each block resolves to what renders it, and another slice's block to its p
 	assert.deepEqual(timed, ['timedTask', 'citizenCase', 'cta', 'none'])
 })
 
+test('a case screen under a detail card on its collection waits quietly for a case', () => {
+	const contribution = {
+		collections: [{ id: 'mijnZaken' }, { id: 'verzoeken' }],
+	}
+	const [, detail, quiet, alone] = resolveBlocks(
+		{
+			blocks: [
+				{ type: 'collection', collection: 'mijnZaken' },
+				{ type: 'detail', collection: 'mijnZaken' },
+				{ type: 'citizenCase', collection: 'mijnZaken' },
+				{ type: 'citizenCase', collection: 'verzoeken' },
+			],
+		},
+		contribution,
+	)
+	assert.equal(detail.kind, 'detail')
+	assert.equal(quiet.quietWhenEmpty, true)
+	// Without a detail card on its collection it still says "Select a case.".
+	assert.equal(alone.quietWhenEmpty, undefined)
+	const page = readFileSync(
+		join(ROOT, 'src', 'site', 'pages', 'collections', 'ContributionPage.vue'),
+		'utf8',
+	)
+	assert.match(page, /:quietWhenEmpty="item\.quietWhenEmpty === true"/)
+	const screen = readFileSync(
+		join(ROOT, 'src', 'site', 'components', 'e', 'CitizenCase.vue'),
+		'utf8',
+	)
+	assert.match(screen, /<p v-if="!quietWhenEmpty" class="utrecht-paragraph pq-empty">/)
+})
+
 test('only update and endpoint row actions reach the row buttons, never propose-change', () => {
 	const withActions = {
 		collections: [

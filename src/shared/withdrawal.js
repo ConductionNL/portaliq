@@ -52,13 +52,30 @@ export function withdrawalView(withdrawal, caseRow) {
 }
 
 /**
- * The case's answers, without the envelope, the files and the withdrawal fields.
+ * The answers the case screen lists: the fields the writable set names, in
+ * its order, and nothing else (citizen-case-shows-only-its-fields).
+ *
+ * The case row also carries what the collection shows elsewhere on the page
+ * (a number, a status, a date). Those are not answers the resident gave, so
+ * they are never listed here as one, with a sentence saying they cannot be
+ * changed. The withdrawal fields are the withdrawn state, never an answer.
  *
  * @param {object} caseRow The case.
+ * @param {object} writableSet The server's writable set (`fields` keyed by name).
  * @return {string[]}
  */
-export function caseFieldNames(caseRow) {
-	return Object.keys(caseRow || {}).filter(
+export function caseFieldNames(caseRow, writableSet) {
+	const named = writableSet?.fields
+	if (
+		!caseRow
+		|| typeof caseRow !== 'object'
+		|| !named
+		|| typeof named !== 'object'
+		|| Array.isArray(named)
+	) {
+		return []
+	}
+	return Object.keys(named).filter(
 		(key) =>
 			key !== '@self' && key !== '_files' && !WITHDRAWAL_FIELDS.includes(key),
 	)

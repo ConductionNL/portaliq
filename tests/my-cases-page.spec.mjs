@@ -21,7 +21,7 @@ import { createPortalApi } from '../src/shared/portalApi.js'
 import { buildNav, shellSections } from '../src/shared/portalNav.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const { splitCases, caseStatus, caseTarget, caseTitle } = await import(
+const { splitCases, caseTarget, caseTitle, caseStatus } = await import(
 	pathToFileURL(join(ROOT, 'src', 'shared', 'myCases.js')).href
 )
 
@@ -151,6 +151,25 @@ test('a case opens where it came from, and names itself by title or reference', 
 	assert.equal(caseTarget({ id: 'y' }), null)
 	assert.equal(caseTitle(CASES[0]), 'Parkeervergunning')
 	assert.equal(caseTitle(CASES[2]), 'ZAAK-0')
+})
+
+test('a case shows the words for its status, and keeps the raw status for logic', () => {
+	const row = {
+		status: '3c0f5a00-0000-4000-a000-00000000b001',
+		_statusLabel: 'Ontvangen',
+	}
+	assert.equal(caseStatus(row), 'Ontvangen')
+	assert.equal(row.status, '3c0f5a00-0000-4000-a000-00000000b001')
+	// Without words the status reads as before.
+	assert.equal(caseStatus({ status: 'In behandeling' }), 'In behandeling')
+	assert.equal(caseStatus({ status: 'x', _statusLabel: '  ' }), 'x')
+	assert.equal(caseStatus({ status: 7 }), '')
+	assert.equal(caseStatus(null), '')
+	const page = readFileSync(
+		join(ROOT, 'src', 'site', 'pages', 'e', 'MyCasesPage.vue'),
+		'utf8',
+	)
+	assert.match(page, /status: caseStatus\(row\)/)
 })
 
 test('site: the shell offers "My cases" first when the server announces it, and both locales carry the strings', () => {

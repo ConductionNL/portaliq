@@ -130,6 +130,25 @@ class PortalSigninSettingsTest extends TestCase {
 
 
 	/**
+	 * A plain http broker address counts as missing: the envelope is trusted
+	 * on the back channel alone, so it must be https.
+	 *
+	 * @return void
+	 */
+	public function testABrokerRouteWithAPlainHttpAddressIsRefused(): void {
+		$result = $this->settings()->save(
+			portal: self::PORTAL,
+			routes: ['digid' => 'broker'],
+			broker: ['startUrl' => 'https://integriq.example/idp/start', 'exchangeUrl' => 'http://integriq.example/api/idp/envelope/exchange', 'consumerId' => 'portaliq-venray'],
+			secret: 's3cret'
+		);
+
+		$this->assertSame(['error' => 'broker_incomplete'], $result);
+		$this->assertSame([], $this->config);
+	}//end testABrokerRouteWithAPlainHttpAddressIsRefused()
+
+
+	/**
 	 * A complete broker saves; the secret goes to its own entry and never
 	 * comes back; an empty secret on a later save keeps it.
 	 *

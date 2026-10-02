@@ -45,6 +45,10 @@ use Throwable;
  * deliberately the ONE stateless match predicate every caller (this class,
  * NewsFeedReader) shares, so the rule can never fork between the enumeration
  * path here and the read path there.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- one reader over one
+ * interim fixture register (audience enumeration plus consent); it is
+ * replaced as a whole when the real audience source lands, so splitting it
+ * now would only spread the seam.
  */
 class GuardianAudienceFixtureReader {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -176,10 +180,12 @@ class GuardianAudienceFixtureReader {
 	 * Whether photo consent for a PURPOSE is granted for a child, independent
 	 * of which guardian is reading — the gate applies to the ITEM (any
 	 * targeted child without granted consent withholds the photo for every
-	 * reader), not to one guardian's own view. Scans every fixture row for
-	 * one carrying this child; an absent child or an absent purpose entry
-	 * (no fixture row mentions it) fails closed to WITHHELD, exactly like an
-	 * explicit `false`.
+	 * reader), not to one guardian's own view. Scans every fixture row
+	 * carrying this child: consent is granted only when at least one row
+	 * mentions the child and none of them withholds it, so one guardian
+	 * withholding wins over another granting. An absent child or an absent
+	 * purpose entry fails closed to WITHHELD, exactly like an explicit
+	 * `false`.
 	 *
 	 * @param string $childRef The child to check.
 	 * @param string $purpose The consent purpose (default: {@see self::PURPOSE_NEWS}).
@@ -211,6 +217,7 @@ class GuardianAudienceFixtureReader {
 			return false;
 		}
 
+		$mentioned = false;
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
 			if ($normalised === null) {
@@ -223,11 +230,16 @@ class GuardianAudienceFixtureReader {
 			}
 
 			$consent = $this->nestedBoolMap(value: $normalised['photoConsent'] ?? []);
-			return ($consent[$childRef][$purpose] ?? false) === true;
+			if (($consent[$childRef][$purpose] ?? false) !== true) {
+				// One guardian withholding withholds for the child.
+				return false;
+			}
+
+			$mentioned = true;
 		}
 
 		// No fixture row mentions this child at all — fail closed.
-		return false;
+		return $mentioned;
 	}//end childPhotoConsentGranted()
 
 	/**

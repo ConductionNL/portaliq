@@ -71,18 +71,27 @@ export function caseTitle(row) {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
- * A case's status in words: the status's public label when the app projects
- * one (`statusPublicLabel`, else `statusLabel`), else `status` itself, unless
- * that is an identifier. A status type's uuid is how an app tells statuses
- * apart and says nothing to a person, so it reads as no status at all.
+ * What a case's status reads as in the list: the words the server stamped as
+ * `_statusLabel` from the collection's `statusLabelField`, else the status's
+ * public label when the app projects one (`statusPublicLabel`, else
+ * `statusLabel`), else the stored status, unless that is an identifier. A
+ * status type's uuid is how an app tells statuses apart and says nothing to a
+ * person, so it reads as no status at all. The raw status stays on the row
+ * for everything that tells statuses apart.
  *
- * @param {object} row The case.
- * @return {string} The status, or ''.
+ * @param {object} row The case row.
+ * @return {string} The status to show, or ''.
  *
+ * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
  * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
  */
 export function caseStatus(row) {
-	for (const field of ['statusPublicLabel', 'statusLabel', 'status']) {
+	for (const field of [
+		'_statusLabel',
+		'statusPublicLabel',
+		'statusLabel',
+		'status',
+	]) {
 		const value = row?.[field]
 		if (
 			typeof value === 'string'

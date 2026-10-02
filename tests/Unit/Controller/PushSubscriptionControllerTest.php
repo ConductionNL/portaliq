@@ -94,12 +94,24 @@ class PushSubscriptionControllerTest extends TestCase {
 
 	public function testSubscribeSavesTheSubjectsOwnSubscription(): void {
 		$objectService = $this->fakeObjectService();
-		$response = $this->controller(['subjectRef' => 'guardian-1'], $objectService)->subscribe('https://push.example.org/x', ['p256dh' => 'k']);
+		$response = $this->controller(['subjectRef' => 'guardian-1'], $objectService)->subscribe('https://fcm.googleapis.com/fcm/send/abc', ['p256dh' => 'k']);
 
 		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
 		$this->assertSame('guardian-1', $objectService->saved['subjectRef']);
 		$this->assertTrue($objectService->saved['active']);
 	}//end testSubscribeSavesTheSubjectsOwnSubscription()
+
+	public function testSubscribeRefusesAnEndpointOutsideTheKnownPushServices(): void {
+		$objectService = $this->fakeObjectService();
+		$controller = $this->controller(['subjectRef' => 'guardian-1'], $objectService);
+
+		foreach (['', 'http://fcm.googleapis.com/fcm/send/abc', 'https://push.example.org/x', 'https://fcm.googleapis.com.evil.example/x', 'https://evilfcm.googleapis.com.example/x'] as $endpoint) {
+			$this->assertSame(Http::STATUS_BAD_REQUEST, $controller->subscribe($endpoint)->getStatus(), $endpoint);
+		}
+
+		$this->assertSame([], $objectService->saved);
+		$this->assertSame(Http::STATUS_NO_CONTENT, $controller->subscribe('https://web.push.apple.com/QGx')->getStatus());
+	}//end testSubscribeRefusesAnEndpointOutsideTheKnownPushServices()
 
 	public function testUnsubscribeIsSuccessfulEvenWhenNoSubscriptionExisted(): void {
 		$objectService = $this->fakeObjectService([]);

@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Contribution\CaseStatusLabelField;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 
 /**
@@ -123,6 +124,7 @@ class PortalCaseListReader {
 						'collection' => (string)($collection['id'] ?? ''),
 					];
 					$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
+					$row = (new CaseStatusLabelField())->stamp(row: $row, collection: $collection);
 
 					$rows[] = $row;
 				}
@@ -376,6 +378,7 @@ class PortalCaseListReader {
 				'collection' => (string)($collection['id'] ?? ''),
 			];
 			$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
+			$row = (new CaseStatusLabelField())->stamp(row: $row, collection: $collection);
 			$row['_mandate'] = $described;
 			// The case is the subsidiary's, and says so: it is never presented
 			// as the parent's own (REQ-PTV-005).

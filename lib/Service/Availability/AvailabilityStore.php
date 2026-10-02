@@ -111,7 +111,9 @@ class AvailabilityStore {
 	}//end outagesBetween()
 
 	/**
-	 * A portal's open outage, or null.
+	 * A portal's open outage, or null. Every page of the portal's outages is
+	 * read, so an open one behind the first page is still found rather than
+	 * opened a second time.
 	 *
 	 * @param string $portal The portal slug.
 	 *
@@ -120,11 +122,18 @@ class AvailabilityStore {
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
 	 */
 	public function openOutage(string $portal): ?array {
-		foreach ($this->findAll(schema: self::OUTAGE_SCHEMA, filters: ['portal' => $portal]) as $row) {
-			if (($row['portal'] ?? '') === $portal && trim((string)($row['endedAt'] ?? '')) === '') {
-				return $row;
+		$offset = 0;
+		do {
+			$rows = $this->findAll(schema: self::OUTAGE_SCHEMA, filters: ['portal' => $portal], offset: $offset);
+			foreach ($rows as $row) {
+				if (($row['portal'] ?? '') === $portal && trim((string)($row['endedAt'] ?? '')) === '') {
+					return $row;
+				}
 			}
-		}
+
+			$offset += self::PAGE;
+			$pageSize = count($rows);
+		} while ($pageSize === self::PAGE);
 
 		return null;
 	}//end openOutage()
@@ -239,10 +248,11 @@ class AvailabilityStore {
 	 *
 	 * @param string $schema The schema.
 	 * @param array<string, mixed> $filters The filters.
+	 * @param int $offset Records to skip, for the next page.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function findAll(string $schema, array $filters): array {
+	private function findAll(string $schema, array $filters, int $offset = 0): array {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
@@ -253,7 +263,7 @@ class AvailabilityStore {
 				return [];
 			}
 
-			$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => self::PAGE, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: availability read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 

@@ -73,9 +73,9 @@ class EventFeedReaderTest extends TestCase {
 		return $container;
 	}//end container()
 
-	private function audienceReader(array $groupRefs): GuardianAudienceFixtureReader {
+	private function audienceReader(array $groupRefs, array $childRefs = []): GuardianAudienceFixtureReader {
 		$reader = $this->createMock(GuardianAudienceFixtureReader::class);
-		$reader->method('resolveAudience')->willReturn(['schoolRef' => '', 'groupRefs' => $groupRefs, 'childRefs' => [], 'photoConsent' => []]);
+		$reader->method('resolveAudience')->willReturn(['schoolRef' => '', 'groupRefs' => $groupRefs, 'childRefs' => $childRefs, 'photoConsent' => []]);
 		return $reader;
 	}//end audienceReader()
 
@@ -105,4 +105,12 @@ class EventFeedReaderTest extends TestCase {
 		$this->assertNull($reader->readOwnEvent('guardian-anna-devries', 'e1'));
 		$this->assertNull($reader->readOwnEvent('guardian-anna-devries', 'does-not-exist'));
 	}//end testReadOwnEventReturnsNullForOutOfAudienceOrNonExistent()
+
+	public function testIsOwnChildOnlyForAChildInTheGuardiansAudience(): void {
+		$reader = new EventFeedReader($this->container([]), $this->audienceReader(['groep-5a'], ['child-1']), $this->createMock(LoggerInterface::class));
+
+		$this->assertTrue($reader->isOwnChild('guardian-anna-devries', 'child-1'));
+		$this->assertFalse($reader->isOwnChild('guardian-anna-devries', 'someone-elses-child'));
+		$this->assertFalse($reader->isOwnChild('guardian-anna-devries', ''));
+	}//end testIsOwnChildOnlyForAChildInTheGuardiansAudience()
 }//end class

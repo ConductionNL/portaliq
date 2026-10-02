@@ -87,6 +87,7 @@ class EventControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('draft', $objectService->saved['status']);
 		$this->assertTrue($objectService->saved['rsvpEnabled']);
+		$this->assertSame('staff-directie-1', $objectService->saved['authorRef']);
 	}//end testCreateSavesADraftWithAValidTarget()
 
 	public function testPublishReturns404ForAMissingId(): void {

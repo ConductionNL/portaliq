@@ -147,18 +147,42 @@ test('the screen shows exactly what the server declares', () => {
 	)
 })
 
+const CASE_ROW = {
+	'@self': {},
+	_files: [],
+	naam: 'Jansen',
+	withdrawnAt: 'x',
+	withdrawalReason: 'y',
+	adres: 'Straat 1',
+	status: '3c0f5a00-0000-4000-a000-00000000b001',
+	identifier: '2026-0004',
+}
+
 test('the withdrawal fields are not listed as ordinary answers', () => {
 	assert.deepEqual(
-		caseFieldNames({
-			'@self': {},
-			_files: [],
-			naam: 'Jansen',
-			withdrawnAt: 'x',
-			withdrawalReason: 'y',
-			adres: 'Straat 1',
+		caseFieldNames(CASE_ROW, {
+			fields: {
+				naam: { writable: true },
+				withdrawnAt: { writable: false },
+				adres: { writable: false, reason: 'Dicht.' },
+			},
 		}),
 		['naam', 'adres'],
 	)
+})
+
+test('the case screen lists only the answers the writable set names', () => {
+	// The status uuid and the case number are on the row, but they are not
+	// answers the resident gave (citizen-case-shows-only-its-fields).
+	assert.deepEqual(
+		caseFieldNames(CASE_ROW, { fields: { naam: { writable: true } } }),
+		['naam'],
+	)
+	// A case type that names no answer lists none, whatever the row carries.
+	assert.deepEqual(caseFieldNames(CASE_ROW, { fields: [] }), [])
+	assert.deepEqual(caseFieldNames(CASE_ROW, {}), [])
+	assert.deepEqual(caseFieldNames(CASE_ROW, undefined), [])
+	assert.deepEqual(caseFieldNames(null, { fields: { naam: {} } }), [])
 })
 
 test('site: the case screen uses them, and both locales carry the strings', () => {
@@ -167,7 +191,7 @@ test('site: the case screen uses them, and both locales carry the strings', () =
 		'utf8',
 	)
 	assert.match(screen, /withdrawalView\(this\.data\?\.withdrawal, this\.caseRow\)/)
-	assert.match(screen, /caseFieldNames\(this\.caseRow\)/)
+	assert.match(screen, /caseFieldNames\(this\.caseRow, this\.writableSet\)/)
 	assert.match(screen, /<WithdrawCaseConfirm/)
 	assert.match(screen, /this\.api\.withdrawCitizenCase\(/)
 	assert.doesNotMatch(screen, /undo|reopen/i)

@@ -77,6 +77,41 @@ export function rowActionsOf(contribution, collection) {
  * @return {Array<object>}
  */
 export function resolveBlocks(page, contribution) {
+	return quietCaseUnderDetail(resolveEachBlock(page, contribution))
+}
+
+/**
+ * A case screen that shares its collection with a detail card on the same
+ * page stays quiet until a case is chosen: the card already says "Select an
+ * item.", and a second line saying the same thing is noise
+ * (citizen-case-shows-only-its-fields).
+ *
+ * @param {Array<object>} items The resolved blocks.
+ * @return {Array<object>} The same blocks, a quiet case screen marked `quietWhenEmpty`.
+ *
+ * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-case-withdraw-screen/spec.md
+ */
+function quietCaseUnderDetail(items) {
+	const detailed = new Set(
+		items
+			.filter((item) => item.kind === 'detail')
+			.map((item) => item.collection?.id),
+	)
+	return items.map((item) =>
+		item.kind === 'citizenCase' && detailed.has(item.collection?.id)
+			? { ...item, quietWhenEmpty: true }
+			: item,
+	)
+}
+
+/**
+ * Resolve each block on its own, see resolveBlocks().
+ *
+ * @param {object} page The contribution page.
+ * @param {object} contribution The contribution it belongs to.
+ * @return {Array<object>}
+ */
+function resolveEachBlock(page, contribution) {
 	return (page?.blocks || []).map((block, index) => {
 		const type = block?.type
 		if (type === 'richText') {

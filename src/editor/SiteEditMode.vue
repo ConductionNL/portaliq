@@ -162,7 +162,6 @@
 <script>
 import axios from '@nextcloud/axios'
 import { register, translate } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { reactive } from 'vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
@@ -172,6 +171,7 @@ import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
 import { createPageEditor, createPageSaver } from './index.js'
+import { instanceUrl } from './instanceUrl.js'
 
 import 'gridstack/dist/gridstack.css'
 import '@conduction/nextcloud-vue/css/index.css'
@@ -235,7 +235,7 @@ export default {
 					get: (url) => axios.get(url),
 					put: (url, payload, config) => axios.put(url, payload, config),
 					url: (id) =>
-						generateUrl(
+						instanceUrl(
 							`/apps/openregister/api/objects/portaliq/page/${encodeURIComponent(id)}`,
 						),
 				}),

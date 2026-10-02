@@ -71,6 +71,21 @@ class PortalNoticeLanguage {
 	}//end forOrganisation()
 
 	/**
+	 * The language code of the organisation's portal: its first locale, else
+	 * Dutch. A notice whose text the contributing app declares is picked in
+	 * this language (claim-addressed-change-notices).
+	 *
+	 * @param string $organisation The resident's organisation.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 */
+	public function languageFor(string $organisation): string {
+		return $this->language(organisation: $organisation);
+	}//end languageFor()
+
+	/**
 	 * The first locale of the organisation's portal, else Dutch.
 	 *
 	 * @param string $organisation The resident's organisation.

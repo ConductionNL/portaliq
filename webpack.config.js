@@ -175,9 +175,12 @@ webpackConfig.resolve.alias = {
 // after this guard and never added to it, so `build:admin` deleted
 // `portaliq-site.js` and `/site` rendered an empty div — silently, because a
 // script that 404s produces no console error and an unmounted Vue app logs
-// nothing. Keep this in step with the `entry` blocks of webpack.site.js.
+// nothing. Keep this in step with the `entry` blocks of webpack.site.js and
+// webpack.traffic.js: the site, its editor, the embed frame and the traffic
+// client, each with its `.map` and its lazy chunks (`portaliq-site-…`,
+// `portaliq-site-editor-…`, `portaliq-embed-…`).
 webpackConfig.output.clean = {
-	keep: /^portaliq-site\.js/,
+	keep: /^portaliq-(site|embed|traffic)[.-]/,
 }
 
 // Add SCSS rule to the existing module rules

@@ -26,7 +26,7 @@ Portaliq redeems that code at integriq's exchange address (`POST /apps/integriq/
 Open **Portals**, then a portal, and find the **Sign-in** widget. The settings belong to the portal's organisation and apply to all its portals.
 
 1. For each of DigiD, eHerkenning and eIDAS, choose the organisation's own sign-in service or integriq.
-2. Under **Integriq**, fill in the start address, the exchange address, the consumer id and the consumer secret.
+2. Under **Integriq**, fill in the start address, the exchange address, the consumer id and the consumer secret. Both addresses must start with `https://`.
 3. Press **Save**. "The sign-in settings are saved."
 
 A provider set to integriq without every broker setting is not saved: "A provider can only use integriq once the start address, the exchange address, the consumer id and the secret are all set."

@@ -213,6 +213,12 @@ test('the site renderer refreshes on activity, warns in its own dialog and follo
 	)
 	assert.match(dialog, /role="alertdialog"/)
 	assert.match(dialog, /aria-live="polite"/)
+	assert.match(dialog, /<dialog\s/, 'a native dialog, so Tab stays inside it')
+	assert.match(
+		dialog,
+		/dialog\.showModal\(\)/,
+		'opened as a modal: the page behind it is inert',
+	)
 	const auth = readFileSync(join(ROOT, 'src', 'site', 'lib', 'authApi.js'), 'utf8')
 	assert.match(auth, /export async function refreshSession\(/)
 })
