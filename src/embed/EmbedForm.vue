@@ -8,7 +8,7 @@
 	REQ-SRP-047).
 
 	For now this renders the same plain list of labelled text inputs the React
-	frame (src/portal/components/EmbeddedForm.jsx) rendered, so a framed form
+	frame (the React portal's EmbeddedForm.jsx) rendered, so a framed form
 	works from the day the frame loads this entry. It is meant to be REPLACED
 	by slice c's SchemaForm (src/site/components/c/SchemaForm.vue) once that
 	lands, which knows field types, conditions and file fields. Keep this

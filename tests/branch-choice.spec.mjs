@@ -10,21 +10,18 @@
 //   node --test tests/branch-choice.spec.mjs
 
 import assert from 'node:assert/strict'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { branchOptions } from '../src/portal/lib/branch.js'
-
-const require = createRequire(import.meta.url)
-const babel = require('@babel/core')
-const { createElement } = require('react')
-const { renderToStaticMarkup } = require('react-dom/server')
+import { fileURLToPath } from 'node:url'
+import { branchOptions } from '../src/shared/branch.js'
+import { createPortalApi } from '../src/shared/portalApi.js'
+import { instance } from './support/page-instance.mjs'
+import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests')
 const BASE = '/apps/portaliq/portal/api'
+const SWITCHER = 'src/site/components/BranchSwitcher.vue'
 /**
  * An identity translator with {name} substitution.
  *
@@ -35,36 +32,6 @@ const BASE = '/apps/portaliq/portal/api'
 function t(key, vars = {}) {
 	return key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
 }
-
-/**
- * Compile one portal source file with the portal build's React preset and
- * import it from where `react` resolves; relative imports point at src/portal.
- *
- * @param {string} relative The path under src/portal.
- * @return {Promise<object>} The module.
- */
-async function load(relative) {
-	const source = join(ROOT, 'src', 'portal', relative)
-	const compiled = babel.transformSync(readFileSync(source, 'utf8'), {
-		filename: source,
-		babelrc: false,
-		configFile: false,
-		presets: [['@babel/preset-react', { runtime: 'automatic' }]],
-	})
-	mkdirSync(OUT_DIR, { recursive: true })
-	const out = join(
-		OUT_DIR,
-		relative.replace(/[\\/]/g, '_').replace(/\.jsx?$/, '.mjs'),
-	)
-	const branchLib = pathToFileURL(
-		join(ROOT, 'src', 'portal', 'lib', 'branch.js'),
-	).href
-	writeFileSync(out, compiled.code.replace("'../lib/branch.js'", `'${branchLib}'`))
-	return import(pathToFileURL(out).href)
-}
-
-const { createPortalApi } = await load('../shared/portalApi.js')
-const { default: BranchSwitcher } = await load('components/BranchSwitcher.jsx')
 
 const BRANCHES = [
 	{
@@ -158,57 +125,91 @@ test('choosing a branch stores the new bearer, and a refusal stores nothing', as
 	assert.deepEqual(stored, ['token-2'])
 })
 
-test('the switcher lists the branches with a label, and is absent without two branches', () => {
-	const html = renderToStaticMarkup(
-		createElement(BranchSwitcher, {
-			t,
-			branches: BRANCHES,
-			value: '000087654321',
-			onChange() {},
-		}),
-	)
-	assert.match(
-		html,
-		/<label for="portaliq-branch-choice">Acting for branch<\/label>/,
-	)
+test('the switcher lists the branches with a label, and is absent without two branches', async () => {
+	const session = { branch: '000087654321', branchRestricted: false }
+	const html = await renderSfc(SWITCHER, { t, api: {}, session, initialBranches: BRANCHES })
+	assert.match(html, /<label for="pq-branch-choice" class="utrecht-form-label">Acting for branch<\/label>/)
+	assert.match(html, /<select id="pq-branch-choice" class="utrecht-select"/)
 	assert.match(html, /Whole company/)
-	assert.match(
-		html,
-		/<option value="000087654321" selected="">Korenschoof Zuid, Laan 40, 3521CD Utrecht<\/option>/,
-	)
-	assert.equal(
-		renderToStaticMarkup(
-			createElement(BranchSwitcher, {
-				t,
-				branches: [BRANCHES[0]],
-				value: '',
-				onChange() {},
-			}),
-		),
-		'',
-	)
-	assert.equal(
-		renderToStaticMarkup(
-			createElement(BranchSwitcher, {
-				t,
-				branches: [],
-				value: '',
-				onChange() {},
-			}),
-		),
-		'',
-	)
+	assert.match(html, /<option value="000087654321" selected>Korenschoof Zuid, Laan 40, 3521CD Utrecht<\/option>/)
+
+	// One branch: nothing to choose, so the branch in effect is text.
+	const one = await renderSfc(SWITCHER, { t, api: {}, session, initialBranches: [BRANCHES[0]] })
+	assert.doesNotMatch(one, /pq-branch-choice/)
+	assert.match(one, /data-testid="branch-in-effect"[^>]*>Branch 000087654321</)
+
+	// A whole-company session without branches shows nothing at all.
+	const none = await renderSfc(SWITCHER, { t, api: {}, session: { branch: '' }, initialBranches: [] })
+	assert.doesNotMatch(none, /data-testid="branch/)
 })
 
-test('the header offers the choice only to a session the login did not restrict', () => {
-	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
-	assert.match(
-		app,
-		/import BranchSwitcher from '@portal\/components\/BranchSwitcher\.jsx'/,
-	)
-	assert.match(app, /state\.session\.branchRestricted !== true/)
-	assert.match(app, /api\.fetchBranches\(\)/)
-	assert.match(app, /api\.chooseBranch\(/)
+test('a session the login restricted to a branch never gets the choice, and shows its branch', async () => {
+	const session = { branch: '000012345678', branchRestricted: true }
+	const html = await renderSfc(SWITCHER, { t, api: {}, session, initialBranches: BRANCHES })
+	assert.doesNotMatch(html, /pq-branch-choice/)
+	assert.match(html, /data-testid="branch-in-effect"[^>]*>Signed in for branch 000012345678</)
+
+	// And it reads no branches.
+	const Switcher = await loadSfc(SWITCHER)
+	let asked = 0
+	const ctx = instance(Switcher, { t, api: { fetchBranches: async () => { asked += 1 } }, session })
+	await ctx.load()
+	assert.equal(asked, 0)
+	assert.deepEqual(ctx.branches, [])
+})
+
+test('a whole-company session reads the branches, and a restricted answer reads as none', async () => {
+	const Switcher = await loadSfc(SWITCHER)
+	const session = { branch: '', branchRestricted: false }
+	const ctx = instance(Switcher, { t, session, api: { fetchBranches: async () => ({ branch: '', restricted: false, branches: BRANCHES }) } })
+	await ctx.load()
+	assert.deepEqual(ctx.branches, BRANCHES)
+	assert.equal(ctx.offersChoice, true)
+
+	const refused = instance(Switcher, { t, session, api: { fetchBranches: async () => ({ branch: '', restricted: true, branches: [] }) } })
+	await refused.load()
+	assert.deepEqual(refused.branches, [])
+	assert.equal(refused.offersChoice, false)
+})
+
+test('a chosen branch reloads with the new bearer, and a refusal says so and keeps the page', async () => {
+	const Switcher = await loadSfc(SWITCHER)
+	const session = { branch: '', branchRestricted: false }
+	const chosen = []
+	let reloaded = 0
+	const ok = instance(Switcher, {
+		t,
+		session,
+		initialBranches: BRANCHES,
+		reload: () => { reloaded += 1 },
+		api: { chooseBranch: async (branch) => { chosen.push(branch); return { ok: true } } },
+	})
+	await ok.choose('000087654321')
+	assert.deepEqual(chosen, ['000087654321'])
+	assert.equal(reloaded, 1)
+	assert.equal(ok.refused, false)
+
+	const no = instance(Switcher, {
+		t,
+		session,
+		initialBranches: BRANCHES,
+		reload: () => { reloaded += 1 },
+		api: { chooseBranch: async () => ({ ok: false }) },
+	})
+	await no.choose('000099999999')
+	assert.equal(no.refused, true)
+	assert.equal(reloaded, 1)
+
+	const html = await renderSfc(SWITCHER, { t, api: {}, session, initialBranches: BRANCHES })
+	assert.doesNotMatch(html, /That branch could not be chosen\./, 'no refusal before a choice')
+	const refusedSource = readFileSync(join(ROOT, SWITCHER), 'utf8')
+	assert.match(refusedSource, /role="alert"[\s\S]*That branch could not be chosen\./)
+})
+
+test('the site header mounts the switcher for a signed-in session', () => {
+	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
+	assert.match(app, /import\('\.\/components\/BranchSwitcher\.vue'\)/)
+	assert.match(app, /<BranchSwitcher\s+v-if="session"\s+:t="t"\s+:api="api"\s+:session="session" \/>/)
 })
 
 test('the new strings are translated for every locale the portal ships', () => {

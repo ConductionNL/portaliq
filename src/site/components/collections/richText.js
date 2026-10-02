@@ -3,7 +3,7 @@
 //
 // A `richText` block's markdown as lines of text: `#`, `##` and `###`
 // headings, and paragraphs. Nothing in it becomes markup; the same rules as
-// src/portal/components/RichText.jsx.
+// the React portal's RichText.jsx.
 //
 // Imports nothing, so tests/rich-text.spec.mjs runs it as node.
 //

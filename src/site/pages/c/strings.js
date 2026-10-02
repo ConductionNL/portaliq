@@ -3,7 +3,7 @@
 
 /**
  * The strings of slice c (forms and actions), nl and en. The keys are the
- * English source strings the React portal uses in src/portal/i18n, so a key
+ * English source strings the React portal used, now in src/shared/i18n, so a key
  * the shell's translator already knows reads the same here.
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022

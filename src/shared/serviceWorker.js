@@ -2,15 +2,16 @@
 //
 // parent-pwa-installability: caches the site's own shell (its JS bundle and
 // the HTML entry) so a repeat visit, and an installed app's launch, are fast
-// and survive a flaky connection. It caches the React portal's shell too,
-// until that portal is retired (site-reaches-portal-parity REQ-SRP-045). Deliberately narrow:
+// and survive a flaky connection (site-reaches-portal-parity REQ-SRP-045).
+// The retired React portal's bundle and address are no longer cached: the
+// address now redirects to the site. Deliberately narrow:
 // this is shell caching for installability, not an offline-capable app —
 // no portal DATA is ever cached here.
 //
 // Plain, unbundled JavaScript on purpose: `/js/` is entirely gitignored
 // build output, so a hand-written service worker cannot live there and be
-// reviewable in version control. It lives in src/shared/ so it outlives
-// src/portal/. `PortalManifestController::serviceWorker()` serves
+// reviewable in version control. It lives in src/shared/.
+// `PortalManifestController::serviceWorker()` serves
 // this file's contents as-is; nothing here is a webpack entry.
 //
 // THE ONE RULE THAT MUST NEVER REGRESS (design.md D-1, proposal.md Risk 1):
@@ -27,7 +28,7 @@
 // ends in "/site" exactly like the site's own page. The narrower test would
 // have cached that API answer as if it were the shell.
 
-const CACHE_VERSION = 'portaliq-shell-v2'
+const CACHE_VERSION = 'portaliq-shell-v3'
 
 // Bump CACHE_VERSION on any change to this list, or to the caching logic
 // below — the activate handler then deletes the old cache on next launch
@@ -35,12 +36,7 @@ const CACHE_VERSION = 'portaliq-shell-v2'
 //
 // The site's lazy page chunks are NOT listed: they are only loaded on the
 // route that needs them, and their file names change with every build.
-const SHELL_ASSET_SUFFIXES = [
-	'/js/portaliq-site.js',
-	'/site',
-	'/js/portaliq-portal.js',
-	'/portal',
-]
+const SHELL_ASSET_SUFFIXES = ['/js/portaliq-site.js', '/site']
 
 self.addEventListener('install', () => {
 	self.skipWaiting()

@@ -103,8 +103,8 @@ class PortalIdentityMailerTest extends TestCase {
 
 	/**
 	 * The three ways in open on the Vue site, where their screens are
-	 * (identity-ways-in-screens, portaliq#1021); the e-mail confirmation
-	 * stays on the portal screen that consumes it today.
+	 * (identity-ways-in-screens, portaliq#1021), and so does the e-mail
+	 * confirmation since the React portal retired (REQ-SRP-049).
 	 *
 	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
@@ -113,7 +113,7 @@ class PortalIdentityMailerTest extends TestCase {
 			PortalIdentityMailer::TEMPLATE_REFERENCE_LINK => '/apps/portaliq/site?portal=gemeente-x#',
 			PortalIdentityMailer::TEMPLATE_INVITATION => '/apps/portaliq/site?portal=gemeente-x#',
 			PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION => '/apps/portaliq/site?portal=gemeente-x#',
-			PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION => '/apps/portaliq/portal?portal=gemeente-x#',
+			PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION => '/apps/portaliq/site?portal=gemeente-x#',
 		];
 
 		foreach ($expected as $template => $address) {
@@ -143,7 +143,7 @@ class PortalIdentityMailerTest extends TestCase {
 		$mailer->send(template: PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION, email: 'nieuw@example.org', secret: 'secret-abc', organisation: 'gemeente-x');
 
 		$this->assertSame(
-			['https://portal.example.test/apps/portaliq/portal?org=gemeente-x#confirm-email=secret-abc'],
+			['https://portal.example.test/apps/portaliq/site?org=gemeente-x#confirm-email=secret-abc'],
 			$this->mailed['buttons']
 		);
 		$this->assertStringContainsString('Organisatie X', $this->mailed['subject']);

@@ -11,54 +11,14 @@
 //   node --test tests/access-request-asker.spec.mjs
 
 import assert from 'node:assert/strict'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { createPortalApi } from '../src/shared/portalApi.js'
 import { buildNav, defaultNavKey, shellSections } from '../src/shared/portalNav.js'
-import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
-
-const require = createRequire(import.meta.url)
-const babel = require('@babel/core')
-const { createElement } = require('react')
-const { renderToStaticMarkup } = require('react-dom/server')
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests')
-
-/**
- * Compile one portal source file with the portal build's React preset and
- * import it from where `react` resolves.
- *
- * @param {string} relative The path under src/portal.
- * @return {Promise<object>} The module.
- */
-async function load(relative) {
-	const source = join(ROOT, 'src', 'portal', relative)
-	const compiled = babel.transformSync(readFileSync(source, 'utf8'), {
-		filename: source,
-		babelrc: false,
-		configFile: false,
-		presets: [['@babel/preset-react', { runtime: 'automatic' }]],
-	})
-	mkdirSync(OUT_DIR, { recursive: true })
-	const out = join(
-		OUT_DIR,
-		relative.replace(/[\\/]/g, '_').replace(/\.jsx?$/, '.mjs'),
-	)
-	compileLoading(OUT_DIR)
-	writeFileSync(out, compiled.code.replace("'./Loading.jsx'", `'${LOADING_MODULE}'`))
-	return import(pathToFileURL(out).href)
-}
-
-const { createPortalApi } = await load('../shared/portalApi.js')
-const {
-	default: AccessRequestsPage,
-	newestFirst,
-	requestProblem,
-	stateLabel,
-} = await load('components/AccessRequestsPage.jsx')
 
 const BASE = '/apps/portaliq/portal/api'
 function t(key, vars = {}) {
@@ -128,92 +88,25 @@ test('the asker reads their own requests, and a failure reads as none', async ()
 	assert.deepEqual(await api.fetchMyAccessRequests(), [])
 })
 
-test('a request needs a party and a reason before it is sent', () => {
-	assert.equal(
-		requestProblem({ onBehalfOf: '', reason: 'x' }),
-		'Say whose cases you need access to.',
+test('site: the shell offers the page to every signed-in user', () => {
+	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
+	const registry = readFileSync(
+		join(ROOT, 'src', 'site', 'pages', 'registry.js'),
+		'utf8',
 	)
-	assert.equal(
-		requestProblem({ onBehalfOf: '87654321', reason: '   ' }),
-		'Give a reason for your request.',
-	)
-	assert.equal(
-		requestProblem({ onBehalfOf: '87654321', reason: 'Bookkeeper' }),
-		'',
-	)
-})
-
-test('the newest request comes first', () => {
-	const sorted = newestFirst([
-		{ id: 'old', requestedAt: '2026-09-01T10:00:00+00:00' },
-		{ id: 'new', requestedAt: '2026-09-20T10:00:00+00:00' },
-		{ id: 'none' },
-	])
-	assert.deepEqual(
-		sorted.map((r) => r.id),
-		['new', 'old', 'none'],
-	)
-})
-
-test('each state reads as words', () => {
-	assert.equal(stateLabel('pending'), 'Waiting for an answer')
-	assert.equal(stateLabel('granted'), 'Granted')
-	assert.equal(stateLabel('refused'), 'Refused')
-	assert.equal(stateLabel('something-else'), 'Waiting for an answer')
-})
-
-test('the list shows a pending request and a refusal with its reason', () => {
-	const html = renderToStaticMarkup(
-		createElement(AccessRequestsPage, {
-			api: {},
-			t,
-			initialRequests: [
-				{
-					id: 'r1',
-					onBehalfOf: '87654321',
-					state: 'pending',
-					requestedAt: '2026-09-20T10:00:00+00:00',
-				},
-				{
-					id: 'r2',
-					onBehalfOf: '11223344',
-					state: 'refused',
-					decisionReason: 'No authorisation from the company',
-					requestedAt: '2026-09-10T10:00:00+00:00',
-				},
-			],
-		}),
-	)
-	assert.match(html, /87654321/)
-	assert.match(html, /Waiting for an answer/)
-	assert.match(html, /Refused/)
-	assert.match(html, /No authorisation from the company/)
-	assert.match(html, /Ask for access/)
-	// The form has a label for each field, so a screen reader names them.
-	assert.match(html, /<label for="access-request-party"/)
-	assert.match(html, /<label for="access-request-reason"/)
-})
-
-test('with no requests yet the page says so', () => {
-	const html = renderToStaticMarkup(
-		createElement(AccessRequestsPage, { api: {}, t, initialRequests: [] }),
-	)
-	assert.match(html, /You have not asked for access yet\./)
-})
-
-test('the portal offers the page to every signed-in user', () => {
-	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
+	assert.match(registry, /access: accountPages\.__access__/)
 	assert.match(
 		app,
-		/import AccessRequestsPage from '@portal\/components\/AccessRequestsPage\.jsx'/,
+		/shellSections\(\{ session: this\.session, \.\.\.this\.account \}\)/,
 	)
 	assert.equal(shellSections({ session: {}, contributions: {} }).access, true)
 	assert.equal(shellSections({ session: null, contributions: {} }).access, false)
 	// The shared navigation offers it, after the content pages, never first.
-	const nav = buildNav([{ app: 'a', pages: [{ id: 'p' }] }], (key) => key, { access: true })
+	const nav = buildNav([{ app: 'a', pages: [{ id: 'p' }] }], (key) => key, {
+		access: true,
+	})
 	assert.ok(nav.some((entry) => entry.special === 'access'))
 	assert.equal(defaultNavKey(nav), 'a:p')
-	assert.match(app, /active\.special === 'access' && \(\s*<AccessRequestsPage/)
 })
 
 test('every new string has a Dutch translation', () => {
@@ -254,22 +147,43 @@ test('every new string has a Dutch translation', () => {
 // The Vue port on the site (site-reaches-portal-parity T19, REQ-SRP-039).
 
 const { renderSfc, loadSfc } = await import('./support/render-sfc.mjs')
-const site = await import(pathToFileURL(join(ROOT, 'src', 'site', 'pages', 'e', 'accessRequests.js')).href)
+const site = await import(
+	pathToFileURL(join(ROOT, 'src', 'site', 'pages', 'e', 'accessRequests.js')).href
+)
 const SITE_PAGE = 'src/site/pages/e/AccessRequestsPage.vue'
 
 test('site: a request needs a party and a reason, the newest comes first, and each state reads as words', () => {
-	assert.equal(site.requestProblem({ onBehalfOf: ' ', reason: 'x' }), 'Say whose cases you need access to.')
-	assert.equal(site.requestProblem({ onBehalfOf: '1', reason: ' ' }), 'Give a reason for your request.')
+	assert.equal(
+		site.requestProblem({ onBehalfOf: ' ', reason: 'x' }),
+		'Say whose cases you need access to.',
+	)
+	assert.equal(
+		site.requestProblem({ onBehalfOf: '1', reason: ' ' }),
+		'Give a reason for your request.',
+	)
 	assert.equal(site.requestProblem({ onBehalfOf: '1', reason: 'x' }), '')
 	assert.deepEqual(
-		site.newestFirst([{ id: 'a' }, { id: 'b', requestedAt: '2026-01-01' }, { id: 'c', requestedAt: '2026-02-01' }]).map((r) => r.id),
+		site
+			.newestFirst([
+				{ id: 'a' },
+				{ id: 'b', requestedAt: '2026-01-01' },
+				{ id: 'c', requestedAt: '2026-02-01' },
+			])
+			.map((r) => r.id),
 		['c', 'b', 'a'],
 	)
 	assert.equal(site.stateLabel('granted'), 'Granted')
 	assert.equal(site.stateLabel('refused'), 'Refused')
 	assert.equal(site.stateLabel('pending'), 'Waiting for an answer')
-	assert.equal(site.sendProblem({ ok: false, error: 'reason_required' }), 'Give a reason for your request.')
-	assert.equal(site.sendProblem({ ok: false, error: 'other' }), 'Your request could not be sent. Try again later.')
+	assert.equal(site.stateLabel('something-else'), 'Waiting for an answer')
+	assert.equal(
+		site.sendProblem({ ok: false, error: 'reason_required' }),
+		'Give a reason for your request.',
+	)
+	assert.equal(
+		site.sendProblem({ ok: false, error: 'other' }),
+		'Your request could not be sent. Try again later.',
+	)
 })
 
 test('site: the list shows a pending request and a refusal with its reason, with a label for each field', async () => {
@@ -278,14 +192,27 @@ test('site: the list shows a pending request and a refusal with its reason, with
 		t,
 		locale: 'en',
 		initialRequests: [
-			{ id: 'r2', onBehalfOf: '11223344', state: 'refused', decisionReason: 'No authorisation from the company', requestedAt: '2026-09-10T10:00:00+00:00' },
-			{ id: 'r1', onBehalfOf: '87654321', state: 'pending', requestedAt: '2026-09-20T10:00:00+00:00' },
+			{
+				id: 'r2',
+				onBehalfOf: '11223344',
+				state: 'refused',
+				decisionReason: 'No authorisation from the company',
+				requestedAt: '2026-09-10T10:00:00+00:00',
+			},
+			{
+				id: 'r1',
+				onBehalfOf: '87654321',
+				state: 'pending',
+				requestedAt: '2026-09-20T10:00:00+00:00',
+			},
 		],
 	})
 	assert.ok(html.indexOf('87654321') < html.indexOf('11223344'), 'newest first')
 	assert.match(html, /data-state="pending"/)
 	assert.match(html, /Waiting for an answer/)
+	assert.match(html, /Refused/)
 	assert.match(html, /Reason: No authorisation from the company/)
+	assert.match(html, /Ask for access/)
 	assert.match(html, /Asked on September 20, 2026|Asked on 20 September 2026/)
 	assert.match(html, /<label for="access-request-party"/)
 	assert.match(html, /<label for="access-request-reason"/)
@@ -297,10 +224,22 @@ test('site: sending checks the form first, then asks, empties the form and lists
 	const page = await loadSfc(SITE_PAGE)
 	const asked = []
 	const api = {
-		requestAccess: async (party, reason) => { asked.push([party, reason]); return { ok: true } },
-		fetchMyAccessRequests: async () => [{ id: 'n', onBehalfOf: '87654321', state: 'pending' }],
+		requestAccess: async (party, reason) => {
+			asked.push([party, reason])
+			return { ok: true }
+		},
+		fetchMyAccessRequests: async () => [
+			{ id: 'n', onBehalfOf: '87654321', state: 'pending' },
+		],
 	}
-	const vm = { api, draft: { onBehalfOf: '', reason: '' }, problem: '', notice: '', busy: false, requests: [] }
+	const vm = {
+		api,
+		draft: { onBehalfOf: '', reason: '' },
+		problem: '',
+		notice: '',
+		busy: false,
+		requests: [],
+	}
 	await page.methods.send.call(vm)
 	assert.equal(vm.problem, 'Say whose cases you need access to.')
 	assert.equal(asked.length, 0, 'nothing is sent while the form is incomplete')
