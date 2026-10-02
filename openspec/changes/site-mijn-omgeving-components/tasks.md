@@ -4,8 +4,8 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
 
 ## Wave 1: live join rows only (REQ-SMO-023)
 
-- [ ] **T1**: `via.when` and `via.validUntilField` in `PortalObjectReader::isValidVia()` and `verifiedJoinTargets()`; `when` checked with the `RowWhenNormaliser` grammar (design D9).
-  - PHPUnit `PortalObjectReaderTest::testAJoinRowOutsideWhenGrantsNothing`, `::testAnExpiredJoinRowGrantsNothing`, `::testAnEmptyValidUntilGrants`, `::testAMalformedWhenFailsClosed`
+- [x] **T1**: `via.when` and `via.validUntilField` in `PortalObjectReader::isValidVia()` and `verifiedJoinTargets()`; `when` checked with the `RowWhenNormaliser` grammar (design D9).
+  - PHPUnit `PortalObjectReaderTest::testAJoinRowOutsideWhenGrantsNothing`, `::testAnExpiredJoinRowGrantsNothing` (an empty end date grants inside it), `::testAMalformedLiveRowMemberFailsClosed`, `::testASingleReadThroughAWithdrawnJoinRowIsNull`; the rule lives in `ViaJoinRowFilter`
   - Mutation: removing either check fails a test
 
 ## Wave 2: rows, badges, empty and loading states (REQ-SMO-001, REQ-SMO-004, REQ-SMO-009; blocks `tasks`, `inbox` of REQ-SMO-021)
