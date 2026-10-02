@@ -52,6 +52,19 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	private const SCHEMA = 'pushSubscription';
 
 	/**
+	 * The browsers' push services an endpoint may point at (a host is one of
+	 * these or a sub-domain of one). Once a real Web Push sender replaces the
+	 * logging one, the server calls the stored endpoint, so it must never be
+	 * an address the caller chose freely.
+	 */
+	private const PUSH_SERVICE_HOSTS = [
+		'fcm.googleapis.com',
+		'updates.push.services.mozilla.com',
+		'push.apple.com',
+		'notify.windows.com',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
@@ -75,7 +88,9 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 * @param array<string, mixed> $keys `{p256dh, auth}`.
 	 * @param string $deviceRef Optional device reference.
 	 *
-	 * @return JSONResponse 204 on success, 401 without a resolved subject.
+	 * @return JSONResponse 204 on success, 400 for an endpoint that is not an
+	 *                      https address of a known push service, 401 without
+	 *                      a resolved subject.
 	 *
 	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
 	 */
@@ -88,7 +103,7 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($endpoint === '') {
+		if ($this->isPushServiceEndpoint(endpoint: $endpoint) === false) {
 			return new JSONResponse(['error' => 'invalid_request'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -173,6 +188,29 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 
 		return new JSONResponse([], Http::STATUS_NO_CONTENT);
 	}//end unsubscribe()
+
+	/**
+	 * Whether an endpoint is an https address on one of the browsers' push
+	 * services.
+	 *
+	 * @param string $endpoint The push endpoint URL.
+	 *
+	 * @return bool
+	 */
+	private function isPushServiceEndpoint(string $endpoint): bool {
+		if (strtolower((string)parse_url($endpoint, PHP_URL_SCHEME)) !== 'https') {
+			return false;
+		}
+
+		$host = strtolower((string)parse_url($endpoint, PHP_URL_HOST));
+		foreach (self::PUSH_SERVICE_HOSTS as $service) {
+			if ($host === $service || str_ends_with($host, '.' . $service) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isPushServiceEndpoint()
 
 	/**
 	 * The id of an existing subscription for this subject+endpoint, if any.

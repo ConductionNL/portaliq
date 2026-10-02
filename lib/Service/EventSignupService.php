@@ -64,8 +64,8 @@ class EventSignupService {
 
 	/**
 	 * Attempt a sign-up. Returns null on success; a reason string on refusal
-	 * — the event/role not being reachable by this guardian is
-	 * {@see self::REASON_ROLE_NOT_FOUND} (the controller maps that to 404,
+	 * — the event/role not being reachable by this guardian, or a child that
+	 * is not the guardian's own, is {@see self::REASON_ROLE_NOT_FOUND} (the controller maps that to 404,
 	 * no existence oracle), a full role is {@see self::REASON_ROLE_FULL}
 	 * (422). Nothing is written on ANY refusal path.
 	 *
@@ -80,16 +80,7 @@ class EventSignupService {
 	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
 	 */
 	public function attemptSignup(string $subjectRef, string $eventId, string $roleId, string $childRef = '', string $note = ''): ?string {
-		if ($subjectRef === '' || $eventId === '' || $roleId === '') {
-			return self::REASON_ROLE_NOT_FOUND;
-		}
-
-		$event = $this->feedReader->readOwnEvent(subjectRef: $subjectRef, id: $eventId);
-		if ($event === null) {
-			return self::REASON_ROLE_NOT_FOUND;
-		}
-
-		$role = $this->findRole(event: $event, roleId: $roleId);
+		$role = $this->reachableRole(subjectRef: $subjectRef, eventId: $eventId, roleId: $roleId, childRef: $childRef);
 		if ($role === null) {
 			return self::REASON_ROLE_NOT_FOUND;
 		}
@@ -127,6 +118,35 @@ class EventSignupService {
 
 		return null;
 	}//end attemptSignup()
+
+	/**
+	 * The role this guardian may sign up for, or null: an event in their own
+	 * audience that declares the role, and — for a sign-up that names a child —
+	 * their own child. An adult-only role carries no child.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $eventId The event id.
+	 * @param string $roleId The signup role id.
+	 * @param string $childRef The child, or '' for an adult-only role.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function reachableRole(string $subjectRef, string $eventId, string $roleId, string $childRef): ?array {
+		if ($subjectRef === '' || $eventId === '' || $roleId === '') {
+			return null;
+		}
+
+		$event = $this->feedReader->readOwnEvent(subjectRef: $subjectRef, id: $eventId);
+		if ($event === null) {
+			return null;
+		}
+
+		if ($childRef !== '' && $this->feedReader->isOwnChild(subjectRef: $subjectRef, childRef: $childRef) === false) {
+			return null;
+		}
+
+		return $this->findRole(event: $event, roleId: $roleId);
+	}//end reachableRole()
 
 	/**
 	 * Find a declared role on an event by id.

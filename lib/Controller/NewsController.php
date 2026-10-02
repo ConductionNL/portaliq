@@ -85,23 +85,26 @@ class NewsController extends Controller {
 	 * only on the framework attribute, and gives future role-narrowing (e.g.
 	 * a dedicated staff group) exactly one place to land.
 	 *
-	 * @return void
+	 * @return string The staff member's user id.
 	 *
 	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
 	 */
-	private function requireAuthenticatedStaff(): void {
-		if ($this->userSession->getUser() === null) {
+	private function requireAuthenticatedStaff(): string {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
 			throw new OCSForbiddenException('Authentication required');
 		}
+
+		return $user->getUID();
 	}//end requireAuthenticatedStaff()
 
 	/**
-	 * Create a draft news item.
+	 * Create a draft news item. The author is the signed-in staff member,
+	 * never a value from the request.
 	 *
 	 * @param string $title The title.
 	 * @param string $body The body.
 	 * @param array<string, mixed> $target The target (schoolRef/groupRefs/childRefs).
-	 * @param string $authorRef The authoring staff subjectRef.
 	 * @param array<int, string> $photoRefs Attached photo references.
 	 *
 	 * @return JSONResponse The created object, or a 400/500.
@@ -109,8 +112,8 @@ class NewsController extends Controller {
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 */
 	#[NoAdminRequired]
-	public function create(string $title, string $body, array $target, string $authorRef, array $photoRefs = []): JSONResponse {
-		$this->requireAuthenticatedStaff();
+	public function create(string $title, string $body, array $target, array $photoRefs = []): JSONResponse {
+		$authorRef = $this->requireAuthenticatedStaff();
 
 		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);

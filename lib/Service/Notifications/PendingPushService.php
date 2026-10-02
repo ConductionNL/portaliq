@@ -44,6 +44,13 @@ class PendingPushService {
 	private const SCHEMA = 'pendingPush';
 
 	/**
+	 * Rows read per page. Delivered rows stay in the queue, so every page is
+	 * read until a short one: a fixed first page would, once filled with
+	 * delivered rows, hide every later push for good.
+	 */
+	private const PAGE = 500;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister services.
@@ -113,25 +120,31 @@ class PendingPushService {
 			return 0;
 		}
 
-		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: pending push read failed', ['reason' => $e->getMessage()]);
-			return 0;
-		}
-
-		if (is_array($rows) === false) {
-			return 0;
-		}
-
 		$delivered = 0;
-		foreach ($rows as $row) {
-			if ($this->deliverIfDue(objectService: $objectService, row: $row, now: $now) === true) {
-				$delivered++;
+		$offset = 0;
+		do {
+			try {
+				$objectService->setRegister(register: self::REGISTER);
+				$objectService->setSchema(schema: self::SCHEMA);
+				$rows = $objectService->findAll(config: ['filters' => [], 'limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
+			} catch (Throwable $e) {
+				$this->logger->warning('Portaliq: pending push read failed', ['reason' => $e->getMessage()]);
+				return $delivered;
 			}
-		}
+
+			if (is_array($rows) === false) {
+				return $delivered;
+			}
+
+			foreach ($rows as $row) {
+				if ($this->deliverIfDue(objectService: $objectService, row: $row, now: $now) === true) {
+					$delivered++;
+				}
+			}
+
+			$offset += self::PAGE;
+			$pageSize = count($rows);
+		} while ($pageSize === self::PAGE);
 
 		return $delivered;
 	}//end deliverDue()
@@ -152,7 +165,22 @@ class PendingPushService {
 		}
 
 		$deliverAfter = (string)($normalised['deliverAfter'] ?? '');
-		if ($deliverAfter === '' || new DateTimeImmutable($deliverAfter) > $now) {
+		if ($deliverAfter === '') {
+			return false;
+		}
+
+		try {
+			$due = new DateTimeImmutable($deliverAfter);
+		} catch (Throwable $e) {
+			// One malformed row is skipped; it must not stop the rows after it.
+			$this->logger->warning(
+				'Portaliq: pending push has an unreadable deliverAfter',
+				['id' => $this->rowId(row: $normalised), 'reason' => $e->getMessage()]
+			);
+			return false;
+		}
+
+		if ($due > $now) {
 			return false;
 		}
 

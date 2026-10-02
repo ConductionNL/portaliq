@@ -9,54 +9,56 @@
 	and the same rules as the portal SPA's IdleWarningDialog.jsx: a countdown
 	on screen, the remaining time spoken once a minute, focus on the action
 	that keeps the visitor signed in, and near the cap only "Sign in again".
+	A native modal dialog, as WithdrawCaseConfirm is: `showModal()` keeps Tab
+	inside it and makes the page behind it inert while the countdown runs.
+	Escape does not dismiss it; the visitor chooses one of its actions.
 -->
 <template>
-	<div class="pq-idle-backdrop">
-		<section
-			role="alertdialog"
-			aria-modal="true"
-			aria-labelledby="pq-idle-title"
-			aria-describedby="pq-idle-body"
-			class="pq-idle-warning"
-			data-testid="site-idle-warning">
-			<h2 id="pq-idle-title" class="utrecht-heading-2">
-				{{ t('You will be signed out soon') }}
-			</h2>
-			<p id="pq-idle-body" class="utrecht-paragraph">
-				{{ sentence(left) }}
-			</p>
-			<p class="pq-idle-spoken" aria-live="polite">
-				{{ sentence(Math.ceil(Math.max(0, left) / 60) * 60) }}
-			</p>
-			<div class="pq-idle-buttons">
-				<button
-					v-if="extendable"
-					ref="first"
-					type="button"
-					class="utrecht-button utrecht-button--primary-action"
-					data-testid="site-idle-stay"
-					@click="$emit('stay')">
-					{{ t('Stay signed in') }}
-				</button>
-				<button
-					v-if="extendable"
-					type="button"
-					class="utrecht-button utrecht-button--secondary-action"
-					@click="$emit('signout')">
-					{{ t('Sign out') }}
-				</button>
-				<button
-					v-else
-					ref="first"
-					type="button"
-					class="utrecht-button utrecht-button--primary-action"
-					data-testid="site-idle-sign-in-again"
-					@click="$emit('signout')">
-					{{ t('Sign in again') }}
-				</button>
-			</div>
-		</section>
-	</div>
+	<dialog
+		ref="dialog"
+		role="alertdialog"
+		aria-labelledby="pq-idle-title"
+		aria-describedby="pq-idle-body"
+		class="pq-idle-warning"
+		data-testid="site-idle-warning"
+		@cancel.prevent>
+		<h2 id="pq-idle-title" class="utrecht-heading-2">
+			{{ t('You will be signed out soon') }}
+		</h2>
+		<p id="pq-idle-body" class="utrecht-paragraph">
+			{{ sentence(left) }}
+		</p>
+		<p class="pq-idle-spoken" aria-live="polite">
+			{{ sentence(Math.ceil(Math.max(0, left) / 60) * 60) }}
+		</p>
+		<div class="pq-idle-buttons">
+			<button
+				v-if="extendable"
+				ref="first"
+				type="button"
+				class="utrecht-button utrecht-button--primary-action"
+				data-testid="site-idle-stay"
+				@click="$emit('stay')">
+				{{ t('Stay signed in') }}
+			</button>
+			<button
+				v-if="extendable"
+				type="button"
+				class="utrecht-button utrecht-button--secondary-action"
+				@click="$emit('signout')">
+				{{ t('Sign out') }}
+			</button>
+			<button
+				v-else
+				ref="first"
+				type="button"
+				class="utrecht-button utrecht-button--primary-action"
+				data-testid="site-idle-sign-in-again"
+				@click="$emit('signout')">
+				{{ t('Sign in again') }}
+			</button>
+		</div>
+	</dialog>
 </template>
 
 <script>
@@ -105,11 +107,17 @@ export default {
 	},
 
 	/**
-	 * Start the countdown and focus the first action.
+	 * Open as a modal, start the countdown and focus the first action.
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 	 */
 	mounted() {
+		const dialog = this.$refs.dialog
+		if (typeof dialog?.showModal === 'function') {
+			dialog.showModal()
+		} else {
+			dialog?.setAttribute('open', '')
+		}
 		this.tick = setInterval(() => {
 			this.left = this.times.expiresAt - Math.floor(Date.now() / 1000)
 		}, 1000)
@@ -117,12 +125,18 @@ export default {
 	},
 
 	/**
-	 * Stop the countdown.
+	 * Stop the countdown and close the modal.
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 	 */
 	beforeUnmount() {
 		clearInterval(this.tick)
+		if (
+			this.$refs.dialog?.open
+			&& typeof this.$refs.dialog.close === 'function'
+		) {
+			this.$refs.dialog.close()
+		}
 	},
 
 	methods: {
@@ -167,22 +181,16 @@ export default {
 </script>
 
 <style scoped>
-.pq-idle-backdrop {
-	position: fixed;
-	inset: 0;
-	z-index: 1000;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 16px;
-	background: rgb(0 0 0 / 40%);
-}
-
 .pq-idle-warning {
-	max-width: 32rem;
+	max-width: min(32rem, calc(100vw - 32px));
 	padding: 24px;
+	border: none;
 	background: var(--utrecht-document-background-color, Canvas);
 	color: var(--utrecht-document-color, CanvasText);
+}
+
+.pq-idle-warning::backdrop {
+	background: rgb(0 0 0 / 40%);
 }
 
 .pq-idle-buttons {

@@ -18,9 +18,10 @@ class EventRsvpServiceTest extends TestCase {
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
 
-	private function feedReader(?array $event): EventFeedReader {
+	private function feedReader(?array $event, bool $ownChild = true): EventFeedReader {
 		$reader = $this->createMock(EventFeedReader::class);
 		$reader->method('readOwnEvent')->willReturn($event);
+		$reader->method('isOwnChild')->willReturn($ownChild);
 		return $reader;
 	}//end feedReader()
 
@@ -32,6 +33,14 @@ class EventRsvpServiceTest extends TestCase {
 		$service2 = new EventRsvpService($this->createMock(ContainerInterface::class), $disabled, $this->createMock(LoggerInterface::class));
 		$this->assertFalse($service2->rsvp('g1', 'e1', 'child-1', 'yes'));
 	}//end testReturnsFalseWhenTheEventIsNotInAudienceOrRsvpDisabled()
+
+	public function testReturnsFalseForAChildThatIsNotTheGuardiansOwn(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+
+		$service = new EventRsvpService($container, $this->feedReader(['id' => 'e1', 'rsvpEnabled' => true], false), $this->createMock(LoggerInterface::class));
+		$this->assertFalse($service->rsvp('g1', 'e1', 'someone-elses-child', 'yes'));
+	}//end testReturnsFalseForAChildThatIsNotTheGuardiansOwn()
 
 	public function testRejectsAnInvalidResponseValue(): void {
 		$service = new EventRsvpService($this->createMock(ContainerInterface::class), $this->feedReader(['id' => 'e1', 'rsvpEnabled' => true]), $this->createMock(LoggerInterface::class));

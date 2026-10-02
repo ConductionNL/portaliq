@@ -76,13 +76,13 @@ class NewsControllerTest extends TestCase {
 		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
 
 		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
-		$controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']], 'staff-1');
+		$controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]);
 	}//end testCreateRefusesAnUnauthenticatedCaller()
 
 	public function testCreateRejectsATargetWithNoDimension(): void {
 		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
 
-		$response = $controller->create('Title', 'Body', [], 'staff-1');
+		$response = $controller->create('Title', 'Body', []);
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 	}//end testCreateRejectsATargetWithNoDimension()
@@ -104,11 +104,11 @@ class NewsControllerTest extends TestCase {
 		};
 
 		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
-		$response = $controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']], 'staff-1');
+		$response = $controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('draft', $objectService->saved['status']);
-		$this->assertSame('staff-1', $objectService->saved['authorRef']);
+		$this->assertSame('staff-directie-1', $objectService->saved['authorRef']);
 		$this->assertSame('n1', $response->getData()['id']);
 	}//end testCreateSavesADraftWithAValidTarget()
 

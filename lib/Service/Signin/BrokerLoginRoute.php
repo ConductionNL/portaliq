@@ -86,8 +86,11 @@ class BrokerLoginRoute {
 	/**
 	 * The broker settings, with the secret, or null when any is missing.
 	 *
-	 * Both addresses must be absolute http(s) urls. The secret is never in
-	 * the override: the caller reads it from its own sensitive entry.
+	 * Both addresses must be absolute https urls: the envelope's claims are
+	 * trusted on the strength of the back channel alone, so a plain http
+	 * exchange would let anyone on the network path forge a sign-in. The
+	 * secret is never in the override: the caller reads it from its own
+	 * sensitive entry.
 	 *
 	 * @param array<string, mixed> $overrides The organisation's presentation override.
 	 * @param string               $secret    The consumer secret.
@@ -114,7 +117,7 @@ class BrokerLoginRoute {
 
 
 	/**
-	 * An absolute http(s) address, or null.
+	 * An absolute https address, or null.
 	 *
 	 * @param mixed $value The configured value.
 	 *
@@ -127,7 +130,7 @@ class BrokerLoginRoute {
 
 		$value = trim($value);
 		$scheme = strtolower((string)parse_url($value, PHP_URL_SCHEME));
-		if (in_array($scheme, ['http', 'https'], true) === false || (string)parse_url($value, PHP_URL_HOST) === '') {
+		if ($scheme !== 'https' || (string)parse_url($value, PHP_URL_HOST) === '') {
 			return null;
 		}
 
