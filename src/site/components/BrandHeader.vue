@@ -242,6 +242,27 @@ export default {
 }
 
 /*
+ * ON A PHONE THE MASTHEAD WRAPS. Its height is fixed by the design system,
+ * and signed in it holds the name, "Mijn omgeving" and "Uitloggen" beside
+ * the logo. Measured at 390 px: the site name was cut to "N TILB" and the
+ * sign-out button sat over the blue bar. Below tablet width the controls
+ * take their own row under the logo instead.
+ */
+@media (max-width: 767px) {
+	.pq-site__header .ac-header__navigation-main {
+		flex-wrap: wrap;
+		block-size: auto;
+		min-block-size: var(--navigation-bar-height, 72px);
+		row-gap: 8px;
+		padding-block-end: 8px;
+	}
+
+	.pq-site__header .ac-header__right-section {
+		margin-inline: 16px;
+	}
+}
+
+/*
  * THE BREADCRUMB IS ONE LINE. App.vue carried this rule scoped, and a scoped
  * rule never reaches a child component's elements, so the trail rendered as
  * three stacked lines on every page. It belongs with the markup it styles.

@@ -239,6 +239,12 @@ test('on a phone the menu folds behind one button that says whether it is open',
 	assert.match(area, /\.pq-account--with-menu \{\s*display: grid;\s*grid-template-columns: minmax\(0, 1fr\);/)
 	assert.match(area, /@media \(min-width: 768px\) \{\s*\.pq-account--with-menu \{\s*grid-template-columns: minmax\(180px, 260px\) minmax\(0, 1fr\);/)
 	assert.doesNotMatch(sfc + area, /(?:^|[^-])width:\s*\d{3,}px/m)
+
+	// Signed in, the masthead's controls take their own row on a phone, so
+	// the site name and the sign-out button are not squeezed over the bar.
+	const header = read('src', 'site', 'components', 'BrandHeader.vue')
+	const narrow = header.slice(header.indexOf('@media (max-width: 767px)'))
+	assert.match(narrow, /\.ac-header__navigation-main \{\s*flex-wrap: wrap;\s*block-size: auto;/)
 })
 
 test('the signed-in area shows the menu only with a session and groups', async () => {
