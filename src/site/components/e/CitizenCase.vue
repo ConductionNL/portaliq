@@ -252,7 +252,7 @@ export default {
 		},
 
 		fields() {
-			return caseFieldNames(this.caseRow)
+			return caseFieldNames(this.caseRow, this.writableSet)
 		},
 
 		withdrawal() {
