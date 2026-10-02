@@ -72,3 +72,13 @@ A `collection` block MAY declare `lookups`, each with `as`, a `collection` of th
 - WHEN her homework table renders with a lookup `as: 'status'` over her submissions
 - THEN the rows read "Ingeleverd", "Open" and "Te laat ingeleverd"
 - @e2e exclude pinned by `tests/record-page.spec.mjs` ("a lookup labels each homework row") and `RecordPageNormaliserTest::testAGroupBoundBlockKeepsItsGroupFieldAndLookups`
+
+### Requirement: The site MUST ask the portal API in the site's language
+
+The site MUST send its own language as `Accept-Language` on every read of the portal API, so a contributing app that answers in the reader's language (learniq's parent sections) answers a Dutch site in Dutch, whatever language the visitor's browser prefers.
+
+#### Scenario: A guardian on an English browser reads learniq's sections in Dutch
+- GIVEN the Wilgenboom site is Dutch and the guardian's browser prefers English
+- WHEN the site reads her contributions
+- THEN the request carries `Accept-Language: nl` and learniq's sections read "Mijn kinderen"
+- @e2e exclude pinned by `tests/portal-language.spec.mjs`; the live check reads the sections on the Wilgenboom site

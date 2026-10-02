@@ -110,7 +110,7 @@
     "check:site-collections": "node --test tests/site-collections.spec.mjs",
     "check:collection-loader": "node --test tests/collection-loader.spec.mjs",
     "check:collection-groups": "node --test tests/collection-groups.spec.mjs",
-    "check:record-page": "node --test tests/record-page.spec.mjs",
+    "check:record-page": "node --test tests/record-page.spec.mjs tests/portal-language.spec.mjs",
     "check:array-cells": "node --test tests/array-cells.spec.mjs",
     "check:rich-text": "node --test tests/rich-text.spec.mjs",
     "check:tasks-page": "node --test tests/tasks-page.spec.mjs",

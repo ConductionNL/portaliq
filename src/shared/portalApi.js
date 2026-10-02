@@ -81,9 +81,15 @@ export function createPortalApi(config, store = {}) {
 	// The portal this page is served as. The server applies that portal's
 	// hidden case types, not another portal's of the same organisation
 	// (operate-show-per-case-type).
-	const portalHeader = config.organisationSlug
-		? { 'X-Portaliq-Portal': config.organisationSlug }
-		: {}
+	const portalHeader = {
+		...(config.organisationSlug
+			? { 'X-Portaliq-Portal': config.organisationSlug }
+			: {}),
+		// The site's own language, so a contributing app answers a Dutch site
+		// in Dutch whatever the visitor's browser prefers
+		// (contribution-record-page).
+		...(config.language ? { 'Accept-Language': config.language } : {}),
+	}
 
 	/**
 	 *
