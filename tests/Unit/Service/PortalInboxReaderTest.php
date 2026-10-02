@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\Notifications\MessageBoxDeliveries;
+use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -532,4 +533,130 @@ class PortalInboxReaderTest extends TestCase {
 		$this->assertSame(['Een', 'Twee', 'Zonder id'], array_column($messages, 'subject'));
 		$this->assertSame(['inbox', 'inbox', 'inbox'], array_column(array_column($messages, '_source'), 'collection'));
 	}//end testADeclaredPortalMessageInboxShowsEachNoticeOnce()
+
+	/**
+	 * A dossiq-shaped inbox: the collection names its own fields, and the row
+	 * the screen gets carries the text, the date and the unread state.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The dossiq rows.
+	 * @param array<string, mixed>             $extra Extra collection keys.
+	 *
+	 * @return array{0: array<string, mixed>, 1: PortalObjectReader}
+	 */
+	private function dossiqInbox(array $rows, array $extra = []): array {
+		$aggregate = ['contributions' => [[
+			'app' => 'dossiq',
+			'label' => 'Zaken',
+			'collections' => [array_merge(
+				[
+					'id' => 'berichten',
+					'kind' => 'inbox',
+					'register' => 'dossiq',
+					'schema' => 'portaalBericht',
+					'scopeField' => 'recipientRef',
+					'messageFields' => ['body' => 'content', 'receivedAt' => 'sentAt', 'readAt' => 'readByRecipientAt', 'attachments' => 'attachments'],
+				],
+				$extra
+			)],
+		]]];
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			static fn (string $register, string $schema): array => ($schema === 'portalMessage' ? [['id' => 'own', 'subject' => 'Ontvangen', 'receivedAt' => '2026-10-01T09:00:00Z', 'read' => false]] : $rows)
+		);
+
+		return [$aggregate, $reader];
+	}//end dossiqInbox()
+
+	/**
+	 * portaliq#702: a dossiq message shows its text and date.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 */
+	public function testDeclaredMessageFieldsFillTheInboxRow(): void {
+		[$aggregate, $reader] = $this->dossiqInbox([
+			['id' => 'b1', 'subject' => 'Besluit', 'content' => 'Uw verzoek is toegekend.', 'sentAt' => '2026-10-02T10:00:00Z', 'attachments' => ['f1']],
+		]);
+
+		$messages = (new PortalInboxReader($reader))->aggregateInbox(self::SUBJECT, $aggregate);
+		$dossiq = $messages[0];
+
+		$this->assertSame('b1', $dossiq['id']);
+		$this->assertSame('Uw verzoek is toegekend.', $dossiq['body']);
+		$this->assertSame('2026-10-02T10:00:00Z', $dossiq['receivedAt']);
+		$this->assertSame(['f1'], $dossiq['attachments']);
+		$this->assertFalse($dossiq['read']);
+	}//end testDeclaredMessageFieldsFillTheInboxRow()
+
+	/**
+	 * A read date reads as read, and the unread count follows it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 */
+	public function testReadAtMarksARowRead(): void {
+		[$aggregate, $reader] = $this->dossiqInbox([
+			['id' => 'b1', 'subject' => 'Gelezen', 'sentAt' => '2026-10-02T10:00:00Z', 'readByRecipientAt' => '2026-10-02T11:00:00Z'],
+			['id' => 'b2', 'subject' => 'Nieuw', 'sentAt' => '2026-10-02T12:00:00Z'],
+		]);
+
+		$inbox = new PortalInboxReader($reader);
+		$messages = $inbox->aggregateInbox(self::SUBJECT, $aggregate);
+		$read = array_column($messages, 'read', 'id');
+
+		$this->assertTrue($read['b1']);
+		$this->assertFalse($read['b2']);
+		// b2 and portaliq's own notice are unread.
+		$this->assertSame(2, $inbox->unreadCount(self::SUBJECT, $aggregate));
+	}//end testReadAtMarksARowRead()
+
+	/**
+	 * A dossiq message sorts by its own date, not last.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 */
+	public function testMappedRowsSortByTheirOwnDate(): void {
+		[$aggregate, $reader] = $this->dossiqInbox([
+			['id' => 'older', 'subject' => 'Oud', 'sentAt' => '2026-09-01T10:00:00Z'],
+			['id' => 'newer', 'subject' => 'Nieuw', 'sentAt' => '2026-10-02T10:00:00Z'],
+		]);
+
+		$messages = (new PortalInboxReader($reader))->aggregateInbox(self::SUBJECT, $aggregate);
+
+		$this->assertSame(['newer', 'own', 'older'], array_column($messages, 'id'));
+	}//end testMappedRowsSortByTheirOwnDate()
+
+	/**
+	 * Files are listed only for a collection that declares `filesDownload`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+	 */
+	public function testFilesOnlyWhenDeclared(): void {
+		$row = ['id' => 'b1', 'subject' => 'Besluit', 'sentAt' => '2026-10-02T10:00:00Z'];
+		$listed = [['id' => 7, 'name' => 'besluit.pdf', 'size' => 1200]];
+
+		$files = $this->createMock(PortalFileReader::class);
+		$files->expects($this->once())->method('listFiles')
+			->with('dossiq', 'portaalBericht', 'b1')
+			->willReturn($listed);
+
+		[$aggregate, $reader] = $this->dossiqInbox([$row], ['filesDownload' => true]);
+		$messages = (new PortalInboxReader($reader, null, null, $files))->aggregateInbox(self::SUBJECT, $aggregate);
+		$byId = array_column($messages, null, 'id');
+		$this->assertSame($listed, $byId['b1']['_files']);
+		$this->assertArrayNotHasKey('_files', $byId['own'], 'portaliq notices list no files');
+
+		$never = $this->createMock(PortalFileReader::class);
+		$never->expects($this->never())->method('listFiles');
+		[$plain, $plainReader] = $this->dossiqInbox([$row]);
+		$messages = (new PortalInboxReader($plainReader, null, null, $never))->aggregateInbox(self::SUBJECT, $plain);
+		$this->assertArrayNotHasKey('_files', array_column($messages, null, 'id')['b1']);
+	}//end testFilesOnlyWhenDeclared()
 }//end class

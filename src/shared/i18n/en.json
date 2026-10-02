@@ -325,5 +325,7 @@
 	"Messages and news": "Messages and news",
 	"Your details and account": "Your details and account",
 	"{label} ({source})": "{label} ({source})",
-	"Menu": "Menu"
+	"Menu": "Menu",
+	"Attachments": "Attachments",
+	"The download did not work.": "The download did not work."
 }

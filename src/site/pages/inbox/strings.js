@@ -20,6 +20,7 @@ export default {
 		'Also send letters to {label}': 'Brieven ook naar {label} sturen',
 		'Also sent to {label}.': 'Ook verstuurd naar {label}.',
 		'As written': 'Zoals geschreven',
+		Attachments: 'Bijlagen',
 		'Back to tests': 'Terug naar toetsen',
 		'Back to the list': 'Terug naar de lijst',
 		'Changes on your cases': 'Wijzigingen in uw zaken',
@@ -87,6 +88,7 @@ export default {
 		'Submit task': 'Taak indienen',
 		Task: 'Taak',
 		'Tests you can take': 'Toetsen die je kunt maken',
+		'The download did not work.': 'Downloaden is niet gelukt.',
 		'The tasks are not available right now. Please try again later.':
 			'De taken zijn nu niet beschikbaar. Probeer het later opnieuw.',
 		'The upload was refused. Check the file rules above.':
@@ -139,6 +141,7 @@ export default {
 		'Also send letters to {label}': 'Also send letters to {label}',
 		'Also sent to {label}.': 'Also sent to {label}.',
 		'As written': 'As written',
+		Attachments: 'Attachments',
 		'Back to tests': 'Back to tests',
 		'Back to the list': 'Back to the list',
 		'Changes on your cases': 'Changes on your cases',
@@ -206,6 +209,7 @@ export default {
 		'Submit task': 'Submit task',
 		Task: 'Task',
 		'Tests you can take': 'Tests you can take',
+		'The download did not work.': 'The download did not work.',
 		'The tasks are not available right now. Please try again later.':
 			'The tasks are not available right now. Please try again later.',
 		'The upload was refused. Check the file rules above.':

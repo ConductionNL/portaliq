@@ -325,5 +325,7 @@
 	"Messages and news": "Berichten en nieuws",
 	"Your details and account": "Uw gegevens en account",
 	"{label} ({source})": "{label} ({source})",
-	"Menu": "Menu"
+	"Menu": "Menu",
+	"Attachments": "Bijlagen",
+	"The download did not work.": "Downloaden is niet gelukt."
 }

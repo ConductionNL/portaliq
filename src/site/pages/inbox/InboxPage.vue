@@ -68,6 +68,37 @@
 						</div>
 					</dl>
 
+					<div
+						v-if="attachments(message).length > 0"
+						class="pq-inbox-row__files"
+						data-testid="inbox-row-files">
+						<p
+							:id="`pq-inbox-files-${idOf(message, i)}`"
+							class="utrecht-paragraph pq-inbox-row__files-title">
+							{{ tr('Attachments') }}
+						</p>
+						<ul
+							class="pq-inbox-row__file-list"
+							:aria-labelledby="`pq-inbox-files-${idOf(message, i)}`">
+							<li v-for="file in attachments(message)" :key="file.id">
+								<button
+									type="button"
+									class="utrecht-button utrecht-button--subtle"
+									:disabled="downloadingId === file.id"
+									data-testid="inbox-row-download"
+									@click="download(message, file)">
+									{{ file.name || file.id }}
+								</button>
+							</li>
+						</ul>
+						<p
+							v-if="downloadFailedFor === idOf(message, i)"
+							class="utrecht-paragraph pq-inbox-row__download-error"
+							role="alert">
+							{{ tr('The download did not work.') }}
+						</p>
+					</div>
+
 					<p
 						v-if="delivery(message)"
 						class="utrecht-paragraph pq-inbox-row__delivery">
@@ -118,6 +149,8 @@ import TranslatedText from '../../components/inbox/TranslatedText.vue'
 import { unreadIn } from '../../../shared/inboxUnread.js'
 import { deliveryLine } from '../../../shared/messageBox.js'
 import {
+	attachmentsOf,
+	downloadCollection,
 	formatDateTime,
 	hasReadiness,
 	keepRecordToOpen,
@@ -149,6 +182,8 @@ export default {
 			loading: true,
 			messages: [],
 			busyId: null,
+			downloadingId: null,
+			downloadFailedFor: null,
 			unread: this.contributions?.unreadCount ?? null,
 		}
 	},
@@ -221,6 +256,39 @@ export default {
 		 */
 		readiness(message) {
 			return hasReadiness(message)
+		},
+
+		/**
+		 * @param {object} message A message.
+		 * @return {Array<object>} The files that came with it.
+		 * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+		 */
+		attachments(message) {
+			return attachmentsOf(message)
+		},
+
+		/**
+		 * Download one file of a message through the scoped download, which
+		 * proves the message is the resident's before it serves the file.
+		 *
+		 * @param {object} message The message.
+		 * @param {object} file The file: `id`, `name`.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+		 */
+		async download(message, file) {
+			const id = rowId(message)
+			const collection = downloadCollection(message)
+			if (!id || !collection) {
+				return
+			}
+			this.downloadingId = file.id
+			this.downloadFailedFor = null
+			const result = await this.api.downloadFile(collection, id, file)
+			this.downloadingId = null
+			if (!result?.ok) {
+				this.downloadFailedFor = id
+			}
 		},
 
 		/**
@@ -346,5 +414,19 @@ export default {
 
 .pq-inbox-row__meta dd {
 	margin: 0;
+}
+
+.pq-inbox-row__files-title {
+	margin-block-end: 4px;
+	font-weight: bold;
+}
+
+.pq-inbox-row__file-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
 }
 </style>
