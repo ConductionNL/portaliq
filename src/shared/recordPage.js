@@ -66,17 +66,41 @@ function belongs(row, field, value) {
 }
 
 /**
+ * Whether a row bound to groups is for one of these groups. A row that names
+ * no group (a school-wide event) is for everyone.
+ *
+ * @param {object} row The row.
+ * @param {string} field The row's group field.
+ * @param {Set<string>} groups The groups that count.
+ * @return {boolean}
+ */
+function inGroups(row, field, groups) {
+	const own = row ? row[field] : undefined
+	const list = (Array.isArray(own) ? own : [own]).filter(
+		(value) => value !== null && value !== undefined && value !== '',
+	)
+	return list.length === 0 || list.some((value) => groups.has(String(value)))
+}
+
+/**
  * The rows of a block narrowed to the open record. Without a record or a
  * `recordField` the rows come back as they are; with a record whose value is
- * empty nothing belongs to it, so nothing comes back.
+ * empty nothing belongs to it, so nothing comes back. A block that names a
+ * `recordGroupsField` also keeps only the rows for the given groups (the
+ * record's, or every child's without a record).
  *
  * @param {Array<object>} rows The scoped rows.
- * @param {{recordField?: string, recordKey?: string}|null} scope The block or source.
+ * @param {{recordField?: string, recordKey?: string, recordGroupsField?: string}|null} scope The block or source.
  * @param {object|null} record The open record.
+ * @param {Array<string>|null} [groups] The groups that count, null to skip.
  * @return {Array<object>}
  */
-export function narrowToRecord(rows, scope, record) {
-	const list = Array.isArray(rows) ? rows : []
+export function narrowToRecord(rows, scope, record, groups = null) {
+	let list = Array.isArray(rows) ? rows : []
+	if (scope && scope.recordGroupsField && Array.isArray(groups)) {
+		const set = new Set(groups)
+		list = list.filter((row) => inGroups(row, scope.recordGroupsField, set))
+	}
 	if (!record || !scope || !scope.recordField) {
 		return list
 	}
@@ -85,6 +109,50 @@ export function narrowToRecord(rows, scope, record) {
 		return []
 	}
 	return list.filter((row) => belongs(row, scope.recordField, value))
+}
+
+/**
+ * The rows with each lookup's value written under its `as` name: the
+ * `valueField` of the row in the lookup collection whose `matchField` holds
+ * this row's id, narrowed to the record like a block, labelled through
+ * `values`, else `default`.
+ *
+ * @param {Array<object>} rows The rows.
+ * @param {Array<object>|undefined} lookups The block's lookups.
+ * @param {object} store Loaded rows.
+ * @param {object|null} record The open record.
+ * @return {Array<object>}
+ */
+export function withLookups(rows, lookups, store, record) {
+	if (!Array.isArray(lookups) || lookups.length === 0) {
+		return rows
+	}
+	const indexes = lookups.map((lookup) => {
+		const index = new Map()
+		for (const row of narrowToRecord(
+			store?.[lookup.collection]?.objects,
+			lookup,
+			record,
+		)) {
+			const key = String(row?.[lookup.matchField] ?? '')
+			if (key !== '' && !index.has(key)) {
+				index.set(key, row[lookup.valueField])
+			}
+		}
+		return index
+	})
+	return rows.map((row) => {
+		const out = { ...row }
+		lookups.forEach((lookup, i) => {
+			const raw = indexes[i].get(idOf(row))
+			const labelled =
+				raw !== undefined && raw !== null && lookup.values
+					? lookup.values[String(raw)]
+					: undefined
+			out[lookup.as] = labelled ?? raw ?? lookup.default ?? ''
+		})
+		return out
+	})
 }
 
 /**
@@ -202,7 +270,7 @@ export function dayKey(date) {
  * One calendar item from a row (or an element of a row's list).
  *
  * @param {object} data The row or element.
- * @param {object} fields `startField`, `endField`, `titleField`.
+ * @param {object} fields `startField`, `endField`, `titleField`, `title`.
  * @param {string} kind The kind label.
  * @param {string} key A stable key.
  * @return {object|null}
@@ -212,8 +280,10 @@ function itemOf(data, fields, kind, key) {
 		return null
 	}
 	const start = toDate(data[fields.startField])
-	const title = data[fields.titleField]
-	if (!start || typeof title !== 'string' || title.trim() === '') {
+	const own = fields.titleField ? data[fields.titleField] : ''
+	const title =
+		typeof own === 'string' && own.trim() !== '' ? own : fields.title || ''
+	if (!start || title.trim() === '') {
 		return null
 	}
 	const declaredEnd = fields.endField ? toDate(data[fields.endField]) : null
@@ -236,15 +306,17 @@ function itemOf(data, fields, kind, key) {
  * @param {object} block The calendar block.
  * @param {object} store Loaded rows, `{[collectionId]: {objects}}`.
  * @param {object|null} record The open record.
+ * @param {Array<string>|null} [groups] The groups that count, null to skip.
  * @return {Array<object>}
  */
-export function calendarItems(block, store, record) {
+export function calendarItems(block, store, record, groups = null) {
 	const items = []
 	;(block?.sources || []).forEach((source, s) => {
 		const rows = narrowToRecord(
 			store?.[source.collection]?.objects,
 			source,
 			record,
+			groups,
 		)
 		rows.forEach((row, r) => {
 			const base = `${s}:${idOf(row) || r}`
@@ -388,6 +460,28 @@ export function recordGroups(contribution, store, record) {
 		.filter((row) => String(row?.[link] ?? '') === id)
 		.map((row) => String(row[groups.field] ?? ''))
 		.filter((value) => value !== '')
+}
+
+/**
+ * The groups of every child: each row of the contribution's
+ * `guardianAudience.groups` collection, for a page without an open record.
+ *
+ * @param {object|null} contribution The contribution.
+ * @param {object} store Loaded rows.
+ * @return {Array<string>}
+ */
+export function allGroups(contribution, store) {
+	const groups = contribution?.guardianAudience?.groups
+	if (!groups || !groups.collection || !groups.field) {
+		return []
+	}
+	return [
+		...new Set(
+			(store?.[groups.collection]?.objects || [])
+				.map((row) => String(row?.[groups.field] ?? ''))
+				.filter((value) => value !== ''),
+		),
+	]
 }
 
 /**

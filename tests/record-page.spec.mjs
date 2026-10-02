@@ -15,6 +15,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+	allGroups,
 	calendarItems,
 	dayKey,
 	itemsOnDay,
@@ -25,6 +26,7 @@ import {
 	recordGroups,
 	recordTitle,
 	upcomingItems,
+	withLookups,
 } from '../src/shared/recordPage.js'
 import { collectionIdsFor } from '../src/site/pages/collections/collectionLoader.js'
 import { resolveBlocks } from '../src/site/pages/collections/pageBlocks.js'
@@ -619,4 +621,155 @@ test("another child's record does not open", async () => {
 	assert.doesNotMatch(html, /Iemand Anders/)
 	assert.doesNotMatch(html, /data-testid="kpi-block"/)
 	assert.match(html, /data-testid="record-hint"/)
+})
+
+test("group-bound rows show for the record's groups, school-wide rows for everyone", () => {
+	const events = [
+		{ id: 'a', title: 'Sportdag', schoolId: SCHOOL, cohortIds: [] },
+		{
+			id: 'b',
+			title: 'Schoolreis groep 7',
+			schoolId: SCHOOL,
+			cohortIds: [GROEP7],
+		},
+		{ id: 'c', title: 'Kamp groep 4', schoolId: SCHOOL, cohortIds: [GROEP4] },
+		{
+			id: 'd',
+			title: 'Groep 8 musical',
+			schoolId: SCHOOL,
+			cohortIds: ['groep-8'],
+		},
+	]
+	const scope = {
+		recordField: 'schoolId',
+		recordKey: 'schoolId',
+		recordGroupsField: 'cohortIds',
+	}
+	assert.deepEqual(
+		narrowToRecord(
+			events,
+			scope,
+			vera,
+			recordGroups(contribution, store, vera),
+		).map((e) => e.id),
+		['a', 'b'],
+	)
+	// Without a record: every child's groups, never another group's.
+	assert.deepEqual(allGroups(contribution, store), [GROEP7, GROEP4])
+	assert.deepEqual(
+		narrowToRecord(events, scope, null, allGroups(contribution, store)).map(
+			(e) => e.id,
+		),
+		['a', 'b', 'c'],
+	)
+	assert.equal(
+		narrowToRecord(events, scope, null, null).length,
+		4,
+		'null skips the group rule',
+	)
+})
+
+test("a lookup labels each homework row with the child's own submission", () => {
+	const homework = [
+		{ id: 'h1', title: 'Rekenen blz 12', cohortId: GROEP7 },
+		{ id: 'h2', title: 'Spreekbeurt', cohortId: GROEP7 },
+		{ id: 'h3', title: 'Lezen', cohortId: GROEP7 },
+	]
+	const lookups = [
+		{
+			as: 'status',
+			collection: 'parentSubmissions',
+			matchField: 'assignmentId',
+			valueField: 'lifecycle',
+			recordField: 'learnerRef',
+			values: {
+				submitted: 'Ingeleverd',
+				late: 'Te laat ingeleverd',
+				draft: 'Open',
+			},
+			default: 'Open',
+		},
+	]
+	const withSubmissions = {
+		parentSubmissions: {
+			objects: [
+				{
+					id: 's1',
+					assignmentId: 'h1',
+					learnerRef: VERA,
+					lifecycle: 'submitted',
+				},
+				{
+					id: 's2',
+					assignmentId: 'h2',
+					learnerRef: DAAN,
+					lifecycle: 'submitted',
+				},
+				{
+					id: 's3',
+					assignmentId: 'h3',
+					learnerRef: VERA,
+					lifecycle: 'late',
+				},
+			],
+		},
+	}
+	assert.deepEqual(
+		withLookups(homework, lookups, withSubmissions, vera).map(
+			(row) => row.status,
+		),
+		['Ingeleverd', 'Open', 'Te laat ingeleverd'],
+	)
+	assert.equal(withLookups(homework, undefined, withSubmissions, vera), homework)
+})
+
+test('a calendar source without a title value takes its fixed title', () => {
+	const items = calendarItems(
+		{
+			sources: [
+				{
+					collection: 'slots',
+					startField: 'startsAt',
+					endField: 'endsAt',
+					titleField: 'slotLabel',
+					title: 'Oudergesprek',
+					recordField: 'learnerRef',
+				},
+			],
+		},
+		{
+			slots: {
+				objects: [
+					{
+						id: 'x',
+						learnerRef: VERA,
+						startsAt: '2026-11-03T19:00:00+01:00',
+						endsAt: '2026-11-03T19:10:00+01:00',
+					},
+					{
+						id: 'y',
+						learnerRef: VERA,
+						startsAt: '2026-11-04T19:00:00+01:00',
+						slotLabel: 'Gesprek met juf Anouk',
+					},
+				],
+			},
+		},
+		vera,
+	)
+	assert.deepEqual(
+		items.map((item) => item.title),
+		['Oudergesprek', 'Gesprek met juf Anouk'],
+	)
+})
+
+test('a kpi caption names the school year the cards show', async () => {
+	const html = await renderSfc('src/site/components/collections/KpiCards.vue', {
+		cards: kpiBlock.cards,
+		row: store.parentAttendanceSummary.objects[1],
+		caption: { field: 'schoolYear', label: 'Schooljaar' },
+		t,
+		locale: 'nl',
+	})
+	assert.match(html, /data-testid="kpi-caption"[^>]*>\s*Schooljaar 2026-2027/)
 })

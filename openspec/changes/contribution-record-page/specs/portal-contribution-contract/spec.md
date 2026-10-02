@@ -19,7 +19,13 @@ A contribution page MAY declare `record` with a `collection` id and optional `ti
 
 ### Requirement: A block on a record page MAY narrow its rows to the open record
 
-A `collection`, `kpi` or `calendar` block (per calendar source) MAY declare `recordField` and `recordKey` (default `id`). On an open record the portal MUST show only the rows whose `recordField` value equals the record's `recordKey` value, or, when the row holds a list there, contains it. The narrowing MUST only ever subset the rows the server already scoped to the subject.
+A `collection`, `kpi` or `calendar` block (per calendar source) MAY declare `recordField` and `recordKey` (default `id`). On an open record the portal MUST show only the rows whose `recordField` value equals the record's `recordKey` value, or, when the row holds a list there, contains it. A block or source MAY also declare `recordGroupsField`: a row that names groups there MUST show only for the open record's groups (the rows of the contribution's `guardianAudience.groups` collection that link to the record), or, without an open record, for the groups of every row of that collection; a row that names no group shows for everyone. The narrowing MUST only ever subset the rows the server already scoped to the subject.
+
+#### Scenario: A school trip for another group stays off Vera's page
+- GIVEN school events for the whole school, for Vera's group and for another group, and a source with `recordGroupsField: 'cohortIds'`
+- WHEN Vera's record is open
+- THEN the school-wide event and her group's event show, the other group's does not
+- @e2e exclude pinned by `tests/record-page.spec.mjs` ("group-bound rows show for the record's groups")
 
 #### Scenario: Only Vera's report cards show on Vera's page
 - GIVEN `parentReportCards` rows for two children and a block with `recordField: 'learnerRef'`
@@ -29,7 +35,7 @@ A `collection`, `kpi` or `calendar` block (per calendar source) MAY declare `rec
 
 ### Requirement: A kpi block MUST show figure cards from one row
 
-A `kpi` block names a collection and `cards`, each with a `field`, a `label`, and optional `unit`, `details` (a list of `{field, label}`) and `highlight`. The normaliser MUST drop a card without a field or label and the block when no card survives. `pick: {field, direction}` chooses the row with the highest (`desc`) or lowest (`asc`) value of that field; without `pick` the first row counts. Without a row the portal MUST say there are no figures yet. A highlighted card MUST be marked in text, not by colour alone.
+A `kpi` block names a collection and `cards`, each with a `field`, a `label`, and optional `unit`, `details` (a list of `{field, label}`) and `highlight`. The normaliser MUST drop a card without a field or label and the block when no card survives. `pick: {field, direction}` chooses the row with the highest (`desc`) or lowest (`asc`) value of that field; without `pick` the first row counts. Without a row the portal MUST say there are no figures yet. An optional `caption: {field, label}` MUST show under the heading which value the cards read (for example the school year). A highlighted card MUST be marked in text, not by colour alone.
 
 #### Scenario: A guardian reads her child's absence figures
 - GIVEN an attendance summary row with 5 absent days, 3 with permission and 2 without, and 4 late arrivals of 35 minutes
@@ -39,7 +45,7 @@ A `kpi` block names a collection and `cards`, each with a `field`, a `label`, an
 
 ### Requirement: A calendar block MUST show dated rows as a list and a month
 
-A `calendar` block names `sources`, each with a `collection`, a `startField`, a `titleField`, an optional `endField`, an optional `kind` label and an optional `expand: {field, startField, endField, titleField}` that turns each element of a list field into its own item. The normaliser MUST drop a source whose collection does not resolve, and the block when no source survives. The portal MUST show the items from today onward as a list grouped by month, and a month view with previous and next buttons, both reachable by keyboard and readable on a phone.
+A `calendar` block names `sources`, each with a `collection`, a `startField`, a `titleField` or a fixed `title` (a row without a title value takes the fixed one), an optional `endField`, an optional `kind` label and an optional `expand: {field, startField, endField, titleField}` that turns each element of a list field into its own item. The normaliser MUST drop a source whose collection does not resolve, and the block when no source survives. The portal MUST show the items from today onward as a list grouped by month, and a month view with previous and next buttons, both reachable by keyboard and readable on a phone.
 
 #### Scenario: Holidays, school events and conference times share one calendar
 - GIVEN school events, a report period holding holidays, and a booked conference time
@@ -56,3 +62,13 @@ A `news` block MAY declare `limit` (1 to 20, default 3). The portal MUST show th
 - WHEN Vera's record is open
 - THEN the news block shows the first two
 - @e2e exclude pinned by `tests/record-page.spec.mjs` ("news narrows to the record")
+
+### Requirement: A collection block MAY label its rows from a second collection
+
+A `collection` block MAY declare `lookups`, each with `as`, a `collection` of the same contribution, a `matchField`, a `valueField`, and optional `recordField`, `values` (a map from value to label) and `default`. The normaliser MUST drop a lookup that misses a name or whose collection does not resolve. The portal MUST write under `as`, on each row, the `valueField` of the first row of the lookup collection whose `matchField` holds the row's id (narrowed to the open record through `recordField`), labelled through `values`, else `default`.
+
+#### Scenario: Homework shows whether the child handed it in
+- GIVEN three assignments of Vera's group and her submissions for two of them
+- WHEN her homework table renders with a lookup `as: 'status'` over her submissions
+- THEN the rows read "Ingeleverd", "Open" and "Te laat ingeleverd"
+- @e2e exclude pinned by `tests/record-page.spec.mjs` ("a lookup labels each homework row") and `RecordPageNormaliserTest::testAGroupBoundBlockKeepsItsGroupFieldAndLookups`

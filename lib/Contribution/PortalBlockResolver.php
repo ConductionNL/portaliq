@@ -111,7 +111,9 @@ class PortalBlockResolver {
 
 			// A block on a record page may narrow its rows to the open record
 			// (contribution-record-page).
-			return (new RecordBlockNormaliser())->withRecordScope(declared: $block, entry: $entry);
+			$scopes = new RecordScopeNormaliser();
+			$entry = $scopes->scope(declared: $block, entry: $entry);
+			return $scopes->lookups(declared: $block, entry: $entry, collectionIds: $collectionIds);
 		}
 
 		if (in_array($type, ['kpi', 'calendar', 'news'], true) === true) {

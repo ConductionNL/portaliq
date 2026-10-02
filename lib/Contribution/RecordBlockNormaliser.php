@@ -73,30 +73,6 @@ class RecordBlockNormaliser {
 	}//end pageRecord()
 
 	/**
-	 * Copy a valid `recordField` and `recordKey` from a declared entry onto a
-	 * normalised one. `recordKey` is only kept beside a `recordField`.
-	 *
-	 * @param array<string, mixed> $declared The declared block or source.
-	 * @param array<string, mixed> $entry The normalised block or source.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
-	 */
-	public function withRecordScope(array $declared, array $entry): array {
-		if ($this->isName(value: ($declared['recordField'] ?? null)) === false) {
-			return $entry;
-		}
-
-		$entry['recordField'] = $declared['recordField'];
-		if ($this->isName(value: ($declared['recordKey'] ?? null)) === true) {
-			$entry['recordKey'] = $declared['recordKey'];
-		}
-
-		return $entry;
-	}//end withRecordScope()
-
-	/**
 	 * A `kpi` block, or null when its collection does not resolve or no card survives.
 	 *
 	 * @param array<string, mixed> $block The declared block.
@@ -125,18 +101,37 @@ class RecordBlockNormaliser {
 		}
 
 		$out = $this->withLabel(declared: $block, entry: ['type' => 'kpi', 'collection' => $collection]);
-		$out = $this->withRecordScope(declared: $block, entry: $out);
-		$pick = ($block['pick'] ?? null);
+		$out = (new RecordScopeNormaliser())->scope(declared: $block, entry: $out);
+		$out['cards'] = $cards;
+		return $this->withPickAndCaption(declared: $block, entry: $out);
+	}//end kpiBlock()
+
+	/**
+	 * Copy a kpi block's valid `pick` (`desc` unless it says `asc`) and `caption`.
+	 *
+	 * @param array<string, mixed> $declared The declared block.
+	 * @param array<string, mixed> $entry The normalised block.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withPickAndCaption(array $declared, array $entry): array {
+		$pick = ($declared['pick'] ?? null);
 		if (is_array($pick) === true && $this->isName(value: ($pick['field'] ?? null)) === true) {
-			$out['pick'] = ['field' => $pick['field'], 'direction' => 'desc'];
+			$entry['pick'] = ['field' => $pick['field'], 'direction' => 'desc'];
 			if (($pick['direction'] ?? null) === 'asc') {
-				$out['pick']['direction'] = 'asc';
+				$entry['pick']['direction'] = 'asc';
 			}
 		}
 
-		$out['cards'] = $cards;
-		return $out;
-	}//end kpiBlock()
+		$caption = ($declared['caption'] ?? null);
+		if (is_array($caption) === true && $this->isName(value: ($caption['field'] ?? null)) === true
+			&& $this->isName(value: ($caption['label'] ?? null)) === true
+		) {
+			$entry['caption'] = ['field' => $caption['field'], 'label' => $caption['label']];
+		}
+
+		return $entry;
+	}//end withPickAndCaption()
 
 	/**
 	 * A `calendar` block, or null when none of its sources resolves.

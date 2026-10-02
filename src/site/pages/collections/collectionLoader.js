@@ -35,6 +35,9 @@ export function collectionIdsFor(page) {
 		if (['collection', 'detail', 'kpi'].includes(block?.type)) {
 			add(block.collection)
 		}
+		for (const lookup of block?.lookups || []) {
+			add(lookup?.collection)
+		}
 		if (block?.type === 'calendar') {
 			for (const source of block.sources || []) {
 				add(source?.collection)

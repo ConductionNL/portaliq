@@ -58,7 +58,7 @@ class CalendarSourceNormaliser {
 			$out['kind'] = $source['kind'];
 		}
 
-		return (new RecordBlockNormaliser())->withRecordScope(declared: $source, entry: $out);
+		return (new RecordScopeNormaliser())->scope(declared: $source, entry: $out);
 	}//end source()
 
 	/**
@@ -91,22 +91,25 @@ class CalendarSourceNormaliser {
 	}//end withDates()
 
 	/**
-	 * The start, title and optional end field names, or null without a start or title.
+	 * The start field, the title field or fixed title (a row without a title
+	 * value takes the fixed one), and the optional end field; null without a
+	 * start or any title.
 	 *
 	 * @param array<string, mixed> $declared The declared source or expansion.
 	 *
 	 * @return array<string, string>|null
 	 */
 	private function dateFields(array $declared): ?array {
-		if ($this->isName(value: ($declared['startField'] ?? null)) === false
-			|| $this->isName(value: ($declared['titleField'] ?? null)) === false
-		) {
+		$titled = ($this->isName(value: ($declared['titleField'] ?? null)) === true || $this->isName(value: ($declared['title'] ?? null)) === true);
+		if ($this->isName(value: ($declared['startField'] ?? null)) === false || $titled === false) {
 			return null;
 		}
 
-		$out = ['startField' => $declared['startField'], 'titleField' => $declared['titleField']];
-		if ($this->isName(value: ($declared['endField'] ?? null)) === true) {
-			$out['endField'] = $declared['endField'];
+		$out = ['startField' => $declared['startField']];
+		foreach (['titleField', 'title', 'endField'] as $key) {
+			if ($this->isName(value: ($declared[$key] ?? null)) === true) {
+				$out[$key] = $declared[$key];
+			}
 		}
 
 		return $out;

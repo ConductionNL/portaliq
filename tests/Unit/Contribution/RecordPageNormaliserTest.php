@@ -191,4 +191,79 @@ class RecordPageNormaliserTest extends TestCase {
 		$this->assertSame(['type' => 'news', 'limit' => 3], $blocks[1]);
 		$this->assertSame(['type' => 'news', 'limit' => 5], $blocks[2]);
 	}
+
+	public function testAGroupBoundBlockKeepsItsGroupFieldAndLookups(): void {
+		$blocks = $this->blocks(
+			[
+				[
+					'type' => 'collection',
+					'collection' => 'events',
+					'recordGroupsField' => 'cohortIds',
+					'lookups' => [
+						[
+							'as' => 'done',
+							'collection' => 'cards',
+							'matchField' => 'assignmentId',
+							'valueField' => 'lifecycle',
+							'recordField' => 'learnerRef',
+							'values' => ['submitted' => 'Handed in', 'late' => 7],
+							'default' => 'Open',
+						],
+						['as' => 'x', 'collection' => 'elsewhere', 'matchField' => 'a', 'valueField' => 'b'],
+						['as' => '', 'collection' => 'cards', 'matchField' => 'a', 'valueField' => 'b'],
+						['collection' => 'cards', 'matchField' => 'a'],
+					],
+				],
+			]
+		);
+
+		$this->assertSame('cohortIds', $blocks[0]['recordGroupsField']);
+		$this->assertSame(
+			[
+				[
+					'as' => 'done',
+					'collection' => 'cards',
+					'matchField' => 'assignmentId',
+					'valueField' => 'lifecycle',
+					'recordField' => 'learnerRef',
+					'values' => ['submitted' => 'Handed in'],
+					'default' => 'Open',
+				],
+			],
+			$blocks[0]['lookups']
+		);
+	}
+
+	public function testAKpiCaptionAndAStaticCalendarTitleAreKept(): void {
+		$blocks = $this->blocks(
+			[
+				[
+					'type' => 'kpi',
+					'collection' => 'summary',
+					'caption' => ['field' => 'schoolYear', 'label' => 'School year'],
+					'cards' => [['field' => 'a', 'label' => 'A']],
+				],
+				[
+					'type' => 'kpi',
+					'collection' => 'summary',
+					'caption' => ['label' => 'no field'],
+					'cards' => [['field' => 'a', 'label' => 'A']],
+				],
+				[
+					'type' => 'calendar',
+					'sources' => [
+						['collection' => 'events', 'startField' => 'startsAt', 'title' => 'Parent evening', 'titleField' => 'slotLabel', 'recordGroupsField' => 'cohortIds'],
+						['collection' => 'events', 'startField' => 'startsAt', 'title' => ''],
+					],
+				],
+			]
+		);
+
+		$this->assertSame(['field' => 'schoolYear', 'label' => 'School year'], $blocks[0]['caption']);
+		$this->assertArrayNotHasKey('caption', $blocks[1]);
+		$this->assertSame(
+			[['collection' => 'events', 'startField' => 'startsAt', 'titleField' => 'slotLabel', 'title' => 'Parent evening', 'recordGroupsField' => 'cohortIds']],
+			$blocks[2]['sources']
+		);
+	}
 }

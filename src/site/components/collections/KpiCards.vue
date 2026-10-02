@@ -22,6 +22,12 @@
 			{{ label }}
 		</component>
 		<p
+			v-if="caption && row && captionValue"
+			class="utrecht-paragraph pq-kpi__caption"
+			data-testid="kpi-caption">
+			{{ caption.label }} {{ captionValue }}
+		</p>
+		<p
 			v-if="loading"
 			class="utrecht-paragraph"
 			role="status"
@@ -89,6 +95,8 @@ export default {
 		level: { type: Number, default: 2 },
 		/** The heading above the cards, '' for none. */
 		label: { type: String, default: '' },
+		/** The line under the heading: `{field, label}`, e.g. the school year shown. */
+		caption: { type: Object, default: null },
 		/** The translator. */
 		t: { type: Function, required: true },
 		/** The page language. */
@@ -98,6 +106,13 @@ export default {
 	data() {
 		counter += 1
 		return { headingId: `pq-kpi-${counter}` }
+	},
+
+	computed: {
+		captionValue() {
+			const value = this.caption ? this.row?.[this.caption.field] : ''
+			return value === null || value === undefined ? '' : String(value)
+		},
 	},
 
 	methods: {

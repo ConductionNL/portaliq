@@ -143,6 +143,7 @@
 				:row="kpiRow(item)"
 				:loading="loadedOf(item.collection).loading"
 				:label="item.block.label || ''"
+				:caption="item.block.caption || null"
 				:level="sectionLevel"
 				:t="tr"
 				:locale="lang" />
@@ -223,11 +224,13 @@ import {
 } from '../../../shared/collectionGroups.js'
 import { consumeOpenTarget, forgetOpenTarget } from '../../../shared/openRecord.js'
 import {
+	allGroups,
 	calendarItems,
 	narrowToRecord,
 	pickRow,
 	recordGroups,
 	recordTitle,
+	withLookups,
 } from '../../../shared/recordPage.js'
 import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'
 import { dialogFor } from '../../../shared/signing.js'
@@ -435,6 +438,19 @@ export default {
 			)
 		},
 
+		/**
+		 * The groups a group-bound row must be for: the open record's, else
+		 * every child's.
+		 *
+		 * @return {Array<string>}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
+		 */
+		scopeGroups() {
+			return this.activeRecord
+				? this.openRecordGroups
+				: allGroups(this.currentContribution, this.store)
+		},
+
 		/** Section headings sit one level below an open record's name. */
 		sectionLevel() {
 			return this.activeRecord ? 3 : 2
@@ -549,8 +565,14 @@ export default {
 			const source = (this.currentContribution?.collections || []).find(
 				(c) => c && c.id === groups?.collection,
 			)
+			const groupBound = (scope) => Boolean(scope && scope.recordGroupsField)
 			const wanted =
-				this.recordPage && this.blocks.some((item) => item.kind === 'news')
+				(this.recordPage && this.blocks.some((item) => item.kind === 'news'))
+				|| this.blocks.some(
+					(item) =>
+						groupBound(item.block)
+						|| (item.block?.sources || []).some(groupBound),
+				)
 			if (source && wanted && !this.store[source.id]) {
 				this.loader.load(source)
 			}
@@ -564,9 +586,16 @@ export default {
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
 		 */
 		rowsOf(item) {
-			return narrowToRecord(
+			const rows = narrowToRecord(
 				this.loadedOf(item.collection).objects,
 				item.block,
+				this.activeRecord,
+				this.scopeGroups,
+			)
+			return withLookups(
+				rows,
+				item.block?.lookups,
+				this.store,
 				this.activeRecord,
 			)
 		},
@@ -590,7 +619,12 @@ export default {
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
 		 */
 		calendarOf(item) {
-			return calendarItems(item.block, this.store, this.activeRecord)
+			return calendarItems(
+				item.block,
+				this.store,
+				this.activeRecord,
+				this.scopeGroups,
+			)
 		},
 
 		calendarLoading(item) {
