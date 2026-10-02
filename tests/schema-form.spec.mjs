@@ -18,6 +18,7 @@ import {
 	formBody,
 	sentValue,
 	staticOptions,
+	withSingleOptions,
 } from '../src/site/components/c/forms.js'
 import { mountSfc } from './support/mount-sfc.mjs'
 
@@ -81,7 +82,7 @@ function fakeApi(answers = {}) {
 		calls,
 		async fetchOptions(provider) {
 			calls.options.push(provider)
-			return [{ value: 'vera-1', label: 'Vera' }]
+			return answers.options || [{ value: 'vera-1', label: 'Vera' }]
 		},
 		async createObject(action, body) {
 			calls.created.push(body)
@@ -243,6 +244,84 @@ test('the helpers: required checks, the body and a datetime value', () => {
 		new Date('2026-10-02T09:30').toISOString(),
 	)
 	assert.equal(sentValue('text', null), '')
+})
+
+test('a required select with one option starts on it, and can still be changed', async () => {
+	const api = fakeApi()
+	const form = await mountSfc(FORM, { action: absenceAction(), api })
+	await form.flush()
+	const child = () =>
+		form.findAll((n) => n.props.id === 'f-createExcuseRequest-learnerRef')[0]
+	assert.equal(child().props.value, 'vera-1', 'the only child is preselected')
+	assert.match(
+		form.textOf(form.find('schema-field-learnerRef')),
+		/Choose an option Vera/,
+		'the select stays a select with its placeholder',
+	)
+	const kind = form.findAll(
+		(n) => n.props.id === 'f-createExcuseRequest-reasonKind',
+	)[0]
+	assert.equal(kind.props.value, '', 'two options: nothing is chosen for you')
+
+	await form.fire(child(), 'change', { value: '' })
+	assert.equal(child().props.value, '', 'the resident can clear it')
+	await form.fire(child(), 'change', { value: 'vera-1' })
+
+	const field = (name) =>
+		form.findAll((n) => n.props.id === `f-createExcuseRequest-${name}`)[0]
+	await form.fire(field('dateFrom'), 'input', { value: '2026-10-02' })
+	await form.fire(field('reasonKind'), 'change', { value: 'illness' })
+	await form.fire(form.find('schema-form'), 'submit')
+	assert.equal(api.calls.created.length, 1)
+	assert.equal(api.calls.created[0].learnerRef, 'vera-1')
+	assert.equal(child().props.value, 'vera-1', 'the next report starts on the child again')
+	assert.equal(field('dateFrom').props.value, '')
+})
+
+test('a guardian with two children picks one', async () => {
+	const api = fakeApi({
+		options: [
+			{ value: 'vera-1', label: 'Vera' },
+			{ value: 'sam-2', label: 'Sam' },
+		],
+	})
+	const form = await mountSfc(FORM, { action: absenceAction(), api })
+	await form.flush()
+	const child = form.findAll(
+		(n) => n.props.id === 'f-createExcuseRequest-learnerRef',
+	)[0]
+	assert.equal(child.props.value, '')
+})
+
+test('the single option helper: required selects only, never over a choice', () => {
+	const action = absenceAction()
+	const one = { learnerRef: [{ value: 'vera-1', label: 'Vera' }] }
+	assert.equal(withSingleOptions(action, { learnerRef: '' }, one).learnerRef, 'vera-1')
+	assert.equal(
+		withSingleOptions(action, { learnerRef: 'other' }, one).learnerRef,
+		'other',
+		'a choice is kept',
+	)
+	const optional = {
+		...action,
+		fieldConfigs: { ...action.fieldConfigs, learnerRef: { label: 'Child' } },
+	}
+	assert.equal(withSingleOptions(optional, { learnerRef: '' }, one).learnerRef, '')
+	assert.equal(withSingleOptions(action, { learnerRef: '' }, {}).learnerRef, '')
+	assert.equal(
+		withSingleOptions(action, { learnerRef: '' }, { learnerRef: [{ value: '', label: 'None' }] })
+			.learnerRef,
+		'',
+	)
+	assert.equal(
+		withSingleOptions(
+			{ fields: ['up'], fieldConfigs: { up: { type: 'file', required: true } } },
+			{ up: '' },
+			{ up: [{ value: 'x', label: 'X' }] },
+		).up,
+		'',
+		'a file field is never filled',
+	)
 })
 
 test('the shell registry runs slice c, and every slice c string is in both shared bundles', async () => {
