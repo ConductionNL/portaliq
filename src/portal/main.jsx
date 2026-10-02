@@ -8,8 +8,8 @@
 import { loadState } from '@nextcloud/initial-state'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { createTranslator } from '../shared/i18n/index.js'
 import { startHeightReporting } from '../shared/embedHeight.js'
+import { createTranslator } from '../shared/i18n/index.js'
 import App from './App.jsx'
 import EmbeddedForm from './components/EmbeddedForm.jsx'
 

@@ -169,3 +169,24 @@ test('every string the banner uses is in Dutch and English, as the portal said i
 		}
 	}
 })
+
+// The wiring, asserted from the caller: a banner and a worker nobody mounts
+// pass every test above and still never reach a resident.
+test('the shell mounts the banner and registers the worker after mounting', () => {
+	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
+	assert.match(app, /<InstallBanner class="container" :t="t" \/>/)
+	assert.match(
+		app,
+		/import \{ InstallBanner \} from '\.\/components\/f\/index\.js'/,
+	)
+
+	const main = readFileSync(join(ROOT, 'src', 'site', 'main.js'), 'utf8')
+	const mount = main.indexOf('.mount(element)')
+	const register = main.indexOf(
+		'registerSiteServiceWorker(authBaseFrom(resolveApiBase()))',
+	)
+	assert.ok(
+		mount > 0 && register > mount,
+		'the worker is registered after the mount',
+	)
+})
