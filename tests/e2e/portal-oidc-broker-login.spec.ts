@@ -70,8 +70,9 @@
 import { expect, test } from '@playwright/test'
 import * as crypto from 'node:crypto'
 import * as http from 'node:http'
+import { ACCOUNT_ROUTE, PORTAL_API, SITE_PATH } from './portal-nav.ts'
 
-const API_BASE = '/apps/portaliq/portal/api'
+const API_BASE = PORTAL_API
 const LIVE = process.env.OIDC_E2E_LIVE === '1'
 
 test.describe('portal-oidc-broker-login — fail-closed (no setup required)', () => {
@@ -142,7 +143,7 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 		"set OIDC_E2E_LIVE=1 (+ OIDC_E2E_ORG_SLUG/ISSUER/CLIENT_ID) after wiring the org's OIDC config — see file header",
 	)
 
-	test('start→callback against a stub broker lands authenticated in the SPA; the configured provider button renders, an unconfigured one does not', async ({
+	test('start→callback against a stub broker lands authenticated on the site; the configured provider button renders, an unconfigured one does not', async ({
 		page,
 	}) => {
 		const orgSlug = process.env.OIDC_E2E_ORG_SLUG!
@@ -242,28 +243,29 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 		}
 
 		try {
-			await page.goto(
-				`/apps/portaliq/portal?org=${encodeURIComponent(orgSlug)}`,
-			)
+			// The site's signed-in area, for the portal the org names
+			// (REQ-SRP-048: a tenant named by `?org=` resolves on the site).
+			const params = new URLSearchParams({
+				org: orgSlug,
+				route: ACCOUNT_ROUTE,
+			})
+			await page.goto(`${SITE_PATH}?${params.toString()}`)
 
-			// The configured provider's button renders; an unconfigured one
-			// (digid, in this fixture's setup) does not.
-			await expect(
-				page.getByRole('button', { name: /eHerkenning/i }),
-			).toBeVisible()
-			await expect(page.getByRole('button', { name: /DigiD/i })).toHaveCount(0)
+			// The configured provider's sign-in route renders; an unconfigured
+			// one (digid, in this fixture's setup) does not. On the site these
+			// are links (AccountArea.vue `site-account-signin-route`), not the
+			// buttons the React portal rendered.
+			const routes = page.getByTestId('site-account-signin-route')
+			await expect(routes.filter({ hasText: /eHerkenning/i })).toBeVisible()
+			await expect(routes.filter({ hasText: /DigiD/i })).toHaveCount(0)
 
-			await page.getByRole('button', { name: /eHerkenning/i }).click()
+			await routes.filter({ hasText: /eHerkenning/i }).click()
 
 			// The stub broker's /authorize immediately redirects back with a
-			// code — the browser lands on the SPA, authenticated. The
-			// authenticated shell renders BOTH `.portaliq-home` and its
-			// `.portaliq-subject` line, so match either and take the first
-			// (a bare toBeVisible() on the two-element locator trips strict mode).
-			await page.waitForURL(/\/portal(#|$)/, { timeout: 15000 })
-			await expect(
-				page.locator('.portaliq-subject, .portaliq-home').first(),
-			).toBeVisible()
+			// code — the browser lands on the site with the bearer in the
+			// fragment, which the site adopts, and shows who is signed in.
+			await page.waitForURL(/\/apps\/portaliq\/site/, { timeout: 15000 })
+			await expect(page.getByTestId('site-auth-subject')).toBeVisible()
 		} finally {
 			server.close()
 		}

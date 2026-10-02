@@ -11,10 +11,11 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
-const API_BASE = '/apps/portaliq/portal/api'
+const API_BASE = PORTAL_API
+
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
-const PORTAL_PATH = '/apps/portaliq/portal?org=dev-org'
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ORGANISATION = 'dev-org'
 
@@ -47,7 +48,7 @@ async function seed(
  * Two case collections (one of them marking closed cases by `withdrawnAt`, a field the
  * portalCase schema has), a
  * page showing the first, the given cases for a fresh resident, and that
- * resident signed in on the portal.
+ * resident signed in on the site, on My cases.
  *
  * @param request The request fixture.
  * @param page The page.
@@ -112,10 +113,8 @@ async function signIn(
 		'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
 	).toBeTruthy()
 	const { token } = await login.json()
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
-	await page.goto(PORTAL_PATH)
+	await seedSiteSession(page, token)
+	await page.goto(siteAddress('/mijn/cases'))
 	await expect(page.getByTestId('my-cases')).toBeVisible()
 }
 
@@ -259,10 +258,8 @@ async function signInAsEmployee(
 	})
 	expect(login.ok(), 'dev-login must be enabled').toBeTruthy()
 	const { token } = await login.json()
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
-	await page.goto(PORTAL_PATH)
+	await seedSiteSession(page, token)
+	await page.goto(siteAddress('/mijn/cases'))
 	await expect(page.getByTestId('my-cases')).toBeVisible()
 }
 
