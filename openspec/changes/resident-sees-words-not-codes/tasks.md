@@ -10,3 +10,5 @@
   - PHPUnit `SessionControllerTest::testIndexNamesThePersonNeverTheReference`; `node --test tests/site-signed-in-shell.spec.mjs`
 - [x] **T5**: the publication page shows summary, date, category name, theme names and documents only; the category filter names its categories
   - `node --test tests/publication-documents.spec.mjs` (`npm run check:publication-documents`)
+- [x] **T6**: "My cases" shows a case's status by its public label and never a uuid
+  - `node --test tests/my-cases-page.spec.mjs` (`npm run check:my-cases-page`)
