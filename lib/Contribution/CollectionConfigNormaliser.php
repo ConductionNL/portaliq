@@ -84,6 +84,7 @@ class CollectionConfigNormaliser {
 
 			$collection = $this->normaliseColumns(collection: $collection);
 			$collection = $this->normaliseDetail(collection: $collection);
+			$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
 			$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
 			$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
 			$collection = $this->normaliseDefaults(collection: $collection);
