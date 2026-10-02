@@ -98,16 +98,19 @@ class SessionController extends Controller {
 	private const SILENT_LOGIN_ERRORS = ['login_required', 'interaction_required', 'consent_required', 'account_selection_required'];
 
 	/**
-	 * Where an OIDC callback lands in the SPA when no `returnTo` was stored:
-	 * the portal page's OWN route, resolved through the URL generator so it
-	 * carries the app's web-root (`/apps/portaliq/portal`). A bare `/portal`
-	 * literal resolved to the Nextcloud ROOT (`/portal`), which 404s — the
-	 * portal is an app page, so every OIDC login landed on "Page not found".
+	 * Where an OIDC callback lands when no `returnTo` was stored: the site's
+	 * OWN route, resolved through the URL generator so it carries the app's
+	 * web-root (`/apps/portaliq/site`). A bare literal resolved to the
+	 * Nextcloud ROOT, which 404s, so every OIDC login landed on "Page not
+	 * found". It named the React portal (`portalPage.index`) until the site
+	 * replaced it (site-reaches-portal-parity REQ-SRP-049).
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
 	 */
 	private function portalReturnTo(): string {
-		return $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.index');
+		return $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site');
 	}//end portalReturnTo()
 
 	/**

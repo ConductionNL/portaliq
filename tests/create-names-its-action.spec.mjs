@@ -11,13 +11,7 @@
 //   node --test tests/create-names-its-action.spec.mjs
 
 import assert from 'node:assert/strict'
-import {
-	existsSync,
-	mkdirSync,
-	readdirSync,
-	readFileSync,
-	writeFileSync,
-} from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
@@ -27,8 +21,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 /**
  * Import the portal API adapter as an ES module. It imports nothing, so a
- * copy with an .mjs extension is all node needs. The site-parity work moves
- * it from src/portal/lib to src/shared; whichever exists is the one tested.
+ * copy with an .mjs extension is all node needs.
  *
  * @return {Promise<object>} The module.
  */
@@ -36,10 +29,7 @@ async function loadPortalApi() {
 	const dir = join(tmpdir(), `portaliq-create-names-its-action-${process.pid}`)
 	mkdirSync(dir, { recursive: true })
 	const out = join(dir, 'portalApi.mjs')
-	const shared = join(ROOT, 'src', 'shared', 'portalApi.js')
-	const source = existsSync(shared)
-		? shared
-		: join(ROOT, 'src', 'portal', 'lib', 'portalApi.js')
+	const source = join(ROOT, 'src', 'shared', 'portalApi.js')
 	writeFileSync(out, readFileSync(source, 'utf8'))
 	return import(pathToFileURL(out).href)
 }

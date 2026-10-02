@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // The asker's side of an access request on the site (identity-access-requests,
-// ported from src/portal/components/AccessRequestsPage.jsx). Imports nothing,
+// ported from the React portal's AccessRequestsPage.jsx). Imports nothing,
 // so the node specs run it as a plain script.
 
 /**

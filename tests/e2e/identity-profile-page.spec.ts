@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * identity-profile-page: the "My account" routes, driven over the same HTTP
- * the page (src/portal/components/AccountPage.jsx) calls. The CI instance
+ * the page (src/site/pages/e/AccountPage.vue) calls. The CI instance
  * captures no mail, so following the confirmation link is pinned by
  * tests/Unit/Service/Identity/PortalContactAddressServiceTest.php; here a
  * pending address stays pending and cannot be preferred.

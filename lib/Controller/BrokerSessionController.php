@@ -207,8 +207,8 @@ class BrokerSessionController extends Controller {
 
 
 	/**
-	 * The portal SPA's address for a resolved portal: `?portal=<slug>` when it
-	 * has one, else the plain portal address. Only a resolved portal's slug is
+	 * The site's address for a resolved portal: `?portal=<slug>` when it
+	 * has one, else the plain site address. Only a resolved portal's slug is
 	 * echoed, never raw input.
 	 *
 	 * @param array<string, mixed>|null $site The serving portal, or null.
@@ -246,12 +246,16 @@ class BrokerSessionController extends Controller {
 
 
 	/**
-	 * The portal SPA's path.
+	 * The site's path: where a login lands when it names no page, and where
+	 * every failure lands with `#signin=failed`. It named the React portal
+	 * until the site replaced it (site-reaches-portal-parity REQ-SRP-049).
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
 	 */
 	private function portalPath(): string {
-		return $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.index');
+		return $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site');
 	}//end portalPath()
 
 

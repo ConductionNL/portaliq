@@ -85,7 +85,7 @@ class BrokerSessionControllerTest extends TestCase {
 		$portals->method('resolve')->willReturn(['slug' => 'venray', 'organisation' => 'gemeente-x']);
 		$login = $this->getMockBuilder(BrokerLogin::class)->disableOriginalConstructor()->onlyMethods(['start', 'complete'])->getMock();
 		$login->expects($this->once())->method('start')
-			->with('gemeente-x', 'digid', '/apps/portaliq/portal?portal=venray', 'https://portal.example/apps/portaliq/portal/api/session/broker/callback')
+			->with('gemeente-x', 'digid', '/apps/portaliq/site?portal=venray', 'https://portal.example/apps/portaliq/portal/api/session/broker/callback')
 			->willReturn('https://integriq.example/idp/start?state=s');
 
 		$response = $this->controller(login: $login, portals: $portals)->start(provider: 'digid', portal: 'venray');
@@ -97,7 +97,7 @@ class BrokerSessionControllerTest extends TestCase {
 
 	/**
 	 * A login started on the public site returns to the page it came from,
-	 * and an address outside the site route to the portal.
+	 * and an address outside the site route to the site's own address.
 	 *
 	 * @return void
 	 *
@@ -106,7 +106,7 @@ class BrokerSessionControllerTest extends TestCase {
 	public function testStartKeepsTheSitePageToReturnTo(): void {
 		$cases = [
 			'/apps/portaliq/site?portal=venray&route=/mijn' => '/apps/portaliq/site?portal=venray&route=/mijn',
-			'//evil.example/x' => '/apps/portaliq/portal',
+			'//evil.example/x' => '/apps/portaliq/site',
 		];
 		foreach ($cases as $returnTo => $kept) {
 			$login = $this->getMockBuilder(BrokerLogin::class)->disableOriginalConstructor()->onlyMethods(['start', 'complete'])->getMock();
@@ -123,7 +123,7 @@ class BrokerSessionControllerTest extends TestCase {
 	 * portal-broker-login-keeps-the-portal: a login started from a portal
 	 * returns to that portal's own address. Only the slug of the portal the
 	 * resolver found is echoed, URL-encoded; an unknown portal returns to the
-	 * plain portal address.
+	 * plain site address.
 	 *
 	 * @return void
 	 *
@@ -131,10 +131,10 @@ class BrokerSessionControllerTest extends TestCase {
 	 */
 	public function testALoginStartedFromAPortalReturnsToIt(): void {
 		$cases = [
-			'wilgenboom' => [['slug' => 'wilgenboom', 'organisation' => 'gemeente-x'], '/apps/portaliq/portal?portal=wilgenboom'],
-			'de school' => [['slug' => 'de school&x=1', 'organisation' => 'gemeente-x'], '/apps/portaliq/portal?portal=de%20school%26x%3D1'],
-			'"><script>' => [['slug' => 'default', 'organisation' => 'gemeente-x'], '/apps/portaliq/portal?portal=default'],
-			'no-such-portal' => [null, '/apps/portaliq/portal'],
+			'wilgenboom' => [['slug' => 'wilgenboom', 'organisation' => 'gemeente-x'], '/apps/portaliq/site?portal=wilgenboom'],
+			'de school' => [['slug' => 'de school&x=1', 'organisation' => 'gemeente-x'], '/apps/portaliq/site?portal=de%20school%26x%3D1'],
+			'"><script>' => [['slug' => 'default', 'organisation' => 'gemeente-x'], '/apps/portaliq/site?portal=default'],
+			'no-such-portal' => [null, '/apps/portaliq/site'],
 		];
 		foreach ($cases as $asked => [$resolved, $returnTo]) {
 			$portals = $this->createMock(PortalResolver::class);
@@ -163,15 +163,15 @@ class BrokerSessionControllerTest extends TestCase {
 		$portals = $this->createMock(PortalResolver::class);
 		$portals->method('resolve')->willReturn(['slug' => 'wilgenboom', 'organisation' => 'gemeente-x']);
 		$start = $this->controller(login: $this->login(), portals: $portals)->start(provider: 'digid', portal: 'wilgenboom');
-		$this->assertSame('https://portal.example/apps/portaliq/portal?portal=wilgenboom#signin=failed', $start->getRedirectURL());
+		$this->assertSame('https://portal.example/apps/portaliq/site?portal=wilgenboom#signin=failed', $start->getRedirectURL());
 
-		$spent = ['token' => '', 'returnTo' => '/apps/portaliq/portal?portal=wilgenboom'];
+		$spent = ['token' => '', 'returnTo' => '/apps/portaliq/site?portal=wilgenboom'];
 		$callback = $this->controller(login: $this->login(complete: $spent))->callback(relayState: 's', code: 'c');
-		$this->assertSame('https://portal.example/apps/portaliq/portal?portal=wilgenboom#signin=failed', $callback->getRedirectURL());
+		$this->assertSame('https://portal.example/apps/portaliq/site?portal=wilgenboom#signin=failed', $callback->getRedirectURL());
 
 		$elsewhere = ['token' => '', 'returnTo' => '//evil.example/x'];
 		$callback = $this->controller(login: $this->login(complete: $elsewhere))->callback(relayState: 's', code: 'c');
-		$this->assertSame('https://portal.example/apps/portaliq/portal#signin=failed', $callback->getRedirectURL());
+		$this->assertSame('https://portal.example/apps/portaliq/site#signin=failed', $callback->getRedirectURL());
 	}//end testAFailedLoginLandsOnThePortalItStartedFrom()
 
 
@@ -212,7 +212,7 @@ class BrokerSessionControllerTest extends TestCase {
 
 		foreach ($answers as $response) {
 			$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
-			$this->assertSame('https://portal.example/apps/portaliq/portal#signin=failed', $response->getRedirectURL());
+			$this->assertSame('https://portal.example/apps/portaliq/site#signin=failed', $response->getRedirectURL());
 		}
 	}//end testEveryFailureLandsOnTheSameFragment()
 
@@ -226,8 +226,26 @@ class BrokerSessionControllerTest extends TestCase {
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
 	 */
 	public function testACompletedLoginCarriesTheBearerInTheFragment(): void {
-		$response = $this->controller(login: $this->login(complete: ['token' => 'a.b c', 'returnTo' => '/apps/portaliq/portal']))->callback(state: 's', code: 'c');
+		$response = $this->controller(login: $this->login(complete: ['token' => 'a.b c', 'returnTo' => '/apps/portaliq/site']))->callback(state: 's', code: 'c');
 
-		$this->assertSame('https://portal.example/apps/portaliq/portal#token=a.b%20c', $response->getRedirectURL());
+		$this->assertSame('https://portal.example/apps/portaliq/site#token=a.b%20c', $response->getRedirectURL());
 	}//end testACompletedLoginCarriesTheBearerInTheFragment()
+
+
+	/**
+	 * site-reaches-portal-parity REQ-SRP-049: a login that names no page, and
+	 * every failure, lands on the site, never on the retired `/portal`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
+	 */
+	public function testLoginsAndFailuresLandOnTheSiteNotThePortal(): void {
+		$done = $this->controller(login: $this->login(complete: ['token' => 't', 'returnTo' => '']))->callback(state: 's', code: 'c');
+		$this->assertSame('https://portal.example/apps/portaliq/site#token=t', $done->getRedirectURL());
+
+		$failed = $this->controller(login: $this->login())->callback(state: 's', code: 'c');
+		$this->assertSame('https://portal.example/apps/portaliq/site#signin=failed', $failed->getRedirectURL());
+		$this->assertStringNotContainsString('/apps/portaliq/portal', $failed->getRedirectURL());
+	}//end testLoginsAndFailuresLandOnTheSiteNotThePortal()
 }//end class

@@ -6,7 +6,7 @@
 // `groupByField` (collection-group-by-field T1, T3). A guardian with two
 // children sees one table per child, headed by the child's name from the
 // contribution's `guardianAudience.children` collection; one child, or no
-// group field, renders as before. The wiring tests read both renderers.
+// group field, renders as before. The wiring test reads the site's page.
 //
 // Usage:
 //   node --test tests/collection-groups.spec.mjs
@@ -109,13 +109,7 @@ test("the names come from the contribution's guardianAudience children", () => {
 	assert.equal(anyGrouped([{ id: 'x' }]), false)
 })
 
-test('both renderers group a collection that declares groupByField', () => {
-	const pageView = readFileSync(
-		join(ROOT, 'src/portal/components/PageView.jsx'),
-		'utf8',
-	)
-	assert.match(pageView, /from '\.\.\/\.\.\/shared\/collectionGroups\.js'/)
-	assert.match(pageView, /groupRows\(/)
+test('the site page groups a collection that declares groupByField', () => {
 	const page = readFileSync(
 		join(ROOT, 'src/site/pages/collections/ContributionPage.vue'),
 		'utf8',

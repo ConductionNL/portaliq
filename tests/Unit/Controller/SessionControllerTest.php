@@ -26,8 +26,8 @@ use PHPUnit\Framework\TestCase;
  * portal-controller-http-test-coverage: the three HTTP-facing behaviours
  * `supplier-portal` T02 describes as DONE but never turned into a regression
  * test — `GET /portal/api/session` resolve (both branches), the dev-login
- * gate (open vs 404-closed, per `src/portal/App.jsx`'s own comment about the
- * production posture), and logout's real revocation
+ * gate (open vs 404-closed, the production posture the React portal's shell
+ * described), and logout's real revocation
  * (portal-auth-edge-session-hardening) rather than a static `{ok: true}`.
  *
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#2.1
@@ -811,7 +811,8 @@ class SessionControllerTest extends TestCase {
 	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
 	 */
 	public function testALoginStartedFromAPortalReturnsToIt(): void {
-		foreach (['wilgenboom' => '/apps/portaliq/portal?portal=wilgenboom', 'no-such-portal' => '/apps/portaliq/portal'] as $slug => $returnTo) {
+		// The site, never the retired React portal (site-reaches-portal-parity REQ-SRP-049).
+		foreach (['wilgenboom' => '/apps/portaliq/site?portal=wilgenboom', 'no-such-portal' => '/apps/portaliq/site'] as $slug => $returnTo) {
 			$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 			$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
 			$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
@@ -823,7 +824,9 @@ class SessionControllerTest extends TestCase {
 			$oidc->method('buildAuthorizationUrl')->willReturn('https://broker.example/authorize?state=state-1');
 
 			$urlGenerator = $this->createMock(IURLGenerator::class);
-			$urlGenerator->method('linkToRoute')->willReturn('/apps/portaliq/portal');
+			$urlGenerator->method('linkToRoute')->willReturnCallback(
+				static fn (string $name): string => $name === 'portaliq.portalPage.site' ? '/apps/portaliq/site' : '/apps/portaliq/portal'
+			);
 
 			$portals = $this->createMock(PortalResolver::class);
 			$portals->method('resolve')->willReturnCallback(
@@ -843,14 +846,14 @@ class SessionControllerTest extends TestCase {
 
 	/**
 	 * A login started on the public site returns to the page it came from;
-	 * an address outside the site route falls back to the portal address.
+	 * an address outside the site route falls back to the portal's site address.
 	 *
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	public function testALoginStartedOnTheSiteReturnsToThatPage(): void {
 		$cases = [
 			'/apps/portaliq/site?portal=wilgenboom&route=/mijn' => '/apps/portaliq/site?portal=wilgenboom&route=/mijn',
-			'https://evil.example/apps/portaliq/site' => '/apps/portaliq/portal?portal=wilgenboom',
+			'https://evil.example/apps/portaliq/site' => '/apps/portaliq/site?portal=wilgenboom',
 		];
 		foreach ($cases as $returnTo => $stored) {
 			$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
@@ -951,14 +954,16 @@ class SessionControllerTest extends TestCase {
 		$oidc->method('discover')->willReturn(['end_session_endpoint' => 'https://broker.example/logout'] + $this->discoveryFixture());
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);
-		$urlGenerator->method('linkToRoute')->willReturn('/apps/portaliq/portal');
+		$urlGenerator->method('linkToRoute')->willReturnCallback(
+			static fn (string $name): string => $name === 'portaliq.portalPage.site' ? '/apps/portaliq/site' : '/apps/portaliq/portal'
+		);
 		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
 
 		$data = $this->controller(session: $session, orgConfig: $orgConfig, oidc: $oidc, urlGenerator: $urlGenerator)->logout()->getData();
 
 		$this->assertTrue($data['ok']);
 		$this->assertSame(
-			'https://broker.example/logout?client_id=rp-client-1&post_logout_redirect_uri=' . rawurlencode('https://portal.example/apps/portaliq/portal'),
+			'https://broker.example/logout?client_id=rp-client-1&post_logout_redirect_uri=' . rawurlencode('https://portal.example/apps/portaliq/site'),
 			$data['logoutUrl']
 		);
 

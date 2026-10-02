@@ -438,7 +438,7 @@ class NotificationDispatchJob extends QueuedJob {
 	}//end bodyText()
 
 	/**
-	 * Build the deep link into the portal (the `portalPage#index` route with
+	 * Build the deep link into the site (the `portalPage#site` route with
 	 * `?org=<slug>`, landing at the authenticated inbox after login) — content is
 	 * only ever shown behind the portal auth edge (design.md). Resolved from the
 	 * route table by PortalDeepLinkBuilder: the former `getAbsoluteURL('/portal')`

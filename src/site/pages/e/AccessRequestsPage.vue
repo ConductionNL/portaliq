@@ -5,7 +5,7 @@
 
 <!--
 	The asker's side of an access request on the site (identity-access-requests
-	T04, T05), ported from src/portal/components/AccessRequestsPage.jsx. A
+	T04, T05), ported from the React portal's AccessRequestsPage.jsx. A
 	signed-in user asks for access to the cases of a company or person they act
 	for, giving a reason, and follows every request they made: waiting,
 	granted, or refused with the reason the organisation gave.

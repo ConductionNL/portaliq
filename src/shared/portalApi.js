@@ -9,13 +9,15 @@
 // server-authorised endpoints instead of the unscoped `/openregister/api/*`, and
 // the response shapes are normalised to plain arrays/objects the renderers use.
 //
-// Shared by the React portal (src/portal) and the Vue site renderer
-// (src/site): it imports nothing, so node tests cover the one implementation
-// both bundles run.
+// Written for the retired React portal and used by the Vue site renderer
+// (src/site) and the embed frame: it imports nothing, so node tests cover the
+// one implementation the bundles run.
 //
 // Auth: the portal session is a bearer minted at the auth edge (`/portal/api/
-// session`). The React portal stores it in localStorage (the default below);
-// the site keeps it per tab in sessionStorage and hands its own store in. The server derives subjectRef/audience/
+// session`). The default store below is the React portal's localStorage key;
+// the site keeps the bearer per tab in sessionStorage and hands its own store
+// in (src/site/lib/authApi.js, which also takes over an old localStorage
+// bearer once). The server derives subjectRef/audience/
 // organisation from the bearer — the client never sends them. Every method fails
 // closed: a non-2xx or a network error yields an empty/`null` result, never a
 // throw the UI has to guard.

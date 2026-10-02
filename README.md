@@ -32,10 +32,12 @@ portal-contribution registry. Employees stay internal.
 > **Two frontends, two audiences** — this app is built on the ConductionNL
 > Nextcloud app template. The template's **Vue 2.7 / nc-vue** stack (below) powers
 > Portaliq's *internal* admin surface (managing contributions + tenant config).
-> The *public* portal is a separate **React + NL Design System** SPA
-> (`src/portal/`, built by `webpack.portal.js` → `npm run build:portal`), served
-> at `/portal` via a `#[PublicPage]` template — the tilburg-woo-ui pattern for an
-> external white-label surface. The template docs below describe the Vue admin side.
+> The *public* site is a separate **Vue 3 + NL Design System** renderer
+> (`src/site/`, built by `webpack.site.js` with `npm run build:site`), served at
+> `/site` by a `#[PublicPage]` template: the tilburg-woo-ui pattern for an
+> external white-label surface. Residents sign in there too. The old React portal
+> at `/portal` is retired: that address now redirects to `/site`, and its API
+> under `/portal/api/*` stays. The template docs below describe the Vue admin side.
 
 > **Manifest-first** — pages, navigation, and dependencies are declared in `src/manifest.json`. The shell (CnAppRoot) reads the manifest at boot and renders index / detail / dashboard / settings pages without per-page Vue files. Reach for a custom Vue component only when the page is `type: "custom"`. See `openspec/architecture/` and hydra ADR-024 for the architectural rationale.
 
@@ -229,8 +231,8 @@ maximum session lifetime** — app config `session_max_lifetime`, default 8h
 unchanged across every rotation in the chain, never reset by a refresh). A
 refresh past the cap, on a revoked/expired/malformed bearer, or when the
 signing secret is not yet configured, fails closed to the SAME generic 401 —
-the subject must re-authenticate. The SPA (`src/portal/App.jsx`) calls refresh
-proactively every ~25 minutes while a session is active.
+the subject must re-authenticate. The site (`src/site/lib/idleTracker.js`)
+refreshes on activity in the second half of the session window.
 
 **Rate limiting.** The public session endpoints (`index`/`devLogin`/`logout`/
 `refresh`) and the scoped-CRUD/action surface
@@ -456,10 +458,15 @@ Canonical contract text: ADR-046 amendment 2026-07-06 + ADR-063 (hydra) + the
 
 ### Deploying the portal (production notes)
 
-- **Build both bundles.** `npm run build` produces *both* the Vue admin bundle
-  and the React portal bundle (`js/portaliq-portal.js`); the portal bundle is
-  gitignored, so a release that only runs the admin build serves a 404 at
-  `/portal`. `build:admin` / `build:portal` build them individually.
+- **Build every bundle.** `npm run build` produces the Vue admin bundle, the
+  site bundle (`js/portaliq-site.js`, with the embed frame's `portaliq-embed.js`)
+  and the traffic client. They are gitignored, so a release that only runs the
+  admin build serves an empty page at `/site`. `build:admin` and `build:site`
+  build them one at a time.
+- **Old `/portal` links keep working.** `/portal` answers 302 to `/site` with
+  the same query string, and the browser keeps the fragment. If your OIDC broker
+  checks `post_logout_redirect_uri` against a list, add the `/site` address:
+  sign-out now returns there.
 - **`portalAccount` claims schema.** `scopeClaim`/`via` scoping resolves the
   subject's claims from a `portalAccount` object carrying `subjectRef`,
   `audience` and `claims` (`{appId: {claimName: value}}`). Ensure the deployed

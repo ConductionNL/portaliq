@@ -12,49 +12,14 @@
 // The submit flow lives in src/shared/fileFieldSubmit.js so it can be
 // driven here against a fake api: the live attach fails on a fresh instance
 // (portaliq#29), so a browser run would prove the instance, not the form.
-// SchemaForm is JSX; it is compiled with the same Babel preset
-// webpack.portal.js uses and written to node_modules/.cache next to a .mjs
-// copy of the submit module, which is where its relative import points.
+// The form is the site's Vue SchemaForm, mounted in plain node.
 
 import assert from 'node:assert/strict'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
 import { test } from 'node:test'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import * as submit from '../src/shared/fileFieldSubmit.js'
 import { mountSfc } from './support/mount-sfc.mjs'
 
-const require = createRequire(import.meta.url)
-const babel = require('@babel/core')
-const React = require('react')
-const { renderToStaticMarkup } = require('react-dom/server')
-
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests')
-mkdirSync(OUT_DIR, { recursive: true })
-
-const SUBMIT_SOURCE = join(ROOT, 'src', 'shared', 'fileFieldSubmit.js')
-const SUBMIT_OUT = join(OUT_DIR, 'fileFieldSubmit.mjs')
-writeFileSync(SUBMIT_OUT, readFileSync(SUBMIT_SOURCE, 'utf8'))
-
-const FORM_SOURCE = join(ROOT, 'src', 'portal', 'components', 'SchemaForm.jsx')
-const FORM_OUT = join(OUT_DIR, 'SchemaForm.mjs')
-const compiled = babel.transformSync(readFileSync(FORM_SOURCE, 'utf8'), {
-	filename: FORM_SOURCE,
-	babelrc: false,
-	configFile: false,
-	presets: [['@babel/preset-react', { runtime: 'automatic' }]],
-})
-writeFileSync(
-	FORM_OUT,
-	compiled.code.replace(
-		"'../../shared/fileFieldSubmit.js'",
-		"'./fileFieldSubmit.mjs'",
-	),
-)
-
-const { default: SchemaForm } = await import(pathToFileURL(FORM_OUT).href)
-const submit = await import(pathToFileURL(SUBMIT_OUT).href)
+const VUE_FORM = 'src/site/components/c/SchemaForm.vue'
 
 const action = {
 	id: 'createSubmission',
@@ -117,51 +82,40 @@ function fakeApi({ createOk = true, failNames = [] } = {}) {
 	}
 }
 
-test('renders a file input for a file field', () => {
-	const html = renderToStaticMarkup(
-		React.createElement(SchemaForm, {
-			action,
-			api: fakeApi(),
-			t: (key, vars) => `${key}|${JSON.stringify(vars || {})}`,
-		}),
-	)
+test('renders a file input for a file field, labelled, with the limit through the translator', async () => {
+	const form = await mountSfc(VUE_FORM, {
+		action,
+		api: fakeApi(),
+		t: (key, vars) => `${key}|${JSON.stringify(vars || {})}`,
+	})
+	const byId = (id) => form.findAll((n) => n.props.id === id)[0]
+	const labelFor = (id) =>
+		form.findAll((n) => n.tag === 'label' && n.props.for === id)[0]
 
-	assert.match(
-		html,
-		/<label for="f-createSubmission-attachmentRefs">Your work<\/label>/,
-	)
-	assert.match(
-		html,
-		/<input id="f-createSubmission-attachmentRefs" type="file" multiple="" accept="\.pdf"\/>/,
-	)
+	const picker = byId('f-createSubmission-attachmentRefs')
+	assert.equal(picker.tag, 'input')
+	assert.equal(picker.props.type, 'file')
+	assert.equal(form.textOf(labelFor(picker.props.id)), 'Your work')
 	// The size limit is shown through the translator.
-	assert.match(html, /Up to \{size\} MB per file\|\{&quot;size&quot;:1\}/)
+	assert.match(form.text(), /Up to \{size\} MB per file\|\{"size":1\}/)
 	// The other field is still a text box.
-	assert.match(html, /<input id="f-createSubmission-assignmentId" type="text"/)
+	assert.equal(byId('f-createSubmission-assignmentId').props.type, 'text')
 })
 
-test('a form without a translator still renders the English source', () => {
-	const html = renderToStaticMarkup(
-		React.createElement(SchemaForm, { action, api: fakeApi() }),
-	)
-
-	assert.match(html, /Up to 1 MB per file/)
-})
-
-test('a single file field renders without multiple', () => {
+test('a single file field renders without multiple, at the default limit', async () => {
 	const single = {
 		...action,
 		fieldConfigs: { attachmentRefs: { type: 'file', size: 'medium' } },
 	}
-	const html = renderToStaticMarkup(
-		React.createElement(SchemaForm, { action: single, api: fakeApi() }),
-	)
+	const form = await mountSfc(VUE_FORM, { action: single, api: fakeApi() })
+	const picker = form.findAll(
+		(n) => n.props.id === 'f-createSubmission-attachmentRefs',
+	)[0]
 
-	assert.match(
-		html,
-		/<input id="f-createSubmission-attachmentRefs" type="file"\/>/,
-	)
-	assert.match(html, /Up to 20 MB per file/)
+	assert.equal(picker.props.type, 'file')
+	assert.equal(picker.props.multiple, false)
+	assert.equal(picker.props.accept, undefined)
+	assert.match(form.text(), /Up to 20 MB per file/)
 })
 
 test('creates then uploads each file and names a failed one', async () => {
@@ -240,11 +194,11 @@ test('the saved id is read wherever the server put it', () => {
 	assert.equal(submit.objectIdOf(null), '')
 })
 
-// The site's Vue port (site-reaches-portal-parity T11, REQ-SRP-023) runs the
-// same shared flow from src/shared/fileFieldSubmit.js.
+// The site form driven end to end (site-reaches-portal-parity T11,
+// REQ-SRP-023) on the shared flow from src/shared/fileFieldSubmit.js.
 
-test('the site form renders a file picker with its limit', async () => {
-	const form = await mountSfc('src/site/components/c/SchemaForm.vue', {
+test('a form without a translator renders the English source and the picker options', async () => {
+	const form = await mountSfc(VUE_FORM, {
 		action,
 		api: fakeApi(),
 	})
@@ -263,7 +217,7 @@ test('the site form renders a file picker with its limit', async () => {
 
 test('the site form creates, uploads, names the failed file and retries only that one', async () => {
 	const api = fakeApi({ failNames: ['bijlage.pdf'] })
-	const form = await mountSfc('src/site/components/c/SchemaForm.vue', {
+	const form = await mountSfc(VUE_FORM, {
 		action,
 		api,
 	})
@@ -299,7 +253,7 @@ test('the site form creates, uploads, names the failed file and retries only tha
 
 test('the site form refuses an oversized file before saving', async () => {
 	const api = fakeApi()
-	const form = await mountSfc('src/site/components/c/SchemaForm.vue', {
+	const form = await mountSfc(VUE_FORM, {
 		action,
 		api,
 	})

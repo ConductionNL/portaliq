@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // "My details" on the site (identity-registered-details, ported from
-// src/portal/components/RegisteredDetailsPage.jsx). Imports nothing, so the
+// the React portal's RegisteredDetailsPage.jsx). Imports nothing, so the
 // node specs run it as a plain script.
 
 /**

@@ -121,20 +121,6 @@ test('answer link', async () => {
 	assert.equal(outcome.link, 'https://gemeente.example/shared/abc')
 })
 
-test('the detail card renders the item list and the confirm shows the link', () => {
-	const page = readFileSync(
-		join(ROOT, 'src/portal/components/PageView.jsx'),
-		'utf8',
-	)
-	assert.match(page, /<ItemList\s/)
-	assert.match(page, /withoutRemoveAction\(collection,/)
-	const confirm = readFileSync(
-		join(ROOT, 'src/portal/components/RowActionConfirm.jsx'),
-		'utf8',
-	)
-	assert.match(confirm, /data-testid="rowaction-link"/)
-})
-
 test('the site confirm step shows the link the action answered', async () => {
 	const api = {
 		forwardRowAction: async () => ({
@@ -156,9 +142,8 @@ test('the site confirm step shows the link the action answered', async () => {
 	)
 })
 
-// The same promises, held by the site's Vue pages (site-reaches-portal-parity
-// slice b, REQ-SRP-017, REQ-SRP-020). The React half above goes when /portal
-// retires.
+// The site's Vue pages (site-reaches-portal-parity slice b, REQ-SRP-017,
+// REQ-SRP-020).
 
 const { loadSfc, renderSfc } = await import('./support/render-sfc.mjs')
 const VUE_ITEMS = 'src/site/components/collections/ItemList.vue'

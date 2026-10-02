@@ -616,14 +616,14 @@ any user input or confirmation.
 - **WHEN** the collection's objects are being fetched
 - **THEN** the loading state is exposed via an `aria-live="polite"` /
   `role="status"` region, not only visual `…` text
-- @e2e exclude a loading state lasts too briefly to catch reliably in a browser; pinned by tests/portal-live-regions.spec.mjs (every loading indicator is the Loading status region)
+- @e2e exclude a loading state lasts too briefly to catch reliably in a browser; pinned by tests/portal-live-regions.spec.mjs (every "Loading…" on the site sits in a status region)
 
 #### Scenario: Create-action input never uses a native prompt
 - **GIVEN** a subject clicks a `type: create` action button
 - **WHEN** the portal collects the action's declared fields
 - **THEN** it renders a labelled, keyboard-operable inline form, never
   `window.prompt()`
-- @e2e exclude a negative over the whole portal; pinned by tests/portal-live-regions.spec.mjs (no native prompt, alert or confirm anywhere in src/portal)
+- @e2e exclude a negative over the whole portal; pinned by tests/portal-live-regions.spec.mjs (no native prompt, alert or confirm anywhere in src/site or src/embed)
 
 ### Requirement: The signed-in portal MUST meet WCAG 2.2 AA
 
@@ -647,4 +647,4 @@ other message as a status.
 - **GIVEN** a resident who saves a change on their case
 - **WHEN** the portal says it was saved, or that it could not be
 - **THEN** the message sits in a status region, or an alert region for an error, so a screen reader reads it without the resident looking for it
-- @e2e exclude pinned by tests/portal-live-regions.spec.mjs over every portal component
+- @e2e exclude pinned by tests/portal-live-regions.spec.mjs over every site component

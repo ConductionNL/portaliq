@@ -11,63 +11,17 @@
 //   node --test tests/row-action.spec.mjs
 //
 // The manifest is shillinq's parent manifest once it declares rowField and
-// rowWhen. The JSX components are compiled with the preset webpack.portal.js
-// uses and written next to a .mjs copy of the module, where their relative
-// imports point.
+// rowWhen. The components are the site's Vue ports, on the shared
+// src/shared/rowAction.js.
 
 import assert from 'node:assert/strict'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
 import { test } from 'node:test'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
+import * as rowAction from '../src/shared/rowAction.js'
 import { mountSfc } from './support/mount-sfc.mjs'
+import { renderSfc } from './support/render-sfc.mjs'
 
-const require = createRequire(import.meta.url)
-const babel = require('@babel/core')
-const React = require('react')
-const { renderToStaticMarkup } = require('react-dom/server')
-
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests', 'row-action')
-mkdirSync(OUT_DIR, { recursive: true })
-
-writeFileSync(
-	join(OUT_DIR, 'rowAction.mjs'),
-	readFileSync(join(ROOT, 'src', 'shared', 'rowAction.js'), 'utf8'),
-)
-
-/**
- * Compile one component into the cache, pointing its imports at the cache.
- *
- * @param {string} name The component file name without extension.
- * @return {string} The compiled file's path.
- */
-function compile(name) {
-	const source = join(ROOT, 'src', 'portal', 'components', `${name}.jsx`)
-	const code = babel
-		.transformSync(readFileSync(source, 'utf8'), {
-			filename: source,
-			babelrc: false,
-			configFile: false,
-			presets: [['@babel/preset-react', { runtime: 'automatic' }]],
-		})
-		.code.replace("'../../shared/rowAction.js'", "'./rowAction.mjs'")
-		.replace("'./Loading.jsx'", `'${LOADING_MODULE}'`)
-	const out = join(OUT_DIR, `${name}.mjs`)
-	writeFileSync(out, code)
-	return out
-}
-
-compileLoading(OUT_DIR)
-const { default: CollectionTable } = await import(
-	pathToFileURL(compile('CollectionTable')).href
-)
-const { default: RowActionConfirm } = await import(
-	pathToFileURL(compile('RowActionConfirm')).href
-)
-const rowAction = await import(pathToFileURL(join(OUT_DIR, 'rowAction.mjs')).href)
+const VUE_TABLE = 'src/site/components/collections/CollectionTable.vue'
+const VUE_CONFIRM = 'src/site/modals/c/RowActionConfirm.vue'
 
 const t = (key) => `[${key}]`
 
@@ -130,56 +84,54 @@ test('offersRowAction follows rowWhen and nothing else', () => {
 	assert.equal(rowAction.offersRowAction(close, paid), true)
 })
 
-test('the table shows the pay button only on the rows that can still be paid', () => {
-	const html = renderToStaticMarkup(
-		React.createElement(CollectionTable, {
-			collection: salesInvoices,
-			objects: [issued, paid],
-			rowActions: [pay],
-			offers: rowAction.offersRowAction,
-			onRowAction: () => {},
-		}),
-	)
+test('the table shows the pay button only on the rows that can still be paid', async () => {
+	const html = await renderSfc(VUE_TABLE, {
+		collection: salesInvoices,
+		objects: [issued, paid],
+		rowActions: [pay],
+		offers: rowAction.offersRowAction,
+		loading: false,
+		t: (key) => key,
+		locale: 'en',
+	})
 	const rows = html.split('<tr').slice(2)
 	assert.equal(rows.length, 2)
 	assert.match(rows[0], />Pay now</)
 	assert.doesNotMatch(rows[1], />Pay now</)
 })
 
-test('the table without offers keeps showing every action on every row', () => {
-	const html = renderToStaticMarkup(
-		React.createElement(CollectionTable, {
-			collection: salesInvoices,
-			objects: [issued, paid],
-			rowActions: [close],
-			onRowAction: () => {},
-		}),
-	)
+test('the table without offers keeps showing every action on every row', async () => {
+	const html = await renderSfc(VUE_TABLE, {
+		collection: salesInvoices,
+		objects: [issued, paid],
+		rowActions: [close],
+		loading: false,
+		t: (key) => key,
+		locale: 'en',
+	})
 	assert.equal(html.split('>Close</button>').length - 1, 2)
 })
 
-test('the confirm step shows the notice on a voluntary contribution, and none otherwise', () => {
+test('the confirm step shows the notice on a voluntary contribution, and none otherwise', async () => {
 	const render = (row) =>
-		renderToStaticMarkup(
-			React.createElement(RowActionConfirm, {
-				action: pay,
-				collection: salesInvoices,
-				row,
-				api: {},
-				t,
-			}),
-		)
+		renderSfc(VUE_CONFIRM, {
+			action: pay,
+			collection: salesInvoices,
+			row,
+			api: {},
+			t,
+		})
 
-	const voluntary = render(issued)
-	assert.match(voluntary, /<h4[^>]*>Pay now<\/h4>/)
+	const voluntary = await render(issued)
+	assert.match(voluntary, /<h3[^>]*>\s*Pay now\s*<\/h3>/)
 	assert.equal(voluntary.split(VOLUNTARY).length - 1, 1)
-	assert.match(voluntary, /class="portaliq-notice"/)
-	assert.match(voluntary, />\[Continue\]</)
-	assert.match(voluntary, />\[Cancel\]</)
+	assert.match(voluntary, /class="utrecht-paragraph pq-rowaction__notice"/)
+	assert.match(voluntary, />\s*\[Continue\]\s*</)
+	assert.match(voluntary, />\s*\[Cancel\]\s*</)
 	assert.match(voluntary, /role="status"/)
 
-	const plain = render({ ...issued, invoiceNote: undefined })
-	assert.doesNotMatch(plain, /portaliq-notice/)
+	const plain = await render({ ...issued, invoiceNote: undefined })
+	assert.doesNotMatch(plain, /pq-rowaction__notice/)
 })
 
 test('redirectTarget follows only an https URL from a 2xx answer', () => {
@@ -325,8 +277,8 @@ test('a page-level action shows the leaf app answer instead of discarding it (#8
 	})
 })
 
-// The site's Vue port (site-reaches-portal-parity T12 and T13, REQ-SRP-025,
-// REQ-SRP-026, REQ-SRP-027) on the same shared src/shared/rowAction.js.
+// The site's Vue port, mounted (site-reaches-portal-parity T12 and T13,
+// REQ-SRP-025, REQ-SRP-026, REQ-SRP-027).
 
 /**
  * A fake portal api that records every forward.
@@ -356,7 +308,7 @@ function forwardingApi(answer) {
 
 test('the site confirm step shows the notice and sends nothing until Continue', async () => {
 	const api = forwardingApi({ ok: true, status: 200, body: {} })
-	const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', {
+	const step = await mountSfc(VUE_CONFIRM, {
 		action: pay,
 		collection: salesInvoices,
 		row: issued,
@@ -392,7 +344,7 @@ test('the site confirm step follows a checked redirect and never an unsafe one',
 		status: 200,
 		body: { checkoutUrl: 'https://pay.example/checkout/1' },
 	})
-	const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', {
+	const step = await mountSfc(VUE_CONFIRM, {
 		action: pay,
 		collection: salesInvoices,
 		row: issued,
@@ -408,7 +360,7 @@ test('the site confirm step follows a checked redirect and never an unsafe one',
 		status: 200,
 		body: { redirectUrl: 'javascript:alert(1)' },
 	})
-	const other = await mountSfc('src/site/modals/c/RowActionConfirm.vue', {
+	const other = await mountSfc(VUE_CONFIRM, {
 		action: pay,
 		collection: salesInvoices,
 		row: issued,

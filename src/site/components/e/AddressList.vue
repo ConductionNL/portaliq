@@ -6,7 +6,7 @@
 <!--
 	One kind of contact address on "My account" (identity-profile-page T07):
 	the list with the preferred one marked, and a form to add one. Ported from
-	AddressList in src/portal/components/AccountPage.jsx. An e-mail address is
+	AddressList in the React portal's AccountPage.jsx. An e-mail address is
 	used for nothing until its confirmation link is followed.
 -->
 <template>

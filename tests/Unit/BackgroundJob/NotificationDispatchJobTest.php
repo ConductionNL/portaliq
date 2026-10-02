@@ -103,8 +103,14 @@ class NotificationDispatchJobTest extends TestCase {
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('linkToRoute')->willReturnCallback(
 			static function (string $route, array $arguments = []): string {
-				$path = '/index.php/apps/portaliq/portal';
-				if ($route !== 'portaliq.portalPage.index' || $arguments === []) {
+				// Only the site's route answers the site's path: a link built
+				// from any other route would show up in the asserted body.
+				if ($route !== 'portaliq.portalPage.site') {
+					return '/index.php/apps/portaliq/' . $route;
+				}
+
+				$path = '/index.php/apps/portaliq/site';
+				if ($arguments === []) {
 					return $path;
 				}
 
@@ -247,7 +253,7 @@ class NotificationDispatchJobTest extends TestCase {
 		$this->assertSame(['supplier@example.org'], $captured['to']);
 		$this->assertStringContainsString('Test Org', $captured['subject']);
 		$this->assertStringContainsString('Test Org', $captured['body']);
-		$this->assertStringContainsString('https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $captured['body']);
+		$this->assertStringContainsString('https://cloud.example/index.php/apps/portaliq/site?org=org-1', $captured['body']);
 		$this->assertStringNotContainsString('message.created', $captured['subject'] . $captured['body']);
 		// The CONTRIBUTING app, the rule key and the case content must not be
 		// named — that is what "content-free" protects. A ban on words in the
@@ -261,7 +267,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->assertContains($locale, ['nl', 'en']);
 			$this->assertContains(
 				$parameters,
-				[['Test Org'], ['Test Org', 'https://cloud.example/index.php/apps/portaliq/portal?org=org-1']],
+				[['Test Org'], ['Test Org', 'https://cloud.example/index.php/apps/portaliq/site?org=org-1']],
 				'translation "' . $key . '" received a parameter that is neither the organisation name nor the deep link'
 			);
 		}
