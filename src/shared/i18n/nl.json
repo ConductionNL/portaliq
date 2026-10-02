@@ -324,5 +324,6 @@
 	"Cases and tasks": "Zaken en taken",
 	"Messages and news": "Berichten en nieuws",
 	"Your details and account": "Uw gegevens en account",
-	"{label} ({source})": "{label} ({source})"
+	"{label} ({source})": "{label} ({source})",
+	"Menu": "Menu"
 }

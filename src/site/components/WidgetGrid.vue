@@ -171,8 +171,20 @@ const IntakeStatusBlock = defineAsyncComponent(
  * through Portaliq's own anonymous contribution-create endpoint and is
  * described by this app's `form` schema, not the design system.
  */
+/**
+ * On demand as well: the menu block is placed on the pages of portals that
+ * want a side menu (site-navigation-block), and the first-load budget applies.
+ */
+const SiteNavigationBlock = defineAsyncComponent(
+	() => import('./SiteNavigationBlock.vue'),
+)
+
 const PUBLIC_WIDGETS = {
 	markdown: MarkdownBlock,
+	// site-navigation-block: the portal's own navigation, which the shell
+	// derives from the public menus and the signed-in navigation and hands
+	// over as `navigation`; the block fetches nothing.
+	siteNavigation: SiteNavigationBlock,
 	contributions: ContributionsBlock,
 	// `federatedSearch` stays owned here rather than coming from the shared
 	// registry, because what it is allowed to query is this app's decision.
@@ -301,6 +313,17 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
+		/**
+		 * The menu block's data: `{groups, currentRoute, label, toggleLabel}`,
+		 * derived by the host from the menus and the signed-in navigation
+		 * (src/site/lib/siteNavigation.js). Supplied by the host for the same
+		 * reason the glossary rows are.
+		 */
+		navigation: {
+			type: Object,
+			default: () => ({}),
+		},
 	},
 
 	// `search` comes from the shared hero block, which renders a search box and
@@ -382,6 +405,21 @@ export default {
 
 			if (widget.widgetKey === 'markdown') {
 				return { source: props.markdown || '' }
+			}
+
+			// The menu block: the host supplies the groups and the route on
+			// screen, after the authored props, so a placement can rename the
+			// landmark but cannot change where the links lead
+			// (site-navigation-block).
+			if (widget.widgetKey === 'siteNavigation') {
+				const navigation = this.navigation || {}
+				return {
+					label: navigation.label,
+					toggleLabel: navigation.toggleLabel,
+					...props,
+					groups: navigation.groups || [],
+					currentRoute: navigation.currentRoute || '/',
+				}
 			}
 
 			// THE GLOSSARY'S ROWS ARE DATA, NOT PAGE CONFIGURATION.
