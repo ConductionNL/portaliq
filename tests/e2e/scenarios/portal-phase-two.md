@@ -172,10 +172,20 @@ menu, a grid page, two markdown pages, a draft, two glossary terms).
   public origin. Without deleting the globals, "does not depend on Nextcloud"
   and "happens to work because Nextcloud is there" are the same observation.
 
-## S12 — Visual comparison: the Vue renderer against the React portal
+## S12 — Visual comparison: retired with the React portal
 
 | | |
 | --- | --- |
+| **Spec** | `portal-shared-runtime` — parity must be measured, not asserted |
+| **Runs in** | nothing any more |
+
+- **NOTE** this scenario captured the Vue renderer and the React portal side
+  by side for human review. The React portal is gone (`site-reaches-portal-
+  parity`, REQ-SRP-050) and `/apps/portaliq/portal` only redirects to the site
+  (REQ-SRP-048, `portal-redirects-to-site.spec.ts`), so there is no second
+  renderer to capture and the spec was deleted.
+
+--- | --- |
 | **Spec** | `portal-shared-runtime` — parity must be measured, not asserted |
 | **Runs in** | `visual/portal-comparison.spec.ts` |
 
