@@ -76,10 +76,19 @@ forwards `{ itemId }` with the proven dossier id. A `removeAction` without
 
 When an endpoint row action succeeds and its answer carries `link` that is
 https or instance-local, the confirm step SHALL show that link in a read-only
-field with a copy button.
+field with a copy button. Instance-local is a path on this instance, or an
+absolute link on the page's own origin (also when that origin is plain http,
+as on a dev or intranet instance). A `javascript:` link or an http link on
+another origin SHALL NOT be shown.
 
 #### Scenario: A resident shares a dossier
 - **GIVEN** a dossier and a share action that answers `{ link: "https://gemeente.nl/…/shared/abc" }`
 - **WHEN** the resident runs it
 - **THEN** the link shows in a read-only field with "Kopieer link"
 - test: `tests/my-dossiers.spec.mjs` ("answer link")
+
+#### Scenario: A share link on the site's own origin
+- **GIVEN** the site on `http://localhost:8080` and a share action that answers `{ link: "http://localhost:8080/index.php/apps/portaliq/site?route=/gedeeld-dossier/tok-1" }`
+- **WHEN** the resident runs it
+- **THEN** the link shows in the read-only field, and a link on another origin such as `http://evil.example/x` does not
+- test: `tests/my-dossiers.spec.mjs` ("answer link on the site's own origin")

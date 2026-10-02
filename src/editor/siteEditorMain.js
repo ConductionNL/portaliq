@@ -20,13 +20,14 @@ import SiteEditMode from './SiteEditMode.vue'
  * Mount the editor for one page.
  *
  * @param {HTMLElement} element Where the page was rendered.
- * @param {{pageId: string, portal: string, onLeave: Function}} options The page, its portal, and what to do on leaving.
- * @return {Function} Unmounts the editor.
+ * @param {{pageId: string, portal: string, onLeave: () => void, onSaved: () => void}} options The page, its portal, what to do on leaving, and what to do after a publish.
+ * @return {() => void} Unmounts the editor.
  * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+ * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
  */
-function mount(element, { pageId, portal, onLeave }) {
+function mount(element, { pageId, portal, onLeave, onSaved }) {
 	const app = createApp({
-		render: () => h(SiteEditMode, { pageId, portal, onLeave }),
+		render: () => h(SiteEditMode, { pageId, portal, onLeave, onSaved }),
 	})
 	app.mount(element)
 	return () => app.unmount()

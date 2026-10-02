@@ -188,6 +188,29 @@ test('the site shows one button per attached action and forwards with actionApp'
 	)
 })
 
+// attach-to-own-collection T04 on the site: the record on screen decides, as
+// it did in the portal, so the reply shows only on a question that waits for
+// the resident.
+test('the site offers an attached action only on the records its rowWhen names', async () => {
+	const collection = { id: 'vragen', attachedActions: [REPLY] }
+	const waiting = await mountSfc('src/site/components/c/AttachedActions.vue', {
+		collection,
+		row: { id: 'q-1', status: 'awaiting_customer' },
+		api: {},
+	})
+	assert.ok(waiting.find('attached-action-replyToQuestion'))
+
+	for (const status of ['in_progress', 'converted']) {
+		const other = await mountSfc('src/site/components/c/AttachedActions.vue', {
+			collection,
+			row: { id: 'q-2', status },
+			api: {},
+		})
+		assert.ok(!other.find('attached-action-replyToQuestion'), status)
+		assert.equal(other.text(), '', `nothing renders on a ${status} question`)
+	}
+})
+
 test('the site renders nothing without attached actions or without a record', async () => {
 	const none = await mountSfc('src/site/components/c/AttachedActions.vue', {
 		collection: { id: 'x' },

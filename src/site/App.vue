@@ -1628,11 +1628,13 @@ export default {
 		 * Load one page by route.
 		 *
 		 * @param {string} route The in-portal route.
+		 * @param {{fresh?: boolean}} [options] `fresh` to read past the browser cache.
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-unpublished-content-must-be-indistinguishable-from-absent-content
+		 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
 		 */
-		async loadRoute(route) {
+		async loadRoute(route, { fresh = false } = {}) {
 			this.signInNeeded = false
 			// The signed-in area renders from the session, not from a CMS
 			// page, so no page is read for it.
@@ -1662,7 +1664,7 @@ export default {
 			this.error = null
 			this.routeParam = ''
 			try {
-				this.page = await fetchPage(route, this.portalSlug)
+				this.page = await fetchPage(route, this.portalSlug, { fresh })
 			} catch (error) {
 				// A ROUTE CAN ADDRESS A THING RATHER THAN A PAGE.
 				//
@@ -1680,7 +1682,9 @@ export default {
 				const parent = this.parentRoute(route)
 				if (this.isNotFound(error) === true && parent !== null) {
 					try {
-						this.page = await fetchPage(parent, this.portalSlug)
+						this.page = await fetchPage(parent, this.portalSlug, {
+							fresh,
+						})
 						this.routeParam = route.slice(parent.length + 1)
 						this.loading = false
 						return
@@ -1725,7 +1729,32 @@ export default {
 				this.unmountEditor = null
 			}
 			this.editMode = false
-			await this.loadRoute(this.route)
+			// Fresh: the page may have been published a moment ago, and an
+			// ordinary read answers from the browser cache for five minutes.
+			await this.loadRoute(this.route, { fresh: true })
+		},
+
+		/**
+		 * After the editor published, read the page on screen again past the
+		 * browser cache, quietly: the editor stays open, and leaving it shows
+		 * the published page, not the copy the cache still held.
+		 *
+		 * @return {Promise<void>} Resolves when the page is read.
+		 *
+		 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
+		 */
+		async refreshShownPage() {
+			if (this.routeParam !== '') {
+				return
+			}
+			try {
+				this.page = await fetchPage(this.route, this.portalSlug, {
+					fresh: true,
+				})
+			} catch {
+				// Leaving edit mode reads the page again anyway; a failed
+				// refresh here must not disturb the editor.
+			}
 		},
 
 		/**
@@ -1748,6 +1777,7 @@ export default {
 					pageId: this.editing.pageId,
 					portal: (this.site && this.site.slug) || this.portalSlug || '',
 					onLeave: () => this.leaveEditMode(),
+					onSaved: () => this.refreshShownPage(),
 				})
 				this.editorStatus = ''
 			} catch {

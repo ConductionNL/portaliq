@@ -121,8 +121,17 @@ export default {
 			return translatorOr(this.t)
 		},
 
+		/**
+		 * The actions that apply to the record on screen: an action with
+		 * `rowWhen` (pipelinq's reply, only on a question that waits for the
+		 * resident) shows only on the rows it names, as the portal did.
+		 *
+		 * @return {Array<object>} The actions.
+		 *
+		 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+		 */
 		actions() {
-			return attachedActionsOf(this.collection)
+			return this.row ? attachedActionsOf(this.collection, this.row) : []
 		},
 
 		fields() {
