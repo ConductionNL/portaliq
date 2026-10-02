@@ -425,7 +425,13 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// The LITERAL payload — never the request body. Whatever extra fields a
 		// client sends are simply never read, so `read` (or the collection's
-		// own read date) is the only field this endpoint can ever change.
+		// own read date, messageFields.readAt) is the only field this
+		// endpoint can ever change.
+		$fields = new InboxMessageFields();
+		$payload = $fields->readPayload(
+			collection: $fields->normalise(collection: $collection),
+			now: gmdate(format: 'Y-m-d\TH:i:s\Z')
+		);
 		$updated = $this->writeScoped(
 			register: $register,
 			schema: $schema,
@@ -433,7 +439,7 @@ class ContributionController extends Controller implements PortalProtected {
 			subjectRef: $scopeValue,
 			organisation: (string)($subject['organisation'] ?? ''),
 			id: $id,
-			data: $this->readPayload(collection: $collection),
+			data: $payload,
 			context: 'markRead'
 		);
 		if ($updated instanceof JSONResponse) {
@@ -442,26 +448,6 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['object' => $updated]);
 	}//end markRead()
-
-	/**
-	 * The one field mark-read writes: the collection's own read date when
-	 * it names one in `messageFields.readAt`, else `read: true`. Built here,
-	 * never from the request body.
-	 *
-	 * @param array<string, mixed> $collection The matched inbox collection.
-	 *
-	 * @return array<string, mixed> The literal payload.
-	 *
-	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
-	 */
-	private function readPayload(array $collection): array {
-		$fields = new InboxMessageFields();
-
-		return $fields->readPayload(
-			collection: $fields->normalise(collection: $collection),
-			now: gmdate(format: 'Y-m-d\TH:i:s\Z')
-		);
-	}//end readPayload()
 
 	/**
 	 * Find a `kind: inbox` collection matching (register, schema) in the
