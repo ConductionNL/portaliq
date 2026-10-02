@@ -98,13 +98,79 @@ class CitizenWritableSetResolver {
 	 *                                     declaration and its `fields` whitelist.
 	 * @param array<string, mixed> $case The citizen's own case row.
 	 * @param string $audience The session's audience, e.g. `client`.
+	 * @param string $closedField The closed marker the case's collection
+	 *                            declares (`closedField`), or ''.
 	 *
 	 * @return array<string, mixed> The writable set: `fields`, `writable`,
-	 *                              `window`, `documents` and `status`.
+	 *                              `window`, `documents`, `status` and
+	 *                              `ended`.
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function resolve(array $action, array $case, string $audience, string $closedField = ''): array {
+		$set = $this->resolveOpen(action: $action, case: $case, audience: $audience);
+		if ($this->hasEnded(case: $case, closedField: $closedField) === false) {
+			return array_merge($set, ['ended' => false]);
+		}
+
+		// A withdrawn or closed case takes nothing more from the portal, and
+		// the case type's sentences for a window that has closed ("is al in
+		// behandeling, stuur ons een bericht") invite a resident to add to a
+		// case that is over. Every window closes with one neutral sentence,
+		// which a refused write answers with; the screen shows the case's
+		// state instead (`ended`).
+		$reason = $this->l10n->t('This case is not open for changes from the portal.');
+		$closed = ['open' => false, 'reason' => $reason];
+		$fields = [];
+		foreach (array_keys((array)($set['fields'] ?? [])) as $field) {
+			$fields[$field] = ['writable' => false, 'reason' => $reason];
+		}
+
+		return array_merge(
+			$set,
+			[
+				'fields' => $fields,
+				'writable' => [],
+				'window' => $closed,
+				'documents' => $closed,
+				'ended' => true,
+			]
+		);
+	}//end resolve()
+
+	/**
+	 * Whether the case is over: withdrawn, or closed by the marker its
+	 * collection declares (the one "My cases" files it under Closed by).
+	 *
+	 * @param array<string, mixed> $case The citizen's own case row.
+	 * @param string $closedField The collection's `closedField`, or ''.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function hasEnded(array $case, string $closedField): bool {
+		$withdrawnAt = ($case['withdrawnAt'] ?? null);
+		if (is_string($withdrawnAt) === true && $withdrawnAt !== '') {
+			return true;
+		}
+
+		return (new CaseRowMarker())->isClosed(row: $case, collection: ['closedField' => $closedField]);
+	}//end hasEnded()
+
+	/**
+	 * The writable set as the case type declares it for the case's status.
+	 *
+	 * @param array<string, mixed> $action The matched `type: update` action.
+	 * @param array<string, mixed> $case The citizen's own case row.
+	 * @param string $audience The session's audience.
+	 *
+	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
-	public function resolve(array $action, array $case, string $audience): array {
+	private function resolveOpen(array $action, array $case, string $audience): array {
 		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
 		if (is_array($config) === false) {
 			return $this->closedSet(reason: $this->l10n->t('This case is not open for changes from the portal.'));
@@ -144,7 +210,7 @@ class CitizenWritableSetResolver {
 			'documents' => $documents,
 			'status' => $this->status(caseType: $caseType, status: $status),
 		];
-	}//end resolve()
+	}//end resolveOpen()
 
 	/**
 	 * Whether this case may be withdrawn right now, and onto what.
@@ -155,13 +221,16 @@ class CitizenWritableSetResolver {
 	 *
 	 * @param array<string, mixed> $action The matched `type: update` action.
 	 * @param array<string, mixed> $case The citizen's own case row.
+	 * @param string $closedField The closed marker the case's collection
+	 *                            declares (`closedField`), or ''.
 	 *
 	 * @return array<string, mixed> `declared`, `open`, `reason`,
 	 *         `targetStatus` and `confirmText`.
 	 *
 	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
 	 */
-	public function withdrawal(array $action, array $case): array {
+	public function withdrawal(array $action, array $case, string $closedField = ''): array {
 		$closed = [
 			'declared' => false,
 			'open' => false,
@@ -206,6 +275,17 @@ class CitizenWritableSetResolver {
 				'declared' => true,
 				'open' => false,
 				'reason' => $this->l10n->t('This request has already been withdrawn.'),
+				'targetStatus' => $targetStatus,
+				'confirmText' => $confirmText,
+			];
+		}
+
+		if ($this->hasEnded(case: $case, closedField: $closedField) === true) {
+			// A closed case is not withdrawn: there is nothing left to stop.
+			return [
+				'declared' => true,
+				'open' => false,
+				'reason' => $this->l10n->t('This request cannot be withdrawn from the portal.'),
 				'targetStatus' => $targetStatus,
 				'confirmText' => $confirmText,
 			];

@@ -51,7 +51,7 @@
 		</div>
 
 		<p
-			v-if="!windowOpen"
+			v-if="!windowOpen && !ended"
 			class="utrecht-paragraph pq-case-closed"
 			data-testid="case-window-closed">
 			{{ (writableSet.window && writableSet.window.reason) || '' }}
@@ -64,6 +64,7 @@
 				:field="field"
 				:state="fieldStates[field] || null"
 				:value="draft[field] !== undefined ? draft[field] : caseRow[field]"
+				:quiet="ended"
 				:t="t"
 				@change="onFieldChange" />
 		</div>
@@ -126,7 +127,7 @@
 					@change="onAddDocument" />
 			</div>
 			<p
-				v-else
+				v-else-if="!ended"
 				class="utrecht-paragraph pq-case-reason"
 				data-testid="case-documents-closed">
 				{{ (writableSet.documents && writableSet.documents.reason) || '' }}
@@ -150,7 +151,7 @@
 		</div>
 
 		<p
-			v-if="withdrawal.kind === 'closed'"
+			v-if="withdrawal.kind === 'closed' && !ended"
 			class="utrecht-paragraph pq-case-reason"
 			data-testid="case-withdraw-closed">
 			{{ withdrawal.reason }}
@@ -189,7 +190,11 @@
 import WithdrawCaseConfirm from '../../modals/e/WithdrawCaseConfirm.vue'
 import CaseField from './CaseField.vue'
 import { groupDocuments } from '../../../shared/caseDocuments.js'
-import { caseFieldNames, withdrawalView } from '../../../shared/withdrawal.js'
+import {
+	caseFieldNames,
+	caseHasEnded,
+	withdrawalView,
+} from '../../../shared/withdrawal.js'
 import { readerLocale, shortDate } from '../../pages/e/format.js'
 
 export default {
@@ -262,6 +267,11 @@ export default {
 
 		withdrawal() {
 			return withdrawalView(this.data?.withdrawal, this.caseRow)
+		},
+
+		/** Withdrawn or closed: the screen shows the state, not why a window shut. */
+		ended() {
+			return caseHasEnded(this.writableSet, this.withdrawal)
 		},
 
 		groups() {
