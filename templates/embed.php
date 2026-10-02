@@ -52,6 +52,16 @@ $config = [
     <title><?php p($locale === 'en' ? 'Form' : 'Formulier'); ?></title>
 </head>
 <body>
+    <!--
+        THE SKIP LINK (WCAG 2.4.1), for the reason site.php gives: this
+        template owns the document, so the bypass belongs in the response, not
+        in the bundle. First element in <body>, so it is the first tab stop in
+        the frame. The target is the mount point, which the bundle fills.
+    -->
+    <a id="skip-link"
+       class="utrecht-skip-link utrecht-skip-link--visible-on-focus"
+       href="#portaliq-embed"><?php p($locale === 'en' ? 'Skip to the form' : 'Direct naar het formulier'); ?></a>
+
     <script type="application/json" id="portaliq-embed-config"><?php
         print_unescaped(json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
     ?></script>
