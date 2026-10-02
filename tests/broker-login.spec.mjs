@@ -14,7 +14,12 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '../src/shared/signinRoute.js'
+import {
+	consumeSigninFailed,
+	loginStartUrl,
+	signinOrganisation,
+} from '../src/shared/signinRoute.js'
+import { signInRoutes, takeSigninFailed } from '../src/site/lib/authApi.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -53,13 +58,41 @@ test('a failed login is read once from the fragment and stripped', () => {
 	assert.equal(replaced.length, 1)
 })
 
-test('the login screen starts each button by its route and shows the failure', () => {
-	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
-	assert.match(app, /loginStartUrl\(config\.apiBase, signinOrganisation\(config\), p\.provider, p\.route, config\.organisationSlug\)/)
-	assert.match(app, /consumeSigninFailed\(window\.location, window\.history\)/)
+test('site: the login screen starts each button at the edge for its portal and shows the failure', () => {
+	const routes = signInRoutes(
+		{
+			slug: 'wilgenboom',
+			authentication: { modes: ['public', 'digid', 'oidc'] },
+		},
+		'/apps/portaliq/portal/api',
+	)
+	assert.deepEqual(
+		routes.map((route) => route.mode),
+		['digid', 'oidc'],
+		'public is not a sign-in route',
+	)
+	for (const route of routes) {
+		assert.match(
+			route.href,
+			/^\/apps\/portaliq\/portal\/api\/session\/oidc\/start\?provider=/,
+		)
+		assert.match(
+			route.href,
+			/[?&]portal=wilgenboom(&|$)/,
+			'the serving portal travels with the link',
+		)
+	}
+	assert.match(routes[1].href, /provider=generic/, 'a mode is not a provider')
+
+	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
+	assert.match(app, /signinFailed: takeSigninFailed\(\)/)
 	assert.match(
 		app,
-		/t\('Signing in did not work\. Try again or choose another way in\.'\)/,
+		/:signinFailedMessage="signinFailed \? signinFailedMessage : ''"/,
+	)
+	assert.match(
+		app,
+		/this\.t\(\s*'Signing in did not work\. Try again or choose another way in\.',?\s*\)/,
 	)
 
 	const nl = JSON.parse(
@@ -71,22 +104,55 @@ test('the login screen starts each button by its route and shows the failure', (
 	)
 })
 
+test('site: a failed sign-in is read once from the fragment and stripped', () => {
+	const replaced = []
+	const saved = globalThis.window
+	globalThis.window = {
+		location: {
+			hash: '#signin=failed',
+			pathname: '/apps/portaliq/site',
+			search: '?portal=venray',
+		},
+		history: { replaceState: (_s, _t, url) => replaced.push(url) },
+	}
+	try {
+		assert.equal(takeSigninFailed(), true)
+		assert.deepEqual(replaced, ['/apps/portaliq/site?portal=venray'])
+		globalThis.window.location.hash = '#token=abc'
+		assert.equal(takeSigninFailed(), false)
+		assert.equal(replaced.length, 1)
+	} finally {
+		globalThis.window = saved
+	}
+})
+
 test('the login starts with the sign-in organisation, not the portal slug (portal-signin-on-its-own-address T1)', () => {
 	assert.equal(
-		signinOrganisation({ organisationSlug: 'wilgenboom', signinOrganisation: 'default-organisation' }),
+		signinOrganisation({
+			organisationSlug: 'wilgenboom',
+			signinOrganisation: 'default-organisation',
+		}),
 		'default-organisation',
 	)
 	assert.equal(
-		signinOrganisation({ organisationSlug: 'gemeente-x', signinOrganisation: '' }),
+		signinOrganisation({
+			organisationSlug: 'gemeente-x',
+			signinOrganisation: '',
+		}),
 		'gemeente-x',
 		'an older server without the key keeps the old behaviour',
 	)
 	assert.equal(signinOrganisation({}), '')
 })
 
-test('the dev login button shows only where the server accepts it (portal-signin-on-its-own-address T2)', () => {
-	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
-	assert.match(app, /\{config\.devLogin === true && \(\s*<button type="button" className="portaliq-devlogin"/)
+test('site: the dev login button shows only where the server accepts it (portal-signin-on-its-own-address T2)', () => {
+	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
+	assert.match(app, /:devLogin="signinConfig\.devLogin === true"/)
+	const area = readFileSync(
+		join(ROOT, 'src', 'site', 'components', 'AccountArea.vue'),
+		'utf8',
+	)
+	assert.match(area, /v-if="devLogin"[\s\S]*?data-testid="site-devlogin"/)
 })
 
 test('the login names the serving portal so it returns there (portal-signin-on-its-own-address T3)', () => {
@@ -94,5 +160,8 @@ test('the login names the serving portal so it returns there (portal-signin-on-i
 		loginStartUrl('/api', 'default-organisation', 'digid', 'oidc', 'wilgenboom'),
 		'/api/session/oidc/start?org=default-organisation&provider=digid&portal=wilgenboom',
 	)
-	assert.equal(loginStartUrl('/api', 'org', 'digid', 'oidc', ''), '/api/session/oidc/start?org=org&provider=digid')
+	assert.equal(
+		loginStartUrl('/api', 'org', 'digid', 'oidc', ''),
+		'/api/session/oidc/start?org=org&provider=digid',
+	)
 })
