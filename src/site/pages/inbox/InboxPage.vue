@@ -80,9 +80,7 @@
 						<ul
 							class="pq-inbox-row__file-list"
 							:aria-labelledby="`pq-inbox-files-${idOf(message, i)}`">
-							<li
-								v-for="file in attachments(message)"
-								:key="file.id">
+							<li v-for="file in attachments(message)" :key="file.id">
 								<button
 									type="button"
 									class="utrecht-button utrecht-button--subtle"

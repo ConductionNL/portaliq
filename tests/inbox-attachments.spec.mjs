@@ -11,10 +11,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import {
-	attachmentsOf,
-	downloadCollection,
-} from '../src/site/pages/inbox/inbox.js'
+import { attachmentsOf, downloadCollection } from '../src/site/pages/inbox/inbox.js'
 import { instance, inState, t } from './support/page-instance.mjs'
 import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 

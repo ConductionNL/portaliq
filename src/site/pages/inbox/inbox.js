@@ -202,9 +202,9 @@ export function attachmentsOf(message) {
 	const files = Array.isArray(message?._files) ? message._files : []
 	return files.filter(
 		(file) =>
-			file &&
-			(typeof file.id === 'string' || typeof file.id === 'number') &&
-			String(file.id) !== '',
+			file
+			&& (typeof file.id === 'string' || typeof file.id === 'number')
+			&& String(file.id) !== '',
 	)
 }
 
