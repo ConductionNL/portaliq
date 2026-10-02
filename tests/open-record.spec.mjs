@@ -121,24 +121,28 @@ test("only a row in the resident's own scoped list is opened", () => {
 	assert.equal(rowFor(objects, 'someone-elses'), null)
 })
 
-test('the shell, the inbox and the page view are wired to it', () => {
-	const app = readFileSync(
-		new URL('../src/portal/App.jsx', import.meta.url),
-		'utf8',
+test('site: the shell, the inbox and the contribution page are wired to it', () => {
+	const app = readFileSync(new URL('../src/site/App.vue', import.meta.url), 'utf8')
+	assert.match(
+		app,
+		/consumeOpenTarget\(window\.location, window\.history, storage\)/,
 	)
-	assert.match(app, /consumeOpenTarget\(/)
-	assert.match(app, /onOpenRecord=/)
+	assert.match(app, /const opened = openRecordEntry\(this\.nav\)/)
 	const inbox = readFileSync(
 		new URL('../src/site/pages/inbox/InboxPage.vue', import.meta.url),
 		'utf8',
 	)
 	assert.match(inbox, /recordLink/)
 	assert.match(inbox, /NotificationSettings/)
+	assert.match(inbox, /@click="openRecord\(message\.recordLink\)"/)
 	const page = readFileSync(
-		new URL('../src/portal/components/PageView.jsx', import.meta.url),
+		new URL(
+			'../src/site/pages/collections/ContributionPage.vue',
+			import.meta.url,
+		),
 		'utf8',
 	)
-	assert.match(page, /openRecord/)
+	assert.match(page, /openRecord: \{ type: Object, default: null \}/)
 	for (const locale of ['en', 'nl']) {
 		const bundle = JSON.parse(
 			readFileSync(
@@ -174,25 +178,46 @@ const siteNav = [
 	{
 		key: 'learniq:absences',
 		contribution: { app: 'learniq' },
-		page: { id: 'absences', blocks: [{ type: 'collection', collection: 'parentExcuseRequests' }] },
+		page: {
+			id: 'absences',
+			blocks: [{ type: 'collection', collection: 'parentExcuseRequests' }],
+		},
 	},
 ]
 
 test('site: a link kept across the sign-in opens the page that shows its collection', () => {
 	const store = storage()
-	store.setItem(OPEN_STORAGE_KEY, JSON.stringify({ app: 'learniq', collection: 'parentExcuseRequests', id: 'x1' }))
+	store.setItem(
+		OPEN_STORAGE_KEY,
+		JSON.stringify({
+			app: 'learniq',
+			collection: 'parentExcuseRequests',
+			id: 'x1',
+		}),
+	)
 
-	const entry = openRecordEntry(siteNav, { location: { hash: '', pathname: '/site', search: '' }, history: null, storage: store })
+	const entry = openRecordEntry(siteNav, {
+		location: { hash: '', pathname: '/site', search: '' },
+		history: null,
+		storage: store,
+	})
 
 	assert.equal(entry.key, 'learniq:absences')
-	assert.ok(store.map.has(OPEN_STORAGE_KEY), 'kept until the page has selected the row')
+	assert.ok(
+		store.map.has(OPEN_STORAGE_KEY),
+		'kept until the page has selected the row',
+	)
 })
 
 test('site: a link in the address is stripped, and one no page shows is forgotten', () => {
 	const store = storage()
 	const replaced = []
 	const entry = openRecordEntry(siteNav, {
-		location: { hash: '#open=learniq/elsewhere/x1', pathname: '/apps/portaliq/site', search: '?portal=wilgenboom' },
+		location: {
+			hash: '#open=learniq/elsewhere/x1',
+			pathname: '/apps/portaliq/site',
+			search: '?portal=wilgenboom',
+		},
 		history: { replaceState: (...args) => replaced.push(args) },
 		storage: store,
 	})
@@ -202,11 +227,29 @@ test('site: a link in the address is stripped, and one no page shows is forgotte
 	assert.equal(store.map.has(OPEN_STORAGE_KEY), false)
 })
 
-test('site: the contribution page selects the row from the resident\'s own rows, or says it is not there', () => {
-	const page = readFileSync(new URL('../src/site/pages/collections/ContributionPage.vue', import.meta.url), 'utf8')
+test("site: the contribution page selects the row from the resident's own rows, or says it is not there", () => {
+	const page = readFileSync(
+		new URL(
+			'../src/site/pages/collections/ContributionPage.vue',
+			import.meta.url,
+		),
+		'utf8',
+	)
 	assert.match(page, /openRecordState\(/)
 	assert.match(page, /forgetOpenTarget\(sessionStore\(\)\)/)
-	assert.match(page, /tr\('This record is not in your list, so nothing of it is shown\.'\)/)
-	const loader = readFileSync(new URL('../src/site/pages/collections/collectionLoader.js', import.meta.url), 'utf8')
-	assert.match(loader, /rowFor\(loaded\.objects, target\.id\) \|\| target\.row \|\| null/)
+	assert.match(
+		page,
+		/tr\('This record is not in your list, so nothing of it is shown\.'\)/,
+	)
+	const loader = readFileSync(
+		new URL(
+			'../src/site/pages/collections/collectionLoader.js',
+			import.meta.url,
+		),
+		'utf8',
+	)
+	assert.match(
+		loader,
+		/rowFor\(loaded\.objects, target\.id\) \|\| target\.row \|\| null/,
+	)
 })
