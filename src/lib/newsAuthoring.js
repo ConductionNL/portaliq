@@ -21,6 +21,12 @@
  */
 
 /** The audience kinds the screen offers, plus the one it only keeps. */
+/**
+ * The News page's list in the shared object store: `<register>-<schema>` of
+ * the manifest page.
+ */
+export const NEWS_LIST = 'portaliq-newsItem'
+
 export const AUDIENCE_SCHOOL = 'school'
 export const AUDIENCE_GROUPS = 'groups'
 export const AUDIENCE_CHILDREN = 'children'
