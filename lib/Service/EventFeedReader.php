@@ -141,6 +141,26 @@ class EventFeedReader {
 	}//end readOwnEvent()
 
 	/**
+	 * Whether a child is one of the guardian's own children, so an RSVP or a
+	 * sign-up can only ever be made for the guardian's own child.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $childRef The child.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 */
+	public function isOwnChild(string $subjectRef, string $childRef): bool {
+		if ($subjectRef === '' || $childRef === '') {
+			return false;
+		}
+
+		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
+		return in_array($childRef, $audience['childRefs'], true);
+	}//end isOwnChild()
+
+	/**
 	 * The guardian's own RSVP response for one event, or null.
 	 *
 	 * @param string $eventId The event id.

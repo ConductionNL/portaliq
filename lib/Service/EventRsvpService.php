@@ -61,7 +61,8 @@ class EventRsvpService {
 
 	/**
 	 * Upsert an RSVP. Returns false for EVERY failure shape (not found,
-	 * not in audience, `rsvpEnabled` false, invalid response) — the
+	 * not in audience, `rsvpEnabled` false, not the guardian's own child,
+	 * invalid response) — the
 	 * controller maps false to a single 404, carrying no existence oracle.
 	 *
 	 * @param string $subjectRef The guardian's own subjectRef.
@@ -80,6 +81,10 @@ class EventRsvpService {
 
 		$event = $this->feedReader->readOwnEvent(subjectRef: $subjectRef, id: $eventId);
 		if ($event === null || ($event['rsvpEnabled'] ?? false) !== true) {
+			return false;
+		}
+
+		if ($this->feedReader->isOwnChild(subjectRef: $subjectRef, childRef: $childRef) === false) {
 			return false;
 		}
 

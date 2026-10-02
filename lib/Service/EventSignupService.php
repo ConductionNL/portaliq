@@ -64,8 +64,8 @@ class EventSignupService {
 
 	/**
 	 * Attempt a sign-up. Returns null on success; a reason string on refusal
-	 * — the event/role not being reachable by this guardian is
-	 * {@see self::REASON_ROLE_NOT_FOUND} (the controller maps that to 404,
+	 * — the event/role not being reachable by this guardian, or a child that
+	 * is not the guardian's own, is {@see self::REASON_ROLE_NOT_FOUND} (the controller maps that to 404,
 	 * no existence oracle), a full role is {@see self::REASON_ROLE_FULL}
 	 * (422). Nothing is written on ANY refusal path.
 	 *
@@ -86,6 +86,12 @@ class EventSignupService {
 
 		$event = $this->feedReader->readOwnEvent(subjectRef: $subjectRef, id: $eventId);
 		if ($event === null) {
+			return self::REASON_ROLE_NOT_FOUND;
+		}
+
+		// A sign-up for a child is only for the guardian's own child; an
+		// adult-only role carries no child.
+		if ($childRef !== '' && $this->feedReader->isOwnChild(subjectRef: $subjectRef, childRef: $childRef) === false) {
 			return self::REASON_ROLE_NOT_FOUND;
 		}
 

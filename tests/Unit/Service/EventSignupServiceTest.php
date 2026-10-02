@@ -22,9 +22,10 @@ class EventSignupServiceTest extends TestCase {
 		return ['id' => 'e1', 'signupRoles' => [['id' => 'begeleiding', 'label' => 'Begeleiding', 'capacity' => $capacity]]];
 	}//end eventWithRole()
 
-	private function feedReader(?array $event): EventFeedReader {
+	private function feedReader(?array $event, bool $ownChild = true): EventFeedReader {
 		$reader = $this->createMock(EventFeedReader::class);
 		$reader->method('readOwnEvent')->willReturn($event);
+		$reader->method('isOwnChild')->willReturn($ownChild);
 		return $reader;
 	}//end feedReader()
 
@@ -35,6 +36,14 @@ class EventSignupServiceTest extends TestCase {
 		$service2 = new EventSignupService($this->createMock(ContainerInterface::class), $this->feedReader($this->eventWithRole(2)), $this->createMock(LoggerInterface::class));
 		$this->assertSame(EventSignupService::REASON_ROLE_NOT_FOUND, $service2->attemptSignup('g1', 'e1', 'unknown-role'));
 	}//end testReturnsRoleNotFoundForAnUnreachableEventOrUnknownRole()
+
+	public function testASignupForAChildThatIsNotTheGuardiansOwnIsRefused(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+
+		$service = new EventSignupService($container, $this->feedReader($this->eventWithRole(2), false), $this->createMock(LoggerInterface::class));
+		$this->assertSame(EventSignupService::REASON_ROLE_NOT_FOUND, $service->attemptSignup('g1', 'e1', 'begeleiding', 'someone-elses-child'));
+	}//end testASignupForAChildThatIsNotTheGuardiansOwnIsRefused()
 
 	public function testASignupIsAcceptedWhileCapacityRemains(): void {
 		$objectService = new class {
