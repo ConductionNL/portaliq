@@ -192,8 +192,9 @@ export async function fetchGlossary(portal) {
  * @return {Promise<object>} One published page by route.
  * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
  */
-export const fetchPage = (route, portal, options = {}) =>
-	get('/page', { route, portal }, options)
+export function fetchPage(route, portal, options = {}) {
+	return get('/page', { route, portal }, options)
+}
 
 /**
  * The leaf apps' contributed surfaces for this portal (ADR-046).
