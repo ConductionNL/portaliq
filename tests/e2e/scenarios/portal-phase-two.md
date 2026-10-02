@@ -181,7 +181,7 @@ menu, a grid page, two markdown pages, a draft, two glossary terms).
 
 - **NOTE** this scenario captured the Vue renderer and the React portal side
   by side for human review. The React portal is gone (`site-reaches-portal-
-  parity`, REQ-SRP-050) and `/apps/portaliq/portal` only redirects to the site
+  parity`, REQ-SRP-050) and its old address only redirects to the site
   (REQ-SRP-048, `portal-redirects-to-site.spec.ts`), so there is no second
   renderer to capture and the spec was deleted.
 

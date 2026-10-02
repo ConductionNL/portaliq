@@ -5,7 +5,7 @@
  * Opening the resident's signed-in area on the site, and selecting a KNOWN
  * page in it, instead of trusting where it lands.
  *
- * The React portal is gone: `/apps/portaliq/portal` only redirects to the site
+ * The React portal is gone: its old address only redirects to the site
  * (REQ-SRP-048). The signed-in area lives on the site under the `/mijn/...`
  * routes (src/shared/portalNav.js `routeForNav`), reached through the
  * `?route=` query parameter. Its navigation is one more header menu, titled

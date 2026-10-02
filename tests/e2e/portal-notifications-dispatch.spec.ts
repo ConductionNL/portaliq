@@ -82,7 +82,7 @@ test.describe('portal-notifications-dispatch', () => {
 	}) => {
 		// The privacy-minimal email's ONLY link names the tenant by
 		// `?org=<slug>` and, since the React portal retired, opens the site
-		// (REQ-SRP-049; the old `/portal` address redirects there, REQ-SRP-048).
+		// (REQ-SRP-049; the old portal address redirects there, REQ-SRP-048).
 		// Assert it lands the (unauthenticated) site shell rather than a
 		// 404/blank page, exactly as design.md specifies ("the deep link
 		// routes through the SPA's existing deep-linking, landing the subject
