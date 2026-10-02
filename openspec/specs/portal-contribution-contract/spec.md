@@ -374,10 +374,13 @@ row is not the subject's — foreign owner, wrong tenant, or non-existent id —
 MUST return "not found" and MUST NOT call the OpenRegister save at all. The
 client-supplied id MUST NEVER be trusted as a capability. On an owned row it
 MUST merge only the already-whitelisted fields onto the existing object,
-re-stamp the scope field (and organisation) AFTER the merge so a patch can
-never move the row out of the subject's scope (a verified list is re-stamped
-with the stored list itself, a single value with the subject's reference), and
-save with the id preserved
+re-stamp the scope field AFTER the merge so a patch can never move the row out
+of the subject's scope (a verified list is re-stamped with the stored list
+itself, a single value with the subject's reference), keep the stored
+organisation exactly as it is (the tenant is stamped on create only: an update
+MUST NOT overwrite it and MUST NOT add one where the stored object has none,
+whatever the subject's portal or the payload says), and save with the id
+preserved
 so OpenRegister UPDATES rather than creates. The update MUST fail closed (OR
 error, missing OpenRegister) to "not found". The controller MUST answer
 `PATCH .../collections/{register}/{schema}/{id}` after authorising a declared
@@ -395,6 +398,13 @@ membership added by `portal-scope-list-membership`.
 - WHEN the subject PATCHes whitelisted fields on that object by id
 - THEN only the whitelisted fields change, unrelated fields are preserved, the scope field is re-stamped, and OpenRegister updates the row (id preserved)
 - @e2e exclude backend update contract — covered by the PHPUnit writer/controller matrices; no distinct portaliq UI flow
+
+#### Scenario: An update leaves the stored organisation alone
+
+- GIVEN an object the subject owns that has no organisation, AND a subject whose portal has one
+- WHEN the subject updates it (a withdrawal, an amendment, a row action)
+- THEN the saved object still has no organisation; an object that had one keeps it, and an organisation in the payload changes nothing
+- @e2e exclude backend write contract, covered by PHPUnit `tests/Unit/Service/PortalObjectWriterOrganisationTest.php`; no distinct UI surface
 
 #### Scenario: A patch to a foreign-owned id is refused before any write
 

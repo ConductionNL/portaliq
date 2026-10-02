@@ -20,7 +20,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createPortalApi } from '../src/shared/portalApi.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const { withdrawalView, caseFieldNames } = await import(
+const { withdrawalView, caseFieldNames, caseHasEnded } = await import(
 	pathToFileURL(join(ROOT, 'src', 'shared', 'withdrawal.js')).href
 )
 
@@ -367,6 +367,79 @@ test('site: the case offers withdrawal exactly as the server declares, and shows
 		},
 	})
 	assert.match(open, /<dialog[\s\S]*Wij stoppen\./)
+})
+
+test('a withdrawn or closed case has ended; a running one has not', () => {
+	assert.equal(caseHasEnded({ ended: true }, { kind: 'none' }), true)
+	assert.equal(caseHasEnded({}, { kind: 'withdrawn' }), true)
+	assert.equal(caseHasEnded({ ended: false }, { kind: 'closed' }), false)
+	assert.equal(caseHasEnded(undefined, undefined), false)
+})
+
+test('site: an ended case shows its state, never an invitation to add to it', async () => {
+	// What dossiq's Woo case type says once its windows close, as the server
+	// sent it on a withdrawn case before it marked the case ended.
+	const AMEND = 'Uw verzoek is al in behandeling. Wilt u iets aanvullen? Stuur ons een bericht.'
+	const DOCS = 'Wij beoordelen de documenten al. Stuur ons een bericht als u nog iets heeft.'
+	const WITHDRAW = 'Uw verzoek is al in behandeling en kan niet meer online worden ingetrokken.'
+	const sentences = (ended) => ({
+		fields: { omschrijving: { writable: false, reason: AMEND } },
+		writable: [],
+		window: { open: false, reason: AMEND },
+		documents: { open: false, reason: DOCS },
+		status: { label: 'Afgehandeld' },
+		ended,
+	})
+	const render = (caseRow, writableSet, withdrawal) =>
+		renderSfc(SITE_CASE, {
+			api: {},
+			t,
+			locale: 'nl',
+			collection: COLLECTION,
+			row: { id: 'c1' },
+			initialData: { case: caseRow, writableSet, documents: [], withdrawal },
+		})
+
+	const withdrawn = await render(
+		{ omschrijving: 'de stukken', withdrawnAt: '2026-10-02T20:00:24+00:00' },
+		sentences(true),
+		{ declared: true, open: false, reason: 'This request has already been withdrawn.' },
+	)
+	assert.match(withdrawn, /Withdrawn on 02-10-2026\./)
+	assert.match(withdrawn, /Afgehandeld/)
+	assert.match(withdrawn, /data-testid="case-value-omschrijving"[^>]*>de stukken</)
+	for (const testid of ['case-window-closed', 'case-documents-closed', 'case-withdraw-closed', 'case-reason-omschrijving']) {
+		assert.doesNotMatch(withdrawn, new RegExp(`data-testid="${testid}"`), testid)
+	}
+	assert.doesNotMatch(withdrawn, /Stuur ons een bericht|al in behandeling/)
+
+	// Withdrawn on an older server that does not say `ended` yet.
+	const older = await render(
+		{ omschrijving: 'de stukken', withdrawnAt: '2026-10-02T20:00:24+00:00' },
+		sentences(undefined),
+		{ declared: true, open: false },
+	)
+	assert.doesNotMatch(older, /Stuur ons een bericht|al in behandeling/)
+
+	// Closed by staff, never withdrawn: no sentence about withdrawing either.
+	const closed = await render(
+		{ omschrijving: 'de stukken' },
+		sentences(true),
+		{ declared: true, open: false, reason: WITHDRAW },
+	)
+	assert.doesNotMatch(closed, /Stuur ons een bericht|al in behandeling/)
+	assert.doesNotMatch(closed, /case-withdraw"/)
+
+	// A running case whose windows closed still says why.
+	const running = await render(
+		{ omschrijving: 'de stukken' },
+		sentences(false),
+		{ declared: true, open: false, reason: WITHDRAW },
+	)
+	assert.match(running, /data-testid="case-window-closed"[^>]*>\s*Uw verzoek is al in behandeling\. Wilt u/)
+	assert.match(running, /data-testid="case-documents-closed"[^>]*>\s*Wij beoordelen/)
+	assert.match(running, /data-testid="case-withdraw-closed"[^>]*>\s*Uw verzoek is al in behandeling en kan/)
+	assert.match(running, /data-testid="case-reason-omschrijving"/)
 })
 
 test('site: cancelling sends nothing and puts focus back on the withdraw button; confirming withdraws and reads the case again', async () => {

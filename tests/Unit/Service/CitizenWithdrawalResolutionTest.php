@@ -55,6 +55,27 @@ class CitizenWithdrawalResolutionTest extends TestCase {
 
 	}//end testAClosedWindowSaysWhy()
 
+	/**
+	 * A case its collection marks closed cannot be withdrawn, even in a status
+	 * the case type still lists as open; unmarked, the same case can.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function testAClosedCaseCannotBeWithdrawn(): void {
+		$resolver = $this->resolver($this->caseType(openStatuses: ['ontvangen']));
+		$case = ['caseType' => 'verhuizing', 'status' => 'ontvangen', 'isFinalStatus' => true];
+
+		$closed = $resolver->withdrawal(action: $this->action(), case: $case, closedField: 'isFinalStatus');
+		$this->assertTrue($closed['declared']);
+		$this->assertFalse($closed['open']);
+		$this->assertSame('This request cannot be withdrawn from the portal.', $closed['reason']);
+
+		$this->assertTrue($resolver->withdrawal(action: $this->action(), case: $case)['open']);
+
+	}//end testAClosedCaseCannotBeWithdrawn()
+
 	public function testAnAlreadyWithdrawnRequestIsNeverOpenAgain(): void {
 		$resolver = $this->resolver($this->caseType(openStatuses: ['ontvangen', 'ingetrokken']));
 
