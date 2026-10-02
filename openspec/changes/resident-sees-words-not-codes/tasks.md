@@ -8,3 +8,5 @@
   - PHPUnit `CollectionFieldConfigsTest`; `node --test tests/value-labels.spec.mjs`
 - [x] **T4**: the session endpoint and the site header never name a person by a number (subject reference, identity number, digits only)
   - PHPUnit `SessionControllerTest::testIndexNamesThePersonNeverTheReference`; `node --test tests/site-signed-in-shell.spec.mjs`
+- [x] **T5**: the publication page shows summary, date, category name, theme names and documents only; the category filter names its categories
+  - `node --test tests/publication-documents.spec.mjs` (`npm run check:publication-documents`)

@@ -325,5 +325,12 @@
 	"Messages and news": "Berichten en nieuws",
 	"Your details and account": "Uw gegevens en account",
 	"{label} ({source})": "{label} ({source})",
-	"Menu": "Menu"
+	"Menu": "Menu",
+	"Publication date": "Publicatiedatum",
+	"Information category": "Informatiecategorie",
+	"Themes": "Thema's",
+	"Publication not found": "Publicatie niet gevonden",
+	"This publication does not exist (any more), or is not public.": "Deze publicatie bestaat niet (meer), of is niet openbaar.",
+	"This publication has no documents.": "Deze publicatie heeft geen documenten.",
+	"Untitled": "Zonder titel"
 }

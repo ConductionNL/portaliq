@@ -325,5 +325,12 @@
 	"Messages and news": "Messages and news",
 	"Your details and account": "Your details and account",
 	"{label} ({source})": "{label} ({source})",
-	"Menu": "Menu"
+	"Menu": "Menu",
+	"Publication date": "Publication date",
+	"Information category": "Information category",
+	"Themes": "Themes",
+	"Publication not found": "Publication not found",
+	"This publication does not exist (any more), or is not public.": "This publication does not exist (any more), or is not public.",
+	"This publication has no documents.": "This publication has no documents.",
+	"Untitled": "Untitled"
 }
