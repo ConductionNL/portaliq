@@ -212,8 +212,10 @@ class PortalIdentityMailer {
 	}//end send()
 
 	/**
-	 * The page a template's link opens: the Vue site for the ways in, whose
-	 * screens live only there (portaliq#1021), else the portal.
+	 * The page a template's link opens. Every link opens the site: the ways
+	 * in by their portal slug (portaliq#1021), the e-mail confirmation through
+	 * forPortal(), which builds the site address too since the React portal
+	 * retired (site-reaches-portal-parity REQ-SRP-049).
 	 *
 	 * @param array<string, mixed> $keys         The template's keys.
 	 * @param string               $portalSlug   The portal's slug, or ''.

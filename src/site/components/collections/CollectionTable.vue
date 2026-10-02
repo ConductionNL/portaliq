@@ -204,6 +204,7 @@ export default {
 			return formatCell(row?.[column.field], column.render, {
 				locale: this.locale,
 				t: this.t,
+				valueLabels: column.valueLabels,
 			})
 		},
 

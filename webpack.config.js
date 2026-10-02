@@ -157,9 +157,10 @@ webpackConfig.resolve.alias = {
 	'@nextcloud/axios$': path.resolve(__dirname, 'node_modules/@nextcloud/axios'),
 }
 
-// This app emits THREE independent bundles into the SAME `js/` directory:
-// the Vue admin SPA (this config), the React public portal
-// (webpack.portal.js) and the Vue site renderer (webpack.site.js).
+// This app emits independent bundles into the SAME `js/` directory: the Vue
+// admin SPA (this config), the Vue site renderer (webpack.site.js) and the
+// traffic client (webpack.traffic.js). The React portal's own build
+// was the third until it retired (site-reaches-portal-parity).
 // @nextcloud/webpack-vue-config sets `output.clean: true`, so the admin build
 // WIPES js/ — including bundles only the other configs ever write.
 //
@@ -167,17 +168,16 @@ webpackConfig.resolve.alias = {
 // Anything that rebuilds the admin bundle alone — `npm run build:admin`,
 // `npm run watch` — silently deletes the others, and the affected page then
 // serves a bare mount `<div>` with a 404 on its script and NO console error.
-// The other two configs set `clean: false` to protect this side; this is the
+// The other configs set `clean: false` to protect this side; this is the
 // missing other half.
 //
 // EVERY foreign entry must be listed. It was not: the site renderer was added
 // after this guard and never added to it, so `build:admin` deleted
 // `portaliq-site.js` and `/site` rendered an empty div — silently, because a
 // script that 404s produces no console error and an unmounted Vue app logs
-// nothing. Keep this in step with the `entry` blocks of webpack.portal.js and
-// webpack.site.js.
+// nothing. Keep this in step with the `entry` blocks of webpack.site.js.
 webpackConfig.output.clean = {
-	keep: /^portaliq-(portal|site)\.js/,
+	keep: /^portaliq-site\.js/,
 }
 
 // Add SCSS rule to the existing module rules

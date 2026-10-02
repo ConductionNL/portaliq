@@ -67,7 +67,8 @@ test('the template owns its document and loads the embed entry, not the portal',
 	assert.match(template, /id="portaliq-embed"/)
 	assert.doesNotMatch(template, /Util::addScript/)
 	assert.doesNotMatch(template, /provideInitialState/)
-	assert.doesNotMatch(template, /portaliq-portal/)
+	// No other bundle: not the site's, not the retired portal's.
+	assert.doesNotMatch(template, /-(portal|site)\.js/)
 })
 
 test('the embed entry pulls in neither the site nor the React portal', () => {

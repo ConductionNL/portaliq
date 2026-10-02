@@ -11,10 +11,16 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import {
+	accountLink,
+	PORTAL_API,
+	seedSiteSession,
+	siteAddress,
+} from './portal-nav.ts'
 
-const API_BASE = '/apps/portaliq/portal/api'
+const API_BASE = PORTAL_API
+
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
-const PORTAL_PATH = '/apps/portaliq/portal?org=dev-org'
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 
 /**
@@ -116,12 +122,11 @@ async function openCase(request: APIRequestContext, page: Page): Promise<void> {
 		'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
 	).toBeTruthy()
 	const { token } = await login.json()
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
-	await page.goto(PORTAL_PATH)
-	await page.getByText('Mijn zaken', { exact: true }).first().click()
-	await page.locator('.portaliq-row-clickable').first().click()
+	await seedSiteSession(page, token)
+	await page.goto(siteAddress())
+	// The seeded "Mijn zaken" page, not the shell's own "Mijn zaken" section.
+	await accountLink(page, 'portaliq/mijn-zaken').first().click()
+	await page.getByTestId('collection-table-select').first().click()
 	await expect(page.getByTestId('citizen-case')).toBeVisible()
 }
 
@@ -141,7 +146,7 @@ test.describe('cases-documents-on-the-case', () => {
 			buffer: Buffer.from('jpeg'),
 		})
 		await expect(page.getByTestId('case-notice')).toBeVisible()
-		const sent = page.locator('.portaliq-case-documents-yours')
+		const sent = page.locator('.pq-case-documents-yours')
 		await expect(sent).toContainText('foto-schade.jpg')
 
 		const download = page.waitForEvent('download')

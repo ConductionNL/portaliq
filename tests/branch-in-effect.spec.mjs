@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { branchInEffect } from '../src/portal/lib/branch.js'
+import { branchInEffect } from '../src/shared/branch.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const t = (key, vars = {}) => key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
@@ -41,8 +41,9 @@ test('both strings are translated for every locale the portal ships', () => {
 	}
 })
 
-test('the header shows the branch in effect', () => {
-	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
-	assert.match(app, /import \{ branchInEffect \} from '@portal\/lib\/branch\.js'/)
-	assert.match(app, /branchInEffect\(state\.session, t\)/)
+test('the site header shows the branch in effect', () => {
+	const switcher = readFileSync(join(ROOT, 'src', 'site', 'components', 'BranchSwitcher.vue'), 'utf8')
+	assert.match(switcher, /import \{ branchInEffect, branchOptions \} from '\.\.\/\.\.\/shared\/branch\.js'/)
+	assert.match(switcher, /branchInEffect\(this\.session, this\.t\)/)
+	assert.match(switcher, /data-testid="branch-in-effect"/)
 })

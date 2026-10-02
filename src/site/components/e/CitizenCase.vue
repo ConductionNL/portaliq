@@ -6,7 +6,7 @@
 <!--
 	The citizen's own case (what-the-citizen-may-write-on-their-own-case,
 	cases-documents-on-the-case, case-actions-withdraw-screen), ported from
-	src/portal/components/CitizenCase.jsx. Also the `citizenCase` block inside
+	the React portal's CitizenCase.jsx. Also the `citizenCase` block inside
 	slice b's contribution page: import it from src/site/components/e/index.js.
 
 	Nothing on this screen decides what may be changed. The server answers with

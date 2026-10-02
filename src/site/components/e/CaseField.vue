@@ -5,7 +5,7 @@
 
 <!--
 	One answer on the citizen's case (what-the-citizen-may-write-on-their-own-
-	case), ported from CaseField in src/portal/components/CitizenCase.jsx. An
+	case), ported from CaseField in the React portal's CitizenCase.jsx. An
 	open field is an input; a closed field is text with the sentence that says
 	why. Never a disabled control without an explanation.
 -->

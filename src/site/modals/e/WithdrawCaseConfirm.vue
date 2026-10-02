@@ -6,7 +6,7 @@
 <!--
 	The confirmation before a resident withdraws their request
 	(case-actions-withdraw-screen REQ-WDS-002), ported from
-	src/portal/components/WithdrawCaseConfirm.jsx. A modal dialog: it says what
+	the React portal's WithdrawCaseConfirm.jsx. A modal dialog: it says what
 	withdrawing means, in the case app's words when it gives them, asks an
 	optional reason, and sends nothing until the resident presses "Withdraw
 	request". Focus moves to the heading when it opens; Escape and "Keep my

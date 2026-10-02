@@ -5,7 +5,7 @@
 
 <!--
 	"Acting for" for the site header (cases-my-cases-page REQ-CMC-004), ported
-	from src/portal/components/ActingForSwitcher.jsx. The person acts for
+	from the React portal's ActingForSwitcher.jsx. The person acts for
 	themself or under one of the mandates they hold; the choice applies to "My
 	cases" and every case screen for the rest of the session. Renders nothing
 	for a person who holds no mandate.

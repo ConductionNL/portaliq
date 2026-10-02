@@ -340,7 +340,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 
 		$this->assertSame(['d-1'], $ledger->delivered);
 		$this->assertSame(['resident@example.org'], $bodies['to']);
-		$this->assertStringContainsString('https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $bodies['body']);
+		$this->assertStringContainsString('https://cloud.example/index.php/apps/portaliq/site?org=org-1', $bodies['body']);
 		// Privacy-minimal by construction: no task or case content in the mail.
 		$this->assertStringNotContainsString('Stuur uw bewijsstuk', $bodies['subject'] . $bodies['body']);
 		$this->assertStringNotContainsString('document van u nodig', $bodies['body']);
@@ -359,7 +359,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 		$reminder = $this->sentMail(kind: 'reminder');
 		$this->assertStringNotContainsString('new task', $reminder['subject'] . $reminder['body']);
 		$this->assertStringContainsString('Reminder: you have an open task in the portal of Gemeente Test', $reminder['subject']);
-		$this->assertStringContainsString('You have an open task in the portal of Gemeente Test. Log in to finish it: https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $reminder['body']);
+		$this->assertStringContainsString('You have an open task in the portal of Gemeente Test. Log in to finish it: https://cloud.example/index.php/apps/portaliq/site?org=org-1', $reminder['body']);
 
 		foreach (['ask', 're-ask'] as $kind) {
 			$mail = $this->sentMail(kind: $kind);
@@ -479,7 +479,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	public function testOverdueMailSubject(): void {
 		$overdue = $this->sentMail(kind: 'overdue');
 		$this->assertStringContainsString('Your task in the portal of Gemeente Test is overdue', $overdue['subject']);
-		$this->assertStringContainsString('A task in the portal of Gemeente Test is past its deadline. Log in to finish it: https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $overdue['body']);
+		$this->assertStringContainsString('A task in the portal of Gemeente Test is past its deadline. Log in to finish it: https://cloud.example/index.php/apps/portaliq/site?org=org-1', $overdue['body']);
 		$this->assertStringNotContainsString('new task', $overdue['subject'] . $overdue['body']);
 		$this->assertStringNotContainsString('Stuur uw bewijsstuk', $overdue['subject'] . $overdue['body']);
 	}//end testOverdueMailSubject()
@@ -502,7 +502,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	public function testAskMailIsUnchanged(): void {
 		$expected = [
 			'subject' => '[nl] You have a new task in the portal of Gemeente Test / [en] You have a new task in the portal of Gemeente Test',
-			'body' => "[nl] You have a new task in the portal of Gemeente Test. Log in to view it: https://cloud.example/index.php/apps/portaliq/portal?org=org-1\n\n[en] You have a new task in the portal of Gemeente Test. Log in to view it: https://cloud.example/index.php/apps/portaliq/portal?org=org-1",
+			'body' => "[nl] You have a new task in the portal of Gemeente Test. Log in to view it: https://cloud.example/index.php/apps/portaliq/site?org=org-1\n\n[en] You have a new task in the portal of Gemeente Test. Log in to view it: https://cloud.example/index.php/apps/portaliq/site?org=org-1",
 		];
 		$this->assertSame($expected, $this->sentMail(kind: 'ask'));
 		$this->assertSame($expected, $this->sentMail(kind: 're-ask'));
@@ -760,8 +760,14 @@ class PortalTaskDeliveryJobTest extends TestCase {
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('linkToRoute')->willReturnCallback(
 			static function (string $route, array $arguments = []): string {
-				$path = '/index.php/apps/portaliq/portal';
-				if ($route !== 'portaliq.portalPage.index' || $arguments === []) {
+				// Only the site's route answers the site's path: a link built
+				// from any other route would show up in the asserted body.
+				if ($route !== 'portaliq.portalPage.site') {
+					return '/index.php/apps/portaliq/' . $route;
+				}
+
+				$path = '/index.php/apps/portaliq/site';
+				if ($arguments === []) {
 					return $path;
 				}
 

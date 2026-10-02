@@ -40,17 +40,22 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import {
+	accountLink,
+	menuBadgeCount,
+	oneOf,
+	PORTAL_API,
+	seedSiteSession,
+	siteAddress,
+} from './portal-nav.ts'
 
-// Pretty-URL app paths, matching the convention already used by
-// tests/e2e/portal-document-download.spec.ts (`/apps/portaliq/...`, no `index.php`).
-const PORTAL_PATH = '/apps/portaliq/portal'
-const API_BASE = '/apps/portaliq/portal/api'
+const API_BASE = PORTAL_API
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 
 /**
- * Mint a low-trust supplier dev session and seed it into the SPA's
- * localStorage token slot BEFORE the app boots, so the portal loads already
- * authenticated (mirrors how a real bearer, once minted, is stored).
+ * Mint a low-trust supplier dev session and seed it into the site's session
+ * token slot BEFORE the app boots, so the site loads already signed in
+ * (mirrors how a real bearer, once minted, is stored).
  */
 async function loginAsSupplier(
 	request: APIRequestContext,
@@ -69,9 +74,7 @@ async function loginAsSupplier(
 	const token = body.token as string
 	expect(token).toBeTruthy()
 
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
+	await seedSiteSession(page, token)
 
 	return token
 }
@@ -153,47 +156,51 @@ test.describe('portal-inbox-v2', () => {
 
 		await loginAsSupplier(request, page, subjectRef, organisation)
 
-		await page.goto(PORTAL_PATH)
+		await page.goto(siteAddress())
 		await page.waitForLoadState('domcontentloaded')
 
-		// The unread badge on the Inbox nav item reflects the ONE unread
+		// The unread badge on the inbox menu link reflects the ONE unread
 		// message (portal-inbox-v2 T04 / contributions unread count).
-		const inboxNav = page.getByRole('button', { name: /Inbox/ })
-		await expect(inboxNav.locator('.portaliq-badge-count')).toHaveText('1')
+		const inboxNav = accountLink(page, 'inbox')
+		await expect(menuBadgeCount(inboxNav)).toHaveText('1')
 
 		await inboxNav.click()
 
 		// Both rows are present, newest (unread) first — merged + sorted by
 		// receivedAt descending.
-		const rows = page.locator('.portaliq-inbox-row')
+		const rows = page.locator('.pq-inbox-row')
 		await expect(rows).toHaveCount(2)
 		await expect(rows.nth(0)).toContainText('Uw aanvraag is beoordeeld')
 		await expect(rows.nth(1)).toContainText('Welkomstbericht')
 
 		// 2:10 metadata renders on the row that carries it …
 		const unreadRow = rows.nth(0)
-		await expect(unreadRow).toHaveClass(/portaliq-inbox-row--unread/)
-		await expect(unreadRow.locator('.portaliq-inbox-row__meta')).toContainText(
+		await expect(unreadRow).toHaveClass(/pq-inbox-row--unread/)
+		await expect(unreadRow.locator('.pq-inbox-row__meta')).toContainText(
 			'Beschikking',
 		)
-		await expect(unreadRow.locator('.portaliq-inbox-row__meta')).toContainText(
+		await expect(unreadRow.locator('.pq-inbox-row__meta')).toContainText(
 			'De aanvraag is toegewezen.',
 		)
 
 		// … and is absent entirely (no empty placeholder) on the row without it.
 		const readRow = rows.nth(1)
-		await expect(readRow).not.toHaveClass(/portaliq-inbox-row--unread/)
-		await expect(readRow.locator('.portaliq-inbox-row__meta')).toHaveCount(0)
+		await expect(readRow).not.toHaveClass(/pq-inbox-row--unread/)
+		await expect(readRow.locator('.pq-inbox-row__meta')).toHaveCount(0)
 
-		// Toggle read state on the unread row — tamper-proof mark-read
-		// (portal-inbox-v2 T03), server-confirmed before the UI flips.
-		await unreadRow.locator('.portaliq-inbox-row__toggle').click()
-		await expect(unreadRow.locator('.portaliq-inbox-row__toggle')).toHaveText(
-			'Read',
-		)
-		await expect(unreadRow).not.toHaveClass(/portaliq-inbox-row--unread/)
+		// Mark the unread row read — tamper-proof mark-read (portal-inbox-v2
+		// T03), server-confirmed before the UI flips.
+		await unreadRow
+			.getByRole('button', {
+				name: oneOf('Markeren als gelezen', 'Mark as read'),
+			})
+			.click()
+		await expect(
+			unreadRow.getByRole('button', { name: oneOf('Gelezen', 'Read') }),
+		).toBeDisabled()
+		await expect(unreadRow).not.toHaveClass(/pq-inbox-row--unread/)
 
-		// The nav badge disappears once nothing is unread.
-		await expect(inboxNav.locator('.portaliq-badge-count')).toHaveCount(0)
+		// The menu badge disappears once nothing is unread.
+		await expect(inboxNav.getByTestId('site-resident-menu-badge')).toHaveCount(0)
 	})
 })

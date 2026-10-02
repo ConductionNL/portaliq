@@ -13,7 +13,7 @@
 //   node --test tests/site-inbox-pages.spec.mjs
 
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -89,16 +89,13 @@ function memoryStorage() {
 }
 
 /**
- * The portal's own translation bundle, wherever the shell slice put it.
+ * The shared translation bundle.
  *
  * @param {string} locale `nl` or `en`.
  * @return {object} The bundle.
  */
 function portalBundle(locale) {
-	const shared = join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`)
-	const file = existsSync(shared)
-		? shared
-		: join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`)
+	const file = join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`)
 	return JSON.parse(readFileSync(file, 'utf8'))
 }
 

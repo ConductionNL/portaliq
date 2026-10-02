@@ -147,7 +147,8 @@ class SchemaInputHintNormaliser {
 			return $action;
 		}
 
-		$options = $this->enumOptions(property: $property);
+		$labels  = (new ValueLabelsNormaliser())->normalise(value: ($action['fieldConfigs'][$field][ValueLabelsNormaliser::KEY] ?? null));
+		$options = $this->enumOptions(property: $property, labels: $labels);
 		if ($options === []) {
 			return $action;
 		}
@@ -159,24 +160,31 @@ class SchemaInputHintNormaliser {
 
 	/**
 	 * The options of a property: its `oneOf` `const` and `title` pairs when it
-	 * labels its values that way, else its `enum` with a readable label.
+	 * labels its values that way, else its `enum` with a readable label. A
+	 * label the app declared in the field's `valueLabels` wins over both, so an
+	 * app can put the options in the reader's language; the value submitted
+	 * stays the raw one.
 	 *
-	 * @param array<string, mixed> $property The schema property.
+	 * @param array<string, mixed>  $property The schema property.
+	 * @param array<string, string> $labels   The field's declared value labels.
 	 *
 	 * @return array<int, array{value: string, label: string}>
+	 *
+	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 */
-	private function enumOptions(array $property): array {
+	private function enumOptions(array $property, array $labels=[]): array {
 		$options = [];
 		foreach ($this->listOf(value: ($property['oneOf'] ?? null)) as $entry) {
 			if (is_array($entry) === true && $this->isScalar(value: ($entry['const'] ?? null)) === true && is_string($entry['title'] ?? null) === true) {
-				$options[] = ['value' => (string) $entry['const'], 'label' => $entry['title']];
+				$value     = (string) $entry['const'];
+				$options[] = ['value' => $value, 'label' => ($labels[$value] ?? $entry['title'])];
 			}
 		}
 
 		if ($options === []) {
 			foreach ($this->listOf(value: ($property['enum'] ?? null)) as $value) {
 				if ($this->isScalar(value: $value) === true) {
-					$options[] = ['value' => (string) $value, 'label' => $this->readable(value: (string) $value)];
+					$options[] = ['value' => (string) $value, 'label' => ($labels[(string) $value] ?? $this->readable(value: (string) $value))];
 				}
 			}
 		}

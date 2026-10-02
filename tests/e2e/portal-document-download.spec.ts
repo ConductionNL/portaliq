@@ -30,17 +30,20 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { openPortaliqDemoPage } from './portal-nav.ts'
+import {
+	openPortaliqDemoPage,
+	PORTAL_API,
+	readSiteSession,
+	seedSiteSession,
+	siteAddress,
+} from './portal-nav.ts'
 
-// Pretty-URL app paths, matching the convention already used by
-// tests/e2e/docs-screenshots.spec.ts (`/apps/portaliq/...`, no `index.php`).
-const PORTAL_PATH = '/apps/portaliq/portal'
-const API_BASE = '/apps/portaliq/portal/api'
+const API_BASE = PORTAL_API
 
 /**
- * Mint a low-trust supplier dev session and seed it into the SPA's
- * localStorage token slot BEFORE the app boots, so the portal loads already
- * authenticated (mirrors how a real bearer, once minted, is stored).
+ * Mint a low-trust supplier dev session and seed it into the site's session
+ * token slot BEFORE the app boots, so the site loads already signed in
+ * (mirrors how a real bearer, once minted, is stored).
  */
 async function loginAsSupplier(
 	request: APIRequestContext,
@@ -58,9 +61,7 @@ async function loginAsSupplier(
 	const token = body.token as string
 	expect(token).toBeTruthy()
 
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
+	await seedSiteSession(page, token)
 
 	return token
 }
@@ -68,7 +69,8 @@ async function loginAsSupplier(
 test.describe('portal-document-download', () => {
 	// This test seeds its own fixture by UPLOADING through the portal's upload
 	// block before it downloads, so its body really does exercise the scoped
-	// attach path end to end — it drives `.portaliq-fileupload input[type="file"]`
+	// attach path end to end — it drives the detail card's file input
+	// (`detail-card-upload`)
 	// on a row the subject owns and proves the file landed by downloading it
 	// back by name.
 	//
@@ -87,7 +89,7 @@ test.describe('portal-document-download', () => {
 	}) => {
 		await loginAsSupplier(request, page, `e2e-download-${Date.now()}`)
 
-		await page.goto(PORTAL_PATH)
+		await page.goto(siteAddress())
 		await page.waitForLoadState('domcontentloaded')
 		await openPortaliqDemoPage(page)
 
@@ -105,7 +107,7 @@ test.describe('portal-document-download', () => {
 			timeout: 20_000,
 		})
 		const row = page
-			.locator('tr.portaliq-row-clickable')
+			.getByTestId('collection-table-row')
 			.filter({ hasText: title })
 		await row.waitFor({ timeout: 20_000 })
 
@@ -114,7 +116,9 @@ test.describe('portal-document-download', () => {
 
 		// Upload a file to the owned row — the file-download list only shows
 		// files that actually exist, so the upload block seeds the fixture.
-		const fileInput = page.locator('.portaliq-fileupload input[type="file"]')
+		const fileInput = page
+			.getByTestId('detail-card-upload')
+			.locator('input[type="file"]')
 		await fileInput.setInputFiles({
 			name: 'e2e-besluit.txt',
 			mimeType: 'text/plain',
@@ -122,15 +126,15 @@ test.describe('portal-document-download', () => {
 		})
 
 		// The upload block reports success, and the download list picks up the
-		// new file (server-attached `_files`, refreshed by re-selecting the row).
-		await expect(page.locator('.portaliq-fileupload-msg')).toContainText(
-			'toegevoegd',
+		// new file (server-attached `_files`; the detail card re-reads the row
+		// after a successful upload).
+		await expect(page.getByTestId('detail-card-upload')).toContainText(
+			/toegevoegd|File added/,
 		)
-		await row.click()
 
-		const downloadButton = page.locator('.portaliq-filelist button', {
-			hasText: 'e2e-besluit.txt',
-		})
+		const downloadButton = page
+			.getByTestId('detail-card-download')
+			.filter({ hasText: 'e2e-besluit.txt' })
 		await expect(downloadButton).toBeVisible()
 
 		const [download] = await Promise.all([
@@ -151,7 +155,7 @@ test.describe('portal-document-download', () => {
 	}) => {
 		await loginAsSupplier(request, page, `e2e-download-404-${Date.now()}`)
 
-		await page.goto(PORTAL_PATH)
+		await page.goto(siteAddress())
 		await page.waitForLoadState('domcontentloaded')
 		await openPortaliqDemoPage(page)
 
@@ -160,9 +164,7 @@ test.describe('portal-document-download', () => {
 		await page.getByRole('button', { name: 'Aanmaken' }).click()
 		await page.waitForTimeout(500)
 
-		const token = await page.evaluate(() =>
-			window.localStorage.getItem('portaliq_token'),
-		)
+		const token = await readSiteSession(page)
 
 		// A non-existent fileId on a row this subject does NOT necessarily even
 		// own yet (no upload happened) still 404s — never a 401/500, and never

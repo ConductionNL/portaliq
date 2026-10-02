@@ -68,6 +68,10 @@ export function adoptSessionToken() {
 		return ''
 	}
 
+	// The React portal's bearer leaves localStorage on the first read,
+	// whichever bearer this tab ends up with (REQ-SRP-002).
+	const legacy = adoptLegacyToken()
+
 	const hash = String(window.location.hash || '')
 	const match = hash.match(/[#&]token=([^&]+)/)
 	if (match) {
@@ -85,10 +89,55 @@ export function adoptSessionToken() {
 	}
 
 	try {
-		return window.sessionStorage.getItem(TOKEN_KEY) || ''
+		return window.sessionStorage.getItem(TOKEN_KEY) || legacy
+	} catch {
+		return legacy
+	}
+}
+
+/**
+ * Where the retired React portal kept its bearer: localStorage, for every tab.
+ */
+export const LEGACY_TOKEN_KEY = 'portaliq_token'
+
+/**
+ * Take the bearer the React portal left in localStorage, once
+ * (site-reaches-portal-parity REQ-SRP-002).
+ *
+ * A resident who signed in on `/portal` before it moved to the site still has
+ * a valid bearer under the old key. Ignoring it would sign them out in
+ * silence; keeping both stores would leave a bearer in localStorage that
+ * outlives every tab. So it moves: into this tab's store, and out of
+ * localStorage, whether or not it still works. A bearer that has expired then
+ * reads as signed out, and the sign-in screen says what to do.
+ *
+ * @return {string} The adopted bearer, or ''.
+ *
+ * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-site-must-adopt-and-keep-one-bearer-for-the-resident-req-srp-002
+ */
+export function adoptLegacyToken() {
+	let legacy
+	try {
+		legacy = window.localStorage.getItem(LEGACY_TOKEN_KEY) || ''
+		if (legacy) {
+			window.localStorage.removeItem(LEGACY_TOKEN_KEY)
+		}
 	} catch {
 		return ''
 	}
+
+	if (legacy) {
+		try {
+			// A bearer this tab already holds is newer than the old one.
+			if (!window.sessionStorage.getItem(TOKEN_KEY)) {
+				window.sessionStorage.setItem(TOKEN_KEY, legacy)
+			}
+		} catch {
+			// No session storage: the bearer lasts this page view.
+		}
+	}
+
+	return legacy
 }
 
 /**

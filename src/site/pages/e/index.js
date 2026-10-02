@@ -32,7 +32,7 @@
  * - `__cases__` (MyCasesPage): `closedMarker` (boolean, contributions
  *   `cases.closedMarker`), `canOpen(target)` and `openCase(target, row)` where
  *   `target` is `{app, collection, id}` (the shell resolves it with `navKeyFor`
- *   from src/portal/lib/openRecord.js and opens the app's page with the row
+ *   from src/shared/openRecord.js and opens the app's page with the row
  *   selected). Without `canOpen` a case is listed but not openable. Emits
  *   `loaded(answer)`. The mandate in effect comes from the acting-for store
  *   (src/site/components/e/actingFor.js), which the header switcher writes.
@@ -43,7 +43,7 @@
  */
 
 /**
- * The pages of slice e, by the React portal's own section keys (src/portal/App.jsx).
+ * The pages of slice e, by the React portal's own section keys (its App.jsx).
  *
  * @type {Record<string, () => Promise<object>>}
  */

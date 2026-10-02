@@ -26,7 +26,7 @@ The absolute limit `session_max_lifetime` (default 8 hours, counted from the sig
 - **Near the 8-hour limit**, the dialog says the session ends and offers "Sign in again" only.
 - **After the sign-out**, the login screen says "You were signed out because you were inactive."
 
-In the portal app, all tabs share one session: activity in one tab keeps the others signed in, and signing out in one tab signs out the others. On the public site, each tab has its own session and times out on its own.
+Each tab has its own session and times out on its own. Signing out in one tab does not sign out another. The old portal app shared one session over all tabs; it now redirects to the site.
 
 ## Silent sign-in from the organisation's other services
 
@@ -38,7 +38,7 @@ Another service of the organisation can link to the portal's sign-in with `silen
 
 The portal then asks the organisation's OIDC broker to sign the resident in without a prompt. When the broker already knows the resident, they arrive signed in. When it does not, they land on the ordinary login screen, without an error.
 
-To try this on every visit to the portal app, set `silentSignIn` in the organisation's presentation override to a provider the organisation offers on its own OIDC broker:
+To try this on every visit to the site, set `silentSignIn` in the organisation's presentation override to a provider the organisation offers on its own OIDC broker:
 
 ```json
 { "silentSignIn": "digid" }
@@ -48,7 +48,7 @@ The portal tries it once per browser session, so a refused attempt never loops. 
 
 ## Signing out ends the broker session
 
-When the organisation's OIDC broker announces an `end_session_endpoint`, signing out of the portal also sends the browser there, with `client_id` and `post_logout_redirect_uri`. The next person at a shared computer is then not signed in at the organisation's other services. The portal keeps no ID token, so the broker may ask the resident to confirm.
+When the organisation's OIDC broker announces an `end_session_endpoint`, signing out of the portal also sends the browser there, with `client_id` and `post_logout_redirect_uri` (the site's address, `/apps/portaliq/site`). The next person at a shared computer is then not signed in at the organisation's other services. The portal keeps no ID token, so the broker may ask the resident to confirm.
 
 ## What a third-party front-end must now do
 
