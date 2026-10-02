@@ -13,9 +13,11 @@ use OCA\Portaliq\BackgroundJob\MessageBoxDispatchJob;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
 use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalWriteContext;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
@@ -90,7 +92,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 	 *
 	 * @return PortalRecordChangeListener
 	 */
-	private function listener(bool $dispatchThrows = false, array $messageBox = []): PortalRecordChangeListener {
+	private function listener(bool $dispatchThrows = false, array $messageBox = [], ?array $portal = null): PortalRecordChangeListener {
 		$inbox = ['id' => 'berichten', 'register' => 'zaken', 'schema' => 'bericht', 'scopeField' => 'ontvanger', 'kind' => 'inbox', 'label' => 'Berichten'];
 		if (($messageBox['declared'] ?? false) === true) {
 			$inbox['messageBox'] = ['recipientProvider' => 'messageBoxRecipient', 'bodyField' => 'inhoud'];
@@ -154,10 +156,27 @@ class PortalRecordChangeListenerTest extends TestCase {
 			}
 		);
 
-		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnCallback(static fn (string $text, array $params = []): string => vsprintf($text, $params));
+		// Each language answers with its code in front, so a test sees which
+		// language wrote the text and that only one did.
 		$factory = $this->createMock(IFactory::class);
-		$factory->method('get')->willReturn($l10n);
+		$factory->method('get')->willReturnCallback(
+			function (string $app, ?string $lang = null): IL10N {
+				$l10n = $this->createMock(IL10N::class);
+				$l10n->method('t')->willReturnCallback(static fn (string $text, array $params = []): string => '['.(string)$lang.'] '.vsprintf($text, $params));
+				return $l10n;
+			}
+		);
+
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolveByOrganisation')->willReturnCallback(
+			static function (string $organisation) use ($portal): ?array {
+				if (($portal['throws'] ?? false) === true) {
+					throw new RuntimeException('portals unreadable');
+				}
+
+				return ($organisation === 'venray' ? $portal : null);
+			}
+		);
 
 		return new PortalRecordChangeListener(
 			rules: $index,
@@ -165,7 +184,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 			accounts: $accounts,
 			writer: $writer,
 			dispatch: $dispatch,
-			l10nFactory: $factory,
+			language: new PortalNoticeLanguage(l10nFactory: $factory, portals: $portals),
 			logger: $this->createMock(LoggerInterface::class),
 			messageBox: $this->messageBoxChannel(offered: ($messageBox['offered'] ?? false)),
 		);
@@ -472,4 +491,42 @@ class PortalRecordChangeListenerTest extends TestCase {
 
 		$this->assertSame([], $this->dispatched);
 	}//end testOwnMessageNotDispatchedTwice()
+	/**
+	 * The notice is written in one language, the portal's first locale, and
+	 * never Dutch and English glued together.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
+	 */
+	public function testTheNoticeIsInThePortalsLanguageOnly(): void {
+		$old = $this->object(schema: '12', data: ['initiator' => 'bsn-1', 'identifier' => 'Z-2026-1', 'status' => 'Ontvangen']);
+		$new = $this->object(schema: '12', data: ['initiator' => 'bsn-1', 'identifier' => 'Z-2026-1', 'status' => 'Afgewezen']);
+
+		$this->listener(portal: ['slug' => 'venray', 'locales' => ['en', 'nl']])->handle(new ObjectUpdatedEvent($new, $old));
+
+		$this->assertSame('[en] Z-2026-1 has been updated', $this->written[0]['data']['subject']);
+		$this->assertSame('[en] Open it to see what changed.', $this->written[0]['data']['body']);
+	}//end testTheNoticeIsInThePortalsLanguageOnly()
+
+	/**
+	 * Without a portal that names its language, the notice is Dutch.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
+	 */
+	public function testWithoutAPortalLanguageTheNoticeIsDutch(): void {
+		$old = $this->object(schema: '12', data: ['initiator' => 'bsn-1', 'identifier' => 'Z-2026-1', 'status' => 'Ontvangen']);
+		$new = $this->object(schema: '12', data: ['initiator' => 'bsn-1', 'identifier' => 'Z-2026-1', 'status' => 'Afgewezen']);
+
+		$this->listener(portal: ['slug' => 'venray', 'locales' => []])->handle(new ObjectUpdatedEvent($new, $old));
+		$this->listener(portal: ['throws' => true])->handle(new ObjectUpdatedEvent($new, $old));
+
+		$this->assertCount(2, $this->written, 'an unreadable portal does not lose the notice');
+		foreach ($this->written as $written) {
+			$this->assertSame('[nl] Z-2026-1 has been updated', $written['data']['subject']);
+			$this->assertStringNotContainsString('[en]', $written['data']['subject'].$written['data']['body']);
+		}
+	}//end testWithoutAPortalLanguageTheNoticeIsDutch()
 }//end class

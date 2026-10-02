@@ -1073,6 +1073,22 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 		const matchNotice = await noticeAbout('opencatalogi', state.savedSearchId)
 		expect(matchNotice, 'the inbox serves the match notice').toBeTruthy()
 		expect(matchNotice.read).toBe(false)
+		// A daily search sends one digest: exactly one message about this
+		// search, written by opencatalogi with its rule key, naming the search
+		// and listing the new publication. No generic "is bijgewerkt" notice
+		// for the saved search (the job's bookkeeping saves notify nobody).
+		const aboutSearch = (await inbox()).filter(
+			(m: any) =>
+				m.recordLink?.app === 'opencatalogi'
+				&& m.recordLink?.id === state.savedSearchId,
+		)
+		expect(aboutSearch, 'one match notice for the daily search').toHaveLength(1)
+		expect(aboutSearch[0].ruleKey).toBe('opencatalogi.savedSearch.matched')
+		expect(aboutSearch[0].subject).toContain(`"Fietspaden ${TOKEN_WORD}"`)
+		expect(aboutSearch[0].body).toContain(`Nieuw besluit ${TOKEN_WORD}`)
+		expect(aboutSearch[0].subject + aboutSearch[0].body).not.toMatch(
+			/is bijgewerkt|has been updated/,
+		)
 
 		// Pause.
 		const paused = await json(
@@ -1089,5 +1105,72 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 			(await readObject('publication', 'savedSearch', state.savedSearchId))
 				.active,
 		).toBe(false)
+	})
+
+	// J6 skips before 07:00, when no daily search is due. This half runs at
+	// any hour: an immediate search is due on every run.
+	// @e2e portal-notifications-and-preferences::a-matched-saved-search-reaches-the-inbox
+	test('J6 at any hour: an immediate search sends one match notice per new publication', async () => {
+		const word = `direct${STAMP}`
+		const title = `Direct ${word}`
+		const saved = await json(
+			await portalAction('opencatalogi', 'saveSearch', {
+				title,
+				frequency: 'immediate',
+				query: {
+					text: word,
+					filters: {
+						informatiecategorie: ['infocat014'],
+						organisation: [],
+						periodFrom: '',
+						periodTo: '',
+					},
+					catalog: '',
+				},
+			}),
+			'save the immediate search',
+		)
+		const searchId = idOf(saved)
+		remember('publication', 'savedSearch', searchId)
+		await patchObject('publication', 'savedSearch', searchId, {
+			lastRunAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+		})
+		const fresh = await createObject('publication', 'publication', {
+			title: `Besluit ${word}`,
+			publicationDate: new Date(Date.now() - 30_000).toISOString(),
+			wooCategory: 'infocat014',
+			publicationKind: 'woo-besluit',
+		})
+
+		const aboutSearch = async (): Promise<any[]> =>
+			(await inbox()).filter(
+				(m: any) =>
+					m.recordLink?.app === 'opencatalogi'
+					&& m.recordLink?.id === searchId,
+			)
+		expect(
+			await aboutSearch(),
+			'saving and patching the search notify nobody',
+		).toHaveLength(0)
+
+		runJob('OCA\\OpenCatalogi\\BackgroundJob\\SavedSearchMatchingJob')
+
+		await expect
+			.poll(async () => (await aboutSearch()).length, { timeout: 30_000 })
+			.toBe(1)
+		const [notice] = await aboutSearch()
+		expect(notice.subject).toBe(
+			`Nieuwe publicatie voor uw zoekopdracht "${title}": Besluit ${word}`,
+		)
+		expect(notice.ruleKey).toBe('opencatalogi.savedSearch.matched')
+		expect(notice.read).toBe(false)
+		expect(notice.body).toContain(idOf(fresh))
+		expect(notice.subject + notice.body).not.toMatch(
+			/is bijgewerkt|has been updated/,
+		)
+
+		// The job moved lastRunAt past the publication: a second run adds nothing.
+		runJob('OCA\\OpenCatalogi\\BackgroundJob\\SavedSearchMatchingJob')
+		expect(await aboutSearch()).toHaveLength(1)
 	})
 })
