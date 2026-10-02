@@ -547,6 +547,10 @@ class CitizenCaseControllerTest extends TestCase {
 				'toelichting' => 'aan de achterzijde',
 				'status' => 'ontvangen',
 				'zaaktype' => 'type-1',
+				// What the case app keeps for its staff and never declares.
+				'assignee' => 'behandelaar-7',
+				'qualityScore' => 0.9997,
+				'@self' => ['id' => self::CASE_ID, 'owner' => 'admin', 'organisation' => 'org-uuid'],
 			],
 			self::OTHER_CASE_ID => [
 				'id' => self::OTHER_CASE_ID,
@@ -1131,4 +1135,114 @@ class CitizenCaseControllerTest extends TestCase {
 
 		$this->assertSame([['portal:from-applicant']], $this->attachedTags);
 	}//end testAnUploadIsTaggedAsTheResidents()
+
+	/**
+	 * The collection the resident reads their cases in, declaring what they
+	 * may see of one.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const DECLARING_FIELDS = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'fields' => ['title', 'status']]];
+
+	/**
+	 * The case screen receives the fields the collection declares and the
+	 * ones the screen itself works with, never a field the case app keeps for
+	 * its staff (citizen-case-shows-only-its-fields).
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testTheCaseScreenReceivesOnlyTheDeclaredFields(): void {
+		$data = $this->controller(collections: self::DECLARING_FIELDS)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(['id', '@self', 'omschrijving', 'status', 'toelichting'], $this->sortedKeys($data['case']));
+		$this->assertSame(['id' => self::CASE_ID], $data['case']['@self']);
+		// The full row still decides the writable set on the server.
+		$this->assertSame(['omschrijving', 'toelichting'], $data['writableSet']['writable']);
+	}//end testTheCaseScreenReceivesOnlyTheDeclaredFields()
+
+	/**
+	 * The withdrawn case that comes back is projected the same way, and still
+	 * carries the withdrawal the screen shows.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAWithdrawnCaseComesBackWithoutTheStaffFields(): void {
+		$data = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			params: ['reason' => 'Niet meer nodig.'],
+			collections: self::DECLARING_FIELDS
+		)->withdraw('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(
+			['id', '@self', 'omschrijving', 'status', 'toelichting', 'withdrawalReason', 'withdrawnAt'],
+			$this->sortedKeys($data['case'])
+		);
+		$this->assertSame('ingetrokken', $data['case']['status']);
+		// The record of who wrote it stays on the case, not in the browser.
+		$this->assertArrayNotHasKey('portalWrites', $data['case']);
+		$this->assertArrayHasKey('portalWrites', $this->writes[0]['data']);
+	}//end testAWithdrawnCaseComesBackWithoutTheStaffFields()
+
+	/**
+	 * An amended case comes back projected too.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAnAmendedCaseComesBackWithoutTheStaffFields(): void {
+		$data = $this->controller(
+			fields: ['omschrijving' => 'een bedrijfspand'],
+			collections: self::DECLARING_FIELDS
+		)->amend('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame('een bedrijfspand', $data['case']['omschrijving']);
+		$this->assertArrayNotHasKey('assignee', $data['case']);
+		$this->assertArrayNotHasKey('qualityScore', $data['case']);
+		$this->assertArrayNotHasKey('portalWrites', $data['case']);
+	}//end testAnAmendedCaseComesBackWithoutTheStaffFields()
+
+	/**
+	 * A malformed declaration narrows to the identifiers, not to the screen's
+	 * own fields and never to the whole row.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAMalformedDeclarationShowsOnlyTheIdentifiers(): void {
+		$data = $this->controller(
+			collections: [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'fields' => 'title']]
+		)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(['id', '@self'], $this->sortedKeys($data['case']));
+	}//end testAMalformedDeclarationShowsOnlyTheIdentifiers()
+
+	/**
+	 * Only a collection on the case's own register and schema counts: fields
+	 * declared over another schema do not open or close anything here.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testFieldsDeclaredOnAnotherSchemaDoNotApply(): void {
+		$data = $this->controller(
+			collections: [['id' => 'facturen', 'register' => 'zaken', 'schema' => 'factuur', 'fields' => ['bedrag']]]
+		)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		// No declaration on this schema: the row passes whole, as its list does.
+		$this->assertArrayHasKey('assignee', $data['case']);
+	}//end testFieldsDeclaredOnAnotherSchemaDoNotApply()
+
+	/**
+	 * The keys of a row, `id` and `@self` first, the rest sorted.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<int, string>
+	 */
+	private function sortedKeys(array $row): array {
+		$keys = array_values(array_diff(array_keys($row), ['id', '@self']));
+		sort($keys);
+
+		return array_merge(
+			array_values(array_intersect(['id', '@self'], array_keys($row))),
+			$keys
+		);
+	}//end sortedKeys()
 }//end class

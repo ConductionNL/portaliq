@@ -67,6 +67,25 @@ export function caseTitle(row) {
 	return String(row?.id || row?.uuid || row?.['@self']?.id || '')
 }
 
+/**
+ * What a case's status reads as in the list: the words the server stamped as
+ * `_statusLabel` from the collection's `statusLabelField`, else the stored
+ * status as before. The raw status stays on the row for everything that tells
+ * statuses apart.
+ *
+ * @param {object} row The case row.
+ * @return {string} The status to show, or ''.
+ *
+ * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+ */
+export function caseStatus(row) {
+	const label = row?._statusLabel
+	if (typeof label === 'string' && label.trim() !== '') {
+		return label
+	}
+	return typeof row?.status === 'string' ? row.status : ''
+}
+
 // Whom the person acts for (REQ-CMC-004). "Yourself" is sent as `mandate=self`
 // so the server lists only the person's own cases even while they hold a
 // mandate; without any value it would spend the first mandate held.

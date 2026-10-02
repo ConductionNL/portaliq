@@ -151,7 +151,12 @@
 </template>
 
 <script>
-import { caseTarget, caseTitle, splitCases } from '../../../shared/myCases.js'
+import {
+	caseStatus,
+	caseTarget,
+	caseTitle,
+	splitCases,
+} from '../../../shared/myCases.js'
 import { actingFor, learnMandates } from '../../components/e/actingFor.js'
 import { longDate, readerLocale } from './format.js'
 
@@ -220,7 +225,7 @@ export default {
 					title: caseTitle(row),
 					source: row._source?.label || row._source?.appId || '',
 					mandate: row._mandate?.label || '',
-					status: typeof row.status === 'string' ? row.status : '',
+					status: caseStatus(row),
 					date: longDate(
 						row.created || row.startedAt || row['@self']?.created,
 						locale,

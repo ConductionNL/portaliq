@@ -355,7 +355,10 @@
         "Activate your account at %1$s": "Activate your account at %1$s",
         "Activate your account": "Activate your account",
         "You created an account at %1$s. Follow the link to make it ready for use.": "You created an account at %1$s. Follow the link to make it ready for use.",
-        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer."
+        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer.",
+        "This request has already been withdrawn.": "This request has already been withdrawn.",
+        "This request cannot be withdrawn from the portal.": "This request cannot be withdrawn from the portal.",
+        "The request could not be withdrawn. Please try again.": "The request could not be withdrawn. Please try again."
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

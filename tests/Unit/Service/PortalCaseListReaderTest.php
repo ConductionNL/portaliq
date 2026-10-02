@@ -205,6 +205,36 @@ class PortalCaseListReaderTest extends TestCase {
 	}//end testEachRowSaysWhetherItIsClosedByTheDeclaredField()
 
 	/**
+	 * A case whose status is a reference reads by the words the collection
+	 * names for it, on the own list and the mandated one. The raw status stays
+	 * on the row, and a row without words carries no label at all.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+	 */
+	public function testEachRowCarriesTheStatusWordsTheCollectionNames(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'WORDS', 'caseType' => 'vergunning', 'status' => 'uuid-b001', 'statusPublicLabel' => 'Ontvangen'],
+			['reference' => 'BLANK', 'caseType' => 'vergunning', 'status' => 'uuid-b002', 'statusPublicLabel' => ' '],
+			['reference' => 'NONE', 'caseType' => 'vergunning', 'status' => 'uuid-b003', 'statusPublicLabel' => null],
+		]);
+		$collection = $this->mandatedCollection();
+		$collection['statusLabelField'] = 'statusPublicLabel';
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+
+		$own = $cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection));
+		$this->assertSame(['WORDS' => 'Ontvangen'], array_column($own, '_statusLabel', 'reference'));
+		$this->assertSame(['WORDS' => 'uuid-b001', 'BLANK' => 'uuid-b002', 'NONE' => 'uuid-b003'], array_column($own, 'status', 'reference'));
+
+		$mandated = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection), mandates: [$this->mandate()]);
+		$this->assertSame(['WORDS' => 'Ontvangen'], array_column($mandated, '_statusLabel', 'reference'));
+
+		unset($collection['statusLabelField']);
+		$silent = $cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection));
+		$this->assertSame([], array_column($silent, '_statusLabel'));
+
+	}//end testEachRowCarriesTheStatusWordsTheCollectionNames()
+
+	/**
 	 * cases-my-cases-page REQ-CMC-001: newest first also when the row carries
 	 * no `created` of its own, by the record's own creation date.
 	 *

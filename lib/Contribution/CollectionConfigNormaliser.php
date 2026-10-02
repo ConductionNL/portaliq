@@ -91,6 +91,7 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
+			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
 			$collection = $this->normaliseGroupByField(collection: $collection);
 			$collection = (new PortalBranchScope())->normalise(collection: $collection);
 			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);

@@ -201,7 +201,8 @@ test('site: no documents says so, a closed window and a closed document slot giv
 		writableSet: {
 			window: { open: false, reason: 'De termijn is voorbij.' },
 			documents: { open: false, reason: 'Er kan niets meer bij.' },
-			fields: {},
+			// The screen lists the answers the writable set names, and only those.
+			fields: { naam: { writable: false } },
 		},
 		documents: [],
 	}
