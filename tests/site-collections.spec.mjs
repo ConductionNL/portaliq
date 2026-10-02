@@ -420,7 +420,18 @@ test("the page renders learniq's parent collections with labels, as a guardian r
 		UUID,
 		'no uuid is visible',
 	)
-	assert.match(html, /<h2[^>]*class="utrecht-heading-3">My children<\/h2>/)
+	// One heading per title: the shell shows "My children" as the page h1, so
+	// the collection named like the page does not repeat it, and its table is
+	// labelled by the shell's title. The other collections keep their own.
+	assert.doesNotMatch(html, /<h2[^>]*>My children<\/h2>/)
+	assert.match(
+		html,
+		/aria-labelledby="site-account-title" data-testid="collection-table"/,
+	)
+	assert.match(
+		html,
+		/<h2[^>]*class="utrecht-heading-3">My child&#39;s report cards<\/h2>/,
+	)
 	assert.match(html, /<dt class="pq-detail__label">First name<\/dt>/)
 	assert.match(html, /<dd class="pq-detail__value">Vera<\/dd>/)
 	assert.match(html, /<h3 class="utrecht-heading-3">Your children<\/h3>/)

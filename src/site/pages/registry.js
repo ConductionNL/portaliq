@@ -43,9 +43,12 @@
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 
+// Slice c registers its forms and actions in slice b's places on import.
+import { pages as formPages } from './c/index.js'
 import { registerBlockSlot } from './collections/blockSlots.js'
 import { pages as collectionPages } from './collections/index.js'
 import { pages as accountPages } from './e/index.js'
+import { pages as inboxPages, components as inboxParts } from './inbox/index.js'
 
 /** The key every contribution page falls back to. */
 export const CONTRIBUTION_PAGE = 'contribution'
@@ -58,15 +61,24 @@ export const CONTRIBUTION_PAGE = 'contribution'
 const BUILT_IN = {
 	// Slice b: collections, detail and timeline (the React portal's PageView).
 	...collectionPages,
+	// Slice c: no pages of its own; its forms and actions fill slice b's places.
+	...formPages,
 	// Slice e: my cases, access to cases, my details, my account.
 	cases: accountPages.__cases__,
 	access: accountPages.__access__,
 	details: accountPages.__details__,
 	account: accountPages.__account__,
+	// Slice d: inbox, my tasks, messages and news.
+	inbox: inboxPages.inbox,
+	tasks: inboxPages.tasks,
+	messages: inboxPages.messages,
+	news: inboxPages.news,
 }
 
 // Slice e's own case fills slice b's `citizenCase` place on a contribution page.
 registerBlockSlot('citizenCase', () => import('../components/e/CitizenCase.vue'))
+// Slice d's timed test fills slice b's `timedTask` place.
+registerBlockSlot('timedTask', inboxParts.timedTask)
 
 const loaders = new Map(Object.entries(BUILT_IN))
 

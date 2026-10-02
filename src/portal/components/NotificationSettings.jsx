@@ -11,7 +11,7 @@
 // @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-choices-live-on-the-inbox-page-req-nap-008
 
 import { useEffect, useState } from 'react'
-import { messageBoxChoice, withMessageBoxChoice } from '../lib/messageBox.js'
+import { messageBoxChoice, withMessageBoxChoice } from '../../shared/messageBox.js'
 
 const KINDS = [
 	{ key: 'case.updated', label: 'Changes on your cases' },
