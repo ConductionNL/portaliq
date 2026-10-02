@@ -44,7 +44,7 @@ class CollectionConfigNormaliser {
 	/**
 	 * Allowed column render kinds; anything else normalises to `text`.
 	 */
-	private const RENDER_KINDS = ['text', 'date', 'datetime', 'badge', 'currency', 'boolean', 'link'];
+	private const RENDER_KINDS = ['text', 'date', 'datetime', 'badge', 'currency', 'boolean', 'link', 'user'];
 
 	/**
 	 * Allowed detail layouts; anything else normalises to `card`.
