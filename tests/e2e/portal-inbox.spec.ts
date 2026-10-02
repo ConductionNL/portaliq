@@ -41,7 +41,7 @@ import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
-	accountSectionLink,
+	accountLink,
 	menuBadgeCount,
 	oneOf,
 	PORTAL_API,
@@ -161,7 +161,7 @@ test.describe('portal-inbox-v2', () => {
 
 		// The unread badge on the inbox menu link reflects the ONE unread
 		// message (portal-inbox-v2 T04 / contributions unread count).
-		const inboxNav = accountSectionLink(page, 'inbox')
+		const inboxNav = accountLink(page, 'inbox')
 		await expect(menuBadgeCount(inboxNav)).toHaveText('1')
 
 		await inboxNav.click()

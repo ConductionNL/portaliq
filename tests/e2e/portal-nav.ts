@@ -115,18 +115,21 @@ export function oneOf(...texts: string[]): RegExp {
 }
 
 /**
- * The signed-in menu's link to one of the shell's own sections (`inbox`,
- * `cases`, `tasks`, `messages`, `news`, `access`, `details`, `account`).
+ * The signed-in menu's link to one in-site account route: one of the shell's
+ * own sections (`inbox`, `cases`, `tasks`, `messages`, `news`, `access`,
+ * `details`, `account`) or a contributed page as `<app>/<page id>`
+ * (src/shared/portalNav.js `routeForNav`).
  *
  * Addressed by its route rather than its label: the inbox is "Berichten" in
- * Dutch, the same label as Portaliq's own contributed "Berichten" page.
+ * Dutch, the same label as Portaliq's own contributed "Berichten" page, and
+ * "Mijn zaken" is both the shell's cases section and a seeded page.
  *
  * @param page the Playwright page, on the site and signed in
- * @param section the section key (src/shared/portalNav.js `NAV_KEYS`)
- * @return the link
+ * @param path the section key, or `<app>/<page id>`
+ * @return the link (several when two contributions declare the same page)
  */
-export function accountSectionLink(page: Page, section: string): Locator {
-	const route = encodeURIComponent(`${ACCOUNT_ROUTE}/${section}`)
+export function accountLink(page: Page, path: string): Locator {
+	const route = encodeURIComponent(`${ACCOUNT_ROUTE}/${path}`)
 	return page.locator(`[data-testid="site-menu"] a[href*="route=${route}"]`)
 }
 

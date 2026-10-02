@@ -38,7 +38,7 @@ import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
-	accountSectionLink,
+	accountLink,
 	menuBadgeCount,
 	openPortaliqDemoPage,
 	PORTAL_API,
@@ -98,7 +98,7 @@ test.describe('wmebv-submission-receipts', () => {
 
 		// The inbox menu link gains an unread badge — the receipt landed in the
 		// SAME unified inbox portal-inbox-v2 aggregates, not a separate surface.
-		const inboxNav = accountSectionLink(page, 'inbox')
+		const inboxNav = accountLink(page, 'inbox')
 		await expect(menuBadgeCount(inboxNav)).toHaveText('1')
 
 		await inboxNav.click()
