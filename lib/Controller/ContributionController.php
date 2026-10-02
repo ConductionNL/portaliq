@@ -68,6 +68,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
+use OCA\Portaliq\Service\PortalUserDisplayNames;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -158,6 +159,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
 	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
+	 * @param PortalUserDisplayNames $userNames Reads a `render: "user"` column as the user's name.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -179,6 +181,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?PortalCrossRefGuard $crossRefs = null,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly PortalBranchScope $branches = new PortalBranchScope(),
+		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -553,6 +556,10 @@ class ContributionController extends Controller implements PortalProtected {
 			);
 		}
 
+		// A `render: "user"` column answers the user's name, never the user id
+		// (contribution-user-display-name).
+		$objects = $this->userNames->rows(rows: $objects, collection: $collection);
+
 		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
 	}//end collection()
 
@@ -677,6 +684,8 @@ class ContributionController extends Controller implements PortalProtected {
 		if (($collection['filesDownload'] ?? false) === true) {
 			$object['_files'] = $this->fileReader->listFiles(register: $register, schema: $schema, id: $id);
 		}
+
+		$object = $this->userNames->row(row: $object, collection: $collection);
 
 		return new JSONResponse(['object' => $object]);
 	}//end object()

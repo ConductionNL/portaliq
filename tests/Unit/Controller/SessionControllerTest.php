@@ -682,6 +682,32 @@ class SessionControllerTest extends TestCase {
 
 	}//end testIndexAsksForAnEmailAddressWhenNoneIsInUse()
 
+	/**
+	 * site-header-names-the-person: the session carries the account's display
+	 * name, and never a value that is only the subject reference.
+	 *
+	 * @return void
+	 */
+	public function testIndexNamesThePersonNeverTheReference(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+		$cases = [
+			'a display name' => [['displayName' => ' Fatima Hulstkamp '], 'Fatima Hulstkamp'],
+			'no display name' => [['displayName' => ''], ''],
+			'the reference as a name' => [['displayName' => 's1'], ''],
+			'no account' => [null, ''],
+		];
+		foreach ($cases as $label => [$account, $expected]) {
+			$accounts = $this->createMock(PortalAccountService::class);
+			$accounts->method('findBySubjectRef')->with('s1')->willReturn($account === null ? null : $account + ['subjectRef' => 's1']);
+
+			$data = $this->controller(session: $session, accounts: $accounts)->index()->getData();
+
+			$this->assertSame($expected, $data['displayName'], $label);
+		}
+
+	}//end testIndexNamesThePersonNeverTheReference()
+
 	public function testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
