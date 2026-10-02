@@ -112,7 +112,20 @@ $locale = (string)($_['locale'] ?? 'nl');
 // advantage and exposed the ordering for what it always was.
 $stylesheets = [];
 $tokenStylesheets = [];
+// THE BRIDGE GOES FIRST IN THE TOKEN LAYER, directly before the set, and only
+// with one (site-links-the-theme-bridge). It maps the `--nldesign-*` layer
+// every set defines onto the component roles this page paints from; 40 of
+// the theme app's 52 sets define nothing else. It must still come AFTER the
+// vendored sheets: `nlds-app.css` declares two of its names on `:root`
+// (`--conduction-primary-top-nav-background-color` and `-color`), and the
+// later declaration wins. A set that declares a role of its own loads after
+// the bridge and keeps its value.
+$themeBridgeStylesheet = (string)($_['themeBridgeStylesheet'] ?? '');
 if ($themeStylesheet !== '' && $themeApp !== null) {
+    if ($themeBridgeStylesheet !== '') {
+        $tokenStylesheets[] = $asset($themeApp, 'css/' . $themeBridgeStylesheet . '.css');
+    }
+
     $tokenStylesheets[] = $asset($themeApp, 'css/' . $themeStylesheet . '.css');
 }
 

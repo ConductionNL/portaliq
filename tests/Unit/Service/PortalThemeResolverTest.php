@@ -85,6 +85,7 @@ class PortalThemeResolverTest extends TestCase {
 			unlink($file);
 		}
 
+		@unlink($this->themeRoot . '/css/public-bridge.css');
 		@unlink($this->themeRoot . '/lib/Controller/FontController.php');
 		@rmdir($this->themeRoot . '/lib/Controller');
 		@rmdir($this->themeRoot . '/lib');
@@ -295,6 +296,47 @@ class PortalThemeResolverTest extends TestCase {
 
 		$this->assertNull($resolver->stylesheetFor(theme: 'vng'));
 	}//end testAnAbsentThemeAppResolvesToNull()
+
+
+	/**
+	 * site-links-the-theme-bridge: the theme app's bridge is offered when it
+	 * ships one. The positive control for the two refusals below.
+	 *
+	 * @return void
+	 */
+	public function testTheBridgeIsOfferedWhenTheThemeAppShipsIt(): void {
+		file_put_contents($this->themeRoot . '/css/public-bridge.css', ':root{--utrecht-document-color:var(--nldesign-color-text)}');
+
+		$this->assertSame('public-bridge', $this->resolver()->bridgeStylesheet());
+	}//end testTheBridgeIsOfferedWhenTheThemeAppShipsIt()
+
+
+	/**
+	 * A theme app without the file gets no bridge link: Nextcloud answers a
+	 * missing app asset with 401, on every page load.
+	 *
+	 * @return void
+	 */
+	public function testNoBridgeWithoutTheFile(): void {
+		$this->assertNull($this->resolver()->bridgeStylesheet());
+	}//end testNoBridgeWithoutTheFile()
+
+
+	/**
+	 * No theme app installed, no bridge, even when a file would exist.
+	 *
+	 * @return void
+	 */
+	public function testNoBridgeWithoutAThemeApp(): void {
+		file_put_contents($this->themeRoot . '/css/public-bridge.css', ':root{}');
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturn(false);
+		$appManager->method('getAppPath')->willReturn($this->themeRoot);
+
+		$resolver = new PortalThemeResolver(appManager: $appManager);
+
+		$this->assertNull($resolver->bridgeStylesheet());
+	}//end testNoBridgeWithoutAThemeApp()
 
 
 	/**

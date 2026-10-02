@@ -67,6 +67,18 @@ class PortalThemeResolver {
 	 */
 	private const THEME_APP_IDS = ['thematiq', 'nldesign'];
 
+	/**
+	 * The theme app's public bridge, relative to its `css/` directory.
+	 *
+	 * It maps the `--nldesign-*` layer every set defines onto the
+	 * `--utrecht-*`, `--tilburg-*` and `--conduction-*` roles the site paints
+	 * from (thematiq#355). Without it, 40 of the 52 sets load and change
+	 * nothing on the site.
+	 *
+	 * @var string
+	 */
+	public const BRIDGE_STYLESHEET = 'public-bridge';
+
 
 	/**
 	 * Constructor.
@@ -134,6 +146,32 @@ class PortalThemeResolver {
 
 		return 'tokens/' . $theme;
 	}//end stylesheetFor()
+
+
+	/**
+	 * The theme app's public bridge stylesheet, relative to its `css/`
+	 * directory, or null when the installed theme app ships none.
+	 *
+	 * Existence is checked on disk, as for a set: Nextcloud answers a missing
+	 * app asset with 401, and a link that fails looks like no theme at all.
+	 * Whether to link it is the caller's call: only with a resolved set.
+	 *
+	 * @return string|null The stylesheet path, or null.
+	 *
+	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+	 */
+	public function bridgeStylesheet(): ?string {
+		$root = $this->themeAppPath();
+		if ($root === null) {
+			return null;
+		}
+
+		if (is_file($root . '/css/' . self::BRIDGE_STYLESHEET . '.css') === false) {
+			return null;
+		}
+
+		return self::BRIDGE_STYLESHEET;
+	}//end bridgeStylesheet()
 
 
 	/**

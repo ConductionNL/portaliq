@@ -202,6 +202,31 @@ class PortalPageControllerTest extends TestCase {
 
 	}//end testSiteEmitsBothStylesheetsForAThemedPortal()
 
+
+	/**
+	 * site-links-the-theme-bridge: a themed portal gets the bridge, an
+	 * unthemed one does not, although the theme app ships it in both cases.
+	 * The bridge carries fallbacks; linked without a set it would restyle a
+	 * page that must render unstyled.
+	 *
+	 * @return void
+	 */
+	public function testTheBridgeTravelsOnlyWithAResolvedSet(): void {
+		$themed = $this->controller(
+			orgSlug: '',
+			portal: ['theme' => 'denhaag'],
+			themeStylesheet: 'tokens/denhaag'
+		);
+		$this->assertSame('public-bridge', $themed->site()->getParams()['themeBridgeStylesheet']);
+
+		$unthemed = $this->controller(
+			orgSlug: '',
+			portal: ['theme' => 'nosuchset'],
+			themeStylesheet: null
+		);
+		$this->assertSame('', $unthemed->site()->getParams()['themeBridgeStylesheet']);
+	}//end testTheBridgeTravelsOnlyWithAResolvedSet()
+
 	/**
 	 * A THROWING portal resolver yields an UNSTYLED page, not somebody else's brand.
 	 *
@@ -537,6 +562,7 @@ class PortalPageControllerTest extends TestCase {
 		$themeResolver = $this->createMock(PortalThemeResolver::class);
 		$themeResolver->method('stylesheetFor')->willReturn($themeStylesheet);
 		$themeResolver->method('nldsStylesheetFor')->willReturn($nldsStylesheet);
+		$themeResolver->method('bridgeStylesheet')->willReturn('public-bridge');
 		$themeResolver->method('logoFileFor')->willReturn($logoFile);
 		// The id the theme app is installed under on this instance. The app is
 		// mid-rename (`nldesign` -> `thematiq`), so the controller asks rather

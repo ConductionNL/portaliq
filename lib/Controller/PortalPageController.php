@@ -265,6 +265,9 @@ class PortalPageController extends Controller {
 				// contract withholds; it only decides which stylesheet tag to emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
 				'themeLogoUrl' => $this->siteThemeLogoUrl(),
+				// The theme app's public bridge, linked directly before the set
+				// and only with one (site-links-the-theme-bridge).
+				'themeBridgeStylesheet' => $this->siteThemeBridgeStylesheet(),
 				// The NLDS token set this app ships for the serving portal's
 				// theme, when it has one. Separate from the line above because
 				// they answer different questions: that one is "which theme
@@ -524,6 +527,30 @@ class PortalPageController extends Controller {
 			theme: (string)($portal['theme'] ?? '')
 		);
 	}//end siteThemeStylesheet()
+
+
+	/**
+	 * The theme app's public bridge for the serving portal, or ''.
+	 *
+	 * Only with a resolved set: the bridge carries fallbacks, so linking it
+	 * on an unthemed portal would quietly restyle a page that must render
+	 * unstyled (design D2 of site-links-the-theme-bridge).
+	 *
+	 * @return string The bridge path relative to the theme app's `css/`, or ''.
+	 *
+	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+	 */
+	private function siteThemeBridgeStylesheet(): string {
+		if ($this->siteThemeStylesheet() === '') {
+			return '';
+		}
+
+		try {
+			return (string)$this->themeResolver->bridgeStylesheet();
+		} catch (\Throwable) {
+			return '';
+		}
+	}//end siteThemeBridgeStylesheet()
 
 
 	/**
