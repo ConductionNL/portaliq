@@ -241,6 +241,12 @@ export default {
 	inline-size: 100%;
 }
 
+/* A header cell centres by browser default; the values below it start at the
+   inline edge, so the label sat over the gap between two columns. */
+.pq-collection-table .utrecht-table__header-cell {
+	text-align: start;
+}
+
 .pq-collection-table__row--selectable {
 	cursor: pointer;
 }
