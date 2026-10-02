@@ -33,6 +33,12 @@ if ($locale !== 'en') {
     $locale = 'nl';
 }
 
+// The skip link's words, in the frame's language.
+$skipLabel = 'Direct naar de inhoud';
+if ($locale === 'en') {
+    $skipLabel = 'Skip to content';
+}
+
 // Cache-buster from the built file's own mtime, for the reason site.php gives.
 $bundle = 'js/' . $appId . '-embed.js';
 $bundleFile = $appManager->getAppPath($appId) . '/' . $bundle;
@@ -52,8 +58,13 @@ $config = [
     <title><?php p($locale === 'en' ? 'Form' : 'Formulier'); ?></title>
     <style>
         /* The skip link (WCAG 2.4.1): out of sight until it has keyboard focus. */
-        .pq-embed-skip{position:absolute;inset-inline-start:-10000px;inset-block-start:auto;inline-size:1px;block-size:1px;overflow:hidden}
-        .pq-embed-skip:focus{position:static;inline-size:auto;block-size:auto;overflow:visible;display:inline-block;padding:.5rem 1rem;background:Canvas;color:LinkText;outline:2px solid currentColor;outline-offset:2px}
+        .pq-embed-skip {
+            position: absolute; inset-inline-start: -10000px; inline-size: 1px; block-size: 1px; overflow: hidden;
+        }
+        .pq-embed-skip:focus {
+            position: static; inline-size: auto; block-size: auto; overflow: visible; display: inline-block;
+            padding: .5rem 1rem; background: Canvas; color: LinkText; outline: 2px solid currentColor; outline-offset: 2px;
+        }
         #pq-embed-main:focus{outline:none}
     </style>
 </head>
@@ -63,7 +74,7 @@ $config = [
         bypass too. The target is a <main> in THIS template, not one the bundle
         renders, so the link works before the frame boots and if it never does.
     -->
-    <a id="skip-link" class="pq-embed-skip" href="#pq-embed-main"><?php p($locale === 'en' ? 'Skip to content' : 'Direct naar de inhoud'); ?></a>
+    <a id="skip-link" class="pq-embed-skip" href="#pq-embed-main"><?php p($skipLabel); ?></a>
 
     <script type="application/json" id="portaliq-embed-config"><?php
         print_unescaped(json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));

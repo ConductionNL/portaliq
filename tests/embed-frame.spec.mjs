@@ -91,7 +91,9 @@ test('the frame has a skip link to a target the template itself renders (WCAG 2.
 	)
 	assert.match(template, /id="portaliq-embed"/, 'the mount point stays inside the document')
 	// The link text is in the page language.
-	assert.match(link[1], /\$locale === 'en' \? 'Skip to content' : 'Direct naar de inhoud'/)
+	assert.match(link[1], /p\(\$skipLabel\)/)
+	assert.match(template, /\$skipLabel = 'Direct naar de inhoud';/)
+	assert.match(template, /\$skipLabel = 'Skip to content';/)
 })
 
 test('the embed entry pulls in neither the site nor the React portal', () => {
