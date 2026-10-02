@@ -213,17 +213,21 @@ class PortalObjectWriter {
 	 * object by id and confirm `row[scopeField] === subjectRef` plus the tenant
 	 * check — the SAME per-row boundary the reader enforces — returning null
 	 * (→ 404, no write) if it is not the subject's; (2) merge the already-
-	 * whitelisted `$data` onto the existing object; (3) re-stamp the scope
-	 * field (and organisation) so a patch can never move a row out of the
-	 * subject's scope even if the scope field somehow reached the whitelist;
-	 * (4) save with the id preserved via `uuid` so OR updates, not creates.
+	 * whitelisted `$data` onto the existing object; (3) keep the stored
+	 * organisation as it is: the tenant is stamped on create only, so an
+	 * update never overwrites it and never adds one; (4) re-stamp the scope
+	 * field so a patch can never move a row out of the subject's scope even
+	 * if the scope field somehow reached the whitelist; (5) save with the id
+	 * preserved via `uuid` so OR updates, not creates.
 	 * Fails closed to null on OR errors and on any ownership failure.
 	 *
 	 * @param string $register The register slug/id.
 	 * @param string $schema The schema slug.
 	 * @param string $scopeField The field that must own the row.
 	 * @param string $subjectRef The server-derived subject reference.
-	 * @param string $organisation The tenant to stamp (may be empty).
+	 * @param string $organisation The subject's tenant, used only in the
+	 *                             ownership check (may be empty). It is never
+	 *                             written on update.
 	 * @param string $id The client-supplied object id (never trusted).
 	 * @param array<string, mixed> $data The client-supplied fields (already whitelisted).
 	 *
@@ -271,11 +275,20 @@ class PortalObjectWriter {
 		$merged = array_merge($existing, $data);
 		unset($merged['@self']);
 
-		// (3) RE-STAMP the ownership fields AFTER the merge, so a client value
-		// can never win — a patch can never move the row out of scope. A
-		// verified membership list is re-stamped with the stored list itself:
-		// it already contains the subject, and portaliq never edits who else
-		// is on it.
+		// (3) The stored organisation stays exactly as it is. The tenant was
+		// decided when the object was created; `$organisation` only takes part
+		// in the ownership check above. An update never overwrites it and never
+		// adds one, whatever the subject's portal is or the payload says.
+		unset($merged['organisation']);
+		if (array_key_exists('organisation', $existing) === true) {
+			$merged['organisation'] = $existing['organisation'];
+		}
+
+		// (4) RE-STAMP the scope field AFTER the merge, so a client value can
+		// never win — a patch can never move the row out of scope. A verified
+		// membership list is re-stamped with the stored list itself: it
+		// already contains the subject, and portaliq never edits who else is
+		// on it.
 		if ($scopeField !== '') {
 			$merged[$scopeField] = $subjectRef;
 			if ($this->isScopeList(stored: ($existing[$scopeField] ?? null)) === true) {
@@ -283,11 +296,7 @@ class PortalObjectWriter {
 			}
 		}
 
-		if ($organisation !== '') {
-			$merged['organisation'] = $organisation;
-		}
-
-		// (4) Save with the id preserved (`uuid`) so OR UPDATES this row.
+		// (5) Save with the id preserved (`uuid`) so OR UPDATES this row.
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $merged,
