@@ -11,91 +11,110 @@
 		pages/registry.js, so a section whose page is not built yet still shows
 		up and says so.
 	-->
-	<section class="container pq-account" data-testid="site-account">
-		<p v-if="!sessionKnown" class="utrecht-paragraph" role="status">
-			{{ t('Loading…') }}
-		</p>
-
-		<div v-else-if="!session" data-testid="site-account-signin">
-			<h1 class="utrecht-heading-2">
-				{{ t('Welcome') }}
-			</h1>
-			<p class="utrecht-paragraph">
-				{{ t('Log in to view your information.') }}
-			</p>
-			<ul v-if="signInRoutes.length" class="pq-account__ways-in">
-				<li v-for="way in signInRoutes" :key="way.mode">
-					<a
-						class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
-						:href="way.href"
-						:data-mode="way.mode"
-						data-testid="site-account-signin-route">
-						{{ way.label }}
-					</a>
-				</li>
-			</ul>
-			<p v-else class="utrecht-paragraph">
-				{{ t('No login method is configured for this organisation yet.') }}
-			</p>
-			<button
-				v-if="devLogin"
-				type="button"
-				class="utrecht-button utrecht-button--secondary-action"
-				data-testid="site-devlogin"
-				@click="$emit('devlogin')">
-				{{ t('Dev-login (test)') }}
-			</button>
-			<p v-if="devError" class="utrecht-paragraph" role="alert">
-				{{ devError }}
-			</p>
-			<!-- The doors besides the sign-in buttons, only where they lead
-			     somewhere (identity-ways-in-screens REQ-IWI-005). -->
-			<WaysIn
-				v-if="ways.register || ways.reference"
-				:ways="ways"
-				:authBase="authBase"
-				:portal="portalSlug"
-				:t="waysT || t" />
-		</div>
-
-		<p v-else-if="loading" class="utrecht-paragraph" role="status">
-			{{ t('Loading…') }}
-		</p>
-
-		<p
-			v-else-if="nav.length === 0"
-			class="utrecht-paragraph"
-			data-testid="site-account-empty">
-			{{ t('No contributions to show yet.') }}
-		</p>
-
-		<template v-else-if="entry">
-			<h1
-				v-if="!ownsHeading"
-				id="site-account-title"
-				class="utrecht-heading-2"
-				data-testid="site-account-title">
-				{{ entry.label }}
-			</h1>
-			<p v-if="pageLoading" class="utrecht-paragraph" role="status">
+	<section
+		class="container pq-account"
+		:class="{ 'pq-account--with-menu': withMenu }"
+		data-testid="site-account">
+		<!-- The resident's own menu, beside the content on every page of this
+		     area once signed in (site-resident-menu REQ-SRM-002). -->
+		<ResidentMenu
+			v-if="withMenu"
+			class="pq-account__menu"
+			:groups="menuGroups"
+			:currentRoute="currentRoute"
+			:label="t('My area')"
+			:showLabel="t('Menu of my area')"
+			:hideLabel="t('Close the menu')"
+			@navigate="$emit('navigate', $event)" />
+		<div class="pq-account__content">
+			<p v-if="!sessionKnown" class="utrecht-paragraph" role="status">
 				{{ t('Loading…') }}
 			</p>
-			<component
-				:is="pageComponent"
-				v-else-if="pageComponent"
-				:key="entry.key"
-				v-bind="pageProps"
-				@navigate="$emit('navigate', $event)"
-				@unread="$emit('unread', $event)"
-				@refresh="$emit('refresh')"
-				@removed="$emit('signout')" />
-		</template>
+
+			<div v-else-if="!session" data-testid="site-account-signin">
+				<h1 class="utrecht-heading-2">
+					{{ t('Welcome') }}
+				</h1>
+				<p class="utrecht-paragraph">
+					{{ t('Log in to view your information.') }}
+				</p>
+				<ul v-if="signInRoutes.length" class="pq-account__ways-in">
+					<li v-for="way in signInRoutes" :key="way.mode">
+						<a
+							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
+							:href="way.href"
+							:data-mode="way.mode"
+							data-testid="site-account-signin-route">
+							{{ way.label }}
+						</a>
+					</li>
+				</ul>
+				<p v-else class="utrecht-paragraph">
+					{{
+						t('No login method is configured for this organisation yet.')
+					}}
+				</p>
+				<button
+					v-if="devLogin"
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action"
+					data-testid="site-devlogin"
+					@click="$emit('devlogin')">
+					{{ t('Dev-login (test)') }}
+				</button>
+				<p v-if="devError" class="utrecht-paragraph" role="alert">
+					{{ devError }}
+				</p>
+				<!-- The doors besides the sign-in buttons, only where they lead
+			     somewhere (identity-ways-in-screens REQ-IWI-005). -->
+				<WaysIn
+					v-if="ways.register || ways.reference"
+					:ways="ways"
+					:authBase="authBase"
+					:portal="portalSlug"
+					:t="waysT || t" />
+			</div>
+
+			<p v-else-if="loading" class="utrecht-paragraph" role="status">
+				{{ t('Loading…') }}
+			</p>
+
+			<p
+				v-else-if="nav.length === 0"
+				class="utrecht-paragraph"
+				data-testid="site-account-empty">
+				{{ t('No contributions to show yet.') }}
+			</p>
+
+			<template v-else-if="entry">
+				<h1
+					v-if="!ownsHeading"
+					id="site-account-title"
+					class="utrecht-heading-2"
+					data-testid="site-account-title">
+					{{ entry.label }}
+				</h1>
+				<p v-if="pageLoading" class="utrecht-paragraph" role="status">
+					{{ t('Loading…') }}
+				</p>
+				<component
+					:is="pageComponent"
+					v-else-if="pageComponent"
+					:key="entry.key"
+					v-bind="pageProps"
+					@navigate="$emit('navigate', $event)"
+					@unread="$emit('unread', $event)"
+					@refresh="$emit('refresh')"
+					@removed="$emit('signout')" />
+			</template>
+		</div>
 	</section>
 </template>
 
 <script>
 import { markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
+import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
 import { navKeyFor, OPEN_STORAGE_KEY } from '../../shared/openRecord.js'
 import { routeForNav } from '../../shared/portalNav.js'
@@ -123,7 +142,7 @@ function declaredProps(component) {
 export default {
 	name: 'AccountArea',
 
-	components: { WaysIn },
+	components: { ResidentMenu, WaysIn },
 
 	props: {
 		/** Whether the session has been read; until then nothing is decided. */
@@ -169,6 +188,10 @@ export default {
 		locale: { type: String, default: 'nl' },
 		/** The portal record from the content API. */
 		portal: { type: Object, default: null },
+		/** The resident menu's groups, from residentMenuGroups(); empty shows none. */
+		menuGroups: { type: Array, default: () => [] },
+		/** The route on screen, to mark the current item in the menu. */
+		currentRoute: { type: String, default: '' },
 	},
 
 	emits: ['devlogin', 'navigate', 'unread', 'refresh', 'signout'],
@@ -185,6 +208,18 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Whether the resident menu shows: signed in, with groups to show.
+		 * Signed out this area is the way in and keeps its full width.
+		 *
+		 * @return {boolean} True when the menu shows.
+		 *
+		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+		 */
+		withMenu() {
+			return Boolean(this.session) && this.menuGroups.length > 0
+		},
+
 		/**
 		 * @return {boolean} Whether the page on screen shows its own h1.
 		 *
@@ -305,6 +340,26 @@ export default {
 <style scoped>
 .pq-account {
 	padding-block: 24px;
+}
+
+/* The menu beside the content from tablet width up; on a phone the menu
+   stands above it and folds behind its button (ResidentMenu.vue). */
+.pq-account--with-menu {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 16px;
+}
+
+.pq-account__content {
+	min-inline-size: 0;
+}
+
+@media (min-width: 768px) {
+	.pq-account--with-menu {
+		grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+		gap: 40px;
+		align-items: start;
+	}
 }
 
 .pq-account__ways-in {
