@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IL10N;
@@ -53,6 +55,21 @@ class SubmissionReceiptServiceTest extends TestCase {
 		return $factory;
 	}//end l10nFactory()
 
+	/**
+	 * Portaliq's notice language over the stub translations, for an
+	 * organisation whose portal names the given locale first (or none).
+	 *
+	 * @param string|null $portalLocale The portal's first locale, or null for no portal.
+	 *
+	 * @return PortalNoticeLanguage
+	 */
+	private function language(?string $portalLocale = null): PortalNoticeLanguage {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolveByOrganisation')->willReturn($portalLocale === null ? null : ['locales' => [$portalLocale]]);
+
+		return new PortalNoticeLanguage($this->l10nFactory(), $portals);
+	}//end language()
+
 	private function timeFactory(int $time = 1700000000): ITimeFactory {
 		$timeFactory = $this->createMock(ITimeFactory::class);
 		$timeFactory->method('getTime')->willReturn($time);
@@ -70,7 +87,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'Voorbeeld']);
 
 		$this->assertCount(2, $writes);
@@ -86,12 +103,12 @@ class SubmissionReceiptServiceTest extends TestCase {
 		$this->assertNotEmpty($message['data']['referenceId']);
 		$this->assertNotEmpty($message['data']['subject']);
 		$this->assertNotEmpty($message['data']['body']);
-		// Bilingual: both an NL and an EN rendering of the body are present
-		// (and of the subject line), each carrying the SAME reference id.
-		$this->assertStringContainsString('[nl] ', $message['data']['body']);
-		$this->assertStringContainsString('[en] ', $message['data']['body']);
-		$this->assertStringContainsString('[nl] ', $message['data']['subject']);
-		$this->assertStringContainsString('[en] ', $message['data']['subject']);
+		// One language, the portal's (Dutch when the portal names none): no
+		// second rendering joined with " / ".
+		$this->assertStringStartsWith('[nl] ', $message['data']['body']);
+		$this->assertStringStartsWith('[nl] ', $message['data']['subject']);
+		$this->assertStringNotContainsString('[en] ', $message['data']['subject'] . $message['data']['body']);
+		$this->assertStringNotContainsString(' / ', $message['data']['subject']);
 		$this->assertStringContainsString($message['data']['referenceId'], $message['data']['body']);
 
 		$submission = $writes[1];
@@ -114,6 +131,30 @@ class SubmissionReceiptServiceTest extends TestCase {
 	 * organisation + the passed-through audience.
 	 */
 	/**
+	 * The receipt is written once, in the language of the resident's portal.
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
+	 */
+	public function testTheReceiptIsInThePortalsLanguageOnly(): void {
+		$writes = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+				$writes[] = $data;
+				return (['@self' => ['id' => $schema . '-id']] + $data);
+			}
+		);
+
+		$service = new SubmissionReceiptService($writer, $this->language(portalLocale: 'en'), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'Voorbeeld']);
+
+		$receipt = $writes[0];
+		$this->assertSame('[en] Confirmation of receipt, reference ' . $receipt['referenceId'], $receipt['subject']);
+		$this->assertStringStartsWith('[en] We received your submission', $receipt['body']);
+		$this->assertStringNotContainsString('[nl] ', $receipt['subject'] . $receipt['body']);
+	}//end testTheReceiptIsInThePortalsLanguageOnly()
+
+	/**
 	 * WOO-569: a task completion is acknowledged through the SAME receipt
 	 * path as a create action. Run the real service for `task.complete` and
 	 * pin what lands: a receipt message with a reference id and the copy, and
@@ -131,7 +172,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 		);
 		$copy = ['taskUuid' => 't-1', 'title' => 'Stuur uw bewijsstuk', 'outcome' => 'submitted', 'comment' => 'klaar', 'answers' => ['veld' => 'waarde'], 'files' => ['bewijs.pdf']];
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 		$service->record('s1', 'org-1', 'portaliq', 'task.complete', $copy, 'client');
 
 		$this->assertCount(2, $writes);
@@ -162,7 +203,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'Voorbeeld'], 'supplier');
 
 		$this->assertSame(NotificationDispatchService::RULE_MESSAGE_CREATED, $received['ruleKey']);
@@ -192,7 +233,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 		$notificationDispatch = $this->createMock(NotificationDispatchService::class);
 		$notificationDispatch->expects($this->never())->method('dispatch');
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
 
 	}//end testFailedMessageWriteNeverFiresTheDispatchTrigger()
@@ -211,7 +252,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 
 		// Must not throw.
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
@@ -242,7 +283,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
 
 		$submissionWrites = array_values(array_filter($captured, static fn ($c) => $c['schema'] === 'portalSubmission'));
@@ -276,7 +317,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 
 		// Must not throw — the domain create already succeeded; a WMEBV
 		// side-effect exception must never surface to the caller.
@@ -291,7 +332,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createObject')->willThrowException(new RuntimeException('OR is entirely down'));
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 
 		// Even when EVERY write throws, record() must never propagate.
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
@@ -308,7 +349,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 	private function mappingService(): SubmissionReceiptService {
 		return new SubmissionReceiptService(
 			$this->createMock(PortalObjectWriter::class),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->timeFactory(),
 			$this->createMock(LoggerInterface::class),
 			$this->createMock(NotificationDispatchService::class)

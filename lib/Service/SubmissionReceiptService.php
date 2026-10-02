@@ -44,8 +44,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCP\AppFramework\Utility\ITimeFactory;
-use OCP\L10N\IFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -75,7 +75,7 @@ class SubmissionReceiptService {
 	 * convention — `l10n/nl.json` supplies the Dutch translation for this
 	 * EXACT string; `l10n/en.json` maps it to itself.
 	 */
-	private const SUBJECT_KEY = 'Confirmation of receipt — reference %1$s';
+	private const SUBJECT_KEY = 'Confirmation of receipt, reference %1$s';
 
 	/**
 	 * The receipt body-text translation key (B1 language level). English key
@@ -89,9 +89,9 @@ class SubmissionReceiptService {
 	 *
 	 * @param PortalObjectWriter $writer Subject-scoped OR writer (same
 	 *                                   one the create used).
-	 * @param IFactory $l10nFactory Resolves NL/EN translators
-	 *                              independent of any session locale
-	 *                              (portal subjects are not NC users).
+	 * @param PortalNoticeLanguage $language The translations in the language
+	 *                                      of the resident's portal (portal
+	 *                                      subjects are not NC users).
 	 * @param ITimeFactory $timeFactory Testable clock for the ISO-8601
 	 *                                  timestamps.
 	 * @param LoggerInterface $logger The logger.
@@ -102,7 +102,7 @@ class SubmissionReceiptService {
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
-		private readonly IFactory $l10nFactory,
+		private readonly PortalNoticeLanguage $language,
 		private readonly ITimeFactory $timeFactory,
 		private readonly LoggerInterface $logger,
 		private readonly NotificationDispatchService $notificationDispatch,
@@ -177,6 +177,8 @@ class SubmissionReceiptService {
 	 * @param string $audience The subject's audience (notification dispatch).
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
 	private function doRecord(
 		string $subjectRef,
@@ -188,6 +190,8 @@ class SubmissionReceiptService {
 	): void {
 		$referenceId = $this->generateReferenceId();
 		$submittedAt = $this->now();
+		// One language, the portal's, as change notices are (REQ-NAP-010).
+		$l10n = $this->language->forOrganisation(organisation: $organisation);
 
 		$message = $this->writer->createObject(
 			register: self::REGISTER,
@@ -196,8 +200,8 @@ class SubmissionReceiptService {
 			subjectRef: $subjectRef,
 			organisation: $organisation,
 			data: [
-				'subject' => $this->subjectLine(referenceId: $referenceId),
-				'body' => $this->bodyText(referenceId: $referenceId, submittedAt: $submittedAt),
+				'subject' => $l10n->t(self::SUBJECT_KEY, [$referenceId]),
+				'body' => $l10n->t(self::BODY_KEY, [$referenceId, $submittedAt]),
 				'referenceId' => $referenceId,
 				'dataCopy' => $whitelistedData,
 				'read' => false,
@@ -354,38 +358,6 @@ class SubmissionReceiptService {
 	private function now(): string {
 		return gmdate('c', $this->timeFactory->getTime());
 	}//end now()
-
-	/**
-	 * The bilingual (NL first, EN second) B1-level receipt subject line.
-	 *
-	 * @param string $referenceId The receipt's reference id.
-	 *
-	 * @return string
-	 */
-	private function subjectLine(string $referenceId): string {
-		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t(self::SUBJECT_KEY, [$referenceId]);
-		$enText = $this->l10nFactory->get('portaliq', 'en')->t(self::SUBJECT_KEY, [$referenceId]);
-
-		return $nlText . ' / ' . $enText;
-	}//end subjectLine()
-
-	/**
-	 * The bilingual (NL first, EN second) B1-level receipt body text — plain,
-	 * short sentences, no jargon, satisfying the WMEBV ontvangstbevestiging
-	 * duty regardless of which language the subject reads first.
-	 *
-	 * @param string $referenceId The receipt's reference id.
-	 * @param string $submittedAt The ISO-8601 submission timestamp.
-	 *
-	 * @return string
-	 */
-	private function bodyText(string $referenceId, string $submittedAt): string {
-		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t(self::BODY_KEY, [$referenceId, $submittedAt]);
-		$enText = $this->l10nFactory->get('portaliq', 'en')->t(self::BODY_KEY, [$referenceId, $submittedAt]);
-
-		return $nlText . "\n\n" . $enText;
-	}//end bodyText()
-
 
 	/**
 	 * The WMEBV "copy of the submitted data" for a completion — the role the

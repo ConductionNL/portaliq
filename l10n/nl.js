@@ -89,7 +89,7 @@ OC.L10N.register(
         "Completions": "Voltooiingen",
         "Configuration": "Configuratie",
         "Configure the app settings": "Configureer de app-instellingen",
-        "Confirmation of receipt — reference %1$s": "Bevestiging van ontvangst — referentie %1$s",
+        "Confirmation of receipt, reference %1$s": "Bevestiging van ontvangst, referentie %1$s",
         "Confirmation shown after a successful submission (contribution-manifest-v3).": "Bevestiging die na een geslaagde inzending wordt getoond (contribution-manifest-v3).",
         "Confirmation text": "Bevestigingstekst",
         "Consent": "Toestemming",
