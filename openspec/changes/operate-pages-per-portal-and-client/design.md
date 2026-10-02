@@ -71,6 +71,8 @@ every collection that no remaining page references. `authorisedCollection()`
 then refuses those collections with the answer it gives for any undeclared
 one.
 
+**Read narrowly while building (T04).** "Every collection that no remaining page references" would also close collections that are on no page at all, such as an inbox collection the inbox reads without a page. Only the collections the hidden pages showed and no remaining page shows are closed: hiding a page never takes away what it never showed.
+
 ## D4. What the SPA shows
 
 `buildNav()` keeps its shape; it receives fewer pages in a set order. A

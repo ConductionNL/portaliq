@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Contribution;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Contribution\PortalManifestNormaliser;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Portal\PortalContributionProvider;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -449,6 +451,77 @@ class PortalContributionRegistryTest extends TestCase {
 			$result['contributions'][0]['collections'][0]['attachedActions'] ?? null
 		);
 	}//end testTheAggregateResolvesAttachedActions()
+
+	/**
+	 * operate-pages-per-portal-and-client REQ-PGC-002: a page staff hid on
+	 * one client's account leaves that account's aggregate, with the
+	 * collection only it showed, and the account is read once per request.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
+	 */
+	public function testHiddenPageForAccountDropsItsCollections(): void {
+		$provider = $this->createMock(PortalContributionProvider::class);
+		$provider->method('getAudiences')->willReturn(['business']);
+		$provider->method('getContribution')->willReturn([
+			'collections' => [
+				['id' => 'invoices', 'register' => 'r', 'schema' => 'invoice', 'scopeField' => 'organisation'],
+				['id' => 'quotes', 'register' => 'r', 'schema' => 'quote', 'scopeField' => 'organisation'],
+			],
+			'actions' => [],
+			'pages' => [
+				['id' => 'invoices', 'blocks' => [['type' => 'collection', 'collection' => 'invoices']]],
+				['id' => 'quotes', 'blocks' => [['type' => 'collection', 'collection' => 'quotes']]],
+			],
+		]);
+
+		$accounts = $this->createMock(PortalAccountLookup::class);
+		$accounts->expects($this->once())->method('bySubjectRef')->with('kvk-1')
+			->willReturn(['subjectRef' => 'kvk-1', 'hiddenPages' => ['portaliq:invoices']]);
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->container($provider),
+			$this->createMock(LoggerInterface::class),
+			new PortalManifestNormaliser(),
+			null,
+			$accounts
+		);
+
+		$subject = ['audience' => 'business', 'organisation' => 'org-1', 'subjectRef' => 'kvk-1'];
+		$first   = $registry->aggregateFor($subject);
+		$second  = $registry->aggregateFor($subject);
+
+		$this->assertSame(['quotes'], array_column($first['contributions'][0]['pages'], 'id'));
+		$this->assertSame(['quotes'], array_column($first['contributions'][0]['collections'], 'id'));
+		$this->assertSame($first, $second);
+
+	}//end testHiddenPageForAccountDropsItsCollections()
+
+	/**
+	 * A subject without a subjectRef costs no account read.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
+	 */
+	public function testNoSubjectRefReadsNoAccount(): void {
+		$provider = $this->createMock(PortalContributionProvider::class);
+		$provider->method('getAudiences')->willReturn(['business']);
+		$provider->method('getContribution')->willReturn(['collections' => [], 'actions' => []]);
+
+		$accounts = $this->createMock(PortalAccountLookup::class);
+		$accounts->expects($this->never())->method('bySubjectRef');
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->container($provider),
+			$this->createMock(LoggerInterface::class),
+			new PortalManifestNormaliser(),
+			null,
+			$accounts
+		);
+
+		$this->assertCount(1, $registry->aggregateFor(['audience' => 'business'])['contributions']);
+
+	}//end testNoSubjectRefReadsNoAccount()
 
 	/**
 	 * @param array<int, string>    $installed  App ids `getInstalledApps()` reports.

@@ -263,6 +263,38 @@ class PortalSelfServiceServiceTest extends TestCase {
 	}//end testRemovalTakesEveryAddress()
 
 	/**
+	 * operate-pages-per-portal-and-client REQ-PGC-002: the pages staff hid on
+	 * an account are not the account holder's to change. The self-service
+	 * route takes no such field, and an update leaves the list as it was.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
+	 */
+	public function testAClientCannotUnhideAPage(): void {
+		$this->seedRow('portalAccount', [
+			'subjectRef' => 'subject-1',
+			'organisation' => 'gemeente-x',
+			'audience' => 'business',
+			'displayName' => 'Bakkerij De Kroon B.V.',
+			'email' => 'oud@example.org',
+			'status' => 'active',
+			'hiddenPages' => ['pipelinq:invoices'],
+		]);
+
+		$this->service()->updateDetails(subjectRef: 'subject-1', displayName: 'Ans');
+
+		$this->assertSame(expected: 'Ans', actual: $this->account()['displayName']);
+		$this->assertSame(expected: ['pipelinq:invoices'], actual: $this->account()['hiddenPages']);
+		$parameters = array_map(
+			static fn (\ReflectionParameter $parameter): string => $parameter->getName(),
+			(new \ReflectionMethod(\OCA\Portaliq\Controller\PortalAccountSelfController::class, 'updateDetails'))->getParameters()
+		);
+		$this->assertNotContains(needle: 'hiddenPages', haystack: $parameters);
+
+	}//end testAClientCannotUnhideAPage()
+
+	/**
 	 * The account row as it now stands.
 	 *
 	 * @return array<string, mixed>

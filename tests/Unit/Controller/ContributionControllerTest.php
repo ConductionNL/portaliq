@@ -2308,6 +2308,77 @@ class ContributionControllerTest extends TestCase {
 	}//end readerCapturing()
 
 	/**
+	 * operate-pages-per-portal-and-client REQ-PGC-001: the serving portal's
+	 * navigation list for the subject's audience hides and orders the pages
+	 * of the contributions answer; the collections stay.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
+	 */
+	public function testPortalNavigationHidesAndOrdersPages(): void {
+		$aggregate = $this->navigationAggregate();
+		$portals   = $this->createMock(PortalResolver::class);
+		$portals->expects($this->once())->method('resolve')->willReturn([
+			'slug' => 'open-tilburg',
+			'navigation' => [
+				'supplier' => [
+					['page' => 'portaliq:invoices', 'hidden' => false],
+					['page' => 'portaliq:quotes', 'hidden' => true],
+				],
+			],
+		]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals)->index()->getData();
+
+		$this->assertSame(['invoices', 'contacts'], array_column($data['contributions'][0]['pages'], 'id'));
+		$this->assertSame(['quotes', 'invoices', 'contacts'], array_column($data['contributions'][0]['collections'], 'id'));
+
+	}//end testPortalNavigationHidesAndOrdersPages()
+
+	/**
+	 * No portal, or a portal without a list for this audience: the answer is
+	 * today's.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
+	 */
+	public function testNoChoiceAnswersAsToday(): void {
+		$aggregate = $this->navigationAggregate();
+		$portals   = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn(['slug' => 'open-tilburg', 'navigation' => ['client' => [['page' => 'portaliq:quotes', 'hidden' => true]]]]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals)->index()->getData();
+		$this->assertSame($aggregate['contributions'], $data['contributions']);
+
+		$none = $this->controller(aggregate: $aggregate)->index()->getData();
+		$this->assertSame($aggregate['contributions'], $none['contributions']);
+
+	}//end testNoChoiceAnswersAsToday()
+
+	/**
+	 * A one-contribution aggregate with three pages.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function navigationAggregate(): array {
+		return [
+			'audience' => 'supplier',
+			'organisation' => 'org-1',
+			'contributions' => [
+				[
+					'app' => 'portaliq',
+					'collections' => [['id' => 'quotes'], ['id' => 'invoices'], ['id' => 'contacts']],
+					'actions' => [],
+					'pages' => [
+						['id' => 'quotes', 'blocks' => [['type' => 'collection', 'collection' => 'quotes']]],
+						['id' => 'invoices', 'blocks' => [['type' => 'collection', 'collection' => 'invoices']]],
+						['id' => 'contacts', 'blocks' => [['type' => 'collection', 'collection' => 'contacts']]],
+					],
+				],
+			],
+		];
+
+	}//end navigationAggregate()
+
+	/**
 	 * Build a controller with a canned aggregate + subject and optional
 	 * collaborator overrides.
 	 */
@@ -2328,6 +2399,7 @@ class ContributionControllerTest extends TestCase {
 		?PortalSchemaReader $schemaReader = null,
 		?CaseTypeVisibility $caseTypes = null,
 		array $params = [],
+		?PortalResolver $portals = null,
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', '']]);
@@ -2385,7 +2457,8 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			null,
 			null,
-			$caseTypes
+			$caseTypes,
+			portals: $portals
 		);
 
 	}//end controller()

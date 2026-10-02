@@ -1968,7 +1968,14 @@ OC.L10N.register(
         "The id of integriq's payment record for this request's fee, once the resident started paying (intake-pay-on-submit REQ-IPS-005). The reference page reads the payment state from that record, never from a query string.": "The id of integriq's payment record for this request's fee, once the resident started paying (intake-pay-on-submit REQ-IPS-005). The reference page reads the payment state from that record, never from a query string.",
         "The id of the endpoint action in that app's contribution that starts the payment and answers with `checkoutUrl` and `paymentIntentId`.": "The id of the endpoint action in that app's contribution that starts the payment and answers with `checkoutUrl` and `paymentIntentId`.",
         "What a resident pays for a request of this type, and which of the case app's own actions takes the payment (intake-pay-on-submit REQ-IPS-001). The portal reads the amount only from here and forwards exactly this amount; an amount in a request body is ignored. Absent means the request is free. A case type with a fee needs a signed-in resident at trust substantial.": "What a resident pays for a request of this type, and which of the case app's own actions takes the payment (intake-pay-on-submit REQ-IPS-001). The portal reads the amount only from here and forwards exactly this amount; an amount in a request body is ignored. Absent means the request is free. A case type with a fee needs a signed-in resident at trust substantial.",
-        "What the payment is for, as the payment provider shows it.": "What the payment is for, as the payment provider shows it."
+        "What the payment is for, as the payment provider shows it.": "What the payment is for, as the payment provider shows it.",
+        "Navigation": "Navigation",
+        "Per audience, the pages of this portal's menu in the order shown. Each entry names a page as <app>:<pageId> and may hide it. A hidden page is left out of this portal's menu only; to stop one client reading it, hide it on the client's account. Pages not listed follow the listed ones. Empty shows every page as the apps give them.": "Per audience, the pages of this portal's menu in the order shown. Each entry names a page as <app>:<pageId> and may hide it. A hidden page is left out of this portal's menu only; to stop one client reading it, hide it on the client's account. Pages not listed follow the listed ones. Empty shows every page as the apps give them.",
+        "The page, as <app>:<pageId>.": "The page, as <app>:<pageId>.",
+        "Hidden": "Hidden",
+        "Leave this page out of the menu.": "Leave this page out of the menu.",
+        "Hidden pages": "Hidden pages",
+        "Pages this client does not see, set by staff, each as <app>:<pageId>. The pages leave the client's menu, and the records only those pages show are refused to this account. The client cannot change this list.": "Pages this client does not see, set by staff, each as <app>:<pageId>. The pages leave the client's menu, and the records only those pages show are refused to this account. The client cannot change this list."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.56.0"
+        "version": "0.57.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.56.0",
+                "version": "0.57.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -737,7 +737,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.14.0",
+                "version": "0.15.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -990,6 +990,20 @@
                         "format": "date-time",
                         "description": "When the owner's removal request was carried out.",
                         "example": "2026-09-18T12:00:00+00:00"
+                    },
+                    "hiddenPages": {
+                        "title": "Hidden pages",
+                        "type": "array",
+                        "widget": "json",
+                        "description": "Pages this client does not see, set by staff, each as <app>:<pageId>. The pages leave the client's menu, and the records only those pages show are refused to this account. The client cannot change this list.",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[a-z0-9_-]+:.+$"
+                        },
+                        "default": [],
+                        "example": [
+                            "pipelinq:invoices"
+                        ]
                     }
                 }
             },
@@ -1973,7 +1987,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.10.0",
+                "version": "0.11.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3438,6 +3452,44 @@
                         "example": [
                             "www.mollie.com"
                         ]
+                    },
+                    "navigation": {
+                        "title": "Navigation",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "Per audience, the pages of this portal's menu in the order shown. Each entry names a page as <app>:<pageId> and may hide it. A hidden page is left out of this portal's menu only; to stop one client reading it, hide it on the client's account. Pages not listed follow the listed ones. Empty shows every page as the apps give them.",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "page"
+                                ],
+                                "properties": {
+                                    "page": {
+                                        "title": "Page",
+                                        "description": "The page, as <app>:<pageId>.",
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_-]+:.+$"
+                                    },
+                                    "hidden": {
+                                        "title": "Hidden",
+                                        "description": "Leave this page out of the menu.",
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        },
+                        "default": {},
+                        "example": {
+                            "client": [
+                                {
+                                    "page": "pipelinq:quotes",
+                                    "hidden": true
+                                }
+                            ]
+                        }
                     }
                 }
             },

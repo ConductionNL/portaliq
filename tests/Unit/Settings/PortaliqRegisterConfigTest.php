@@ -322,17 +322,26 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.10.0): a case type's `portalFee`, a submission's
 		// `paymentIntentId` and a portal's `paymentHosts`
 		// (intake-pay-on-submit T02). Additive.
-		$this->assertSame('0.56.0', self::$register['info']['version']);
-		$this->assertSame('0.56.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.57.0 (portal 0.11.0, portalAccount 0.15.0): a portal's
+		// `navigation` per audience and an account's staff-set `hiddenPages`
+		// (operate-pages-per-portal-and-client T01). Additive.
+		$this->assertSame('0.57.0', self::$register['info']['version']);
+		$this->assertSame('0.57.0', self::$register['components']['registers']['portaliq']['version']);
 		$schemas = self::$register['components']['schemas'];
+		$this->assertSame('0.11.0', $schemas['portal']['version']);
+		$navigation = $schemas['portal']['properties']['navigation'];
+		$this->assertSame('object', $navigation['type']);
+		$this->assertSame(['page'], $navigation['additionalProperties']['items']['required']);
+		$this->assertSame('boolean', $navigation['additionalProperties']['items']['properties']['hidden']['type']);
+		$this->assertSame('0.15.0', $schemas['portalAccount']['version']);
+		$this->assertSame('array', $schemas['portalAccount']['properties']['hiddenPages']['type']);
+		$this->assertSame('^[a-z0-9_-]+:.+$', $schemas['portalAccount']['properties']['hiddenPages']['items']['pattern']);
 		$this->assertSame('0.3.0', $schemas['portalCaseType']['version']);
 		$this->assertSame(['amount', 'payApp', 'payAction'], $schemas['portalCaseType']['properties']['portalFee']['required']);
 		$this->assertSame('^\\d{1,7}(\\.\\d{1,2})?$', $schemas['portalCaseType']['properties']['portalFee']['properties']['amount']['pattern']);
 		$this->assertSame('0.2.0', $schemas['portalIntakeSubmission']['version']);
 		$this->assertSame('string', $schemas['portalIntakeSubmission']['properties']['paymentIntentId']['type']);
-		$this->assertSame('0.10.0', $schemas['portal']['version']);
 		$this->assertSame([], $schemas['portal']['properties']['paymentHosts']['default']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
@@ -382,8 +391,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.10.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.11.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.15.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
@@ -649,7 +658,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.15.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [
