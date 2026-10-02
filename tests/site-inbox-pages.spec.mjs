@@ -202,10 +202,13 @@ test('marking a message read flips that row only and drops the unread count by o
 	})
 	await page.load()
 	assert.equal(page.messages.length, 2)
+	// The loaded rows are the truth, not the sign-in count of 3: a notice a
+	// job wrote after sign-in counts too (woo-inbox-notices REQ-NAP-011).
+	assert.deepEqual(page.emitted, [['unread', 1]])
 	await page.markRead(page.messages[0])
 	assert.deepEqual(calls, ['m1'])
 	assert.equal(page.messages[0].read, true)
-	assert.deepEqual(page.emitted, [['unread', 2]])
+	assert.deepEqual(page.emitted, [['unread', 1], ['unread', 0]])
 	await page.markRead(page.messages[1])
 	assert.deepEqual(calls, ['m1'], 'a read message is not sent again')
 })
