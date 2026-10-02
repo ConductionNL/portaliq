@@ -33,7 +33,8 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
 ## Wave 5: pages, menu, home, switching (REQ-SMO-006, REQ-SMO-007, REQ-SMO-008, REQ-SMO-020; `limit`, `sort`, `range` of REQ-SMO-021)
 
 - [ ] **T9**: `PortalPageResolver` keeps `group` (after #1097), `menu: false`, `perRecord`, `records`, `home`; `perRecord` dropped off its record collection.
-  - PHPUnit `PortalPageResolverTest::testMenuFalseKeepsTheRoute`, `::testPerRecordNeedsItsRecordCollection`, `::testABareRecordsIdIsReadAsACollection`
+  - [x] server side, built early in `feat/site-design-wave-1`: `PageMenuKeys`, PHPUnit `PageMenuKeysTest::testMenuFalseKeepsTheRoute`, `::testOnlyFalseAndTrueAreKept`, `::testABareRecordsIdIsReadAsACollection`, `::testPerRecordNeedsItsRecordCollection`. `group` stays #1097's. `records.subtitleLookup` (REQ-SMO-026) is not in it yet.
+  - [ ] the site honouring the keys (menu, switcher, home) is wave 5
 - [ ] **T10**: `limit` and `sort` on `collection`, `range` on `calendar`.
   - PHPUnit on the normalisers; `check:record-page`, `check:collection-table` extended
 - [ ] **T11**: resident menu icons, groups, `menu: false`, `perRecord` entries; Den Haag side navigation look.

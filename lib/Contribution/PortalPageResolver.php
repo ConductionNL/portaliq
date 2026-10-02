@@ -96,6 +96,8 @@ class PortalPageResolver {
 	 *                   (drives the synthesised id).
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
 	 */
 	private function normalisePage(mixed $page, array $collectionIds, array $actionIds, int $index): ?array {
 		if (is_array($page) === false) {
@@ -130,6 +132,9 @@ class PortalPageResolver {
 		if ($record !== null) {
 			$entry['record'] = $record;
 		}
+
+		// Menu, record switcher and home (site-mijn-omgeving-components REQ-SMO-020).
+		$entry += (new PageMenuKeys())->keys(page: $page, entry: $entry, collectionIds: $collectionIds);
 
 		return $entry;
 	}//end normalisePage()
