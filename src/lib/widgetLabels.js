@@ -36,6 +36,7 @@ const PUBLIC_LABELS = {
  *
  * @param {string} name The name.
  * @return {string} The label.
+ * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
  */
 export function humanise(name) {
 	const spaced = String(name)

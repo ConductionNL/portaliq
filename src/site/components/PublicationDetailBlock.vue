@@ -214,6 +214,8 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The page's language.
+		 *
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		locale() {
 			return pageLocale()
@@ -221,6 +223,8 @@ export default {
 
 		/**
 		 * @return {(key: string) => string} The translator for the page's language.
+		 *
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		t() {
 			return createTranslator(this.locale)
