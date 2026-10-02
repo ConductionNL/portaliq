@@ -84,6 +84,8 @@ to `/portal/api/intake/status`. It sends the bearer when `src/site/lib/authApi.j
 holds one, so the applicant block is prefilled server-side for a signed-in
 resident as the resolver already does.
 
+**Change while building (T05).** The block already existed when this change was built, rendering its own Utrecht fields. It keeps them rather than mounting `CnFormPage`: `CnFormPage` is not in `@conduction/nextcloud-vue/public`, the entry checked free of Nextcloud dependencies that the site's blocks use. The condition is still nextcloud-vue's own: `src/site/lib/intakeVisibility.js` imports `evaluateVisibleWhenLocal` from the package's `src/utils/visibleWhen.js` and walks the fields in declared order as `PortalFormValidator` does, so a hidden answer is neither shown nor sent. The challenge is solved with the site's existing `solveChallenge` (`src/site/lib/waysIn.js`).
+
 ## D5. A draft is an OpenRegister journey run, never a portaliq object
 
 No draft schema is added to `lib/Settings/portaliq_register.json`. A draft is

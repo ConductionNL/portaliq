@@ -37,13 +37,40 @@
 			:role="view.tone === 'error' ? 'alert' : 'status'">
 			{{ view.sentence }}
 		</p>
+
+		<div v-if="payment" data-testid="intake-status-payment">
+			<p class="utrecht-paragraph">
+				{{ payment.sentence }}
+			</p>
+			<button
+				v-if="payment.canPay"
+				type="button"
+				class="utrecht-button utrecht-button--primary-action"
+				:disabled="paying"
+				data-testid="intake-status-pay"
+				@click="pay">
+				{{ payLabel }}
+			</button>
+			<p
+				v-if="payFailed"
+				class="utrecht-paragraph"
+				data-testid="intake-status-pay-error"
+				role="alert">
+				{{ payFailedLabel }}
+			</p>
+		</div>
 	</section>
 </template>
 
 <script>
-import { authBaseFrom } from '../lib/authApi.js'
+import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
-import { lookUpStatus, statusView } from '../lib/intakeApi.js'
+import {
+	lookUpStatus,
+	payIntake,
+	paymentView,
+	statusView,
+} from '../lib/intakeApi.js'
 
 /**
  * Look up what became of a request by its reference
@@ -81,13 +108,28 @@ export default {
 			type: String,
 			default: 'Bekijk de status',
 		},
+
+		/** The button that pays a fee not paid yet, or paid in vain. */
+		payLabel: {
+			type: String,
+			default: 'Nu betalen',
+		},
+
+		/** Shown when the payment could not start. */
+		payFailedLabel: {
+			type: String,
+			default: 'U kunt nu niet betalen. Probeer het later opnieuw.',
+		},
 	},
 
 	data() {
 		return {
 			reference: '',
 			view: null,
+			payment: null,
 			busy: false,
+			paying: false,
+			payFailed: false,
 			inputId: 'pq-intake-status-reference',
 		}
 	},
@@ -124,10 +166,39 @@ export default {
 					this.portal,
 				)
 				this.view = statusView(status)
+				this.payment = paymentView(status)
 			} catch {
 				this.view = statusView(null)
+				this.payment = null
 			} finally {
 				this.busy = false
+			}
+		},
+
+		/**
+		 * Pay a fee not paid yet, or paid in vain, and leave for the checkout
+		 * in the top window. Paying needs the visitor's own session: the
+		 * server refuses a reference that is not theirs.
+		 *
+		 * @return {Promise<void>} Resolves when answered.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-result-is-read-from-the-payment-record-req-ips-005
+		 */
+		async pay() {
+			this.paying = true
+			this.payFailed = false
+			try {
+				const { checkoutUrl } = await payIntake(
+					authBaseFrom(resolveApiBase()),
+					this.reference,
+					this.portal,
+					adoptSessionToken(),
+				)
+				window.top.location.assign(checkoutUrl)
+			} catch {
+				this.payFailed = true
+			} finally {
+				this.paying = false
 			}
 		},
 	},

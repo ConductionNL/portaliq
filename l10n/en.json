@@ -1964,7 +1964,22 @@
         "Choose at least one group.": "Choose at least one group.",
         "Choose the school.": "Choose the school.",
         "For": "For",
-        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer."
+        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer.",
+        "Amount": "Amount",
+        "Currency": "Currency",
+        "Pay action": "Pay action",
+        "Paying app": "Paying app",
+        "Payment hosts": "Payment hosts",
+        "Payment intent": "Payment intent",
+        "Portal fee": "Portal fee",
+        "The ISO 4217 currency code.": "The ISO 4217 currency code.",
+        "The app whose portal contribution declares the pay action, normally the case app itself.": "The app whose portal contribution declares the pay action, normally the case app itself.",
+        "The fee, as a decimal text with a point, more than zero.": "The fee, as a decimal text with a point, more than zero.",
+        "The host names a resident may be sent to for paying a request fee, such as `www.mollie.com` (intake-pay-on-submit REQ-IPS-004). A checkout on any other host, or over plain http, is refused. Empty by default, so nothing redirects until an administrator names the provider's host.": "The host names a resident may be sent to for paying a request fee, such as `www.mollie.com` (intake-pay-on-submit REQ-IPS-004). A checkout on any other host, or over plain http, is refused. Empty by default, so nothing redirects until an administrator names the provider's host.",
+        "The id of integriq's payment record for this request's fee, once the resident started paying (intake-pay-on-submit REQ-IPS-005). The reference page reads the payment state from that record, never from a query string.": "The id of integriq's payment record for this request's fee, once the resident started paying (intake-pay-on-submit REQ-IPS-005). The reference page reads the payment state from that record, never from a query string.",
+        "The id of the endpoint action in that app's contribution that starts the payment and answers with `checkoutUrl` and `paymentIntentId`.": "The id of the endpoint action in that app's contribution that starts the payment and answers with `checkoutUrl` and `paymentIntentId`.",
+        "What a resident pays for a request of this type, and which of the case app's own actions takes the payment (intake-pay-on-submit REQ-IPS-001). The portal reads the amount only from here and forwards exactly this amount; an amount in a request body is ignored. Absent means the request is free. A case type with a fee needs a signed-in resident at trust substantial.": "What a resident pays for a request of this type, and which of the case app's own actions takes the payment (intake-pay-on-submit REQ-IPS-001). The portal reads the amount only from here and forwards exactly this amount; an amount in a request body is ignored. Absent means the request is free. A case type with a fee needs a signed-in resident at trust substantial.",
+        "What the payment is for, as the payment provider shows it.": "What the payment is for, as the payment provider shows it."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -24,6 +24,13 @@
 		</p>
 
 		<p
+			v-else-if="state === 'signIn' && fee"
+			class="utrecht-paragraph"
+			data-testid="intake-form-sign-in-fee">
+			{{ fee.signIn }}
+		</p>
+
+		<p
 			v-else-if="state === 'signIn'"
 			class="utrecht-paragraph"
 			data-testid="intake-form-sign-in">
@@ -58,6 +65,26 @@
 			<p class="utrecht-paragraph">
 				{{ keepReferenceLabel }}
 			</p>
+			<template v-if="fee">
+				<p class="utrecht-paragraph" data-testid="intake-form-fee">
+					{{ fee.costs }}
+				</p>
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--primary-action"
+					:disabled="paying"
+					data-testid="intake-form-pay"
+					@click="pay">
+					{{ fee.pay }}
+				</button>
+				<p
+					v-if="payFailed"
+					class="utrecht-paragraph pq-intake-form__error"
+					data-testid="intake-form-pay-error"
+					role="alert">
+					{{ payFailedLabel }}
+				</p>
+			</template>
 		</div>
 
 		<form
@@ -158,10 +185,14 @@ import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import {
 	bindingRouteFrom,
+	challengeProof,
+	feeText,
 	initialValues,
 	loadForm,
+	payIntake,
 	submitIntake,
 } from '../lib/intakeApi.js'
+import { shownAnswers, shownFields } from '../lib/intakeVisibility.js'
 
 /**
  * The form a catalogue entry starts, rendered on a portal page
@@ -277,6 +308,12 @@ export default {
 			type: String,
 			default: 'Maak een keuze',
 		},
+
+		/** Shown when the payment could not start. */
+		payFailedLabel: {
+			type: String,
+			default: 'U kunt nu niet betalen. Probeer het later opnieuw.',
+		},
 	},
 
 	data() {
@@ -289,6 +326,8 @@ export default {
 			sendFailed: false,
 			reference: '',
 			confirmationText: '',
+			paying: false,
+			payFailed: false,
 		}
 	},
 
@@ -305,16 +344,26 @@ export default {
 		},
 
 		/**
-		 * The rendered fields that carry a name.
+		 * The sentences of the fee the case type declares, or null.
+		 *
+		 * @return {{costs: string, pay: string, signIn: string}|null} The sentences.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-a-fee-bearing-form-asks-the-visitor-to-sign-in-first-req-ips-002
+		 */
+		fee() {
+			return feeText(this.render.fee)
+		},
+
+		/**
+		 * The rendered fields a resident sees for the answers so far: a field
+		 * shows only while its condition holds.
 		 *
 		 * @return {Array<object>} The fields.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-fields-condition-decides-whether-the-resident-sees-it-req-icq-001
 		 */
 		fields() {
-			return (
-				Array.isArray(this.render.fields) ? this.render.fields : []
-			).filter((field) => field && field.name)
+			return shownFields(this.render.fields, this.values)
 		},
 	},
 
@@ -369,11 +418,12 @@ export default {
 		},
 
 		/**
-		 * Send the answers and show the reference.
+		 * Send the answers of the shown fields, with the solved challenge when
+		 * the form carries one, and show the reference.
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+		 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-bound-form-can-be-filled-in-on-a-site-page-req-icq-004
 		 */
 		async submit() {
 			this.submitting = true
@@ -383,9 +433,11 @@ export default {
 				const outcome = await submitIntake(
 					authBaseFrom(resolveApiBase()),
 					this.bindingRoute,
-					this.values,
+					shownAnswers(this.render.fields, this.values),
 					this.portal,
 					adoptSessionToken(),
+					null,
+					await challengeProof(this.render.challenge),
 				)
 				if (outcome.reference === '') {
 					this.errors = outcome.errors
@@ -399,6 +451,32 @@ export default {
 				this.sendFailed = true
 			} finally {
 				this.submitting = false
+			}
+		},
+
+		/**
+		 * Start paying the fee and leave for the checkout. The top window, so
+		 * an embedded form does not open a payment page inside a frame.
+		 *
+		 * @return {Promise<void>} Resolves when answered.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-portal-redirects-only-to-a-declared-payment-host-req-ips-004
+		 */
+		async pay() {
+			this.paying = true
+			this.payFailed = false
+			try {
+				const { checkoutUrl } = await payIntake(
+					authBaseFrom(resolveApiBase()),
+					this.reference,
+					this.portal,
+					adoptSessionToken(),
+				)
+				window.top.location.assign(checkoutUrl)
+			} catch {
+				this.payFailed = true
+			} finally {
+				this.paying = false
 			}
 		},
 
