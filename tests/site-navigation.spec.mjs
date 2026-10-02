@@ -65,8 +65,9 @@ const MENUS = [
 		],
 	},
 ]
-const hrefFor = (route) =>
-	`/apps/portaliq/site?portal=wilgenboom&route=${encodeURIComponent(route)}`
+function hrefFor(route) {
+	return `/apps/portaliq/site?portal=wilgenboom&route=${encodeURIComponent(route)}`
+}
 
 test('the groups hold every header item: the app, the own sections, the site pages', () => {
 	const groups = navigationGroups({
