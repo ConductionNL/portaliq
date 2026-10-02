@@ -12,3 +12,7 @@
   - `node --test tests/publication-documents.spec.mjs` (`npm run check:publication-documents`)
 - [x] **T6**: "My cases" shows a case's status by its public label and never a uuid
   - `node --test tests/my-cases-page.spec.mjs` (`npm run check:my-cases-page`)
+- [x] **T7**: the page editor names a block by its widget's name (bar, accessible name, inspector)
+  - `node --test tests/page-editor.spec.mjs`
+- [x] **T8**: the editor's status tokens are light tints with AA text, so "Gepubliceerd." and the delete button read at AA
+  - `node --test tests/site-edit-mode.spec.mjs`
