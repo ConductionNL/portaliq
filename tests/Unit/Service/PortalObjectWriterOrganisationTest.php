@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
-use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Service\ObjectService;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Tests\Doubles\OpenRegisterObjectEntity;
+use OCA\Portaliq\Tests\Doubles\OpenRegisterObjectService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -23,9 +23,9 @@ use RuntimeException;
  * has, and adds nothing when it has none.
  *
  * The doubles are built with `onlyMethods` on OpenRegister's own
- * ObjectService and ObjectEntity (or on the signature stubs under
- * tests/Stubs/OpenRegister when OpenRegister is absent), so a call the real
- * class cannot take fails here too.
+ * ObjectService and ObjectEntity, or on their signature copies under
+ * tests/Doubles when OpenRegister is not loaded, so a call the real class
+ * cannot take fails here too.
  *
  * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
  */
@@ -33,22 +33,14 @@ class PortalObjectWriterOrganisationTest extends TestCase {
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
 
+	private const ENTITY = 'OCA\\OpenRegister\\Db\\ObjectEntity';
+
 	/**
 	 * What the writer handed to saveObject, per call.
 	 *
 	 * @var array<int, array{object: array<string, mixed>, uuid: ?string}>
 	 */
 	private array $saves = [];
-
-	public static function setUpBeforeClass(): void {
-		if (class_exists(ObjectEntity::class) === false) {
-			require_once __DIR__ . '/../../Stubs/OpenRegister/Db/ObjectEntity.php';
-		}
-
-		if (class_exists(ObjectService::class) === false) {
-			require_once __DIR__ . '/../../Stubs/OpenRegister/Service/ObjectService.php';
-		}
-	}//end setUpBeforeClass()
 
 	protected function setUp(): void {
 		$this->saves = [];
@@ -157,14 +149,19 @@ class PortalObjectWriterOrganisationTest extends TestCase {
 	 * @param array<string, mixed>|null $stored The row `find()` returns.
 	 */
 	private function writer(?array $stored): PortalObjectWriter {
-		/** @var ObjectService&MockObject $objectService */
-		$objectService = $this->getMockBuilder(ObjectService::class)
+		$serviceClass = OpenRegisterObjectService::class;
+		if (class_exists(self::OS) === true) {
+			$serviceClass = self::OS;
+		}
+
+		/** @var MockObject $objectService */
+		$objectService = $this->getMockBuilder($serviceClass)
 			->disableOriginalConstructor()
 			->onlyMethods(['find', 'saveObject'])
 			->getMock();
 
 		$objectService->method('find')->willReturnCallback(
-			function (int|string $id) use ($stored): ?ObjectEntity {
+			function (int|string $id) use ($stored): ?object {
 				if ($stored === null || ($stored['id'] ?? null) !== $id) {
 					return null;
 				}
@@ -174,7 +171,7 @@ class PortalObjectWriterOrganisationTest extends TestCase {
 		);
 
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], mixed $register = null, mixed $schema = null, ?string $uuid = null): ObjectEntity {
+			function (array $object, ?array $extend = [], mixed $register = null, mixed $schema = null, ?string $uuid = null): object {
 				$this->saves[] = ['object' => $object, 'uuid' => $uuid];
 				return $this->entity(row: $object);
 			}
@@ -199,8 +196,13 @@ class PortalObjectWriterOrganisationTest extends TestCase {
 	 *
 	 * @param array<string, mixed> $row The row.
 	 */
-	private function entity(array $row): ObjectEntity {
-		$entity = $this->getMockBuilder(ObjectEntity::class)
+	private function entity(array $row): object {
+		$entityClass = OpenRegisterObjectEntity::class;
+		if (class_exists(self::ENTITY) === true) {
+			$entityClass = self::ENTITY;
+		}
+
+		$entity = $this->getMockBuilder($entityClass)
 			->disableOriginalConstructor()
 			->onlyMethods(['jsonSerialize'])
 			->getMock();

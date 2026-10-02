@@ -1,18 +1,19 @@
 <?php
 
 /**
- * OpenRegister test stub: the two ObjectService methods the portal writer
+ * OpenRegister signature double: the two ObjectService methods the portal writer
  * calls, with their signatures copied from openregister's class on
- * `development` (3f804c2fda). Loaded only when OpenRegister is absent, so a
- * test can build an `onlyMethods` double that refuses a method or argument the
- * real class does not have. The bodies are never run: the double replaces
- * them.
+ * `development` (3f804c2fda). A test doubles the real class when OpenRegister
+ * is loaded and this one when it is not, so an `onlyMethods` double refuses a
+ * method or argument the real class does not have. It lives in portaliq's own
+ * test namespace so it never stands in for OpenRegister in another test. The
+ * bodies are never run: the double replaces them.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @category Service
- * @package  OCA\OpenRegister\Service
+ * @package  OCA\Portaliq\Tests\Doubles
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,10 +24,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\OpenRegister\Service;
+namespace OCA\Portaliq\Tests\Doubles;
 
 use LogicException;
-use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Db\Register;
 use OCA\OpenRegister\Db\Schema;
 use OCP\IUser;
@@ -34,7 +34,7 @@ use OCP\IUser;
 /**
  * Signature stand-in for OpenRegister's ObjectService.
  */
-class ObjectService {
+class OpenRegisterObjectService {
 	/**
 	 * Find one object by id or uuid.
 	 *
@@ -50,7 +50,7 @@ class ObjectService {
 		bool $_multitenancy = true,
 		bool $_render = true,
 		bool $_audit = true,
-	): ?ObjectEntity {
+	): ?OpenRegisterObjectEntity {
 		throw new LogicException('Stub: replace with a test double.');
 	}//end find()
 
@@ -61,7 +61,7 @@ class ObjectService {
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
 	 */
 	public function saveObject(
-		array|ObjectEntity $object,
+		array|OpenRegisterObjectEntity $object,
 		?array $extend = [],
 		Register|string|int|null $register = null,
 		Schema|string|int|null $schema = null,
@@ -75,7 +75,7 @@ class ObjectService {
 		bool $failIfExists = false,
 		bool $_unowned = false,
 		bool $_dedupOverride = false,
-	): ObjectEntity {
+	): OpenRegisterObjectEntity {
 		throw new LogicException('Stub: replace with a test double.');
 	}//end saveObject()
 }//end class

@@ -1,16 +1,16 @@
 <?php
 
 /**
- * OpenRegister test stub: the one ObjectEntity method the portal writer reads,
+ * OpenRegister signature double: the one ObjectEntity method the portal writer reads,
  * `jsonSerialize()`, with its signature copied from openregister's class on
- * `development` (3f804c2fda). Loaded only when OpenRegister is absent. A test
- * doubles it with `onlyMethods(['jsonSerialize'])`.
+ * `development` (3f804c2fda). A test doubles it with
+ * `onlyMethods(['jsonSerialize'])` when OpenRegister is not loaded.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @category Db
- * @package  OCA\OpenRegister\Db
+ * @package  OCA\Portaliq\Tests\Doubles
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\OpenRegister\Db;
+namespace OCA\Portaliq\Tests\Doubles;
 
 use JsonSerializable;
 
 /**
  * Signature stand-in for OpenRegister's ObjectEntity.
  */
-class ObjectEntity implements JsonSerializable {
+class OpenRegisterObjectEntity implements JsonSerializable {
 	/**
 	 * The object as an array.
 	 *
