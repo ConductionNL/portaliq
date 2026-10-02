@@ -110,7 +110,7 @@ class CitizenWritableSetResolver {
 	 */
 	public function resolve(array $action, array $case, string $audience, string $closedField = ''): array {
 		$set = $this->resolveOpen(action: $action, case: $case, audience: $audience);
-		if ($this->hasEnded(case: $case, closedField: $closedField) === false) {
+		if ((new CaseRowMarker())->hasEnded(row: $case, closedField: $closedField) === false) {
 			return array_merge($set, ['ended' => false]);
 		}
 
@@ -139,25 +139,6 @@ class CitizenWritableSetResolver {
 		);
 	}//end resolve()
 
-	/**
-	 * Whether the case is over: withdrawn, or closed by the marker its
-	 * collection declares (the one "My cases" files it under Closed by).
-	 *
-	 * @param array<string, mixed> $case The citizen's own case row.
-	 * @param string $closedField The collection's `closedField`, or ''.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
-	 */
-	public function hasEnded(array $case, string $closedField): bool {
-		$withdrawnAt = ($case['withdrawnAt'] ?? null);
-		if (is_string($withdrawnAt) === true && $withdrawnAt !== '') {
-			return true;
-		}
-
-		return (new CaseRowMarker())->isClosed(row: $case, collection: ['closedField' => $closedField]);
-	}//end hasEnded()
 
 	/**
 	 * The writable set as the case type declares it for the case's status.
@@ -280,7 +261,7 @@ class CitizenWritableSetResolver {
 			];
 		}
 
-		if ($this->hasEnded(case: $case, closedField: $closedField) === true) {
+		if ((new CaseRowMarker())->hasEnded(row: $case, closedField: $closedField) === true) {
 			// A closed case is not withdrawn: there is nothing left to stop.
 			return [
 				'declared' => true,

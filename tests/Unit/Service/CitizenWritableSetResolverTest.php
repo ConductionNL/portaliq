@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
+use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCP\IL10N;
@@ -255,9 +256,9 @@ class CitizenWritableSetResolverTest extends TestCase {
 
 		$running = $case;
 		$running['isFinalStatus'] = false;
-		$this->assertFalse($this->resolver(caseType: $this->caseType())->hasEnded(case: $running, closedField: 'isFinalStatus'));
+		$this->assertFalse((new CaseRowMarker())->hasEnded(row: $running, closedField: 'isFinalStatus'));
 		$running['withdrawnAt'] = '';
-		$this->assertFalse($this->resolver(caseType: $this->caseType())->hasEnded(case: $running, closedField: ''));
+		$this->assertFalse((new CaseRowMarker())->hasEnded(row: $running, closedField: ''));
 	}//end testACaseTheCollectionMarksClosedHasEnded()
 
 	/**
