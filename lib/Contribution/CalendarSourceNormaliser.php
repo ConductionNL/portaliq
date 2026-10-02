@@ -58,6 +58,11 @@ class CalendarSourceNormaliser {
 			$out['kind'] = $source['kind'];
 		}
 
+		$only = $this->only(declared: ($source['only'] ?? null));
+		if ($only !== null) {
+			$out['only'] = $only;
+		}
+
 		return (new RecordScopeNormaliser())->scope(declared: $source, entry: $out);
 	}//end source()
 
@@ -114,6 +119,27 @@ class CalendarSourceNormaliser {
 
 		return $out;
 	}//end dateFields()
+
+	/**
+	 * The `only` rule, `{field, in}`: a row counts only when its field holds
+	 * one of the listed values. Null when it names no field or no value.
+	 *
+	 * @param mixed $declared The declared rule.
+	 *
+	 * @return array{field: string, in: array<int, string>}|null
+	 */
+	private function only(mixed $declared): ?array {
+		if (is_array($declared) === false || $this->isName(value: ($declared['field'] ?? null)) === false) {
+			return null;
+		}
+
+		$values = array_values(array_filter((array)($declared['in'] ?? []), fn ($value): bool => $this->isName(value: $value)));
+		if ($values === []) {
+			return null;
+		}
+
+		return ['field' => $declared['field'], 'in' => $values];
+	}//end only()
 
 	/**
 	 * Whether a value is a non-empty string.

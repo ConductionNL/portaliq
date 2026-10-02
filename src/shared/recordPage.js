@@ -115,7 +115,7 @@ export function narrowToRecord(rows, scope, record, groups = null) {
  * The rows with each lookup's value written under its `as` name: the
  * `valueField` of the row in the lookup collection whose `matchField` holds
  * this row's id, narrowed to the record like a block, labelled through
- * `values`, else `default`.
+ * `values`, else `fallback`.
  *
  * @param {Array<object>} rows The rows.
  * @param {Array<object>|undefined} lookups The block's lookups.
@@ -149,7 +149,7 @@ export function withLookups(rows, lookups, store, record) {
 				raw !== undefined && raw !== null && lookup.values
 					? lookup.values[String(raw)]
 					: undefined
-			out[lookup.as] = labelled ?? raw ?? lookup.default ?? ''
+			out[lookup.as] = labelled ?? raw ?? lookup.fallback ?? ''
 		})
 		return out
 	})
@@ -319,6 +319,10 @@ export function calendarItems(block, store, record, groups = null) {
 			groups,
 		)
 		rows.forEach((row, r) => {
+			const only = source.only
+			if (only && !only.in.includes(String(row?.[only.field] ?? ''))) {
+				return
+			}
 			const base = `${s}:${idOf(row) || r}`
 			if (source.expand) {
 				const list = Array.isArray(row?.[source.expand.field])

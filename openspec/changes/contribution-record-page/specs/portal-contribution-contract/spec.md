@@ -45,7 +45,7 @@ A `kpi` block names a collection and `cards`, each with a `field`, a `label`, an
 
 ### Requirement: A calendar block MUST show dated rows as a list and a month
 
-A `calendar` block names `sources`, each with a `collection`, a `startField`, a `titleField` or a fixed `title` (a row without a title value takes the fixed one), an optional `endField`, an optional `kind` label and an optional `expand: {field, startField, endField, titleField}` that turns each element of a list field into its own item. The normaliser MUST drop a source whose collection does not resolve, and the block when no source survives. The portal MUST show the items from today onward as a list grouped by month, and a month view with previous and next buttons, both reachable by keyboard and readable on a phone.
+A `calendar` block names `sources`, each with a `collection`, a `startField`, a `titleField` or a fixed `title` (a row without a title value takes the fixed one), an optional `endField`, an optional `kind` label, an optional `only: {field, in}` that keeps only the rows whose field holds one of the listed values, and an optional `expand: {field, startField, endField, titleField}` that turns each element of a list field into its own item. The normaliser MUST drop a source whose collection does not resolve, and the block when no source survives. The portal MUST show the items from today onward as a list grouped by month, and a month view with previous and next buttons, both reachable by keyboard and readable on a phone.
 
 #### Scenario: Holidays, school events and conference times share one calendar
 - GIVEN school events, a report period holding holidays, and a booked conference time
@@ -65,7 +65,7 @@ A `news` block MAY declare `limit` (1 to 20, default 3). The portal MUST show th
 
 ### Requirement: A collection block MAY label its rows from a second collection
 
-A `collection` block MAY declare `lookups`, each with `as`, a `collection` of the same contribution, a `matchField`, a `valueField`, and optional `recordField`, `values` (a map from value to label) and `default`. The normaliser MUST drop a lookup that misses a name or whose collection does not resolve. The portal MUST write under `as`, on each row, the `valueField` of the first row of the lookup collection whose `matchField` holds the row's id (narrowed to the open record through `recordField`), labelled through `values`, else `default`.
+A `collection` block MAY declare `lookups`, each with `as`, a `collection` of the same contribution, a `matchField`, a `valueField`, and optional `recordField`, `values` (a map from value to label) and `fallback`. The normaliser MUST drop a lookup that misses a name or whose collection does not resolve. The portal MUST write under `as`, on each row, the `valueField` of the first row of the lookup collection whose `matchField` holds the row's id (narrowed to the open record through `recordField`), labelled through `values`, else `fallback`.
 
 #### Scenario: Homework shows whether the child handed it in
 - GIVEN three assignments of Vera's group and her submissions for two of them

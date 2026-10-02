@@ -687,7 +687,7 @@ test("a lookup labels each homework row with the child's own submission", () => 
 				late: 'Te laat ingeleverd',
 				draft: 'Open',
 			},
-			default: 'Open',
+			fallback: 'Open',
 		},
 	]
 	const withSubmissions = {
@@ -772,4 +772,33 @@ test('a kpi caption names the school year the cards show', async () => {
 		locale: 'nl',
 	})
 	assert.match(html, /data-testid="kpi-caption"[^>]*>\s*Schooljaar 2026-2027/)
+})
+
+test('a calendar source shows only the rows its rule names', () => {
+	const items = calendarItems(
+		{
+			sources: [
+				{
+					collection: 'slots',
+					startField: 'startsAt',
+					title: 'Oudergesprek',
+					only: { field: 'lifecycle', in: ['booked', 'acknowledged'] },
+				},
+			],
+		},
+		{
+			slots: {
+				objects: [
+					{ id: 'a', startsAt: '2026-11-03', lifecycle: 'booked' },
+					{ id: 'b', startsAt: '2026-11-04', lifecycle: 'cancelled' },
+					{ id: 'c', startsAt: '2026-11-05', lifecycle: 'acknowledged' },
+				],
+			},
+		},
+		null,
+	)
+	assert.deepEqual(
+		items.map((item) => dayKey(item.start)),
+		['2026-11-03', '2026-11-05'],
+	)
 })

@@ -207,7 +207,7 @@ class RecordPageNormaliserTest extends TestCase {
 							'valueField' => 'lifecycle',
 							'recordField' => 'learnerRef',
 							'values' => ['submitted' => 'Handed in', 'late' => 7],
-							'default' => 'Open',
+							'fallback' => 'Open',
 						],
 						['as' => 'x', 'collection' => 'elsewhere', 'matchField' => 'a', 'valueField' => 'b'],
 						['as' => '', 'collection' => 'cards', 'matchField' => 'a', 'valueField' => 'b'],
@@ -227,7 +227,7 @@ class RecordPageNormaliserTest extends TestCase {
 					'valueField' => 'lifecycle',
 					'recordField' => 'learnerRef',
 					'values' => ['submitted' => 'Handed in'],
-					'default' => 'Open',
+					'fallback' => 'Open',
 				],
 			],
 			$blocks[0]['lookups']
@@ -265,5 +265,22 @@ class RecordPageNormaliserTest extends TestCase {
 			[['collection' => 'events', 'startField' => 'startsAt', 'titleField' => 'slotLabel', 'title' => 'Parent evening', 'recordGroupsField' => 'cohortIds']],
 			$blocks[2]['sources']
 		);
+	}
+
+	public function testACalendarSourceKeepsAWellFormedOnlyRule(): void {
+		$blocks = $this->blocks(
+			[
+				[
+					'type' => 'calendar',
+					'sources' => [
+						['collection' => 'events', 'startField' => 'a', 'titleField' => 'b', 'only' => ['field' => 'lifecycle', 'in' => ['booked', '', 3, 'acknowledged']]],
+						['collection' => 'events', 'startField' => 'a', 'titleField' => 'b', 'only' => ['field' => 'lifecycle', 'in' => []]],
+					],
+				],
+			]
+		);
+
+		$this->assertSame(['field' => 'lifecycle', 'in' => ['booked', 'acknowledged']], $blocks[0]['sources'][0]['only']);
+		$this->assertArrayNotHasKey('only', $blocks[0]['sources'][1]);
 	}
 }

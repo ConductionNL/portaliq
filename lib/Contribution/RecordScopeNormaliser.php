@@ -12,7 +12,7 @@
  *   groups (or, without a record, the groups of every row of the
  *   contribution's `guardianAudience.groups` collection);
  * - `lookups`: `{as, collection, matchField, valueField, recordField?,
- *   values?, default?}` writes, under `as`, the value found in another
+ *   values?, fallback?}` writes, under `as`, the value found in another
  *   collection of the same contribution (a homework row's "handed in").
  *
  * SECURITY: presentation only. Every lookup collection must resolve against
@@ -136,8 +136,8 @@ class RecordScopeNormaliser {
 			$out['values'] = $values;
 		}
 
-		if ($this->isName(value: ($lookup['default'] ?? null)) === true) {
-			$out['default'] = $lookup['default'];
+		if ($this->isName(value: ($lookup['fallback'] ?? null)) === true) {
+			$out['fallback'] = $lookup['fallback'];
 		}
 
 		return $out;
