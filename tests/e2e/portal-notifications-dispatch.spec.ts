@@ -41,17 +41,20 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { openPortaliqDemoPage } from './portal-nav.ts'
+import {
+	openPortaliqDemoPage,
+	PORTAL_API,
+	seedSiteSession,
+	SITE_PATH,
+	siteAddress,
+} from './portal-nav.ts'
 
-// Pretty-URL app paths, matching the convention already used by
-// tests/e2e/portal-inbox.spec.ts (`/apps/portaliq/...`, no `index.php`).
-const PORTAL_PATH = '/apps/portaliq/portal'
-const API_BASE = '/apps/portaliq/portal/api'
+const API_BASE = PORTAL_API
 
 /**
- * Mint a low-trust supplier dev session and seed it into the SPA's
- * localStorage token slot BEFORE the app boots, so the portal loads already
- * authenticated (mirrors how a real bearer, once minted, is stored).
+ * Mint a low-trust supplier dev session and seed it into the site's session
+ * token slot BEFORE the app boots, so the site loads already signed in
+ * (mirrors how a real bearer, once minted, is stored).
  */
 async function loginAsSupplier(
 	request: APIRequestContext,
@@ -70,27 +73,27 @@ async function loginAsSupplier(
 	const token = body.token as string
 	expect(token).toBeTruthy()
 
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
+	await seedSiteSession(page, token)
 }
 
 test.describe('portal-notifications-dispatch', () => {
 	test('the deep link an email points at resolves the tenant', async ({
 		page,
 	}) => {
-		// The privacy-minimal email's ONLY link is `/portal?org=<slug>` — assert
-		// it lands the (unauthenticated) portal shell rather than a 404/blank
-		// page, and that white-label resolution reads the org param, exactly as
-		// design.md specifies ("the deep link routes through the SPA's existing
-		// deep-linking, landing the subject at the authenticated inbox after
-		// login").
-		await page.goto(`${PORTAL_PATH}?org=e2e-org`)
+		// The privacy-minimal email's ONLY link names the tenant by
+		// `?org=<slug>` and, since the React portal retired, opens the site
+		// (REQ-SRP-049; the old `/portal` address redirects there, REQ-SRP-048).
+		// Assert it lands the (unauthenticated) site shell rather than a
+		// 404/blank page, exactly as design.md specifies ("the deep link
+		// routes through the SPA's existing deep-linking, landing the subject
+		// at the authenticated inbox after login").
+		await page.goto(`${SITE_PATH}?org=e2e-org`)
 		await page.waitForLoadState('domcontentloaded')
 
 		// The shell renders (no 404) — the subject is prompted to authenticate
 		// rather than seeing case content, matching the "content only behind the
 		// portal auth edge" invariant.
+		await expect(page.getByTestId('site-root')).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('404')
 	})
 
@@ -102,7 +105,7 @@ test.describe('portal-notifications-dispatch', () => {
 		const organisation = 'e2e-org'
 		await loginAsSupplier(request, page, subjectRef, organisation)
 
-		await page.goto(PORTAL_PATH)
+		await page.goto(siteAddress())
 		await page.waitForLoadState('domcontentloaded')
 		await openPortaliqDemoPage(page)
 
@@ -113,7 +116,7 @@ test.describe('portal-notifications-dispatch', () => {
 		// fires the trigger synchronously in-request; only the EMAIL SEND itself
 		// is pushed to the background job. A slow/failing mail server must never
 		// surface here — the request completing with the normal success UI,
-		// promptly, is the observable proof of that decoupling from the SPA side.
+		// promptly, is the observable proof of that decoupling from the site's side.
 		const title = `E2E notif ${Date.now()}`
 		await page.getByLabel('Onderwerp').fill(title)
 		await page.getByRole('button', { name: 'Aanmaken' }).click()
