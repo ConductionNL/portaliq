@@ -8,6 +8,7 @@
 		<p
 			v-if="loading"
 			class="utrecht-paragraph"
+			role="status"
 			data-testid="publication-detail-loading">
 			{{ t('Loading…') }}
 		</p>

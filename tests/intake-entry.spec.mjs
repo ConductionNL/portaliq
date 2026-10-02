@@ -361,5 +361,11 @@ test('the public renderer mounts the three intake blocks and hands them the port
 		/intakeForm: \['portal', 'routeParam'\]/,
 		'the designer must not offer host-supplied props',
 	)
-	assert.match(catalogue, /intakeCatalogue: 'Aanvragen per onderwerp'/)
+	// The palette's names live in one module the editor shares
+	// (resident-sees-words-not-codes).
+	const labels = await readFile(
+		new URL('../src/lib/widgetLabels.js', import.meta.url),
+		'utf8',
+	)
+	assert.match(labels, /intakeCatalogue: 'Aanvragen per onderwerp'/)
 })
