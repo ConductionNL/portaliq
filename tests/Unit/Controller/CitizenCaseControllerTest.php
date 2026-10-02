@@ -59,6 +59,12 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\CitizenWriteRecorder
  * @uses   \OCA\Portaliq\Service\CitizenWriteThrottle
  * @uses   \OCA\Portaliq\Service\PortalSessionService
+ * @uses   \OCA\Portaliq\Contribution\TimelineProviderMethod
+ * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
+ * @uses   \OCA\Portaliq\Service\Branch\PortalBranchScope
+ * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
+ * @uses   \OCA\Portaliq\Service\PortalCaseDocumentReader
+ * @uses   \OCA\Portaliq\Service\MandatedCaseReader
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */

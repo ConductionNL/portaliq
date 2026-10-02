@@ -51,6 +51,7 @@ use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateBody;
 use OCA\Portaliq\Contribution\CreateActionMatcher;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
+use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
@@ -372,7 +373,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 * any write), and the write goes through PortalObjectWriter::updateObject()
 	 * with a LITERAL `['read' => true]` payload — never the request body — so
 	 * no other field can ever be written through this endpoint regardless of
-	 * what a client sends. updateObject() re-verifies ownership (scopeField +
+	 * what a client sends. A collection that names its own read date in
+	 * `messageFields.readAt` gets the current time in that one field instead. updateObject() re-verifies ownership (scopeField +
 	 * tenant) against OpenRegister BEFORE writing, so a foreign-owned or
 	 * non-existent id yields the SAME 404 as every other scoped write — no
 	 * existence oracle.
@@ -384,6 +386,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The updated message, or 401 / 403 / 404.
 	 *
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -421,8 +424,14 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		// The LITERAL payload — never the request body. Whatever extra fields a
-		// client sends are simply never read, so `read` is the only field this
+		// client sends are simply never read, so `read` (or the collection's
+		// own read date, messageFields.readAt) is the only field this
 		// endpoint can ever change.
+		$fields = new InboxMessageFields();
+		$payload = $fields->readPayload(
+			collection: $fields->normalise(collection: $collection),
+			now: gmdate(format: 'Y-m-d\TH:i:s\Z')
+		);
 		$updated = $this->writeScoped(
 			register: $register,
 			schema: $schema,
@@ -430,7 +439,7 @@ class ContributionController extends Controller implements PortalProtected {
 			subjectRef: $scopeValue,
 			organisation: (string)($subject['organisation'] ?? ''),
 			id: $id,
-			data: ['read' => true],
+			data: $payload,
 			context: 'markRead'
 		);
 		if ($updated instanceof JSONResponse) {
