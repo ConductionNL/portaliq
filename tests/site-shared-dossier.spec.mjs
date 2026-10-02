@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { instanceRootFrom } from '../src/site/lib/instanceRoot.js'
 import {
 	fetchSharedDossier,
 	isSharedDossierRoute,
@@ -76,6 +77,22 @@ test('the page keeps the title, the note and per item a title, a safe link and a
 	assert.deepEqual(sharedDossierView(null), { title: '', description: '', items: [] })
 })
 
+test('the read goes to opencatalogi under the instance root the content API names', async () => {
+	const urls = []
+	const fetchImpl = async (url) => {
+		urls.push(url)
+		return { ok: true, status: 200, json: async () => ANSWER }
+	}
+	await fetchSharedDossier(TOKEN, fetchImpl, instanceRootFrom('/nextcloud/index.php/apps/portaliq/api/content'))
+	await fetchSharedDossier(TOKEN, fetchImpl, instanceRootFrom('/apps/portaliq/api/content/site'))
+	await fetchSharedDossier(TOKEN, fetchImpl, instanceRootFrom('/api/content'))
+	assert.deepEqual(urls, [
+		`/nextcloud/index.php/apps/opencatalogi/api/collections/shared/${TOKEN}`,
+		`/apps/opencatalogi/api/collections/shared/${TOKEN}`,
+		`/index.php/apps/opencatalogi/api/collections/shared/${TOKEN}`,
+	])
+})
+
 test('the read is anonymous, and a 404 and a failure are told apart', async () => {
 	const calls = []
 	const ok = await fetchSharedDossier(TOKEN, async (url, init) => {
@@ -84,7 +101,7 @@ test('the read is anonymous, and a 404 and a failure are told apart', async () =
 	})
 	assert.equal(ok.status, 'ok')
 	assert.equal(ok.dossier.title, 'Windpark')
-	assert.equal(calls[0][0], SHARED_DOSSIER_ENDPOINT + TOKEN)
+	assert.equal(calls[0][0], '/index.php' + SHARED_DOSSIER_ENDPOINT + TOKEN)
 	assert.equal(calls[0][1].credentials, 'omit', 'the visitor session stays home')
 	assert.equal(calls[0][1].headers.Authorization, undefined)
 

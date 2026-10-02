@@ -91,6 +91,15 @@ test('the portal edit mode is the shared editor with a public palette', () => {
 	}
 })
 
+test('the editor reaches openregister under the instance root, not a guessed webroot', () => {
+	for (const file of ['src/editor/SiteEditMode.vue', 'src/editor/SiteMenuPanel.vue', 'src/editor/SitePagesPanel.vue']) {
+		const source = read(file)
+		assert.doesNotMatch(source, /@nextcloud\/router/, `${file}: /site carries no webroot for generateUrl`)
+		assert.match(source, /instanceUrl\(\s*`\/apps\/openregister\//, file)
+	}
+	assert.match(read('src/editor/instanceUrl.js'), /instanceRootFrom\(resolveApiBase\(\)\)/)
+})
+
 test('the palette limited to public widgets offers only what the renderer mounts', async () => {
 	const palette = read('src/dialogs/WidgetPaletteDialog.vue')
 	assert.match(palette, /publicOnly/)

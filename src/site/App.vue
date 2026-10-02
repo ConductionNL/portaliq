@@ -260,6 +260,7 @@
 						<SharedDossierPage
 							v-else-if="sharedDossierRoute"
 							:token="sharedDossierToken"
+							:instanceRoot="instanceRoot"
 							:t="t"
 							@loaded="onSharedDossierLoaded" />
 
@@ -514,6 +515,7 @@ import {
 } from './lib/contentApi.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
+import { instanceRootFrom } from './lib/instanceRoot.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
@@ -1113,6 +1115,15 @@ export default {
 		 */
 		sharedDossierToken() {
 			return sharedDossierToken(this.route)
+		},
+
+		/**
+		 * @return {string} The Nextcloud instance root other apps are reached under.
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		instanceRoot() {
+			return instanceRootFrom(resolveApiBase())
 		},
 
 		/**

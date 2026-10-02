@@ -18,9 +18,11 @@
 /** The in-site route prefix of a shared dossier. */
 export const SHARED_DOSSIER_ROUTE = '/gedeeld-dossier'
 
-/** opencatalogi's read of a shared dossier, before the token. */
-export const SHARED_DOSSIER_ENDPOINT =
-	'/index.php/apps/opencatalogi/api/collections/shared/'
+/**
+ * opencatalogi's read of a shared dossier, before the token, from the instance
+ * root on (`instanceRootFrom()` in `instanceRoot.js`).
+ */
+export const SHARED_DOSSIER_ENDPOINT = '/apps/opencatalogi/api/collections/shared/'
 
 /** A token as opencatalogi makes it: the dossier uuid, a dot, 192 bits in hex. */
 const TOKEN = /^[0-9a-f-]{36}\.[0-9a-f]{48}$/
@@ -106,16 +108,17 @@ export function sharedDossierView(body) {
  *
  * @param {string} token The share token.
  * @param {(url: string, init: object) => Promise<object>} fetchImpl `fetch`, or a stand-in in a test.
+ * @param {string} [root] The instance root, '/index.php' when not known.
  * @return {Promise<{status: 'ok', dossier: object}|{status: 'notFound'}|{status: 'error'}>}
  * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
  */
-export async function fetchSharedDossier(token, fetchImpl) {
+export async function fetchSharedDossier(token, fetchImpl, root = '/index.php') {
 	if (!TOKEN.test(String(token || ''))) {
 		return { status: 'notFound' }
 	}
 	try {
 		const response = await fetchImpl(
-			SHARED_DOSSIER_ENDPOINT + encodeURIComponent(token),
+			root + SHARED_DOSSIER_ENDPOINT + encodeURIComponent(token),
 			{ headers: { Accept: 'application/json' }, credentials: 'omit' },
 		)
 		if (response.status === 404) {
