@@ -7,7 +7,7 @@
 // The server normaliser already dropped blocks whose reference does not
 // resolve; one that still does not resolve here renders nothing.
 //
-// The same rules as src/portal/components/PageView.jsx:
+// The same rules as the React portal's PageView.jsx:
 //   - a `collection` block is a table, or a timed task when its collection is
 //     one; only `type: update` and endpoint row actions reach the row buttons,
 //     never the item list's remove action, and viewing a document belongs to

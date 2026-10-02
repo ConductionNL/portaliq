@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: EUPL-1.2
 //
-// Build for the built-in SITE renderer — the Vue replacement for the React
-// portal (ADR-084).
+// Build for the built-in SITE renderer, the Vue replacement for the retired
+// React portal (ADR-084).
 //
-// Standalone on purpose, the same way webpack.portal.js was: this bundle must
-// boot at a PUBLIC origin, so it cannot inherit @nextcloud/webpack-vue-config's
-// assumptions about Nextcloud globals and asset paths.
+// Standalone on purpose, the same way the React portal's build was: this
+// bundle must boot at a PUBLIC origin, so it cannot inherit
+// @nextcloud/webpack-vue-config's assumptions about Nextcloud globals and
+// asset paths.
 //
-// `output.clean` is FALSE here, and that is load-bearing while three bundles
-// share js/. webpack.config.js documents what happens otherwise: an
+// `output.clean` is FALSE here, and that is load-bearing while several
+// bundles share js/. webpack.config.js documents what happens otherwise: an
 // admin-only rebuild wipes the sibling bundle and the page then serves a bare
-// <div> with a 404 on its script and NO console error. Once the React portal
-// is retired and there are two configs instead of three, that hazard is worth
-// removing rather than guarding.
+// <div> with a 404 on its script and NO console error.
 
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
@@ -152,8 +151,8 @@ const editor = {
  *
  * templates/embed.php frames one intake form on somebody else's website. It
  * used to load the whole React portal for that; it now loads `src/embed/main.js`
- * only: Vue, the frame, the form and the Utrecht CSS it uses, and neither the
- * site nor the portal. Own chunk prefix and runtime global, for the reason the
+ * only: Vue, the frame, the form and the Utrecht CSS it uses, and not the
+ * site. Own chunk prefix and runtime global, for the reason the
  * editor gives above.
  *
  * Its own budget, well under the site's: a visitor of a municipality's page

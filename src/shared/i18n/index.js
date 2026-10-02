@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: EUPL-1.2
 //
-// Minimal, framework-agnostic i18n for the PUBLIC portal SPA
+// Minimal, framework-agnostic i18n for the PUBLIC site
 // (portal-spa-i18n-locale-support). `@nextcloud/l10n`'s `loadTranslations()`
 // targets Nextcloud's own asset pipeline (bundle discovery via the app's
-// `l10n/` directory + `OC.getLanguage()`), which this standalone,
-// separately-built bundle (webpack.portal.js) does not go through — so this
+// `l10n/` directory + `OC.getLanguage()`), which the standalone,
+// separately-built site bundle does not go through — so this
 // app ships its own tiny JSON-bundle loader instead, using the SAME
 // English-source-key convention the rest of the company's frontends follow
 // (hydra ADR-004): every literal below is an English string, translations

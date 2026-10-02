@@ -5,7 +5,7 @@
 
 <!--
 	The install offer (parent-pwa-installability), ported from the
-	`portaliq-install-banner` in src/portal/App.jsx. The browser's own offer
+	`portaliq-install-banner` in the React portal's App.jsx. The browser's own offer
 	(`beforeinstallprompt`) is captured so the site can show its own control.
 	A browser that never makes the offer (Safari, or an app that is already
 	installed) gets nothing at all: the banner renders only while an offer is

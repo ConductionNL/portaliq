@@ -5,7 +5,7 @@
 
 <!--
 	The embed frame (site-reaches-portal-parity REQ-SRP-047), ported from
-	src/portal/components/EmbeddedForm.jsx: the form, or the reason there is
+	the React portal's EmbeddedForm.jsx: the form, or the reason there is
 	not one, in words. A visitor meeting a blank rectangle on a municipality's
 	website cannot tell whether the form is broken, still loading, or not for
 	them, so every refusal has a sentence (src/shared/embedCopy.js).

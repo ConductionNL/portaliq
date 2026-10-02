@@ -78,6 +78,19 @@ would have attributed the whole 55 KB of intervening growth to this change.
 Anyone touching this file: re-measure both bundles in the same run. A row here
 is worth exactly as much as the date beside it.
 
+### Re-measured 2026-10-02, after the React portal retired
+
+Built from the retirement branch with `npm run build`, `NODE_ENV=production`.
+There is no `portaliq-portal.js` any more.
+
+| Bundle | Raw | Gzipped | Budget |
+| --- | ---: | ---: | --- |
+| `portaliq-site.js` (entry) | 335,094 B | 101,083 B | 412 KiB (`webpack.site.js`) |
+| `portaliq-embed.js` | 148,092 B | 36,508 B | its own, in `webpack.site.js` |
+
+Every signed-in page is an async chunk loaded on its route, so the entry did
+not grow with the ported screens.
+
 ## Parity checklist, measured 2026-10-02
 
 This replaces the "what each renderer can do" table of 2026-08-15. That table
