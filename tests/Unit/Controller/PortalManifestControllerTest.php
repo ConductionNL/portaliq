@@ -85,6 +85,25 @@ class PortalManifestControllerTest extends TestCase {
 
 	}//end testStartUrlPrefersThePortalSlugOverOrg()
 
+	/**
+	 * The installed app opens on the site with the same portal, and stays
+	 * on it: `/portal` is being retired (site-reaches-portal-parity
+	 * REQ-SRP-044), so an app installed today must not open on an address
+	 * that will only redirect.
+	 *
+	 * @return void
+	 */
+	public function testStartUrlAndScopePointAtTheSite(): void {
+		$controller = $this->controller(orgSlug: '', portalSlug: 'wilgenboom');
+
+		$manifest = json_decode((string)$controller->manifest()->getData(), true);
+
+		$this->assertSame(expected: '/index.php/apps/portaliq/route/portaliq.portalPage.site?portal=wilgenboom', actual: $manifest['start_url']);
+		$this->assertSame(expected: '/index.php/apps/portaliq/route/portaliq.portalPage.site?', actual: $manifest['scope']);
+		$this->assertStringStartsWith(prefix: strtok($manifest['scope'], '?'), string: $manifest['start_url']);
+
+	}//end testStartUrlAndScopePointAtTheSite()
+
 	public function testServiceWorkerAnswersTheAllowedScopeHeader(): void {
 		$controller = $this->controller(orgSlug: '');
 
@@ -105,7 +124,7 @@ class PortalManifestControllerTest extends TestCase {
 		// literal string, so this test still passes if serviceWorker.js's
 		// own content changes for a legitimate reason.
 		$this->assertSame(
-			expected: (string)file_get_contents(dirname(__DIR__, 3) . '/src/portal/serviceWorker.js'),
+			expected: (string)file_get_contents(dirname(__DIR__, 3) . '/src/shared/serviceWorker.js'),
 			actual: $body
 		);
 
