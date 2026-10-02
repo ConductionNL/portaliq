@@ -21,18 +21,26 @@ import {
 /**
  * The "logged in as" line for a session.
  *
+ * Names the person by the display name the session carries (the portal
+ * account's, from provisioning or the broker). The subject reference is an
+ * internal key and is never shown: without a name the line is a plain
+ * "Logged in" (site-header-names-the-person).
+ *
  * @param {object|null} session The session.
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {string} The line, or '' without a session.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/site-header-names-the-person/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
  */
 export function loggedInAs(session, t) {
 	if (!session) {
 		return ''
 	}
-	const who =
-		session.name || session.subjectRef || session.subject || session.sub || ''
-	return who ? t('Logged in as {subjectRef}', { subjectRef: who }) : t('Logged in')
+	const name = String(session.displayName || session.name || '').trim()
+	const reference = String(session.subjectRef || '')
+	if (name === '' || name === reference) {
+		return t('Logged in')
+	}
+	return t('Logged in as {name}', { name })
 }
 
 /**

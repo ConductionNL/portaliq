@@ -41,6 +41,7 @@ import {
 	registerTranslations,
 	useObjectStore,
 } from '@conduction/nextcloud-vue'
+import { loadState } from '@nextcloud/initial-state'
 import {
 	loadTranslations,
 	translatePlural as n,
@@ -55,6 +56,7 @@ import enTranslations from '../l10n/en.json'
 import customComponents from './customComponents.js'
 import appIcons from './icons.js'
 import { registerProposalQueueLeaf } from './integrations/registerProposalQueueLeaf.js'
+import { normaliseAccess, routeAllowed, withAccess } from './lib/adminAccess.js'
 import { recordListFetches } from './lib/listRefresh.js'
 import bundledManifest from './manifest.json'
 import pinia from './pinia.js'
@@ -211,6 +213,17 @@ const router = createRouter({
 	routes: routesFromManifest(bundledManifest),
 })
 
+// Which pages this user's role may use (admin-menu-follows-roles). The menu
+// hides the rest through its `visibleIf` predicates on `access.*`, and the
+// guard below sends a typed address for such a page to the dashboard.
+const access = normaliseAccess(loadState('portaliq', 'access', null))
+const manifest = withAccess(bundledManifest, access)
+router.beforeEach((to) =>
+	routeAllowed(manifest, String(to.name || ''), access)
+		? true
+		: { name: 'Dashboard' },
+)
+
 tryLoadTranslations()
 
 // Pass shallow copies of the registry maps to App.vue. The lib exports
@@ -226,7 +239,7 @@ const customComponentsProp = { ...customComponents }
 const registryProp = { ...registry }
 
 const app = createApp(App, {
-	manifest: bundledManifest,
+	manifest,
 	customComponents: customComponentsProp,
 	pageTypes: pageTypesProp,
 	registry: registryProp,

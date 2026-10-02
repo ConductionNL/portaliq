@@ -323,10 +323,14 @@ class SessionController extends Controller {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$account = $this->accounts->findBySubjectRef(subjectRef: (string)$subject['subjectRef']);
+
 		return new JSONResponse(
 			[
 				'authenticated' => true,
 				'subjectRef' => $subject['subjectRef'],
+				// Change site-header-names-the-person: the header greets the person by name, never by reference.
+				'displayName' => $this->displayNameOf(account: $account, subjectRef: (string)$subject['subjectRef']),
 				'audience' => $subject['audience'],
 				'organisation' => $subject['organisation'],
 				'trust' => $subject['trust'],
@@ -334,12 +338,33 @@ class SessionController extends Controller {
 				'branch' => (string)($subject['branch'] ?? ''),
 				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
 				// Change identity-profile-page T06: ask for an e-mail address when none is in use.
-				'contactPrompt' => (new ContactAddressValues())->needsContactPrompt(
-					account: $this->accounts->findBySubjectRef(subjectRef: (string)$subject['subjectRef'])
-				),
+				'contactPrompt' => (new ContactAddressValues())->needsContactPrompt(account: $account),
 			] + $this->session->sessionTimes(subject: $subject)
 		);
 	}//end index()
+
+	/**
+	 * The name the site greets a signed-in person by, or '' when none is known.
+	 *
+	 * The account's display name, which provisioning or the broker set. A
+	 * value equal to the subject reference is not a name and is never served:
+	 * the header must not show an internal reference.
+	 *
+	 * @param array<string, mixed>|null $account    The person's portal account, or null.
+	 * @param string                    $subjectRef The session's subject reference.
+	 *
+	 * @return string The name, or ''.
+	 *
+	 * @spec openspec/changes/site-header-names-the-person/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+	 */
+	private function displayNameOf(?array $account, string $subjectRef): string {
+		$name = trim((string)($account['displayName'] ?? ''));
+		if ($name === '' || $name === $subjectRef) {
+			return '';
+		}
+
+		return $name;
+	}//end displayNameOf()
 
 	/**
 	 * Mint a dev session (no real IdP). Gated — 404 unless dev-login is enabled.

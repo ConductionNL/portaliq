@@ -54,6 +54,30 @@ class PortalManifestNormaliserTest extends TestCase {
 
 	}//end testColumnsAreSanitisedAndUnknownRenderFallsBackToText()
 
+	/**
+	 * A column may declare `render: "user"` (contribution-user-display-name),
+	 * and the normaliser keeps it.
+	 *
+	 * @return void
+	 */
+	public function testAUserColumnKeepsItsRender(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					[
+						'id' => 'c1',
+						'schema' => 's',
+						'columns' => [['field' => 'handledBy', 'label' => 'Leerkracht', 'render' => 'user']],
+					],
+				],
+				'actions' => [],
+			]
+		);
+
+		$this->assertSame(['field' => 'handledBy', 'label' => 'Leerkracht', 'render' => 'user'], $out['collections'][0]['columns'][0]);
+
+	}//end testAUserColumnKeepsItsRender()
+
 	public function testDetailAndDefaultsAreValidatedFailClosed(): void {
 		$out = $this->normaliser()->normalise(
 			[
