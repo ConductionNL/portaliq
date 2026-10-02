@@ -91,6 +91,7 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
+			$collection = $this->normaliseStatusLabelField(collection: $collection);
 			$collection = $this->normaliseGroupByField(collection: $collection);
 			$collection = (new PortalBranchScope())->normalise(collection: $collection);
 			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
@@ -179,6 +180,38 @@ class CollectionConfigNormaliser {
 
 		return $collection;
 	}//end normaliseClosedField()
+
+	/**
+	 * Keep `statusLabelField` only when it names a field the collection projects.
+	 *
+	 * A case's `status` is often a reference (a uuid) that says nothing to a
+	 * resident. `statusLabelField` names the field that holds the words for it,
+	 * so "My cases" shows those and keeps the raw status for everything else.
+	 * The rule is the closed marker's: a non-empty string naming one of the
+	 * projected `fields` (or any field, when the collection projects none),
+	 * because a label field the row never carries would leave every status
+	 * blank without anyone noticing.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+	 */
+	private function normaliseStatusLabelField(array $collection): array {
+		if (array_key_exists('statusLabelField', $collection) === false) {
+			return $collection;
+		}
+
+		$field = $collection['statusLabelField'];
+		$fields = ($collection['fields'] ?? null);
+		$named = (is_string($field) === true && $field !== '');
+		if ($named === false || (is_array($fields) === true && in_array($field, $fields, true) === false)) {
+			unset($collection['statusLabelField']);
+		}
+
+		return $collection;
+	}//end normaliseStatusLabelField()
 
 	/**
 	 * Keep `groupByField` only when it names a field the collection projects.

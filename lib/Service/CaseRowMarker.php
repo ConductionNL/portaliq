@@ -90,6 +90,33 @@ class CaseRowMarker {
 	}//end isClosed()
 
 	/**
+	 * The words a case's status reads as: the value of the collection's
+	 * declared `statusLabelField`, or null when it declares none or the row
+	 * holds no text there. The raw status stays on the row for everything
+	 * that tells statuses apart.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 * @param array<string, mixed> $collection The declared case collection.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+	 */
+	public function statusLabelOf(array $row, array $collection): ?string {
+		$field = (string)($collection['statusLabelField'] ?? '');
+		if ($field === '') {
+			return null;
+		}
+
+		$value = ($row[$field] ?? null);
+		if (is_string($value) === false || trim($value) === '') {
+			return null;
+		}
+
+		return $value;
+	}//end statusLabelOf()
+
+	/**
 	 * The date a case sorts by: its own `created` or `startedAt`, else the
 	 * record's creation date.
 	 *

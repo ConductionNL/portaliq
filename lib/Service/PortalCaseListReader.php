@@ -123,6 +123,7 @@ class PortalCaseListReader {
 						'collection' => (string)($collection['id'] ?? ''),
 					];
 					$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
+					$row = $this->withStatusLabel(row: $row, collection: $collection);
 
 					$rows[] = $row;
 				}
@@ -376,6 +377,7 @@ class PortalCaseListReader {
 				'collection' => (string)($collection['id'] ?? ''),
 			];
 			$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
+			$row = $this->withStatusLabel(row: $row, collection: $collection);
 			$row['_mandate'] = $described;
 			// The case is the subsidiary's, and says so: it is never presented
 			// as the parent's own (REQ-PTV-005).
@@ -484,4 +486,25 @@ class PortalCaseListReader {
 		// Change signin-eherkenning-branch D2: a branch session sees its branch only.
 		return $this->branches->rows(subject: $subject, collection: $collection, rows: $rows);
 	}//end readCases()
+
+	/**
+	 * Stamp the words the case's status reads as onto the row as
+	 * `_statusLabel`, when the collection names a field for them. A row
+	 * without them is left as it is, so "My cases" shows the status as before.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 * @param array<string, mixed> $collection The declared case collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+	 */
+	private function withStatusLabel(array $row, array $collection): array {
+		$label = (new CaseRowMarker())->statusLabelOf(row: $row, collection: $collection);
+		if ($label !== null) {
+			$row['_statusLabel'] = $label;
+		}
+
+		return $row;
+	}//end withStatusLabel()
 }//end class
