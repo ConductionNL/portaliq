@@ -440,11 +440,7 @@ import {
 } from '../shared/portalNav.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
-import {
-	accountCrumbs,
-	accountRedirect,
-	loggedInAs,
-} from './lib/accountArea.js'
+import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,

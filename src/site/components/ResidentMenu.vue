@@ -46,7 +46,9 @@
 						<a
 							class="pq-resident-menu__link"
 							:class="{
-								'pq-resident-menu__link--current': isCurrent(item.link),
+								'pq-resident-menu__link--current': isCurrent(
+									item.link,
+								),
 							}"
 							:href="item.href || item.link"
 							:aria-current="isCurrent(item.link) ? 'page' : undefined"

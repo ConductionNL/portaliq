@@ -27,84 +27,86 @@
 			:hideLabel="t('Close the menu')"
 			@navigate="$emit('navigate', $event)" />
 		<div class="pq-account__content">
-		<p v-if="!sessionKnown" class="utrecht-paragraph" role="status">
-			{{ t('Loading…') }}
-		</p>
-
-		<div v-else-if="!session" data-testid="site-account-signin">
-			<h1 class="utrecht-heading-2">
-				{{ t('Welcome') }}
-			</h1>
-			<p class="utrecht-paragraph">
-				{{ t('Log in to view your information.') }}
-			</p>
-			<ul v-if="signInRoutes.length" class="pq-account__ways-in">
-				<li v-for="way in signInRoutes" :key="way.mode">
-					<a
-						class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
-						:href="way.href"
-						:data-mode="way.mode"
-						data-testid="site-account-signin-route">
-						{{ way.label }}
-					</a>
-				</li>
-			</ul>
-			<p v-else class="utrecht-paragraph">
-				{{ t('No login method is configured for this organisation yet.') }}
-			</p>
-			<button
-				v-if="devLogin"
-				type="button"
-				class="utrecht-button utrecht-button--secondary-action"
-				data-testid="site-devlogin"
-				@click="$emit('devlogin')">
-				{{ t('Dev-login (test)') }}
-			</button>
-			<p v-if="devError" class="utrecht-paragraph" role="alert">
-				{{ devError }}
-			</p>
-			<!-- The doors besides the sign-in buttons, only where they lead
-			     somewhere (identity-ways-in-screens REQ-IWI-005). -->
-			<WaysIn
-				v-if="ways.register || ways.reference"
-				:ways="ways"
-				:authBase="authBase"
-				:portal="portalSlug"
-				:t="waysT || t" />
-		</div>
-
-		<p v-else-if="loading" class="utrecht-paragraph" role="status">
-			{{ t('Loading…') }}
-		</p>
-
-		<p
-			v-else-if="nav.length === 0"
-			class="utrecht-paragraph"
-			data-testid="site-account-empty">
-			{{ t('No contributions to show yet.') }}
-		</p>
-
-		<template v-else-if="entry">
-			<h1
-				v-if="!ownsHeading"
-				id="site-account-title"
-				class="utrecht-heading-2"
-				data-testid="site-account-title">
-				{{ entry.label }}
-			</h1>
-			<p v-if="pageLoading" class="utrecht-paragraph" role="status">
+			<p v-if="!sessionKnown" class="utrecht-paragraph" role="status">
 				{{ t('Loading…') }}
 			</p>
-			<component
-				:is="pageComponent"
-				v-else-if="pageComponent"
-				:key="entry.key"
-				v-bind="pageProps"
-				@navigate="$emit('navigate', $event)"
-				@unread="$emit('unread', $event)"
-				@refresh="$emit('refresh')"
-				@removed="$emit('signout')" />
-		</template>
+
+			<div v-else-if="!session" data-testid="site-account-signin">
+				<h1 class="utrecht-heading-2">
+					{{ t('Welcome') }}
+				</h1>
+				<p class="utrecht-paragraph">
+					{{ t('Log in to view your information.') }}
+				</p>
+				<ul v-if="signInRoutes.length" class="pq-account__ways-in">
+					<li v-for="way in signInRoutes" :key="way.mode">
+						<a
+							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
+							:href="way.href"
+							:data-mode="way.mode"
+							data-testid="site-account-signin-route">
+							{{ way.label }}
+						</a>
+					</li>
+				</ul>
+				<p v-else class="utrecht-paragraph">
+					{{
+						t('No login method is configured for this organisation yet.')
+					}}
+				</p>
+				<button
+					v-if="devLogin"
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action"
+					data-testid="site-devlogin"
+					@click="$emit('devlogin')">
+					{{ t('Dev-login (test)') }}
+				</button>
+				<p v-if="devError" class="utrecht-paragraph" role="alert">
+					{{ devError }}
+				</p>
+				<!-- The doors besides the sign-in buttons, only where they lead
+			     somewhere (identity-ways-in-screens REQ-IWI-005). -->
+				<WaysIn
+					v-if="ways.register || ways.reference"
+					:ways="ways"
+					:authBase="authBase"
+					:portal="portalSlug"
+					:t="waysT || t" />
+			</div>
+
+			<p v-else-if="loading" class="utrecht-paragraph" role="status">
+				{{ t('Loading…') }}
+			</p>
+
+			<p
+				v-else-if="nav.length === 0"
+				class="utrecht-paragraph"
+				data-testid="site-account-empty">
+				{{ t('No contributions to show yet.') }}
+			</p>
+
+			<template v-else-if="entry">
+				<h1
+					v-if="!ownsHeading"
+					id="site-account-title"
+					class="utrecht-heading-2"
+					data-testid="site-account-title">
+					{{ entry.label }}
+				</h1>
+				<p v-if="pageLoading" class="utrecht-paragraph" role="status">
+					{{ t('Loading…') }}
+				</p>
+				<component
+					:is="pageComponent"
+					v-else-if="pageComponent"
+					:key="entry.key"
+					v-bind="pageProps"
+					@navigate="$emit('navigate', $event)"
+					@unread="$emit('unread', $event)"
+					@refresh="$emit('refresh')"
+					@removed="$emit('signout')" />
+			</template>
 		</div>
 	</section>
 </template>

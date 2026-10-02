@@ -29,7 +29,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (...parts) => readFileSync(join(ROOT, ...parts), 'utf8')
 const bundle = (locale) => JSON.parse(read('src', 'shared', 'i18n', `${locale}.json`))
 const fill = (text, vars = {}) => text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
-const translator = (locale) => {
+function translator (locale) {
 	const strings = bundle(locale)
 	return (key, vars) => fill(strings[key] || key, vars)
 }

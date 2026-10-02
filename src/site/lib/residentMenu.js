@@ -14,7 +14,11 @@
  * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 
-import { ACCOUNT_ROUTE, isAccountRoute, routeForNav } from '../../shared/portalNav.js'
+import {
+	ACCOUNT_ROUTE,
+	isAccountRoute,
+	routeForNav,
+} from '../../shared/portalNav.js'
 
 /** Shell sections about cases, in the first group. */
 const CASE_SECTIONS = ['cases', 'tasks', 'access']
@@ -36,10 +40,12 @@ const PROFILE_SECTIONS = ['details', 'account']
  * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 export function showsResidentMenu(session, route, nav) {
-	return Boolean(session)
+	return (
+		Boolean(session)
 		&& isAccountRoute(route)
 		&& Array.isArray(nav)
 		&& nav.length > 0
+	)
 }
 
 /**
