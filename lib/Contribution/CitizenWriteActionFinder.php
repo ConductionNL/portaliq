@@ -55,7 +55,8 @@ class CitizenWriteActionFinder {
 	 * @param string $register The register the case lives in.
 	 * @param string $schema The schema the case lives in.
 	 *
-	 * @return array{action: array<string, mixed>, app: string, filesDownload: bool, documents: array{label: string, provider: string}|null, fields: mixed}|null
+	 * @return array{action: array<string, mixed>, app: string, filesDownload: bool,
+	 *     documents: array{label: string, provider: string}|null, fields: mixed}|null
 	 *         Null when no contributed action admits a citizen write here.
 	 *         `filesDownload` says whether the same app opted a collection on
 	 *         this register and schema into downloads (portaliq#798);

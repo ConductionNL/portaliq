@@ -45,6 +45,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CitizenCaseDocuments;
+use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
@@ -52,7 +53,6 @@ use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalFileReader;
-use OCA\Portaliq\Service\PortalFieldProjector;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -89,21 +89,6 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 */
 	private ?CitizenWriteActionFinder $writeActions = null;
 
-	/**
-	 * The lazily built field projector, see visibleCase().
-	 *
-	 * @var PortalFieldProjector|null
-	 */
-	private ?PortalFieldProjector $projector = null;
-
-	/**
-	 * The fields a withdrawal writes. The case screen shows them as the
-	 * withdrawn state, so they travel with the case whatever the collection
-	 * declares.
-	 *
-	 * @var array<int, string>
-	 */
-	private const WITHDRAWAL_FIELDS = ['withdrawnAt', 'withdrawalReason'];
 
 	/**
 	 * Constructor.
@@ -184,7 +169,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse([
-			'case' => $this->visibleCase(context: $context, case: $context['case']),
+			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $context['case']),
 			'writableSet' => $context['set'],
 			// What the portal may offer about ending this request, resolved
 			// from the case type rather than from any list the portal keeps
@@ -492,7 +477,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		// Nothing is deleted and no undo is offered: the answers stay
 		// readable, with the withdrawal beside them.
 		return new JSONResponse([
-			'case' => $this->visibleCase(context: $context, case: $updated),
+			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated),
 			'withdrawal' => $this->writableSet->withdrawal(action: $action, case: $updated),
 		]);
 	}//end applyWithdrawal()
@@ -576,58 +561,6 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			),
 		];
 	}//end context()
-
-	/**
-	 * The case as the resident may read it: the fields the collection declares
-	 * for them, plus what the case screen itself works with.
-	 *
-	 * The full row stays inside this controller, where the writable set, the
-	 * withdrawal and the write record are worked out from it. Only this
-	 * projection leaves the server, so a field the case app keeps for its staff
-	 * (an assignee, a priority, a quality score) never reaches the resident's
-	 * browser. The screen also needs the answers the resident may correct, the
-	 * status the writable set is resolved on and the withdrawal fields; those
-	 * are added to the collection's list, nothing else is. A collection that
-	 * declares no `fields` passes the row whole, exactly as its list does.
-	 *
-	 * @param array<string, mixed> $context The resolved context.
-	 * @param array<string, mixed> $case The full case row.
-	 *
-	 * @return array<string, mixed> The projected case.
-	 *
-	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
-	 */
-	private function visibleCase(array $context, array $case): array {
-		$declared = ($context['fields'] ?? null);
-		if ($declared === null) {
-			return $case;
-		}
-
-		if ($this->projector === null) {
-			$this->projector = new PortalFieldProjector(logger: $this->logger);
-		}
-
-		// A malformed declaration stays malformed, so it projects to the
-		// identifiers only rather than to the screen's own fields.
-		if (is_array($declared) === false) {
-			return $this->projector->projectRow(row: $case, fields: $declared);
-		}
-
-		$action = (array)($context['action'] ?? []);
-		$config = (array)($action[CitizenWriteConfigNormaliser::KEY] ?? []);
-		$whitelist = array_merge(
-			array_values($declared),
-			(array)($action['fields'] ?? []),
-			array_keys((array)($context['set']['fields'] ?? [])),
-			[(string)($config['statusField'] ?? 'status')],
-			self::WITHDRAWAL_FIELDS
-		);
-
-		return $this->projector->projectRow(
-			row: $case,
-			fields: array_values(array_unique(array_filter($whitelist, is_string(...))))
-		);
-	}//end visibleCase()
 
 	/**
 	 * The guard both write acts share: the throttle, counted per identity and
@@ -766,7 +699,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			occurredAt: $occurredAt
 		);
 
-		return new JSONResponse(['case' => $this->visibleCase(context: $context, case: $updated)]);
+		return new JSONResponse(['case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated)]);
 	}//end applyAmendment()
 
 	/**
