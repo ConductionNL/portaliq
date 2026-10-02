@@ -13,6 +13,8 @@
  * @spec openspec/specs/portal-session-idle-and-sso/spec.md
  */
 
+import type { Page } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import { oneOf, PORTAL_API, readSiteSession, siteAddress } from './portal-nav.ts'
 
@@ -34,9 +36,9 @@ test.describe('signin-session-idle-warning', () => {
 	 * Open the site's signed-in area signed in through dev-login under a fake
 	 * clock.
 	 *
-	 * @param {import('@playwright/test').Page} page The page.
+	 * @param page The page.
 	 */
-	async function signIn(page) {
+	async function signIn(page: Page) {
 		await page.clock.install()
 		await page.goto(siteAddress())
 		await page.getByTestId('site-devlogin').click()
