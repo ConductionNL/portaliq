@@ -47,6 +47,21 @@ A field whose input is a date MUST render as a fieldset whose legend is the ques
 - WHEN the resident goes to the next step
 - THEN the step does not advance and the summary names the date field
 
+### Requirement: An action field MAY word its own error (REQ-SMF-006)
+
+The contribution contract MUST accept `fieldConfigs.<field>.requiredMessage`, a text. When a required field is left empty, the site MUST show that text as the field's error, under the field and in the error summary, instead of the generic "<label> is verplicht.". Without it the generic message stays. The text never makes a field required; REQ-SMF-023 still decides that.
+
+#### Scenario: The absence form names the missing day
+- GIVEN learniq's absence action declares `fieldConfigs.dateTo.requiredMessage: "Kies de laatste dag dat Vera afwezig is"` and `dateTo` is schema-required
+- WHEN the guardian sends the form with "Tot en met welke dag?" empty
+- THEN the summary links "Kies de laatste dag dat Vera afwezig is"
+- AND the same text stands under the field
+
+#### Scenario: Without its own words the field keeps the generic message
+- GIVEN a required field `reasonKind` without `requiredMessage`
+- WHEN it is left empty and the form is sent
+- THEN its error reads "Soort afwezigheid is verplicht."
+
 ### Requirement: A file field on an action MUST look like a button and list the chosen file (REQ-SMF-004)
 
 A file field on a create or update action MUST render a real file input behind a label styled as a secondary button. It MUST show a hint with the size limit when the action declares one. After a choice it MUST list each chosen file by name with a control to remove it. It MUST remain operable by keyboard and announce the chosen file.

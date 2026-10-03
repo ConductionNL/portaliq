@@ -59,8 +59,7 @@ export default {
 		'A field without "optional" must be filled in.':
 			'Een veld zonder "niet verplicht" moet u invullen.',
 		'Something is still missing': 'Er ontbreekt nog iets',
-		'Fill this in. Then you can send the form.':
-			'Vul dit aan. Daarna kunt u het formulier versturen.',
+		'Fill this in. Then you can continue.': 'Vul dit aan. Daarna kunt u verder.',
 		'Error: ': 'Fout: ',
 		Day: 'Dag',
 		Month: 'Maand',
@@ -132,8 +131,8 @@ export default {
 		'A field without "optional" must be filled in.':
 			'A field without "optional" must be filled in.',
 		'Something is still missing': 'Something is still missing',
-		'Fill this in. Then you can send the form.':
-			'Fill this in. Then you can send the form.',
+		'Fill this in. Then you can continue.':
+			'Fill this in. Then you can continue.',
 		'Error: ': 'Error: ',
 		Day: 'Day',
 		Month: 'Month',

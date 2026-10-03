@@ -174,6 +174,28 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testACollectionFieldKeepsItsSubsetForTheSiteToFilter()
 
 	/**
+	 * `requiredMessage` is kept as text, like a label; anything else is
+	 * dropped, and it never makes a field required (REQ-SMF-006, REQ-SMF-023).
+	 *
+	 * @return void
+	 */
+	public function testARequiredMessageIsKeptAsText(): void {
+		$configs = $this->absenceConfigs(
+			[
+				'dateTo'     => ['required' => true, 'requiredMessage' => 'Kies de laatste dag dat Vera afwezig is'],
+				'reasonKind' => ['requiredMessage' => ['Kies een reden']],
+				'reason'     => ['requiredMessage' => 'Vertel ons waarom'],
+			]
+		);
+
+		$this->assertSame('Kies de laatste dag dat Vera afwezig is', $configs['dateTo']['requiredMessage']);
+		$this->assertTrue($configs['dateTo']['required']);
+		$this->assertArrayNotHasKey('requiredMessage', $configs['reasonKind']);
+		$this->assertSame('Vertel ons waarom', $configs['reason']['requiredMessage']);
+		$this->assertArrayNotHasKey('required', $configs['reason'], 'words alone never require a field');
+	}//end testARequiredMessageIsKeptAsText()
+
+	/**
 	 * The normalised field configs of learniq's absence action.
 	 *
 	 * @param array<string, array<string, mixed>> $fieldConfigs The declared field configs.

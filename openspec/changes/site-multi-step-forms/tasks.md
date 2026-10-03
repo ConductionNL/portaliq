@@ -17,6 +17,9 @@ Four waves. Each wave is one PR to `development`. Every PR runs `npm run build:s
   - PHPUnit `ActionConfigNormaliserTest::testAWidgetHintIsKeptOnlyWhenKnown`
   - Mutation: dropping the allow-list lets `slider` through and fails the test
 
+- [x] **T4c**: `fieldConfigs.<field>.requiredMessage` (REQ-SMF-006): `ActionConfigNormaliser` keeps it as text; `fieldErrors()` shows it for an empty required field. The summary's second line reads "Vul dit aan. Daarna kunt u verder." on every form.
+  - PHPUnit `ActionConfigNormaliserTest::testARequiredMessageIsKeptAsText`; node test: the summary links the app's own words
+
 ## Wave 3: steps, review, confirmation (REQ-SMF-010, REQ-SMF-011, REQ-SMF-020, REQ-SMF-022)
 
 - [ ] **T5**: `PortalFormBindingResolver` passes `steps` (design D6), keeping steps that name known fields and putting loose fields in a last step.

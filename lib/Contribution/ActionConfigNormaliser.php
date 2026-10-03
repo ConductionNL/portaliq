@@ -299,10 +299,13 @@ class ActionConfigNormaliser {
 	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
 	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
 	 */
 	private function fieldConfigEntry(string $field, array $config, array $mandatory, string $actionType = ''): array {
 		$entry = [];
-		foreach (['label', 'placeholder', 'help'] as $textKey) {
+		// `requiredMessage` words the error of an empty required field
+		// (REQ-SMF-006); like the label, it is text the site shows as is.
+		foreach (['label', 'placeholder', 'help', 'requiredMessage'] as $textKey) {
 			if (isset($config[$textKey]) === true && is_string($config[$textKey]) === true) {
 				$entry[$textKey] = $config[$textKey];
 			}

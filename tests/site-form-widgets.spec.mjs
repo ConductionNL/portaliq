@@ -280,3 +280,46 @@ test('through the action form: cards and the other select send the same value a 
 	].join('-')
 	assert.deepEqual(api.calls.created[0], { reasonKind: 'family', dateFrom: iso })
 })
+
+test('an action field may word its own error; the summary line is the same on every form', async () => {
+	const action = {
+		id: 'createExcuseRequest',
+		type: 'create',
+		label: 'Afwezig melden',
+		fields: ['dateTo', 'reasonKind'],
+		fieldConfigs: {
+			dateTo: {
+				label: 'Tot en met welke dag?',
+				required: true,
+				input: 'date',
+				requiredMessage: 'Kies de laatste dag dat Vera afwezig is',
+			},
+			reasonKind: { label: 'Soort afwezigheid', required: true },
+		},
+		optionsProviders: { reasonKind: { type: 'static', options: KINDS } },
+	}
+	const api = fakeApi()
+	const form = await mountSfc(FORM, { action, api })
+	await form.flush()
+	await form.fire(form.find('schema-form'), 'submit')
+
+	assert.equal(api.calls.created.length, 0)
+	assert.equal(
+		form.textOf(form.find('error-summary-link-dateTo')),
+		'Kies de laatste dag dat Vera afwezig is',
+	)
+	assert.equal(
+		form.textOf(form.find('schema-field-error-dateTo')),
+		'Kies de laatste dag dat Vera afwezig is',
+		'the same words stand under the field',
+	)
+	assert.equal(
+		form.textOf(form.find('error-summary-link-reasonKind')),
+		'Soort afwezigheid is required.',
+		'without its own words the generic message stays',
+	)
+	assert.match(
+		form.textOf(form.find('error-summary')),
+		/Fill this in\. Then you can continue\./,
+	)
+})

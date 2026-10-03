@@ -163,7 +163,7 @@ export const DUTCH = Object.freeze({
 	optional: '(niet verplicht)',
 	optionalNote: 'Een veld zonder "niet verplicht" moet u invullen.',
 	summaryHeading: 'Er ontbreekt nog iets',
-	summaryIntro: 'Vul dit aan. Daarna kunt u het formulier versturen.',
+	summaryIntro: 'Vul dit aan. Daarna kunt u verder.',
 	titlePrefix: 'Fout: ',
 	required: '{field} is verplicht.',
 	date: '{field}: vul een geldige datum in, bijvoorbeeld 1 3 2026.',
