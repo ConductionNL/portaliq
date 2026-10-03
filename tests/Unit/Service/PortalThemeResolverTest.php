@@ -86,6 +86,7 @@ class PortalThemeResolverTest extends TestCase {
 		}
 
 		@unlink($this->themeRoot . '/css/public-bridge.css');
+		@unlink($this->themeRoot . '/css/fonts.css');
 		@unlink($this->themeRoot . '/lib/Controller/FontController.php');
 		@rmdir($this->themeRoot . '/lib/Controller');
 		@rmdir($this->themeRoot . '/lib');
@@ -307,7 +308,7 @@ class PortalThemeResolverTest extends TestCase {
 	public function testTheBridgeIsOfferedWhenTheThemeAppShipsIt(): void {
 		file_put_contents($this->themeRoot . '/css/public-bridge.css', ':root{--utrecht-document-color:var(--nldesign-color-text)}');
 
-		$this->assertSame('public-bridge', $this->resolver()->bridgeStylesheet());
+		$this->assertSame('public-bridge', $this->resolver()->shippedStylesheets()['bridge']);
 	}//end testTheBridgeIsOfferedWhenTheThemeAppShipsIt()
 
 
@@ -318,7 +319,7 @@ class PortalThemeResolverTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoBridgeWithoutTheFile(): void {
-		$this->assertNull($this->resolver()->bridgeStylesheet());
+		$this->assertNull($this->resolver()->shippedStylesheets()['bridge']);
 	}//end testNoBridgeWithoutTheFile()
 
 
@@ -335,8 +336,23 @@ class PortalThemeResolverTest extends TestCase {
 
 		$resolver = new PortalThemeResolver(appManager: $appManager);
 
-		$this->assertNull($resolver->bridgeStylesheet());
+		$this->assertSame(['bridge' => null, 'fonts' => null], $resolver->shippedStylesheets());
 	}//end testNoBridgeWithoutAThemeApp()
+
+
+	/**
+	 * site-links-the-theme-bridge REQ-STB-002: the bundled faces are offered
+	 * when the theme app ships `css/fonts.css`, and not when it does not.
+	 *
+	 * @return void
+	 */
+	public function testTheBundledFacesAreOfferedOnlyWhenShipped(): void {
+		$this->assertNull($this->resolver()->shippedStylesheets()['fonts']);
+
+		file_put_contents($this->themeRoot . '/css/fonts.css', "@font-face{font-family:'Source Sans 3'}");
+
+		$this->assertSame('fonts', $this->resolver()->shippedStylesheets()['fonts']);
+	}//end testTheBundledFacesAreOfferedOnlyWhenShipped()
 
 
 	/**

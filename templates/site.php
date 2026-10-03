@@ -120,7 +120,9 @@ $tokenStylesheets = [];
 // (`--conduction-primary-top-nav-background-color` and `-color`), and the
 // later declaration wins. A set that declares a role of its own loads after
 // the bridge and keeps its value.
-$themeBridgeStylesheet = (string)($_['themeBridgeStylesheet'] ?? '');
+$themeAppSheets = (array)($_['themeAppSheets'] ?? []);
+$themeBridgeStylesheet = (string)($themeAppSheets['bridge'] ?? '');
+$themeFontStylesheet = (string)($themeAppSheets['fonts'] ?? '');
 if ($themeStylesheet !== '' && $themeApp !== null) {
     if ($themeBridgeStylesheet !== '') {
         $tokenStylesheets[] = $asset($themeApp, 'css/' . $themeBridgeStylesheet . '.css');
@@ -224,6 +226,18 @@ if (is_file($appRoot . '/css/fonts/licensed/avenir-lt-55-roman.woff2') === true)
 // design system's own faces (root-relative urls, see above), a different set
 // of fonts solving a different problem. Linked only when the installed theme
 // app has font uploads at all.
+// THE FACES THE THEME APP BUNDLES (site-links-the-theme-bridge REQ-STB-002).
+// A set names its family through `--nldesign-font-family` (Source Sans 3 for
+// the example gemeente); the theme app's `css/fonts.css` declares the faces
+// with urls relative to itself, so it is linked from the theme app, as a
+// static file a guest can read. Only when the controller names it: shipped,
+// and the portal on a resolved set. After this app's own faces, so a bundled
+// family wins over a same-named vendored one; before the uploaded faces
+// below, so an administrator's upload wins over both.
+if ($themeFontStylesheet !== '' && $themeApp !== null) {
+    $stylesheets[] = $asset($themeApp, 'css/' . $themeFontStylesheet . '.css');
+}
+
 $fontRoute = \OCP\Server::get(PortalThemeResolver::class)->fontStylesheetRoute();
 if ($fontRoute !== null) {
     $stylesheets[] = $url->linkToRoute($fontRoute);

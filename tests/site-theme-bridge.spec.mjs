@@ -83,3 +83,26 @@ test('the token layer is linked after the vendored sheets and site-theme.css', (
 		'the bridge never joins the vendored list',
 	)
 })
+
+// REQ-STB-002: the faces the theme app bundles.
+const FONT_PUSH = "$stylesheets[] = $asset($themeApp, 'css/' . $themeFontStylesheet . '.css');"
+
+test('the bundled faces are linked only when the controller named them', () => {
+	const guard = template.indexOf("if ($themeFontStylesheet !== '' && $themeApp !== null) {")
+	const push = template.indexOf(FONT_PUSH)
+	assert.notEqual(guard, -1, 'the font link is guarded')
+	assert.ok(push > guard, 'the push sits inside the guard')
+	assert.equal(template.split(FONT_PUSH).length - 1, 1, 'linked in one place only')
+})
+
+test('the bundled faces come after this app\'s faces and before the uploaded ones', () => {
+	const own = template.indexOf("$asset($appId, 'css/nlds/nlds-fonts.css')")
+	const licensed = template.indexOf("$asset($appId, 'css/nlds/nlds-fonts-licensed.css')")
+	const bundled = template.indexOf(FONT_PUSH)
+	const uploaded = template.indexOf('$stylesheets[] = $url->linkToRoute($fontRoute);')
+	const tokenLayer = template.indexOf('foreach ($tokenStylesheets as $href)')
+	assert.ok(own !== -1 && licensed !== -1 && uploaded !== -1)
+	assert.ok(own < bundled && licensed < bundled, 'after this app\'s own faces')
+	assert.ok(bundled < uploaded, 'before the uploaded faces')
+	assert.ok(bundled < tokenLayer, 'before the token set that names the family')
+})

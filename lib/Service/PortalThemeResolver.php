@@ -79,6 +79,14 @@ class PortalThemeResolver {
 	 */
 	public const BRIDGE_STYLESHEET = 'public-bridge';
 
+	/**
+	 * The faces the theme app bundles (Fira Sans, Source Sans 3), relative to
+	 * its `css/` directory. A set names a family; this file declares it.
+	 *
+	 * @var string
+	 */
+	public const FONT_STYLESHEET = 'fonts';
+
 
 	/**
 	 * Constructor.
@@ -149,20 +157,28 @@ class PortalThemeResolver {
 
 
 	/**
-	 * The theme app's public bridge stylesheet, relative to its `css/`
-	 * directory, or null when the installed theme app ships none.
+	 * The theme app's own stylesheets the site links beside a set, relative
+	 * to its `css/` directory, each null when the installed theme app ships
+	 * none: its public bridge and its bundled faces.
 	 *
-	 * Existence is checked on disk, as for a set: Nextcloud answers a missing
-	 * app asset with 401, and a link that fails looks like no theme at all.
-	 * Whether to link it is the caller's call: only with a resolved set.
+	 * Existence is checked on disk (ThemeAppAsset): a link to a missing app
+	 * asset fails on every page load and looks like no theme at all. Whether
+	 * to link them is the caller's call: only with a resolved set.
 	 *
-	 * @return string|null The stylesheet path, or null.
+	 * @return array{bridge: string|null, fonts: string|null}
 	 *
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
 	 */
-	public function bridgeStylesheet(): ?string {
-		return (new ThemeAppAsset())->stylesheetIfShipped(root: $this->themeAppPath(), name: self::BRIDGE_STYLESHEET);
-	}//end bridgeStylesheet()
+	public function shippedStylesheets(): array {
+		$root = $this->themeAppPath();
+		$asset = new ThemeAppAsset();
+
+		return [
+			'bridge' => $asset->stylesheetIfShipped(root: $root, name: self::BRIDGE_STYLESHEET),
+			'fonts'  => $asset->stylesheetIfShipped(root: $root, name: self::FONT_STYLESHEET),
+		];
+	}//end shippedStylesheets()
 
 
 	/**

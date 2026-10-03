@@ -217,14 +217,14 @@ class PortalPageControllerTest extends TestCase {
 			portal: ['theme' => 'denhaag'],
 			themeStylesheet: 'tokens/denhaag'
 		);
-		$this->assertSame('public-bridge', $themed->site()->getParams()['themeBridgeStylesheet']);
+		$this->assertSame(['bridge' => 'public-bridge', 'fonts' => 'fonts'], $themed->site()->getParams()['themeAppSheets']);
 
 		$unthemed = $this->controller(
 			orgSlug: '',
 			portal: ['theme' => 'nosuchset'],
 			themeStylesheet: null
 		);
-		$this->assertSame('', $unthemed->site()->getParams()['themeBridgeStylesheet']);
+		$this->assertSame(['bridge' => '', 'fonts' => ''], $unthemed->site()->getParams()['themeAppSheets']);
 	}//end testTheBridgeTravelsOnlyWithAResolvedSet()
 
 	/**
@@ -562,7 +562,7 @@ class PortalPageControllerTest extends TestCase {
 		$themeResolver = $this->createMock(PortalThemeResolver::class);
 		$themeResolver->method('stylesheetFor')->willReturn($themeStylesheet);
 		$themeResolver->method('nldsStylesheetFor')->willReturn($nldsStylesheet);
-		$themeResolver->method('bridgeStylesheet')->willReturn('public-bridge');
+		$themeResolver->method('shippedStylesheets')->willReturn(['bridge' => 'public-bridge', 'fonts' => 'fonts']);
 		$themeResolver->method('logoFileFor')->willReturn($logoFile);
 		// The id the theme app is installed under on this instance. The app is
 		// mid-rename (`nldesign` -> `thematiq`), so the controller asks rather

@@ -265,7 +265,7 @@ class PortalPageController extends Controller {
 				// contract withholds; it only decides which stylesheet tag to emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
 				'themeLogoUrl' => $this->siteThemeLogoUrl(),
-				'themeBridgeStylesheet' => $this->siteThemeBridgeStylesheet(),
+				'themeAppSheets' => $this->siteThemeAppSheets(),
 				// The NLDS token set this app ships for the serving portal's
 				// theme, when it has one. Separate from the line above because
 				// they answer different questions: that one is "which theme
@@ -528,27 +528,34 @@ class PortalPageController extends Controller {
 
 
 	/**
-	 * The theme app's public bridge for the serving portal, or ''.
+	 * The theme app's own stylesheets for the serving portal: its public
+	 * bridge and its bundled faces, each '' when not shipped.
 	 *
-	 * Only with a resolved set: the bridge carries fallbacks, so linking it
-	 * on an unthemed portal would quietly restyle a page that must render
-	 * unstyled (design D2 of site-links-the-theme-bridge).
+	 * Only with a resolved set: the bridge carries fallbacks, so linking it on
+	 * an unthemed portal would quietly restyle a page that must render
+	 * unstyled, and an unthemed page names no bundled family.
 	 *
-	 * @return string The bridge path relative to the theme app's `css/`, or ''.
+	 * @return array{bridge: string, fonts: string} Paths relative to the theme app's `css/`.
 	 *
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
 	 */
-	private function siteThemeBridgeStylesheet(): string {
+	private function siteThemeAppSheets(): array {
+		$none = ['bridge' => '', 'fonts' => ''];
 		if ($this->siteThemeStylesheet() === '') {
-			return '';
+			return $none;
 		}
 
 		try {
-			return (string)$this->themeResolver->bridgeStylesheet();
+			$shipped = $this->themeResolver->shippedStylesheets();
+			return [
+				'bridge' => (string)($shipped['bridge'] ?? ''),
+				'fonts'  => (string)($shipped['fonts'] ?? ''),
+			];
 		} catch (\Throwable) {
-			return '';
+			return $none;
 		}
-	}//end siteThemeBridgeStylesheet()
+	}//end siteThemeAppSheets()
 
 
 	/**

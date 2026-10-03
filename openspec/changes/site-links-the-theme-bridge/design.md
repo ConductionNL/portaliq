@@ -39,7 +39,7 @@ Nextcloud answers a missing app asset with 401, not 404 (recorded in `site.php` 
 
 ## D4. One resolver method
 
-`PortalThemeResolver::bridgeStylesheet(): ?string` returns `'public-bridge'` or null. It uses the existing private `themeAppPath()`. `PortalPageController` passes it to the template as `themeBridgeStylesheet` next to `themeStylesheet`. The template prepends it to `$tokenStylesheets` only when `themeStylesheet` is not empty.
+`PortalThemeResolver::shippedStylesheets()` returns `['bridge' => 'public-bridge'|null, 'fonts' => 'fonts'|null]`, each checked on disk through `ThemeAppAsset`. `PortalPageController` passes both to the template as `themeAppSheets`, empty without a resolved set. The template prepends the bridge to `$tokenStylesheets` and links the bundled faces after this app's own font sheets (REQ-STB-002).
 
 ## Risks
 

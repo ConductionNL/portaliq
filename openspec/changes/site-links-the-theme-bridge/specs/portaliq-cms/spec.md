@@ -31,3 +31,24 @@ When the serving portal's theme resolves to a token set, the site MUST link the 
 - GIVEN the installed theme app has no `css/public-bridge.css`
 - WHEN a portal on a resolvable set renders
 - THEN the set is linked and no link to `public-bridge.css` is emitted
+
+### Requirement: The site MUST link the faces the theme app bundles (REQ-STB-002)
+
+When the serving portal's theme resolves to a set and the installed theme app ships `css/fonts.css`, the site MUST link that stylesheet from the theme app, so a family the set names through `--nldesign-font-family` is declared on the page. It MUST be linked after this app's own font stylesheets and before the theme app's uploaded-font stylesheet and the token set. It MUST NOT be linked when the theme app ships no such file or when no set resolves. The stylesheet and the font files it names MUST be readable by a signed-out visitor.
+
+#### Scenario: The example gemeente is drawn in Source Sans 3
+- GIVEN a portal on the example gemeente set, which names "Source Sans 3"
+- AND the theme app ships `css/fonts.css` declaring Source Sans 3 with `fonts/source-sans-3-latin-*.woff2`
+- WHEN a signed-out visitor opens the portal's home page
+- THEN the theme app's `css/fonts.css` is linked
+- AND headings and body text render in Source Sans 3, not the fallback
+
+#### Scenario: Order of the font stylesheets
+- GIVEN a portal on a resolvable set whose theme app ships `css/fonts.css`
+- WHEN the site template renders
+- THEN `fonts.css` is linked after `nlds-fonts.css` and before the uploaded-font stylesheet and the set
+
+#### Scenario: No bundled faces, no link
+- GIVEN the installed theme app has no `css/fonts.css`, or the portal's theme does not resolve
+- WHEN the site template renders
+- THEN no link to the theme app's `css/fonts.css` is emitted
