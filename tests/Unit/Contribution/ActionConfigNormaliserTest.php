@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Contribution;
 
+use OCA\Portaliq\Contribution\FieldWidgetNormaliser;
 use OCA\Portaliq\Contribution\PortalManifestNormaliser;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use PHPUnit\Framework\TestCase;
@@ -172,6 +173,22 @@ class ActionConfigNormaliserTest extends TestCase {
 		$this->assertSame('choices', $config['widget']);
 		$this->assertSame(['vera-1'], $config['choiceOptions']);
 	}//end testACollectionFieldKeepsItsSubsetForTheSiteToFilter()
+
+	/**
+	 * A subset is capped at twenty cards and keeps whole numbers as text.
+	 *
+	 * @return void
+	 */
+	public function testASubsetIsCappedAtTwentyCards(): void {
+		$entry = (new FieldWidgetNormaliser())->apply(
+			entry: [],
+			source: ['widget' => 'choices', 'choiceOptions' => range(1, 25)]
+		);
+
+		$this->assertCount(20, $entry['choiceOptions']);
+		$this->assertSame('1', $entry['choiceOptions'][0]);
+		$this->assertSame('20', $entry['choiceOptions'][19]);
+	}//end testASubsetIsCappedAtTwentyCards()
 
 	/**
 	 * `requiredMessage` is kept as text, like a label; anything else is

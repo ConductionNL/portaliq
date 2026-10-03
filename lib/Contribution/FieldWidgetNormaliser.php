@@ -107,9 +107,9 @@ class FieldWidgetNormaliser {
 			return $action;
 		}
 
-		$providers = ($action['optionsProviders'] ?? []);
-		if (is_array($providers) === false) {
-			$providers = [];
+		$providers = [];
+		if (is_array($action['optionsProviders'] ?? null) === true) {
+			$providers = $action['optionsProviders'];
 		}
 
 		foreach ($configs as $field => $config) {
