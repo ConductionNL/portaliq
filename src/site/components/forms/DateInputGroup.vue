@@ -87,6 +87,11 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The three boxes: key, id, label and autocomplete token.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
+		 */
 		partsList() {
 			const bday = this.autocomplete === 'bday'
 			return [
@@ -118,6 +123,8 @@ export default {
 		 *
 		 * @param {string} value The new value.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
 		 */
 		modelValue(value) {
 			if (value !== this.sent) {

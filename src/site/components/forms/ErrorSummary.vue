@@ -73,6 +73,11 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The heading's id, which names the summary group.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
 		headingId() {
 			return `${this.idBase}-heading`
 		},
@@ -83,6 +88,8 @@ export default {
 		 * Keep the document title in step with the errors.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
 		 */
 		entries() {
 			this.syncTitle()
@@ -133,6 +140,8 @@ export default {
 		 * Add the title prefix while errors stand, remove it once they are gone.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
 		 */
 		syncTitle() {
 			this.setTitlePrefix(this.entries.length > 0)
@@ -143,6 +152,8 @@ export default {
 		 *
 		 * @param {boolean} on Whether the prefix should stand.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
 		 */
 		setTitlePrefix(on) {
 			if (typeof document === 'undefined' || this.titlePrefix === '') {

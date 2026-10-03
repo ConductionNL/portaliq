@@ -58,6 +58,7 @@
 					class="utrecht-select"
 					:aria-required="field.required ? 'true' : undefined"
 					:aria-invalid="errors[field.id] ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
 					:aria-describedby="describedBy"
 					:data-testid="`form-field-${field.id}`">
 					<option value="" disabled>{{ selectPlaceholder }}</option>
@@ -76,6 +77,7 @@
 					class="utrecht-textarea"
 					:aria-required="field.required ? 'true' : undefined"
 					:aria-invalid="errors[field.id] ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
 					:aria-describedby="describedBy"
 					:data-testid="`form-field-${field.id}`" />
 
@@ -87,6 +89,7 @@
 					:type="inputType(field)"
 					:aria-required="field.required ? 'true' : undefined"
 					:aria-invalid="errors[field.id] ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
 					:aria-describedby="describedBy"
 					:data-testid="`form-field-${field.id}`" />
 			</FieldShell>
@@ -234,6 +237,8 @@ export default {
 		 * The layer's Dutch words.
 		 *
 		 * @return {object} The words.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
 		 */
 		text() {
 			return DUTCH

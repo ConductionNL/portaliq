@@ -27,6 +27,7 @@
 				:disabled="config.disabled === true"
 				:aria-required="ariaRequired"
 				:aria-invalid="error !== '' ? 'true' : undefined"
+				:aria-labelledby="`${id}-label`"
 				:aria-describedby="describedBy"
 				@change="$emit('pick', $event.target.files)" />
 			<p
@@ -67,6 +68,7 @@
 			:disabled="config.disabled === true"
 			:aria-required="ariaRequired"
 			:aria-invalid="error !== '' ? 'true' : undefined"
+			:aria-labelledby="`${id}-label`"
 			:aria-describedby="describedBy"
 			@change="$emit('update:modelValue', $event.target.value)">
 			<option value="">
@@ -89,6 +91,7 @@
 			:disabled="config.disabled === true"
 			:aria-required="ariaRequired"
 			:aria-invalid="error !== '' ? 'true' : undefined"
+			:aria-labelledby="`${id}-label`"
 			:aria-describedby="describedBy"
 			@input="$emit('update:modelValue', $event.target.value)" />
 		<input
@@ -102,6 +105,7 @@
 			:disabled="config.disabled === true"
 			:aria-required="ariaRequired"
 			:aria-invalid="error !== '' ? 'true' : undefined"
+			:aria-labelledby="`${id}-label`"
 			:aria-describedby="describedBy"
 			@input="$emit('update:modelValue', $event.target.value)" />
 	</FieldShell>
@@ -168,6 +172,11 @@ export default {
 			return this.config.required === true
 		},
 
+		/**
+		 * `aria-required` for a required field, nothing for an optional one.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+		 */
 		ariaRequired() {
 			return this.required ? 'true' : undefined
 		},
@@ -178,6 +187,11 @@ export default {
 				: 'medium'
 		},
 
+		/**
+		 * The description: the field's own help, else a date's example.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
+		 */
 		help() {
 			if (typeof this.config.help === 'string' && this.config.help !== '') {
 				return this.config.help

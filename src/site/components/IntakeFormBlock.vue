@@ -112,6 +112,7 @@
 					class="utrecht-select"
 					:aria-required="field.required === true ? 'true' : undefined"
 					:aria-invalid="errors[field.name] ? 'true' : 'false'"
+					:aria-labelledby="`${elementId(field)}-label`"
 					:aria-describedby="describedBy"
 					:data-testid="`intake-field-${field.name}`">
 					<option value="" disabled>
@@ -132,6 +133,7 @@
 					class="utrecht-textarea"
 					:aria-required="field.required === true ? 'true' : undefined"
 					:aria-invalid="errors[field.name] ? 'true' : 'false'"
+					:aria-labelledby="`${elementId(field)}-label`"
 					:aria-describedby="describedBy"
 					:data-testid="`intake-field-${field.name}`" />
 
@@ -143,6 +145,7 @@
 					:type="inputType(field)"
 					:aria-required="field.required === true ? 'true' : undefined"
 					:aria-invalid="errors[field.name] ? 'true' : 'false'"
+					:aria-labelledby="`${elementId(field)}-label`"
 					:aria-describedby="describedBy"
 					:data-testid="`intake-field-${field.name}`" />
 			</FieldShell>
@@ -354,6 +357,8 @@ export default {
 		 * The layer's Dutch words.
 		 *
 		 * @return {object} The words.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
 		 */
 		text() {
 			return DUTCH
@@ -541,6 +546,8 @@ export default {
 		 *
 		 * @param {object} field The field.
 		 * @return {string} The description, or ''.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
 		 */
 		helpOf(field) {
 			if (typeof field.description === 'string' && field.description !== '') {

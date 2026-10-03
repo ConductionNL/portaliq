@@ -9,7 +9,9 @@
 		class="utrecht-form-fieldset utrecht-form-field pq-field-shell pq-field-shell--group"
 		:class="{ 'utrecht-form-field--invalid': error !== '' }"
 		:aria-describedby="describedBy">
-		<legend class="utrecht-form-label pq-field-shell__legend">
+		<legend
+			:id="`${id}-label`"
+			class="utrecht-form-label pq-field-shell__legend">
 			{{ label }}<LabelSuffix v-if="!required" :text="optionalLabel" />
 		</legend>
 		<div
@@ -34,7 +36,7 @@
 		class="utrecht-form-field pq-field-shell"
 		:class="{ 'utrecht-form-field--invalid': error !== '' }">
 		<div class="utrecht-form-field__label">
-			<label :for="id" class="utrecht-form-label">
+			<label :id="`${id}-label`" :for="id" class="utrecht-form-label">
 				{{ label }}<LabelSuffix v-if="!required" :text="optionalLabel" />
 			</label>
 		</div>
@@ -75,6 +77,10 @@ import '@utrecht/form-field-error-message-css/dist/index.css'
  * With `group` the field is a fieldset whose legend is the question, for an
  * answer of several inputs such as a date's day, month and year. The fieldset
  * then carries the `aria-describedby` itself.
+ *
+ * The label (or legend) has the id `${id}-label`. An input in the slot names
+ * it in `aria-labelledby` as well as through `for`, so a static label check
+ * that reads one file at a time sees the association too.
  *
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
  */
