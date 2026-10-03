@@ -32,12 +32,13 @@ A company is different: its KVK number is public and is what eHerkenning returns
 ## Decided
 
 - A private person may give a mandate, by email invitation: they sign in once with DigiD to send it, and the invitee accepts after their own sign-in (Ruben, 3 October 2026).
+- A company holds a mandate it accepts (holder `kvk:<number>`), so every eHerkenning sign-in for that company carries it; a person holds their own (`subject:<ref>`). Portaliq keeps its own record, not Open Cloud Mesh (Ruben, 3 October 2026; design D7, "Why not OCM"). This changes the accept path and the reader, which today hold a mandate per account.
+- Blocking: an eHerkenning session does not reliably carry the KVK number of the company the person signs in for (design D8). Task T0 comes first.
 
 ## Not in this change
 
 - Looking up a person by BSN or name. Impossible by design, see above.
 - Mandates through an external register (eHerkenning ketenmachtigingen, DigiD Machtigen). Portaliq reads only its own records.
-- A mandate held by a whole company rather than by the person who accepted. Open, not decided (design, "Open").
 - The case filtering on `portalParty`: dossiq's change, over `mandateField` (REQ-CMC-003).
 
 ## Affected projects
