@@ -31,11 +31,18 @@ const SOURCE = readFileSync(join(ROOT, 'src', 'shared', 'serviceWorker.js'), 'ut
 const AUTH_BASE = '/index.php/apps/portaliq/portal/api'
 
 /**
- * Load the worker into a sandbox and return its fetch handler.
+ * Load the worker into a sandbox with a cache that really keeps what it is
+ * given, and a fetch the test chooses. The old sandbox stubbed fetch as
+ * always OK and the cache as always empty, so it could never see the worker
+ * reject a navigation when its fetch failed (the net::ERR_FAILED that every
+ * returning visitor got on a custom_apps install).
  *
- * @return {Function} The fetch listener.
+ * @param {object} [options] The sandbox.
+ * @param {Function} [options.fetch] The worker's fetch; OK by default.
+ * @param {Array<string>} [options.cached] URLs already in the cache.
+ * @return {Promise<{handler: Function, store: Map, fetches: Array<string>}>}
  */
-function workerFetchHandler() {
+async function loadWorker({ fetch, cached = [] } = {}) {
 	const listeners = {}
 	const self = {
 		addEventListener: (type, fn) => {
@@ -44,54 +51,87 @@ function workerFetchHandler() {
 		skipWaiting: () => {},
 		clients: { claim: () => {} },
 	}
+	const store = new Map(cached.map((url) => [url, { cachedCopyOf: url }]))
+	const cache = {
+		match: async (request) => store.get(request.url),
+		put: async (request, response) => {
+			store.set(request.url, response)
+		},
+		keys: async () => [...store.keys()].map((url) => ({ url })),
+	}
 	const caches = {
-		open: async () => ({ match: async () => undefined, put: async () => {} }),
+		open: async () => cache,
 		keys: async () => [],
 		delete: async () => true,
 	}
-	const fetch = async () => ({ ok: true, clone: () => ({}) })
-	vm.runInNewContext(SOURCE, { self, caches, fetch, URL, Promise })
+	const fetches = []
+	const workerFetch = async (request) => {
+		fetches.push(request.url)
+		return fetch
+			? fetch(request)
+			: { ok: true, clone: () => ({ freshCopyOf: request.url }) }
+	}
+	vm.runInNewContext(SOURCE, { self, caches, fetch: workerFetch, URL, Promise })
 	assert.equal(typeof listeners.fetch, 'function', 'the worker listens for fetch')
-	return listeners.fetch
+	// Let the start-up read of the cache finish.
+	await new Promise((resolve) => setImmediate(resolve))
+	return { handler: listeners.fetch, store, fetches }
 }
 
 /**
- * Whether the worker answers a request itself (from or into its cache).
+ * Hand one request to the worker.
  *
- * @param {string} path   The request path.
+ * @param {Function} handler The fetch listener.
+ * @param {string} path The request path.
  * @param {string} method The request method.
- * @return {boolean} True when the worker called respondWith.
+ * @return {{responded: Promise|null, background: Promise|null}} What it did.
  */
-function workerAnswers(path, method = 'GET') {
-	const handler = workerFetchHandler()
-	let answered = false
+function dispatch(handler, path, method = 'GET') {
+	const out = { responded: null, background: null }
 	handler({
 		request: { url: `http://localhost${path}`, method },
-		respondWith: () => {
-			answered = true
+		respondWith: (promise) => {
+			out.responded = promise
+		},
+		waitUntil: (promise) => {
+			out.background = promise
 		},
 	})
-	return answered
+	return out
 }
 
-test('the site shell is cached: its bundle and its page', () => {
+/**
+ * Whether the worker takes a request on at all: answers it from its cache,
+ * or stores a copy of it in the background.
+ *
+ * @param {string} path The request path.
+ * @param {string} method The request method.
+ * @return {Promise<boolean>} True when the worker touched it.
+ */
+async function workerAnswers(path, method = 'GET') {
+	const { handler } = await loadWorker()
+	const out = dispatch(handler, path, method)
+	return out.responded !== null || out.background !== null
+}
+
+test('the site shell is cached: its bundle and its page', async () => {
 	assert.equal(
-		workerAnswers('/index.php/apps/portaliq/js/portaliq-site.js?v=123'),
+		await workerAnswers('/index.php/apps/portaliq/js/portaliq-site.js?v=123'),
 		true,
 	)
-	assert.equal(workerAnswers('/index.php/apps/portaliq/site'), true)
+	assert.equal(await workerAnswers('/index.php/apps/portaliq/site'), true)
 	assert.equal(
-		workerAnswers(
+		await workerAnswers(
 			'/index.php/apps/portaliq/site?portal=wilgenboom&route=/nieuws',
 		),
 		true,
 	)
 })
 
-test('the retired portal address is not cached: it redirects to the site', () => {
-	assert.equal(workerAnswers('/index.php/apps/portaliq/portal'), false)
+test('the retired portal address is not cached: it redirects to the site', async () => {
+	assert.equal(await workerAnswers('/index.php/apps/portaliq/portal'), false)
 	assert.equal(
-		workerAnswers('/index.php/apps/portaliq/portal?portal=wilgenboom'),
+		await workerAnswers('/index.php/apps/portaliq/portal?portal=wilgenboom'),
 		false,
 	)
 })
@@ -99,26 +139,98 @@ test('the retired portal address is not cached: it redirects to the site', () =>
 test('the cache name moved on, so the old shell cache is deleted', () => {
 	assert.match(
 		readFileSync(join(ROOT, 'src', 'shared', 'serviceWorker.js'), 'utf8'),
-		/const CACHE_VERSION = 'portaliq-shell-v3'/,
+		/const CACHE_VERSION = 'portaliq-shell-v4'/,
 	)
 })
 
 // 🔴 THE ONE RULE. A cached authenticated answer could be served to the next
 // person who opens the same address on that device.
-test('the API is never answered by the worker, signed in or not', () => {
-	assert.equal(workerAnswers('/index.php/apps/portaliq/portal/api/session'), false)
+test('the API is never answered by the worker, signed in or not', async () => {
 	assert.equal(
-		workerAnswers(
+		await workerAnswers('/index.php/apps/portaliq/portal/api/session'),
+		false,
+	)
+	assert.equal(
+		await workerAnswers(
 			'/index.php/apps/portaliq/portal/api/site/js/portaliq-site.js',
 		),
 		false,
 	)
-	assert.equal(workerAnswers('/index.php/apps/portaliq/api/content/site'), false)
-	assert.equal(workerAnswers('/index.php/apps/portaliq/api/content/pages'), false)
+	assert.equal(
+		await workerAnswers('/index.php/apps/portaliq/api/content/site'),
+		false,
+	)
+	assert.equal(
+		await workerAnswers('/index.php/apps/portaliq/api/content/pages'),
+		false,
+	)
 })
 
-test('only GET requests are cached', () => {
-	assert.equal(workerAnswers('/index.php/apps/portaliq/site', 'POST'), false)
+// A BROKEN WORKER MUST NEVER TAKE THE SITE DOWN. Under a blocked policy
+// every fetch of the worker rejects. It must then leave the page to the
+// browser, never hand it a rejected response.
+test('when every fetch of the worker fails, it leaves the page to the browser', async () => {
+	const { handler, store } = await loadWorker({
+		fetch: async () => {
+			throw new TypeError('Failed to fetch')
+		},
+	})
+	const out = dispatch(handler, '/apps/portaliq/site?portal=wilgenboom')
+	assert.equal(out.responded, null, 'no respondWith, so the browser loads /site')
+	assert.ok(out.background, 'it only tries to keep a copy in the background')
+	await assert.doesNotReject(out.background, 'the background copy never rejects')
+	assert.equal(store.size, 0, 'nothing is cached')
+	assert.equal(
+		dispatch(handler, '/apps/portaliq/site?portal=wilgenboom').responded,
+		null,
+		'and the next visit is left to the browser too',
+	)
+})
+
+test('a page the worker holds is answered from its cache, even when the network fails', async () => {
+	const url = 'http://localhost/apps/portaliq/site?portal=wilgenboom'
+	const { handler } = await loadWorker({
+		cached: [url],
+		fetch: async () => {
+			throw new TypeError('Failed to fetch')
+		},
+	})
+	const out = dispatch(handler, '/apps/portaliq/site?portal=wilgenboom')
+	assert.ok(out.responded, 'answered by the worker')
+	assert.deepEqual(await out.responded, { cachedCopyOf: url })
+})
+
+test('a first visit is fetched by the browser, the worker keeps a copy for the next one', async () => {
+	const path = '/apps/portaliq/js/portaliq-site.js?v=9'
+	const { handler, store, fetches } = await loadWorker()
+	const first = dispatch(handler, path)
+	assert.equal(first.responded, null)
+	await first.background
+	assert.equal(fetches.length, 1)
+	assert.ok(store.has(`http://localhost${path}`))
+	const second = dispatch(handler, path)
+	assert.ok(second.responded, 'the next visit comes from the cache')
+	assert.deepEqual(await second.responded, {
+		freshCopyOf: `http://localhost${path}`,
+	})
+})
+
+test('a copy the browser evicted is forgotten, so the next load skips the worker', async () => {
+	const url = 'http://localhost/apps/portaliq/site'
+	const { handler, store } = await loadWorker({ cached: [url] })
+	store.delete(url)
+	const out = dispatch(handler, '/apps/portaliq/site')
+	assert.ok(out.responded)
+	assert.equal((await out.responded).ok, true, 'fetched from the network')
+	assert.equal(
+		dispatch(handler, '/apps/portaliq/site').responded,
+		null,
+		'the next load goes to the browser',
+	)
+})
+
+test('only GET requests are cached', async () => {
+	assert.equal(await workerAnswers('/index.php/apps/portaliq/site', 'POST'), false)
 })
 
 test('the worker is served next to the auth edge and controls the whole app', () => {
@@ -158,7 +270,10 @@ test('the scope the site registers is the scope the server allows, however the a
 		join(ROOT, 'lib', 'Controller', 'PortalManifestController.php'),
 		'utf8',
 	)
-	assert.match(controller, /'Service-Worker-Allowed' => \$this->serviceWorkerScope\(\)/)
+	assert.match(
+		controller,
+		/'Service-Worker-Allowed' => \$this->serviceWorkerScope\(\)/,
+	)
 	assert.match(controller, /\$suffix = 'portal\/sw\.js'/)
 })
 
