@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.55.0"
+        "version": "0.56.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.55.0",
+                "version": "0.56.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -7149,7 +7149,7 @@
             "newsItem": {
                 "slug": "newsItem",
                 "icon": "FileDocument",
-                "version": "0.2.1",
+                "version": "0.3.0",
                 "title": "News item",
                 "authorization": {
                     "read": [
@@ -7231,6 +7231,13 @@
                             "published"
                         ],
                         "example": "published"
+                    },
+                    "publishedAt": {
+                        "title": "Published on",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable.",
+                        "example": "2026-10-03T09:00:00+00:00"
                     },
                     "photoRefs": {
                         "title": "Photos",
