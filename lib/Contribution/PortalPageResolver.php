@@ -67,13 +67,12 @@ class PortalPageResolver {
 	public function normalisePages(mixed $pages, array $collections, array $actions): array {
 		$out = [];
 		if (is_array($pages) === true) {
-			$collectionIds = $this->ids(entries: $collections);
 			$actionIds = $this->ids(entries: $actions);
 
 			foreach ($pages as $page) {
 				$entry = $this->normalisePage(
 					page: $page,
-					collectionIds: $collectionIds,
+					collections: $collections,
 					actionIds: $actionIds,
 					index: count($out)
 				);
@@ -95,7 +94,7 @@ class PortalPageResolver {
 	 * its blocks dropped.
 	 *
 	 * @param mixed $page The declared page.
-	 * @param array<int, string> $collectionIds The valid collection ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
 	 * @param array<int, string> $actionIds The valid action ids.
 	 * @param int $index How many pages already survived
 	 *                   (drives the synthesised id).
@@ -104,15 +103,17 @@ class PortalPageResolver {
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
 	 */
-	private function normalisePage(mixed $page, array $collectionIds, array $actionIds, int $index): ?array {
+	private function normalisePage(mixed $page, array $collections, array $actionIds, int $index): ?array {
 		if (is_array($page) === false) {
 			return null;
 		}
 
+		$collectionIds = $this->ids(entries: $collections);
 		$blocks = $this->blocks->normaliseBlocks(
 			blocks: ($page['blocks'] ?? null),
 			collectionIds: $collectionIds,
-			actionIds: $actionIds
+			actionIds: $actionIds,
+			collections: $collections
 		);
 		if ($blocks === []) {
 			return null;
