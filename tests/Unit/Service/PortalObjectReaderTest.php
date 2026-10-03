@@ -1505,6 +1505,166 @@ class PortalObjectReaderTest extends TestCase {
 	}//end testReadObjectMatchesAListScopeFieldByMembership()
 
 	/**
+	 * site-mijn-omgeving-components REQ-SMO-023: a join row outside `when`
+	 * grants nothing. The pupil's withdrawn enrolment in group 3B opens no
+	 * session of 3B; the active one in 4A still does (the positive control).
+	 *
+	 * @return void
+	 */
+	public function testAJoinRowOutsideWhenGrantsNothing(): void {
+		$rows = $this->readLiveJoin(
+			[
+				['learnerRef' => 'pupil-1', 'cohortId' => '3B', 'status' => 'withdrawn'],
+				['learnerRef' => 'pupil-1', 'cohortId' => '4A', 'status' => 'active'],
+			],
+			['when' => ['field' => 'status', 'in' => ['active']]]
+		);
+
+		$this->assertSame(['4A lesson'], array_column($rows, 'title'));
+	}//end testAJoinRowOutsideWhenGrantsNothing()
+
+	/**
+	 * An expired share grants nothing; an empty end date and a future one do.
+	 *
+	 * @return void
+	 */
+	public function testAnExpiredJoinRowGrantsNothing(): void {
+		$rows = $this->readLiveJoin(
+			[
+				['learnerRef' => 'pupil-1', 'cohortId' => '3B', 'expiresAt' => '2020-10-01'],
+				['learnerRef' => 'pupil-1', 'cohortId' => '4A', 'expiresAt' => ''],
+				['learnerRef' => 'pupil-1', 'cohortId' => '5C', 'expiresAt' => '2999-01-01T00:00:00+00:00'],
+			],
+			['validUntilField' => 'expiresAt']
+		);
+
+		$this->assertSame(['4A lesson', '5C lesson'], array_column($rows, 'title'));
+	}//end testAnExpiredJoinRowGrantsNothing()
+
+	/**
+	 * A malformed live-row member fails the whole via closed: zero rows and no
+	 * query at all, like any other invalid via.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedLiveRowMemberFailsClosed(): void {
+		foreach ([
+			['when' => ['field' => 'status']],
+			['when' => ['field' => 'status', 'in' => []]],
+			['when' => ['field' => 'status', 'in' => ['active'], 'notIn' => ['withdrawn']]],
+			['when' => ['field' => '', 'in' => ['active']]],
+			['when' => ['field' => 'status', 'in' => [['nested']]]],
+			['validUntilField' => ''],
+			['validUntilField' => 7],
+		] as $extra) {
+			$objectService = $this->liveJoinObjectService([['learnerRef' => 'pupil-1', 'cohortId' => '4A', 'status' => 'active']]);
+			$rows = $this->liveJoinReader($objectService)->readCollection(
+				register: 'school',
+				schema: 'session',
+				scopeField: 'cohortId',
+				subjectRef: 'pupil-1',
+				via: $this->liveJoinVia($extra),
+				audience: 'student'
+			);
+
+			$this->assertSame([], $rows, 'malformed: ' . json_encode($extra));
+			$this->assertCount(0, $objectService->calls);
+		}
+	}//end testAMalformedLiveRowMemberFailsClosed()
+
+	/**
+	 * The single read honours the same rule: a session of a withdrawn
+	 * enrolment does not open by id.
+	 *
+	 * @return void
+	 */
+	public function testASingleReadThroughAWithdrawnJoinRowIsNull(): void {
+		$objectService = $this->liveJoinObjectService([['learnerRef' => 'pupil-1', 'cohortId' => '3B', 'status' => 'withdrawn']]);
+
+		$row = $this->liveJoinReader($objectService)->readObject(
+			register: 'school',
+			schema: 'session',
+			scopeField: 'cohortId',
+			subjectRef: 'pupil-1',
+			id: 's-3b',
+			via: $this->liveJoinVia(['when' => ['field' => 'status', 'in' => ['active']]]),
+			audience: 'student'
+		);
+
+		$this->assertNull($row);
+	}//end testASingleReadThroughAWithdrawnJoinRowIsNull()
+
+	/**
+	 * Read sessions through a reverse enrolment join with extra via members.
+	 *
+	 * @param array<int, array<string, mixed>> $enrolments The join rows.
+	 * @param array<string, mixed>             $extra      The live-row members.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readLiveJoin(array $enrolments, array $extra): array {
+		return $this->liveJoinReader($this->liveJoinObjectService($enrolments))->readCollection(
+			register: 'school',
+			schema: 'session',
+			scopeField: 'cohortId',
+			subjectRef: 'pupil-1',
+			via: $this->liveJoinVia($extra),
+			audience: 'student'
+		);
+	}//end readLiveJoin()
+
+	/**
+	 * The fake object service for the live-join tests.
+	 *
+	 * @param array<int, array<string, mixed>> $enrolments The join rows.
+	 *
+	 * @return object
+	 */
+	private function liveJoinObjectService(array $enrolments): object {
+		return $this->objectService(
+			[
+				'enrolment' => $enrolments,
+				'session' => [
+					['uuid' => 's-3b', 'cohortId' => '3B', 'title' => '3B lesson'],
+					['uuid' => 's-4a', 'cohortId' => '4A', 'title' => '4A lesson'],
+					['uuid' => 's-5c', 'cohortId' => '5C', 'title' => '5C lesson'],
+				],
+			]
+		);
+	}//end liveJoinObjectService()
+
+	/**
+	 * The reader under test.
+	 *
+	 * @param object $objectService The fake object service.
+	 *
+	 * @return PortalObjectReader
+	 */
+	private function liveJoinReader(object $objectService): PortalObjectReader {
+		return new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+	}//end liveJoinReader()
+
+	/**
+	 * A reverse join from the pupil's enrolments to sessions of the cohort.
+	 *
+	 * @param array<string, mixed> $extra The live-row members.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function liveJoinVia(array $extra): array {
+		return array_merge(
+			[
+				'register' => 'school',
+				'schema' => 'enrolment',
+				'scopeField' => 'learnerRef',
+				'targetField' => 'cohortId',
+				'match' => 'scopeField',
+			],
+			$extra
+		);
+	}//end liveJoinVia()
+
+	/**
 	 * An ObjectService stand-in serving canned rows per schema and recording
 	 * every call (register/schema context, config, rbac/multitenancy flags).
 	 */
