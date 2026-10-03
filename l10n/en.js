@@ -80,7 +80,7 @@ OC.L10N.register(
         "Completions": "Completions",
         "Configuration": "Configuration",
         "Configure the app settings": "Configure the app settings",
-        "Confirmation of receipt — reference %1$s": "Confirmation of receipt — reference %1$s",
+        "Confirmation of receipt, reference %1$s": "Confirmation of receipt, reference %1$s",
         "Confirmation shown after a successful submission (contribution-manifest-v3).": "Confirmation shown after a successful submission (contribution-manifest-v3).",
         "Confirmation text": "Confirmation text",
         "Consent": "Consent",

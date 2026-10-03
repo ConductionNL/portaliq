@@ -10,6 +10,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+	deriveColumns,
 	detailFields,
 	formatCell,
 	valueLabel,
@@ -105,4 +106,56 @@ test('the detail card shows the label', async () => {
 	})
 	assert.match(html, /Goedgekeurd/)
 	assert.doesNotMatch(html, />\s*approved\s*</)
+})
+
+// A detail field that is no column reads through the collection's own
+// `fieldConfigs` (resident-sees-words-not-codes).
+// @spec openspec/changes/resident-sees-words-not-codes/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-say-how-the-values-of-any-of-its-fields-read
+
+const complaints = {
+	id: 'klachten',
+	columns: [{ field: 'status', label: 'Status' }],
+	fieldConfigs: {
+		status: { valueLabels: { in_progress: 'In behandeling' } },
+		complaintCategory: {
+			label: 'Soort klacht',
+			valueLabels: { service: 'Dienstverlening' },
+		},
+	},
+	detail: { fields: ['complaintCategory', 'status'] },
+}
+
+test('a detail field that is no column takes its label and value labels from fieldConfigs', () => {
+	const fields = detailFields(complaints, {})
+	const category = fields.find((field) => field.field === 'complaintCategory')
+	assert.equal(category.label, 'Soort klacht')
+	assert.deepEqual(category.valueLabels, { service: 'Dienstverlening' })
+})
+
+test('a column without value labels falls back to fieldConfigs, in the table and on the card', () => {
+	const [status] = deriveColumns(complaints, [])
+	assert.deepEqual(status.valueLabels, { in_progress: 'In behandeling' })
+	const own = {
+		...complaints,
+		columns: [{ field: 'status', valueLabels: { in_progress: 'Loopt' } }],
+	}
+	assert.deepEqual(deriveColumns(own, [])[0].valueLabels, { in_progress: 'Loopt' })
+	const card = detailFields(complaints, {}).find(
+		(field) => field.field === 'status',
+	)
+	assert.deepEqual(card.valueLabels, { in_progress: 'In behandeling' })
+	assert.equal(card.label, 'Status')
+})
+
+test('the detail card shows the fieldConfigs label and value label', async () => {
+	const html = await renderSfc('src/site/components/collections/DetailCard.vue', {
+		collection: complaints,
+		row: { id: 'k1', complaintCategory: 'service', status: 'in_progress' },
+		t,
+		locale: 'nl',
+	})
+	assert.match(html, /Soort klacht/)
+	assert.match(html, /Dienstverlening/)
+	assert.match(html, /In behandeling/)
+	assert.doesNotMatch(html, />\s*(service|in_progress)\s*</)
 })

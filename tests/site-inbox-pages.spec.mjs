@@ -24,7 +24,6 @@ import {
 	markedRead,
 	recordRoute,
 	TASKS_ROUTE,
-	unreadAfterRead,
 } from '../src/site/pages/inbox/inbox.js'
 import { components, pages } from '../src/site/pages/inbox/index.js'
 import strings from '../src/site/pages/inbox/strings.js'
@@ -176,10 +175,6 @@ test('marking a message read flips that row only and drops the unread count by o
 		markedRead(MESSAGES, 'm1').map((m) => m.read),
 		[true, true],
 	)
-	assert.equal(unreadAfterRead(3), 2)
-	assert.equal(unreadAfterRead(0), 0)
-	assert.equal(unreadAfterRead(undefined), 0)
-
 	const calls = []
 	const api = {
 		async fetchInbox() {
@@ -205,9 +200,53 @@ test('marking a message read flips that row only and drops the unread count by o
 	await page.markRead(page.messages[0])
 	assert.deepEqual(calls, ['m1'])
 	assert.equal(page.messages[0].read, true)
-	assert.deepEqual(page.emitted, [['unread', 1], ['unread', 0]])
+	assert.deepEqual(page.emitted, [
+		['unread', 1],
+		['unread', 0],
+	])
 	await page.markRead(page.messages[1])
 	assert.deepEqual(calls, ['m1'], 'a read message is not sent again')
+})
+
+test('a page mounted again after a read counts from its rows, not from the sign-in count', async () => {
+	// The shell has not reloaded the contributions yet, so it still hands
+	// the page the sign-in count of 2, while the server already has m1 read.
+	const rows = [
+		{ ...MESSAGES[0], read: true },
+		{ ...MESSAGES[1], read: false },
+	]
+	const api = {
+		async fetchInbox() {
+			return rows
+		},
+		async markMessageRead() {
+			return { ok: true }
+		},
+	}
+	const page = instance(InboxPage, { api, t, contributions: { unreadCount: 2 } })
+	assert.equal(page.unread, 0, 'nothing loaded, nothing counted')
+	await page.load()
+	assert.deepEqual(page.emitted, [['unread', 1]])
+	await page.markRead(page.messages[1])
+	assert.deepEqual(page.emitted, [
+		['unread', 1],
+		['unread', 0],
+	])
+})
+
+test('an inbox the server did not answer leaves the shell its own count', async () => {
+	const page = instance(InboxPage, {
+		api: {
+			async fetchInbox() {
+				return null
+			},
+		},
+		t,
+		contributions: { unreadCount: 4 },
+	})
+	await page.load()
+	assert.deepEqual(page.messages, [])
+	assert.deepEqual(page.emitted, [], 'a failed read is not "0 unread"')
 })
 
 test('a refused mark-read changes nothing', async () => {

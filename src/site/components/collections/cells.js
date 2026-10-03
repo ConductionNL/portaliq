@@ -122,11 +122,16 @@ export function deriveColumns(collection, objects) {
 			)
 		: []
 	if (declared.length > 0) {
-		return declared.map((c) => ({
-			...c,
-			label: columnLabel(c),
-			render: c.render || 'text',
-		}))
+		return declared.map((c) => {
+			const valueLabels =
+				c.valueLabels || fieldConfigOf(collection, c.field).valueLabels
+			return {
+				...c,
+				label: columnLabel(c),
+				render: c.render || 'text',
+				...(valueLabels ? { valueLabels } : {}),
+			}
+		})
 	}
 	const rows = Array.isArray(objects) ? objects : []
 	const fields = []
@@ -168,15 +173,35 @@ export function detailFields(collection, row) {
 			? declared
 			: Object.keys(row || {}).filter((key) => !ENVELOPE.has(key))
 	return fields.map((field) => {
-		const column = byField.get(field) || { field }
+		const config = fieldConfigOf(collection, field)
+		const column = byField.get(field) || { field, label: config.label }
 		return {
 			field,
 			label: columnLabel(column),
 			render: column.render || 'text',
-			valueLabels: column.valueLabels,
+			valueLabels: column.valueLabels || config.valueLabels,
 			declared: declared.length > 0,
 		}
 	})
+}
+
+/**
+ * The collection's own config for one field (`fieldConfigs.<field>`): a
+ * `label` and `valueLabels` for a field the detail card shows that is no
+ * column. A column's own label and value labels win.
+ *
+ * @param {object} collection The collection.
+ * @param {string} field The field.
+ * @return {{label?: string, valueLabels?: object}}
+ * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-say-how-the-values-of-any-of-its-fields-read
+ */
+export function fieldConfigOf(collection, field) {
+	const configs = collection?.fieldConfigs
+	if (!configs || typeof configs !== 'object' || !Object.hasOwn(configs, field)) {
+		return {}
+	}
+	const config = configs[field]
+	return config && typeof config === 'object' ? config : {}
 }
 
 /**

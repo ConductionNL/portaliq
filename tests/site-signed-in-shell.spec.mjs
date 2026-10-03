@@ -159,6 +159,10 @@ test('the header says who is signed in, in the site language', () => {
 	assert.equal(loggedInAs({ subjectRef: 's1', sub: 's1', subject: 's1' }, nl), 'Ingelogd')
 	assert.equal(loggedInAs({ subjectRef: 's1', displayName: '  ' }, nl), 'Ingelogd')
 	assert.equal(loggedInAs({ subjectRef: 's1', displayName: 's1' }, nl), 'Ingelogd')
+	// A number is never a name: a BSN shown as the display name reads as
+	// "Ingelogd" (resident-sees-words-not-codes).
+	assert.equal(loggedInAs({ subjectRef: 's1', displayName: '999993653' }, nl), 'Ingelogd')
+	assert.equal(loggedInAs({ subjectRef: 's1', name: ' 123456782 ' }, nl), 'Ingelogd')
 	assert.equal(loggedInAs({}, nl), 'Ingelogd')
 	assert.equal(loggedInAs(null, nl), '')
 })

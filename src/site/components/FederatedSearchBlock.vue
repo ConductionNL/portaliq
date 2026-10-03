@@ -459,6 +459,7 @@ import {
 	toResult,
 	writeSearchState,
 } from '../lib/federatedSearch.js'
+import { labelBuckets, pageLocale } from '../lib/wooCategories.js'
 
 export default {
 	name: 'FederatedSearchBlock',
@@ -971,7 +972,13 @@ export default {
 					.map((field) => ({
 						field,
 						label: this.facetLabels[field] || field,
-						buckets: toBuckets(body.facets, field),
+						// A Woo category reads as its name, never its code
+						// (resident-sees-words-not-codes).
+						buckets: labelBuckets(
+							toBuckets(body.facets, field),
+							field,
+							pageLocale(),
+						),
 					}))
 					.filter((group) => group.buckets.length > 0)
 				this.reportSearch(this.total)

@@ -318,3 +318,34 @@ test('site: opening a case hands the shell the target and the row', async () => 
 		[{ app: 'dossiq', collection: 'mijnZaken', id: 'z-1' }, 'z-1'],
 	])
 })
+
+// A case's status reads in words, never as the status type's uuid
+// (resident-sees-words-not-codes).
+// @spec openspec/changes/resident-sees-words-not-codes/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
+
+const STATUS_UUID = '3c0f5a00-0000-4000-a000-00000000b001'
+
+test('a case status reads as its public label, never as a uuid', () => {
+	assert.equal(caseStatus({ status: STATUS_UUID, statusPublicLabel: 'Ontvangen' }), 'Ontvangen')
+	assert.equal(caseStatus({ status: STATUS_UUID, statusLabel: 'In behandeling' }), 'In behandeling')
+	assert.equal(caseStatus({ status: STATUS_UUID }), '')
+	assert.equal(caseStatus({ status: 'Afgerond' }), 'Afgerond')
+	assert.equal(caseStatus({ status: { id: STATUS_UUID } }), '')
+	assert.equal(caseStatus(null), '')
+})
+
+test('site: a case row shows the status label and no uuid', async () => {
+	const html = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		initialData: {
+			ok: true,
+			cases: [
+				{ id: 'c-1', title: 'Verlichting fietspad Lindelaan', caseType: '3c0f5a00-0000-4000-a000-00000000a001', status: STATUS_UUID, statusPublicLabel: 'Ontvangen', _source: { appId: 'dossiq', label: 'Dossiq' } },
+				{ id: 'c-2', title: 'Planning fietspad Lindelaan', status: STATUS_UUID, _source: { appId: 'dossiq', label: 'Dossiq' } },
+			],
+		},
+	})
+	assert.match(html, /Ontvangen/)
+	assert.doesNotMatch(html, /3c0f5a00/)
+})

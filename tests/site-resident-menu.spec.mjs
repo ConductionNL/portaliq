@@ -136,6 +136,58 @@ test('an app named only by its id groups under that id, and an empty group is le
 	assert.deepEqual(residentMenuGroups(null, en, 0, href), [])
 })
 
+test('pages with the same group share one heading across apps, in the order they first appear', () => {
+	const nav = buildNav(
+		[
+			{
+				app: 'dossiq',
+				label: 'Dossiq',
+				pages: [
+					{ id: 'mijnZaken', label: 'Mijn zaken', group: 'Mijn zaken en verzoeken' },
+					{ id: 'uren', label: 'Mijn uren' },
+				],
+			},
+			{
+				app: 'pipelinq',
+				label: 'Pipelinq',
+				pages: [
+					{ id: 'vragen', label: 'Mijn vragen', group: 'Vragen en contact' },
+					{ id: 'verzoeken', label: 'Mijn verzoeken', group: 'Mijn zaken en verzoeken' },
+				],
+			},
+			{
+				app: 'opencatalogi',
+				label: 'Open Catalogi',
+				pages: [{ id: 'dossiers', label: 'Mijn dossiers', group: '  ' }],
+			},
+		],
+		nl,
+		{},
+	)
+	assert.deepEqual(names(residentMenuGroups(nav, nl, 0, href)), [
+		['Mijn zaken en verzoeken', ['Mijn zaken', 'Mijn verzoeken']],
+		['Dossiq', ['Mijn uren']],
+		['Vragen en contact', ['Mijn vragen']],
+		['Open Catalogi', ['Mijn dossiers']],
+		['Berichten en nieuws', ['Berichten']],
+	])
+})
+
+test('two items of one name in a shared group are told apart by their app', () => {
+	const nav = buildNav(
+		[
+			{ app: 'dossiq', label: 'Dossiq', pages: [{ id: 'a', label: 'Mijn zaken', group: 'Mijn zaken en verzoeken' }] },
+			{ app: 'pipelinq', label: 'Pipelinq', pages: [{ id: 'b', label: 'Mijn zaken', group: 'Mijn zaken en verzoeken' }] },
+		],
+		nl,
+		{},
+	)
+	assert.deepEqual(names(residentMenuGroups(nav, nl, 0, href))[0], [
+		'Mijn zaken en verzoeken',
+		['Mijn zaken (Dossiq)', 'Mijn zaken (Pipelinq)'],
+	])
+})
+
 test('the inbox item carries the unread count, read out in words', () => {
 	const groups = residentMenuGroups(navFor(en), en, 2, href)
 	const inbox = groups.flatMap((group) => group.items).find((item) => item.link === '/mijn/inbox')

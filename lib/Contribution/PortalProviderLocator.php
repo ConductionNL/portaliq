@@ -54,13 +54,43 @@ class PortalProviderLocator {
 	 * @param IAppManager        $appManager For reading each app's declared namespace.
 	 * @param ContainerInterface $container  For constructing the provider.
 	 * @param LoggerInterface    $logger     The logger.
+	 * @param ContributionLanguage|null $language Asks each provider in the portal's language; none leaves Nextcloud's choice.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?ContributionLanguage $language = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Ask a provider for its contribution, in the portal's language.
+	 *
+	 * Every caller asks through here, so every provider call runs inside
+	 * ContributionLanguage: the request forces the portal's language while
+	 * the provider translates its labels, and is put back afterwards. The
+	 * provider interface stays `getContribution(array $subject)`.
+	 *
+	 * @param object               $provider The provider `locate()` returned.
+	 * @param array<string, mixed> $subject  The subject to ask for.
+	 *
+	 * @return mixed What the provider returned; null when it has no `getContribution`.
+	 *
+	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+	 */
+	public function contributionOf(object $provider, array $subject): mixed {
+		if (method_exists($provider, 'getContribution') === false) {
+			return null;
+		}
+
+		$call = static fn () => $provider->getContribution($subject);
+		if ($this->language === null) {
+			return $call();
+		}
+
+		return $this->language->speak(language: $this->language->languageFor(subject: $subject), call: $call);
+	}//end contributionOf()
 
 	/**
 	 * Resolve one app's contribution provider by convention FQCN, or null.

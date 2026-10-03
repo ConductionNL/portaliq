@@ -211,6 +211,13 @@ export default {
 				: this.split.open
 		},
 
+		/**
+		 * The rows on screen, each with its status in words.
+		 *
+		 * @return {Array<object>} The rows.
+		 *
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
+		 */
 		rows() {
 			const locale = readerLocale(this.locale)
 			return this.shown.map((row) => {
