@@ -22,7 +22,7 @@
 			:entries="summary"
 			:idBase="`f-${action.id}-summary`"
 			:heading="translate('Something is still missing')"
-			:intro="translate('Fill this in. Then you can send the form.')"
+			:intro="translate('Fill this in. Then you can continue.')"
 			:titlePrefix="translate('Error: ')" />
 
 		<p

@@ -63,7 +63,7 @@ export default {
 		/** One line under the heading, '' for none. */
 		intro: {
 			type: String,
-			default: 'Vul dit aan. Daarna kunt u het formulier versturen.',
+			default: 'Vul dit aan. Daarna kunt u verder.',
 		},
 
 		/** The prefix of the document title while errors stand. */
