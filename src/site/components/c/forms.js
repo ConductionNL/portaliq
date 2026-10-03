@@ -14,6 +14,7 @@
  */
 
 import { fileFields } from '../../../shared/fileFieldSubmit.js'
+import { dateProblem } from '../forms/fields.js'
 
 /**
  * Interpolate `{name}` placeholders.
@@ -242,8 +243,8 @@ export function formBody(action, values, options = {}) {
 }
 
 /**
- * The inline error per field: a required field left empty, or a required
- * file field without a file.
+ * The inline error per field: a required field left empty, a required file
+ * field without a file, or a date whose day, month and year make no real date.
  *
  * @param {object} action The action.
  * @param {Record<string, string>} values The typed values.
@@ -252,18 +253,17 @@ export function formBody(action, values, options = {}) {
  * @return {Record<string, string>} The message per field; empty when all is well.
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  */
 export function fieldErrors(action, values, files, t) {
 	const translate = translatorOr(t)
 	const fileNames = fileFields(action)
 	const errors = {}
 	for (const field of formFields(action)) {
-		if (fieldConfig(action, field).required !== true) {
-			continue
-		}
+		const required = fieldConfig(action, field).required === true
 		const label = fieldLabel(action, field)
 		if (fileNames.includes(field)) {
-			if (((files || {})[field] || []).length === 0) {
+			if (required && ((files || {})[field] || []).length === 0) {
 				errors[field] = translate('Please choose a file for {field}.', {
 					field: label,
 				})
@@ -271,8 +271,19 @@ export function fieldErrors(action, values, files, t) {
 			continue
 		}
 		const value = (values || {})[field]
-		if (value === undefined || value === null || String(value).trim() === '') {
-			errors[field] = translate('{field} is required.', { field: label })
+		const empty =
+			value === undefined || value === null || String(value).trim() === ''
+		if (empty) {
+			if (required) {
+				errors[field] = translate('{field} is required.', { field: label })
+			}
+			continue
+		}
+		if (fieldInput(action, field) === 'date' && dateProblem(value)) {
+			errors[field] = translate(
+				'{field}: enter a real date, for example 1 3 2026.',
+				{ field: label },
+			)
 		}
 	}
 	return errors
