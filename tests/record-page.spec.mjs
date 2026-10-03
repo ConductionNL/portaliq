@@ -17,6 +17,7 @@ import { test } from 'node:test'
 import {
 	allGroups,
 	calendarItems,
+	countedWord,
 	dayKey,
 	itemsOnDay,
 	monthWeeks,
@@ -841,4 +842,54 @@ test('a calendar source shows only the rows its rule names', () => {
 		items.map((item) => dayKey(item.start)),
 		['2026-11-03', '2026-11-05'],
 	)
+})
+
+test('a unit reads singular for one and plural for every other figure', () => {
+	const days = { one: 'dag', other: 'dagen' }
+	assert.equal(countedWord(days, 1), 'dag')
+	assert.equal(countedWord(days, '1'), 'dag')
+	assert.equal(countedWord(days, 0), 'dagen')
+	assert.equal(countedWord(days, 5), 'dagen')
+	assert.equal(countedWord(days, 1.5), 'dagen')
+	assert.equal(countedWord(days, null), 'dagen', 'no figure reads plural')
+	assert.equal(countedWord('keer', 1), 'keer', 'a plain string stays as it is')
+	assert.equal(countedWord({ one: 'dag' }, 1), '', 'half a pair shows nothing')
+	assert.equal(countedWord(undefined, 1), '')
+})
+
+test('a kpi card says "1 dag" and "1 minuut", and "5 dagen" beside it', async () => {
+	const html = await renderSfc('src/site/components/collections/KpiCards.vue', {
+		cards: [
+			{
+				field: 'absentDays',
+				label: 'Afwezig',
+				unit: { one: 'dag', other: 'dagen' },
+				details: [
+					{
+						field: 'lateMinutes',
+						label: { one: 'minuut', other: 'minuten' },
+					},
+					{ field: 'absentAuthorisedDays', label: 'met toestemming' },
+				],
+			},
+			{
+				field: 'lateCount',
+				label: 'Te laat',
+				unit: { one: 'keer', other: 'keer' },
+			},
+		],
+		row: {
+			absentDays: 1,
+			lateMinutes: 1,
+			absentAuthorisedDays: 5,
+			lateCount: 4,
+		},
+		t,
+		locale: 'nl',
+	})
+	const cards = html.match(/<li class="pq-kpi__card[^"]*"[^]*?<\/li>/g) || []
+	assert.match(cards[0], />1<\/span>\s*<span class="pq-kpi__unit">dag<\/span>/)
+	assert.match(cards[0], /1 minuut, 5 met toestemming/)
+	assert.doesNotMatch(cards[0], /dagen|\[object Object\]/)
+	assert.match(cards[1], />4<\/span>\s*<span class="pq-kpi__unit">keer<\/span>/)
 })

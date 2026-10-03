@@ -194,9 +194,10 @@ class RecordBlockNormaliser {
 			return null;
 		}
 
-		$out = ['field' => $card['field'], 'label' => $card['label']];
-		if ($this->isName(value: ($card['unit'] ?? null)) === true) {
-			$out['unit'] = $card['unit'];
+		$out  = ['field' => $card['field'], 'label' => $card['label']];
+		$unit = $this->countedWord(value: ($card['unit'] ?? null));
+		if ($unit !== null) {
+			$out['unit'] = $unit;
 		}
 
 		$details = $this->details(declared: ($card['details'] ?? null));
@@ -216,20 +217,47 @@ class RecordBlockNormaliser {
 	 *
 	 * @param mixed $declared The declared details.
 	 *
-	 * @return array<int, array{field: string, label: string}>
+	 * @return array<int, array{field: string, label: string|array{one: string, other: string}}>
 	 */
 	private function details(mixed $declared): array {
 		$details = [];
 		foreach ($this->listOf(value: $declared) as $detail) {
-			if (is_array($detail) === true && $this->isName(value: ($detail['field'] ?? null)) === true
-				&& $this->isName(value: ($detail['label'] ?? null)) === true
-			) {
-				$details[] = ['field' => $detail['field'], 'label' => $detail['label']];
+			if (is_array($detail) === false || $this->isName(value: ($detail['field'] ?? null)) === false) {
+				continue;
+			}
+
+			$label = $this->countedWord(value: ($detail['label'] ?? null));
+			if ($label !== null) {
+				$details[] = ['field' => $detail['field'], 'label' => $label];
 			}
 		}
 
 		return $details;
 	}//end details()
+
+	/**
+	 * A word that follows a figure: a string, or `{one, other}` so "1 dag"
+	 * and "5 dagen" both read right. Half a pair, or anything else, is null.
+	 *
+	 * @param mixed $value The declared word.
+	 *
+	 * @return string|array{one: string, other: string}|null
+	 *
+	 * @spec openspec/changes/kpi-unit-singular-and-plural/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
+	 */
+	private function countedWord(mixed $value): string|array|null {
+		if ($this->isName(value: $value) === true) {
+			return $value;
+		}
+
+		if (is_array($value) === true && $this->isName(value: ($value['one'] ?? null)) === true
+			&& $this->isName(value: ($value['other'] ?? null)) === true
+		) {
+			return ['one' => $value['one'], 'other' => $value['other']];
+		}
+
+		return null;
+	}//end countedWord()
 
 	/**
 	 * A declared list, or [] for anything else.

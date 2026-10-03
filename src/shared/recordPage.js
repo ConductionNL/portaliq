@@ -234,6 +234,28 @@ export function figure(row, field, locale) {
 	return String(value)
 }
 
+/**
+ * The word beside a figure: a plain string as it is, or from `{one, other}`
+ * the singular for exactly 1 and the plural for any other figure (also for
+ * none), the rule Nextcloud's own plural forms follow for Dutch and English.
+ * Half a pair, or anything else, reads as nothing.
+ *
+ * @param {string|{one: string, other: string}|undefined} word The declared word.
+ * @param {unknown} value The figure the word follows.
+ * @return {string}
+ * @spec openspec/changes/kpi-unit-singular-and-plural/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
+ */
+export function countedWord(word, value) {
+	if (typeof word === 'string') {
+		return word
+	}
+	if (!word || typeof word.one !== 'string' || typeof word.other !== 'string') {
+		return ''
+	}
+	const isOne = value !== null && value !== '' && Number(value) === 1
+	return isOne ? word.one : word.other
+}
+
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
 
 /**
