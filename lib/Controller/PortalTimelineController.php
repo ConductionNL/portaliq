@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Contribution\StepsProviderMethod;
 use OCA\Portaliq\Service\PortalItemReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -109,6 +110,42 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	}//end show()
 
 	/**
+	 * Where one case the subject owns stands: the steps its app's `steps`
+	 * provider answers, held to `{label, description?, state, date?}`.
+	 * Proven exactly as the history is.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 * @param string $id The case id (never trusted; ownership proven first).
+	 *
+	 * @return JSONResponse `{label, steps}`, or 401 / 403 / 404 / 502.
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function steps(string $register, string $schema, string $id): JSONResponse {
+		$proven = $this->provenObject(register: $register, schema: $schema, id: $id, key: 'steps');
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$entries = $this->timelines->entries(appId: $proven['app'], method: $proven['declared']['provider'], id: $id);
+		if ($entries === null) {
+			// Steps that could not be read are not a case without steps.
+			return new JSONResponse(['error' => 'steps_unavailable'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		return new JSONResponse(
+			[
+				'label' => (string)($proven['declared']['label'] ?? ''),
+				'steps' => (new StepsProviderMethod())->steps(entries: $entries),
+			]
+		);
+	}//end steps()
+
+	/**
 	 * The items of one object the subject owns (my-dossiers): a dossier's
 	 * publications, from the provider method its collection's `itemList`
 	 * names. Proven exactly as the history is.
@@ -155,7 +192,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param string $register The register of the collection.
 	 * @param string $schema   The schema of the collection.
 	 * @param string $id       The object id.
-	 * @param string $key      `timeline` or `itemList`.
+	 * @param string $key      `timeline`, `steps` or `itemList`.
 	 *
 	 * @return JSONResponse|array{app: string, declared: array<string, mixed>} The refusal, or the proven match.
 	 *

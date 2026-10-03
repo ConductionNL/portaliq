@@ -68,11 +68,16 @@ class PortalCaseListReader {
 	 *                                                     never depend on the
 	 *                                                     mandate record.
 	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
+	 * @param CaseTypeNames|null $typeNames Names each row's case type
+	 *                                      (site-mijn-omgeving-components
+	 *                                      REQ-SMO-030); without it rows
+	 *                                      carry no name.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?Identity\PortalMandateService $mandates = null,
 		private readonly PortalBranchScope $branches = new PortalBranchScope(),
+		private readonly ?CaseTypeNames $typeNames = null,
 	) {
 	}//end __construct()
 
@@ -112,7 +117,8 @@ class PortalCaseListReader {
 				}
 
 				foreach ($this->readCases(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
-					if (in_array($this->typeOf(row: $row, collection: $collection), $hiddenCaseTypes, true) === true) {
+					$caseType = $this->typeOf(row: $row, collection: $collection);
+					if (in_array($caseType, $hiddenCaseTypes, true) === true) {
 						continue;
 					}
 
@@ -125,6 +131,7 @@ class PortalCaseListReader {
 					];
 					$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
 					$row = (new CaseStatusLabelField())->stamp(row: $row, collection: $collection);
+					$row = ($this->typeNames?->stamp(row: $row, collection: $collection, typeId: $caseType) ?? $row);
 
 					$rows[] = $row;
 				}
@@ -379,6 +386,7 @@ class PortalCaseListReader {
 			];
 			$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
 			$row = (new CaseStatusLabelField())->stamp(row: $row, collection: $collection);
+			$row = ($this->typeNames?->stamp(row: $row, collection: $collection, typeId: $caseType) ?? $row);
 			$row['_mandate'] = $described;
 			// The case is the subsidiary's, and says so: it is never presented
 			// as the parent's own (REQ-PTV-005).

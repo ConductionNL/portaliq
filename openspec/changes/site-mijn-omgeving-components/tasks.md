@@ -19,12 +19,14 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
 
 ## Wave 3: case cards and steps (REQ-SMO-002, REQ-SMO-003, REQ-SMO-022, REQ-SMO-030; blocks `cases`, `steps`)
 
-- [ ] **T5**: `steps: { label?, provider }` on a `cases` collection, `StepsProviderMethod` beside `TimelineProviderMethod`; `dueField`, `turnField` kept only when projected.
+- [x] **T5**: `steps: { label?, provider }` on a `cases` collection, `StepsProviderMethod` beside `TimelineProviderMethod`; `dueField`, `turnField` kept only when projected.
   - PHPUnit `CollectionConfigNormaliserTest::testStepsNeedAProviderMethod`, `::testATurnFieldMustBeProjected`; a provider answer with a bad `state` loses that entry
-- [ ] **T6**: `_caseTypeName` stamped by `PortalCaseListReader` through `CaseTypeReader` (design D8).
+- [x] **T6**: `_caseTypeName` stamped by `PortalCaseListReader` through `CaseTypeReader` (design D8).
   - PHPUnit `PortalCaseListReaderTest::testEachRowCarriesItsCaseTypeName`, `::testAnUnknownTypeLeavesNoName`
-- [ ] **T7**: `CaseCard.vue`, `ProcessSteps.vue` on `@gemeente-denhaag/card`, `process-steps`, `step-marker`; blocks `cases` and `steps`; "Mijn zaken" as cards.
+- [x] **T7**: `CaseCard.vue`, `ProcessSteps.vue` on `@gemeente-denhaag/card`, `process-steps`, `step-marker`; blocks `cases` and `steps`; "Mijn zaken" as cards.
   - `check:my-cases-page`, `check:my-cases-acting-for` updated; e2e on dossiq's `mijnZaken`
+  - Built in wave 3: `StepsProviderMethod` (normalise, steps shape), `GET .../{id}/steps` on `PortalTimelineController`, `CaseTypeNames`, blocks `cases` and `steps` in `ListBlockNormaliser` (steps only on its record page), `CaseCard`, `ProcessSteps`, `CasesBlock`, `StepsBlock`; node `check:mijn-cases`; e2e `tests/e2e/site-mijn-case-cards.spec.ts` on a seeded portalPage cases collection (dossiq is not in CI). The cases block shows no type name yet: only the Mijn zaken read stamps `_caseTypeName`.
+  - Also in wave 3 (REQ-SMO-009, found live): a failed read is a `LoadError` alert with "Opnieuw proberen" on My tasks, the messages page, Mijn zaken and the tasks, inbox, cases and steps blocks, never an empty list.
 
 ## Wave 4: documents, timeline, description list (REQ-SMO-005; blocks `documents`, `timeline`)
 

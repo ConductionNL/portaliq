@@ -119,19 +119,7 @@ class PortalPageResolver {
 			return null;
 		}
 
-		$entry = ['blocks' => $blocks];
-		$entry['id'] = 'page-' . ($index + 1);
-
-		$id = ($page['id'] ?? null);
-		if (is_string($id) === true && $id !== '') {
-			$entry['id'] = $id;
-		}
-
-		foreach (['label', 'icon'] as $textKey) {
-			if (isset($page[$textKey]) === true && is_string($page[$textKey]) === true) {
-				$entry[$textKey] = $page[$textKey];
-			}
-		}
+		$entry = ['blocks' => $blocks] + $this->identity(page: $page, index: $index);
 
 		$entry += $this->menuGroup(group: ($page['group'] ?? null));
 
@@ -144,8 +132,57 @@ class PortalPageResolver {
 		// Menu, record switcher and home (site-mijn-omgeving-components REQ-SMO-020).
 		$entry += (new PageMenuKeys())->keys(page: $page, entry: $entry, collectionIds: $collectionIds);
 
-		return $entry;
+		return $this->withRecordBlocksOnRecordPagesOnly(entry: $entry);
 	}//end normalisePage()
+
+	/**
+	 * The page's id (declared, else synthesised from its position), label and icon.
+	 *
+	 * @param array<string, mixed> $page  The declared page.
+	 * @param int                  $index How many pages already survived.
+	 *
+	 * @return array<string, string>
+	 */
+	private function identity(array $page, int $index): array {
+		$out = ['id' => 'page-' . ($index + 1)];
+
+		$id = ($page['id'] ?? null);
+		if (is_string($id) === true && $id !== '') {
+			$out['id'] = $id;
+		}
+
+		foreach (['label', 'icon'] as $textKey) {
+			if (isset($page[$textKey]) === true && is_string($page[$textKey]) === true) {
+				$out[$textKey] = $page[$textKey];
+			}
+		}
+
+		return $out;
+	}//end identity()
+
+	/**
+	 * The page without a steps block that does not read its own record
+	 * collection, or null when no block is left: steps belong to one open
+	 * case (site-mijn-omgeving-components REQ-SMO-021).
+	 *
+	 * @param array<string, mixed> $entry The normalised page.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	private function withRecordBlocksOnRecordPagesOnly(array $entry): ?array {
+		$records = array_filter(
+			[($entry['record']['collection'] ?? null), ($entry['records']['collection'] ?? null)],
+			'is_string'
+		);
+		$entry['blocks'] = (new ListBlockNormaliser())->recordPageOnly(blocks: $entry['blocks'], recordCollections: array_values($records));
+		if ($entry['blocks'] === []) {
+			return null;
+		}
+
+		return $entry;
+	}//end withRecordBlocksOnRecordPagesOnly()
 
 	/**
 	 * The menu group a page names, trimmed, as a key to add to the page.

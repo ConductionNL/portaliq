@@ -126,6 +126,15 @@
 		     when it is empty, each task one button with its deadline badge. -->
 		<Skeleton v-else-if="loading" :label="mt('Loading')" />
 
+		<!-- A read that failed says so and offers to try again; it never
+		     reads as "no open tasks" (site-mijn-omgeving-components
+		     REQ-SMO-009). -->
+		<LoadError
+			v-else-if="failed"
+			:text="mt('Your tasks could not be loaded.')"
+			:retryLabel="mt('Try again')"
+			@retry="loadList" />
+
 		<EmptyState v-else-if="tasks.length === 0" :text="tr('No open tasks.')" />
 
 		<ul v-else class="pq-tasks">
@@ -144,6 +153,7 @@
 import BusyStatus from '../../components/inbox/BusyStatus.vue'
 import ActionRow from '../../components/mijn/ActionRow.vue'
 import EmptyState from '../../components/mijn/EmptyState.vue'
+import LoadError from '../../components/mijn/LoadError.vue'
 import Skeleton from '../../components/mijn/Skeleton.vue'
 import { deadlineBadge, mijnTranslator } from '../../components/mijn/rows.js'
 import { formatDate, sessionStore, takeTaskToOpen } from './inbox.js'
@@ -163,7 +173,7 @@ import { pageLocale, withStrings } from './translate.js'
 export default {
 	name: 'TasksPage',
 
-	components: { ActionRow, BusyStatus, EmptyState, Skeleton },
+	components: { ActionRow, BusyStatus, EmptyState, LoadError, Skeleton },
 
 	props: {
 		...PAGE_PROPS,
@@ -176,6 +186,7 @@ export default {
 	data() {
 		return {
 			loading: true,
+			failed: false,
 			tasks: [],
 			detail: null,
 			comment: '',
@@ -278,8 +289,15 @@ export default {
 		 */
 		async loadList() {
 			this.loading = true
-			const page = await this.api.fetchTasks()
-			this.tasks = Array.isArray(page?.results) ? page.results : []
+			this.failed = false
+			let page
+			try {
+				page = await this.api.fetchTasks()
+			} catch {
+				page = null
+			}
+			this.failed = !Array.isArray(page?.results) || page.failed === true
+			this.tasks = this.failed ? [] : page.results
 			this.loading = false
 		},
 

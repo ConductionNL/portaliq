@@ -111,6 +111,73 @@ class ListBlockNormaliser {
 	}//end inboxBlock()
 
 	/**
+	 * A `cases` block, or null when it names no `kind: cases` collection of
+	 * the contribution. `open: true` shows only running cases.
+	 *
+	 * @param array<string, mixed>             $block       The declared block.
+	 * @param array<int, array<string, mixed>> $collections The contribution's sanitised collections.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	public function casesBlock(array $block, array $collections): ?array {
+		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
+		if ($collection === null || ($collection['kind'] ?? null) !== 'cases') {
+			return null;
+		}
+
+		$entry = ['type' => 'cases', 'collection' => $collection['id']];
+		if (($block['open'] ?? null) === true) {
+			$entry['open'] = true;
+		}
+
+		return $entry + $this->common(block: $block);
+	}//end casesBlock()
+
+	/**
+	 * A `steps` block, or null when its collection declares no steps
+	 * provider. Whether the page is that collection's record page is the
+	 * page resolver's check (recordPageOnly()).
+	 *
+	 * @param array<string, mixed>             $block       The declared block.
+	 * @param array<int, array<string, mixed>> $collections The contribution's sanitised collections.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	public function stepsBlock(array $block, array $collections): ?array {
+		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
+		if ($collection === null || is_array($collection['steps'] ?? null) === false) {
+			return null;
+		}
+
+		return ['type' => 'steps', 'collection' => $collection['id']] + $this->common(block: $block);
+	}//end stepsBlock()
+
+	/**
+	 * The blocks without a `steps` block that does not read the page's own
+	 * record collection: steps belong to one open case.
+	 *
+	 * @param array<int, array<string, mixed>> $blocks            The page's normalised blocks.
+	 * @param array<int, string>               $recordCollections The page's `record` and `records` collections.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	public function recordPageOnly(array $blocks, array $recordCollections): array {
+		return array_values(
+			array_filter(
+				$blocks,
+				static fn (array $block): bool => ($block['type'] ?? null) !== 'steps'
+					|| in_array(($block['collection'] ?? null), $recordCollections, true) === true
+			)
+		);
+	}//end recordPageOnly()
+
+	/**
 	 * The keys every list block shares: `limit` and `label`.
 	 *
 	 * @param array<string, mixed> $block The declared block.

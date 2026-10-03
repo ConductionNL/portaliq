@@ -12,7 +12,18 @@
 -->
 <template>
 	<section class="pq-messages">
-		<Skeleton v-if="threads === null" :label="mt('Loading')" :rows="2" />
+		<Skeleton
+			v-if="threads === null && !failed"
+			:label="mt('Loading')"
+			:rows="2" />
+		<!-- A read that failed says so and offers to try again; it never
+		     reads as "no conversations" (site-mijn-omgeving-components
+		     REQ-SMO-009). -->
+		<LoadError
+			v-else-if="failed"
+			:text="mt('Your conversations could not be loaded.')"
+			:retryLabel="mt('Try again')"
+			@retry="load" />
 		<template v-else>
 			<MessageLanguagePicker
 				id="portaliq-message-language"
@@ -90,6 +101,7 @@ import MessageLanguagePicker from '../../components/inbox/MessageLanguagePicker.
 import TranslatedText from '../../components/inbox/TranslatedText.vue'
 import ActionRow from '../../components/mijn/ActionRow.vue'
 import EmptyState from '../../components/mijn/EmptyState.vue'
+import LoadError from '../../components/mijn/LoadError.vue'
 import Skeleton from '../../components/mijn/Skeleton.vue'
 import { mijnTranslator } from '../../components/mijn/rows.js'
 import { formatDateTime, rowId } from './inbox.js'
@@ -105,6 +117,7 @@ export default {
 	components: {
 		ActionRow,
 		EmptyState,
+		LoadError,
 		MessageLanguagePicker,
 		Skeleton,
 		TranslatedText,
@@ -117,6 +130,7 @@ export default {
 	data() {
 		return {
 			threads: null,
+			failed: false,
 			activeId: null,
 			messages: null,
 			language: '',
@@ -162,11 +176,23 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		async load() {
-			const [list, details] = await Promise.all([
-				this.api.fetchThreads(),
-				this.api.getDetails(),
-			])
-			this.threads = Array.isArray(list) ? list : []
+			this.failed = false
+			this.threads = null
+			let list
+			let details = null
+			try {
+				;[list, details] = await Promise.all([
+					this.api.fetchThreads({ orNull: true }),
+					this.api.getDetails(),
+				])
+			} catch {
+				list = null
+			}
+			if (!Array.isArray(list)) {
+				this.failed = true
+				return
+			}
+			this.threads = list
 			this.language = details?.messageLanguage || ''
 			if (this.threads.length > 0) {
 				await this.choose(rowId(this.threads[0]))
