@@ -29,7 +29,7 @@ test('the site inbox hands its loaded unread count to the shell badge', () => {
 		inbox,
 		/import \{ unreadIn \} from '\.\.\/\.\.\/\.\.\/shared\/inboxUnread\.js'/,
 	)
-	assert.match(inbox, /this\.unread = unreadIn\(this\.messages\)/)
+	assert.match(inbox, /unread\(\) \{\n\t\t\treturn unreadIn\(this\.messages\)/)
 	assert.match(inbox, /this\.\$emit\('unread', this\.unread\)/)
 	// The signed-in area passes it on, and the shell's badge reads it.
 	const area = readFileSync(

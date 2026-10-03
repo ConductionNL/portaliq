@@ -32,7 +32,7 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
 - **spec_ref**: `openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-every-surface-the-site-paints-must-read-a-theme-token-req-ptb-001`
 - **files**: `templates/site.php`, `css/site-theme.css`, `src/site/App.vue`, `.stylelintrc*`
 - **acceptance_criteria**:
-  - GIVEN a portal on a resolvable theme WHEN the site renders THEN the link order is bridge, set chain, vendored sheets, `site-theme.css`
+  - GIVEN a portal on a resolvable theme WHEN the site renders THEN the link order is vendored sheets, `site-theme.css`, bridge, set chain (the bridge link and its order are built by `site-links-the-theme-bridge`, REQ-STB-001; this task keeps the set chain and the token-only `site-theme.css`)
   - GIVEN a rendered portal WHEN only `--utrecht-document-background-color` changes THEN all painted surfaces change, including `.pq-site`'s scoped style
   - GIVEN `css/site-theme.css` WHEN stylelint runs THEN `color-no-hex` and `color-named: never` pass
 - Reference: 03fdd5f, 93a0ecd, 46d7e9f, fd37778

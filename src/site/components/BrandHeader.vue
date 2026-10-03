@@ -39,10 +39,12 @@
 
 			<!-- The sign-in controls appear only when the portal declares a
 			     mode other than `public`: an inert login button is a support
-			     ticket from every visitor who presses it. -->
+			     ticket from every visitor who presses it. A failed sign-in is
+			     said even without them: it is about the attempt that came
+			     back, not about the ways in. -->
 			<div class="ac-header__right-section">
 				<div
-					v-if="session || signInRoutes.length"
+					v-if="session || signInRoutes.length || signinFailedMessage"
 					class="ac-navigation pq-site__auth"
 					data-testid="site-auth">
 					<template v-if="session">
@@ -70,7 +72,7 @@
 							{{ signOutLabel }}
 						</button>
 					</template>
-					<nav v-else :aria-label="userMenuLabel">
+					<nav v-else-if="signInRoutes.length" :aria-label="userMenuLabel">
 						<!-- A failed sign-in the edge sent back (REQ-BEL-006). -->
 						<p
 							v-if="signinFailedMessage"
@@ -96,6 +98,9 @@
 							</li>
 						</ul>
 					</nav>
+					<p v-else role="alert" data-testid="site-signin-failed">
+						{{ signinFailedMessage }}
+					</p>
 				</div>
 			</div>
 		</div>

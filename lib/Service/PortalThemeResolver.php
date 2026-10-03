@@ -67,6 +67,26 @@ class PortalThemeResolver {
 	 */
 	private const THEME_APP_IDS = ['thematiq', 'nldesign'];
 
+	/**
+	 * The theme app's public bridge, relative to its `css/` directory.
+	 *
+	 * It maps the `--nldesign-*` layer every set defines onto the
+	 * `--utrecht-*`, `--tilburg-*` and `--conduction-*` roles the site paints
+	 * from (thematiq#355). Without it, 40 of the 52 sets load and change
+	 * nothing on the site.
+	 *
+	 * @var string
+	 */
+	public const BRIDGE_STYLESHEET = 'public-bridge';
+
+	/**
+	 * The faces the theme app bundles (Fira Sans, Source Sans 3), relative to
+	 * its `css/` directory. A set names a family; this file declares it.
+	 *
+	 * @var string
+	 */
+	public const FONT_STYLESHEET = 'fonts';
+
 
 	/**
 	 * Constructor.
@@ -134,6 +154,31 @@ class PortalThemeResolver {
 
 		return 'tokens/' . $theme;
 	}//end stylesheetFor()
+
+
+	/**
+	 * The theme app's own stylesheets the site links beside a set, relative
+	 * to its `css/` directory, each null when the installed theme app ships
+	 * none: its public bridge and its bundled faces.
+	 *
+	 * Existence is checked on disk (ThemeAppAsset): a link to a missing app
+	 * asset fails on every page load and looks like no theme at all. Whether
+	 * to link them is the caller's call: only with a resolved set.
+	 *
+	 * @return array{bridge: string|null, fonts: string|null}
+	 *
+	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
+	 */
+	public function shippedStylesheets(): array {
+		$root = $this->themeAppPath();
+		$asset = new ThemeAppAsset();
+
+		return [
+			'bridge' => $asset->stylesheetIfShipped(root: $root, name: self::BRIDGE_STYLESHEET),
+			'fonts'  => $asset->stylesheetIfShipped(root: $root, name: self::FONT_STYLESHEET),
+		];
+	}//end shippedStylesheets()
 
 
 	/**
