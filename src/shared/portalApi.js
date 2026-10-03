@@ -251,10 +251,16 @@ export function createPortalApi(config, store = {}) {
 		 * collection across the subject's contributions, merged, sorted by
 		 * `receivedAt` descending, each row carrying a `_source` provenance
 		 * tag (`appId`/`label`/`register`/`schema`/`collection`).
+		 *
+		 * @return {Promise<Array<object>|null>} The rows, or null when the
+		 *   server did not answer, so a failed read is not an empty inbox.
 		 */
 		async fetchInbox() {
 			const body = await get('/inbox')
-			return body && Array.isArray(body.messages) ? body.messages : []
+			if (body === null) {
+				return null
+			}
+			return Array.isArray(body?.messages) ? body.messages : []
 		},
 
 		/**

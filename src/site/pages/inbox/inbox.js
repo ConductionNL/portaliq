@@ -2,11 +2,11 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The plain logic of the site's inbox: row ids, dates, the read toggle, the
- * unread count the menu shows, and the two ways out of a message (open the
- * record it is about, view the task it asks for). The same behaviour as the
- * React portal's InboxPage.jsx and App.jsx, without a framework, so node can
- * test it.
+ * The plain logic of the site's inbox: row ids, dates, the read toggle and
+ * the two ways out of a message (open the record it is about, view the task
+ * it asks for). The same behaviour as the React portal's InboxPage.jsx and
+ * App.jsx, without a framework, so node can test it. The unread count is the
+ * page's own, from its rows (src/shared/inboxUnread.js).
  */
 
 import { navKeyFor, OPEN_STORAGE_KEY } from '../../../shared/openRecord.js'
@@ -89,18 +89,6 @@ export function hasReadiness(message) {
  */
 export function markedRead(messages, id) {
 	return (messages || []).map((m) => (rowId(m) === id ? { ...m, read: true } : m))
-}
-
-/**
- * The unread count after one message was read: never below zero.
- *
- * @param {number|null|undefined} count The count before.
- * @return {number} The count after.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
- */
-export function unreadAfterRead(count) {
-	const n = Number(count)
-	return Number.isFinite(n) ? Math.max(0, n - 1) : 0
 }
 
 /**

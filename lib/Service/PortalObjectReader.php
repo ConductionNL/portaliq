@@ -68,6 +68,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use DateTimeImmutable;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -849,6 +850,8 @@ class PortalObjectReader {
 	 * @param string $organisation The subject's tenant (may be empty).
 	 *
 	 * @return array<string, true> Verified target ids as a lookup set.
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
 	 */
 	private function verifiedJoinTargets(object $objectService, array $via, string $scopeValue, string $organisation): array {
 		$joinScopeField = (string)$via['scopeField'];
@@ -878,6 +881,8 @@ class PortalObjectReader {
 		}
 
 		$targets = [];
+		$liveRows = new ViaJoinRowFilter();
+		$now = new DateTimeImmutable();
 		foreach ($joinRows as $joinRow) {
 			$row = $this->normalise(row: $joinRow);
 			if ($row === null) {
@@ -889,6 +894,12 @@ class PortalObjectReader {
 			}
 
 			if ($this->organisationMatches(row: $row, organisation: $organisation) === false) {
+				continue;
+			}
+
+			// A withdrawn, terminated, revoked or expired join row grants
+			// nothing (site-mijn-omgeving-components REQ-SMO-023).
+			if ($liveRows->grants(row: $row, via: $via, now: $now) === false) {
 				continue;
 			}
 
@@ -1022,6 +1033,7 @@ class PortalObjectReader {
 	 * @return bool
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
 	 */
 	private function isValidVia(mixed $via): bool {
 		if (is_array($via) === false) {
@@ -1044,7 +1056,8 @@ class PortalObjectReader {
 			return false;
 		}
 
-		return true;
+		// The live-row members (REQ-SMO-023): malformed fails the whole via.
+		return (new ViaJoinRowFilter())->isValid(via: $via);
 	}//end isValidVia()
 
 	/**

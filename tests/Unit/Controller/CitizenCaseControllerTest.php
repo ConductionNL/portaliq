@@ -65,6 +65,9 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
  * @uses   \OCA\Portaliq\Service\PortalCaseDocumentReader
  * @uses   \OCA\Portaliq\Service\MandatedCaseReader
+ * @uses   \OCA\Portaliq\Service\CitizenCaseProjection
+ * @uses   \OCA\Portaliq\Service\PortalFieldProjector
+ * @uses   \OCA\Portaliq\Service\CaseRowMarker
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
