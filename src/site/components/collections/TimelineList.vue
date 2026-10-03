@@ -53,10 +53,18 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {string} The declared label, else "What happened".
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
+		 */
 		heading() {
 			return this.label || this.t('What happened')
 		},
 
+		/**
+		 * @return {Array<object>} The entries, newest first.
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
+		 */
 		ordered() {
 			return newestFirst(this.entries)
 		},
