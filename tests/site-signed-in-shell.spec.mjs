@@ -106,9 +106,10 @@ test('every entry has its own in-site route under /mijn, and the route finds it 
 	assert.equal(navEntryForRoute(nav, '/zoeken'), null)
 })
 
-test('a bare /mijn or a page not offered opens the default page; an offered page stays', () => {
+test('a page not offered opens the default page; an offered page and the bare /mijn (the home) stay', () => {
 	const nav = buildNav(CONTRIBUTIONS.contributions, identity, { cases: true })
-	assert.equal(accountRedirect(nav, '/mijn'), '/mijn/cases')
+	// site-mijn-omgeving-components REQ-SMO-007: /mijn is the home now.
+	assert.equal(accountRedirect(nav, '/mijn'), '')
 	assert.equal(accountRedirect(nav, '/mijn/other/page'), '/mijn/cases')
 	assert.equal(accountRedirect(nav, '/mijn/learniq/children'), '')
 	assert.equal(accountRedirect(nav, '/zoeken'), '')

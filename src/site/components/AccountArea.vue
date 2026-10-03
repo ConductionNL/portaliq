@@ -86,6 +86,24 @@
 				{{ t('No contributions to show yet.') }}
 			</p>
 
+			<!-- `/mijn` itself: the resident's home, loaded on demand
+			     (site-mijn-omgeving-components REQ-SMO-007, design D4). -->
+			<template v-else-if="isHome">
+				<component
+					:is="homeComponent"
+					v-if="homeComponent"
+					:session="session"
+					:nav="nav"
+					:contributions="contributions"
+					:api="api"
+					:t="t"
+					:locale="locale"
+					@navigate="$emit('navigate', $event)" />
+				<p v-else class="utrecht-paragraph" role="status">
+					{{ t('Loading…') }}
+				</p>
+			</template>
+
 			<template v-else-if="entry">
 				<h1
 					v-if="!ownsHeading"
@@ -117,7 +135,11 @@ import PlaceholderPage from '../pages/PlaceholderPage.vue'
 import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
 import { navKeyFor, OPEN_STORAGE_KEY } from '../../shared/openRecord.js'
-import { routeForNav } from '../../shared/portalNav.js'
+import {
+	ACCOUNT_ROUTE,
+	recordIdOfRoute,
+	routeForNav,
+} from '../../shared/portalNav.js'
 import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
 
 /**
@@ -204,6 +226,8 @@ export default {
 			// gets only those, and nothing lands on its DOM as an attribute.
 			pageComponent: null,
 			pageLoading: false,
+			// The `/mijn` home, loaded the first time it is opened.
+			homeComponent: null,
 		}
 	},
 
@@ -225,6 +249,21 @@ export default {
 		 *
 		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
+		/**
+		 * Whether `/mijn` itself is on screen, signed in with something to
+		 * show: then the home renders instead of a page.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 */
+		isHome() {
+			return (
+				Boolean(this.session)
+				&& this.nav.length > 0
+				&& this.currentRoute === ACCOUNT_ROUTE
+			)
+		},
+
 		ownsHeading() {
 			return pageOwnsHeading(this.entry)
 		},
@@ -253,6 +292,9 @@ export default {
 				closedMarker: this.contributions?.cases?.closedMarker === true,
 				canOpen: (target) => navKeyFor(this.nav, target) !== null,
 				openCase: (target, row) => this.openCase(target, row),
+				// The record a route chooses on a record page
+				// (site-mijn-omgeving-components REQ-SMO-008).
+				routeRecordId: recordIdOfRoute(this.currentRoute),
 			}
 			const wanted = declaredProps(this.pageComponent)
 			return Object.fromEntries(
@@ -262,6 +304,27 @@ export default {
 	},
 
 	watch: {
+		/**
+		 * Load the home the first time `/mijn` itself is on screen.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 */
+		isHome: {
+			immediate: true,
+			handler(home) {
+				if (home && !this.homeComponent) {
+					import('./mijn/MijnHome.vue')
+						.then((module) => {
+							this.homeComponent = markRaw(module.default || module)
+						})
+						.catch(() => {
+							this.homeComponent = markRaw(PlaceholderPage)
+						})
+				}
+			},
+		},
+
 		entry: {
 			immediate: true,
 			handler() {

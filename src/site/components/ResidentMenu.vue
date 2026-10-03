@@ -36,16 +36,24 @@
 			<div
 				v-for="group in groups"
 				:key="group.key"
-				class="pq-resident-menu__group"
+				class="denhaag-sidenav pq-resident-menu__group"
 				data-testid="site-resident-menu-group">
 				<p :id="groupId(group)" class="pq-resident-menu__title">
 					{{ group.title }}
 				</p>
-				<ul class="pq-resident-menu__list" :aria-labelledby="groupId(group)">
-					<li v-for="item in group.items" :key="item.key">
+				<ul
+					class="denhaag-sidenav__list pq-resident-menu__list"
+					:aria-labelledby="groupId(group)">
+					<li
+						v-for="item in group.items"
+						:key="item.key"
+						class="denhaag-sidenav__item">
 						<a
-							class="pq-resident-menu__link"
+							class="denhaag-sidenav__link pq-resident-menu__link"
 							:class="{
+								'denhaag-sidenav__link--current': isCurrent(
+									item.link,
+								),
 								'pq-resident-menu__link--current': isCurrent(
 									item.link,
 								),
@@ -54,7 +62,20 @@
 							:aria-current="isCurrent(item.link) ? 'page' : undefined"
 							data-testid="site-resident-menu-link"
 							@click.prevent="select(item.link)">
-							<span>{{ item.name }}</span>
+							<!-- The page's icon, decorative: the label says it all
+							     (site-mijn-omgeving-components REQ-SMO-006). -->
+							<svg
+								v-if="iconPath(item)"
+								class="pq-resident-menu__icon"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+								focusable="false">
+								<path :d="iconPath(item)" fill="currentColor" />
+							</svg>
+							<span
+								class="denhaag-sidenav__link-label pq-resident-menu__label"
+								>{{ item.name }}</span
+							>
 							<span
 								v-if="item.badge"
 								class="pq-resident-menu__badge"
@@ -101,10 +122,38 @@ export default {
 			/** Whether the list is open on a phone; wider screens always show it. */
 			open: false,
 			listId: 'pq-resident-menu-list',
+			/** The icon paths by name, once loaded; none until then. */
+			icons: {},
 		}
 	},
 
+	/**
+	 * Load the Den Haag side navigation CSS and the icons on demand, so the
+	 * site's entry carries neither (site-mijn-omgeving-components D1).
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
+	 */
+	mounted() {
+		import('@gemeente-denhaag/sidenav/index.css').catch(() => {})
+		import('../lib/menuIcons.js')
+			.then((module) => {
+				this.icons = module.default || {}
+			})
+			.catch(() => {})
+	},
+
 	methods: {
+		/**
+		 * The path of an item's icon, or '' when it names none this menu has.
+		 *
+		 * @param {object} item A menu item.
+		 * @return {string} The SVG path data.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
+		 */
+		iconPath(item) {
+			return (item.icon && this.icons[item.icon]) || ''
+		},
+
 		/**
 		 * Whether an item is the page on screen. Drives `aria-current`, so the
 		 * place is announced and not only coloured.
@@ -181,6 +230,16 @@ export default {
 	color: var(--utrecht-link-color, LinkText);
 	text-decoration: none;
 	overflow-wrap: anywhere;
+}
+
+.pq-resident-menu__icon {
+	flex-shrink: 0;
+	inline-size: 1.25rem;
+	block-size: 1.25rem;
+}
+
+.pq-resident-menu__label {
+	flex-grow: 1;
 }
 
 .pq-resident-menu__link:hover {

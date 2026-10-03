@@ -16,6 +16,19 @@
 			{{ tr('This record is not in your list, so nothing of it is shown.') }}
 		</p>
 
+		<!-- A page that switches between records (`records`): for whom it
+		     shows, as a radio group; the choice is the route
+		     (site-mijn-omgeving-components REQ-SMO-008). -->
+		<RecordSwitcher
+			v-if="switching && recordRows.length > 0"
+			:rows="recordRows"
+			:chosen="recordId"
+			:titleFields="recordPage.titleFields || []"
+			:subtitleFields="recordPage.subtitleFields || []"
+			:legend="switcherLegend"
+			:name="`pq-switch-${currentPage ? currentPage.id : 'page'}`"
+			@choose="choose" />
+
 		<!-- A record page (contribution-record-page): the record's name and
 		     the way back once one is open, a hint while the list shows. -->
 		<div
@@ -31,7 +44,7 @@
 				{{ recordName }}
 			</h2>
 			<button
-				v-if="recordRows.length > 1"
+				v-if="recordRows.length > 1 && !switching"
 				type="button"
 				class="utrecht-button utrecht-button--secondary-action"
 				data-testid="record-back"
@@ -40,7 +53,7 @@
 			</button>
 		</div>
 		<p
-			v-else-if="recordPage && recordRows.length > 1"
+			v-else-if="recordPage && recordRows.length > 1 && !switching"
 			class="utrecht-paragraph"
 			data-testid="record-hint">
 			{{ tr('Open a name to see everything about it.') }}
@@ -283,6 +296,7 @@ import {
 	groupRows,
 } from '../../../shared/collectionGroups.js'
 import { consumeOpenTarget, forgetOpenTarget } from '../../../shared/openRecord.js'
+import { routeForNav } from '../../../shared/portalNav.js'
 import {
 	allGroups,
 	calendarItems,
@@ -296,6 +310,7 @@ import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.
 import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
 import { blocks as mijnBlocks } from '../../components/mijn/index.js'
+import { mijnTranslator } from '../../components/mijn/rows.js'
 import { createCollectionLoader, openRecordState } from './collectionLoader.js'
 import { resolveBlocks } from './pageBlocks.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
@@ -351,6 +366,7 @@ export default {
 		InboxBlock: defineAsyncComponent(mijnBlocks.inbox),
 		CasesBlock: defineAsyncComponent(mijnBlocks.cases),
 		StepsBlock: defineAsyncComponent(mijnBlocks.steps),
+		RecordSwitcher: defineAsyncComponent(mijnBlocks.recordSwitcher),
 	},
 
 	// The shell hands every page the whole contract (session, portal, nav, …);
@@ -384,6 +400,8 @@ export default {
 		today: { type: Date, default: null },
 		/** Every navigation entry, so a task or message row finds its page. */
 		nav: { type: Array, default: () => [] },
+		/** The record the route chooses (`/mijn/<app>/<page>/<id>`), or ''. */
+		routeRecordId: { type: String, default: '' },
 	},
 
 	emits: ['navigate', 'unread', 'refresh', 'recordOpened'],
@@ -428,7 +446,26 @@ export default {
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
 		 */
 		recordPage() {
-			return this.currentPage?.record || null
+			return this.currentPage?.record || this.currentPage?.records || null
+		},
+
+		/**
+		 * Whether the page switches between records (`records`): a record is
+		 * always open, the first by default, and a switcher picks another.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		switching() {
+			return Boolean(this.currentPage?.records)
+		},
+
+		/**
+		 * @return {string} The switcher's name for a screen reader.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		switcherLegend() {
+			return mijnTranslator(this.t, this.lang)('Choose for whom')
 		},
 
 		recordRows() {
@@ -455,6 +492,10 @@ export default {
 				return rows.find((row) => rowIdOf(row) === id) || null
 			}
 			const loading = this.store[this.recordPage.collection]?.loading
+			if (this.switching && !loading && !this.target) {
+				// A switching page opens on its first record.
+				return rows[0] || null
+			}
 			return rows.length === 1 && !loading ? rows[0] : null
 		},
 
@@ -548,7 +589,7 @@ export default {
 			return this.blocks.some(
 				(item) =>
 					item.collection && item.collection.id === target.collection,
-			)
+			) || this.recordPage?.collection === target.collection
 				? target
 				: null
 		},
@@ -575,6 +616,14 @@ export default {
 
 	mounted() {
 		this.loader = createCollectionLoader({ api: this.api, store: this.store })
+		if (!this.target && this.routeRecordId && this.recordPage) {
+			// The route chooses the record (`/mijn/<app>/<page>/<id>`).
+			this.target = {
+				app: this.currentContribution?.app || '',
+				collection: this.recordPage.collection,
+				id: this.routeRecordId,
+			}
+		}
 		if (!this.target) {
 			this.target = consumeOpenTarget(
 				window.location,
@@ -825,6 +874,30 @@ export default {
 
 		offers(action, row) {
 			return offersRowAction(action, row)
+		},
+
+		/**
+		 * Switch to another record: open it, and put it in the route so the
+		 * choice survives a reload and a shared link.
+		 *
+		 * @param {string} id The chosen record's id.
+		 * @return {void}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		choose(id) {
+			const row = this.recordRows.find(
+				(candidate) => rowIdOf(candidate) === id,
+			)
+			if (!row || !this.recordPage) {
+				return
+			}
+			this.select({ id: this.recordPage.collection }, row)
+			if (this.entry) {
+				this.$emit(
+					'navigate',
+					`${routeForNav(this.entry)}/${encodeURIComponent(id)}`,
+				)
+			}
 		},
 
 		select(collection, row) {
