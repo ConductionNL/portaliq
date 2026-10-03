@@ -108,9 +108,9 @@
 </template>
 
 <script>
-import { DEFAULT_MAX_SIZE_MB } from '../../../shared/fileFieldSubmit.js'
 import DateInputGroup from '../forms/DateInputGroup.vue'
 import FieldShell from '../forms/FieldShell.vue'
+import { DEFAULT_MAX_SIZE_MB } from '../../../shared/fileFieldSubmit.js'
 import { translatorOr } from './forms.js'
 
 import '@utrecht/select-css/dist/index.css'

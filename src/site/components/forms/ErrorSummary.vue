@@ -65,6 +65,7 @@ export default {
 			type: String,
 			default: 'Vul dit aan. Daarna kunt u het formulier versturen.',
 		},
+
 		/** The prefix of the document title while errors stand. */
 		titlePrefix: { type: String, default: 'Fout: ' },
 		/** A unique id base for the heading. */

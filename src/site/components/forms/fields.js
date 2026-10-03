@@ -150,3 +150,51 @@ export function summaryEntries(order, errors, targetOf) {
 		...loose.map((field) => ({ field, target: '', message: messages[field] })),
 	]
 }
+
+/**
+ * The layer's words for the blocks that speak Dutch only (the published
+ * intake form and the landing page form carry Dutch defaults, not a
+ * translator). The action forms translate the English keys in
+ * src/shared/i18n instead.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+ */
+export const DUTCH = Object.freeze({
+	optional: '(niet verplicht)',
+	optionalNote: 'Een veld zonder "niet verplicht" moet u invullen.',
+	summaryHeading: 'Er ontbreekt nog iets',
+	summaryIntro: 'Vul dit aan. Daarna kunt u het formulier versturen.',
+	titlePrefix: 'Fout: ',
+	required: '{field} is verplicht.',
+	date: '{field}: vul een geldige datum in, bijvoorbeeld 1 3 2026.',
+	dateHint: 'Bijvoorbeeld 1 3 2026',
+})
+
+/**
+ * The client-side errors of a form of plain field descriptions: a required
+ * field left empty, or a date that is not a real date. The server checks the
+ * whole submission again; this only spares the resident a round trip.
+ *
+ * @param {Array<{name: string, label: string, required: boolean, date: boolean}>} fields The visible fields.
+ * @param {Record<string, string>} values The values per field name.
+ * @param {{required: string, date: string}} [text] The messages, with `{field}`.
+ * @return {Record<string, string>} The message per field; empty when all is well.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+ */
+export function plainFieldErrors(fields, values, text = DUTCH) {
+	const errors = {}
+	for (const field of Array.isArray(fields) ? fields : []) {
+		const value = String((values || {})[field.name] ?? '').trim()
+		if (value === '') {
+			if (field.required === true) {
+				errors[field.name] = text.required.split('{field}').join(field.label)
+			}
+			continue
+		}
+		if (field.date === true && dateProblem(value)) {
+			errors[field.name] = text.date.split('{field}').join(field.label)
+		}
+	}
+	return errors
+}

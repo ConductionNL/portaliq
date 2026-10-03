@@ -79,13 +79,13 @@
 
 <script>
 import ErrorSummary from '../forms/ErrorSummary.vue'
-import { explainsOptional, summaryEntries } from '../forms/fields.js'
 import SchemaField from './SchemaField.vue'
 import {
 	oversizedFiles,
 	submitWithFiles,
 	uploadFiles,
 } from '../../../shared/fileFieldSubmit.js'
+import { explainsOptional, summaryEntries } from '../forms/fields.js'
 import {
 	collectionProviders,
 	fieldConfig,

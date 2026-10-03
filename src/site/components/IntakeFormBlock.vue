@@ -69,25 +69,50 @@
 				{{ render.formName }}
 			</h2>
 
-			<div
+			<p
+				v-if="explainOptional"
+				class="utrecht-paragraph pq-intake-form__note"
+				data-testid="intake-form-optional-note">
+				{{ text.optionalNote }}
+			</p>
+
+			<ErrorSummary
+				ref="summary"
+				:entries="summary"
+				idBase="pq-intake-summary"
+				:heading="text.summaryHeading"
+				:intro="text.summaryIntro"
+				:titlePrefix="text.titlePrefix" />
+
+			<FieldShell
 				v-for="field in fields"
+				:id="elementId(field)"
 				:key="field.name"
-				class="pq-intake-form__field">
-				<label :for="elementId(field)" class="utrecht-form-label">
-					{{ field.label || field.name }}
-					<span v-if="field.required" aria-hidden="true">*</span>
-				</label>
+				v-slot="{ describedBy }"
+				class="pq-intake-form__field"
+				:label="field.label || field.name"
+				:required="field.required === true"
+				:optionalLabel="text.optional"
+				:help="helpOf(field)"
+				:error="errors[field.name] || ''"
+				:group="isDate(field)"
+				:errorTestid="`intake-field-error-${field.name}`">
+				<DateInputGroup
+					v-if="isDate(field)"
+					:id="elementId(field)"
+					v-model="values[field.name]"
+					:required="field.required === true"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`" />
 
 				<select
-					v-if="Array.isArray(field.options) && field.options.length"
+					v-else-if="Array.isArray(field.options) && field.options.length"
 					:id="elementId(field)"
 					v-model="values[field.name]"
 					class="utrecht-select"
-					:required="field.required === true"
+					:aria-required="field.required === true ? 'true' : undefined"
 					:aria-invalid="errors[field.name] ? 'true' : 'false'"
-					:aria-describedby="
-						errors[field.name] ? `${elementId(field)}-error` : undefined
-					"
+					:aria-describedby="describedBy"
 					:data-testid="`intake-field-${field.name}`">
 					<option value="" disabled>
 						{{ selectPlaceholder }}
@@ -105,11 +130,9 @@
 					:id="elementId(field)"
 					v-model="values[field.name]"
 					class="utrecht-textarea"
-					:required="field.required === true"
+					:aria-required="field.required === true ? 'true' : undefined"
 					:aria-invalid="errors[field.name] ? 'true' : 'false'"
-					:aria-describedby="
-						errors[field.name] ? `${elementId(field)}-error` : undefined
-					"
+					:aria-describedby="describedBy"
 					:data-testid="`intake-field-${field.name}`" />
 
 				<input
@@ -118,21 +141,11 @@
 					v-model="values[field.name]"
 					class="utrecht-textbox"
 					:type="inputType(field)"
-					:required="field.required === true"
+					:aria-required="field.required === true ? 'true' : undefined"
 					:aria-invalid="errors[field.name] ? 'true' : 'false'"
-					:aria-describedby="
-						errors[field.name] ? `${elementId(field)}-error` : undefined
-					"
+					:aria-describedby="describedBy"
 					:data-testid="`intake-field-${field.name}`" />
-
-				<p
-					v-if="errors[field.name]"
-					:id="`${elementId(field)}-error`"
-					class="utrecht-form-field-error-message"
-					:data-testid="`intake-field-error-${field.name}`">
-					{{ errors[field.name] }}
-				</p>
-			</div>
+			</FieldShell>
 
 			<button
 				type="submit"
@@ -154,6 +167,9 @@
 </template>
 
 <script>
+import DateInputGroup from './forms/DateInputGroup.vue'
+import ErrorSummary from './forms/ErrorSummary.vue'
+import FieldShell from './forms/FieldShell.vue'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import {
@@ -162,6 +178,12 @@ import {
 	loadForm,
 	submitIntake,
 } from '../lib/intakeApi.js'
+import {
+	DUTCH,
+	explainsOptional,
+	plainFieldErrors,
+	summaryEntries,
+} from './forms/fields.js'
 
 /**
  * The form a catalogue entry starts, rendered on a portal page
@@ -173,9 +195,20 @@ import {
  * bearer when they are signed in, so their own details arrive prefilled; an
  * anonymous visitor gets no prefill. A valid submission answers with a
  * reference at once, before the case exists.
+ *
+ * The fields follow the NL Design System form guidance (site-multi-step-forms
+ * REQ-SMF-001 to 003): "(niet verplicht)" on optional fields and
+ * `aria-required` on required ones, a date as day, month and year, and an
+ * error summary above the fields whose heading takes focus. The client
+ * checks only empty required fields and impossible dates; the server's
+ * refusal per field lands in the same summary.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
  */
 export default {
 	name: 'IntakeFormBlock',
+
+	components: { DateInputGroup, ErrorSummary, FieldShell },
 
 	props: {
 		/** The serving portal's slug. Supplied by the host, never authored. */
@@ -316,6 +349,44 @@ export default {
 				Array.isArray(this.render.fields) ? this.render.fields : []
 			).filter((field) => field && field.name)
 		},
+
+		/**
+		 * The layer's Dutch words.
+		 *
+		 * @return {object} The words.
+		 */
+		text() {
+			return DUTCH
+		},
+
+		/**
+		 * Whether the form explains "(niet verplicht)": only when it mixes
+		 * required and optional fields.
+		 *
+		 * @return {boolean} True to show the sentence.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+		 */
+		explainOptional() {
+			return explainsOptional(
+				this.fields.map((field) => field.required === true),
+			)
+		},
+
+		/**
+		 * The error summary's lines: client and server errors, in field order.
+		 *
+		 * @return {Array<{field: string, target: string, message: string}>} The lines.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		summary() {
+			return summaryEntries(
+				this.fields.map((field) => field.name),
+				this.errors,
+				(name) => this.elementId({ name }),
+			)
+		},
 	},
 
 	watch: {
@@ -376,9 +447,22 @@ export default {
 		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
 		 */
 		async submit() {
-			this.submitting = true
 			this.sendFailed = false
-			this.errors = {}
+			this.errors = plainFieldErrors(
+				this.fields.map((field) => ({
+					name: field.name,
+					label: field.label || field.name,
+					required: field.required === true,
+					date: this.isDate(field),
+				})),
+				this.values,
+			)
+			if (Object.keys(this.errors).length > 0) {
+				this.$nextTick(() => this.focusSummary())
+				return
+			}
+
+			this.submitting = true
 			try {
 				const outcome = await submitIntake(
 					authBaseFrom(resolveApiBase()),
@@ -388,7 +472,8 @@ export default {
 					adoptSessionToken(),
 				)
 				if (outcome.reference === '') {
-					this.errors = outcome.errors
+					this.errors = this.messagesOf(outcome.errors)
+					this.$nextTick(() => this.focusSummary())
 					return
 				}
 
@@ -400,6 +485,68 @@ export default {
 			} finally {
 				this.submitting = false
 			}
+		},
+
+		/**
+		 * The server's refusal per field as one message each: a list of
+		 * messages is joined, anything that is not text is left out.
+		 *
+		 * @param {object} errors The server's `errors`.
+		 * @return {Record<string, string>} The message per field.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		messagesOf(errors) {
+			const out = {}
+			for (const [name, message] of Object.entries(errors || {})) {
+				const text = Array.isArray(message)
+					? message.filter((m) => typeof m === 'string').join(' ')
+					: typeof message === 'string'
+						? message
+						: ''
+				if (text !== '') {
+					out[name] = text
+				}
+			}
+			return out
+		},
+
+		/**
+		 * Move focus to the error summary's heading.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		focusSummary() {
+			if (this.$refs.summary) {
+				this.$refs.summary.focus()
+			}
+		},
+
+		/**
+		 * Whether a field is a date, asked as day, month and year.
+		 *
+		 * @param {object} field The field.
+		 * @return {boolean} True for `type: date`.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
+		 */
+		isDate(field) {
+			return field.type === 'date'
+		},
+
+		/**
+		 * The description under a field's label: its own, else a date's example.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The description, or ''.
+		 */
+		helpOf(field) {
+			if (typeof field.description === 'string' && field.description !== '') {
+				return field.description
+			}
+			return this.isDate(field) ? this.text.dateHint : ''
 		},
 
 		/**
@@ -431,6 +578,10 @@ export default {
 </script>
 
 <style scoped>
+.pq-intake-form__note {
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+
 .pq-intake-form__field + .pq-intake-form__field,
 .pq-intake-form__form > button,
 .pq-intake-form__error {
