@@ -92,6 +92,32 @@ export function markedRead(messages, id) {
 }
 
 /**
+ * Whether the resident may delete a message: the server marks it
+ * `_source.deletable` (portaliq's own notices, or an app's inbox that allows
+ * it), and it has an id to address it by.
+ *
+ * @param {object} message The message.
+ * @return {boolean}
+ * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+ */
+export function canDelete(message) {
+	return Boolean(rowId(message)) && message?._source?.deletable === true
+}
+
+/**
+ * The messages without the given ids, as a new list.
+ *
+ * @param {Array<object>} messages The messages.
+ * @param {Array<string>} ids The ids to leave out.
+ * @return {Array<object>}
+ * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+ */
+export function withoutMessages(messages, ids) {
+	const gone = new Set(ids || [])
+	return (messages || []).filter((m) => !gone.has(rowId(m)))
+}
+
+/**
  * The site route of the page that shows a message's record, or null when
  * none of the resident's pages shows that collection. The route is the
  * shell's own (src/shared/portalNav.js `routeForNav`).

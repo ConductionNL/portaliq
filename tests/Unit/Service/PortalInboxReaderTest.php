@@ -470,12 +470,45 @@ class PortalInboxReaderTest extends TestCase {
 		$this->assertSame('2026-10-01T09:00:00Z', $messages[0]['receivedAt']);
 		$this->assertSame(['app' => 'pipelinq', 'collection' => 'myQuestions', 'id' => 't1'], $messages[0]['recordLink']);
 		$this->assertSame(
-			['appId' => 'portaliq', 'label' => '', 'register' => 'portaliq', 'schema' => 'portalMessage', 'collection' => 'portalMessages'],
+			['appId' => 'portaliq', 'label' => '', 'register' => 'portaliq', 'schema' => 'portalMessage', 'collection' => 'portalMessages', 'deletable' => true],
 			$messages[0]['_source']
 		);
 		$this->assertSame('dossiq', $messages[1]['_source']['appId']);
 		$this->assertSame(2, (new PortalInboxReader($reader))->unreadCount(self::SUBJECT, $aggregate), 'the unread notice counts');
 	}//end testAResidentSeesTheirOwnPortalMessagesAlongsideAContributedInbox()
+
+	/**
+	 * Each row says whether the resident may delete it: portaliq's own
+	 * notices always, an app's inbox only when it declares `deletable: true`.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testEachRowSaysWhetherTheResidentMayDeleteIt(): void {
+		$aggregate = ['contributions' => [[
+			'app' => 'learniq',
+			'label' => 'School',
+			'collections' => [
+				['id' => 'meldingen', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'notice', 'scopeField' => 'guardianRef', 'deletable' => true],
+				['id' => 'cijfers', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'grade', 'scopeField' => 'guardianRef', 'deletable' => 'yes'],
+			],
+		]]];
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			fn (string $register, string $schema): array => [['id' => $schema . '-1', 'subject' => $schema, 'receivedAt' => '2026-10-0' . strlen($schema) . 'T09:00:00Z']]
+		);
+
+		$sources = [];
+		foreach ((new PortalInboxReader($reader))->aggregateInbox(self::SUBJECT, $aggregate) as $row) {
+			$sources[$row['id']] = ($row['_source']['deletable'] ?? false);
+		}
+
+		$this->assertSame(['notice-1' => true, 'grade-1' => false, 'portalMessage-1' => true], [
+			'notice-1' => $sources['notice-1'],
+			'grade-1' => $sources['grade-1'],
+			'portalMessage-1' => $sources['portalMessage-1'],
+		]);
+	}//end testEachRowSaysWhetherTheResidentMayDeleteIt()
 
 	/**
 	 * Another subject's notice never appears: the read is scoped on the

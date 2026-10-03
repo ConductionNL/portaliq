@@ -357,6 +357,23 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Delete one of the resident's own inbox messages
+		 * (inbox-delete-own-messages). The server re-checks that it is theirs.
+		 *
+		 * @param {object} message The message, with its `_source`.
+		 * @return {Promise<{ok: boolean, status: number}>}
+		 */
+		async deleteMessage(message) {
+			const source = message._source || {}
+			const id = message.id || message['@self']?.id
+			if (!id || !source.register || !source.schema) {
+				return { ok: false, status: 0 }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(source.collection || '')}`
+			return send('DELETE', path, {})
+		},
+
+		/**
 		 * The guardian's own message threads (guardian-direct-messages). An
 		 * answer the server refuses reads as no threads, never as an error.
 		 *

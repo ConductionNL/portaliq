@@ -154,6 +154,12 @@ class PortalInboxReader {
 						'schema' => (string)($collection['schema'] ?? ''),
 						'collection' => (string)($collection['id'] ?? ''),
 					];
+					// A resident may delete portaliq's own notices, and an app's
+					// message only where the app said so (inbox-delete-own-messages).
+					$ownSchema = (($collection['register'] ?? '') === self::OWN_MESSAGES['register'] && ($collection['schema'] ?? '') === self::OWN_MESSAGES['schema']);
+					if ($ownSchema === true || ($collection['deletable'] ?? false) === true) {
+						$row['_source']['deletable'] = true;
+					}
 
 					$rows[] = $row;
 				}
@@ -236,6 +242,7 @@ class PortalInboxReader {
 				'register' => self::OWN_MESSAGES['register'],
 				'schema' => self::OWN_MESSAGES['schema'],
 				'collection' => self::OWN_MESSAGES['id'],
+				'deletable' => true,
 			];
 			$rows[] = $row;
 		}

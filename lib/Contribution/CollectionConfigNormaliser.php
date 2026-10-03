@@ -218,8 +218,10 @@ class CollectionConfigNormaliser {
 	 *
 	 * `filesUpload` opts the collection into the scoped file-upload block and
 	 * `filesDownload` into the scoped file-download block
-	 * (portal-document-download). Only an explicit true enables either; a
-	 * malformed or absent value means false (fail-closed).
+	 * (portal-document-download); `deletable` lets a resident delete their
+	 * own messages from a `kind: inbox` collection (inbox-delete-own-messages).
+	 * Only an explicit true enables any of them; a malformed or absent value
+	 * means false (fail-closed).
 	 *
 	 * @param array<string, mixed> $collection The collection.
 	 *
@@ -228,7 +230,7 @@ class CollectionConfigNormaliser {
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
 	 */
 	private function normaliseFileFlags(array $collection): array {
-		foreach (['filesUpload', 'filesDownload'] as $flag) {
+		foreach (['filesUpload', 'filesDownload', 'deletable'] as $flag) {
 			if (array_key_exists($flag, $collection) === true) {
 				$collection[$flag] = ($collection[$flag] === true || $collection[$flag] === 'true');
 			}

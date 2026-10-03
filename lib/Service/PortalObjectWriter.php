@@ -315,6 +315,63 @@ class PortalObjectWriter {
 	}//end updateObject()
 
 	/**
+	 * Delete ONE row, only when it is the subject's alone: the same ownership
+	 * re-read as updateObject() (scope field and tenant), and a row whose
+	 * scope field is a list naming anyone else is refused too, so a delete
+	 * can never take a row away from another subject. Without a scope field
+	 * nothing is deleted. Every refusal and an unknown id answer the same
+	 * false, so the caller can give one 404 with no existence oracle.
+	 *
+	 * @param string $register The register slug/id.
+	 * @param string $schema The schema slug.
+	 * @param string $scopeField The field that must own the row.
+	 * @param string $subjectRef The server-derived subject reference.
+	 * @param string $organisation The subject's tenant (may be empty).
+	 * @param string $id The client-supplied id (never trusted).
+	 *
+	 * @return bool True when the row was the subject's and is deleted.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function deleteObject(
+		string $register,
+		string $schema,
+		string $scopeField,
+		string $subjectRef,
+		string $organisation,
+		string $id,
+	): bool {
+		$objectService = $this->objectService();
+		if ($id === '' || $scopeField === '' || $subjectRef === '' || $objectService === null) {
+			return false;
+		}
+
+		$existing = $this->fetchOwnedObject(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			scopeField: $scopeField,
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			id: $id
+		);
+		$stored = ($existing[$scopeField] ?? null);
+		if ($existing === null || (is_array($stored) === true && array_values(array_unique($stored)) !== [$subjectRef])) {
+			return false;
+		}
+
+		$uuid = (string)($existing['@self']['uuid'] ?? $existing['@self']['id'] ?? $existing['uuid'] ?? $existing['id'] ?? $id);
+		try {
+			$deleted = $this->insideWriteContext(write: static fn () => $objectService->deleteObject(uuid: $uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false));
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR delete failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return false;
+		}
+
+		return $deleted !== false;
+	}//end deleteObject()
+
+	/**
 	 * Re-read a row by id and return it ONLY when it is the subject's: the row
 	 * must carry the exact subject ref at `scopeField` (or a list that
 	 * contains it) and pass the tenant check — the SAME per-row ownership
