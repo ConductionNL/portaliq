@@ -251,8 +251,18 @@ test("site: every app's cases are in one list, each naming its source, with the 
 	assert.match(html, /Parkeervergunning[\s\S]*Aanvragen/)
 	assert.match(html, /Kapvergunning[\s\S]*Zaken/)
 	assert.doesNotMatch(html, /ZAAK-0/)
-	assert.match(html, /<button[^>]*>Kapvergunning<\/button>/)
-	assert.doesNotMatch(html, /<button[^>]*>Parkeervergunning<\/button>/)
+	// Each case is a Den Haag case card (site-mijn-omgeving-components
+	// REQ-SMO-002): one button whose name starts with the title when a page
+	// shows the case, plain text otherwise.
+	assert.match(
+		html,
+		/<button class="denhaag-case-card denhaag-case-card--list pq-case-card" type="button"><span class="denhaag-case-card__wrapper"><span class="denhaag-case-card__title pq-case-card__title">Kapvergunning<\/span>/,
+	)
+	assert.match(
+		html,
+		/<div class="denhaag-case-card denhaag-case-card--list pq-case-card"><span class="denhaag-case-card__wrapper"><span class="denhaag-case-card__title pq-case-card__title">Parkeervergunning<\/span>/,
+	)
+	assert.equal((html.match(/data-testid="my-cases-row"/g) || []).length, 2)
 })
 
 test("site: without the shell's page lookup a case is listed but not a button", async () => {
@@ -261,8 +271,8 @@ test("site: without the shell's page lookup a case is listed but not a button", 
 		t,
 		initialData: { ok: true, cases: CASES },
 	})
-	assert.match(html, /<span class="pq-cases__title">Kapvergunning<\/span>/)
-	assert.doesNotMatch(html, /pq-cases__open/)
+	assert.match(html, /pq-case-card__title">Kapvergunning<\/span>/)
+	assert.doesNotMatch(html, /<button class="denhaag-case-card/)
 })
 
 test('site: the closed tab lists the closed cases, is not there when nothing can be closed, and nothing reads "No cases yet."', async () => {
@@ -293,11 +303,14 @@ test('site: the closed tab lists the closed cases, is not there when nothing can
 		api: {},
 		t,
 		initialData: { ok: false, error: 'other', cases: [] },
+		locale: 'en',
 	})
-	assert.match(
-		failed,
-		/role="alert"[^>]*>Your cases could not be loaded\. Try again later\.</,
-	)
+	// A failed read is an alert with a way to try again, never "No cases
+	// yet." (site-mijn-omgeving-components REQ-SMO-009).
+	assert.match(failed, /data-testid="mijn-load-error"/)
+	assert.match(failed, /Your cases could not be loaded\./)
+	assert.match(failed, /data-testid="mijn-load-error-retry">Try again</)
+	assert.doesNotMatch(failed, /No cases yet/)
 })
 
 test('site: opening a case hands the shell the target and the row', async () => {
@@ -326,8 +339,14 @@ test('site: opening a case hands the shell the target and the row', async () => 
 const STATUS_UUID = '3c0f5a00-0000-4000-a000-00000000b001'
 
 test('a case status reads as its public label, never as a uuid', () => {
-	assert.equal(caseStatus({ status: STATUS_UUID, statusPublicLabel: 'Ontvangen' }), 'Ontvangen')
-	assert.equal(caseStatus({ status: STATUS_UUID, statusLabel: 'In behandeling' }), 'In behandeling')
+	assert.equal(
+		caseStatus({ status: STATUS_UUID, statusPublicLabel: 'Ontvangen' }),
+		'Ontvangen',
+	)
+	assert.equal(
+		caseStatus({ status: STATUS_UUID, statusLabel: 'In behandeling' }),
+		'In behandeling',
+	)
 	assert.equal(caseStatus({ status: STATUS_UUID }), '')
 	assert.equal(caseStatus({ status: 'Afgerond' }), 'Afgerond')
 	assert.equal(caseStatus({ status: { id: STATUS_UUID } }), '')
@@ -341,8 +360,20 @@ test('site: a case row shows the status label and no uuid', async () => {
 		initialData: {
 			ok: true,
 			cases: [
-				{ id: 'c-1', title: 'Verlichting fietspad Lindelaan', caseType: '3c0f5a00-0000-4000-a000-00000000a001', status: STATUS_UUID, statusPublicLabel: 'Ontvangen', _source: { appId: 'dossiq', label: 'Dossiq' } },
-				{ id: 'c-2', title: 'Planning fietspad Lindelaan', status: STATUS_UUID, _source: { appId: 'dossiq', label: 'Dossiq' } },
+				{
+					id: 'c-1',
+					title: 'Verlichting fietspad Lindelaan',
+					caseType: '3c0f5a00-0000-4000-a000-00000000a001',
+					status: STATUS_UUID,
+					statusPublicLabel: 'Ontvangen',
+					_source: { appId: 'dossiq', label: 'Dossiq' },
+				},
+				{
+					id: 'c-2',
+					title: 'Planning fietspad Lindelaan',
+					status: STATUS_UUID,
+					_source: { appId: 'dossiq', label: 'Dossiq' },
+				},
 			],
 		},
 	})

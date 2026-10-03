@@ -180,13 +180,43 @@
 				:collection="item.collection"
 				:rows="rowsOf(item)"
 				:loading="loadedOf(item.collection).loading"
+				:failed="loadedOf(item.collection).failed === true"
 				:app="currentContribution ? currentContribution.app || '' : ''"
 				:nav="nav"
 				:level="sectionLevel"
 				:t="tr"
 				:locale="lang"
 				:today="today || undefined"
-				@navigate="$emit('navigate', $event)" />
+				@navigate="$emit('navigate', $event)"
+				@retry="reload(item.collection)" />
+
+			<CasesBlock
+				v-else-if="item.kind === 'cases'"
+				:block="item.block"
+				:collection="item.collection"
+				:rows="rowsOf(item)"
+				:loading="loadedOf(item.collection).loading"
+				:failed="loadedOf(item.collection).failed === true"
+				:api="api"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:nav="nav"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)"
+				@retry="reload(item.collection)" />
+
+			<StepsBlock
+				v-else-if="item.kind === 'steps'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined" />
 
 			<InboxBlock
 				v-else-if="item.kind === 'inbox'"
@@ -319,6 +349,8 @@ export default {
 		// holds one (site-mijn-omgeving-components design D1).
 		TasksBlock: defineAsyncComponent(mijnBlocks.tasks),
 		InboxBlock: defineAsyncComponent(mijnBlocks.inbox),
+		CasesBlock: defineAsyncComponent(mijnBlocks.cases),
+		StepsBlock: defineAsyncComponent(mijnBlocks.steps),
 	},
 
 	// The shell hands every page the whole contract (session, portal, nav, …);
@@ -735,6 +767,17 @@ export default {
 		 */
 		groupHeadingId(item, group) {
 			return `${this.headingId(item)}-group-${group.value ? group.value.replace(/[^A-Za-z0-9_-]/g, '') : 'rest'}`
+		},
+
+		/**
+		 * Read one collection again, after its read failed.
+		 *
+		 * @param {object} collection The collection.
+		 * @return {void}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+		 */
+		reload(collection) {
+			this.loader?.load(collection)
 		},
 
 		loadedOf(collection) {

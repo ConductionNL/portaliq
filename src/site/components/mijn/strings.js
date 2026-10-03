@@ -28,6 +28,26 @@ export default {
 			'Uw berichten konden niet worden geladen.',
 		'Today at {time}': 'Vandaag om {time} uur',
 		'{date} at {time}': '{date} om {time} uur',
+		'Try again': 'Opnieuw proberen',
+		'Your tasks could not be loaded.': 'Uw taken konden niet worden geladen.',
+		'Your conversations could not be loaded.':
+			'Uw gesprekken konden niet worden geladen.',
+		'Your cases could not be loaded.': 'Uw zaken konden niet worden geladen.',
+		'What you still have to do could not be loaded.':
+			'Wat u nog moet doen kon niet worden geladen.',
+		'Where your case stands could not be loaded.':
+			'Waar uw zaak staat kon niet worden geladen.',
+		'You have no running cases.': 'U heeft geen lopende zaken.',
+		'You have no cases yet.': 'U heeft nog geen zaken.',
+		'There are no steps to show yet.': 'Er zijn nog geen stappen om te tonen.',
+		'All cases': 'Alle zaken',
+		'Case {reference}': 'Zaak {reference}',
+		'Step {current} of {total}': 'Stap {current} van {total}',
+		'Answer by {date}': 'Antwoord uiterlijk {date}',
+		Done: 'Gereed',
+		'Current step': 'Huidige stap',
+		'Still to come': 'Nog niet begonnen',
+		Closed: 'Afgerond',
 	},
 	en: {
 		'Before {date}': 'Before {date}',
@@ -43,5 +63,25 @@ export default {
 		'Your messages could not be loaded.': 'Your messages could not be loaded.',
 		'Today at {time}': 'Today at {time}',
 		'{date} at {time}': '{date} at {time}',
+		'Try again': 'Try again',
+		'Your tasks could not be loaded.': 'Your tasks could not be loaded.',
+		'Your conversations could not be loaded.':
+			'Your conversations could not be loaded.',
+		'Your cases could not be loaded.': 'Your cases could not be loaded.',
+		'What you still have to do could not be loaded.':
+			'What you still have to do could not be loaded.',
+		'Where your case stands could not be loaded.':
+			'Where your case stands could not be loaded.',
+		'You have no running cases.': 'You have no running cases.',
+		'You have no cases yet.': 'You have no cases yet.',
+		'There are no steps to show yet.': 'There are no steps to show yet.',
+		'All cases': 'All cases',
+		'Case {reference}': 'Case {reference}',
+		'Step {current} of {total}': 'Step {current} of {total}',
+		'Answer by {date}': 'Answer by {date}',
+		Done: 'Done',
+		'Current step': 'Current step',
+		'Still to come': 'Still to come',
+		Closed: 'Closed',
 	},
 }
