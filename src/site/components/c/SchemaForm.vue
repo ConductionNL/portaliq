@@ -11,6 +11,21 @@
 		novalidate
 		@submit.prevent="submit">
 		<p
+			v-if="explainOptional"
+			class="utrecht-paragraph pq-schema-form__intro"
+			data-testid="schema-form-optional-note">
+			{{ translate('A field without "optional" must be filled in.') }}
+		</p>
+
+		<ErrorSummary
+			ref="summary"
+			:entries="summary"
+			:idBase="`f-${action.id}-summary`"
+			:heading="translate('Something is still missing')"
+			:intro="translate('Fill this in. Then you can send the form.')"
+			:titlePrefix="translate('Error: ')" />
+
+		<p
 			v-if="error !== ''"
 			class="utrecht-paragraph pq-schema-form__error"
 			role="alert"
@@ -63,6 +78,8 @@
 </template>
 
 <script>
+import ErrorSummary from '../forms/ErrorSummary.vue'
+import { explainsOptional, summaryEntries } from '../forms/fields.js'
 import SchemaField from './SchemaField.vue'
 import {
 	oversizedFiles,
@@ -90,12 +107,18 @@ import {
  * what the resident may already read. A file field is never in the create
  * body: the record is created first, then each file is uploaded into it.
  *
+ * A failed check shows the error summary above the fields: its heading takes
+ * focus and each line links to its field. A form that mixes required and
+ * optional fields says first that a field without "niet verplicht" must be
+ * filled in.
+ *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
  */
 export default {
 	name: 'SchemaForm',
 
-	components: { SchemaField },
+	components: { ErrorSummary, SchemaField },
 
 	props: {
 		/** The normalised manifest action (`create` or `update`). */
@@ -130,6 +153,33 @@ export default {
 
 		fields() {
 			return formFields(this.action)
+		},
+
+		/**
+		 * Whether the form explains "(niet verplicht)": only when it mixes
+		 * required and optional fields.
+		 *
+		 * @return {boolean} True to show the sentence.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+		 */
+		explainOptional() {
+			return explainsOptional(
+				this.fields.map((field) => this.configOf(field).required === true),
+			)
+		},
+
+		/**
+		 * The error summary's lines, in field order, each linked to its input.
+		 *
+		 * @return {Array<{field: string, target: string, message: string}>} The lines.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		summary() {
+			return summaryEntries(this.fields, this.errors, (field) =>
+				this.inputId(field),
+			)
 		},
 
 		submitLabel() {
@@ -231,16 +281,15 @@ export default {
 		},
 
 		/**
-		 * Move focus to the first field with an error.
+		 * Move focus to the error summary's heading.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
 		 */
-		focusFirstError() {
-			const first = this.fields.find((field) => this.errors[field])
-			const element =
-				first && typeof document !== 'undefined'
-					? document.getElementById(this.inputId(first))
-					: null
-			if (element) {
-				element.focus()
+		focusSummary() {
+			if (this.$refs.summary) {
+				this.$refs.summary.focus()
 			}
 		},
 
@@ -304,10 +353,7 @@ export default {
 			this.done = ''
 			this.errors = fieldErrors(this.action, this.values, this.files, this.t)
 			if (Object.keys(this.errors).length > 0) {
-				this.error = this.translate(
-					'Not everything is filled in yet. Check the fields below.',
-				)
-				this.$nextTick(() => this.focusFirstError())
+				this.$nextTick(() => this.focusSummary())
 				return
 			}
 			const tooLarge = oversizedFiles(this.action, this.files)
@@ -355,6 +401,10 @@ export default {
 	flex-wrap: wrap;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-schema-form__intro {
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
 }
 
 .pq-schema-form__error {
