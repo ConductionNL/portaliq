@@ -77,6 +77,91 @@ class PortalAccessRequestServiceTest extends TestCase {
 	}//end testAnAskerSeesOnlyTheirOwnRequests()
 
 	/**
+	 * portaliq#797, identity-access-requests REQ-IAR-003: a grant records the
+	 * active mandate that opens the party's cases, named by who granted it.
+	 *
+	 * @return void
+	 */
+	public function testAGrantRecordsTheMandateThatOpensTheCases(): void {
+		$service = $this->service();
+		$request = $service->request(subjectRef: 'bookkeeper-1', organisation: 'gemeente-x', onBehalfOf: '87654321', reason: 'Ik doe de boekhouding');
+
+		$outcome = $service->grant(id: $request['uuid'], organisation: 'gemeente-x', decidedBy: 'clerk-anna');
+
+		$this->assertSame(PortalAccessRequestService::OUTCOME_DONE, $outcome);
+		$this->assertSame('granted', $this->storedRows('portalAccessRequest')[0]['state']);
+		$mandates = $this->storedRows('portalMandate');
+		$this->assertCount(1, $mandates);
+		$this->assertSame('bookkeeper-1', $mandates[0]['subjectRef']);
+		$this->assertSame('87654321', $mandates[0]['onBehalfOf']);
+		$this->assertSame('active', $mandates[0]['status']);
+		$this->assertSame('organisation', $mandates[0]['reach']);
+		$this->assertSame('clerk-anna', $mandates[0]['grantedBy']);
+		$this->assertSame('Granted on request', $mandates[0]['label']);
+
+	}//end testAGrantRecordsTheMandateThatOpensTheCases()
+
+	/**
+	 * REQ-IAR-003: a grant never reads granted without its mandate. When the
+	 * mandate write fails, the request is pending again.
+	 *
+	 * @return void
+	 */
+	public function testAGrantWhoseMandateFailsLeavesTheRequestPending(): void {
+		$writer = $this->fakeWriter();
+		$failing = $this->getMockBuilder(\OCA\Portaliq\Service\PortalObjectWriter::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['createObject', 'updateObject'])
+			->getMock();
+		$failing->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use ($writer): ?array {
+				if ($schema === 'portalMandate') {
+					return null;
+				}
+
+				return $writer->createObject($register, $schema, $scopeField, $subjectRef, $organisation, $data);
+			}
+		);
+		$failing->method('updateObject')->willReturnCallback(
+			fn (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data): ?array => $writer->updateObject($register, $schema, $scopeField, $subjectRef, $organisation, $id, $data)
+		);
+		$service = new PortalAccessRequestService($this->fakeReader(), $failing);
+		$request = $service->request(subjectRef: 'bookkeeper-1', organisation: 'gemeente-x', onBehalfOf: '87654321', reason: 'Ik doe de boekhouding');
+
+		$outcome = $service->grant(id: $request['uuid'], organisation: 'gemeente-x', decidedBy: 'clerk-anna');
+
+		$this->assertSame(PortalAccessRequestService::OUTCOME_MANDATE_FAILED, $outcome);
+		$this->assertSame('pending', $this->storedRows('portalAccessRequest')[0]['state']);
+		$this->assertSame([], $this->storedRows('portalMandate'));
+
+	}//end testAGrantWhoseMandateFailsLeavesTheRequestPending()
+
+	public function testARefusalKeepsItsReasonAndWritesNoMandate(): void {
+		$service = $this->service();
+		$request = $service->request(subjectRef: 'bookkeeper-1', organisation: 'gemeente-x', onBehalfOf: '87654321', reason: 'Ik doe de boekhouding');
+
+		$outcome = $service->refuse(id: $request['uuid'], organisation: 'gemeente-x', reason: 'No authorisation from the company', decidedBy: 'clerk-anna');
+
+		$row = $this->storedRows('portalAccessRequest')[0];
+		$this->assertSame(PortalAccessRequestService::OUTCOME_DONE, $outcome);
+		$this->assertSame('refused', $row['state']);
+		$this->assertSame('No authorisation from the company', $row['decisionReason']);
+		$this->assertSame([], $this->storedRows('portalMandate'));
+
+	}//end testARefusalKeepsItsReasonAndWritesNoMandate()
+
+	public function testAnAnsweredOrForeignRequestCannotBeGrantedAgain(): void {
+		$service = $this->service();
+		$request = $service->request(subjectRef: 'bookkeeper-1', organisation: 'gemeente-x', onBehalfOf: '87654321', reason: 'Ik doe de boekhouding');
+		$service->grant(id: $request['uuid'], organisation: 'gemeente-x', decidedBy: 'clerk-anna');
+
+		$this->assertSame(PortalAccessRequestService::OUTCOME_NOT_PENDING, $service->grant(id: $request['uuid'], organisation: 'gemeente-x', decidedBy: 'clerk-anna'));
+		$this->assertSame(PortalAccessRequestService::OUTCOME_NOT_FOUND, $service->grant(id: $request['uuid'], organisation: 'gemeente-y', decidedBy: 'clerk-bert'));
+		$this->assertCount(1, $this->storedRows('portalMandate'));
+
+	}//end testAnAnsweredOrForeignRequestCannotBeGrantedAgain()
+
+	/**
 	 * The service over the fake store.
 	 *
 	 * @return PortalAccessRequestService

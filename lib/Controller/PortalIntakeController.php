@@ -56,6 +56,8 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per step
  * of the intake: resolve, prefill, validate, challenge, queue, list.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- see above.
+ * @SuppressWarnings(PHPMD.StaticAccess)            -- PortalSessionService::trustSatisfies,
+ * the one trust ordering every portal gate shares.
  */
 class PortalIntakeController extends Controller implements PortalProtected {
 
@@ -89,6 +91,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	/**
 	 * The entry point: the published catalogue, by topic.
 	 *
+	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
+	 *
 	 * @return JSONResponse The topics and their requests.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
@@ -96,8 +100,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
-	public function catalogue(): JSONResponse {
-		$site = $this->site();
+	public function catalogue(string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -109,6 +113,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * The form a route is bound to, as it stands right now.
 	 *
 	 * @param string $route The in-portal route of the form page.
+	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
 	 *
 	 * @return JSONResponse The render payload, or a refusal.
 	 *
@@ -117,8 +122,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
-	public function form(string $route): JSONResponse {
-		$site = $this->site();
+	public function form(string $route, string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -129,8 +134,14 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		$render = $this->bindings->render(binding: $binding);
+		$subject = $this->subject();
+		$refusal = $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
 		$render['prefill'] = $this->prefill->forSubject(
-			subject: $this->subject(),
+			subject: $subject,
 			fields: (array)($render['fields'] ?? [])
 		);
 
@@ -150,6 +161,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param string $solution The solution to it.
 	 * @param int $expiresAt The expiry issued with the nonce.
 	 * @param string $signature This instance's signature over the nonce.
+	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
 	 *
 	 * @return JSONResponse The reference, the per-field errors, or a refusal.
 	 *
@@ -165,8 +177,9 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		string $solution = '',
 		int $expiresAt = 0,
 		string $signature = '',
+		string $portal = '',
 	): JSONResponse {
-		$site = $this->site();
+		$site = $this->site(portal: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -177,10 +190,10 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		$render = $this->bindings->render(binding: $binding);
-		if (($render['resolvesToNoForm'] ?? false) === true || ($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
-			// An external intake is filled in at its own host; the portal has
-			// nothing to accept here.
-			return new JSONResponse(['error' => 'form_not_submittable'], Http::STATUS_FORBIDDEN);
+		$subject = $this->subject();
+		$refusal = $this->submitRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		if (($render['settings']['challenge'] ?? false) === true) {
@@ -205,7 +218,6 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['errors' => $validated['errors']], Http::STATUS_BAD_REQUEST);
 		}
 
-		$subject = $this->subject();
 		$accepted = $this->queue->accept(
 			portal: (string)($site['slug'] ?? ''),
 			route: $route,
@@ -228,6 +240,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * What became of a submission.
 	 *
 	 * @param string $reference The reference the citizen was given.
+	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
 	 *
 	 * @return JSONResponse The real state, including a create that failed.
 	 *
@@ -236,8 +249,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
-	public function status(string $reference): JSONResponse {
-		$site = $this->site();
+	public function status(string $reference, string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -251,6 +264,58 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	}//end status()
 
 	/**
+	 * Why this form accepts no submission from this visitor, or null.
+	 *
+	 * @param array<string, mixed> $site The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render What the binding renders to.
+	 * @param array<string, mixed>|null $subject The subject, or null.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function submitRefusal(array $site, array $binding, array $render, ?array $subject): ?JSONResponse {
+		if (($render['resolvesToNoForm'] ?? false) === true || ($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
+			// An external intake is filled in at its own host; the portal has
+			// nothing to accept here.
+			return new JSONResponse(['error' => 'form_not_submittable'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
+	}//end submitRefusal()
+
+	/**
+	 * The refusal for a visitor whose session does not meet the form's
+	 * sign-in level, or null when the visitor may go on.
+	 *
+	 * The level is the strictest of the portal's, the binding's and the
+	 * form's own (portaliq#725). No session is a 401 so the page can offer the
+	 * sign-in; a session below the level is a 403.
+	 *
+	 * @param array<string, mixed> $site The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render What the binding renders to.
+	 * @param array<string, mixed>|null $subject The subject, or null.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function signInRefusal(array $site, array $binding, array $render, ?array $subject): ?JSONResponse {
+		$required = $this->bindings->requiredTrust(site: $site, binding: $binding, render: $render);
+		if ($required === null) {
+			return null;
+		}
+
+		if ($subject === null) {
+			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if (PortalSessionService::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
+			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end signInRefusal()
+
+	/**
 	 * The subject behind the bearer, or null.
 	 *
 	 * @return array<string, mixed>|null
@@ -262,9 +327,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	/**
 	 * The portal being visited, or null.
 	 *
+	 * @param string $portal The portal's slug, or empty for the host.
+	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function site(): ?array {
-		return $this->portals->resolve(request: $this->request);
+	private function site(string $portal = ''): ?array {
+		if ($portal === '') {
+			return $this->portals->resolve(request: $this->request, portalSlug: null);
+		}
+
+		return $this->portals->resolve(request: $this->request, portalSlug: $portal);
 	}//end site()
 }//end class

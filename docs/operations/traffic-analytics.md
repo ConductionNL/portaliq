@@ -597,6 +597,48 @@ replays one in a frame with `sandbox="allow-same-origin"` and no
 shows are where text was, not what it said. The overview's warning says
 how many recordings exist and how long they are kept.
 
+## Paths
+
+**Paths** on the Traffic page shows the steps visitors took. Pick a
+starting point, the start of a visit or a page, and read the steps
+forward. Or pick an ending point, the end of a visit or a page, and read
+the steps that led there. Each step lists its five busiest pages with
+their visits. The other pages of that step are summed into one **+N
+more** node. A red mark shows how many visits ended on a page (or began
+there, reading backward). Click a page, or press Enter on it, and the
+next steps only count the visits that passed it. Add or remove steps, up
+to ten. **Show as a table** lists the same numbers.
+
+Every count is a count of whole visits. A path is what one visit did,
+read from the raw events. It is not stitched together from page pairs:
+visits from A to B and visits from B to C can be different visits.
+
+Four rules decide what a path is:
+
+- Only page views are steps. Other events keep a visit alive, but they
+  are never drawn.
+- A step is the page's route, the same name the Pages list and a page's
+  own detail page use. On the built-in site that is the page, not the
+  site's address.
+- A page viewed twice in a row counts once, so a reload is not a step.
+- Visits are ordered and cut the same way as the daily figures: the
+  client's own order, the portal's inactivity timeout, and midnight UTC.
+- The segment you pick narrows the visits by the same rule as its
+  daily figures.
+
+Paths come from the raw events, so they only reach back as far as the
+portal keeps those (90 days unless `retentionDays` says otherwise). A
+longer period says which days the paths cover. One read looks at no more
+than 50,000 events, newest day first. When it stops there, the page says
+the paths show the most recent visits only, and names the days they
+cover. The result is kept for five minutes, so following a page or
+adding a step does not read the events again.
+
+The page asks `GET /index.php/apps/portaliq/api/traffic/paths` with
+`portal`, `from`, `to`, `segment`, `mode` (`start` or `end`), `anchor` (a
+page, or empty), `steps` (1 to 10) and `trail` (a JSON list with the
+chosen page per step). Administrators only.
+
 ## What you see
 
 **Reports, Traffic** shows one portal at a time over a period you choose
@@ -604,7 +646,7 @@ how many recordings exist and how long they are kept.
 portal declared any, one segment at a time, with an **Export** button
 that downloads the same selection: page views,
 sessions, visitors and engaged sessions, a chart per day, the top pages
-with entrances and exits, the most travelled steps between pages, sources
+with entrances and exits, the paths visitors took, sources
 by channel with the searched terms, and under **Visitors** the new versus
 returning split where the portal can tell, the signed in accounts where it
 links them, and the devices, browsers, operating systems, languages and

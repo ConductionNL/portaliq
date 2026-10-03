@@ -248,6 +248,72 @@ class PortalInvitationService {
 	}//end accept()
 
 	/**
+	 * Withdraw an invitation that was not accepted (REQ-ISA-002). The link in
+	 * the mail admits nobody afterwards. Withdrawing one twice changes
+	 * nothing.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 *
+	 * @return string '' when it is withdrawn, else `not_found` or `already_accepted`.
+	 *
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-see-and-withdraw-invitations-req-isa-002
+	 */
+	public function revoke(string $id, string $organisation): string {
+		$row = $this->findById(id: $id, organisation: $organisation);
+		if ($row === null) {
+			return 'not_found';
+		}
+
+		$state = (string)($row['state'] ?? 'sent');
+		if ($state === 'accepted') {
+			return 'already_accepted';
+		}
+
+		if ($state !== 'revoked') {
+			$this->markState(row: $row, state: 'revoked');
+		}
+
+		return '';
+	}//end revoke()
+
+	/**
+	 * The invitation with this id in this organisation, or null.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function findById(string $id, string $organisation): ?array {
+		if ($id === '' || $organisation === '') {
+			return null;
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'organisation',
+			subjectRef: $organisation,
+			organisation: $organisation,
+			limit: 500
+		);
+		foreach ($rows as $row) {
+			if (is_array($row) === false) {
+				continue;
+			}
+
+			$self = (array)($row['@self'] ?? []);
+			$ids  = [(string)($row['uuid'] ?? ''), (string)($row['id'] ?? ''), (string)($self['id'] ?? '')];
+			if (in_array($id, $ids, true) === true) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end findById()
+
+	/**
 	 * The invitation carrying this secret's hash, or null.
 	 *
 	 * @param string $token The secret.

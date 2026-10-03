@@ -1,0 +1,952 @@
+<!--
+  - SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+  - SPDX-License-Identifier: EUPL-1.2
+  -->
+
+<template>
+	<section
+		class="pq-contribution-page"
+		:data-page="currentPage ? currentPage.id : undefined"
+		data-testid="contribution-page">
+		<p
+			v-if="recordNotFound"
+			class="utrecht-paragraph pq-contribution-page__notice"
+			role="status"
+			data-testid="contribution-page-record-not-found">
+			{{ tr('This record is not in your list, so nothing of it is shown.') }}
+		</p>
+
+		<!-- A record page (contribution-record-page): the record's name and
+		     the way back once one is open, a hint while the list shows. -->
+		<div
+			v-if="recordPage && activeRecord"
+			class="pq-record__head"
+			:data-record="recordId"
+			data-testid="record-head">
+			<h2
+				:id="recordHeadingId"
+				ref="recordHeading"
+				class="utrecht-heading-2 pq-record__title"
+				tabindex="-1">
+				{{ recordName }}
+			</h2>
+			<button
+				v-if="recordRows.length > 1"
+				type="button"
+				class="utrecht-button utrecht-button--secondary-action"
+				data-testid="record-back"
+				@click="closeRecord">
+				{{ tr('Back to {label}', { label: backLabel }) }}
+			</button>
+		</div>
+		<p
+			v-else-if="recordPage && recordRows.length > 1"
+			class="utrecht-paragraph"
+			data-testid="record-hint">
+			{{ tr('Open a name to see everything about it.') }}
+		</p>
+
+		<template v-for="item in visibleBlocks" :key="item.index">
+			<RichTextBlock
+				v-if="item.kind === 'richText'"
+				:markdown="item.block.markdown || ''" />
+
+			<div
+				v-else-if="item.kind === 'table'"
+				class="pq-contribution-page__collection"
+				:data-collection="item.collection.id"
+				data-testid="contribution-page-collection">
+				<!-- One heading per title: a collection named like the page it
+				     is on is already titled by the shell's h1, whose id it then
+				     takes as its label. -->
+				<component
+					:is="`h${sectionLevel}`"
+					v-if="showsHeading(item)"
+					:id="headingId(item)"
+					class="utrecht-heading-3">
+					{{ item.collection.label }}
+				</component>
+				<!-- A collection that declares groupByField shows one table per
+				     child, each named by its own heading
+				     (collection-group-by-field). -->
+				<template
+					v-for="group in groupsOf(item)"
+					:key="group.value || '_rest'">
+					<h3
+						:id="groupHeadingId(item, group)"
+						class="utrecht-heading-4 pq-contribution-page__group"
+						data-testid="contribution-page-group">
+						{{ group.label || tr('Other') }}
+					</h3>
+					<CollectionTable
+						:collection="item.collection"
+						:objects="group.rows"
+						:loading="loadedOf(item.collection).loading"
+						:selectable="true"
+						:selectedRow="selected[item.collection.id] || null"
+						:rowActions="item.tableActions"
+						:offers="offers"
+						:busyRow="busyRow"
+						:labelledby="groupHeadingId(item, group)"
+						:t="tr"
+						:locale="lang"
+						@select="select(item.collection, $event)"
+						@rowAction="
+							(action, row) => onRowAction(item, action, row)
+						" />
+				</template>
+				<CollectionTable
+					v-if="groupsOf(item).length === 0"
+					:collection="item.collection"
+					:objects="rowsOf(item)"
+					:loading="loadedOf(item.collection).loading"
+					:selectable="true"
+					:selectedRow="selected[item.collection.id] || null"
+					:rowActions="item.tableActions"
+					:offers="offers"
+					:busyRow="busyRow"
+					:labelledby="labelOf(item)"
+					:t="tr"
+					:locale="lang"
+					@select="select(item.collection, $event)"
+					@rowAction="(action, row) => onRowAction(item, action, row)" />
+				<!-- Sign and decline get their own step, every other endpoint
+				     row action the plain confirm step: slice c fills it. -->
+				<SlotHost
+					v-if="pending && pending.collectionId === item.collection.id"
+					:key="pendingKey"
+					name="rowAction"
+					:dialog="pending.dialog"
+					:action="pending.action"
+					:viewAction="item.viewAction"
+					:collection="item.collection"
+					:row="pending.row"
+					:api="api"
+					:t="tr"
+					:locale="lang"
+					@done="afterWrite(item.collection)"
+					@close="pending = null" />
+			</div>
+
+			<DetailCard
+				v-else-if="item.kind === 'detail'"
+				:collection="item.collection"
+				:row="detailRow(item)"
+				:api="api"
+				:proposeAction="item.proposeAction"
+				:t="tr"
+				:locale="lang" />
+
+			<KpiCards
+				v-else-if="item.kind === 'kpi'"
+				:cards="item.block.cards || []"
+				:row="kpiRow(item)"
+				:loading="loadedOf(item.collection).loading"
+				:label="item.block.label || ''"
+				:caption="item.block.caption || null"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
+			<CalendarBlock
+				v-else-if="item.kind === 'calendar'"
+				:items="calendarOf(item)"
+				:loading="calendarLoading(item)"
+				:label="item.block.label || ''"
+				:level="sectionLevel"
+				:today="today || undefined"
+				:t="tr"
+				:locale="lang" />
+
+			<NewsBlock
+				v-else-if="item.kind === 'news'"
+				:api="api"
+				:limit="item.block.limit || 3"
+				:label="item.block.label || ''"
+				:level="sectionLevel"
+				:record="activeRecord"
+				:contribution="currentContribution"
+				:groups="openRecordGroups"
+				:initialFeed="initialFeed"
+				:t="tr"
+				:locale="lang"
+				@navigate="$emit('navigate', $event)" />
+
+			<!-- What the resident still has to do and their newest messages
+			     (site-mijn-omgeving-components), loaded on demand. -->
+			<TasksBlock
+				v-else-if="item.kind === 'tasks'"
+				:block="item.block"
+				:collection="item.collection"
+				:rows="rowsOf(item)"
+				:loading="loadedOf(item.collection).loading"
+				:failed="loadedOf(item.collection).failed === true"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:nav="nav"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)"
+				@retry="reload(item.collection)" />
+
+			<CasesBlock
+				v-else-if="item.kind === 'cases'"
+				:block="item.block"
+				:collection="item.collection"
+				:rows="rowsOf(item)"
+				:loading="loadedOf(item.collection).loading"
+				:failed="loadedOf(item.collection).failed === true"
+				:api="api"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:nav="nav"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)"
+				@retry="reload(item.collection)" />
+
+			<StepsBlock
+				v-else-if="item.kind === 'steps'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined" />
+
+			<DocumentsBlock
+				v-else-if="item.kind === 'documents'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
+			<TimelineBlock
+				v-else-if="item.kind === 'timeline'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
+			<InboxBlock
+				v-else-if="item.kind === 'inbox'"
+				:block="item.block"
+				:api="api"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:nav="nav"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)" />
+
+			<SlotHost
+				v-else-if="item.kind === 'citizenCase'"
+				name="citizenCase"
+				:block="item.block"
+				:collection="item.collection"
+				:quietWhenEmpty="item.quietWhenEmpty === true"
+				:row="selected[item.collection.id] || null"
+				:api="api"
+				:t="tr"
+				:locale="lang" />
+
+			<SlotHost
+				v-else-if="item.kind === 'timedTask'"
+				name="timedTask"
+				:block="item.block"
+				:collection="item.collection"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:attempts="loadedOf(item.collection).objects"
+				:api="api"
+				:t="tr"
+				:locale="lang"
+				@changed="afterWrite(item.collection)" />
+
+			<SlotHost
+				v-else-if="item.kind === 'action' || item.kind === 'cta'"
+				name="action"
+				:block="item.block"
+				:action="item.action"
+				:contribution="currentContribution"
+				:api="api"
+				:t="tr"
+				:locale="lang"
+				@created="(object, written) => afterWrite(written || item.action)" />
+		</template>
+	</section>
+</template>
+
+<script>
+import { defineAsyncComponent } from 'vue'
+import CalendarBlock from '../../components/collections/CalendarBlock.vue'
+import CollectionTable from '../../components/collections/CollectionTable.vue'
+import DetailCard from '../../components/collections/DetailCard.vue'
+import KpiCards from '../../components/collections/KpiCards.vue'
+import NewsBlock from '../../components/collections/NewsBlock.vue'
+import RichTextBlock from '../../components/collections/RichTextBlock.vue'
+import SlotHost from '../../components/collections/SlotHost.vue'
+import {
+	anyGrouped,
+	groupFieldOf,
+	groupLabelCollection,
+	groupRows,
+} from '../../../shared/collectionGroups.js'
+import { consumeOpenTarget, forgetOpenTarget } from '../../../shared/openRecord.js'
+import {
+	allGroups,
+	calendarItems,
+	narrowToRecord,
+	pickRow,
+	recordGroups,
+	recordTitle,
+	withLookups,
+} from '../../../shared/recordPage.js'
+import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'
+import { dialogFor } from '../../../shared/signing.js'
+import { rowIdOf } from '../../components/collections/cells.js'
+import { blocks as mijnBlocks } from '../../components/mijn/index.js'
+import { createCollectionLoader, openRecordState } from './collectionLoader.js'
+import { resolveBlocks } from './pageBlocks.js'
+import { collectionsTranslator, pageLocale } from './translate.js'
+
+/**
+ * Where a record link is kept across the sign-in.
+ *
+ * @return {Storage|null}
+ */
+function sessionStore() {
+	try {
+		return typeof window !== 'undefined' ? window.sessionStorage : null
+	} catch {
+		return null
+	}
+}
+
+/**
+ * One contribution page (slice b, b1): its ordered blocks, rendered from the
+ * contribution the page belongs to. The site's counterpart of the React
+ * portal's PageView.jsx, registered under the `contribution` key.
+ *
+ * Tables, detail cards, item lists, timelines and rich text are built here.
+ * Forms and buttons (`action`, `cta`), endpoint row action steps, change
+ * proposals and attached actions (slice c), timed tasks (slice d) and the
+ * resident's case (slice e) go to their named place (SlotHost, see
+ * blockSlots.js), so this page never builds another slice's screen.
+ *
+ * On mount the page loads every collection its blocks read. After a write it
+ * loads every collection on that register and schema again and emits
+ * `unread` with the fresh count.
+ *
+ * A record link (`#open=<app>/<collection>/<id>`, kept across the sign-in)
+ * that names a collection on this page selects that row, from the resident's
+ * own scoped rows only. A record not in that list opens nothing and says so.
+ *
+ * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+ */
+export default {
+	name: 'ContributionPage',
+
+	components: {
+		CalendarBlock,
+		CollectionTable,
+		DetailCard,
+		KpiCards,
+		NewsBlock,
+		RichTextBlock,
+		SlotHost,
+		// Each loads with its action rows and Den Haag CSS only when a page
+		// holds one (site-mijn-omgeving-components design D1).
+		TasksBlock: defineAsyncComponent(mijnBlocks.tasks),
+		InboxBlock: defineAsyncComponent(mijnBlocks.inbox),
+		CasesBlock: defineAsyncComponent(mijnBlocks.cases),
+		StepsBlock: defineAsyncComponent(mijnBlocks.steps),
+		DocumentsBlock: defineAsyncComponent(mijnBlocks.documents),
+		TimelineBlock: defineAsyncComponent(mijnBlocks.timeline),
+	},
+
+	// The shell hands every page the whole contract (session, portal, nav, …);
+	// this page reads none of those, and they must not land on the DOM.
+	inheritAttrs: false,
+
+	props: {
+		/** The navigation entry: `key`, `label`, `page`, `contribution`. */
+		entry: { type: Object, default: null },
+		/** The page, when no entry carries it. */
+		page: { type: Object, default: null },
+		/** The contribution, when no entry carries it. */
+		contribution: { type: Object, default: null },
+		/** The shared portal api, bound to the resident's bearer. */
+		api: { type: Object, default: null },
+		/** The contributions aggregate, or its list. */
+		contributions: { type: [Object, Array], default: null },
+		/** The site translator. */
+		t: { type: Function, default: null },
+		/** The language. */
+		locale: { type: String, default: '' },
+		/** A record link to open, when the shell already read it. */
+		openRecord: { type: Object, default: null },
+		/** Rows to start from, by collection id, for a server render or a test. */
+		initialData: { type: Object, default: null },
+		/** Rows selected from the start, by collection id. */
+		initialSelected: { type: Object, default: null },
+		/** A news feed to start from, for a server render or a test. */
+		initialFeed: { type: Array, default: null },
+		/** Today, for the calendar; a test passes a fixed day. */
+		today: { type: Date, default: null },
+		/** Every navigation entry, so a task or message row finds its page. */
+		nav: { type: Array, default: () => [] },
+	},
+
+	emits: ['navigate', 'unread', 'refresh', 'recordOpened'],
+
+	data() {
+		return {
+			store: { ...(this.initialData || {}) },
+			selected: { ...(this.initialSelected || {}) },
+			pending: null,
+			busyRow: null,
+			recordNotFound: false,
+			target: this.openRecord,
+			loader: null,
+		}
+	},
+
+	computed: {
+		currentPage() {
+			return this.entry?.page || this.page || null
+		},
+
+		currentContribution() {
+			return this.entry?.contribution || this.contribution || null
+		},
+
+		lang() {
+			return pageLocale(this.locale)
+		},
+
+		tr() {
+			return collectionsTranslator(this.t, this.lang)
+		},
+
+		blocks() {
+			return resolveBlocks(this.currentPage, this.currentContribution)
+		},
+
+		/**
+		 * The page's record declaration, or null for an ordinary page.
+		 *
+		 * @return {object|null}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 */
+		recordPage() {
+			return this.currentPage?.record || null
+		},
+
+		recordRows() {
+			return this.recordPage
+				? this.store[this.recordPage.collection]?.objects || []
+				: []
+		},
+
+		/**
+		 * The open record: the row picked from the subject's own list, or the
+		 * only row there is. A row outside that list never opens.
+		 *
+		 * @return {object|null}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 */
+		activeRecord() {
+			if (!this.recordPage) {
+				return null
+			}
+			const rows = this.recordRows
+			const picked = this.selected[this.recordPage.collection]
+			const id = rowIdOf(picked)
+			if (id) {
+				return rows.find((row) => rowIdOf(row) === id) || null
+			}
+			const loading = this.store[this.recordPage.collection]?.loading
+			return rows.length === 1 && !loading ? rows[0] : null
+		},
+
+		recordId() {
+			return rowIdOf(this.activeRecord) || ''
+		},
+
+		recordName() {
+			return recordTitle(this.activeRecord, this.recordPage?.titleFields)
+		},
+
+		recordHeadingId() {
+			return `pq-record-${this.currentPage?.id || 'page'}`
+		},
+
+		backLabel() {
+			const list = this.currentContribution?.collections?.find(
+				(c) => c && c.id === this.recordPage?.collection,
+			)
+			return list?.label || this.entry?.label || ''
+		},
+
+		/**
+		 * The blocks on screen: on a record page the list until a record is
+		 * open, then every other block.
+		 *
+		 * @return {Array<object>}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 */
+		visibleBlocks() {
+			const record = this.recordPage
+			if (!record) {
+				return this.blocks
+			}
+			const isList = (item) =>
+				item.kind === 'table' && item.collection?.id === record.collection
+			if (!this.activeRecord) {
+				return this.blocks.filter(
+					(item) => isList(item) || item.kind === 'richText',
+				)
+			}
+			return this.blocks.filter((item) => !isList(item))
+		},
+
+		openRecordGroups() {
+			return recordGroups(
+				this.currentContribution,
+				this.store,
+				this.activeRecord,
+			)
+		},
+
+		/**
+		 * The groups a group-bound row must be for: the open record's, else
+		 * every child's.
+		 *
+		 * @return {Array<string>}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
+		 */
+		scopeGroups() {
+			return this.activeRecord
+				? this.openRecordGroups
+				: allGroups(this.currentContribution, this.store)
+		},
+
+		/** Section headings sit one level below an open record's name. */
+		sectionLevel() {
+			return this.activeRecord ? 3 : 2
+		},
+
+		allContributions() {
+			const list = Array.isArray(this.contributions)
+				? this.contributions
+				: this.contributions?.contributions
+			return Array.isArray(list) && list.length > 0
+				? list
+				: [this.currentContribution].filter(Boolean)
+		},
+
+		pendingKey() {
+			return this.pending
+				? `${this.pending.action.id}:${rowIdOf(this.pending.row) || ''}`
+				: ''
+		},
+
+		targetOnPage() {
+			const target = this.target
+			if (!target || target.app !== this.currentContribution?.app) {
+				return null
+			}
+			return this.blocks.some(
+				(item) =>
+					item.collection && item.collection.id === target.collection,
+			)
+				? target
+				: null
+		},
+
+		targetState() {
+			const target = this.targetOnPage
+			return target
+				? openRecordState(this.store[target.collection], target)
+				: { state: 'waiting' }
+		},
+	},
+
+	watch: {
+		targetState(next) {
+			this.applyTarget(next)
+		},
+
+		currentPage() {
+			this.selected = {}
+			this.pending = null
+			this.loadPage()
+		},
+	},
+
+	mounted() {
+		this.loader = createCollectionLoader({ api: this.api, store: this.store })
+		if (!this.target) {
+			this.target = consumeOpenTarget(
+				window.location,
+				window.history,
+				sessionStore(),
+			)
+		}
+		this.loadPage()
+	},
+
+	methods: {
+		/**
+		 * Load every collection the page's blocks read, and the children's
+		 * names when a table groups.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 */
+		loadPage() {
+			if (this.loader && this.currentPage) {
+				this.loader.loadPage(this.currentPage, this.currentContribution)
+				this.loadGroupLabels()
+				this.loadRecordGroups()
+			}
+		},
+
+		/**
+		 * Load the rows that name the groups (the guardian's children), when
+		 * a table on this page groups its rows.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 */
+		loadGroupLabels() {
+			const source = groupLabelCollection(this.currentContribution)
+			const grouped = anyGrouped(
+				this.blocks
+					.filter((item) => item.kind === 'table')
+					.map((item) => item.collection),
+			)
+			if (source && grouped && !this.store[source.id]) {
+				this.loader.load(source)
+			}
+		},
+
+		/**
+		 * The groups of the guardian's children, when a news block on a record
+		 * page narrows the news to one child's groups.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+		 */
+		loadRecordGroups() {
+			const groups = this.currentContribution?.guardianAudience?.groups
+			const source = (this.currentContribution?.collections || []).find(
+				(c) => c && c.id === groups?.collection,
+			)
+			const groupBound = (scope) => Boolean(scope && scope.recordGroupsField)
+			const wanted =
+				(this.recordPage && this.blocks.some((item) => item.kind === 'news'))
+				|| this.blocks.some(
+					(item) =>
+						groupBound(item.block)
+						|| (item.block?.sources || []).some(groupBound),
+				)
+			if (source && wanted && !this.store[source.id]) {
+				this.loader.load(source)
+			}
+		},
+
+		/**
+		 * A block's rows, narrowed to the open record when it names a record field.
+		 *
+		 * @param {object} item The page block.
+		 * @return {Array<object>}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
+		 */
+		rowsOf(item) {
+			const rows = narrowToRecord(
+				this.loadedOf(item.collection).objects,
+				item.block,
+				this.activeRecord,
+				this.scopeGroups,
+			)
+			return withLookups(
+				rows,
+				item.block?.lookups,
+				this.store,
+				this.activeRecord,
+			)
+		},
+
+		/**
+		 * The row a kpi block reads.
+		 *
+		 * @param {object} item The kpi block.
+		 * @return {object|null}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
+		 */
+		kpiRow(item) {
+			return pickRow(this.rowsOf(item), item.block.pick)
+		},
+
+		/**
+		 * A calendar block's items.
+		 *
+		 * @param {object} item The calendar block.
+		 * @return {Array<object>}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
+		 */
+		calendarOf(item) {
+			return calendarItems(
+				item.block,
+				this.store,
+				this.activeRecord,
+				this.scopeGroups,
+			)
+		},
+
+		calendarLoading(item) {
+			return (item.block.sources || []).some(
+				(source) => this.loadedOf({ id: source.collection }).loading,
+			)
+		},
+
+		/**
+		 * The row a detail block shows: on a record page the open record for
+		 * the record collection, else the row picked in that table.
+		 *
+		 * @param {object} item The detail block.
+		 * @return {object|null}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 */
+		detailRow(item) {
+			if (
+				this.recordPage
+				&& item.collection.id === this.recordPage.collection
+			) {
+				return this.activeRecord
+			}
+			return this.selected[item.collection.id] || null
+		},
+
+		/**
+		 * Back to the list of a record page.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 */
+		closeRecord() {
+			if (this.recordPage) {
+				this.selected = {
+					...this.selected,
+					[this.recordPage.collection]: null,
+				}
+			}
+		},
+
+		/**
+		 * A table block's rows in groups, or [] to render it as one table.
+		 *
+		 * @param {object} item The page block.
+		 * @return {Array<{value: string, label: string, rows: Array<object>}>}
+		 *
+		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 */
+		groupsOf(item) {
+			if (this.activeRecord && item.block?.recordField) {
+				// One record's rows need no heading per record.
+				return []
+			}
+			const source = groupLabelCollection(this.currentContribution)
+			return groupRows(
+				this.loadedOf(item.collection).objects,
+				groupFieldOf(item.collection),
+				source ? this.store[source.id]?.objects || [] : [],
+			)
+		},
+
+		/**
+		 * The id of one group's heading, which labels that group's table.
+		 *
+		 * @param {object} item The page block.
+		 * @param {object} group The group.
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 */
+		groupHeadingId(item, group) {
+			return `${this.headingId(item)}-group-${group.value ? group.value.replace(/[^A-Za-z0-9_-]/g, '') : 'rest'}`
+		},
+
+		/**
+		 * Read one collection again, after its read failed.
+		 *
+		 * @param {object} collection The collection.
+		 * @return {void}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+		 */
+		reload(collection) {
+			this.loader?.load(collection)
+		},
+
+		loadedOf(collection) {
+			return (
+				this.store[collection.id] || {
+					loading: !this.initialData,
+					objects: [],
+				}
+			)
+		},
+
+		headingId(item) {
+			return `pq-collection-${item.index}-${item.collection.id}`
+		},
+
+		/**
+		 * Whether a collection shows its own heading: it has a label, and
+		 * the label is not the page title the shell already shows as h1.
+		 *
+		 * @param {object} item The page block.
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+		 */
+		showsHeading(item) {
+			const label = item.collection.label || ''
+			return label !== '' && label !== (this.entry && this.entry.label)
+		},
+
+		/**
+		 * The id of the heading that names a collection's table: its own,
+		 * else the shell's page title, else none.
+		 *
+		 * @param {object} item The page block.
+		 * @return {string} The id, or ''.
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+		 */
+		labelOf(item) {
+			if (this.showsHeading(item)) {
+				return this.headingId(item)
+			}
+			return item.collection.label ? 'site-account-title' : ''
+		},
+
+		offers(action, row) {
+			return offersRowAction(action, row)
+		},
+
+		select(collection, row) {
+			this.selected = { ...this.selected, [collection.id]: row }
+			if (this.recordPage && collection.id === this.recordPage.collection) {
+				// Opening a record moves the focus to its name, so a keyboard
+				// or screen reader user lands where the page changed.
+				this.$nextTick(() => this.$refs.recordHeading?.focus?.())
+			}
+		},
+
+		/**
+		 * Select the linked record once its collection has loaded, or say it
+		 * is not in the resident's list; then forget the link.
+		 *
+		 * @param {object} state What openRecordState answered.
+		 * @return {void}
+		 */
+		applyTarget(state) {
+			const target = this.targetOnPage
+			if (!target || state.state === 'waiting') {
+				return
+			}
+			if (state.state === 'found') {
+				this.selected = { ...this.selected, [target.collection]: state.row }
+			}
+			this.recordNotFound = state.state === 'missing'
+			forgetOpenTarget(sessionStore())
+			this.target = null
+			this.$emit('recordOpened', target)
+		},
+
+		/**
+		 * A row button: an endpoint action opens its step below the table, a
+		 * `type: update` transition runs at once with no field data.
+		 *
+		 * @param {object} item The resolved table block.
+		 * @param {object} action The action.
+		 * @param {object} row The row.
+		 * @return {Promise<void>}
+		 */
+		async onRowAction(item, action, row) {
+			if (isEndpointRowAction(action)) {
+				this.pending = {
+					collectionId: item.collection.id,
+					action,
+					row,
+					dialog: dialogFor(action),
+				}
+				return
+			}
+			if (!this.loader) {
+				return
+			}
+			this.busyRow = rowIdOf(row) || null
+			try {
+				await this.loader.transition(action, row, item.collection)
+			} finally {
+				this.busyRow = null
+			}
+		},
+
+		/**
+		 * After a write: load every collection on that register and schema
+		 * again, and hand the fresh unread count to the shell.
+		 *
+		 * @param {{register: string, schema: string}} written What was written to.
+		 * @return {Promise<void>}
+		 */
+		async afterWrite(written) {
+			if (!this.loader || !written) {
+				return
+			}
+			const unread = await this.loader.afterWrite(this.allContributions, {
+				register: written.register,
+				schema: written.schema,
+			})
+			if (typeof unread === 'number') {
+				this.$emit('unread', unread)
+			}
+		},
+	},
+}
+</script>
+
+<style scoped>
+.pq-contribution-page__collection {
+	margin-block-end: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-record__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--utrecht-space-block-sm, 0.5rem);
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-record__title {
+	margin: 0;
+}
+</style>

@@ -23,7 +23,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\DashboardController;
+use OCA\Portaliq\Service\AdminMenuAccess;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\AppFramework\Services\IInitialState;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
@@ -90,4 +92,20 @@ class DashboardControllerTest extends TestCase {
 		$this->assertSame($page->getTemplateName(), $catchAll->getTemplateName());
 		$this->assertSame('index', $catchAll->getTemplateName());
 	}//end testCatchAllRendersTheSameTemplateAsPage()
+
+	/**
+	 * The page hands the app the signed-in user's access flags, so the menu
+	 * shows only what their role may use (admin-menu-follows-roles).
+	 *
+	 * @return void
+	 */
+	public function testThePageHandsTheAppTheAccessFlags(): void {
+		$flags = ['admin' => false, 'pages' => false, 'accounts' => false, 'accessRequests' => false];
+		$access = $this->createMock(AdminMenuAccess::class);
+		$access->method('forCurrentUser')->willReturn($flags);
+		$state = $this->createMock(IInitialState::class);
+		$state->expects($this->once())->method('provideInitialState')->with('access', $flags);
+
+		(new DashboardController($this->createMock(IRequest::class), $access, $state))->page();
+	}//end testThePageHandsTheAppTheAccessFlags()
 }//end class

@@ -30,12 +30,33 @@
 //
 // See hydra ADR-036 for the v2 registry design.
 
-import { showInfo } from '@nextcloud/dialogs'
+import { getCurrentUser } from '@nextcloud/auth'
+import axios from '@nextcloud/axios'
+import {
+	showConfirmation,
+	showError,
+	showInfo,
+	showSuccess,
+	showWarning,
+} from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { spawnDialog } from '@nextcloud/vue/functions/dialog'
+import InviteDialog from './dialogs/InviteDialog.vue'
+import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
+import NewsItemDialog from './dialogs/NewsItemDialog.vue'
+import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
 import CustomExample from './views/CustomExample.vue'
+import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
+import { createFormBindingPreview } from './lib/formBindingPreview.js'
+import { refreshList } from './lib/listRefresh.js'
+import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
+import {
+	createStaffAccountActions,
+	createStaffAccountHandlers,
+} from './lib/staffAccountActions.js'
 
 /**
  * The `Open portal` row action, wired to Nextcloud's URL generator, toast and
@@ -46,6 +67,109 @@ const openPortalSite = createOpenPortalSite({
 	generateUrl,
 	notify: showInfo,
 	translate: (text) => t('portaliq', text),
+})
+
+/**
+ * The Grant and Refuse row actions on the Access requests page (#797), wired
+ * to the POST, the confirmation, the refusal dialog and the toasts. The
+ * factory imports none of them so `tests/access-requests.spec.mjs` can run it
+ * as a plain node script; see src/lib/accessRequestActions.js.
+ */
+const accessRequestHandlers = createAccessRequestHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	confirmGrant: (row) =>
+		showConfirmation({
+			name: t('portaliq', 'Grant this request?'),
+			text: t('portaliq', '{name} can then see the cases of {party}.', {
+				name: row?.displayName || row?.subjectRef || '',
+				party: row?.onBehalfOf || '',
+			}),
+			labelConfirm: t('portaliq', 'Grant'),
+			labelReject: t('portaliq', 'Cancel'),
+		}),
+	askReason: () => spawnDialog(RefuseAccessRequestDialog),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
+	// A row handler gets no handle on the list, so the page reloads to show
+	// the answered request in its new state.
+	reload: () => window.location.reload(),
+})
+
+/**
+ * The `Check form` row action on the Request forms page
+ * (portal-intake-form-as-an-object T03): says which form a binding opens
+ * today, or that it opens none and why. See src/lib/formBindingPreview.js.
+ */
+const formBindingPreview = createFormBindingPreview({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	notify: showSuccess,
+	notifyWarning: showWarning,
+	notifyError: showError,
+	translate: (text, vars) => t('portaliq', text, vars),
+})
+/**
+ * `Issue an account` and `Invite someone` on the Accounts and Invitations
+ * pages, and `Withdraw invitation` on an Invitations row
+ * (identity-staff-account-screens T04, T05). Each goes through
+ * PortalAccountAdminController behind portal.provision. The dialogs submit
+ * themselves so a refusal is shown where the clerk can correct it; see
+ * src/lib/staffAccountActions.js.
+ */
+const staffAccountHandlers = createStaffAccountHandlers({
+	actions: createStaffAccountActions({
+		post: (url, body) => axios.post(url, body),
+		generateUrl,
+		translate: (text, vars) => t('portaliq', text, vars),
+		formatDate: (iso) => {
+			const date = new Date(iso)
+			return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString()
+		},
+	}),
+	openIssue: (submit) => spawnDialog(IssueAccountDialog, { submit }),
+	openInvite: (submit) => spawnDialog(InviteDialog, { submit }),
+	confirmWithdrawInvitation: (row) =>
+		showConfirmation({
+			name: t('portaliq', 'Withdraw this invitation?'),
+			text: t(
+				'portaliq',
+				'The link sent to {email} admits nobody after this.',
+				{
+					email: row?.email || '',
+				},
+			),
+			labelConfirm: t('portaliq', 'Withdraw invitation'),
+			labelReject: t('portaliq', 'Cancel'),
+		}),
+	notify: showSuccess,
+	notifyError: showError,
+	// A header or row handler gets no handle on the list, so the page reloads
+	// to show the new account or the withdrawn invitation.
+	reload: () => window.location.reload(),
+})
+/**
+ * `New news item`, `Change`, `Publish` and `Take back` on the News page
+ * (staff-news-screen). Each goes through NewsController's staff routes, never
+ * the object form; see src/lib/newsAuthoring.js.
+ */
+const newsHandlers = createNewsHandlers({
+	api: createNewsApi({
+		get: (url) => axios.get(url),
+		post: (url, body) => axios.post(url, body),
+		put: (url, body) => axios.put(url, body),
+		generateUrl,
+	}),
+	openDialog: (props) => spawnDialog(NewsItemDialog, props),
+	currentUser: () => getCurrentUser()?.uid || '',
+	translate: (text, vars) => t('portaliq', text, vars),
+	notify: showSuccess,
+	notifyError: showError,
+	// A handler gets no handle on the list, so the list is fetched again with
+	// the page, sort and filters it had (news-list-keeps-its-page). Only a
+	// list that was never fetched here falls back to reloading the page.
+	reload: () => refreshList(NEWS_LIST) || window.location.reload(),
 })
 // Features & Roadmap page — thin wrapper around the lib's
 // CnFeaturesAndRoadmapView (in-product roadmap surface powered by
@@ -79,6 +203,28 @@ export default {
 	 * `navigate` target.
 	 */
 	openPortalSite,
+	/**
+	 * `Grant` and `Refuse` row actions on the Access requests index page
+	 * (#797). Handlers, not object edits: an answer goes through
+	 * AccessRequestAdminController, and a grant also records the mandate.
+	 */
+	...accessRequestHandlers,
+	/**
+	 * `Check form` row action on the Request forms index page.
+	 */
+	...formBindingPreview,
+	/**
+	 * `Issue an account`, `Invite someone` and `Withdraw invitation`
+	 * (identity-staff-account-screens). Handlers, not the object form: the
+	 * provision route de-duplicates the identity and the invite route mails
+	 * the secret.
+	 */
+	...staffAccountHandlers,
+	/**
+	 * The News page's actions (staff-news-screen): handlers, not the object
+	 * form, because news is written through NewsController's staff routes.
+	 */
+	...newsHandlers,
 	// Features & Roadmap page (lib's CnFeaturesAndRoadmapView) — wired up
 	// in src/manifest.json (the `FeaturesRoadmap` custom page + the
 	// `FeaturesRoadmapMenu` settings entry).

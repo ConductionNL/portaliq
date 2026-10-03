@@ -48,6 +48,36 @@ class PortalAccessRequestService {
 	private const SCHEMA = 'portalAccessRequest';
 
 	/**
+	 * The request was answered as asked.
+	 */
+	public const OUTCOME_DONE = 'done';
+
+	/**
+	 * No request with that id in that organisation.
+	 */
+	public const OUTCOME_NOT_FOUND = 'not_found';
+
+	/**
+	 * The request was already answered.
+	 */
+	public const OUTCOME_NOT_PENDING = 'not_pending';
+
+	/**
+	 * The grant could not record its mandate, so the request stays pending.
+	 */
+	public const OUTCOME_MANDATE_FAILED = 'mandate_failed';
+
+	/**
+	 * The schema recording a mandate.
+	 */
+	private const MANDATE_SCHEMA = 'portalMandate';
+
+	/**
+	 * The label beside a case a granted request opens.
+	 */
+	private const MANDATE_LABEL = 'Granted on request';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Lists the requests.
@@ -174,9 +204,9 @@ class PortalAccessRequestService {
 	/**
 	 * Answer a request with a grant or a refusal.
 	 *
-	 * Granting records the decision. It does NOT write a mandate: that is the
-	 * owner's separate, deliberate act, so a mis-click never silently opens an
-	 * organisation's cases.
+	 * The bare decision. A grant through the owner's route goes through
+	 * `grant()`, which also records the mandate, so a request never reads
+	 * `granted` without the access behind it (identity-access-requests D2).
 	 *
 	 * @param string $id The request's id.
 	 * @param string $organisation The tenant, re-checked against the row.
@@ -215,4 +245,142 @@ class PortalAccessRequestService {
 
 		return $written !== null;
 	}//end decide()
+
+	/**
+	 * Grant a request and record the mandate it opens, in one act.
+	 *
+	 * A request never reads `granted` without the mandate behind it: the
+	 * mandate is written first, and when it cannot be written the request is
+	 * left `pending` and the answer says so (identity-access-requests D2). When
+	 * the request can no longer be answered after all, the new mandate is
+	 * revoked again, so no access stands without a granted request.
+	 *
+	 * @param string $id The request's id.
+	 * @param string $organisation The tenant, re-checked against the row.
+	 * @param string $decidedBy The staff user granting it.
+	 *
+	 * @return string One of the OUTCOME_* constants.
+	 *
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
+	 */
+	public function grant(string $id, string $organisation, string $decidedBy): string {
+		$request = $this->pendingRequest(id: $id, organisation: $organisation);
+		if (is_string($request) === true) {
+			return $request;
+		}
+
+		if ($decidedBy === '') {
+			return self::OUTCOME_NOT_FOUND;
+		}
+
+		$mandate = $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::MANDATE_SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: $organisation,
+			data: [
+				'subjectRef' => (string)($request['subjectRef'] ?? ''),
+				'organisation' => $organisation,
+				'onBehalfOf' => (string)($request['onBehalfOf'] ?? ''),
+				'label' => self::MANDATE_LABEL,
+				'reach' => 'organisation',
+				'status' => 'active',
+				'grantedBy' => $decidedBy,
+				'grantedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+			]
+		);
+		if ($mandate === null) {
+			return self::OUTCOME_MANDATE_FAILED;
+		}
+
+		if ($this->decide(id: $id, organisation: $organisation, granted: true, decidedBy: $decidedBy) === true) {
+			return self::OUTCOME_DONE;
+		}
+
+		$this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::MANDATE_SCHEMA,
+			scopeField: 'organisation',
+			subjectRef: $organisation,
+			organisation: $organisation,
+			id: (string)($mandate['uuid'] ?? $mandate['id'] ?? ''),
+			data: ['status' => 'revoked']
+		);
+
+		return self::OUTCOME_NOT_FOUND;
+	}//end grant()
+
+	/**
+	 * Refuse a request, keeping the reason the asker will read.
+	 *
+	 * @param string $id The request's id.
+	 * @param string $organisation The tenant, re-checked against the row.
+	 * @param string $reason Why it is refused.
+	 * @param string $decidedBy The staff user refusing it.
+	 *
+	 * @return string One of the OUTCOME_* constants.
+	 *
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+	 */
+	public function refuse(string $id, string $organisation, string $reason, string $decidedBy): string {
+		if (trim($reason) === '') {
+			return self::OUTCOME_NOT_FOUND;
+		}
+
+		$request = $this->pendingRequest(id: $id, organisation: $organisation);
+		if (is_string($request) === true) {
+			return $request;
+		}
+
+		$written = $this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'organisation',
+			subjectRef: $organisation,
+			organisation: $organisation,
+			id: $id,
+			data: [
+				'state' => 'refused',
+				'decisionReason' => trim($reason),
+				'decidedBy' => $decidedBy,
+				'decidedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+			]
+		);
+		if ($written === null) {
+			return self::OUTCOME_NOT_FOUND;
+		}
+
+		return self::OUTCOME_DONE;
+	}//end refuse()
+
+	/**
+	 * The pending request with this id in this organisation, or the outcome
+	 * that says why there is none.
+	 *
+	 * @param string $id The request's id.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed>|string The row, or an OUTCOME_* constant.
+	 */
+	private function pendingRequest(string $id, string $organisation): array|string {
+		if ($id === '' || $organisation === '') {
+			return self::OUTCOME_NOT_FOUND;
+		}
+
+		foreach ($this->forOwner(organisation: $organisation, state: '') as $row) {
+			$rowId = (string)($row['uuid'] ?? $row['id'] ?? (($row['@self'] ?? [])['id'] ?? ''));
+			if ($rowId !== $id) {
+				continue;
+			}
+
+			if ((string)($row['state'] ?? '') !== 'pending') {
+				return self::OUTCOME_NOT_PENDING;
+			}
+
+			return $row;
+		}
+
+		return self::OUTCOME_NOT_FOUND;
+	}//end pendingRequest()
 }//end class

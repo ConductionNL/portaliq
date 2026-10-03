@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-and-elevated-trust-must-not-combine-on-one-entry
  */
@@ -54,7 +54,7 @@ use OCA\Portaliq\Service\PortalSchemaReader;
 /**
  * Validates and sanitises the v3 UI-configuration vocabulary, fail-closed.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  */
 class PortalManifestNormaliser {
@@ -118,7 +118,8 @@ class PortalManifestNormaliser {
 	 * @return array<string, mixed> The contribution with sanitised v3 config and
 	 *                              a resolved/synthesised `pages` array.
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T3
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
 	 */
 	public function normalise(array $contribution): array {
 		$collections = $this->collections->normaliseCollections(collections: (array)($contribution['collections'] ?? []));
@@ -128,6 +129,15 @@ class PortalManifestNormaliser {
 		// THIS contribution — a per-row transition button (approve/reject/close)
 		// may only reference a `type: update` action the subject is entitled to.
 		$collections = $this->collections->resolveRowActions(collections: $collections, actions: $actions);
+
+		// A timed task names five endpoint actions of THIS contribution
+		// (portal-take-assessment); a block that cannot be resolved falls
+		// back to an ordinary list.
+		$collections = (new TimedTaskConfigNormaliser())->resolve(collections: $collections, actions: $actions);
+
+		// The item list (my-dossiers): its remove action must be one of the
+		// collection's own row actions, so it resolves after them.
+		$collections = (new ItemListConfigNormaliser())->resolve(collections: $collections, actions: $actions);
 
 		$contribution['collections'] = $collections;
 		$contribution['actions'] = $actions;

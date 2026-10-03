@@ -155,6 +155,60 @@ class TrafficEventStoreTest extends TestCase {
 
 
 	/**
+	 * The bounded read says when its limit stopped it, asks for one row
+	 * more than the limit to know, and hands back lean rows: no `@self`,
+	 * no empty fields, and the location kept, because the route of a
+	 * built-in site page lives in its query (portal-traffic-path-explorer).
+	 *
+	 * @return void
+	 */
+	public function testTheBoundedReadSaysWhenItStoppedAndDropsTheMetadata(): void {
+		$fake = new class {
+			public array $configs = [];
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->configs[] = $config;
+				$rows = [];
+				for ($i = 0; $i < 5; $i++) {
+					$rows[] = [
+						'@self' => ['id' => 'u' . $i],
+						'name' => 'page_view',
+						'pagePath' => '/p' . $i,
+						'pageLocation' => 'https://x.test/site?route=/r' . $i,
+						'sequence' => 0,
+						'clientId' => null,
+						'region' => '',
+					];
+				}
+
+				return array_slice($rows, $config['offset'], $config['limit']);
+			}
+		};
+		$store = $this->store($fake);
+
+		$capped = $store->eventsForPaths(portal: 'p', from: '2026-09-20T00:00:00.000Z', to: '2026-09-21T00:00:00.000Z', limit: 3);
+		$this->assertTrue($capped['truncated']);
+		$this->assertSame(
+			[
+				['name' => 'page_view', 'pagePath' => '/p0', 'pageLocation' => 'https://x.test/site?route=/r0', 'sequence' => 0],
+				['name' => 'page_view', 'pagePath' => '/p1', 'pageLocation' => 'https://x.test/site?route=/r1', 'sequence' => 0],
+				['name' => 'page_view', 'pagePath' => '/p2', 'pageLocation' => 'https://x.test/site?route=/r2', 'sequence' => 0],
+			],
+			$capped['events']
+		);
+		$this->assertSame(4, $fake->configs[0]['limit'], 'one row more than the limit is asked for');
+		$this->assertSame(['occurredAt' => 'ASC'], $fake->configs[0]['sort']);
+		$this->assertSame(['portal' => 'p', 'occurredAt' => ['gte' => '2026-09-20T00:00:00.000Z', 'lt' => '2026-09-21T00:00:00.000Z']], $fake->configs[0]['filters']);
+
+		$exact = $store->eventsForPaths(portal: 'p', from: 'a', to: 'b', limit: 5);
+		$this->assertFalse($exact['truncated'], 'exactly the limit is not more than the limit');
+		$this->assertCount(5, $exact['events']);
+
+		$this->assertSame(['events' => [], 'truncated' => true], $store->eventsForPaths(portal: 'p', from: 'a', to: 'b', limit: 0));
+	}//end testTheBoundedReadSaysWhenItStoppedAndDropsTheMetadata()
+
+
+	/**
 	 * No OpenRegister means nothing written and nothing thrown.
 	 *
 	 * @return void

@@ -92,15 +92,17 @@ class NotificationDispatchService {
 	 * @param array<string, mixed> $subject The resolved subject (subjectRef, organisation,
 	 *                                      audience — audience is REQUIRED to resolve the
 	 *                                      app's manifest via the registry; trust is optional).
+	 * @param array<string, string> $record The record the trigger is about ({app, collection, id,
+	 *                                      label}), or [] for a trigger about no record.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 * @spec openspec/specs/supplier-portal/spec.md#dispatch-is-decoupled-from-the-request-path
 	 */
-	public function dispatch(string $ruleKey, string $appId, array $subject): void {
+	public function dispatch(string $ruleKey, string $appId, array $subject, array $record = []): void {
 		try {
-			$this->doDispatch(ruleKey: $ruleKey, appId: $appId, subject: $subject);
+			$this->doDispatch(ruleKey: $ruleKey, appId: $appId, subject: $subject, record: $record);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: notification dispatch matching failed — no email will be sent for this trigger',
@@ -116,10 +118,11 @@ class NotificationDispatchService {
 	 * @param string $ruleKey The trigger's rule key.
 	 * @param string $appId The contributing app.
 	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, string> $record The record the trigger is about, or [].
 	 *
 	 * @return void
 	 */
-	private function doDispatch(string $ruleKey, string $appId, array $subject): void {
+	private function doDispatch(string $ruleKey, string $appId, array $subject, array $record): void {
 		if ($ruleKey === '' || $appId === '') {
 			return;
 		}
@@ -152,6 +155,9 @@ class NotificationDispatchService {
 					'audience' => (string)($subject['audience'] ?? ''),
 					'appId' => $appId,
 					'ruleKey' => $ruleKey,
+					// The record a change rule is about ({app, collection, id,
+					// label}); the job links to it and names its label.
+					'record' => $record,
 				]
 			);
 
@@ -179,6 +185,12 @@ class NotificationDispatchService {
 
 		foreach ($notifications as $declared) {
 			if (is_string($declared) === true && $declared === $ruleKey) {
+				return true;
+			}
+
+			// A change rule (inbox-notifications-and-preferences) declares its
+			// key inside the rule object.
+			if (is_array($declared) === true && (string)($declared['ruleKey'] ?? '') === $ruleKey) {
 				return true;
 			}
 		}

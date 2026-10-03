@@ -87,10 +87,11 @@ class TrafficRollup {
 	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
 	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-each-daily-page-row-must-carry-its-sessions-visitors-sources-and-outbound-links
 	 */
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
-		$pages = $this->journeys->pages(sessions: $sessions);
+		$pages = $this->journeys->pages(sessions: $sessions, engaged: $totals['engagedBy']);
 		// NULL, NOT ZERO, in cookieless mode (Ruben, decision 2). A hash
 		// that does not survive the day cannot say whether it was here
 		// yesterday, and a zero would read as "nobody came back". The same
@@ -247,7 +248,8 @@ class TrafficRollup {
 	 *
 	 * @param array<int, array<string, mixed>> $sessions The sessions.
 	 *
-	 * @return array<string, mixed> pageViews, visitors, newVisitors, returningVisitors, accounts, engaged, seconds, events, lastEventAt.
+	 * @return array<string, mixed> pageViews, visitors, newVisitors, returningVisitors, accounts, engaged, engagedBy
+	 *                              (per session key, whether it was engaged), seconds, events, lastEventAt.
 	 */
 	private function totals(array $sessions): array {
 		$visitors = [];
@@ -256,9 +258,10 @@ class TrafficRollup {
 		$events = [];
 		$pageViews = 0;
 		$engaged = 0;
+		$engagedBy = [];
 		$seconds = 0.0;
 		$last = '';
-		foreach ($sessions as $session) {
+		foreach ($sessions as $key => $session) {
 			$visitors[$session['visitor']] = true;
 			$type = $this->visitorType(session: $session);
 			if ($type !== '' && ($types[$session['visitor']] ?? '') !== 'new') {
@@ -282,7 +285,8 @@ class TrafficRollup {
 			$duration = $this->duration(session: $session);
 			$seconds += $duration;
 			$pageViews += $views;
-			$engaged += (int)($views > 1 || $scrolled === true || $duration >= self::ENGAGED_SECONDS);
+			$engagedBy[$key] = ($views > 1 || $scrolled === true || $duration >= self::ENGAGED_SECONDS);
+			$engaged += (int)$engagedBy[$key];
 		}
 
 		ksort($events);
@@ -294,6 +298,7 @@ class TrafficRollup {
 			'returningVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'returning')),
 			'accounts' => count($accounts),
 			'engaged' => $engaged,
+			'engagedBy' => $engagedBy,
 			'seconds' => $seconds,
 			'events' => $events,
 			'lastEventAt' => $last,

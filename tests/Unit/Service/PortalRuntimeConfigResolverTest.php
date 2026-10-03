@@ -1,0 +1,723 @@
+<?php
+
+/**
+ * PortalRuntimeConfigResolverTest
+ *
+ * @category Test
+ * @package  OCA\Portaliq\Tests\Unit\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Tests\Unit\Service;
+
+use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
+use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
+use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
+use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
+use OCA\Portaliq\Service\PortalThemeResolver;
+use OCP\IConfig;
+use OCP\IRequest;
+use OCP\Security\ISecureRandom;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
+
+/**
+ * The portal object is the tenant source for `/portal` (WOO-566).
+ *
+ * These assertions are the executable form of a product decision taken on
+ * 2026-09-22: an organisation may run several portals that look different from
+ * each other. Everything below follows from that — which parameter wins, why
+ * `?org=` refuses to guess, and why an unresolved request gets NOTHING rather
+ * than something plausible.
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+ */
+class PortalRuntimeConfigResolverTest extends TestCase {
+
+
+	/**
+	 * The neutral default every branch starts from.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private const NEUTRAL = [
+		'organisationName' => 'Portaliq',
+		'organisationSlug' => '',
+		'theme' => 'default',
+		'logo' => null,
+		'featureFlags' => [],
+		'allowedEmbedOrigins' => [],
+		'apiBase' => '/index.php/apps/portaliq/portal/api',
+		'audience' => 'supplier',
+		'locale' => 'nl',
+		'oidcProviders' => [],
+		'silentSignIn' => '',
+	];
+
+
+	/**
+	 * A resolved portal's own name reaches the SPA header.
+	 *
+	 * The bug in one line: this was the literal 'Portaliq' for every tenant on
+	 * every request, because the value came from a config blob nothing has
+	 * ever written.
+	 *
+	 * @return void
+	 */
+	public function testAResolvedPortalSuppliesItsOwnName(): void {
+		$config = $this->resolver()->runtimeConfigFor(
+			portal: ['slug' => 'demo', 'title' => 'Open Catalogi'],
+			orgValue: '',
+			locale: 'nl'
+		);
+
+		$this->assertSame('Open Catalogi', $config['organisationName']);
+		$this->assertSame('demo', $config['organisationSlug']);
+	}//end testAResolvedPortalSuppliesItsOwnName()
+
+
+	/**
+	 * A portal with a blank title leaves the neutral name standing.
+	 *
+	 * An empty header is not more honest than a generic one, it is just
+	 * broken.
+	 *
+	 * @return void
+	 */
+	public function testABlankTitleDoesNotBlankTheHeader(): void {
+		$config = $this->resolver()->runtimeConfigFor(
+			portal: ['slug' => 'demo', 'title' => '   '],
+			orgValue: '',
+			locale: 'nl'
+		);
+
+		$this->assertSame('Portaliq', $config['organisationName']);
+	}//end testABlankTitleDoesNotBlankTheHeader()
+
+
+	/**
+	 * The theme is reported ONLY when a token set actually backs it.
+	 *
+	 * THIS IS THE SUBTLE ONE. The SPA turns this value into a `theme-<name>`
+	 * class on its root element. If the value were passed through unchecked, a
+	 * portal configured with a theme no token file backs would carry a
+	 * perfectly plausible, brand-shaped class name on a page wearing none of
+	 * that brand's colours — and anyone verifying the fix by reading the DOM
+	 * would see the right answer on the wrong page. That is the exact shape of
+	 * the failure that kept the original bug hidden for as long as it was.
+	 *
+	 * @return void
+	 */
+	public function testAnUnresolvableThemeIsNotReportedAsResolved(): void {
+		$resolver = $this->resolver(themeStylesheet: null);
+
+		$config = $resolver->runtimeConfigFor(
+			portal: ['slug' => 'demo', 'theme' => 'a-brand-that-ships-no-tokens'],
+			orgValue: '',
+			locale: 'nl'
+		);
+
+		$this->assertSame('default', $config['theme']);
+	}//end testAnUnresolvableThemeIsNotReportedAsResolved()
+
+
+	/**
+	 * A theme a token set DOES back is reported.
+	 *
+	 * @return void
+	 */
+	public function testAResolvableThemeIsReported(): void {
+		$resolver = $this->resolver(themeStylesheet: 'tokens/opencatalogi');
+
+		$config = $resolver->runtimeConfigFor(
+			portal: ['slug' => 'demo', 'theme' => 'opencatalogi'],
+			orgValue: '',
+			locale: 'nl'
+		);
+
+		$this->assertSame('opencatalogi', $config['theme']);
+		$this->assertSame('tokens/opencatalogi', $resolver->themeStylesheetFor(['theme' => 'opencatalogi']));
+	}//end testAResolvableThemeIsReported()
+
+
+	/**
+	 * An unresolved request gets the NEUTRAL DEFAULT, whole and untouched.
+	 *
+	 * Specifically: no organisation branding leaks back in. The old
+	 * OpenRegister Organisation lookup is gone from this path rather than
+	 * kept beneath it as a fallback, because there has never been a writer for
+	 * the key it read.
+	 *
+	 * @return void
+	 */
+	public function testAnUnresolvedRequestGetsTheNeutralDefault(): void {
+		$config = $this->resolver()->runtimeConfigFor(portal: null, orgValue: 'gemeente-x', locale: 'nl');
+
+		$this->assertSame('Portaliq', $config['organisationName']);
+		$this->assertSame('', $config['organisationSlug']);
+		$this->assertSame('default', $config['theme']);
+		$this->assertNull($config['logo']);
+		$this->assertSame([], $config['allowedEmbedOrigins']);
+	}//end testAnUnresolvedRequestGetsTheNeutralDefault()
+
+
+	/**
+	 * The config shape is complete on every path.
+	 *
+	 * The SPA reads these keys unguarded, so a branch that returns a partial
+	 * array is an undefined-key crash on a public page rather than a styling
+	 * problem.
+	 *
+	 * @return void
+	 */
+	public function testEveryBranchReturnsTheCompleteShape(): void {
+		$resolver = $this->resolver();
+
+		foreach ([null, ['slug' => 'demo', 'title' => 'Open Catalogi']] as $portal) {
+			$config = $resolver->runtimeConfigFor(portal: $portal, orgValue: '', locale: 'nl');
+			foreach (array_keys(self::NEUTRAL) as $key) {
+				$this->assertArrayHasKey($key, $config);
+			}
+		}
+	}//end testEveryBranchReturnsTheCompleteShape()
+
+
+	/**
+	 * `frameAncestors` on the portal object feeds the embed policy.
+	 *
+	 * @return void
+	 */
+	public function testFrameAncestorsComeFromThePortal(): void {
+		$config = $this->resolver()->runtimeConfigFor(
+			portal: [
+				'slug' => 'demo',
+				'frameAncestors' => ['https://gemeente-x.example', ' https://two.example ', '', 'https://gemeente-x.example'],
+			],
+			orgValue: '',
+			locale: 'nl'
+		);
+
+		$this->assertSame(
+			['https://gemeente-x.example', 'https://two.example'],
+			$config['allowedEmbedOrigins']
+		);
+	}//end testFrameAncestorsComeFromThePortal()
+
+
+	/**
+	 * A malformed `frameAncestors` stays fail-closed.
+	 *
+	 * The empty list is what the controller turns into `frame-ancestors
+	 * 'none'`, so "we could not read it" and "embedding is not allowed" have
+	 * to be the same answer.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedFrameAncestorsListFailsClosed(): void {
+		$resolver = $this->resolver();
+
+		foreach ([null, 'https://x.example', 42] as $malformed) {
+			$config = $resolver->runtimeConfigFor(
+				portal: ['slug' => 'demo', 'frameAncestors' => $malformed],
+				orgValue: '',
+				locale: 'nl'
+			);
+
+			$this->assertSame([], $config['allowedEmbedOrigins']);
+		}
+	}//end testAMalformedFrameAncestorsListFailsClosed()
+
+
+	/**
+	 * A frame ancestor is an ORIGIN, and nothing else reaches the policy.
+	 *
+	 * Nextcloud joins these strings into `frame-ancestors` with a space and
+	 * escapes nothing, and since this change an editor fills the list. So a
+	 * `;` would end the directive and start another one, and a bare `*` would
+	 * let every origin iframe a portal carrying a bearer token. Each such
+	 * value is dropped; each real origin is rebuilt as scheme://host[:port].
+	 *
+	 * @return void
+	 */
+	public function testOnlyOriginsReachTheFramePolicy(): void {
+		$config = $this->resolver()->runtimeConfigFor(
+			portal: [
+				'slug' => 'demo',
+				'frameAncestors' => [
+					'https://a.example; script-src *',
+					'*',
+					"'self'",
+					'https://a.example b.example',
+					'javascript:alert(1)',
+					'ftp://files.example',
+					'https://user:secret@creds.example',
+					'https://path.example/embed',
+					'https://query.example?x=1',
+					'https://*.gemeente.example',
+					'https://slash.example/',
+					'https://port.example:8443',
+					'HTTPS://Upper.Example',
+					42,
+				],
+			],
+			orgValue: '',
+			locale: 'nl'
+		);
+
+		$this->assertSame(
+			[
+				'https://*.gemeente.example',
+				'https://slash.example',
+				'https://port.example:8443',
+				'https://upper.example',
+			],
+			$config['allowedEmbedOrigins']
+		);
+	}//end testOnlyOriginsReachTheFramePolicy()
+
+
+	/**
+	 * The portal's own logo reaches the config when it is a web URL.
+	 *
+	 * @return void
+	 */
+	public function testThePortalsLogoReachesTheConfig(): void {
+		$resolver = $this->resolver();
+
+		foreach (['https://cdn.example/logo.svg', '/apps/portaliq/img/logo.svg'] as $logo) {
+			$config = $resolver->runtimeConfigFor(
+				portal: ['slug' => 'demo', 'logo' => $logo],
+				orgValue: '',
+				locale: 'nl'
+			);
+
+			$this->assertSame($logo, $config['logo']);
+		}
+	}//end testThePortalsLogoReachesTheConfig()
+
+
+	/**
+	 * A logo that is not an http(s) or root-relative URL is dropped.
+	 *
+	 * Nothing renders it today; the first consumer that binds it to `src` or
+	 * `href` must not inherit a script URL typed into a free-text field.
+	 *
+	 * @return void
+	 */
+	public function testAnUnsafeLogoLeavesTheDefaultStanding(): void {
+		$resolver = $this->resolver();
+
+		foreach (['javascript:alert(1)', 'data:image/svg+xml,<svg/>', '//elsewhere.example/logo.png', ['x']] as $logo) {
+			$config = $resolver->runtimeConfigFor(
+				portal: ['slug' => 'demo', 'logo' => $logo],
+				orgValue: '',
+				locale: 'nl'
+			);
+
+			$this->assertNull($config['logo']);
+		}
+	}//end testAnUnsafeLogoLeavesTheDefaultStanding()
+
+
+	/**
+	 * No portal means no token stylesheet, not the first one available.
+	 *
+	 * @return void
+	 */
+	public function testNoPortalLinksNoThemeStylesheet(): void {
+		$this->assertSame('', $this->resolver()->themeStylesheetFor(portal: null));
+	}//end testNoPortalLinksNoThemeStylesheet()
+
+
+	/**
+	 * A theme lookup that throws renders the page unstyled, not broken.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingThemeLookupLinksNoStylesheet(): void {
+		$themeResolver = $this->createMock(PortalThemeResolver::class);
+		$themeResolver->method('stylesheetFor')->willThrowException(new \RuntimeException('theme app gone'));
+
+		$resolver = new PortalRuntimeConfigResolver(
+			$this->createMock(PortalResolver::class),
+			$this->orgResolverDouble(),
+			$themeResolver
+		);
+
+		$this->assertSame('', $resolver->themeStylesheetFor(portal: ['slug' => 'demo', 'theme' => 'opencatalogi']));
+	}//end testAThrowingThemeLookupLinksNoStylesheet()
+
+
+	/**
+	 * The OIDC providers still come from the ORGANISATION, off `?org=`.
+	 *
+	 * The presentation moved to the portal object; the broker did not. Two
+	 * portals of one tenant share an identity provider even when they share no
+	 * colours, and the client secret belongs to the legal tenant.
+	 *
+	 * @return void
+	 */
+	public function testOidcProvidersStillComeFromTheOrganisation(): void {
+		$orgResolver = $this->createMock(PortalOrganisationConfigService::class);
+		$orgResolver->method('resolve')->willReturnCallback(
+			static function (string $orgSlug, string $locale = 'nl'): array {
+				if ($orgSlug !== 'gemeente-x') {
+					return self::NEUTRAL;
+				}
+
+				return array_merge(
+					self::NEUTRAL,
+					[
+						// A tenant the OLD path would have branded. None of
+						// these presentation keys may survive into the config:
+						// only `oidcProviders` is taken from this result.
+						'organisationName' => 'Gemeente X',
+						'theme' => 'gemeente-x-brand',
+						'oidcProviders' => [['provider' => 'digid', 'label' => 'DigiD']],
+						'silentSignIn' => 'digid',
+					]
+				);
+			}
+		);
+
+		$resolver = $this->resolver(orgResolver: $orgResolver);
+
+		$this->assertSame(
+			[['provider' => 'digid', 'label' => 'DigiD']],
+			$resolver->runtimeConfigFor(portal: null, orgValue: 'gemeente-x', locale: 'nl')['oidcProviders']
+		);
+		$this->assertSame(
+			[],
+			$resolver->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['oidcProviders']
+		);
+
+		// AND THE ORGANISATION'S BRANDING STAYS OUT. This is the deleted
+		// fallback layer asserted from the outside: the organisation record
+		// still carries a name and a theme, the service still returns them,
+		// and the portal config must show neither.
+		$config = $resolver->runtimeConfigFor(portal: null, orgValue: 'gemeente-x', locale: 'nl');
+		$this->assertSame('Portaliq', $config['organisationName']);
+		$this->assertSame('default', $config['theme']);
+
+		// Silent sign-in belongs to the broker, so it comes from the
+		// organisation too (signin-session-idle-warning-and-sso T09).
+		$this->assertSame('digid', $config['silentSignIn']);
+		$this->assertSame('', $resolver->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['silentSignIn']);
+	}//end testOidcProvidersStillComeFromTheOrganisation()
+
+
+	/**
+	 * A portal opened by its own address offers its organisation's sign-in.
+	 *
+	 * Found on a school portal (slug `wilgenboom`, organisation
+	 * `default-organisation`): without `?org=` the login screen said no login
+	 * method was configured, and with it the DigiD button started the login
+	 * for organisation `wilgenboom`, the portal's slug, which no broker is
+	 * configured for. The providers and the sign-in organisation now follow
+	 * the portal's own `organisation`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T1
+	 */
+	public function testAPortalOffersItsOwnOrganisationsSignIn(): void {
+		$resolver = $this->resolver(orgResolver: $this->orgWithBroker(slug: 'school-org'));
+		$portal = ['slug' => 'wilgenboom', 'title' => 'Ouderportaal', 'organisation' => 'school-org'];
+
+		$config = $resolver->runtimeConfigFor(portal: $portal, orgValue: '', locale: 'nl');
+
+		$this->assertSame([['provider' => 'digid', 'label' => 'DigiD']], $config['oidcProviders']);
+		$this->assertSame('school-org', $config['signinOrganisation']);
+		$this->assertSame('wilgenboom', $config['organisationSlug']);
+	}//end testAPortalOffersItsOwnOrganisationsSignIn()
+
+
+	/**
+	 * An explicit `?org=` still names the sign-in organisation, not the
+	 * portal's slug.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T1
+	 */
+	public function testTheOrgParameterNamesTheSignInOrganisation(): void {
+		$resolver = $this->resolver(orgResolver: $this->orgWithBroker(slug: 'school-org'));
+		$portal = ['slug' => 'wilgenboom', 'title' => 'Ouderportaal'];
+
+		$config = $resolver->runtimeConfigFor(portal: $portal, orgValue: 'school-org', locale: 'nl');
+
+		$this->assertSame('school-org', $config['signinOrganisation']);
+		$this->assertSame([['provider' => 'digid', 'label' => 'DigiD']], $config['oidcProviders']);
+	}//end testTheOrgParameterNamesTheSignInOrganisation()
+
+
+	/**
+	 * The dev login is only offered where the server accepts it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T2
+	 */
+	public function testTheDevLoginIsOfferedOnlyWhereItIsEnabled(): void {
+		$closed = $this->resolver()->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl');
+		$this->assertFalse($closed['devLogin']);
+
+		$config = $this->createMock(IConfig::class);
+		$config->method('getSystemValueBool')->willReturn(false);
+		$config->method('getAppValue')->willReturn('yes');
+		$themeResolver = $this->createMock(PortalThemeResolver::class);
+		$open = new PortalRuntimeConfigResolver(
+			$this->createMock(PortalResolver::class),
+			$this->orgResolverDouble(),
+			$themeResolver,
+			$config
+		);
+		$this->assertTrue($open->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['devLogin']);
+	}//end testTheDevLoginIsOfferedOnlyWhereItIsEnabled()
+
+
+	/**
+	 * An organisation service with one DigiD broker for one slug.
+	 *
+	 * @param string $slug The organisation slug that has the broker.
+	 *
+	 * @return PortalOrganisationConfigService The double.
+	 */
+	private function orgWithBroker(string $slug): PortalOrganisationConfigService {
+		$orgResolver = $this->createMock(PortalOrganisationConfigService::class);
+		$orgResolver->method('resolve')->willReturnCallback(
+			static function (string $orgSlug, string $locale = 'nl') use ($slug): array {
+				if ($orgSlug !== $slug) {
+					return self::NEUTRAL;
+				}
+
+				return array_merge(self::NEUTRAL, ['oidcProviders' => [['provider' => 'digid', 'label' => 'DigiD']]]);
+			}
+		);
+
+		return $orgResolver;
+	}//end orgWithBroker()
+
+
+
+	/**
+	 * identity-ways-in-screens T07 (REQ-IWI-005): a portal with a registration
+	 * policy and an e-mail sign-in offers "Create an account"; the same portal
+	 * with only DigiD does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
+	 */
+	public function testTheDoorsFollowThePolicyAndTheEmailSignIn(): void {
+		$portal = ['slug' => 'gemeente-x', 'title' => 'Gemeente X', 'organisation' => 'gemeente-x', 'authentication' => ['registration' => ['policy' => 'activation']]];
+
+		$withEmail = $this->waysInResolver(providers: [['provider' => 'digid', 'label' => 'DigiD'], ['provider' => 'generic', 'label' => 'E-mail']])
+			->runtimeConfigFor(portal: $portal, orgValue: '', locale: 'nl');
+		$this->assertTrue($withEmail['waysIn']['register']);
+		$this->assertSame('E-mail', $withEmail['waysIn']['emailSignIn']);
+
+		$digidOnly = $this->waysInResolver(providers: [['provider' => 'digid', 'label' => 'DigiD']])
+			->runtimeConfigFor(portal: $portal, orgValue: '', locale: 'nl');
+		$this->assertFalse($digidOnly['waysIn']['register']);
+		$this->assertFalse($digidOnly['waysIn']['reference']);
+	}//end testTheDoorsFollowThePolicyAndTheEmailSignIn()
+
+
+	/**
+	 * Without a portal there is no door at all, and the key is still there.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
+	 */
+	public function testNoPortalNoDoors(): void {
+		$config = $this->waysInResolver(providers: [['provider' => 'generic', 'label' => 'E-mail']])
+			->runtimeConfigFor(portal: null, orgValue: 'gemeente-x', locale: 'nl');
+
+		$this->assertSame(['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => []], $config['waysIn']);
+	}//end testNoPortalNoDoors()
+
+
+	/**
+	 * The resolver with the real ways-in resolver, for an organisation whose
+	 * broker offers the given providers.
+	 *
+	 * @param array<int, array<string, string>> $providers The sign-in buttons.
+	 *
+	 * @return PortalRuntimeConfigResolver
+	 */
+	private function waysInResolver(array $providers): PortalRuntimeConfigResolver {
+		$orgResolver = $this->createMock(PortalOrganisationConfigService::class);
+		$orgResolver->method('resolve')->willReturnCallback(
+			static fn (string $orgSlug, string $locale = 'nl'): array => array_merge(self::NEUTRAL, $orgSlug === '' ? [] : ['oidcProviders' => $providers])
+		);
+
+		$bindings = $this->getMockBuilder(PortalFormBindingResolver::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['declaredCaseTypes'])
+			->getMock();
+		$bindings->method('declaredCaseTypes')->willReturn([]);
+
+		$waysIn = new PortalWaysInResolver(
+			new PortalRegistrationPolicyService(),
+			$bindings,
+			$this->getMockBuilder(CaseTypeReader::class)->disableOriginalConstructor()->onlyMethods(['readCaseType'])->getMock(),
+			new PortalReferenceLinkService(
+				$this->createMock(PortalObjectReader::class),
+				$this->createMock(PortalObjectWriter::class),
+				$this->createMock(ISecureRandom::class)
+			)
+		);
+
+		return new PortalRuntimeConfigResolver(
+			$this->createMock(PortalResolver::class),
+			$orgResolver,
+			$this->createMock(PortalThemeResolver::class),
+			null,
+			$waysIn
+		);
+	}//end waysInResolver()
+
+	/**
+	 * `?portal=` is consulted first and NEVER falls through to `?org=`.
+	 *
+	 * A named portal that does not exist is a miss. Falling through would mean
+	 * `?portal=typo&org=gemeente-x` serves gemeente-x — naming one tenant and
+	 * being handed another.
+	 *
+	 * @return void
+	 */
+	public function testAnExplicitPortalSlugNeverFallsThroughToOrg(): void {
+		$portalResolver = $this->createMock(PortalResolver::class);
+		$portalResolver->method('resolve')->willReturn(null);
+		$portalResolver->expects($this->never())->method('resolveByOrganisation');
+
+		$resolved = $this->resolver(portalResolver: $portalResolver)->resolvePortal(
+			request: $this->createMock(IRequest::class),
+			portalSlug: 'typo',
+			orgValue: 'gemeente-x'
+		);
+
+		$this->assertNull($resolved);
+	}//end testAnExplicitPortalSlugNeverFallsThroughToOrg()
+
+
+	/**
+	 * `?org=` is used only when no `?portal=` was named.
+	 *
+	 * @return void
+	 */
+	public function testTheOrgAliasIsUsedWhenNoPortalIsNamed(): void {
+		$portalResolver = $this->createMock(PortalResolver::class);
+		$portalResolver->method('resolveByOrganisation')->willReturn(['slug' => 'testgemeente']);
+
+		$resolved = $this->resolver(portalResolver: $portalResolver)->resolvePortal(
+			request: $this->createMock(IRequest::class),
+			portalSlug: '',
+			orgValue: 'dev-org'
+		);
+
+		$this->assertSame('testgemeente', $resolved['slug']);
+	}//end testTheOrgAliasIsUsedWhenNoPortalIsNamed()
+
+
+	/**
+	 * With neither parameter, the verified host decides.
+	 *
+	 * @return void
+	 */
+	public function testWithNoParametersTheHostDecides(): void {
+		$portalResolver = $this->createMock(PortalResolver::class);
+		$portalResolver->method('resolve')->willReturn(['slug' => 'by-host']);
+
+		$resolved = $this->resolver(portalResolver: $portalResolver)->resolvePortal(
+			request: $this->createMock(IRequest::class),
+			portalSlug: '',
+			orgValue: ''
+		);
+
+		$this->assertSame('by-host', $resolved['slug']);
+	}//end testWithNoParametersTheHostDecides()
+
+
+	/**
+	 * A resolver that throws fails closed to no portal.
+	 *
+	 * An OpenRegister that is down renders the neutral shell. The alternative
+	 * — a 500 — turns one unlucky read into an outage on the one genuinely
+	 * public page in the fleet.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingResolverFailsClosed(): void {
+		$portalResolver = $this->createMock(PortalResolver::class);
+		$portalResolver->method('resolve')->willThrowException(new RuntimeException('OR is down'));
+
+		$this->assertNull(
+			$this->resolver(portalResolver: $portalResolver)->resolvePortal(
+				request: $this->createMock(IRequest::class),
+				portalSlug: 'demo',
+				orgValue: ''
+			)
+		);
+	}//end testAThrowingResolverFailsClosed()
+
+
+	/**
+	 * Build the resolver under test.
+	 *
+	 * @param PortalResolver|null                  $portalResolver  The portal resolver double.
+	 * @param PortalOrganisationConfigService|null  $orgResolver     The organisation service double.
+	 * @param string|null                          $themeStylesheet What `stylesheetFor()` answers.
+	 *
+	 * @return PortalRuntimeConfigResolver The resolver, wired.
+	 */
+	private function resolver(
+		?PortalResolver $portalResolver = null,
+		?PortalOrganisationConfigService $orgResolver = null,
+		?string $themeStylesheet = 'tokens/opencatalogi'
+	): PortalRuntimeConfigResolver {
+		$themeResolver = $this->createMock(PortalThemeResolver::class);
+		$themeResolver->method('stylesheetFor')->willReturn($themeStylesheet);
+
+		return new PortalRuntimeConfigResolver(
+			($portalResolver ?? $this->createMock(PortalResolver::class)),
+			($orgResolver ?? $this->orgResolverDouble()),
+			$themeResolver
+		);
+	}//end resolver()
+
+
+	/**
+	 * An organisation service that answers the neutral default and no
+	 * providers.
+	 *
+	 * @return PortalOrganisationConfigService The double.
+	 */
+	private function orgResolverDouble(): PortalOrganisationConfigService {
+		$orgResolver = $this->createMock(PortalOrganisationConfigService::class);
+		$orgResolver->method('resolve')->willReturn(self::NEUTRAL);
+
+		return $orgResolver;
+	}//end orgResolverDouble()
+
+
+}//end class

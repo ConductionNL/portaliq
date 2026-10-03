@@ -119,6 +119,47 @@ if (!defined('OC_CONSOLE') && $portaliqNcRoot !== null) {
 	}
 }
 
+// OpenRegister outside the container. Listener tests build OpenRegister's REAL
+// event and entity classes (a faked event once hid a wrong accessor that made
+// every object update 500). Inside the container Nextcloud loads them; outside
+// it, point PORTALIQ_OPENREGISTER_LIB at an openregister checkout's lib/ and
+// they autoload from there. Without either, those tests skip and say why.
+$portaliqOrLib = getenv('PORTALIQ_OPENREGISTER_LIB');
+if (is_string($portaliqOrLib) === true && $portaliqOrLib !== '' && is_dir($portaliqOrLib) === true) {
+	spl_autoload_register(
+		static function (string $class) use ($portaliqOrLib): void {
+			if (str_starts_with($class, 'OCA\\OpenRegister\\') === false) {
+				return;
+			}
+
+			$file = rtrim($portaliqOrLib, '/') . '/' . str_replace('\\', '/', substr($class, strlen('OCA\\OpenRegister\\'))) . '.php';
+			if (is_file($file) === true) {
+				require_once $file;
+			}
+		}
+	);
+}
+
+// Integriq outside the container, the same way. The message box channel
+// dispatches integriq's REAL DigitalPostSendRequestedEvent and hears its REAL
+// DigitalPostDeliveredEvent; point PORTALIQ_INTEGRIQ_LIB at an integriq
+// checkout's lib/ and they autoload from there.
+$portaliqIntegriqLib = getenv('PORTALIQ_INTEGRIQ_LIB');
+if (is_string($portaliqIntegriqLib) === true && $portaliqIntegriqLib !== '' && is_dir($portaliqIntegriqLib) === true) {
+	spl_autoload_register(
+		static function (string $class) use ($portaliqIntegriqLib): void {
+			if (str_starts_with($class, 'OCA\\Integriq\\') === false) {
+				return;
+			}
+
+			$file = rtrim($portaliqIntegriqLib, '/') . '/' . str_replace('\\', '/', substr($class, strlen('OCA\\Integriq\\'))) . '.php';
+			if (is_file($file) === true) {
+				require_once $file;
+			}
+		}
+	);
+}
+
 // OCP outside the container. `nextcloud/ocp` ships the public API as plain
 // PSR-4 files but declares no `autoload` block of its own, so Composer never
 // maps `OCP\` and every test that doubles an OCP interface dies with "Class or
@@ -152,7 +193,42 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 // hydra connection-registry design D6 and integriq's own classes on
 // `development`, and load only when the real classes are absent. Without OCP on
 // the autoload path their parent class is missing, so they are skipped then.
-foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent'] as $integriqStubEvent) {
+// OpenRegister's leaf contract (change-proposal-queue): verbatim copies under
+// tests/Stubs/OpenRegister, used only when OpenRegister itself is not loadable,
+// so the leaf tests run in CI where no sibling checkout exists.
+foreach ([
+	'Exception\\NotImplementedException' => 'Exception/NotImplementedException.php',
+	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
+	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
+	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+] as $orStubClass => $orStubFile) {
+	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
+		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+		&& interface_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+	) {
+		require_once __DIR__ . '/Stubs/OpenRegister/' . $orStubFile;
+	}
+}
+
+unset($orStubClass, $orStubFile);
+
+// Thematiq's contrast arithmetic (nldesign-theme-integration): a verbatim copy,
+// used only when thematiq itself is not loadable.
+if (class_exists('\\OCA\\Thematiq\\Service\\ContrastService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/ContrastService.php';
+}
+
+// And its custom token set validator (nldesign-theme-integration 4.2): a
+// verbatim copy, plus the one converter constant it reads.
+if (class_exists('\\OCA\\Thematiq\\Service\\TokenSetConverterService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/TokenSetConverterService.php';
+}
+
+if (class_exists('\\OCA\\Thematiq\\Service\\CustomTokenSetValidator') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/CustomTokenSetValidator.php';
+}
+
+foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $integriqStubEvent) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false
 	) {

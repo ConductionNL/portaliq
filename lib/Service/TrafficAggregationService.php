@@ -239,11 +239,33 @@ class TrafficAggregationService {
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	private function aggregateDay(string $slug, string $date, array $config, DateTimeImmutable $now): bool {
+		$records = $this->dayRecords(slug: $slug, date: $date, config: $config, now: $now);
+		if ($records === null) {
+			return false;
+		}
+
+		return $this->writeDay(slug: $slug, date: $date, records: $records);
+	}
+
+	/**
+	 * A portal-day's records from its raw events, by segment id ('' for
+	 * all sessions), or null when the day has no raw events left.
+	 *
+	 * @param string               $slug   The portal slug.
+	 * @param string               $date   The UTC day.
+	 * @param array<string, mixed> $config The portal's resolved configuration.
+	 * @param DateTimeImmutable    $now    The clock.
+	 *
+	 * @return array<string, array<string, mixed>>|null The records.
+	 *
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 */
+	public function dayRecords(string $slug, string $date, array $config, DateTimeImmutable $now): ?array {
 		$from = $date . 'T00:00:00.000Z';
 		$to = (new DateTimeImmutable($date . ' 00:00:00', new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d\TH:i:s.v\Z');
 		$events = $this->store->eventsBetween(portal: $slug, from: $from, to: $to);
 		if ($events === []) {
-			return false;
+			return null;
 		}
 
 		$sessions = $this->sessioniser->sessions(events: $events, timeoutMinutes: (int)$config['sessionTimeoutMinutes']);
@@ -256,7 +278,6 @@ class TrafficAggregationService {
 			'experiments' => ($config['experiments'] ?? []),
 			'heatmaps' => (($config['sensitive']['heatmaps'] ?? false) === true),
 		];
-		$existing = $this->existingBySegment(slug: $slug, date: $date);
 		$aggregatedAt = $now->format('Y-m-d\TH:i:s\Z');
 
 		$wanted = ['' => $sessions];
@@ -264,15 +285,37 @@ class TrafficAggregationService {
 			$wanted[(string)$segment['id']] = $this->segments->filter(segment: $segment, sessions: $sessions, goals: (array)($config['goals'] ?? []));
 		}
 
-		$written = false;
+		$records = [];
 		foreach ($wanted as $segmentId => $segmentSessions) {
 			$record = $this->rollup->build(portal: $slug, date: $date, sessions: $segmentSessions, aggregatedAt: $aggregatedAt, options: $options);
 			$record['segment'] = (string)$segmentId;
+			$records[(string)$segmentId] = $record;
+		}
+
+		return $records;
+	}
+
+	/**
+	 * Save a portal-day's records over its existing rollups and remove
+	 * the rollups of segments that no longer exist.
+	 *
+	 * @param string                              $slug    The portal slug.
+	 * @param string                              $date    The UTC day.
+	 * @param array<string, array<string, mixed>> $records The records by segment id.
+	 *
+	 * @return bool True when a rollup was written.
+	 *
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 */
+	public function writeDay(string $slug, string $date, array $records): bool {
+		$existing = $this->existingBySegment(slug: $slug, date: $date);
+		$written = false;
+		foreach ($records as $segmentId => $record) {
 			$written = $this->store->saveDaily(rollup: $record, uuid: ($existing[(string)$segmentId] ?? null)) || $written;
 		}
 
 		foreach ($existing as $segmentId => $uuid) {
-			if (isset($wanted[$segmentId]) === false) {
+			if (isset($records[$segmentId]) === false) {
 				$this->store->deleteDaily(uuid: $uuid);
 			}
 		}
@@ -295,8 +338,9 @@ class TrafficAggregationService {
 	 * @return int How many days were written.
 	 *
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
-	private function aggregateRollup(string $slug, array $members, array $written, DateTimeImmutable $now): int {
+	public function aggregateRollup(string $slug, array $members, array $written, DateTimeImmutable $now): int {
 		$days = [
 			$now->modify('-1 day')->format('Y-m-d') => true,
 			$now->format('Y-m-d') => true,

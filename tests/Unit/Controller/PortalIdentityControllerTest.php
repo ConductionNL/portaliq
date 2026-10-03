@@ -6,13 +6,17 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
+use OCA\Portaliq\Service\Identity\PortalReferenceCaseService;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -34,6 +38,17 @@ class PortalIdentityControllerTest extends TestCase {
 	 * @var array<string, mixed>
 	 */
 	private array $doubles = [];
+
+	/**
+	 * What PortalReferenceCaseService::linkableCase() answers.
+	 *
+	 * @var array{register: string, schema: string}|null
+	 */
+	private ?array $linkable = ['register' => 'dossiq', 'schema' => 'case'];
+
+	private array $params = [];
+
+	private ?string $resolvedSlug = null;
 
 	public function testRegistrationSwitchedOffCreatesNoAccount(): void {
 		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
@@ -180,6 +195,58 @@ class PortalIdentityControllerTest extends TestCase {
 
 	}//end testOutOfScopeAndAccountOnlyAnswerTheSame()
 
+	/**
+	 * portaliq#795. The link used to be issued and then dropped: the answer
+	 * said `sent: true` and no mail left. The secret now goes to the address
+	 * it was asked for, inside the mailed link, and never into the answer.
+	 *
+	 * @return void
+	 */
+	public function testTheReferenceLinkIsMailedToTheAddressAndNeverAnswered(): void {
+		$site = ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x', 'title' => 'Gemeente X'];
+		$controller = $this->controller(site: $site);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(true);
+		$this->doubles['references']->method('issue')->willReturn(['token' => 'secret-1', 'expiresAt' => '2026-09-19T09:00:00+00:00']);
+		$this->doubles['mailer']->expects($this->once())
+			->method('send')
+			->with(
+				$this->equalTo(PortalIdentityMailer::TEMPLATE_REFERENCE_LINK),
+				$this->equalTo('ans@example.org'),
+				$this->equalTo('secret-1'),
+				$this->equalTo('gemeente-x'),
+				$this->equalTo($site)
+			)
+			->willReturn(true);
+
+		$data = $controller->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'melding', caseReference: 'ZAAK-1', email: 'ans@example.org')->getData();
+
+		$this->assertTrue($data['sent']);
+		$this->assertStringNotContainsString('secret-1', (string)json_encode($data));
+
+	}//end testTheReferenceLinkIsMailedToTheAddressAndNeverAnswered()
+
+	/**
+	 * portaliq#795. A mail that did not leave answers exactly like one that
+	 * did: a different answer would tell an anonymous caller something about
+	 * the case, and the secret never falls back into the answer.
+	 *
+	 * @return void
+	 */
+	public function testAFailedReferenceMailAnswersTheSameAndStillHidesTheSecret(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(true);
+		$this->doubles['references']->method('issue')->willReturn(['token' => 'secret-1', 'expiresAt' => '2026-09-19T09:00:00+00:00']);
+		$this->doubles['mailer']->method('send')->willReturn(false);
+
+		$response = $controller->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'melding', caseReference: 'ZAAK-1', email: 'ans@example.org');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['sent' => true, 'expiresAt' => '2026-09-19T09:00:00+00:00'], $response->getData());
+
+	}//end testAFailedReferenceMailAnswersTheSameAndStillHidesTheSecret()
+
 	public function testTheIssuedSecretNeverTravelsInTheAnswer(): void {
 		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
 		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
@@ -264,15 +331,137 @@ class PortalIdentityControllerTest extends TestCase {
 		$this->doubles['references']->expects($this->once())
 			->method('redeem')
 			->with($this->equalTo('secret-1'))
-			->willReturn(['caseReference' => 'ZAAK-1', 'register' => 'dossiq', 'schema' => 'zaak']);
+			->willReturn(['caseReference' => 'ZAAK-1', 'organisation' => 'gemeente-x', 'register' => 'dossiq', 'schema' => 'zaak', 'linkId' => 'link-1']);
+		$this->doubles['sessions']->method('issueReferenceSession')->willReturn(['token' => 'bearer-1', 'jti' => 'jti-1', 'expiresAt' => '2026-09-28T10:30:00+00:00']);
 
 		$data = $controller->redeemReferenceLink(token: 'secret-1')->getData();
 
 		$this->assertSame('ZAAK-1', $data['caseReference']);
 		$this->assertArrayNotHasKey('token', $data);
 		$this->assertArrayNotHasKey('tokenHash', $data);
+		$this->assertArrayNotHasKey('linkId', $data);
 
 	}//end testALiveLinkAnswersWithTheCaseAndNeverTheToken()
+
+	/**
+	 * portaliq#796, identity-ways-in-screens D2. A redeemed link used to hand
+	 * back the case number and nothing that could read the case. It now opens
+	 * a short session scoped to that one case, minted for the link's case,
+	 * register and schema, and its bearer is in the answer.
+	 *
+	 * @return void
+	 */
+	public function testARedeemedLinkOpensASessionScopedToItsOneCase(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['references']->method('redeem')->willReturn(
+			['caseReference' => 'Z-2026-0042', 'organisation' => 'gemeente-x', 'register' => 'dossiq', 'schema' => 'case', 'linkId' => 'link-1']
+		);
+		$this->doubles['sessions']->expects($this->once())
+			->method('issueReferenceSession')
+			->with(
+				$this->equalTo('link-1'),
+				$this->equalTo('Z-2026-0042'),
+				$this->equalTo('gemeente-x'),
+				$this->equalTo('dossiq'),
+				$this->equalTo('case')
+			)
+			->willReturn(['token' => 'bearer-1', 'jti' => 'jti-1', 'expiresAt' => '2026-09-28T10:30:00+00:00']);
+
+		$response = $controller->redeemReferenceLink(token: 'secret-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			['caseReference' => 'Z-2026-0042', 'organisation' => 'gemeente-x', 'bearer' => 'bearer-1', 'expiresAt' => '2026-09-28T10:30:00+00:00'],
+			$response->getData()
+		);
+
+	}//end testARedeemedLinkOpensASessionScopedToItsOneCase()
+
+	/**
+	 * portaliq#796. The address must be the one recorded on the case. A
+	 * mismatch issues no link and sends no mail, and answers exactly like a
+	 * link that was sent, so the endpoint is no oracle for case numbers.
+	 *
+	 * @return void
+	 */
+	public function testAnAddressThatIsNotTheCasesIssuesNothingAndAnswersTheSame(): void {
+		$sent = $this->controller(site: ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x']);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(true);
+		$this->doubles['references']->method('issue')->willReturn(['token' => 'secret-1', 'expiresAt' => '2026-09-29T09:00:00+00:00']);
+		$this->doubles['mailer']->method('send')->willReturn(true);
+		$matched = $sent->requestReferenceLink(register: 'dossiq', schema: 'caseType', caseType: 'melding', caseReference: 'Z-2026-0042', email: 'anna@example.nl');
+
+		$this->linkable = null;
+		$refused = $this->controller(site: ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x']);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(true);
+		$this->doubles['references']->method('nominalExpiry')->willReturn('2026-09-29T09:00:00+00:00');
+		$this->doubles['references']->expects($this->never())->method('issue');
+		$this->doubles['mailer']->expects($this->never())->method('send');
+		$mismatched = $refused->requestReferenceLink(register: 'dossiq', schema: 'caseType', caseType: 'melding', caseReference: 'Z-2026-0042', email: 'mallory@example.nl');
+
+		$this->assertSame($matched->getStatus(), $mismatched->getStatus());
+		$this->assertSame($matched->getData(), $mismatched->getData());
+
+	}//end testAnAddressThatIsNotTheCasesIssuesNothingAndAnswersTheSame()
+
+	/**
+	 * portaliq#796. The link row records which case collection it opens, so
+	 * the session it becomes reads there and nowhere else.
+	 *
+	 * @return void
+	 */
+	public function testAnIssuedLinkRecordsTheCaseCollectionItOpens(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x']);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(true);
+		$this->doubles['references']->expects($this->once())
+			->method('issue')
+			->with(
+				$this->anything(),
+				$this->equalTo('Z-2026-0042'),
+				$this->equalTo('anna@example.nl'),
+				$this->equalTo('gemeente-x'),
+				$this->equalTo('dossiq'),
+				$this->equalTo('case')
+			)
+			->willReturn(['token' => 'secret-1', 'expiresAt' => '2026-09-29T09:00:00+00:00']);
+
+		$controller->requestReferenceLink(register: 'dossiq', schema: 'caseType', caseType: 'melding', caseReference: 'Z-2026-0042', email: 'anna@example.nl');
+
+	}//end testAnIssuedLinkRecordsTheCaseCollectionItOpens()
+
+	/**
+	 * portaliq#796. The reference session reads its one case, read only, and
+	 * nothing without it.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceSessionReadsItsCaseReadOnly(): void {
+		$controller = $this->controller(site: null);
+		$reference = ['subjectRef' => 'reference:abc', 'organisation' => 'gemeente-x', 'caseReference' => 'Z-2026-0042', 'register' => 'dossiq', 'schema' => 'case', 'jti' => 'jti-1'];
+		$this->doubles['sessions']->method('resolveReferenceFromBearer')->willReturn($reference);
+		$this->doubles['referenceCases']->expects($this->once())
+			->method('read')
+			->with($this->equalTo($reference))
+			->willReturn(['identifier' => 'Z-2026-0042', 'status' => 'in behandeling']);
+
+		$data = $controller->referenceCase()->getData();
+
+		$this->assertSame('Z-2026-0042', $data['case']['identifier']);
+		$this->assertTrue($data['readOnly']);
+
+	}//end testAReferenceSessionReadsItsCaseReadOnly()
+
+	public function testWithoutAReferenceSessionNoCaseIsRead(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['sessions']->method('resolveReferenceFromBearer')->willReturn(null);
+		$this->doubles['referenceCases']->expects($this->never())->method('read');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->referenceCase()->getStatus());
+
+	}//end testWithoutAReferenceSessionNoCaseIsRead()
 
 	/**
 	 * gate-25, on `POST /portal/api/identity/invitation/accept`. An
@@ -317,6 +506,129 @@ class PortalIdentityControllerTest extends TestCase {
 	}//end testAnAcceptedInvitationSaysOnlyThatItLanded()
 
 
+
+	/**
+	 * identity-ways-in-screens T01 (REQ-IWI-001): under the activation policy
+	 * the activation secret goes out by mail and never in the answer.
+	 *
+	 * @return void
+	 */
+	public function testUnderActivationTheLinkIsMailedAndNeverAnswered(): void {
+		$site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'];
+		$controller = $this->controller(site: $site);
+		$this->doubles['policy']->method('isOffered')->willReturn(true);
+		$this->doubles['challenge']->method('accepts')->willReturn(true);
+		$this->doubles['policy']->method('decide')->willReturn(['accepted' => true, 'reason' => 'activation', 'status' => 'pending']);
+		$this->doubles['accounts']->method('provision')->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
+		$this->doubles['activation']->expects($this->once())
+			->method('issue')
+			->with($this->equalTo('subject-1'))
+			->willReturn('activation-secret');
+		$this->doubles['mailer']->expects($this->once())
+			->method('send')
+			->with(
+				$this->equalTo(PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION),
+				$this->equalTo('ans@example.org'),
+				$this->equalTo('activation-secret'),
+				$this->equalTo('gemeente-x'),
+				$this->equalTo($site)
+			)
+			->willReturn(true);
+
+		$data = $controller->register(email: 'ans@example.org')->getData();
+
+		$this->assertSame(['status' => 'pending', 'awaiting' => 'activation'], $data);
+		$this->assertStringNotContainsString('activation-secret', (string)json_encode($data));
+
+	}//end testUnderActivationTheLinkIsMailedAndNeverAnswered()
+
+	/**
+	 * Under approval nothing is mailed: staff activate the account.
+	 *
+	 * @return void
+	 */
+	public function testUnderApprovalNoActivationLinkIsMinted(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['policy']->method('isOffered')->willReturn(true);
+		$this->doubles['challenge']->method('accepts')->willReturn(true);
+		$this->doubles['policy']->method('decide')->willReturn(['accepted' => true, 'reason' => 'approval', 'status' => 'pending']);
+		$this->doubles['accounts']->method('provision')->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
+		$this->doubles['activation']->expects($this->never())->method('issue');
+		$this->doubles['mailer']->expects($this->never())->method('send');
+
+		$controller->register(email: 'ans@example.org');
+
+	}//end testUnderApprovalNoActivationLinkIsMinted()
+
+	/**
+	 * T03: a followed activation link answers only that the account is ready.
+	 *
+	 * @return void
+	 */
+	public function testAFollowedActivationLinkSaysOnlyThatTheAccountIsReady(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['activation']->expects($this->once())
+			->method('activate')
+			->with($this->equalTo('activation-secret'))
+			->willReturn(['organisation' => 'gemeente-x']);
+
+		$response = $controller->activate(token: 'activation-secret');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['activated' => true], $response->getData());
+
+	}//end testAFollowedActivationLinkSaysOnlyThatTheAccountIsReady()
+
+	/**
+	 * T03: used, expired and unknown are one refusal.
+	 *
+	 * @return void
+	 */
+	public function testASpentActivationLinkIsRefusedWithoutSayingWhy(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['activation']->method('activate')->willReturn(null);
+
+		$response = $controller->activate(token: 'spent');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'activation_not_valid'], $response->getData());
+
+	}//end testASpentActivationLinkIsRefusedWithoutSayingWhy()
+
+	/**
+	 * T02: the challenge names the portal's honeypot field, so the form can
+	 * carry it empty.
+	 *
+	 * @return void
+	 */
+	public function testTheChallengeNamesTheHoneypotFieldThePortalDeclares(): void {
+		$site = ['organisation' => 'gemeente-x', 'authentication' => ['challenge' => ['honeypotField' => 'website']]];
+		$controller = $this->controller(site: $site);
+		$this->doubles['challenge']->method('issue')->willReturn(['nonce' => 'nonce-1', 'difficulty' => 12]);
+
+		$data = $controller->challenge(surface: 'registration')->getData();
+
+		$this->assertSame('website', $data['honeypotField']);
+
+	}//end testTheChallengeNamesTheHoneypotFieldThePortalDeclares()
+
+	/**
+	 * T02: the portal the SPA is served as is the one the door belongs to;
+	 * on a shared host the host alone names no portal.
+	 *
+	 * @return void
+	 */
+	public function testThePortalTheSpaNamesIsTheOneResolved(): void {
+		$this->params = ['portal' => 'gemeente-x'];
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['challenge']->method('issue')->willReturn(['nonce' => 'nonce-1', 'difficulty' => 12]);
+
+		$controller->challenge(surface: 'registration');
+
+		$this->assertSame('gemeente-x', $this->resolvedSlug);
+
+	}//end testThePortalTheSpaNamesIsTheOneResolved()
+
 	/**
 	 * The controller over doubles, all of which can only answer methods the
 	 * real classes have.
@@ -331,19 +643,37 @@ class PortalIdentityControllerTest extends TestCase {
 	private function controller(?array $site, bool $inScope = true): PortalIdentityController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn([]);
+		$request->method('getParam')->willReturnCallback(
+			fn (string $key, mixed $default = null): mixed => ($this->params[$key] ?? $default)
+		);
 
 		$portals = $this->double(PortalResolver::class, ['resolve']);
-		$portals->method('resolve')->willReturn($site);
+		$portals->method('resolve')->willReturnCallback(
+			function (IRequest $request, ?string $portalSlug = null) use ($site): ?array {
+				$this->resolvedSlug = $portalSlug;
+				return $site;
+			}
+		);
 
 		$this->doubles = [
 			'challenge' => $this->double(PortalChallengeService::class, ['issue', 'accepts']),
-			'references' => $this->double(PortalReferenceLinkService::class, ['admitsReference', 'issue', 'redeem']),
+			'references' => $this->double(PortalReferenceLinkService::class, ['admitsReference', 'issue', 'redeem', 'nominalExpiry']),
 			'policy' => $this->double(PortalRegistrationPolicyService::class, ['isOffered', 'decide']),
 			'invitations' => $this->double(PortalInvitationService::class, ['accept']),
 			'accounts' => $this->double(PortalAccountService::class, ['provision']),
 			'caseTypes' => $this->double(CaseTypeReader::class, ['readCaseType']),
 			'bindings' => $this->double(PortalFormBindingResolver::class, ['caseTypeIsInPortalScope']),
+			'mailer' => $this->double(PortalIdentityMailer::class, ['send']),
+			'referenceCases' => $this->double(PortalReferenceCaseService::class, ['linkableCase', 'read']),
+			'sessions' => $this->double(PortalSessionService::class, ['issueReferenceSession', 'resolveReferenceFromBearer']),
+			'activation' => $this->double(PortalAccountActivationService::class, ['issue', 'activate']),
 		];
+
+		// The case behind a reference link is found and its address matches,
+		// unless a test says otherwise.
+		$this->doubles['referenceCases']->method('linkableCase')->willReturnCallback(
+			fn (): ?array => $this->linkable
+		);
 
 		$this->doubles['bindings']->method('caseTypeIsInPortalScope')->willReturn($inScope);
 
@@ -356,7 +686,11 @@ class PortalIdentityControllerTest extends TestCase {
 			$this->doubles['invitations'],
 			$this->doubles['accounts'],
 			$this->doubles['caseTypes'],
-			$this->doubles['bindings']
+			$this->doubles['bindings'],
+			$this->doubles['mailer'],
+			$this->doubles['referenceCases'],
+			$this->doubles['sessions'],
+			$this->doubles['activation']
 		);
 	}//end controller()
 

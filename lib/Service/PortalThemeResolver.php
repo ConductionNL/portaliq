@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
 use OCP\App\IAppManager;
 
 /**
@@ -66,16 +67,38 @@ class PortalThemeResolver {
 	 */
 	private const THEME_APP_IDS = ['thematiq', 'nldesign'];
 
+	/**
+	 * The theme app's public bridge, relative to its `css/` directory.
+	 *
+	 * It maps the `--nldesign-*` layer every set defines onto the
+	 * `--utrecht-*`, `--tilburg-*` and `--conduction-*` roles the site paints
+	 * from (thematiq#355). Without it, 40 of the 52 sets load and change
+	 * nothing on the site.
+	 *
+	 * @var string
+	 */
+	public const BRIDGE_STYLESHEET = 'public-bridge';
+
+	/**
+	 * The faces the theme app bundles (Fira Sans, Source Sans 3), relative to
+	 * its `css/` directory. A set names a family; this file declares it.
+	 *
+	 * @var string
+	 */
+	public const FONT_STYLESHEET = 'fonts';
+
 
 	/**
 	 * Constructor.
 	 *
-	 * @param IAppManager $appManager Tells us whether the theme app is present.
+	 * @param IAppManager                $appManager Tells us whether the theme app is present.
+	 * @param PortalCustomThemeSets|null $customSets The theme app's custom sets; null offers none.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
+		private readonly ?PortalCustomThemeSets $customSets = null,
 	) {
 	}//end __construct()
 
@@ -122,8 +145,40 @@ class PortalThemeResolver {
 			return null;
 		}
 
+		// A CUSTOM SET IS CHECKED AGAIN BEFORE IT IS LINKED (task 4.2): it came
+		// from an upload or from another instance, and the theme app's own
+		// validator decides whether its file may reach a public page.
+		if ($this->refusalFor(theme: $theme) !== null) {
+			return null;
+		}
+
 		return 'tokens/' . $theme;
 	}//end stylesheetFor()
+
+
+	/**
+	 * The theme app's own stylesheets the site links beside a set, relative
+	 * to its `css/` directory, each null when the installed theme app ships
+	 * none: its public bridge and its bundled faces.
+	 *
+	 * Existence is checked on disk (ThemeAppAsset): a link to a missing app
+	 * asset fails on every page load and looks like no theme at all. Whether
+	 * to link them is the caller's call: only with a resolved set.
+	 *
+	 * @return array{bridge: string|null, fonts: string|null}
+	 *
+	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
+	 */
+	public function shippedStylesheets(): array {
+		$root = $this->themeAppPath();
+		$asset = new ThemeAppAsset();
+
+		return [
+			'bridge' => $asset->stylesheetIfShipped(root: $root, name: self::BRIDGE_STYLESHEET),
+			'fonts'  => $asset->stylesheetIfShipped(root: $root, name: self::FONT_STYLESHEET),
+		];
+	}//end shippedStylesheets()
 
 
 	/**
@@ -188,36 +243,152 @@ class PortalThemeResolver {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 	 */
 	private function catalogueHas(string $theme): bool {
-		$root = $this->themeAppPath();
-		if ($root === null) {
-			return false;
-		}
-
-		$path = $root . '/token-sets.json';
-		if (is_file($path) === false) {
-			return false;
-		}
-
-		$decoded = json_decode((string)file_get_contents($path), true);
-		if (is_array($decoded) === false) {
-			return false;
-		}
-
-		// The file ships as a LIST of set objects; tolerate a keyed map too,
-		// because which of the two it is has changed upstream before.
-		$entries = $decoded;
-		if (array_is_list($decoded) === false) {
-			$entries = array_values($decoded);
-		}
-
-		foreach ($entries as $entry) {
-			if (is_array($entry) === true && ($entry['id'] ?? null) === $theme) {
+		foreach ($this->catalogue() as $entry) {
+			if ($entry['id'] === $theme) {
 				return true;
 			}
 		}
 
 		return false;
 	}//end catalogueHas()
+
+	/**
+	 * Every set the theme app's catalogue offers, read from its
+	 * `token-sets.json` on disk (see `catalogueHas()` for why not the
+	 * endpoint). An unreadable or malformed catalogue answers an empty list, so
+	 * a picker shows nothing rather than a default.
+	 *
+	 * @return array<int, array<string, mixed>> Each entry has at least a string `id`.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	public function catalogue(): array {
+		$root = $this->themeAppPath();
+		if ($root === null) {
+			return [];
+		}
+
+		$path = $root . '/token-sets.json';
+		if (is_file($path) === false) {
+			return [];
+		}
+
+		$decoded = json_decode((string)file_get_contents($path), true);
+		if (is_array($decoded) === false) {
+			return [];
+		}
+
+		$sets = [];
+		$ids = [];
+		foreach (array_values($decoded) as $entry) {
+			if (is_array($entry) === true && is_string($entry['id'] ?? null) === true) {
+				$sets[] = $entry;
+				$ids[$entry['id']] = true;
+			}
+		}
+
+		// The sets an administrator made or received in the theme app
+		// (task 4.1): an upload, or a theme shared through OpenRegister that
+		// the theme app imported as a custom set.
+		foreach (($this->customSets?->all() ?? []) as $entry) {
+			if (isset($ids[$entry['id']]) === false) {
+				$sets[] = $entry;
+			}
+		}
+
+		return $sets;
+	}//end catalogue()
+
+	/**
+	 * Why a custom set may not be linked, in the theme app's words, or null
+	 * when it may (or when the set is not a custom one).
+	 *
+	 * @param string $theme The set id.
+	 *
+	 * @return string|null The refusal.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 */
+	public function refusalFor(string $theme): ?string {
+		if ($this->customSets === null || $this->customSets->isCustomId(id: $theme) === false) {
+			return null;
+		}
+
+		$root = $this->themeAppPath();
+		$file = ($root ?? '') . '/css/tokens/' . $theme . '.css';
+		if ($root === null || is_file($file) === false) {
+			return null;
+		}
+
+		return $this->customSets->refusal(id: $theme, css: (string)file_get_contents($file));
+	}//end refusalFor()
+
+	/**
+	 * The theme app's public stylesheet of administrator-uploaded font faces,
+	 * as a route name, or null when the installed theme app has none.
+	 *
+	 * The route is public on purpose in the theme app (a CSS font load carries
+	 * no session), so an anonymous portal visitor can load it. Asked of the
+	 * installed build, because a build without font uploads has no such route
+	 * and linking one would name a URL nothing answers.
+	 *
+	 * @return string|null E.g. `thematiq.font.css`.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 */
+	public function fontStylesheetRoute(): ?string {
+		$root = $this->themeAppPath();
+		$id = $this->themeAppId();
+		if ($root === null || $id === null || is_file($root . '/lib/Controller/FontController.php') === false) {
+			return null;
+		}
+
+		return $id . '.font.css';
+	}//end fontStylesheetRoute()
+
+	/**
+	 * The token values a resolvable set declares, for the contrast check.
+	 *
+	 * Read from the set's token file, the only place that says what colour
+	 * anything is. Declarations are matched on the custom-property syntax: a
+	 * generated token file has one per line. A `var()` alias is resolved one
+	 * hop against the same file, because a set's roles alias its own palette;
+	 * a value still unresolved stays as it is and the contrast service reports
+	 * it as unevaluated rather than guessing.
+	 *
+	 * @param string $theme The set id.
+	 *
+	 * @return array<string, string> Token name to value; empty when the set does not resolve.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	public function tokenValuesFor(string $theme): array {
+		$sheet = $this->stylesheetFor(theme: $theme);
+		$root = $this->themeAppPath();
+		if ($sheet === null || $root === null) {
+			return [];
+		}
+
+		preg_match_all(
+			'/(--[a-z0-9-]+)\s*:\s*([^;}]+)[;}]/i',
+			(string)file_get_contents($root . '/css/' . $sheet . '.css'),
+			$matches,
+			PREG_SET_ORDER
+		);
+
+		$values = [];
+		foreach ($matches as $match) {
+			$values[trim($match[1])] = trim($match[2]);
+		}
+
+		foreach ($values as $name => $value) {
+			if (preg_match('/^var\(\s*(--[a-z0-9-]+)/i', $value, $alias) === 1) {
+				$values[$name] = ($values[$alias[1]] ?? $value);
+			}
+		}
+
+		return $values;
+	}//end tokenValuesFor()
 
 
 	/**

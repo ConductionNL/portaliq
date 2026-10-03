@@ -112,7 +112,22 @@ $locale = (string)($_['locale'] ?? 'nl');
 // advantage and exposed the ordering for what it always was.
 $stylesheets = [];
 $tokenStylesheets = [];
+// THE BRIDGE GOES FIRST IN THE TOKEN LAYER, directly before the set, and only
+// with one (site-links-the-theme-bridge). It maps the `--nldesign-*` layer
+// every set defines onto the component roles this page paints from; 40 of
+// the theme app's 52 sets define nothing else. It must still come AFTER the
+// vendored sheets: `nlds-app.css` declares two of its names on `:root`
+// (`--conduction-primary-top-nav-background-color` and `-color`), and the
+// later declaration wins. A set that declares a role of its own loads after
+// the bridge and keeps its value.
+$themeAppSheets = (array)($_['themeAppSheets'] ?? []);
+$themeBridgeStylesheet = (string)($themeAppSheets['bridge'] ?? '');
+$themeFontStylesheet = (string)($themeAppSheets['fonts'] ?? '');
 if ($themeStylesheet !== '' && $themeApp !== null) {
+    if ($themeBridgeStylesheet !== '') {
+        $tokenStylesheets[] = $asset($themeApp, 'css/' . $themeBridgeStylesheet . '.css');
+    }
+
     $tokenStylesheets[] = $asset($themeApp, 'css/' . $themeStylesheet . '.css');
 }
 
@@ -161,6 +176,12 @@ foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'n
     $stylesheets[] = $asset($appId, 'css/' . $sheet . '.css');
 }
 
+// The site's own rules, after the vendored sheets so a rule that ties on
+// specificity wins on order: the footer bands restate the vendored positional
+// rules against role classes (portal-theme-blocks-and-contributed-pages
+// REQ-PTB-005). Token references only.
+$stylesheets[] = $asset($appId, 'css/site-theme.css');
+
 // LAST, AND THE POSITION IS THE WHOLE MECHANISM.
 //
 // The vendored sheets above were captured from the reference application,
@@ -194,6 +215,32 @@ $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
 // comes after it, so a licensed deployment still gets the real face.
 if (is_file($appRoot . '/css/fonts/licensed/avenir-lt-55-roman.woff2') === true) {
     $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts-licensed.css');
+}
+
+// THE FACES AN ADMINISTRATOR UPLOADED IN THE THEME APP (nldesign-theme-integration
+// 2.3), from its own public stylesheet: `FontController::css()` is public on
+// purpose, because a CSS font load carries no session. It is empty until a
+// face is uploaded, so a portal without custom fonts pays one cached request.
+//
+// It does not replace `nlds-fonts.css`: that file re-declares the vendored
+// design system's own faces (root-relative urls, see above), a different set
+// of fonts solving a different problem. Linked only when the installed theme
+// app has font uploads at all.
+// THE FACES THE THEME APP BUNDLES (site-links-the-theme-bridge REQ-STB-002).
+// A set names its family through `--nldesign-font-family` (Source Sans 3 for
+// the example gemeente); the theme app's `css/fonts.css` declares the faces
+// with urls relative to itself, so it is linked from the theme app, as a
+// static file a guest can read. Only when the controller names it: shipped,
+// and the portal on a resolved set. After this app's own faces, so a bundled
+// family wins over a same-named vendored one; before the uploaded faces
+// below, so an administrator's upload wins over both.
+if ($themeFontStylesheet !== '' && $themeApp !== null) {
+    $stylesheets[] = $asset($themeApp, 'css/' . $themeFontStylesheet . '.css');
+}
+
+$fontRoute = \OCP\Server::get(PortalThemeResolver::class)->fontStylesheetRoute();
+if ($fontRoute !== null) {
+    $stylesheets[] = $url->linkToRoute($fontRoute);
 }
 
 // The token layer, last, so a theme's value beats the component CSS's own
@@ -231,7 +278,41 @@ if ($favicon === '') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?php p($portalConfig['title'] ?? 'Portaal'); ?></title>
+    <?php
+    // The serving portal's own name, resolved server-side by
+    // PortalPageController::site(). `?? ` alone was not enough: the controller
+    // always passes the key and answers '' for every unresolved request, so a
+    // null-coalesce would have rendered an EMPTY title rather than the
+    // fallback. Checked for emptiness instead, which covers both "no portal
+    // resolved" and "a portal with a blank title".
+    ?>
+    <?php
+    // THE HEAD OF THE PAGE ASKED FOR (site-page-seo-history-and-media), from
+    // SiteHead: the same anonymous read the content API makes, so a draft or
+    // a missing route lends nothing and gets `noindex`. The title prefers the
+    // page's search title; with no head at all the portal's name stands, then
+    // the neutral fallback.
+    $head = (array)($head ?? []);
+    $headTitle = (string)($head['title'] ?? '');
+    if ($headTitle === '') {
+        $headTitle = (($portalConfig['title'] ?? '') !== '' ? (string)$portalConfig['title'] : 'Portaal');
+    }
+    ?>
+    <title><?php p($headTitle); ?></title>
+    <?php if (($head['description'] ?? '') !== '') { ?>
+    <meta name="description" content="<?php p($head['description']); ?>">
+    <meta property="og:description" content="<?php p($head['description']); ?>">
+    <?php } ?>
+    <meta name="robots" content="<?php p(($head['robots'] ?? '') !== '' ? $head['robots'] : 'noindex'); ?>">
+    <meta property="og:title" content="<?php p($headTitle); ?>">
+    <meta property="og:type" content="website">
+    <?php if (($head['canonical'] ?? '') !== '') { ?>
+    <link rel="canonical" href="<?php p($head['canonical']); ?>">
+    <meta property="og:url" content="<?php p($head['canonical']); ?>">
+    <?php } ?>
+    <?php if (($head['ogImage'] ?? '') !== '') { ?>
+    <meta property="og:image" content="<?php p($head['ogImage']); ?>">
+    <?php } ?>
     <?php
     // FAVICON. Without one the browser requests /favicon.ico against the
     // ORIGIN, which on a Nextcloud host is not this app's to answer — measured,
@@ -240,6 +321,17 @@ if ($favicon === '') {
     // way.
     ?>
     <link rel="icon" href="<?php p($favicon); ?>">
+    <?php
+    // THE WEB APP MANIFEST (site-reaches-portal-parity REQ-SRP-044), for the
+    // portal named in the address, so an installed app opens on this site with
+    // the same portal. Without a `?portal=` the manifest resolves the portal by
+    // host, the same way this page does.
+    $manifestParams = [];
+    if ((string)($portalConfig['portal'] ?? '') !== '') {
+        $manifestParams['portal'] = (string)$portalConfig['portal'];
+    }
+    ?>
+    <link rel="manifest" href="<?php p($url->linkToRoute('portaliq.portalManifest.manifest', $manifestParams)); ?>">
     <?php foreach ($stylesheets as $href) { ?>
     <link rel="stylesheet" href="<?php p($href); ?>">
     <?php } ?>

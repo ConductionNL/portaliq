@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
+use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -62,6 +65,27 @@ class PortalCatalogueReaderTest extends TestCase {
 		$this->assertSame('aanvragen/verhuizing', $topics[0]['entries'][0]['route']);
 
 	}//end testAnEntryCarriesTheRouteThatStartsItsForm()
+
+	/**
+	 * operate-show-per-case-type REQ-OSC-002: an entry whose form is bound to
+	 * a case type the portal hides is left out of the catalogue.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testAnEntryForAHiddenCaseTypeIsLeftOut(): void {
+		$this->seedEntry(topic: 'Wonen', title: 'Verhuizing doorgeven', route: 'aanvragen/verhuizing');
+		$this->seedEntry(topic: 'Wonen', title: 'Kapvergunning', route: 'aanvragen/kap');
+
+		$this->seedRow('portalFormBinding', ['portal' => 'gemeente-x', 'route' => 'aanvragen/verhuizing', 'status' => 'published', 'typeId' => 'verhuizing']);
+		$this->seedRow('portalFormBinding', ['portal' => 'gemeente-x', 'route' => 'aanvragen/kap', 'status' => 'published', 'typeId' => 'kapvergunning']);
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('allPublishedPortals')->willReturn([['slug' => 'gemeente-x', 'hiddenCaseTypes' => [['typeId' => 'verhuizing']]]]);
+		$reader = $this->fakeReader();
+
+		$topics = (new PortalCatalogueReader($reader, new PortalFormBindingResolver($reader), new CaseTypeVisibility($portals)))->topicsFor(portal: 'gemeente-x');
+
+		$this->assertSame(['Kapvergunning'], array_column($topics[0]['entries'], 'title'));
+	}//end testAnEntryForAHiddenCaseTypeIsLeftOut()
 
 	/**
 	 * Put one published catalogue entry in the fake store.

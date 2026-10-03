@@ -52,6 +52,11 @@ class PortalActionForwarder {
 	private const FORWARD_TIMEOUT = 10;
 
 	/**
+	 * HTTP methods an endpoint action may declare (contract v2, A6).
+	 */
+	private const ALLOWED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request (source of the raw relayed body).
@@ -81,12 +86,20 @@ class PortalActionForwarder {
 	 * @param array<string, mixed> $action The already-authorised action declaration.
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed>|null $whitelisted The rebuilt whitelisted body, or null to relay raw.
+	 * @param string $scopeValue The server-resolved value of the action's declared `scopeClaim`,
+	 *                           signed into the assertion; '' when the action declares none.
 	 *
 	 * @return IResponse|null The domain app's response, or null on transport failure.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
-	public function forward(array $action, array $subject, ?array $whitelisted = null): ?IResponse {
+	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = ''): ?IResponse {
+		$scopeClaim = '';
+		if (is_string($action['scopeClaim'] ?? null) === true) {
+			$scopeClaim = $action['scopeClaim'];
+		}
+
 		$body = $this->requestBody();
 		if ($whitelisted !== null) {
 			$body = (string)json_encode($whitelisted);
@@ -94,7 +107,11 @@ class PortalActionForwarder {
 
 		$options = [
 			'headers' => [
-				'X-Portal-Subject' => $this->session->issueAssertion($subject),
+				'X-Portal-Subject' => $this->session->issueAssertion(
+					subject: $subject,
+					scopeClaim: $scopeClaim,
+					scopeValue: $scopeValue
+				),
 				'Content-Type' => 'application/json',
 			],
 			'timeout' => self::FORWARD_TIMEOUT,
@@ -126,6 +143,33 @@ class PortalActionForwarder {
 	}//end forward()
 
 	/**
+	 * Whether an action may be forwarded at all: a non-empty INSTANCE-LOCAL
+	 * endpoint path (SSRF guard: a leading slash, no protocol-relative `//`,
+	 * no scheme) and an allowed method. Trust is the caller's check.
+	 *
+	 * The same rule `ContributionController::isForwardableAction()` applies to
+	 * the id-addressed forward; the row-scoped forward reads it from here.
+	 *
+	 * @param array<string, mixed> $action The matched action declaration.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 */
+	public function isForwardable(array $action): bool {
+		$endpoint = ($action['endpoint'] ?? null);
+		if (is_string($endpoint) === false
+			|| str_starts_with($endpoint, '/') === false
+			|| str_starts_with($endpoint, '//') === true
+			|| str_contains($endpoint, '://') === true
+		) {
+			return false;
+		}
+
+		return in_array(strtoupper((string)($action['method'] ?? 'POST')), self::ALLOWED_METHODS, true);
+	}//end isForwardable()
+
+	/**
 	 * Decode a relayed domain response body to an array, degrading to `[]` for
 	 * an empty, non-string or non-array-decoding body.
 	 *
@@ -151,23 +195,41 @@ class PortalActionForwarder {
 
 	/**
 	 * The raw request body to relay verbatim to the domain endpoint. Portaliq
-	 * never interprets it — the domain app validates its own input.
+	 * never interprets it: the domain app validates its own input.
+	 *
+	 * Nextcloud's runtime request declares getContent() protected, so it is
+	 * called only when callable; otherwise the raw body comes from the input
+	 * stream. A method_exists() guard let the protected call through and every
+	 * forwarded action answered 500.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 */
-	private function requestBody(): string {
-		// OCP\IRequest does not declare getContent() in every stub set; the
-		// runtime request object provides it. Guarded so unit mocks without it
-		// simply relay an empty body.
-		if (method_exists($this->request, 'getContent') === false) {
-			return '';
+	protected function requestBody(): string {
+		if (is_callable([$this->request, 'getContent']) === true) {
+			$content = $this->request->getContent();
+			if (is_string($content) === true) {
+				return $content;
+			}
 		}
 
-		$content = $this->request->getContent();
-		if (is_string($content) === false) {
-			return '';
-		}
-
-		return $content;
+		return $this->rawInput();
 	}//end requestBody()
+
+	/**
+	 * The raw body of the current HTTP request, read from the input stream.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 */
+	protected function rawInput(): string {
+		$raw = file_get_contents('php://input');
+		if (is_string($raw) === false) {
+			return '';
+		}
+
+		return $raw;
+	}//end rawInput()
 }//end class

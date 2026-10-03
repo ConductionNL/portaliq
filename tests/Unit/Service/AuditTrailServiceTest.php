@@ -5,143 +5,109 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalObjectWriter;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use ReflectionClass;
 use RuntimeException;
 
 /**
- * portal-session-hardening-v2: an audit entry is written per verb with NO
- * payload content, a `record()` failure is caught + logged and NEVER
- * propagated (the audited action must never be reversed), the download
- * hook's fixed 6-argument call shape (no jti/appId) still records correctly
- * with sane defaults, and `countsByVerb()` degrades to an all-zero map when
- * OpenRegister is unavailable rather than failing the metrics endpoint.
+ * consume-or-audit-trail-proof-records: a proof record is one row in
+ * OpenRegister's audit trail (the real AuditTrail entity), carries no payload,
+ * never fails the audited action, and the metrics count those rows per verb.
  *
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T08
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T13
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T03
  */
 class AuditTrailServiceTest extends TestCase {
+	/**
+	 * The fake audit-trail mapper the service writes into.
+	 *
+	 * @var FakeAuditTrailMapper
+	 */
+	private FakeAuditTrailMapper $mapper;
 
-	public function testRecordWritesAnAppendOnlyEntryWithNoPayload(): void {
-		$captured = null;
-		$writer = $this->createMock(PortalObjectWriter::class);
-		$writer->method('createObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$captured) {
-				$captured = ['register' => $register, 'schema' => $schema, 'scopeField' => $scopeField, 'data' => $data];
-				return $data;
-			}
+	protected function setUp(): void {
+		if (class_exists('OCA\\OpenRegister\\Db\\AuditTrail') === false) {
+			$this->markTestSkipped('Set PORTALIQ_OPENREGISTER_LIB to an openregister lib/ to load the real AuditTrail entity.');
+		}
+
+		$this->mapper = new FakeAuditTrailMapper();
+	}
+
+	private function service(?LoggerInterface $logger = null, bool $withOpenRegister = true): AuditTrailService {
+		$container = $this->createMock(ContainerInterface::class);
+		if ($withOpenRegister === true) {
+			$container->method('get')->with('OCA\\OpenRegister\\Db\\AuditTrailMapper')->willReturn($this->mapper);
+		} else {
+			$container->method('get')->willThrowException(new RuntimeException('openregister is not installed'));
+		}
+
+		return new AuditTrailService($container, $logger ?? $this->createMock(LoggerInterface::class));
+	}
+
+	public function testARecordIsOneOpenRegisterAuditRowWithNoPayload(): void {
+		$target = '5b0f7c2e-1d7e-4a8f-9c3b-2f6a1e0d4c11';
+		$this->service()->record('create', 'party:123', 'org-a', 'dossiq', 'cases', $target, 'jti-1', 'dossiq');
+
+		$this->assertCount(1, $this->mapper->rows);
+		$row = $this->mapper->rows[0];
+		$this->assertInstanceOf('OCA\\OpenRegister\\Db\\AuditTrail', $row);
+		$this->assertSame('portaliq.create', $row->getAction());
+		$this->assertSame('party:123', $row->getUser());
+		$this->assertSame('jti-1', $row->getSession());
+		$this->assertSame('org-a', $row->getOrganisationId());
+		$this->assertSame($target, $row->getObjectUuid());
+		$this->assertNotEmpty($row->getUuid());
+		$this->assertNotNull($row->getCreated());
+		// Exactly the target, never the object's payload.
+		$this->assertSame(
+			['appId' => 'dossiq', 'register' => 'dossiq', 'schema' => 'cases', 'targetId' => $target],
+			$row->getChanged()
 		);
+	}
 
-		$service = new AuditTrailService($writer, $this->createMock(LoggerInterface::class));
-		$service->record(
-			verb: 'create',
-			subjectRef: 's1',
-			organisation: 'org-1',
-			register: 'r1',
-			schema: 'a',
-			id: 'obj-1',
-			jti: 'jti-1',
-			appId: 'demo'
-		);
+	public function testTheDownloadHookCallShapeRecordsWithDefaults(): void {
+		$this->service()->record('login', 'party:9', 'org-b', 'portaliq', 'session', '');
 
-		$this->assertSame('portaliq', $captured['register']);
-		$this->assertSame('portalAuditEntry', $captured['schema']);
-		// No ownership re-verification is needed for a fact record.
-		$this->assertSame('', $captured['scopeField']);
+		$row = $this->mapper->rows[0];
+		$this->assertSame('portaliq.login', $row->getAction());
+		$this->assertNull($row->getSession());
+		$this->assertNull($row->getObjectUuid());
+		$this->assertSame('portaliq', $row->getChanged()['appId']);
+	}
 
-		$data = $captured['data'];
-		$this->assertSame('jti-1', $data['jti']);
-		$this->assertSame('s1', $data['subjectRef']);
-		$this->assertSame('org-1', $data['organisation']);
-		$this->assertSame('demo', $data['appId']);
-		$this->assertSame('create', $data['verb']);
-		$this->assertSame('r1', $data['register']);
-		$this->assertSame('a', $data['schema']);
-		$this->assertSame('obj-1', $data['targetId']);
-		$this->assertArrayHasKey('timestamp', $data);
-		// NEVER a payload/content field — a fact record only.
-		$this->assertArrayNotHasKey('data', $data);
-		$this->assertArrayNotHasKey('payload', $data);
-		$this->assertArrayNotHasKey('object', $data);
-
-	}//end testRecordWritesAnAppendOnlyEntryWithNoPayload()
-
-	public function testRecordDefaultsJtiAndAppIdForTheFixedDownloadHookCallShape(): void {
-		// PortalAuditHook::download() calls record() with EXACTLY 6 arguments
-		// (no jti, no appId) — its signature predates this service and is
-		// pinned by PortalAuditHookTest. Confirms the defaults keep it working.
-		$captured = null;
-		$writer = $this->createMock(PortalObjectWriter::class);
-		$writer->method('createObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$captured) {
-				$captured = $data;
-				return $data;
-			}
-		);
-
-		$service = new AuditTrailService($writer, $this->createMock(LoggerInterface::class));
-		$service->record(
-			verb: 'download',
-			subjectRef: 's1',
-			organisation: 'org-1',
-			register: 'portaliq',
-			schema: 'exampleDocument',
-			id: 'd-1'
-		);
-
-		$this->assertSame('', $captured['jti']);
-		$this->assertSame('portaliq', $captured['appId']);
-		$this->assertSame('download', $captured['verb']);
-
-	}//end testRecordDefaultsJtiAndAppIdForTheFixedDownloadHookCallShape()
-
-	public function testRecordFailureIsCaughtLoggedAndNeverPropagated(): void {
-		$writer = $this->createMock(PortalObjectWriter::class);
-		$writer->method('createObject')->willThrowException(new RuntimeException('OR unreachable'));
-
+	public function testAFailureIsLoggedAndNeverThrown(): void {
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())->method('warning');
 
-		$service = new AuditTrailService($writer, $logger);
+		$this->service(logger: $logger, withOpenRegister: false)->record('create', 'party:1', 'org', 'r', 's', 'x');
+		$this->assertSame([], $this->mapper->rows);
+	}
 
-		// Must NOT throw — the audited action already happened.
-		$service->record(verb: 'create', subjectRef: 's1', organisation: 'org-1', register: 'r1', schema: 'a', id: 'obj-1');
-		$this->addToAssertionCount(1);
+	public function testTheMetricsCountThePortalRowsPerVerb(): void {
+		$service = $this->service();
+		$service->record('login', 'party:1', 'org', 'portaliq', 'session', '');
+		$service->record('login', 'party:2', 'org', 'portaliq', 'session', '');
+		$service->record('download', 'party:1', 'org', 'dossiq', 'cases', 'x');
+		// A row OpenRegister wrote itself for an object create is not a portal proof record.
+		$this->mapper->rows[] = $this->mapper->foreignRow('create');
 
-	}//end testRecordFailureIsCaughtLoggedAndNeverPropagated()
-
-	public function testCountsByVerbReturnsACountPerVerb(): void {
-		$writer = $this->createMock(PortalObjectWriter::class);
-		$writer->method('countObjects')->willReturnCallback(
-			function (string $register, string $schema, array $filters = []) {
-				$counts = ['login' => 3, 'create' => 5];
-				return ($counts[($filters['verb'] ?? '')] ?? 0);
-			}
-		);
-
-		$service = new AuditTrailService($writer, $this->createMock(LoggerInterface::class));
 		$counts = $service->countsByVerb();
 
-		$this->assertSame(3, $counts['login']);
-		$this->assertSame(5, $counts['create']);
-		$this->assertSame(0, $counts['logout']);
-		// Every declared verb is present, count-only — no subject/target/payload keys.
-		$this->assertSame(['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh'], array_keys($counts));
+		$this->assertSame(['create' => 0, 'update' => 0, 'forward' => 0, 'download' => 1, 'login' => 2, 'logout' => 0, 'refresh' => 0, 'complete' => 0], $counts);
+	}
 
-	}//end testCountsByVerbReturnsACountPerVerb()
+	public function testTheCountsAreZeroWithoutOpenRegister(): void {
+		$counts = $this->service(withOpenRegister: false)->countsByVerb();
 
-	public function testCountsByVerbDegradesToZeroWhenWriterFails(): void {
-		$writer = $this->createMock(PortalObjectWriter::class);
-		$writer->method('countObjects')->willReturn(0);
+		$this->assertSame(array_fill_keys(AuditTrailService::VERBS, 0), $counts);
+	}
 
-		$service = new AuditTrailService($writer, $this->createMock(LoggerInterface::class));
-		$counts = $service->countsByVerb();
+	public function testTheServiceCanWriteNowhereButTheAuditTrail(): void {
+		$parameters = (new ReflectionClass(AuditTrailService::class))->getConstructor()->getParameters();
+		$types = array_map(static fn ($parameter): string => (string)$parameter->getType(), $parameters);
 
-		foreach ($counts as $count) {
-			$this->assertSame(0, $count);
-		}
-
-	}//end testCountsByVerbDegradesToZeroWhenWriterFails()
-}//end class
+		$this->assertSame([ContainerInterface::class, LoggerInterface::class], $types);
+	}
+}

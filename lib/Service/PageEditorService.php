@@ -75,6 +75,33 @@ class PageEditorService {
 	private const PAGE_SLUG = 'page';
 
 	/**
+	 * The media library's schema, written by the same editor groups
+	 * (site-page-seo-history-and-media T06): whoever may edit pages may upload
+	 * the images they use.
+	 *
+	 * @var string
+	 */
+	private const MEDIA_SLUG = 'media';
+
+	/**
+	 * The portal menus, written by the same editor groups
+	 * (portal-in-place-editing REQ-PIE-012): whoever may edit pages from the
+	 * portal may edit the menu that links them, and nobody else may.
+	 *
+	 * @var string
+	 */
+	private const MENU_SLUG = 'menu';
+
+	/**
+	 * The portal notices' schema, written by the same editor groups
+	 * (operate-maintenance-notice T01): whoever may edit pages may announce
+	 * maintenance above them.
+	 *
+	 * @var string
+	 */
+	private const NOTICE_SLUG = 'portalNotice';
+
+	/**
 	 * The actions the editor groups are granted on that schema.
 	 *
 	 * `read` is deliberately absent: it carries the public rule that serves
@@ -239,6 +266,7 @@ class PageEditorService {
 	 * @return bool True when the schema was updated.
 	 *
 	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
 	 */
 	public function applyToSchema(array $groups): bool {
 		$mapper = $this->schemaMapper();
@@ -254,17 +282,17 @@ class PageEditorService {
 				return false;
 			}
 
-			$authorization = ($schema->getAuthorization() ?? []);
-			if (is_array($authorization) === false) {
-				$authorization = [];
-			}
+			$this->grantWrites(mapper: $mapper, schema: $schema, groups: $groups);
 
-			foreach (self::WRITE_ACTIONS as $action) {
-				$authorization[$action] = array_values($groups);
+			// The media library, the menus and the notices follow the pages. Any
+			// of them is absent on an instance whose register predates it, which
+			// leaves the pages governed.
+			foreach ([self::MEDIA_SLUG, self::MENU_SLUG, self::NOTICE_SLUG] as $slug) {
+				$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: Application::APP_ID);
+				if ($follower !== null) {
+					$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups);
+				}
 			}
-
-			$schema->setAuthorization($authorization);
-			$mapper->update($schema);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: failed to write the page schema authorization',
@@ -275,6 +303,30 @@ class PageEditorService {
 
 		return true;
 	}//end applyToSchema()
+
+
+	/**
+	 * Write the editor groups into one schema's write rules, keeping `read`.
+	 *
+	 * @param object        $mapper The schema mapper.
+	 * @param object        $schema The schema entity.
+	 * @param array<string> $groups The normalised group ids.
+	 *
+	 * @return void
+	 */
+	private function grantWrites(object $mapper, object $schema, array $groups): void {
+		$authorization = ($schema->getAuthorization() ?? []);
+		if (is_array($authorization) === false) {
+			$authorization = [];
+		}
+
+		foreach (self::WRITE_ACTIONS as $action) {
+			$authorization[$action] = array_values($groups);
+		}
+
+		$schema->setAuthorization($authorization);
+		$mapper->update($schema);
+	}//end grantWrites()
 
 
 	/**

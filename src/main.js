@@ -39,7 +39,9 @@ import {
 	registerIcons,
 	registerLeafIntegrations,
 	registerTranslations,
+	useObjectStore,
 } from '@conduction/nextcloud-vue'
+import { loadState } from '@nextcloud/initial-state'
 import {
 	loadTranslations,
 	translatePlural as n,
@@ -53,6 +55,9 @@ import App from './App.vue'
 import enTranslations from '../l10n/en.json'
 import customComponents from './customComponents.js'
 import appIcons from './icons.js'
+import { registerProposalQueueLeaf } from './integrations/registerProposalQueueLeaf.js'
+import { normaliseAccess, routeAllowed, withAccess } from './lib/adminAccess.js'
+import { recordListFetches } from './lib/listRefresh.js'
 import bundledManifest from './manifest.json'
 import pinia from './pinia.js'
 // v2 five-kind registry — the replacement for customComponents.
@@ -97,6 +102,9 @@ import './assets/app.css'
 installIntegrationRegistry()
 registerBuiltinIntegrations()
 registerLeafIntegrations()
+// Portaliq's own leaf (change-proposal-queue), so its review surface renders
+// on portaliq's pages too; other apps' pages get it from `portaliq-leaves`.
+registerProposalQueueLeaf()
 
 // Register library-side icon set + lib translations once at bootstrap.
 registerIcons(appIcons)
@@ -205,6 +213,17 @@ const router = createRouter({
 	routes: routesFromManifest(bundledManifest),
 })
 
+// Which pages this user's role may use (admin-menu-follows-roles). The menu
+// hides the rest through its `visibleIf` predicates on `access.*`, and the
+// guard below sends a typed address for such a page to the dashboard.
+const access = normaliseAccess(loadState('portaliq', 'access', null))
+const manifest = withAccess(bundledManifest, access)
+router.beforeEach((to) =>
+	routeAllowed(manifest, String(to.name || ''), access)
+		? true
+		: { name: 'Dashboard' },
+)
+
 tryLoadTranslations()
 
 // Pass shallow copies of the registry maps to App.vue. The lib exports
@@ -220,7 +239,7 @@ const customComponentsProp = { ...customComponents }
 const registryProp = { ...registry }
 
 const app = createApp(App, {
-	manifest: bundledManifest,
+	manifest,
 	customComponents: customComponentsProp,
 	pageTypes: pageTypesProp,
 	registry: registryProp,
@@ -231,5 +250,8 @@ const app = createApp(App, {
 // gone from the Vue 3 bootstrap entirely.
 app.mixin({ methods: { t, n } })
 app.use(pinia)
+// Remember what each list last fetched, so a handler can refresh its list in
+// place on the same page (news-list-keeps-its-page).
+recordListFetches(useObjectStore(pinia))
 app.use(router)
 app.mount('#content')

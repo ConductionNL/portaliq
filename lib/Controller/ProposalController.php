@@ -165,6 +165,12 @@ class ProposalController extends Controller {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		// A colleague proposes on a record they can see. Without this any
+		// account could queue a proposal on whatever id it named.
+		if ($this->guard->mayRead(register: $register, schema: $schema, id: $id) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
 		return $this->answer(
 			result: $this->proposals->propose(
 				subject: ['register' => $register, 'schema' => $schema, 'id' => $id],
@@ -224,6 +230,25 @@ class ProposalController extends Controller {
 
 		return new JSONResponse(['proposals' => $proposals]);
 	}//end index()
+
+	/**
+	 * The bearer's own proposals, any state.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function mine(): JSONResponse {
+		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		return new JSONResponse(['proposals' => $this->proposals->mine(proposedBy: (string)($subject['subjectRef'] ?? ''))]);
+	}//end mine()
 
 	/**
 	 * Accept a proposal, writing the record as the reviewer.

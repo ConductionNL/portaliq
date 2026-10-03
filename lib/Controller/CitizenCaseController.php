@@ -43,11 +43,15 @@ use OCA\Portaliq\Contribution\CitizenWriteActionFinder;
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Service\CitizenCaseDocuments;
+use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
+use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -59,6 +63,7 @@ use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
@@ -84,6 +89,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 */
 	private ?CitizenWriteActionFinder $writeActions = null;
 
+
 	/**
 	 * Constructor.
 	 *
@@ -102,6 +108,11 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param PortalPartyTreeResolver $tree How far a mandate reaches.
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
+	 * @param CitizenCaseDocuments $documents Lists and opens the documents on the case.
+	 * @param MandatedCaseReader|null $mandatedCases Reads a case listed under a
+	 *                                               mandate (cases-my-cases-page).
+	 *                                               Absent opens only own cases.
+	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -119,6 +130,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly PortalPartyTreeResolver $tree,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		private readonly CitizenCaseDocuments $documents,
+		private readonly ?MandatedCaseReader $mandatedCases = null,
+		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -140,19 +154,63 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	public function show(string $register, string $schema, string $id): JSONResponse {
 		$context = $this->context(register: $register, schema: $schema, id: $id);
 		if ($context instanceof JSONResponse) {
-			return $context;
+			// Not their own case: it may be one they see under the mandate
+			// they chose (cases-my-cases-page REQ-CMC-004), read-only.
+			// The case comes from the same reader that lists the mandated
+			// cases on "My cases", so this screen never opens a case the list
+			// would not show; every write still checks ownership.
+			return ($this->mandatedCases?->screenOr(
+				refusal: $context,
+				subject: $this->session->resolveFromBearer($this->request->getHeader('Authorization')),
+				mandateId: (string)$this->request->getParam('mandate', ''),
+				target: ['register' => $register, 'schema' => $schema, 'id' => $id],
+				l10n: $this->l10n
+			) ?? $context);
 		}
 
 		return new JSONResponse([
-			'case' => $context['case'],
+			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $context['case']),
 			'writableSet' => $context['set'],
 			// What the portal may offer about ending this request, resolved
 			// from the case type rather than from any list the portal keeps
 			// (withdrawing-your-own-case REQ-WOC-001).
-			'withdrawal' => $this->writableSet->withdrawal(action: $context['action'], case: $context['case']),
-			'documents' => $this->fileReader->listFiles(register: $register, schema: $schema, id: $id),
+			'withdrawal' => $this->writableSet->withdrawal(
+				action: $context['action'],
+				case: $context['case'],
+				closedField: (string)($context['closedField'] ?? '')
+			),
+			'documents' => $this->documents->listFor(context: $context, register: $register, schema: $schema, id: $id),
+			'documentsLabel' => (string)($context['documents']['label'] ?? ''),
 		]);
 	}//end show()
+
+	/**
+	 * Open one document the case screen listed. The id picks among what this
+	 * case lists now; nothing in the request says where a file lives. A
+	 * foreign case, a missing one and an unlisted id answer the same 404
+	 * (cases-documents-on-the-case, REQ-CDC-002).
+	 *
+	 * @param string $register The register the case lives in.
+	 * @param string $schema The schema the case lives in.
+	 * @param string $id The case id.
+	 * @param string $documentId The listed entry's id.
+	 *
+	 * @return Response The file, or 401 / 404.
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function document(string $register, string $schema, string $id, string $documentId): Response {
+		return $this->documents->open(
+			context: $this->context(register: $register, schema: $schema, id: $id),
+			register: $register,
+			schema: $schema,
+			id: $id,
+			documentId: $documentId
+		);
+	}//end document()
 
 	/**
 	 * Amend the answers the citizen already gave, inside the declared window.
@@ -258,7 +316,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 				existing: $this->fileReader->listFiles(register: $register, schema: $schema, id: $id),
 				fileName: $upload['name']
 			),
-			content: $upload['content']
+			content: $upload['content'],
+			// Tagged, so the case screen lists it under "Sent by you" and
+			// nothing else from the folder (cases-documents-on-the-case).
+			tags: [PortalFileWriter::TAG_FROM_APPLICANT]
 		);
 		if ($attached === null) {
 			return $this->refuse(
@@ -312,7 +373,11 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			return $refusal;
 		}
 
-		$withdrawal = $this->writableSet->withdrawal(action: $context['action'], case: $context['case']);
+		$withdrawal = $this->writableSet->withdrawal(
+			action: $context['action'],
+			case: $context['case'],
+			closedField: (string)($context['closedField'] ?? '')
+		);
 		if (($withdrawal['open'] ?? false) !== true) {
 			return $this->refuse(
 				message: (string)($withdrawal['reason'] ?? ''),
@@ -420,8 +485,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		// Nothing is deleted and no undo is offered: the answers stay
 		// readable, with the withdrawal beside them.
 		return new JSONResponse([
-			'case' => $updated,
-			'withdrawal' => $this->writableSet->withdrawal(action: $action, case: $updated),
+			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated),
+			'withdrawal' => $this->writableSet->withdrawal(action: $action, case: $updated, closedField: (string)($context['closedField'] ?? '')),
 		]);
 	}//end applyWithdrawal()
 
@@ -479,7 +544,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			contributingApp: $match['app'],
 			audience: (string)($subject['audience'] ?? '')
 		);
-		if ($case === null) {
+		// Change signin-eherkenning-branch D2: a branch session changes only its
+		// branch's cases, and answers the same as for a case not its own.
+		if ($case === null || $this->branches->admits(subject: $subject, collection: $action, row: $case) === false) {
 			return $this->refuse(
 				message: $this->l10n->t('This case is not yours.'),
 				slug: 'case-not-yours',
@@ -491,11 +558,16 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'subject' => $subject,
 			'action' => $action,
 			'app' => $match['app'],
+			'filesDownload' => $match['filesDownload'],
+			'documents' => ($match['documents'] ?? null),
+			'fields' => ($match['fields'] ?? null),
+			'closedField' => (string)($match['closedField'] ?? ''),
 			'case' => $case,
 			'set' => $this->writableSet->resolve(
 				action: $action,
 				case: $case,
-				audience: (string)($subject['audience'] ?? '')
+				audience: (string)($subject['audience'] ?? ''),
+				closedField: (string)($match['closedField'] ?? '')
 			),
 		];
 	}//end context()
@@ -637,9 +709,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			occurredAt: $occurredAt
 		);
 
-		return new JSONResponse(['case' => $updated]);
+		return new JSONResponse(['case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated)]);
 	}//end applyAmendment()
-
 
 	/**
 	 * A refusal the citizen can read: one sentence, plus a slug the portal

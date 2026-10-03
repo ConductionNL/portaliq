@@ -44,8 +44,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCP\AppFramework\Utility\ITimeFactory;
-use OCP\L10N\IFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -75,7 +75,7 @@ class SubmissionReceiptService {
 	 * convention — `l10n/nl.json` supplies the Dutch translation for this
 	 * EXACT string; `l10n/en.json` maps it to itself.
 	 */
-	private const SUBJECT_KEY = 'Confirmation of receipt — reference %1$s';
+	private const SUBJECT_KEY = 'Confirmation of receipt, reference %1$s';
 
 	/**
 	 * The receipt body-text translation key (B1 language level). English key
@@ -89,9 +89,9 @@ class SubmissionReceiptService {
 	 *
 	 * @param PortalObjectWriter $writer Subject-scoped OR writer (same
 	 *                                   one the create used).
-	 * @param IFactory $l10nFactory Resolves NL/EN translators
-	 *                              independent of any session locale
-	 *                              (portal subjects are not NC users).
+	 * @param PortalNoticeLanguage $language The translations in the language
+	 *                                      of the resident's portal (portal
+	 *                                      subjects are not NC users).
 	 * @param ITimeFactory $timeFactory Testable clock for the ISO-8601
 	 *                                  timestamps.
 	 * @param LoggerInterface $logger The logger.
@@ -102,7 +102,7 @@ class SubmissionReceiptService {
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
-		private readonly IFactory $l10nFactory,
+		private readonly PortalNoticeLanguage $language,
 		private readonly ITimeFactory $timeFactory,
 		private readonly LoggerInterface $logger,
 		private readonly NotificationDispatchService $notificationDispatch,
@@ -177,6 +177,8 @@ class SubmissionReceiptService {
 	 * @param string $audience The subject's audience (notification dispatch).
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
 	private function doRecord(
 		string $subjectRef,
@@ -188,6 +190,8 @@ class SubmissionReceiptService {
 	): void {
 		$referenceId = $this->generateReferenceId();
 		$submittedAt = $this->now();
+		// One language, the portal's, as change notices are (REQ-NAP-010).
+		$l10n = $this->language->forOrganisation(organisation: $organisation);
 
 		$message = $this->writer->createObject(
 			register: self::REGISTER,
@@ -196,8 +200,8 @@ class SubmissionReceiptService {
 			subjectRef: $subjectRef,
 			organisation: $organisation,
 			data: [
-				'subject' => $this->subjectLine(referenceId: $referenceId),
-				'body' => $this->bodyText(referenceId: $referenceId, submittedAt: $submittedAt),
+				'subject' => $l10n->t(self::SUBJECT_KEY, [$referenceId]),
+				'body' => $l10n->t(self::BODY_KEY, [$referenceId, $submittedAt]),
 				'referenceId' => $referenceId,
 				'dataCopy' => $whitelistedData,
 				'read' => false,
@@ -356,33 +360,81 @@ class SubmissionReceiptService {
 	}//end now()
 
 	/**
-	 * The bilingual (NL first, EN second) B1-level receipt subject line.
+	 * The WMEBV "copy of the submitted data" for a completion — the role the
+	 * whitelisted field map plays for a create. It carries what the AUTHORITY
+	 * RECORDED — the seam row's `responses`, `evidence` (file NAMES as stored)
+	 * and outcome, plus the resident's comment — falling back to the request
+	 * only where the seam row carries no such key. Never file content, never a
+	 * temp path: this copy lands in the resident's receipt (`dataCopy`) and in
+	 * the proof log (`payloadCopy`).
 	 *
-	 * @param string $referenceId The receipt's reference id.
+	 * @param string $taskUuid The completed task's uuid.
+	 * @param array<string, mixed> $task The seam's completed task row.
+	 * @param array<string, mixed> $answers The submitted answers.
+	 * @param string|null $comment The resident's comment.
+	 * @param string $outcome The requested outcome.
+	 * @param array<int, array<string, mixed>> $files The relayed uploads.
 	 *
-	 * @return string
+	 * @return array<string, mixed> The whitelisted copy for the receipt and proof log.
+	 *
+	 * A pure mapping of the seam's answer: it reads no service state, so a
+	 * test can exercise it on a partially mocked service.
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
 	 */
-	private function subjectLine(string $referenceId): string {
-		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t(self::SUBJECT_KEY, [$referenceId]);
-		$enText = $this->l10nFactory->get('portaliq', 'en')->t(self::SUBJECT_KEY, [$referenceId]);
+	public function taskCompletionCopy(
+		string $taskUuid,
+		array $task,
+		array $answers,
+		?string $comment,
+		string $outcome,
+		array $files,
+	): array {
+		// 🔴 THE COPY DESCRIBES WHAT THE AUTHORITY RECORDED, NOT WHAT THE RESIDENT
+		// SENT. The seam's completed row is authoritative: `evidence` lists the
+		// files PortalTaskService::storeFiles() actually wrote to the case
+		// (PHP drops an oversized/partial upload with tmp_name '' and the
+		// gateway then forwards nothing for it, while the request still names
+		// it), `responses` is the answers map the seam stored. A receipt or
+		// proof log naming an upload the authority never received would be a
+		// false art. 2:10 statement (review of #501). The request is only the
+		// fallback for a seam row that predates those keys.
+		$recordedFiles = $files;
+		if (array_key_exists('evidence', $task) === true) {
+			$recordedFiles = (array)$task['evidence'];
+		}
 
-		return $nlText . ' / ' . $enText;
-	}//end subjectLine()
+		$names = [];
+		foreach ($recordedFiles as $stored) {
+			$name = 'upload';
+			if (is_array($stored) === true) {
+				$name = (string)($stored['name'] ?? 'upload');
+			}
 
-	/**
-	 * The bilingual (NL first, EN second) B1-level receipt body text — plain,
-	 * short sentences, no jargon, satisfying the WMEBV ontvangstbevestiging
-	 * duty regardless of which language the subject reads first.
-	 *
-	 * @param string $referenceId The receipt's reference id.
-	 * @param string $submittedAt The ISO-8601 submission timestamp.
-	 *
-	 * @return string
-	 */
-	private function bodyText(string $referenceId, string $submittedAt): string {
-		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t(self::BODY_KEY, [$referenceId, $submittedAt]);
-		$enText = $this->l10nFactory->get('portaliq', 'en')->t(self::BODY_KEY, [$referenceId, $submittedAt]);
+			$names[] = $name;
+		}
 
-		return $nlText . "\n\n" . $enText;
-	}//end bodyText()
+		$recordedAnswers = $answers;
+		if (is_array($task['responses'] ?? null) === true) {
+			$recordedAnswers = $task['responses'];
+		}
+
+		$recorded = (string)($task['outcome'] ?? '');
+		if ($recorded === '') {
+			$recorded = $outcome;
+		}
+
+		return [
+			'taskUuid' => $taskUuid,
+			// What the resident saw in "Mijn taken" (displayTitle), falling back
+			// to the raw title for a seam that does not compute one.
+			'title' => (string)($task['displayTitle'] ?? $task['title'] ?? ''),
+			'outcome' => $recorded,
+			'comment' => (string)($comment ?? ''),
+			'answers' => $recordedAnswers,
+			'files' => $names,
+		];
+	}//end taskCompletionCopy()
+
+
 }//end class

@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -175,7 +176,7 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 		$service = $this->oidcService(overridesJson: json_encode($overrides), secret: 's3cr3t-value-0000000000');
 
 		$config = $service->resolve('gemeente-x');
-		$this->assertSame([['provider' => 'eherkenning', 'label' => 'eHerkenning']], $config['oidcProviders']);
+		$this->assertSame([['provider' => 'eherkenning', 'label' => 'eHerkenning', 'route' => 'oidc']], $config['oidcProviders']);
 		// The client secret is NEVER present anywhere in the SPA-facing shape.
 		$this->assertStringNotContainsString('s3cr3t-value', (string)json_encode($config));
 
@@ -188,6 +189,28 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 		$this->assertSame('eherkenning', $full['identityType']);
 
 	}//end testConfiguredProviderSurfacesInOidcProvidersAndResolvesFully()
+
+	/**
+	 * REQ-SIS-005: silent sign-in is on only when the override names a
+	 * provider the organisation configured on its own OIDC broker.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
+	 */
+	public function testSilentSignInNamesAConfiguredOidcProvider(): void {
+		$oidc = ['eherkenning' => ['issuer' => 'https://broker.example/idp', 'clientId' => 'rp-client-1']];
+		foreach ([['eherkenning', 'eherkenning'], ['digid', ''], [null, ''], [['x'], '']] as [$named, $expected]) {
+			$overrides = ['oidc' => $oidc];
+			if ($named !== null) {
+				$overrides['silentSignIn'] = $named;
+			}
+
+			$service = $this->oidcService(overridesJson: json_encode($overrides), secret: 's3cr3t-value-0000000000');
+			$this->assertSame($expected, $service->resolve('gemeente-x')['silentSignIn'], json_encode($named));
+		}
+
+		$this->assertSame('', $this->oidcService(overridesJson: '{}', secret: '')->resolve('')['silentSignIn']);
+
+	}//end testSilentSignInNamesAConfiguredOidcProvider()
 
 	public function testUnconfiguredProviderResolvesToNullNotAnError(): void {
 		$service = $this->oidcService(overridesJson: '{}', secret: '');
@@ -335,6 +358,236 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 		);
 
 	}//end oidcService()
+
+	/**
+	 * The message box channel exists only when the organisation names both an
+	 * integriq digital post source and the label residents read
+	 * (inbox-berichtenbox-channel, REQ-MBC-001). Half a configuration is no
+	 * channel: a source without a label would show residents an empty choice,
+	 * a label without a source would promise a send nothing can make.
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
+	 */
+	public function testMessageBoxNeedsSourceAndLabel(): void {
+		$mapper = $this->oneOrganisation();
+
+		$both = $this->service(mapper: $mapper, overridesJson: json_encode(['messageBox' => ['sourceId' => 'berichtenbox-venray', 'label' => 'MijnOverheid Berichtenbox']]));
+		$this->assertSame(['sourceId' => 'berichtenbox-venray', 'label' => 'MijnOverheid Berichtenbox'], $both->messageBox('gemeente-x'));
+
+		foreach ([
+			['sourceId' => 'berichtenbox-venray'],
+			['label' => 'MijnOverheid Berichtenbox'],
+			['sourceId' => '', 'label' => 'MijnOverheid Berichtenbox'],
+			['sourceId' => ['x'], 'label' => 'MijnOverheid Berichtenbox'],
+			'on',
+		] as $half) {
+			$service = $this->service(mapper: $mapper, overridesJson: json_encode(['messageBox' => $half]));
+			$this->assertNull($service->messageBox('gemeente-x'), 'half a configuration is no channel: '.json_encode($half));
+		}
+
+		$this->assertNull($this->service(mapper: $mapper, overridesJson: '{}')->messageBox('gemeente-x'));
+		$this->assertNull($both->messageBox(''), 'no organisation, no channel');
+		$this->assertNull($this->service(overridesJson: json_encode(['messageBox' => ['sourceId' => 'a', 'label' => 'b']]))->messageBox('gemeente-x'), 'an organisation that does not resolve has no channel');
+
+	}//end testMessageBoxNeedsSourceAndLabel()
+
+	/**
+	 * A service whose config answers per key: the override blob, the broker
+	 * secret and an OIDC client secret.
+	 *
+	 * @param array<string, mixed> $overrides    The organisation's override.
+	 * @param string               $brokerSecret The broker secret.
+	 * @param string               $oidcSecret   The OIDC client secret.
+	 *
+	 * @return PortalOrganisationConfigService
+	 */
+	private function routedService(array $overrides, string $brokerSecret = 'consumer-secret-1', string $oidcSecret = ''): PortalOrganisationConfigService {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($this->oneOrganisation());
+
+		return new PortalOrganisationConfigService(
+			$container,
+			$this->routedConfig(overrides: $overrides, brokerSecret: $brokerSecret, oidcSecret: $oidcSecret),
+			$this->createMock(LoggerInterface::class),
+			new OidcClaimMapperService()
+		);
+	}//end routedService()
+
+	/**
+	 * The organisation login config over the same answers.
+	 *
+	 * @param array<string, mixed> $overrides    The organisation's override.
+	 * @param string               $brokerSecret The broker secret.
+	 *
+	 * @return OrganisationLoginConfig
+	 */
+	private function loginConfig(array $overrides, string $brokerSecret = 'consumer-secret-1'): OrganisationLoginConfig {
+		return new OrganisationLoginConfig(
+			$this->routedService(overrides: $overrides, brokerSecret: $brokerSecret),
+			$this->routedConfig(overrides: $overrides, brokerSecret: $brokerSecret, oidcSecret: '')
+		);
+	}//end loginConfig()
+
+	/**
+	 * App config answering per key.
+	 *
+	 * @param array<string, mixed> $overrides    The override blob.
+	 * @param string               $brokerSecret The broker secret.
+	 * @param string               $oidcSecret   The OIDC client secret.
+	 *
+	 * @return IAppConfig
+	 */
+	private function routedConfig(array $overrides, string $brokerSecret, string $oidcSecret): IAppConfig {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			static function (string $app, string $key, string $default = '') use ($overrides, $brokerSecret, $oidcSecret): string {
+				if ($key === 'broker_secret_org-uuid-1') {
+					return $brokerSecret;
+				}
+
+				if (str_starts_with($key, 'oidc_secret_') === true) {
+					return $oidcSecret;
+				}
+
+				return (string)json_encode($overrides);
+			}
+		);
+
+		return $appConfig;
+	}//end routedConfig()
+
+	/**
+	 * A complete broker route: both addresses, the consumer id, and DigiD
+	 * routed to it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function brokerOverrides(): array {
+		return [
+			'loginRoutes' => ['digid' => 'broker'],
+			'broker' => [
+				'startUrl' => 'https://integriq.example/apps/integriq/idp/start',
+				'exchangeUrl' => 'https://integriq.example/apps/integriq/api/idp/envelope/exchange',
+				'consumerId' => 'portaliq-venray',
+			],
+		];
+	}//end brokerOverrides()
+
+	/**
+	 * T01: the broker route counts only with every field and the secret; a
+	 * missing or unusable one leaves it unconfigured.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function testBrokerRouteNeedsEveryField(): void {
+		$config = $this->loginConfig(overrides: $this->brokerOverrides())->resolveBrokerConfig('gemeente-x', 'digid');
+		$this->assertSame('https://integriq.example/apps/integriq/idp/start', $config['startUrl']);
+		$this->assertSame('portaliq-venray', $config['consumerId']);
+		$this->assertSame('consumer-secret-1', $config['secret']);
+		$this->assertSame('org-uuid-1', $config['organisationUuid']);
+		$this->assertSame('client', $config['audience']);
+
+		foreach (['startUrl', 'exchangeUrl', 'consumerId'] as $field) {
+			$overrides = $this->brokerOverrides();
+			unset($overrides['broker'][$field]);
+			$this->assertNull($this->loginConfig(overrides: $overrides)->resolveBrokerConfig('gemeente-x', 'digid'), 'missing '.$field);
+		}
+
+		$overrides = $this->brokerOverrides();
+		$overrides['broker']['startUrl'] = 'javascript:alert(1)';
+		$this->assertNull($this->loginConfig(overrides: $overrides)->resolveBrokerConfig('gemeente-x', 'digid'), 'not an http(s) address');
+		$this->assertNull($this->loginConfig(overrides: $this->brokerOverrides(), brokerSecret: '')->resolveBrokerConfig('gemeente-x', 'digid'), 'no secret');
+		$this->assertNull($this->loginConfig(overrides: $this->brokerOverrides())->resolveBrokerConfig('gemeente-x', 'eherkenning'), 'eHerkenning is not routed to the broker');
+
+		$generic = $this->brokerOverrides();
+		$generic['loginRoutes'] = ['generic' => 'broker'];
+		$this->assertSame('oidc', $this->loginConfig(overrides: $generic)->loginRouteFor('gemeente-x', 'generic'), 'integriq brokers no generic login');
+	}//end testBrokerRouteNeedsEveryField()
+
+	/**
+	 * T01: the broker secret never reaches the SPA's config, and it is written
+	 * to its own sensitive entry.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function testBrokerSecretIsNeverInResolve(): void {
+		$resolved = $this->routedService(overrides: $this->brokerOverrides())->resolve('gemeente-x');
+		$this->assertStringNotContainsString('consumer-secret-1', (string)json_encode($resolved));
+		$this->assertStringNotContainsString('exchange', (string)json_encode($resolved['oidcProviders']));
+
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->expects($this->once())->method('setValueString')
+			->with('portaliq', 'broker_secret_org-uuid-1', 's3cret', false, true)
+			->willReturn(true);
+		$service = new OrganisationLoginConfig(
+			$this->createMock(PortalOrganisationConfigService::class),
+			$appConfig
+		);
+		$this->assertTrue($service->setBrokerSecret('org-uuid-1', 's3cret'));
+		$this->assertFalse($service->setBrokerSecret('', 's3cret'));
+	}//end testBrokerSecretIsNeverInResolve()
+
+	/**
+	 * T02: every listed provider says which route it takes; one with no
+	 * `loginRoutes` entry keeps the OIDC route.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function testProviderListCarriesRoute(): void {
+		$overrides = $this->brokerOverrides() + ['oidc' => ['eherkenning' => ['issuer' => 'https://idp.example', 'clientId' => 'c1']]];
+		$providers = $this->routedService(overrides: $overrides, oidcSecret: 'oidc-secret')->resolve('gemeente-x')['oidcProviders'];
+
+		$this->assertSame(
+			[
+				['provider' => 'digid', 'label' => 'DigiD', 'route' => 'broker'],
+				['provider' => 'eherkenning', 'label' => 'eHerkenning', 'route' => 'oidc'],
+			],
+			$providers
+		);
+	}//end testProviderListCarriesRoute()
+
+	/**
+	 * T02: a provider routed to an incomplete broker shows no button, even
+	 * when a complete OIDC config for it exists: the route is the choice.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function testUnconfiguredBrokerRouteHidesTheProvider(): void {
+		$overrides = $this->brokerOverrides() + ['oidc' => ['digid' => ['issuer' => 'https://idp.example', 'clientId' => 'c1']]];
+		unset($overrides['broker']['exchangeUrl']);
+
+		$this->assertSame([], $this->routedService(overrides: $overrides, oidcSecret: 'oidc-secret')->resolve('gemeente-x')['oidcProviders']);
+	}//end testUnconfiguredBrokerRouteHidesTheProvider()
+
+	/**
+	 * An organisation mapper that resolves every slug to one organisation.
+	 *
+	 * @return object
+	 */
+	private function oneOrganisation(): object {
+		return new class {
+			public function findBySlug(string $slug) {
+				return new class {
+					public function getUuid() {
+						return 'org-uuid-1';
+					}
+
+					public function getName() {
+						return 'Gemeente X';
+					}
+				};
+			}
+		};
+
+	}//end oneOrganisation()
 
 	private function service(?object $mapper = null, ?string $overridesJson = null): PortalOrganisationConfigService {
 		$container = $this->createMock(ContainerInterface::class);

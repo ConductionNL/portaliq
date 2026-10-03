@@ -20,6 +20,23 @@ parameters:
     excludePaths:
         - lib/Resources/template
 
+    # OpenRegister's AppHost composition root, for the store-plane alias in
+    # lib/AppInfo/StorePlaneRegistrar.php (WOO-559). openregister is a sibling
+    # app, not a composer dependency; the stub carries the engine's public
+    # surface so the guarded call is checked against a signature.
+    scanFiles:
+        - vendor/conduction/hydra-gates/hydra-gates/stubs/openregister-apphost-bootstrap.stub.php
+        # Integriq's digital post events (inbox-berichtenbox-channel): verbatim
+        # copies of integriq's classes on development. The message box sender
+        # and the delivered listener use them behind class_exists / instanceof.
+        - tests/Stubs/Integriq/Event/DigitalPostSendRequestedEvent.php
+        - tests/Stubs/Integriq/Event/DigitalPostDeliveredEvent.php
+        # OpenRegister's leaf contract (change-proposal-queue): verbatim copies.
+        - tests/Stubs/OpenRegister/Exception/NotImplementedException.php
+        - tests/Stubs/OpenRegister/Service/Integration/IntegrationProvider.php
+        - tests/Stubs/OpenRegister/Service/Integration/LeafDescriptor.php
+        - tests/Stubs/OpenRegister/Event/RegisterLeafProvidersEvent.php
+
     # App-specific only. The base already sets level, paths, bootstrapFiles,
     # excludePaths, scanDirectories and every fleet-wide ignore.
     ignoreErrors:

@@ -16,6 +16,7 @@ import Account from 'vue-material-design-icons/Account.vue'
 import AccountBoxOutline from 'vue-material-design-icons/AccountBoxOutline.vue'
 import AccountKey from 'vue-material-design-icons/AccountKey.vue'
 import AccountLock from 'vue-material-design-icons/AccountLock.vue'
+import AccountPlus from 'vue-material-design-icons/AccountPlus.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
@@ -30,10 +31,13 @@ import Calendar from 'vue-material-design-icons/Calendar.vue'
 import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
 import ChatOutline from 'vue-material-design-icons/ChatOutline.vue'
+import Check from 'vue-material-design-icons/Check.vue'
 import ClipboardText from 'vue-material-design-icons/ClipboardText.vue'
+import Close from 'vue-material-design-icons/Close.vue'
 import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultClickOutline.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
+import EmailPlusOutline from 'vue-material-design-icons/EmailPlusOutline.vue'
 import EyeLock from 'vue-material-design-icons/EyeLock.vue'
 import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
 import FileDocument from 'vue-material-design-icons/FileDocument.vue'
@@ -44,14 +48,19 @@ import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
 import History from 'vue-material-design-icons/History.vue'
+import Login from 'vue-material-design-icons/Login.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
 import MessageText from 'vue-material-design-icons/MessageText.vue'
 import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
 import MotionPlayOutline from 'vue-material-design-icons/MotionPlayOutline.vue'
+import NewspaperVariantOutline from 'vue-material-design-icons/NewspaperVariantOutline.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import Palette from 'vue-material-design-icons/Palette.vue'
+import Pencil from 'vue-material-design-icons/Pencil.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
+import Pulse from 'vue-material-design-icons/Pulse.vue'
 import ShieldAccount from 'vue-material-design-icons/ShieldAccount.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
@@ -68,6 +77,7 @@ export default {
 	AccountBoxOutline,
 	AccountKey,
 	AccountLock,
+	AccountPlus,
 	AlertCircleOutline,
 	BellOutline,
 	BookAlphabet,
@@ -77,10 +87,14 @@ export default {
 	ChartBoxOutline,
 	ChartLine,
 	ChatOutline,
+	// The Grant and Refuse row actions of the Access requests page (#797).
+	Check,
 	ClipboardText,
+	Close,
 	CursorDefaultClickOutline,
 	Email,
 	EmailOutline,
+	EmailPlusOutline,
 	EyeLock,
 	FileCheckOutline,
 	FileDocument,
@@ -94,14 +108,23 @@ export default {
 	FolderOutline,
 	FormSelect,
 	History,
+	// The Sign-in widget on a portal's page (signin-integriq-broker-login).
+	Login,
 	MapMarkerPath,
 	Menu,
 	MotionPlayOutline,
 	MessageText,
 	MessageTextOutline,
+	NewspaperVariantOutline,
 	OpenInNew,
 	Palette,
+	// The News page's New news item and Change actions (staff-news-screen).
+	Pencil,
+	Plus,
 	PowerPlugOutline,
+	// ADR-077 Tier A: the concept "activity" (the `activityOffer` schema,
+	// extracurricular-activity-offer) is drawn with Pulse.
+	Pulse,
 	ShieldAccount,
 	ShieldCheckOutline,
 	ShieldKeyOutline,

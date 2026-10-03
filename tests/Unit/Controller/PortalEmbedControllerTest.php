@@ -154,6 +154,105 @@ class PortalEmbedControllerTest extends TestCase {
 
 	}//end testValidationIsTheSchemasNotTheFrames()
 
+	public function testADirectSubmissionToAPortalRequiringIdentifiedIntakeIsRefused(): void {
+		// portaliq#725: the frame refuses on such a portal, so the submit must
+		// too; otherwise a direct POST with an allowed Origin is accepted
+		// anonymously and the portal-wide rule is bypassed.
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', site: [
+			'slug' => 'gemeente-x',
+			'authentication' => ['requiresIdentifiedIntake' => true],
+		]);
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame('identified_intake', $response->getData()['error']);
+
+	}//end testADirectSubmissionToAPortalRequiringIdentifiedIntakeIsRefused()
+
+	public function testAFormRequiringDigidIsNotFramedOnAnAnonymousPortal(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'substantial');
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertSame('identified_intake', $params['refused']);
+		$this->assertSame([], $params['fields']);
+		$this->assertStringContainsString('https://portaal.example.org/site', $params['portalUrl']);
+
+	}//end testAFormRequiringDigidIsNotFramedOnAnAnonymousPortal()
+
+	public function testAFormRequiringDigidAcceptsNoSubmissionThroughTheFrame(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'high');
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testAFormRequiringDigidAcceptsNoSubmissionThroughTheFrame()
+
+	public function testABindingRequiringEherkenningIsNotFramed(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', bindingMinTrust: 'substantial');
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertSame('identified_intake', $params['refused']);
+
+	}//end testABindingRequiringEherkenningIsNotFramed()
+
+	public function testAnAnonymousFormNextToASignedInOneIsStillFramed(): void {
+		// buildiq writes 0 as its anonymous floor (buildiq#921): not a
+		// requirement, and the form stays anonymous.
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 0);
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertArrayNotHasKey('refused', $params);
+		$this->assertSame(['postcode'], array_column($params['fields'], 'name'));
+
+	}//end testAnAnonymousFormNextToASignedInOneIsStillFramed()
+
+	public function testAFormRequiringLevelLowIsNotFramed(): void {
+		// portaliq#731: a maker who set "DigiD or eHerkenning, level low" in
+		// buildiq asked for a signed-in session, so the anonymous frame
+		// refuses and points at the portal instead.
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'low');
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertSame('identified_intake', $params['refused']);
+		$this->assertSame([], $params['fields']);
+
+	}//end testAFormRequiringLevelLowIsNotFramed()
+
+	public function testAFormRequiringLevelLowAcceptsNoSubmissionThroughTheFrame(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'low');
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testAFormRequiringLevelLowAcceptsNoSubmissionThroughTheFrame()
+
+	public function testABindingRequiringLevelLowIsNotFramed(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', bindingMinTrust: 'low');
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertSame('identified_intake', $params['refused']);
+
+	}//end testABindingRequiringLevelLowIsNotFramed()
+
+	public function testAnUnrecognisedSignInLevelFailsClosed(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'digid');
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getStatus());
+
+	}//end testAnUnrecognisedSignInLevelFailsClosed()
+
 	/**
 	 * The controller over doubles, with the real guard and validator so the
 	 * origin and schema decisions are the ones the controller really makes.
@@ -161,10 +260,18 @@ class PortalEmbedControllerTest extends TestCase {
 	 * @param string $origin The framing origin of the request.
 	 * @param array<string, mixed>|null $site The portal resolved.
 	 * @param bool $throttleOpen Whether the throttle lets the request through.
+	 * @param mixed $formMinTrust The published form's sign-in level, or null.
+	 * @param mixed $bindingMinTrust The binding's sign-in level, or null.
 	 *
 	 * @return PortalEmbedController
 	 */
-	private function controller(string $origin, ?array $site = ['slug' => 'gemeente-x'], bool $throttleOpen = true): PortalEmbedController {
+	private function controller(
+		string $origin,
+		?array $site = ['slug' => 'gemeente-x'],
+		bool $throttleOpen = true,
+		mixed $formMinTrust = null,
+		mixed $bindingMinTrust = null,
+	): PortalEmbedController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnCallback(
 			static function (string $name) use ($origin): string {
@@ -177,17 +284,27 @@ class PortalEmbedControllerTest extends TestCase {
 		$portals->method('resolve')->willReturn($site);
 
 		$bindings = $this->double(PortalFormBindingResolver::class, ['bindingFor', 'render']);
-		$bindings->method('bindingFor')->willReturn([
+		$binding = [
 			'portal' => 'gemeente-x',
 			'route' => 'aanvragen/verhuizing',
 			'allowedOrigins' => ['https://www.gemeente.nl'],
-		]);
-		$bindings->method('render')->willReturn([
+		];
+		if ($bindingMinTrust !== null) {
+			$binding['minTrust'] = $bindingMinTrust;
+		}
+
+		$render = [
 			'kind' => 'hosted',
 			'resolvesToNoForm' => false,
 			'fields' => [['name' => 'postcode', 'required' => true]],
 			'settings' => ['confirmationText' => 'Bedankt.'],
-		]);
+		];
+		if ($formMinTrust !== null) {
+			$render['minTrust'] = $formMinTrust;
+		}
+
+		$bindings->method('bindingFor')->willReturn($binding);
+		$bindings->method('render')->willReturn($render);
 
 		$throttle = $this->double(PortalEmbedThrottle::class, ['allow']);
 		$throttle->method('allow')->willReturn($throttleOpen);

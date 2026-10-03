@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.25.0"
+        "version": "0.55.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.25.0",
+                "version": "0.55.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -28,7 +28,6 @@
                     "page",
                     "portal",
                     "portalAccount",
-                    "portalAuditEntry",
                     "portalMessage",
                     "portalNotification",
                     "portalOidcState",
@@ -52,7 +51,28 @@
                     "portalAccessRequest",
                     "portalFormBinding",
                     "portalIntakeSubmission",
-                    "changeProposal"
+                    "changeProposal",
+                    "portalPoll",
+                    "portalPollResponse",
+                    "newsItem",
+                    "newsletter",
+                    "guardianAudienceFixture",
+                    "schoolEvent",
+                    "eventRsvp",
+                    "eventSignup",
+                    "messageThread",
+                    "guardianMessage",
+                    "groupStaffFixture",
+                    "pushSubscription",
+                    "notificationQuietHours",
+                    "pendingPush",
+                    "activityOffer",
+                    "activitySignup",
+                    "activityAttendance",
+                    "portalAvailabilityDaily",
+                    "portalAvailabilityOutage",
+                    "media",
+                    "portalNotice"
                 ]
             }
         },
@@ -336,6 +356,376 @@
                         ]
                     }
                 ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-anna-devries"
+                },
+                "guardianRef": "guardian-anna-devries",
+                "schoolRef": "school-de-regenboog",
+                "groupRefs": [
+                    "groep-5a"
+                ],
+                "childRefs": [
+                    "child-devries-lars"
+                ],
+                "photoConsent": {
+                    "child-devries-lars": {
+                        "news": true
+                    }
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-piet-bakker"
+                },
+                "guardianRef": "guardian-piet-bakker",
+                "schoolRef": "school-de-regenboog",
+                "groupRefs": [
+                    "groep-3b",
+                    "groep-7a"
+                ],
+                "childRefs": [
+                    "child-bakker-eva",
+                    "child-bakker-tim"
+                ],
+                "photoConsent": {
+                    "child-bakker-eva": {
+                        "news": true
+                    },
+                    "child-bakker-tim": {
+                        "news": true
+                    }
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-fatima-elamrani"
+                },
+                "guardianRef": "guardian-fatima-elamrani",
+                "schoolRef": "school-het-kompas",
+                "groupRefs": [
+                    "groep-4c"
+                ],
+                "childRefs": [
+                    "child-elamrani-yusuf"
+                ],
+                "photoConsent": {
+                    "child-elamrani-yusuf": {
+                        "news": false
+                    }
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-noor-yilmaz"
+                },
+                "guardianRef": "guardian-noor-yilmaz",
+                "schoolRef": "school-oude-vestiging",
+                "groupRefs": [
+                    "groep-6b"
+                ],
+                "childRefs": [
+                    "child-yilmaz-can"
+                ],
+                "photoConsent": {
+                    "child-yilmaz-can": {
+                        "news": true
+                    }
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "slug": "news-herfstvakantie-rooster"
+                },
+                "title": "Herfstvakantie rooster",
+                "body": "De herfstvakantie loopt van 19 tot 23 oktober.",
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "authorRef": "staff-directie-1",
+                "status": "published",
+                "photoRefs": [],
+                "readReceipts": []
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "slug": "news-schoolreisje-groep-5a"
+                },
+                "title": "Groep 5a: schoolreisje",
+                "body": "Op 12 november gaat groep 5a op schoolreis naar de kinderboerderij.",
+                "target": {
+                    "groupRefs": [
+                        "groep-5a"
+                    ]
+                },
+                "authorRef": "staff-leerkracht-5a",
+                "status": "published",
+                "photoRefs": [],
+                "readReceipts": []
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "slug": "news-fotos-sportdag"
+                },
+                "title": "Foto's sportdag",
+                "body": "Wat een geweldige sportdag! Foto's hieronder.",
+                "target": {
+                    "groupRefs": [
+                        "groep-4c"
+                    ]
+                },
+                "authorRef": "staff-leerkracht-4c",
+                "status": "published",
+                "photoRefs": [
+                    "photo-sportdag-1.jpg",
+                    "photo-sportdag-2.jpg"
+                ],
+                "readReceipts": []
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsletter",
+                    "slug": "newsletter-weekbrief-de-regenboog"
+                },
+                "title": "Weekbrief De Regenboog",
+                "itemRefs": [
+                    "news-herfstvakantie-rooster"
+                ],
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "sentAt": null,
+                "archived": false
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "schoolEvent",
+                    "slug": "schoolevent-schoolreisje-groep-5a"
+                },
+                "title": "Schoolreisje groep 5a",
+                "description": "Op 12 november gaat groep 5a op schoolreis.",
+                "start": "2026-11-12T09:00:00+00:00",
+                "end": "2026-11-12T15:00:00+00:00",
+                "target": {
+                    "groupRefs": [
+                        "groep-5a"
+                    ]
+                },
+                "status": "published",
+                "rsvpEnabled": true,
+                "signupRoles": [],
+                "authorRef": "staff-leerkracht-5a"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "schoolEvent",
+                    "slug": "schoolevent-sportdag-hulp-gevraagd"
+                },
+                "title": "Sportdag: hulp gevraagd",
+                "description": "We zoeken hulpouders voor de sportdag.",
+                "start": "2026-10-02T08:30:00+00:00",
+                "end": "2026-10-02T14:00:00+00:00",
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "status": "published",
+                "rsvpEnabled": false,
+                "signupRoles": [
+                    {
+                        "id": "begeleiding",
+                        "label": "Begeleiding",
+                        "capacity": 4
+                    },
+                    {
+                        "id": "materiaal",
+                        "label": "Limonade meenemen",
+                        "capacity": 2
+                    }
+                ],
+                "authorRef": "staff-directie-1"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "groupStaffFixture",
+                    "slug": "groupstaff-groep-5a"
+                },
+                "groupRef": "groep-5a",
+                "staffRefs": [
+                    "staff-leerkracht-5a"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "groupStaffFixture",
+                    "slug": "groupstaff-groep-3b"
+                },
+                "groupRef": "groep-3b",
+                "staffRefs": [
+                    "staff-leerkracht-3b"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "groupStaffFixture",
+                    "slug": "groupstaff-groep-4c"
+                },
+                "groupRef": "groep-4c",
+                "staffRefs": [
+                    "staff-leerkracht-4c"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activityOffer",
+                    "slug": "activity-schaakclub-najaar"
+                },
+                "title": "Schaakclub groep 5 tot en met 8",
+                "description": "Elke maandag na school leren we schaken in de aula.",
+                "kind": "club",
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "termStart": "2026-10-05",
+                "termEnd": "2026-12-14",
+                "signupDeadline": "2026-09-30T23:59:00+02:00",
+                "capacity": 16,
+                "waitlistEnabled": true,
+                "sessions": [
+                    {
+                        "id": "week-1",
+                        "start": "2026-10-05T15:15:00+02:00",
+                        "end": "2026-10-05T16:15:00+02:00"
+                    },
+                    {
+                        "id": "week-2",
+                        "start": "2026-10-12T15:15:00+02:00",
+                        "end": "2026-10-12T16:15:00+02:00"
+                    },
+                    {
+                        "id": "week-3",
+                        "start": "2026-10-19T15:15:00+02:00",
+                        "end": "2026-10-19T16:15:00+02:00"
+                    }
+                ],
+                "supervisorRefs": [
+                    "staff-leerkracht-5a"
+                ],
+                "childrenPerSupervisor": 12,
+                "paymentRequested": false,
+                "location": "Aula, De Regenboog",
+                "status": "open",
+                "authorRef": "staff-leerkracht-5a",
+                "consentRequired": false,
+                "photosTaken": false
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activityOffer",
+                    "slug": "activity-schoolzwemmen-groep-5"
+                },
+                "title": "Schoolzwemmen groep 5",
+                "description": "Zwemles in het Sportfondsenbad, met bus heen en terug.",
+                "kind": "sport",
+                "target": {
+                    "groupRefs": [
+                        "groep-5a"
+                    ]
+                },
+                "termStart": "2026-10-07",
+                "termEnd": "2027-01-27",
+                "capacity": 24,
+                "waitlistEnabled": true,
+                "sessions": [
+                    {
+                        "id": "week-1",
+                        "start": "2026-10-07T13:00:00+02:00",
+                        "end": "2026-10-07T14:00:00+02:00"
+                    },
+                    {
+                        "id": "week-2",
+                        "start": "2026-10-14T13:00:00+02:00",
+                        "end": "2026-10-14T14:00:00+02:00"
+                    },
+                    {
+                        "id": "week-3",
+                        "start": "2026-10-21T13:00:00+02:00",
+                        "end": "2026-10-21T14:00:00+02:00"
+                    }
+                ],
+                "supervisorRefs": [
+                    "staff-leerkracht-5a",
+                    "staff-leerkracht-3b"
+                ],
+                "childrenPerSupervisor": 10,
+                "paymentRequested": true,
+                "location": "Sportfondsenbad",
+                "status": "open",
+                "authorRef": "staff-leerkracht-5a",
+                "consentRequired": true,
+                "consentStatement": "Mijn kind mag met de bus mee naar het Sportfondsenbad en daar onder begeleiding zwemles volgen.",
+                "photosTaken": true
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activitySignup",
+                    "slug": "signup-schaakclub-lars"
+                },
+                "activityRef": "activity-schaakclub-najaar",
+                "childRef": "child-devries-lars",
+                "guardianRef": "guardian-anna-devries",
+                "status": "confirmed",
+                "note": "Lars neemt zijn eigen schaakbord mee.",
+                "signedUpAt": "2026-09-21T19:02:00+02:00",
+                "confirmedAt": "2026-09-21T19:02:00+02:00"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activitySignup",
+                    "slug": "signup-schaakclub-tim"
+                },
+                "activityRef": "activity-schaakclub-najaar",
+                "childRef": "child-bakker-tim",
+                "guardianRef": "guardian-piet-bakker",
+                "status": "waitlisted",
+                "signedUpAt": "2026-09-24T08:15:00+02:00"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activityAttendance",
+                    "slug": "attendance-schaakclub-lars-week-1"
+                },
+                "activityRef": "activity-schaakclub-najaar",
+                "sessionId": "week-1",
+                "childRef": "child-devries-lars",
+                "status": "present",
+                "markedByRef": "staff-leerkracht-5a",
+                "markedAt": "2026-10-05T16:20:00+02:00"
             }
         ],
         "schemas": {
@@ -347,7 +737,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.8.0",
+                "version": "0.14.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -410,6 +800,88 @@
                         "type": "string",
                         "description": "Contact email for notifications (masked in logs).",
                         "example": "contact@example.org"
+                    },
+                    "contactAddresses": {
+                        "title": "Contact addresses",
+                        "type": "array",
+                        "description": "The e-mail addresses and phone numbers the owner keeps on the account (identity-profile-page). An e-mail address is used for nothing until it is confirmed; the preferred confirmed e-mail is copied into `email`, the only address notifications go to. A phone number is stored for the organisation to call and is never confirmed.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "kind",
+                                "value"
+                            ],
+                            "properties": {
+                                "kind": {
+                                    "title": "Kind",
+                                    "description": "`email` or `phone`.",
+                                    "type": "string",
+                                    "enum": [
+                                        "email",
+                                        "phone"
+                                    ]
+                                },
+                                "value": {
+                                    "title": "Address",
+                                    "description": "The e-mail address, or the phone number in E.164 where it parses.",
+                                    "type": "string"
+                                },
+                                "confirmed": {
+                                    "title": "Confirmed",
+                                    "description": "True once the link in the confirmation mail was followed. A phone number is never confirmed.",
+                                    "type": "boolean"
+                                },
+                                "preferred": {
+                                    "title": "Preferred",
+                                    "description": "The one address of its kind the organisation uses. Only a confirmed e-mail address can be preferred.",
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "contactChannel": {
+                        "title": "Contact channel",
+                        "type": "string",
+                        "enum": [
+                            "portal",
+                            "email",
+                            "phone",
+                            "post"
+                        ],
+                        "default": "portal",
+                        "description": "How the owner wants the organisation to contact them: through the portal only, by e-mail, by phone or by post (identity-profile-page). A change raises PortalContactDetailsChangedEvent; a case app honours it."
+                    },
+                    "notificationChannels": {
+                        "title": "Notification channels",
+                        "type": "object",
+                        "description": "Per-channel opt-out for out-of-band notification dispatch (notification-preferences-per-role), keyed by channel. A missing key or any value other than `false` opts in (fail-open, matches the behaviour every account already had before this property existed); `false` opts out. The account's own `audience` is already the role this preference applies to. Set through the account's own PATCH /portal/api/identity/details (`emailNotifications`), never accepted for another account. Today's only channel is `email`.",
+                        "example": {
+                            "email": true
+                        }
+                    },
+                    "notificationPreferences": {
+                        "title": "Notification preferences",
+                        "type": "object",
+                        "description": "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. `messageBox.enabled` is whether letters also go to the government message box, when the organisation offers it (inbox-berichtenbox-channel). A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.",
+                        "example": {
+                            "case.updated": {
+                                "email": true,
+                                "push": false
+                            },
+                            "message.created": {
+                                "email": true,
+                                "push": true
+                            },
+                            "messageBox": {
+                                "enabled": true
+                            }
+                        }
+                    },
+                    "messageLanguage": {
+                        "title": "Message language",
+                        "type": "string",
+                        "description": "The language this person reads school messages in, as a language tag such as ar or tr. Messages from school are translated by AI into it and marked as such. Empty shows messages as written. Only the person themselves sets it.",
+                        "example": "ar"
                     },
                     "status": {
                         "title": "Status",
@@ -489,6 +961,28 @@
                         "format": "date-time",
                         "description": "When the confirmation link stops working.",
                         "example": "2026-09-19T09:00:00+00:00"
+                    },
+                    "activationTokenHash": {
+                        "title": "Activation token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret in the activation mail of a self-registration under the activation policy. Emptied when the link is followed.",
+                        "example": "9f86d0…"
+                    },
+                    "activationExpiresAt": {
+                        "title": "Activation expiry",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the activation link stops working.",
+                        "example": "2026-10-03T09:00:00+00:00"
+                    },
+                    "pendingEmailMode": {
+                        "title": "Pending email mode",
+                        "type": "string",
+                        "enum": [
+                            "replace",
+                            "add"
+                        ],
+                        "description": "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list."
                     },
                     "removedAt": {
                         "title": "Removed at",
@@ -634,7 +1128,7 @@
                     ]
                 },
                 "icon": "EmailOutline",
-                "version": "0.4.0",
+                "version": "0.6.0",
                 "configuration": {
                     "linkedTypes": [
                         "talk"
@@ -722,6 +1216,39 @@
                         "type": "string",
                         "description": "The portal task this message announces (portal-task-delivery). The unified inbox renders a deep link into the \"Mijn taken\" surface when present; absent means no such link renders.",
                         "example": "b1946ac9-2ea7-4b1a-9d15-2f4c1e6f2a10"
+                    },
+                    "recordLink": {
+                        "title": "Record link",
+                        "type": "object",
+                        "description": "The record this message is about, as its app, collection and id. The inbox shows an Open button for it, and the portal reads the record through the resident's own scoped read.",
+                        "properties": {
+                            "app": {
+                                "title": "App",
+                                "type": "string",
+                                "description": "The app that holds the record."
+                            },
+                            "collection": {
+                                "title": "Collection",
+                                "type": "string",
+                                "description": "The collection of that app the record belongs to."
+                            },
+                            "id": {
+                                "title": "Record id",
+                                "type": "string",
+                                "description": "The id of the record."
+                            }
+                        },
+                        "example": {
+                            "app": "dossiq",
+                            "collection": "mijnZaken",
+                            "id": "b1946ac9-2ea7-4b1a-9d15-2f4c1e6f2a10"
+                        }
+                    },
+                    "ruleKey": {
+                        "title": "Rule key",
+                        "type": "string",
+                        "description": "The rule key of the app that wrote this message. Portaliq also sends the email when that app declares the key.",
+                        "example": "pipelinq.question.answered"
                     },
                     "deliveryUuid": {
                         "title": "Delivery uuid",
@@ -814,91 +1341,6 @@
                     }
                 }
             },
-            "portalAuditEntry": {
-                "slug": "portalAuditEntry",
-                "authorization": {
-                    "read": [
-                        "authenticated"
-                    ]
-                },
-                "icon": "ShieldCheckOutline",
-                "version": "0.1.0",
-                "title": "Portal Audit Entry",
-                "description": "Append-only, portal-owned audit-trail fact record (portal-session-hardening-v2): written on every portal mutation (create/update/forward), every download, and every session event (login/logout/refresh). Never carries payload content — records THAT a verb happened against a target, not the data. Exposed count-only via MetricsController; never publicly readable. Retention is OpenRegister's records-management concern (Archiefwet) — see openspec/changes/portal-session-hardening-v2/design.md.",
-                "type": "object",
-                "required": [
-                    "subjectRef",
-                    "organisation",
-                    "verb",
-                    "timestamp"
-                ],
-                "appendOnly": true,
-                "properties": {
-                    "jti": {
-                        "title": "Token id (jti)",
-                        "type": "string",
-                        "description": "The acting/affected session's token id, when known (empty for the download hook, which does not carry one).",
-                        "example": "9f8e7d6c-0000-4000-8000-000000000000"
-                    },
-                    "subjectRef": {
-                        "title": "Subject reference",
-                        "type": "string",
-                        "description": "The subject the event belongs to.",
-                        "example": "b3d9c2a1-0000-4000-8000-000000000000"
-                    },
-                    "organisation": {
-                        "title": "Organisation",
-                        "type": "string",
-                        "description": "The subject's tenant.",
-                        "example": "gemeente-x"
-                    },
-                    "appId": {
-                        "title": "App id",
-                        "type": "string",
-                        "description": "The contributing app recording the entry (defaults to portaliq's own id).",
-                        "example": "portaliq"
-                    },
-                    "verb": {
-                        "title": "Verb",
-                        "type": "string",
-                        "description": "The audited action.",
-                        "enum": [
-                            "create",
-                            "update",
-                            "forward",
-                            "download",
-                            "login",
-                            "logout",
-                            "refresh"
-                        ],
-                        "example": "create"
-                    },
-                    "register": {
-                        "title": "Target register",
-                        "type": "string",
-                        "description": "The target register (or, for a forwarded action which touches no register directly, the contributing appId).",
-                        "example": "portaliq"
-                    },
-                    "schema": {
-                        "title": "Target schema",
-                        "type": "string",
-                        "description": "The target schema (or, for a forwarded action, the declared action id).",
-                        "example": "exampleDocument"
-                    },
-                    "targetId": {
-                        "title": "Target id",
-                        "type": "string",
-                        "description": "The target object id (empty for session events and forwarded actions, which have no single object id).",
-                        "example": "00000000-0000-4000-8000-000000000000"
-                    },
-                    "timestamp": {
-                        "title": "Timestamp",
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "When the event was recorded."
-                    }
-                }
-            },
             "portalNotification": {
                 "slug": "portalNotification",
                 "authorization": {
@@ -907,9 +1349,9 @@
                     ]
                 },
                 "icon": "BellOutline",
-                "version": "0.1.0",
+                "version": "0.3.0",
                 "title": "Portal Notification",
-                "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt — never updated in place — so the burden-of-proof/audit trail is complete. Never publicly readable; recipients are never exposed via metrics.",
+                "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt, so the burden-of-proof/audit trail is complete. The one exception is a `messageBox` row: integriq reports what became of the letter later, and that status is written onto the row the send created (inbox-berichtenbox-channel). Never publicly readable; recipients are never exposed via metrics.",
                 "type": "object",
                 "required": [
                     "accountRef",
@@ -947,19 +1389,24 @@
                     "channel": {
                         "title": "Channel",
                         "type": "string",
-                        "description": "The out-of-band channel used. Only `email` is implemented; the field is future-proofed for `sms`/`push`.",
+                        "description": "The out-of-band channel used: `email`, `push` for a web push to the resident's registered devices, or `messageBox` for the government message box an organisation offers through integriq's digital post adapter.",
                         "enum": [
-                            "email"
+                            "email",
+                            "push",
+                            "messageBox"
                         ],
                         "example": "email"
                     },
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "description": "The outcome of this single attempt.",
+                        "description": "The outcome of this attempt. `sent` and `failed` for every channel. A `messageBox` row moves on as integriq reports it: `delivered`, `read`, or `simulated` when integriq's binding sends nothing, which is never shown to the resident as delivered.",
                         "enum": [
                             "sent",
-                            "failed"
+                            "failed",
+                            "delivered",
+                            "read",
+                            "simulated"
                         ],
                         "example": "sent"
                     },
@@ -974,6 +1421,50 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When this attempt was made (ISO-8601)."
+                    },
+                    "externalMessageId": {
+                        "title": "External message id",
+                        "type": "string",
+                        "description": "For a `messageBox` row: the message id integriq's digital post adapter answered with. Integriq's status reports find the row by it.",
+                        "example": "b1e2c3d4-0000-4000-8000-000000000001"
+                    },
+                    "recordLink": {
+                        "title": "Record link",
+                        "type": "object",
+                        "description": "For a `messageBox` row: the inbox message this send is about, so the inbox can show where it went.",
+                        "required": [
+                            "app",
+                            "collection",
+                            "id"
+                        ],
+                        "properties": {
+                            "app": {
+                                "title": "App",
+                                "type": "string",
+                                "description": "The contributing app."
+                            },
+                            "collection": {
+                                "title": "Collection",
+                                "type": "string",
+                                "description": "The app's inbox collection id."
+                            },
+                            "id": {
+                                "title": "Message id",
+                                "type": "string",
+                                "description": "The message's id."
+                            }
+                        },
+                        "example": {
+                            "app": "dossiq",
+                            "collection": "berichten",
+                            "id": "b1e2c3d4-0000-4000-8000-000000000002"
+                        }
+                    },
+                    "refusalCode": {
+                        "title": "Refusal code",
+                        "type": "string",
+                        "description": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, `empty_body` when the message held no text, or the code integriq's refusal carried.",
+                        "example": "not_installed"
                     }
                 }
             },
@@ -985,14 +1476,13 @@
                     ]
                 },
                 "icon": "ShieldLock",
-                "version": "0.1.0",
+                "version": "0.3.0",
                 "title": "Portal OIDC State",
                 "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable — it briefly carries the PKCE code_verifier.",
                 "type": "object",
                 "required": [
                     "state",
                     "nonce",
-                    "codeVerifier",
                     "org",
                     "provider",
                     "expiresAt"
@@ -1013,7 +1503,7 @@
                     "codeVerifier": {
                         "title": "PKCE code verifier",
                         "type": "string",
-                        "description": "The PKCE `code_verifier` presented to the token endpoint on callback, matching the `code_challenge` sent at start.",
+                        "description": "The PKCE `code_verifier` presented to the token endpoint on callback, matching the `code_challenge` sent at start. Only an `oidc` row has one, and the OIDC callback refuses a row without it.",
                         "example": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
                     },
                     "org": {
@@ -1034,6 +1524,16 @@
                         ],
                         "example": "eherkenning"
                     },
+                    "route": {
+                        "title": "Login route",
+                        "type": "string",
+                        "description": "Which login this row belongs to: `oidc` (the organisation's own OIDC broker) or `broker` (integriq). Absent means `oidc`. Each callback refuses a row of the other route.",
+                        "enum": [
+                            "oidc",
+                            "broker"
+                        ],
+                        "example": "broker"
+                    },
                     "returnTo": {
                         "title": "Return to",
                         "type": "string",
@@ -1045,6 +1545,12 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When this row becomes unusable — a TTL bound on the whole start→callback round trip, independent of `used`."
+                    },
+                    "silent": {
+                        "title": "Silent sign-in",
+                        "type": "boolean",
+                        "description": "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.",
+                        "example": false
                     },
                     "used": {
                         "title": "Used",
@@ -1467,7 +1973,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.6.0",
+                "version": "0.9.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -1493,6 +1999,372 @@
                         "type": "string",
                         "description": "One supporting line shown under the portal name in the footer's logo block. The NL Design System reference carries one; without this field every portal's footer showed a bare title.",
                         "example": "Één plek voor alle publicaties van de gemeente"
+                    },
+                    "footer": {
+                        "title": "Footer",
+                        "type": "object",
+                        "description": "What the footer shows besides the menus. Every part is optional. A link without a label or a destination is left out.",
+                        "properties": {
+                            "description": {
+                                "title": "Footer text",
+                                "type": "string",
+                                "description": "A short line under the portal name in the footer.",
+                                "example": "Eén loket voor inwoners en ondernemers"
+                            },
+                            "colophon": {
+                                "title": "Colophon",
+                                "type": "string",
+                                "description": "Who is responsible for this portal, shown in the bottom bar. Empty shows the portal name.",
+                                "example": "Gemeente Voorbeeld, KvK 12345678"
+                            },
+                            "socials": {
+                                "title": "Social media",
+                                "type": "array",
+                                "description": "Links to the organisation's social media accounts, shown as icons.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "title": "Label",
+                                            "type": "string",
+                                            "description": "The text a visitor reads or a screen reader announces."
+                                        },
+                                        "href": {
+                                            "title": "Link",
+                                            "type": "string",
+                                            "description": "Where the link goes: a page of this portal such as /privacy, or a full web, mail or phone address."
+                                        },
+                                        "icon": {
+                                            "title": "Icon",
+                                            "type": "string",
+                                            "description": "The name of the icon to show. Empty shows a plain link icon."
+                                        }
+                                    }
+                                }
+                            },
+                            "legalLinks": {
+                                "title": "Legal links",
+                                "type": "array",
+                                "description": "Links in the bottom bar, such as privacy and accessibility. Empty uses the menu at position 2 or higher.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "title": "Label",
+                                            "type": "string",
+                                            "description": "The text a visitor reads or a screen reader announces."
+                                        },
+                                        "href": {
+                                            "title": "Link",
+                                            "type": "string",
+                                            "description": "Where the link goes: a page of this portal such as /privacy, or a full web, mail or phone address."
+                                        }
+                                    }
+                                }
+                            },
+                            "badges": {
+                                "title": "Certificates",
+                                "type": "array",
+                                "description": "Certificates the organisation holds, each linking to its proof.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "title": "Label",
+                                            "type": "string",
+                                            "description": "The text a visitor reads or a screen reader announces."
+                                        },
+                                        "href": {
+                                            "title": "Link",
+                                            "type": "string",
+                                            "description": "Where the link goes: a page of this portal such as /privacy, or a full web, mail or phone address."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "regions": {
+                        "title": "Page regions",
+                        "type": "object",
+                        "description": "What the portal shows in each region of every page, unless a page fills or empties that region itself. A region left out shows the default. An empty list shows nothing.",
+                        "properties": {
+                            "header": {
+                                "title": "Header region",
+                                "type": "array",
+                                "description": "The blocks at the top of every page. The default is the portal header.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            },
+                            "hero": {
+                                "title": "Hero region",
+                                "type": "array",
+                                "description": "The band under the header of every page. The default is empty.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            },
+                            "main": {
+                                "title": "Main region",
+                                "type": "array",
+                                "description": "Blocks shown in the main content of a page that has none of its own.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            },
+                            "aside": {
+                                "title": "Side region",
+                                "type": "array",
+                                "description": "Blocks shown beside the main content. The default is empty.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            },
+                            "footer": {
+                                "title": "Footer region",
+                                "type": "array",
+                                "description": "The blocks at the bottom of every page. The default is the portal footer.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "slug": {
                         "title": "Slug",
@@ -1571,6 +2443,16 @@
                         "description": "URL or object reference for the site logo shown in the portal header.",
                         "example": "/apps/portaliq/logo/open-tilburg.svg"
                     },
+                    "headerVariant": {
+                        "title": "Header shape",
+                        "type": "string",
+                        "description": "How the header is laid out. `double` puts the menu in a bar under the portal name. `single` puts the name, the menu and sign-in on one bar. Empty or unknown means `double`.",
+                        "enum": [
+                            "double",
+                            "single"
+                        ],
+                        "example": "double"
+                    },
                     "locales": {
                         "title": "Locales",
                         "type": "array",
@@ -1618,6 +2500,12 @@
                                     "high"
                                 ],
                                 "example": "low"
+                            },
+                            "requiresIdentifiedIntake": {
+                                "title": "Sign-in for every form",
+                                "type": "boolean",
+                                "description": "Whether every form on this portal needs a signed-in visitor. An embedded form is then not shown and not accepted: the visitor is sent to the portal's own page to sign in.",
+                                "example": false
                             },
                             "oidc": {
                                 "title": "OIDC configuration",
@@ -1688,6 +2576,18 @@
                                         "example": "faxnummer"
                                     }
                                 }
+                            },
+                            "register": {
+                                "title": "Register page",
+                                "type": "string",
+                                "description": "Where a visitor without an account goes to make one. When empty, the header shows no register button.",
+                                "example": "/registreren"
+                            },
+                            "registerLabel": {
+                                "title": "Register button text",
+                                "type": "string",
+                                "description": "The text on the register button. Empty shows Registreren.",
+                                "example": "Account aanmaken"
                             }
                         }
                     },
@@ -2469,6 +3369,63 @@
                                 "example": ""
                             }
                         }
+                    },
+                    "hiddenCaseTypes": {
+                        "title": "Hidden case types",
+                        "type": "array",
+                        "widget": "json",
+                        "description": "Case types this portal does not show to residents. A case of such a type leaves the case list, its page answers as not found, and its request form does not open. Nothing is deleted. Empty shows every case type.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "typeId"
+                            ],
+                            "properties": {
+                                "register": {
+                                    "title": "Register",
+                                    "description": "The register the case type lives in.",
+                                    "type": "string"
+                                },
+                                "schema": {
+                                    "title": "Schema",
+                                    "description": "The schema the case type lives in.",
+                                    "type": "string"
+                                },
+                                "typeId": {
+                                    "title": "Case type",
+                                    "description": "The id of the case type, as a case carries it.",
+                                    "type": "string",
+                                    "minLength": 1
+                                },
+                                "label": {
+                                    "title": "Name",
+                                    "description": "The case type's name, shown on the portal's Case types list.",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "default": [],
+                        "example": []
+                    },
+                    "registeredDetails": {
+                        "title": "My details forms",
+                        "type": "object",
+                        "description": "The request forms the \"My details\" section links to. Each names a published form binding of this portal by its id. An empty or unpublished binding shows no link. The portal changes no base registration: a request goes to the organisation like any other form.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "correctionFormBinding": {
+                                "title": "Correction form",
+                                "description": "The form binding behind \"Report an error in these details\".",
+                                "type": "string"
+                            },
+                            "addressInvestigationFormBinding": {
+                                "title": "Address investigation form",
+                                "description": "The form binding behind \"Something wrong at this address?\", shown to residents only.",
+                                "type": "string"
+                            }
+                        },
+                        "default": {},
+                        "example": {}
                     }
                 }
             },
@@ -2631,7 +3588,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.3.0",
+                "version": "0.6.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -2693,8 +3650,31 @@
                     "heroImage": {
                         "title": "Hero image",
                         "type": "string",
-                        "description": "Reference/URL to an image shown by a hero-keyed widget when present. Optional — a page with no heroImage renders exactly as before this property existed.",
+                        "description": "The address of an image shown by a hero widget, or media:<id> for an item of this portal's media library. Optional: a page without one renders as before.",
                         "example": "https://example.org/images/webinar-hero.jpg"
+                    },
+                    "seoTitle": {
+                        "title": "Search title",
+                        "type": "string",
+                        "maxLength": 70,
+                        "description": "The title search engines show for this page. Keep it under 60 characters. Empty uses the page title."
+                    },
+                    "seoDescription": {
+                        "title": "Search description",
+                        "type": "string",
+                        "maxLength": 160,
+                        "description": "The text search engines show under the title. Keep it under 155 characters. Empty uses the summary."
+                    },
+                    "seoNoindex": {
+                        "title": "Keep this page out of search engines",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "When on, the page asks search engines not to list it."
+                    },
+                    "seoImage": {
+                        "title": "Share image",
+                        "type": "string",
+                        "description": "The http or https address of the image shown when the page is shared, or media:<id> for an item of this portal's media library."
                     },
                     "body": {
                         "title": "Body",
@@ -2749,7 +3729,7 @@
                                         "slot": {
                                             "title": "Slot",
                                             "type": "string",
-                                            "description": "Placement slot on the page.",
+                                            "description": "The region this widget sits in: header, hero, main, aside or footer. Empty or body means main.",
                                             "example": "body"
                                         },
                                         "gridX": {
@@ -2784,6 +3764,24 @@
                                         }
                                     }
                                 }
+                            },
+                            "clearedRegions": {
+                                "title": "Emptied regions",
+                                "type": "array",
+                                "description": "Regions this page leaves empty on purpose, such as hero. Such a region shows nothing on this page, even when the portal fills it.",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "header",
+                                        "hero",
+                                        "main",
+                                        "aside",
+                                        "footer"
+                                    ]
+                                },
+                                "example": [
+                                    "hero"
+                                ]
                             }
                         }
                     },
@@ -2840,7 +3838,7 @@
                                         "slot": {
                                             "title": "Slot",
                                             "type": "string",
-                                            "description": "Placement slot on the page.",
+                                            "description": "The region this widget sits in: header, hero, main, aside or footer. Empty or body means main.",
                                             "example": "body"
                                         },
                                         "gridX": {
@@ -2875,6 +3873,24 @@
                                         }
                                     }
                                 }
+                            },
+                            "clearedRegions": {
+                                "title": "Emptied regions",
+                                "type": "array",
+                                "description": "Regions this page leaves empty on purpose, such as hero. Such a region shows nothing on this page, even when the portal fills it.",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "header",
+                                        "hero",
+                                        "main",
+                                        "aside",
+                                        "footer"
+                                    ]
+                                },
+                                "example": [
+                                    "hero"
+                                ]
                             }
                         }
                     },
@@ -2883,6 +3899,18 @@
                         "type": "string",
                         "description": "The portal this page belongs to. REQUIRED — content is always resolved within a site.",
                         "example": "open-tilburg"
+                    },
+                    "parent": {
+                        "title": "Parent page",
+                        "type": "string",
+                        "description": "The page this page sits under in the portal's page tree. Empty for a page at the top. Only the tree changes: the route stays the page's address.",
+                        "example": "8f14e45f-ceea-467a-9575-6f2d6f9e4b21"
+                    },
+                    "order": {
+                        "title": "Order",
+                        "type": "integer",
+                        "description": "Position among the pages under the same parent, lowest first.",
+                        "example": 0
                     }
                 }
             },
@@ -2947,6 +3975,69 @@
                         "title": "Portal",
                         "type": "string",
                         "description": "The portal this term belongs to. REQUIRED — a relation to a term on another portal is rejected.",
+                        "example": "open-tilburg"
+                    }
+                }
+            },
+            "media": {
+                "slug": "media",
+                "icon": "FolderOutline",
+                "version": "0.1.0",
+                "title": "Media item",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One image or file in a portal's media library (site-page-seo-history-and-media). The uploaded file is attached to this object through OpenRegister's object files; the newest attached file is the one served. A page refers to an item as media:<id> in its hero image, its share image or its markdown, so replacing the file updates every page that uses it. An image needs alternative text; portaliq refuses the write without it (OpenRegister keeps no conditional rule). The public reach a published item only through the content API (/api/content/media/{id}), never through OpenRegister.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "title",
+                    "kind",
+                    "status"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "The name editors find the item by in the library.",
+                        "example": "Stadhuis"
+                    },
+                    "alt": {
+                        "title": "Alternative text",
+                        "type": "string",
+                        "maxLength": 250,
+                        "description": "What the image shows, read aloud to someone who cannot see it. Required for an image.",
+                        "example": "Het stadhuis aan de Markt"
+                    },
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "enum": [
+                            "image",
+                            "file"
+                        ],
+                        "description": "Whether this is an image shown on a page or a file offered for download.",
+                        "example": "image"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "description": "Only a published item is served to the public.",
+                        "example": "published"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this item belongs to. The public reach it only on this portal.",
                         "example": "open-tilburg"
                     }
                 }
@@ -3225,7 +4316,7 @@
                     ]
                 },
                 "icon": "ChartLine",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Traffic Daily",
                 "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API. One record per portal-day for all visits and one per configured segment; a roll-up portal's record sums its members.",
                 "type": "object",
@@ -3337,14 +4428,14 @@
                     "pages": {
                         "title": "Pages",
                         "type": "array",
-                        "description": "Per-path views, entrances, exits and engagement.",
+                        "description": "Per-route views, entrances, exits and engagement, and per route the sessions, visitors, engaged sessions, referrers and outbound links. A page is keyed by its in-site route: the `route` query parameter of the built-in site, else the URL path, without a trailing slash. A row written before portal-page-traffic has no sessions, visitors, engagedSessions, referrers or outbound; read their absence as not counted, never as zero.",
                         "items": {
                             "type": "object",
                             "properties": {
                                 "path": {
                                     "title": "Path",
                                     "type": "string",
-                                    "description": "The page path, query stripped.",
+                                    "description": "The in-site route: the built-in site's `route` parameter, else the URL path. Query stripped, no trailing slash.",
                                     "example": "/"
                                 },
                                 "views": {
@@ -3370,6 +4461,87 @@
                                     "type": "number",
                                     "description": "Mean seconds on this path before the next page view.",
                                     "example": 1
+                                },
+                                "sessions": {
+                                    "title": "Sessions",
+                                    "type": "integer",
+                                    "description": "Sessions that viewed this route. Absent on a row written before per-page counts existed.",
+                                    "example": 1
+                                },
+                                "visitors": {
+                                    "title": "Visitors",
+                                    "type": "integer",
+                                    "description": "Distinct visitors that viewed this route, by daily hash or client id. Absent on a row written before per-page counts existed.",
+                                    "example": 1
+                                },
+                                "engagedSessions": {
+                                    "title": "Engaged sessions",
+                                    "type": "integer",
+                                    "description": "Engaged sessions that viewed this route, by the same definition as the day's engaged sessions. Absent on a row written before per-page counts existed.",
+                                    "example": 1
+                                },
+                                "referrers": {
+                                    "title": "Referrers",
+                                    "type": "array",
+                                    "description": "Sessions that entered the portal on this route, by referrer host and channel, top ten. Absent on a row written before per-page counts existed.",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "host": {
+                                                "title": "Host",
+                                                "type": "string",
+                                                "description": "The referring host, empty for a direct visit.",
+                                                "example": "www.google.com"
+                                            },
+                                            "channel": {
+                                                "title": "Channel",
+                                                "type": "string",
+                                                "description": "The acquisition channel.",
+                                                "example": "organic"
+                                            },
+                                            "count": {
+                                                "title": "Count",
+                                                "type": "integer",
+                                                "description": "Sessions that entered here from this source.",
+                                                "example": 1
+                                            }
+                                        }
+                                    },
+                                    "example": [
+                                        {
+                                            "host": "www.google.com",
+                                            "channel": "organic",
+                                            "count": 40
+                                        }
+                                    ]
+                                },
+                                "outbound": {
+                                    "title": "Outbound links",
+                                    "type": "array",
+                                    "description": "Outbound links clicked on this route, top ten. Absent on a row written before per-page counts existed.",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "url": {
+                                                "title": "URL",
+                                                "type": "string",
+                                                "description": "The link clicked.",
+                                                "example": "https://www.tilburg.nl/"
+                                            },
+                                            "count": {
+                                                "title": "Count",
+                                                "type": "integer",
+                                                "description": "Clicks on this link from this route.",
+                                                "example": 1
+                                            }
+                                        }
+                                    },
+                                    "example": [
+                                        {
+                                            "url": "https://www.tilburg.nl/",
+                                            "count": 12
+                                        }
+                                    ]
                                 }
                             }
                         },
@@ -3379,7 +4551,23 @@
                                 "views": 600,
                                 "entrances": 300,
                                 "exits": 200,
-                                "avgEngagementSeconds": 40
+                                "avgEngagementSeconds": 40,
+                                "sessions": 280,
+                                "visitors": 260,
+                                "engagedSessions": 150,
+                                "referrers": [
+                                    {
+                                        "host": "www.google.com",
+                                        "channel": "organic",
+                                        "count": 120
+                                    }
+                                ],
+                                "outbound": [
+                                    {
+                                        "url": "https://www.tilburg.nl/",
+                                        "count": 12
+                                    }
+                                ]
                             }
                         ]
                     },
@@ -4505,7 +5693,7 @@
                     ]
                 },
                 "icon": "FileTreeOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Case Type",
                 "description": "What a citizen may change on a case of this type, and until when. The flag lives on the field, so `portalWritable` carries one entry per field; the two windows say in which statuses an amendment and a document are still accepted; `portalStatusLabels` carries the words the citizen reads. A case app owns all four and the portal renders them without adding a vocabulary of its own.",
                 "type": "object",
@@ -4684,6 +5872,12 @@
                                 "type": "string",
                                 "description": "The Nextcloud group whose members may allow a reveal. An instance administrator who is not in it may not.",
                                 "example": "vertrouwenspersonen"
+                            },
+                            "handlerGroup": {
+                                "title": "Handler group",
+                                "type": "string",
+                                "description": "The Nextcloud group whose members may read a report, write on its thread and ask for a reveal. When it is not set, only the custodian group may.",
+                                "example": "meldpunt-integriteit"
                             },
                             "acknowledgementDays": {
                                 "title": "Acknowledgement term",
@@ -4994,6 +6188,18 @@
                         "description": "The case number the link admits to.",
                         "example": "ZAAK-2026-0001"
                     },
+                    "caseRegister": {
+                        "title": "Case register",
+                        "type": "string",
+                        "description": "The register of the case collection the link opens. The session a followed link starts reads only this collection.",
+                        "example": "dossiq"
+                    },
+                    "caseSchema": {
+                        "title": "Case schema",
+                        "type": "string",
+                        "description": "The schema of the case collection the link opens.",
+                        "example": "case"
+                    },
                     "email": {
                         "title": "Email",
                         "type": "string",
@@ -5054,7 +6260,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Access Request",
                 "description": "Somebody asking, in the product, for access they do not have (REQ-PIOC-007). It carries who asked and what for, and the answer the owner gave, which the asker sees.",
                 "type": "object",
@@ -5103,6 +6309,12 @@
                         ],
                         "description": "The owner's answer, which the asker sees.",
                         "example": "pending"
+                    },
+                    "decisionReason": {
+                        "title": "Reason for the refusal",
+                        "type": "string",
+                        "description": "Why the request was refused. The person who asked reads it.",
+                        "example": "No authorisation from the company"
                     },
                     "decidedBy": {
                         "title": "Decided by",
@@ -5251,6 +6463,17 @@
                         "type": "string",
                         "description": "What the citizen is told after submitting. The form's words, not the portal's.",
                         "example": "Bedankt. U hoort binnen vijf werkdagen van ons."
+                    },
+                    "minTrust": {
+                        "title": "Sign-in level",
+                        "type": "string",
+                        "description": "The sign-in this form needs before it is shown or accepted. Absent or low means anyone may fill it in. Substantial or high needs a DigiD or eHerkenning session at that level, and the embedded form then sends the visitor to the portal's own page.",
+                        "enum": [
+                            "low",
+                            "substantial",
+                            "high"
+                        ],
+                        "example": "low"
                     },
                     "allowedOrigins": {
                         "title": "Allowed origins",
@@ -5493,6 +6716,140 @@
                     }
                 }
             },
+            "portalPoll": {
+                "slug": "portalPoll",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Portal Poll",
+                "description": "A question with fixed options, addressed to one audience within one organisation (parent-polls, learniq round-1 finding 9.9). Every portal subject of that audience answers once, through `portalPollResponse`. No per-group targeting yet — see the change's proposal.md Motivation.",
+                "type": "object",
+                "required": [
+                    "question",
+                    "options",
+                    "audience",
+                    "organisation"
+                ],
+                "properties": {
+                    "question": {
+                        "title": "Question",
+                        "type": "string",
+                        "description": "What is being asked.",
+                        "example": "Welke datum past het beste voor de ouderavond?"
+                    },
+                    "options": {
+                        "title": "Options",
+                        "type": "array",
+                        "description": "The fixed answers a subject may choose from.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Id",
+                                    "type": "string",
+                                    "description": "The option's own identifier, referenced by a response's optionId."
+                                },
+                                "label": {
+                                    "title": "Label",
+                                    "type": "string",
+                                    "description": "The option as shown to the subject."
+                                }
+                            }
+                        },
+                        "example": [
+                            {
+                                "id": "a",
+                                "label": "Dinsdag 6 oktober"
+                            },
+                            {
+                                "id": "b",
+                                "label": "Donderdag 8 oktober"
+                            }
+                        ]
+                    },
+                    "audience": {
+                        "title": "Audience",
+                        "type": "string",
+                        "description": "Which portal audience this poll is addressed to. Open string set, matching portalAccount.audience (contract v2 A2) — e.g. parent.",
+                        "example": "parent"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant (OpenRegister Organisation) this poll is addressed within.",
+                        "example": "gemeente-x"
+                    },
+                    "closesAt": {
+                        "title": "Closes at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "After this moment a subject may no longer answer or change their answer; a subject who already answered still sees their own answer.",
+                        "example": "2026-10-01T00:00:00+00:00"
+                    },
+                    "createdBy": {
+                        "title": "Created by",
+                        "type": "string",
+                        "description": "The Nextcloud user id of the staff member who created the poll.",
+                        "example": "clerk-anna"
+                    },
+                    "createdAt": {
+                        "title": "Created at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the poll was created.",
+                        "example": "2026-09-26T09:00:00+00:00"
+                    }
+                }
+            },
+            "portalPollResponse": {
+                "slug": "portalPollResponse",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Portal Poll Response",
+                "description": "One subject's current answer to one portalPoll (parent-polls). Exactly one row per (pollId, subjectRef) — a later response UPDATES this row, it never appends a second one, since a poll response has no reviewer and no drift concern.",
+                "type": "object",
+                "required": [
+                    "pollId",
+                    "subjectRef",
+                    "optionId"
+                ],
+                "properties": {
+                    "pollId": {
+                        "title": "Poll id",
+                        "type": "string",
+                        "description": "The portalPoll this response answers.",
+                        "example": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "Who answered. Server-derived from the bearer; never accepted from the client.",
+                        "example": "b3d9c2a1-0000-4000-8000-000000000000"
+                    },
+                    "optionId": {
+                        "title": "Option id",
+                        "type": "string",
+                        "description": "The chosen option's id, from the poll's own options list.",
+                        "example": "a"
+                    },
+                    "respondedAt": {
+                        "title": "Responded at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the current answer was given (or last changed).",
+                        "example": "2026-09-26T10:00:00+00:00"
+                    }
+                }
+            },
             "portalReport": {
                 "slug": "portalReport",
                 "authorization": {
@@ -5603,11 +6960,11 @@
                 "slug": "portalReporterContact",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "admin"
                     ]
                 },
                 "icon": "AccountLock",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Reporter Contact",
                 "description": "What a reporter gave about themselves, held apart from the report (REQ-RWA-004). Nothing here is returned by a read, a list, a search, an export or a notification of the report: it is reachable only through a reveal the named custodian allowed.",
                 "type": "object",
@@ -5786,6 +7143,1457 @@
                         "format": "date-time",
                         "description": "When it was asked.",
                         "example": ""
+                    }
+                }
+            },
+            "newsItem": {
+                "slug": "newsItem",
+                "icon": "FileDocument",
+                "version": "0.2.1",
+                "title": "News item",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A news item authored by staff and targeted at a school, one or more groups, or specific children (news-and-newsletter-authoring, findings 9.1). Read by a guardian ONLY when `target` intersects their own resolved audience (NewsAudienceMatcher) — never a broadcast-to-everyone fallback, the gap RosarioSIS's Portal Notes shows (rosariosis/round1/journeys.md J6).",
+                "type": "object",
+                "required": [
+                    "title",
+                    "body",
+                    "target",
+                    "authorRef",
+                    "status"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "News item heading.",
+                        "example": "Herfstvakantie rooster"
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "Plain text / markdown body, as written. An AI translation for a reader's language is kept in translations, never here.",
+                        "example": "De herfstvakantie loopt van 19 tot 23 oktober."
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Audience this item is targeted at. At least one of schoolRef/groupRefs/childRefs MUST be present; NewsAudienceMatcher treats them as an OR — any match includes the item.",
+                        "properties": {
+                            "schoolRef": {
+                                "title": "School",
+                                "type": "string",
+                                "example": "school-de-regenboog",
+                                "description": "The school this item is targeted at, when targeting a whole school."
+                            },
+                            "groupRefs": {
+                                "title": "Groups",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "groep-5a"
+                                ],
+                                "description": "The groups this item is targeted at, when targeting one or more groups."
+                            },
+                            "childRefs": {
+                                "title": "Children",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "child-devries-lars"
+                                ],
+                                "description": "The specific children this item is targeted at, when targeting individual children."
+                            }
+                        }
+                    },
+                    "authorRef": {
+                        "title": "Author",
+                        "type": "string",
+                        "description": "Staff subject reference of the author.",
+                        "example": "staff-directie-1"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Lifecycle status. A draft item is indistinguishable from an absent one, exactly like an unpublished `page`.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "example": "published"
+                    },
+                    "photoRefs": {
+                        "title": "Photos",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "References/URLs to attached photos. Withheld from every read when any targeted child's photo consent is not granted (NewsPhotoConsentGate) — the item's title/body still deliver.",
+                        "example": []
+                    },
+                    "readReceipts": {
+                        "title": "Read receipts",
+                        "type": "array",
+                        "description": "Server-managed. One entry per guardian who has read this item (idempotent append by NewsReadReceiptService); never client-writable.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "subjectRef": {
+                                    "type": "string",
+                                    "title": "Guardian",
+                                    "description": "The subjectRef of the guardian who read this item."
+                                },
+                                "readAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "title": "Read at",
+                                    "description": "When this guardian read the item, in ISO 8601."
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "translations": {
+                        "title": "Translations",
+                        "type": "array",
+                        "description": "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written.",
+                        "items": {
+                            "type": "object"
+                        },
+                        "example": []
+                    }
+                }
+            },
+            "newsletter": {
+                "slug": "newsletter",
+                "icon": "EmailOutline",
+                "version": "0.2.0",
+                "title": "Newsletter",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A newsletter composed from existing newsItem objects, sent per school or group with a recipient-count preflight (findings 9.2; the Gibbon Messenger preflight pattern, gibbon/round1/pages/Messenger.md).",
+                "type": "object",
+                "required": [
+                    "title",
+                    "itemRefs",
+                    "target"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "example": "Weekbrief De Regenboog",
+                        "description": "The newsletter's own title, shown in the composer and the guardian's archive."
+                    },
+                    "itemRefs": {
+                        "title": "News items",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Ids of the newsItem objects composed into this newsletter.",
+                        "example": []
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Same shape and OR-matching rule as newsItem.target.",
+                        "properties": {
+                            "schoolRef": {
+                                "type": "string",
+                                "title": "School",
+                                "description": "The school this newsletter is targeted at, when targeting a whole school."
+                            },
+                            "groupRefs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "title": "Groups",
+                                "description": "The groups this newsletter is targeted at, when targeting one or more groups."
+                            },
+                            "childRefs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "title": "Children",
+                                "description": "The specific children this newsletter is targeted at, when targeting individual children."
+                            }
+                        }
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Null until sent. Stamped server-side by NewsletterController::send — never client-writable. A send is refused (this stays null) when the resolved audience is zero (NewsletterPreflightService)."
+                    },
+                    "archived": {
+                        "title": "Archived",
+                        "type": "boolean",
+                        "description": "Staff may archive a sent newsletter explicitly; an archived newsletter is no longer surfaced as ‘recent’ but stays in the guardian's archive list.",
+                        "example": false
+                    },
+                    "translations": {
+                        "title": "Translations",
+                        "type": "array",
+                        "description": "Server-managed. One entry per language this newsletter's title was translated into by AI: the translated title (as both text and title), the source language, the model, a reference to this newsletter and the disclosure sentence. The title stays as written.",
+                        "items": {
+                            "type": "object"
+                        },
+                        "example": []
+                    }
+                }
+            },
+            "guardianAudienceFixture": {
+                "slug": "guardianAudienceFixture",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Guardian audience fixture (interim)",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "description": "INTERIM stand-in for learniq's portal-contribution-guardian-audiences change (another lane, in flight, see design.md 'Audience source seam' in openspec/changes/news-and-newsletter-authoring/). Never publicly readable — read only server-side by GuardianAudienceFixtureReader. Delete this schema and repoint the reader at learniq's real collection once that change ships.",
+                "type": "object",
+                "required": [
+                    "guardianRef"
+                ],
+                "properties": {
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "description": "The guardian's own subjectRef.",
+                        "example": "guardian-anna-devries"
+                    },
+                    "schoolRef": {
+                        "title": "School",
+                        "type": "string",
+                        "example": "school-de-regenboog",
+                        "description": "The guardian's own child's school."
+                    },
+                    "groupRefs": {
+                        "title": "Groups",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "groep-5a"
+                        ],
+                        "description": "The groups the guardian's own children are in."
+                    },
+                    "childRefs": {
+                        "title": "Children",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "child-devries-lars"
+                        ],
+                        "description": "The guardian's own children."
+                    },
+                    "photoConsent": {
+                        "title": "Photo consent",
+                        "type": "object",
+                        "description": "Map of childRef to a map of consent PURPOSE to whether it is granted for that child (findings 2.8 names schoolgids/website/nieuwsbrief/social media/Parro as separate purposes; this change models one, GuardianAudienceFixtureReader::PURPOSE_NEWS = \"news\", covering news items and newsletters). An absent child, or an absent purpose entry, is treated as withheld (fail-closed).",
+                        "example": {
+                            "child-devries-lars": {
+                                "news": true
+                            }
+                        }
+                    }
+                }
+            },
+            "schoolEvent": {
+                "slug": "schoolEvent",
+                "icon": "Calendar",
+                "version": "0.1.0",
+                "title": "Event",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A school/group/child-targeted event with optional guardian RSVP and sign-up roles for volunteers/materials (events-and-signups, findings 9.6, 9.8).",
+                "type": "object",
+                "required": [
+                    "title",
+                    "start",
+                    "target",
+                    "status"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "example": "Schoolreisje groep 5a",
+                        "description": "The event's own title, shown in the guardian feed and the staff authoring list."
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "example": "Op 12 november gaat groep 5a op schoolreis.",
+                        "description": "Free-text details about the event, shown alongside the title."
+                    },
+                    "start": {
+                        "title": "Start",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the event starts, in ISO 8601."
+                    },
+                    "end": {
+                        "title": "End",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the event ends, in ISO 8601. Optional."
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Audience this is targeted at. At least one of schoolRef/groupRefs/childRefs MUST be present; NewsAudienceMatcher treats them as an OR.",
+                        "properties": {
+                            "schoolRef": {
+                                "title": "School",
+                                "type": "string",
+                                "example": "school-de-regenboog",
+                                "description": "The school this event is targeted at, when targeting a whole school."
+                            },
+                            "groupRefs": {
+                                "title": "Groups",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "groep-5a"
+                                ],
+                                "description": "The groups this event is targeted at, when targeting one or more groups."
+                            },
+                            "childRefs": {
+                                "title": "Children",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [],
+                                "description": "The specific children this event is targeted at, when targeting individual children."
+                            }
+                        }
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "example": "published",
+                        "description": "Lifecycle status. A draft event is indistinguishable from an absent one, exactly like an unpublished newsItem."
+                    },
+                    "rsvpEnabled": {
+                        "title": "RSVP enabled",
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Whether a guardian may RSVP to this event."
+                    },
+                    "signupRoles": {
+                        "title": "Sign-up roles",
+                        "type": "array",
+                        "description": "Volunteer/material roles (activiteitenplanner/ouderhulp). Each role's capacity is enforced server-side by EventSignupService.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "title": "Role id",
+                                    "description": "Unique within this event; referenced by an eventSignup's roleId."
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "title": "Label",
+                                    "description": "Display name for this role, such as \"Begeleiding\" or \"Limonade meenemen\"."
+                                },
+                                "capacity": {
+                                    "type": "integer",
+                                    "title": "Capacity",
+                                    "description": "The maximum number of guardians who may sign up for this role."
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "authorRef": {
+                        "title": "Author",
+                        "type": "string",
+                        "example": "staff-directie-1",
+                        "description": "Staff subject reference of the author."
+                    }
+                }
+            },
+            "eventRsvp": {
+                "slug": "eventRsvp",
+                "icon": "FileCheckOutline",
+                "version": "0.1.0",
+                "title": "Event RSVP",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One guardian's RSVP for one child on one event. Upserted by EventRsvpService — a second RSVP for the same guardian+child+event updates rather than duplicates.",
+                "type": "object",
+                "required": [
+                    "eventRef",
+                    "guardianRef",
+                    "childRef",
+                    "response"
+                ],
+                "properties": {
+                    "eventRef": {
+                        "title": "Event",
+                        "type": "string",
+                        "description": "The event this RSVP is for."
+                    },
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "description": "The guardian's own subjectRef."
+                    },
+                    "childRef": {
+                        "title": "Child",
+                        "type": "string",
+                        "description": "The child this RSVP is for."
+                    },
+                    "response": {
+                        "title": "Response",
+                        "type": "string",
+                        "enum": [
+                            "yes",
+                            "no",
+                            "maybe"
+                        ],
+                        "description": "The guardian's response."
+                    },
+                    "respondedAt": {
+                        "title": "Responded at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the guardian last responded, in ISO 8601."
+                    }
+                }
+            },
+            "eventSignup": {
+                "slug": "eventSignup",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Event sign-up",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One guardian's sign-up for one role on one event (activiteitenplanner/ouderhulp). Capacity is enforced server-side by EventSignupService BEFORE this object is written.",
+                "type": "object",
+                "required": [
+                    "eventRef",
+                    "roleId",
+                    "guardianRef"
+                ],
+                "properties": {
+                    "eventRef": {
+                        "title": "Event",
+                        "type": "string",
+                        "description": "The event this sign-up is for."
+                    },
+                    "roleId": {
+                        "title": "Role",
+                        "type": "string",
+                        "description": "The signupRoles entry this sign-up is for."
+                    },
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "description": "The guardian's own subjectRef."
+                    },
+                    "childRef": {
+                        "title": "Child",
+                        "type": "string",
+                        "description": "The child this sign-up is for, when relevant to the role."
+                    },
+                    "note": {
+                        "title": "Note",
+                        "type": "string",
+                        "example": "Neemt limonade mee",
+                        "description": "An optional note from the guardian, such as what they are bringing."
+                    },
+                    "signedUpAt": {
+                        "title": "Signed up at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the guardian signed up, in ISO 8601."
+                    }
+                }
+            },
+            "messageThread": {
+                "slug": "messageThread",
+                "icon": "MessageText",
+                "version": "0.1.0",
+                "title": "Message thread",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A guardian-participant message thread (guardian-direct-messages, finding 9.3). `direct` names two explicit participants; `group` scopes participation to a group via GroupStaffFixtureReader (staff) / GuardianAudienceFixtureReader (guardians). Read/write is never enforced by this schema's own authorization block alone — InAppMessagingLeaf re-verifies participation server-side on every call.",
+                "type": "object",
+                "required": [
+                    "kind",
+                    "createdBy"
+                ],
+                "properties": {
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "description": "Whether this thread is a two-participant `direct` thread or a `group` thread scoped to a whole group.",
+                        "enum": [
+                            "direct",
+                            "group"
+                        ]
+                    },
+                    "participantRefs": {
+                        "title": "Participants",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Explicit participant subjectRefs, used for `direct` threads.",
+                        "example": []
+                    },
+                    "groupRef": {
+                        "title": "Group",
+                        "type": "string",
+                        "description": "The group this thread is scoped to, used for `group` threads."
+                    },
+                    "createdBy": {
+                        "title": "Created by",
+                        "type": "string",
+                        "description": "The subjectRef of whoever created this thread: the staff member for a `group` thread."
+                    },
+                    "createdAt": {
+                        "title": "Created at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When this thread was created, in ISO 8601."
+                    }
+                }
+            },
+            "guardianMessage": {
+                "slug": "guardianMessage",
+                "icon": "Email",
+                "version": "0.2.0",
+                "title": "Message",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One message in a messageThread. `readBy` is server-managed (idempotent append by InAppMessagingLeaf::markThreadRead); never client-writable.",
+                "type": "object",
+                "required": [
+                    "threadRef",
+                    "senderRef",
+                    "body"
+                ],
+                "properties": {
+                    "threadRef": {
+                        "title": "Thread",
+                        "type": "string",
+                        "description": "The messageThread this message belongs to."
+                    },
+                    "senderRef": {
+                        "title": "Sender",
+                        "type": "string",
+                        "description": "The subjectRef of whoever sent this message."
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "The message text."
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When this message was sent, in ISO 8601."
+                    },
+                    "readBy": {
+                        "title": "Read by",
+                        "type": "array",
+                        "description": "Server-managed. One entry per subject who has read this message.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": []
+                    },
+                    "translations": {
+                        "title": "Translations",
+                        "type": "array",
+                        "description": "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written.",
+                        "items": {
+                            "type": "object"
+                        },
+                        "example": []
+                    }
+                }
+            },
+            "groupStaffFixture": {
+                "slug": "groupStaffFixture",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Group staff fixture (interim)",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "INTERIM stand-in for 'which staff teach which group', analogous to guardianAudienceFixture, pending learniq's real staff-assignment data. Never publicly readable; read only server-side by GroupStaffFixtureReader.",
+                "type": "object",
+                "required": [
+                    "groupRef",
+                    "staffRefs"
+                ],
+                "properties": {
+                    "groupRef": {
+                        "title": "Group",
+                        "type": "string",
+                        "description": "The group this fixture row is for.",
+                        "example": "groep-5a"
+                    },
+                    "staffRefs": {
+                        "title": "Staff",
+                        "type": "array",
+                        "description": "The staff subjectRefs who teach this group.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "staff-leerkracht-5a"
+                        ]
+                    }
+                }
+            },
+            "pushSubscription": {
+                "slug": "pushSubscription",
+                "icon": "BellOutline",
+                "version": "0.1.0",
+                "title": "Push subscription",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A guardian's Web Push subscription endpoint (push-notifications-quiet-hours, finding 9.14). The real Web Push transport is out of scope for this change (LoggingPushSender is the interim implementation); this schema exists so subscriptions are captured now.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "endpoint"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject",
+                        "type": "string",
+                        "description": "The subjectRef this subscription belongs to."
+                    },
+                    "endpoint": {
+                        "title": "Endpoint",
+                        "type": "string",
+                        "description": "The Web Push service's delivery endpoint URL.",
+                        "example": "https://push.example.org/send/EXAMPLE_TOKEN"
+                    },
+                    "keys": {
+                        "title": "Keys",
+                        "type": "object",
+                        "description": "The subscription's Web Push encryption keys.",
+                        "properties": {
+                            "p256dh": {
+                                "title": "P256dh",
+                                "type": "string",
+                                "description": "The subscription's public key for message encryption."
+                            },
+                            "auth": {
+                                "title": "Auth",
+                                "type": "string",
+                                "description": "The subscription's authentication secret."
+                            }
+                        }
+                    },
+                    "deviceRef": {
+                        "title": "Device",
+                        "type": "string",
+                        "description": "An opaque reference to the subscribing device, when known."
+                    },
+                    "createdAt": {
+                        "title": "Created at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When this subscription was created, in ISO 8601."
+                    },
+                    "active": {
+                        "title": "Active",
+                        "type": "boolean",
+                        "description": "False once unsubscribed. A revoked subscription is kept (not deleted) so its history is auditable; PushDeliveryService's real transport (a future change) MUST skip inactive subscriptions.",
+                        "example": true
+                    }
+                }
+            },
+            "notificationQuietHours": {
+                "slug": "notificationQuietHours",
+                "icon": "Calendar",
+                "version": "0.1.0",
+                "title": "Notification quiet hours",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One subject's (guardian or staff) configured quiet-hours window, HH:MM 24h strings. Read/written EXCLUSIVELY through QuietHoursPolicy — the single source of truth for the quiet-hours rule (push-notifications-quiet-hours).",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "startTime",
+                    "endTime"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject",
+                        "type": "string",
+                        "description": "The subjectRef (guardian or staff) this quiet-hours window belongs to."
+                    },
+                    "startTime": {
+                        "title": "Start",
+                        "type": "string",
+                        "description": "The window's start time, `HH:MM` 24h.",
+                        "example": "22:00"
+                    },
+                    "endTime": {
+                        "title": "End",
+                        "type": "string",
+                        "description": "The window's end time, `HH:MM` 24h.",
+                        "example": "07:00"
+                    }
+                }
+            },
+            "pendingPush": {
+                "slug": "pendingPush",
+                "icon": "History",
+                "version": "0.1.0",
+                "title": "Pending push",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A non-emergency push deferred because the subject was in quiet hours when PushDeliveryService::deliver() was called. PendingPushDeliveryJob delivers it once `deliverAfter` is reached; never dropped.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "title",
+                    "body",
+                    "deliverAfter"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject",
+                        "type": "string",
+                        "description": "The subjectRef this deferred push is for."
+                    },
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "The push notification's title."
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "The push notification's body text."
+                    },
+                    "deliverAfter": {
+                        "title": "Deliver after",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The subject's quiet-hours window end; PendingPushDeliveryJob delivers this push once reached."
+                    },
+                    "delivered": {
+                        "title": "Delivered",
+                        "type": "boolean",
+                        "description": "Whether PendingPushDeliveryJob has already delivered this push.",
+                        "example": false
+                    }
+                }
+            },
+            "activityOffer": {
+                "slug": "activityOffer",
+                "icon": "Pulse",
+                "version": "0.2.1",
+                "title": "Activity",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A club, course or series of trips that runs for a term, with places, sessions, supervisors and a waiting list (extracurricular-activity-offer). It holds no amount: a place that costs money is paid through a shillinq payment request.",
+                "type": "object",
+                "required": [
+                    "title",
+                    "kind",
+                    "target",
+                    "termStart",
+                    "capacity",
+                    "status"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "example": "Schaakclub groep 5 tot en met 8",
+                        "description": "The name parents see in the portal."
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "example": "Elke maandag na school leren we schaken in de aula.",
+                        "description": "What the children do, where and what to bring."
+                    },
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "enum": [
+                            "club",
+                            "sport",
+                            "culture",
+                            "trip",
+                            "course",
+                            "other"
+                        ],
+                        "example": "club",
+                        "description": "What sort of activity this is."
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Who may sign up: a school, one or more groups, or specific children. At least one must be present; any single match is enough.",
+                        "properties": {
+                            "schoolRef": {
+                                "title": "School",
+                                "type": "string",
+                                "example": "school-de-regenboog",
+                                "description": "The school this activity is open to, when it is open to a whole school."
+                            },
+                            "groupRefs": {
+                                "title": "Groups",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "groep-5a"
+                                ],
+                                "description": "The groups this activity is open to."
+                            },
+                            "childRefs": {
+                                "title": "Children",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [],
+                                "description": "The specific children this activity is open to."
+                            }
+                        }
+                    },
+                    "termStart": {
+                        "title": "Term start",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-05",
+                        "description": "The first day of the term, as a date."
+                    },
+                    "termEnd": {
+                        "title": "Term end",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-12-14",
+                        "description": "The last day of the term, as a date. Optional."
+                    },
+                    "signupDeadline": {
+                        "title": "Sign-up deadline",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-09-30T23:59:00+02:00",
+                        "description": "After this moment parents can no longer sign up. Optional."
+                    },
+                    "capacity": {
+                        "title": "Capacity",
+                        "type": "integer",
+                        "minimum": 1,
+                        "example": 16,
+                        "description": "The most children who can have a place."
+                    },
+                    "waitlistEnabled": {
+                        "title": "Waiting list",
+                        "type": "boolean",
+                        "example": true,
+                        "description": "When full, a new sign-up joins the waiting list instead of being refused."
+                    },
+                    "sessions": {
+                        "title": "Sessions",
+                        "type": "array",
+                        "description": "The meetings in this term. Attendance is marked per session.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Session id",
+                                    "type": "string",
+                                    "description": "Unique within this activity; attendance rows point at it."
+                                },
+                                "start": {
+                                    "title": "Start",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the session starts."
+                                },
+                                "end": {
+                                    "title": "End",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the session ends. Optional."
+                                },
+                                "location": {
+                                    "title": "Location",
+                                    "type": "string",
+                                    "description": "Where the session takes place, when it differs from the activity."
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "supervisorRefs": {
+                        "title": "Supervisors",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "staff-leerkracht-5a"
+                        ],
+                        "description": "The staff who supervise this activity."
+                    },
+                    "childrenPerSupervisor": {
+                        "title": "Children per supervisor",
+                        "type": "integer",
+                        "minimum": 0,
+                        "example": 8,
+                        "description": "How many children one supervisor may take. Places never exceed supervisors times this number. Leave it at 0 for no limit."
+                    },
+                    "paymentRequested": {
+                        "title": "Payment requested",
+                        "type": "boolean",
+                        "example": false,
+                        "description": "A contribution is asked per place. Staff raise it through shillinq, which holds the amount."
+                    },
+                    "consentRequired": {
+                        "title": "Consent required",
+                        "type": "boolean",
+                        "example": true,
+                        "description": "A guardian must agree to the consent text before their child can be signed up."
+                    },
+                    "consentStatement": {
+                        "title": "Consent text",
+                        "type": "string",
+                        "example": "Mijn kind mag met de bus mee naar het Sportfondsenbad en daar onder begeleiding zwemles volgen.",
+                        "description": "What a guardian agrees to when signing up. Required before an activity that needs consent can open."
+                    },
+                    "photosTaken": {
+                        "title": "Photos taken",
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Photos are taken during this activity, so supervisors see which children have photo consent."
+                    },
+                    "location": {
+                        "title": "Location",
+                        "type": "string",
+                        "example": "Aula, De Regenboog",
+                        "description": "Where the activity usually takes place."
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "open",
+                            "closed"
+                        ],
+                        "example": "open",
+                        "description": "Draft is invisible to parents. Open takes sign-ups. Closed shows the activity but takes no new sign-ups."
+                    },
+                    "authorRef": {
+                        "title": "Author",
+                        "type": "string",
+                        "example": "staff-leerkracht-5a",
+                        "description": "The staff member who created the activity."
+                    }
+                }
+            },
+            "activitySignup": {
+                "slug": "activitySignup",
+                "icon": "Account",
+                "version": "0.2.1",
+                "title": "Activity sign-up",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One child's place, or spot on the waiting list, for one activity, signed up by one of their guardians. Written by ActivitySignupService after it has counted the places.",
+                "type": "object",
+                "required": [
+                    "activityRef",
+                    "childRef",
+                    "guardianRef",
+                    "status"
+                ],
+                "properties": {
+                    "activityRef": {
+                        "title": "Activity",
+                        "type": "string",
+                        "description": "The activity this sign-up is for."
+                    },
+                    "childRef": {
+                        "title": "Child",
+                        "type": "string",
+                        "example": "child-devries-lars",
+                        "description": "The child who takes part."
+                    },
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "example": "guardian-anna-devries",
+                        "description": "The guardian who signed the child up."
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "confirmed",
+                            "waitlisted",
+                            "withdrawn"
+                        ],
+                        "example": "confirmed",
+                        "description": "Confirmed has a place. Waitlisted waits for one, in sign-up order. Withdrawn no longer takes part."
+                    },
+                    "note": {
+                        "title": "Note",
+                        "type": "string",
+                        "example": "Lars neemt zijn eigen schaakbord mee.",
+                        "description": "Something the guardian wants the supervisor to know."
+                    },
+                    "signedUpAt": {
+                        "title": "Signed up at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the guardian signed up. The waiting list follows this order."
+                    },
+                    "confirmedAt": {
+                        "title": "Confirmed at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the child got a place."
+                    },
+                    "withdrawnAt": {
+                        "title": "Withdrawn at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the sign-up was withdrawn."
+                    },
+                    "paymentRequestRef": {
+                        "title": "Payment request",
+                        "type": "string",
+                        "description": "The shillinq payment request for this place, when the activity asks a contribution. Portaliq writes it from shillinq's answer when staff raise the contribution."
+                    },
+                    "consent": {
+                        "title": "Consent",
+                        "type": "object",
+                        "description": "The guardian's agreement to the activity's consent text, kept as agreed. Absent when the activity needs no consent.",
+                        "properties": {
+                            "statement": {
+                                "title": "Agreed text",
+                                "type": "string",
+                                "description": "The consent text exactly as the guardian agreed to it."
+                            },
+                            "grantedByRef": {
+                                "title": "Agreed by",
+                                "type": "string",
+                                "description": "The guardian who agreed."
+                            },
+                            "grantedAt": {
+                                "title": "Agreed at",
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "When the guardian agreed."
+                            }
+                        }
+                    }
+                }
+            },
+            "activityAttendance": {
+                "slug": "activityAttendance",
+                "icon": "ClipboardText",
+                "version": "0.1.0",
+                "title": "Activity attendance",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "Whether a child with a place was there for one session of an activity. One row per activity, session and child; a second mark updates it.",
+                "type": "object",
+                "required": [
+                    "activityRef",
+                    "sessionId",
+                    "childRef",
+                    "status"
+                ],
+                "properties": {
+                    "activityRef": {
+                        "title": "Activity",
+                        "type": "string",
+                        "description": "The activity the session belongs to."
+                    },
+                    "sessionId": {
+                        "title": "Session",
+                        "type": "string",
+                        "example": "week-1",
+                        "description": "The session id from the activity's sessions."
+                    },
+                    "childRef": {
+                        "title": "Child",
+                        "type": "string",
+                        "example": "child-devries-lars",
+                        "description": "The child this mark is for."
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "present",
+                            "absent",
+                            "excused"
+                        ],
+                        "example": "present",
+                        "description": "Present, absent, or absent with a reason given."
+                    },
+                    "markedByRef": {
+                        "title": "Marked by",
+                        "type": "string",
+                        "example": "staff-leerkracht-5a",
+                        "description": "The staff member who marked it."
+                    },
+                    "markedAt": {
+                        "title": "Marked at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was last marked."
+                    }
+                }
+            },
+            "portalAvailabilityDaily": {
+                "slug": "portalAvailabilityDaily",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "icon": "ChartLine",
+                "version": "0.1.0",
+                "title": "Portal availability per day",
+                "description": "How available one portal was on one UTC day, measured by the portal itself every five minutes. An interval in which no check ran counts as down. Kept for thirteen months, for the availability report.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "date"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal's slug.",
+                        "example": "open-tilburg"
+                    },
+                    "date": {
+                        "title": "Date",
+                        "type": "string",
+                        "description": "The UTC day, as YYYY-MM-DD.",
+                        "format": "date",
+                        "example": "2026-09-29"
+                    },
+                    "intervals": {
+                        "title": "Intervals",
+                        "type": "integer",
+                        "description": "The five-minute intervals counted so far this day.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "available": {
+                        "title": "Available",
+                        "type": "integer",
+                        "description": "Intervals in which the portal answered and its health check said ok.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "degraded": {
+                        "title": "Degraded",
+                        "type": "integer",
+                        "description": "Intervals in which the portal answered but its health check said degraded.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "down": {
+                        "title": "Down",
+                        "type": "integer",
+                        "description": "Intervals in which the portal did not answer, including intervals without a check.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "noCheck": {
+                        "title": "No check",
+                        "type": "integer",
+                        "description": "Intervals in which no check ran. They are counted as down as well.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "lastCheckAt": {
+                        "title": "Last check",
+                        "type": "string",
+                        "description": "When the last check of this portal ran, so the next one can count the intervals missed in between.",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "portalAvailabilityOutage": {
+                "slug": "portalAvailabilityOutage",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "icon": "ChartLine",
+                "version": "0.1.0",
+                "title": "Portal outage",
+                "description": "One run of consecutive five-minute intervals in which a portal was not available. Open while it lasts, closed at the first check that finds the portal available again. Kept for thirteen months.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "startedAt",
+                    "cause"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal's slug.",
+                        "example": "open-tilburg"
+                    },
+                    "startedAt": {
+                        "title": "Started",
+                        "type": "string",
+                        "description": "The start of the first interval that was not available.",
+                        "format": "date-time"
+                    },
+                    "endedAt": {
+                        "title": "Ended",
+                        "type": "string",
+                        "description": "The check that found the portal available again. Empty while the outage lasts.",
+                        "format": "date-time"
+                    },
+                    "durationMinutes": {
+                        "title": "Duration in minutes",
+                        "type": "integer",
+                        "description": "How long the outage lasted, or has lasted so far.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "cause": {
+                        "title": "Cause",
+                        "type": "string",
+                        "description": "Why the first interval was not available.",
+                        "enum": [
+                            "site-error",
+                            "timeout",
+                            "health-degraded",
+                            "no-check"
+                        ]
+                    }
+                }
+            },
+            "portalNotice": {
+                "slug": "portalNotice",
+                "icon": "AlertCircleOutline",
+                "version": "0.1.0",
+                "title": "Portal notice",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A maintenance or warning notice shown above every page of a portal for a set period (operate-maintenance-notice). Written by the page editor groups (PageEditorService). The public never read this schema through OpenRegister: the site and the signed-in portal receive only the notices that are published and running now, from portaliq's own endpoints. portaliq refuses a notice whose end is not after its start (NoticeWriteGuardListener).",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "message",
+                    "level",
+                    "startsAt",
+                    "endsAt",
+                    "surfaces",
+                    "status"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this notice shows on.",
+                        "example": "open-tilburg"
+                    },
+                    "message": {
+                        "title": "Message",
+                        "type": "string",
+                        "maxLength": 280,
+                        "description": "What visitors read, in plain text.",
+                        "example": "Saturday from 22:00 to 02:00 you cannot submit requests."
+                    },
+                    "level": {
+                        "title": "Level",
+                        "type": "string",
+                        "enum": [
+                            "info",
+                            "warning"
+                        ],
+                        "description": "Information or a warning; a warning stands out more.",
+                        "example": "warning"
+                    },
+                    "linkLabel": {
+                        "title": "Link text",
+                        "type": "string",
+                        "maxLength": 80,
+                        "description": "The text of the optional link. Without it the link reads \"More information\".",
+                        "example": "Read more about the maintenance"
+                    },
+                    "linkUrl": {
+                        "title": "Link",
+                        "type": "string",
+                        "format": "uri",
+                        "pattern": "^https://",
+                        "description": "An optional page with more information. Only an https address is shown.",
+                        "example": "https://www.example.nl/onderhoud"
+                    },
+                    "startsAt": {
+                        "title": "Shows from",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "From when the notice shows.",
+                        "example": "2026-10-03T10:00:00+02:00"
+                    },
+                    "endsAt": {
+                        "title": "Shows until",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the notice stops showing. Required, so no notice stays up by accident.",
+                        "example": "2026-10-04T02:00:00+02:00"
+                    },
+                    "surfaces": {
+                        "title": "Shows on",
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "site",
+                                "portal"
+                            ]
+                        },
+                        "description": "The public site, the signed-in portal, or both.",
+                        "example": [
+                            "site",
+                            "portal"
+                        ]
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "description": "Only a published notice is shown.",
+                        "example": "published"
                     }
                 }
             }

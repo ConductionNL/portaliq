@@ -403,4 +403,286 @@ class PortalResolverTest extends TestCase {
 		$this->assertNull($resolver->resolveForCollector($request, null));
 		$this->assertNull($resolver->resolveForCollector($request, ''));
 	}//end testTheCollectorFallsBackToTheSlugOnlyWhenTheHostResolvesNothing()
+	/**
+	 * The published portals are read from OpenRegister once per request.
+	 *
+	 * `site()` composes its page from five helpers that each resolve the
+	 * portal themselves, and before this each one re-ran a
+	 * `findAll(limit: 500)` against OpenRegister on every public page load
+	 * (review of #516). Counting the reads is the only way to see it: every
+	 * assertion in this file passed with five reads and passes with one, so
+	 * the duplication was invisible from the return values alone.
+	 *
+	 * @return void
+	 */
+	public function testThePortalsAreReadOnceForTheWholeRequest(): void {
+		$reader   = $this->countingReader($this->sites);
+		$resolver = $this->resolverOver($reader);
+
+		$resolver->allPublishedPortals();
+		$resolver->allPublishedPortals();
+		$resolver->resolveByHost('tilburg.example', $resolver->allPublishedPortals());
+
+		$this->assertSame(1, $reader->calls, 'OpenRegister must be read once per request');
+	}//end testThePortalsAreReadOnceForTheWholeRequest()
+
+
+	/**
+	 * The memo returns the same portals it read.
+	 *
+	 * Guards the obvious way to make the counter above green: returning an
+	 * empty array from the second call onwards would also read once.
+	 *
+	 * @return void
+	 */
+	public function testTheMemoReturnsThePortalsNotAnEmptyList(): void {
+		$resolver = $this->resolverOver($this->countingReader($this->sites));
+
+		$first  = $resolver->allPublishedPortals();
+		$second = $resolver->allPublishedPortals();
+
+		$this->assertSame($this->sites, $first);
+		$this->assertSame($first, $second);
+	}//end testTheMemoReturnsThePortalsNotAnEmptyList()
+
+
+	/**
+	 * A failed read is NOT memoised.
+	 *
+	 * Fail-closed means this read returns `[]` when OpenRegister throws. If
+	 * that `[]` were cached, one unlucky read would 404 every remaining
+	 * lookup in the request instead of just its own — a worse failure than
+	 * the duplicate reads the memo removes.
+	 *
+	 * @return void
+	 */
+	public function testAFailedReadIsRetriedRatherThanMemoised(): void {
+		$attempts  = 0;
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function () use (&$attempts) {
+				$attempts++;
+				throw new RuntimeException('OR is down');
+			}
+		);
+
+		$resolver = new PortalResolver(
+			$container,
+			$this->createMock(LoggerInterface::class),
+			$this->contextDouble()
+		);
+
+		$this->assertSame([], $resolver->allPublishedPortals());
+		$this->assertSame([], $resolver->allPublishedPortals());
+		$this->assertSame(2, $attempts, 'a fail-closed read must be retried, not cached');
+	}//end testAFailedReadIsRetriedRatherThanMemoised()
+
+
+	/**
+	 * An ObjectService double that counts how often it is read.
+	 *
+	 * @param array $rows The rows to return.
+	 *
+	 * @return object The counting double, carrying a public `calls` counter.
+	 */
+	private function countingReader(array $rows): object {
+		return new class($rows) {
+
+			/**
+			 * The rows to return.
+			 *
+			 * @var array
+			 */
+			public array $rows;
+
+			/**
+			 * How often findAll() was called.
+			 *
+			 * @var int
+			 */
+			public int $calls = 0;
+
+
+			/**
+			 * Constructor.
+			 *
+			 * @param array $rows The rows.
+			 */
+			public function __construct(array $rows) {
+				$this->rows = $rows;
+			}
+
+
+			/**
+			 * Set the register context.
+			 *
+			 * @param string $register The register slug.
+			 *
+			 * @return void
+			 */
+			public function setRegister(string $register): void {
+			}
+
+
+			/**
+			 * Set the schema context.
+			 *
+			 * @param string $schema The schema slug.
+			 *
+			 * @return void
+			 */
+			public function setSchema(string $schema): void {
+			}
+
+
+			/**
+			 * Return the fixed rows and count the read.
+			 *
+			 * @param array $config        The query config.
+			 * @param bool  $_rbac         RBAC toggle.
+			 * @param bool  $_multitenancy Multitenancy toggle.
+			 *
+			 * @return array The rows.
+			 */
+			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->calls++;
+
+				return $this->rows;
+			}
+
+
+		};
+	}//end countingReader()
+
+
+	/**
+	 * A resolver reading through the given ObjectService double.
+	 *
+	 * @param object $reader The ObjectService double.
+	 *
+	 * @return PortalResolver The resolver.
+	 */
+	private function resolverOver(object $reader): PortalResolver {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($reader);
+
+		return new PortalResolver(
+			$container,
+			$this->createMock(LoggerInterface::class),
+			$this->contextDouble()
+		);
+	}//end resolverOver()
+
+
+
+	/**
+	 * Exactly one published portal carries the value, so `?org=` resolves.
+	 *
+	 * The POSITIVE half. Without it every assertion below would also pass for
+	 * a method that returns null unconditionally — which would be completely
+	 * broken and completely untestable from the negative cases alone.
+	 *
+	 * @return void
+	 */
+	public function testAnOrganisationWithExactlyOnePortalResolves(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'testgemeente', 'organisation' => 'dev-org'],
+			['slug' => 'demo', 'organisation' => null],
+		]);
+
+		$this->assertSame('testgemeente', $resolver->resolveByOrganisation('dev-org')['slug']);
+	}//end testAnOrganisationWithExactlyOnePortalResolves()
+
+
+	/**
+	 * TWO portals for one organisation resolve to NOTHING.
+	 *
+	 * THIS IS THE ASSERTION THE WHOLE ALIAS RULE EXISTS FOR, and it encodes a
+	 * product decision taken on 2026-09-22: an organisation may run several
+	 * portals that look different from each other. From that moment "which
+	 * branding belongs to this organisation" has no answer, and the obvious
+	 * shortcuts — first match, newest match — are both a way of serving one
+	 * tenant's brand under another tenant's name.
+	 *
+	 * Note what is NOT asserted: which of the two wins. Neither does. A test
+	 * pinning the first match would have locked in exactly the bug.
+	 *
+	 * @return void
+	 */
+	public function testAnOrganisationWithTwoPortalsResolvesToNothing(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'inwoners', 'organisation' => 'gemeente-x'],
+			['slug' => 'leveranciers', 'organisation' => 'gemeente-x'],
+		]);
+
+		$this->assertNull($resolver->resolveByOrganisation('gemeente-x'));
+	}//end testAnOrganisationWithTwoPortalsResolvesToNothing()
+
+
+	/**
+	 * An organisation no portal claims resolves to nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownOrganisationResolvesToNothing(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'demo', 'organisation' => 'gemeente-x'],
+		]);
+
+		$this->assertNull($resolver->resolveByOrganisation('gemeente-y'));
+	}//end testAnUnknownOrganisationResolvesToNothing()
+
+
+	/**
+	 * An empty `?org=` never resolves — a portal with no organisation set is
+	 * not "the portal for no organisation".
+	 *
+	 * The demo portal on the reference rig has `organisation: null`, so
+	 * without this guard a bare `?org=` would have matched it and handed every
+	 * parameterless visitor one specific tenant's brand.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyOrganisationResolvesToNothing(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'demo', 'organisation' => null],
+			['slug' => 'other', 'organisation' => ''],
+		]);
+
+		$this->assertNull($resolver->resolveByOrganisation(''));
+		$this->assertNull($resolver->resolveByOrganisation('   '));
+	}//end testAnEmptyOrganisationResolvesToNothing()
+
+
+	/**
+	 * A non-string `organisation` on a portal object is skipped, not coerced.
+	 *
+	 * The field comes from an OpenRegister object an editor controls, so its
+	 * type is not guaranteed. Coercing would let `organisation: 0` match the
+	 * string `'0'`.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedOrganisationFieldIsSkipped(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'broken', 'organisation' => ['nested' => 'value']],
+			['slug' => 'numeric', 'organisation' => 0],
+			['slug' => 'good', 'organisation' => 'gemeente-x'],
+		]);
+
+		$this->assertSame('good', $resolver->resolveByOrganisation('gemeente-x')['slug']);
+		$this->assertNull($resolver->resolveByOrganisation('0'));
+	}//end testAMalformedOrganisationFieldIsSkipped()
+
+
+	/**
+	 * An OpenRegister failure fails closed here too.
+	 *
+	 * @return void
+	 */
+	public function testAnOrganisationLookupFailsClosed(): void {
+		$this->assertNull($this->resolverReturning(null)->resolveByOrganisation('dev-org'));
+	}//end testAnOrganisationLookupFailsClosed()
+
+
 }//end class

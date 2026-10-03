@@ -8,7 +8,9 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\MyCasesController;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalCaseListReader;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -49,6 +51,38 @@ class MyCasesControllerTest extends TestCase {
 
 	}//end testTheSubjectGetsItsOwnCases()
 
+	/**
+	 * operate-show-per-case-type REQ-OSC-002: "My cases" asks both case
+	 * lists to leave out what the serving portal hides.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testThePortalsHiddenCaseTypesAreLeftOut(): void {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn(null);
+		$portals->method('resolveByOrganisation')->willReturn(
+			['slug' => 'mijn-x', 'organisation' => 'gemeente-x', 'hiddenCaseTypes' => [['typeId' => 'handhaving']]]
+		);
+
+		$cases = $this->cases();
+		$cases->expects($this->once())->method('listCases')
+			->with($this->anything(), $this->anything(), ['handhaving'])
+			->willReturn([]);
+		$cases->expects($this->once())->method('listMandatedCases')
+			->with($this->anything(), $this->anything(), $this->anything(), ['handhaving'])
+			->willReturn([]);
+
+		$controller = $this->controller(
+			subject: ['subjectRef' => 'employee-1', 'organisation' => 'gemeente-x', 'audience' => 'client', 'trust' => 'substantial'],
+			cases: $cases,
+			rows: [],
+			mandates: [['label' => 'Voorbeeld B.V.']],
+			caseTypes: new CaseTypeVisibility($portals)
+		);
+
+		$this->assertSame(Http::STATUS_OK, $controller->index()->getStatus());
+	}//end testThePortalsHiddenCaseTypesAreLeftOut()
+
 	public function testAColleagueWithNoMandateSeesNoOrganisationCases(): void {
 		$cases = $this->cases();
 		$cases->expects($this->never())->method('listMandatedCases');
@@ -81,6 +115,33 @@ class MyCasesControllerTest extends TestCase {
 		$this->assertSame('Voorbeeld B.V.', $data['activeMandate']['label']);
 
 	}//end testTheMandatedCasesAreListedBesideTheirOwn()
+
+	/**
+	 * cases-my-cases-page REQ-CMC-004: "Acting for" yourself lists your own
+	 * cases only, even while you hold a mandate. The mandates are still named,
+	 * so the switcher can offer them.
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 */
+	public function testActingForYourselfListsNoMandatedCase(): void {
+		$cases = $this->cases();
+		$cases->expects($this->never())->method('listMandatedCases');
+		$controller = $this->controller(
+			subject: ['subjectRef' => 'employee-1', 'organisation' => 'gemeente-x', 'audience' => 'client', 'trust' => 'substantial'],
+			cases: $cases,
+			rows: [['id' => '1', 'reference' => 'MIJN-1', '_source' => ['schema' => 'zaak']]],
+			mandates: [['label' => 'Voorbeeld B.V.']],
+			mandatedRows: [['id' => '2', 'reference' => 'COLLEGA-1', '_source' => ['schema' => 'zaak']]],
+			mandateParam: MyCasesController::ACTING_FOR_SELF
+		);
+
+		$data = $controller->index()->getData();
+
+		$this->assertSame(['MIJN-1'], array_column($data['cases'], 'reference'));
+		$this->assertNull($data['activeMandate']);
+		$this->assertSame(['Voorbeeld B.V.'], array_column($data['mandates'], 'label'));
+
+	}//end testActingForYourselfListsNoMandatedCase()
 
 	public function testACaseThatIsBothTheirsAndTheirCompanysIsListedOnce(): void {
 		$row = ['id' => '1', 'reference' => 'ZAAK-1', '_source' => ['schema' => 'zaak']];
@@ -146,7 +207,7 @@ class MyCasesControllerTest extends TestCase {
 	 *
 	 * @return MyCasesController
 	 */
-	private function controller(?array $subject, PortalCaseListReader $cases, array $rows, array $mandates = [], array $mandatedRows = [], ?array $scope = null): MyCasesController {
+	private function controller(?array $subject, PortalCaseListReader $cases, array $rows, array $mandates = [], array $mandatedRows = [], ?array $scope = null, ?CaseTypeVisibility $caseTypes = null, string $mandateParam = ''): MyCasesController {
 		$session = $this->getMockBuilder(PortalSessionService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
@@ -191,7 +252,12 @@ class MyCasesControllerTest extends TestCase {
 			->getMock();
 		$tree->method('entitiesFor')->willReturn(($scope ?? ['entities' => ['kvk-1'], 'refused' => false, 'bound' => ['maxDepth' => 4, 'pageSize' => 100]]));
 
-		return new MyCasesController($this->createMock(IRequest::class), $registry, $session, $cases, $mandateService, $tree);
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, $default = null) => ($key === 'mandate' ? $mandateParam : $default)
+		);
+
+		return new MyCasesController($request, $registry, $session, $cases, $mandateService, $tree, $caseTypes);
 	}//end controller()
 
 	/**

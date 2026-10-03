@@ -1,0 +1,142 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The public site's own rules. Token references only, no colour literals
+ * (portal-theme-blocks-and-contributed-pages D2, REQ-PTB-001). Linked by
+ * `templates/site.php` after the vendored NL Design System sheets.
+ *
+ * This file starts with the footer bands (task 5). Task 2 of the same change
+ * owns the rest of the token layer and extends this file.
+ */
+
+/*
+ * FOOTER BANDS BY ROLE (REQ-PTB-005).
+ *
+ * `nlds-app.css` styles the footer's bands by position:
+ * `.ac-footer section:first-of-type` for the content band and
+ * `.ac-footer section:last-of-type:not(:only-of-type)` for the legal bar. A
+ * third band therefore restyled the other two: the legal bar stopped being
+ * `:last-of-type` and lost its colour and padding (423d7df).
+ *
+ * Each rule below restates one vendored rule, declaration for declaration,
+ * against the band's role class. Specificity (0,3,1) ties with the positional
+ * legal rule and wins on order, because this sheet is linked after it.
+ */
+.ac-footer section.pq-footer__band.pq-footer__band--content {
+	background-color: var(
+		--utrecht-page-footer-background-color,
+		var(--tilburg-footer-background-color)
+	);
+	background-image: var(--utrecht-page-footer-background-image);
+	background-position: var(--utrecht-page-footer-background-position);
+	background-repeat: var(--utrecht-page-footer-background-repeat);
+	background-size: auto;
+	min-height: 50px;
+	padding-block: var(--tilburg-space-row-elephant);
+}
+
+@media screen and (max-width: 768px) {
+	.ac-footer section.pq-footer__band.pq-footer__band--content {
+		padding-block: var(--tilburg-space-row-cat);
+	}
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--content .container {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: var(--tilburg-space-column-dog);
+}
+
+@media screen and (max-width: 768px) {
+	.ac-footer section.pq-footer__band.pq-footer__band--content .container {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+	.ac-footer section.pq-footer__band.pq-footer__band--content .container {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--content h3 {
+	margin-block-end: var(--tilburg-space-block-snail);
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--content ul {
+	padding-inline-start: 18px;
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--content ul li {
+	padding-inline-start: var(--tilburg-space-column-beetle);
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--content ul li::marker {
+	color: var(--tilburg-footer-marker-color, var(--tilburg-footer-color));
+	font-size: 1.25rem;
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--content ul li:not(:last-child) {
+	margin-block-end: var(--tilburg-space-block-snail);
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--content ul li:has(svg) a {
+	align-items: center;
+	display: flex;
+	gap: var(--tilburg-space-column-snail);
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--legal {
+	background-color: var(--tilburg-color-blue-500);
+	padding-block: var(--tilburg-space-row-dog);
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--legal ul {
+	column-gap: var(--tilburg-space-column-horse);
+	display: flex;
+	flex-wrap: wrap;
+	list-style: none;
+	row-gap: var(--tilburg-space-row-rat);
+}
+
+/*
+ * THE HERO'S EYEBROW AND ACTIONS (REQ-PTB-006).
+ *
+ * They sit on the hero band, which paints itself, so they name their own
+ * foreground rather than inherit the page's: a hero title inheriting black on
+ * cobalt measured 2.31:1 on the reference branch (93a0ecd). The actions are
+ * outlined in the text colour, so they read on any band colour the theme sets.
+ */
+.ac-hero .pq-hero__eyebrow {
+	color: var(--nldesign-hero-body-color, var(--utrecht-document-inverse-color));
+	font-weight: 600;
+	margin-block-end: var(--tilburg-space-block-snail);
+}
+
+.ac-hero .pq-hero__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--tilburg-space-column-dog);
+	margin-block-start: var(--tilburg-space-row-dog);
+}
+
+.ac-hero .pq-hero__action {
+	border: 2px solid currentcolor;
+	color: var(--nldesign-hero-title-color, var(--utrecht-document-inverse-color));
+	font-weight: 600;
+	padding-block: var(--tilburg-space-block-snail);
+	padding-inline: var(--tilburg-space-column-dog);
+	text-decoration: none;
+}
+
+.ac-hero .pq-hero__action:focus-visible {
+	outline: 3px solid currentcolor;
+	outline-offset: 2px;
+}
+
+.ac-hero .pq-hero__title-icon {
+	display: inline-flex;
+	margin-inline-end: var(--tilburg-space-column-snail);
+	vertical-align: middle;
+}

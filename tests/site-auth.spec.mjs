@@ -19,10 +19,14 @@
 // for three functions would be a bigger change than the thing being tested.
 
 import {
+	adoptLegacyToken,
 	adoptSessionToken,
 	authBaseFrom,
 	clearSessionToken,
+	LEGACY_TOKEN_KEY,
+	SIGNIN_FAILED_MESSAGE,
 	signInRoutes,
+	takeSigninFailed,
 } from '../src/site/lib/authApi.js'
 
 let failures = 0
@@ -122,6 +126,16 @@ assertEqual(
 	['/x/session/nextcloud?portal=la-franken', '/x/session/oidc/start?provider=digid&portal=la-franken'],
 )
 
+// #802: `oidc` is a portal MODE (Google, Microsoft, Keycloak through one
+// integration), not a provider the auth edge knows. The edge's providers are
+// digid, eherkenning, eidas and generic, so a link carrying `provider=oidc`
+// was refused whatever the organisation had configured.
+assertEqual(
+	'the oidc mode starts the generic provider, which is the one the edge knows',
+	signInRoutes({ slug: 'la-franken', authentication: { modes: ['oidc'] } }, '/x').map((r) => r.href),
+	['/x/session/oidc/start?provider=generic&portal=la-franken'],
+)
+
 console.log('adoptSessionToken')
 
 /**
@@ -155,6 +169,51 @@ assertEqual('signing out forgets it', adoptSessionToken(), '')
 
 fakeWindow('#section-2')
 assertEqual('a fragment without a token adopts nothing', adoptSessionToken(), '')
+assertEqual('and is no failed sign-in', takeSigninFailed(), false)
+
+// signin-integriq-broker-login REQ-BEL-006: a failed sign-in comes back as
+// `#signin=failed`, read once and stripped; the message names no reason.
+const failed = fakeWindow('#signin=failed')
+assertEqual('a failed sign-in is read from the fragment', takeSigninFailed(), true)
+assertEqual('and the fragment is stripped', failed.replaced, ['/apps/portaliq/site?portal=demo'])
+assertEqual('the message names no reason', SIGNIN_FAILED_MESSAGE, 'Inloggen is niet gelukt. Probeer het opnieuw of kies een andere manier.')
+
+// site-reaches-portal-parity REQ-SRP-002: a bearer the retired React portal
+// left in localStorage `portaliq_token` is taken once, into this tab's store,
+// and removed from localStorage, so it never outlives the tab again.
+console.log('adoptLegacyToken')
+const legacy = fakeWindow('')
+const local = new Map([[LEGACY_TOKEN_KEY, 'old-bearer']])
+const localStorage = {
+	getItem: (k) => (local.has(k) ? local.get(k) : null),
+	setItem: (k, v) => local.set(k, v),
+	removeItem: (k) => local.delete(k),
+}
+window.localStorage = localStorage
+assertEqual('the old key is portaliq_token', LEGACY_TOKEN_KEY, 'portaliq_token')
+assertEqual('a bearer under the old key is adopted', adoptSessionToken(), 'old-bearer')
+assertEqual('into this tab\'s store', legacy.store.get('portaliq.session.token'), 'old-bearer')
+assertEqual('and removed from localStorage', local.has(LEGACY_TOKEN_KEY), false)
+assertEqual('a later read keeps it', adoptSessionToken(), 'old-bearer')
+clearSessionToken()
+assertEqual('after signing out nothing comes back from the old key', adoptSessionToken(), '')
+
+const both = fakeWindow('#token=fresh')
+window.localStorage = localStorage
+local.set(LEGACY_TOKEN_KEY, 'old-bearer')
+assertEqual('a bearer in the fragment wins over the old key', adoptSessionToken(), 'fresh')
+assertEqual('the tab stores the fresh one', both.store.get('portaliq.session.token'), 'fresh')
+assertEqual('and the old key is gone all the same', local.has(LEGACY_TOKEN_KEY), false)
+window.location.hash = ''
+assertEqual('the tab keeps its own bearer', adoptSessionToken(), 'fresh')
+
+fakeWindow('')
+window.localStorage = {
+	getItem: () => {
+		throw new Error('blocked')
+	},
+}
+assertEqual('blocked storage adopts nothing and throws nothing', adoptLegacyToken(), '')
 delete globalThis.window
 
 if (failures > 0) {

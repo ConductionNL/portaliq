@@ -34,8 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -58,9 +58,10 @@ class PortalSelfServiceService {
 	private const SCHEMA = 'portalAccount';
 
 	/**
-	 * How long a confirmation link works.
+	 * A BCP-47 shaped language tag (translated-message-notice): a 2 or 3
+	 * letter primary subtag, then optional 1 to 8 character subtags.
 	 */
-	private const TTL = 'P1D';
+	private const LANGUAGE_TAG = '/^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/';
 
 	/**
 	 * Constructor.
@@ -69,12 +70,14 @@ class PortalSelfServiceService {
 	 * @param PortalObjectReader $reader Looks a confirmation up by hash.
 	 * @param PortalObjectWriter $writer Writes the account row.
 	 * @param ISecureRandom $random Mints the confirmation secret.
+	 * @param ContactAddressChange $addressChange The address fields (identity-profile-page).
 	 */
 	public function __construct(
 		private readonly PortalAccountService $accounts,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
+		private readonly ContactAddressChange $addressChange = new ContactAddressChange(),
 	) {
 	}//end __construct()
 
@@ -88,37 +91,53 @@ class PortalSelfServiceService {
 	 * @param string $subjectRef The account.
 	 * @param string $displayName A new name, or '' to leave it.
 	 * @param string $email A new address, or '' to leave it.
+	 * @param bool|null $emailNotifications The account's own opt-in/opt-out
+	 *                                      for the email channel
+	 *                                      (notification-preferences-per-role),
+	 *                                      or null to leave it unchanged.
+	 * @param string|null $messageLanguage The language school messages are
+	 *                                     shown in, '' to show them as
+	 *                                     written, or null to leave it
+	 *                                     (translated-message-notice).
 	 *
 	 * @return array{updated: bool, confirmationToken: string}|null Null when
 	 *         there is no such account or nothing usable was asked.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
-	public function updateDetails(string $subjectRef, string $displayName = '', string $email = ''): ?array {
+	public function updateDetails(
+		string $subjectRef,
+		string $displayName = '',
+		string $email = '',
+		?bool $emailNotifications = null,
+		?string $messageLanguage = null,
+	): ?array {
 		$account = $this->ownAccount(subjectRef: $subjectRef);
-		if ($account === null) {
+		$asked   = ['displayName' => $displayName, 'email' => $email, 'emailNotifications' => $emailNotifications, 'messageLanguage' => $messageLanguage];
+		if ($account === null || $this->nothingAsked(asked: $asked) === true) {
 			return null;
 		}
 
-		if ($displayName === '' && $email === '') {
+		$data = $this->preferenceData(account: $account, emailNotifications: $emailNotifications, messageLanguage: $messageLanguage);
+		if ($data === null) {
 			return null;
 		}
 
-		$data = [];
 		if ($displayName !== '') {
 			$data['displayName'] = $displayName;
 		}
 
 		$token = '';
 		if ($email !== '') {
-			if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+			$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+			$pending = $this->addressChange->changedFields(account: $account, email: $email, token: $token);
+			if ($pending === null) {
 				return null;
 			}
 
-			$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
-			$data['pendingEmail'] = $email;
-			$data['pendingEmailTokenHash'] = hash('sha256', $token);
-			$data['pendingEmailExpiresAt'] = (new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);
+			$data = $data + $pending;
 		}
 
 		$written = $this->write(account: $account, data: $data);
@@ -128,6 +147,164 @@ class PortalSelfServiceService {
 
 		return ['updated' => true, 'confirmationToken' => $token];
 	}//end updateDetails()
+
+	/**
+	 * The holder's own details, as the details page shows them.
+	 *
+	 * @param string $subjectRef The account.
+	 *
+	 * @return array{displayName: string, email: string, emailNotifications: bool, messageLanguage: string}|null
+	 *         Null when there is no such account.
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function details(string $subjectRef): ?array {
+		$account = $this->ownAccount(subjectRef: $subjectRef);
+		if ($account === null) {
+			return null;
+		}
+
+		$channels = (array)($account['notificationChannels'] ?? []);
+		return [
+			'displayName'          => (string)($account['displayName'] ?? ''),
+			'email'                => (string)($account['email'] ?? ''),
+			'emailNotifications'   => (($channels['email'] ?? true) !== false),
+			'messageLanguage'      => (string)($account['messageLanguage'] ?? ''),
+			'notificationChannels' => $channels,
+		] + $this->addressChange->readFields(account: $account);
+	}//end details()
+
+	/**
+	 * The language a holder reads school messages in, '' when they read them
+	 * as written (translated-message-notice).
+	 *
+	 * @param string $subjectRef The account.
+	 *
+	 * @return string The language tag, or ''.
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function messageLanguage(string $subjectRef): string {
+		return ($this->details(subjectRef: $subjectRef)['messageLanguage'] ?? '');
+	}//end messageLanguage()
+
+	/**
+	 * The bearer's own notification choices, with whether they registered a
+	 * device for push. A missing choice reads as on.
+	 *
+	 * @param string $subjectRef The bearer's own subject reference.
+	 *
+	 * @return array{preferences: array<string, array<string, bool>>, pushAvailable: bool}|null Null without an account.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function notificationPreferences(string $subjectRef): ?array {
+		$account = $this->ownAccount(subjectRef: $subjectRef);
+		if ($account === null) {
+			return null;
+		}
+
+		return [
+			'preferences' => $this->channels()->preferences(stored: ($account['notificationPreferences'] ?? null)),
+			'pushAvailable' => $this->channels()->hasDevice(subjectRef: $subjectRef),
+		];
+	}//end notificationPreferences()
+
+	/**
+	 * Change the bearer's own notification choices. Only the known kinds and
+	 * channels with a boolean value are taken; the rest of the body is ignored,
+	 * and the account written is always the bearer's own.
+	 *
+	 * @param string               $subjectRef The bearer's own subject reference.
+	 * @param array<string, mixed> $asked      The choices sent.
+	 *
+	 * @return array{preferences: array<string, array<string, bool>>, pushAvailable: bool}|null Null when refused.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function updateNotificationPreferences(string $subjectRef, array $asked): ?array {
+		$account = $this->ownAccount(subjectRef: $subjectRef);
+		if ($account === null) {
+			return null;
+		}
+
+		$preferences = $this->channels()->merged(stored: ($account['notificationPreferences'] ?? null), asked: $asked);
+		if ($this->write(account: $account, data: ['notificationPreferences' => $preferences]) === false) {
+			return null;
+		}
+
+		// Answer with what was written, not a re-read: a read straight after
+		// a write can still see the old row.
+		return ['preferences' => $preferences, 'pushAvailable' => $this->channels()->hasDevice(subjectRef: $subjectRef)];
+	}//end updateNotificationPreferences()
+
+	/**
+	 * The notice choices and device check, over this service's reader.
+	 *
+	 * @return NotificationChannels
+	 */
+	private function channels(): NotificationChannels {
+		return new NotificationChannels(reader: $this->reader);
+	}//end channels()
+
+	/**
+	 * Whether an `updateDetails()` call asked for nothing at all.
+	 *
+	 * @param array{displayName: string, email: string, emailNotifications: bool|null, messageLanguage: string|null} $asked What the call carried.
+	 *
+	 * @return bool
+	 */
+	private function nothingAsked(array $asked): bool {
+		return $asked['displayName'] === '' && $asked['email'] === ''
+			&& $asked['emailNotifications'] === null && $asked['messageLanguage'] === null;
+	}//end nothingAsked()
+
+	/**
+	 * The delivery preferences an `updateDetails()` call changes, or null when
+	 * the language it asked for is not a language tag.
+	 *
+	 * @param array<string, mixed> $account The account as it stands.
+	 * @param bool|null $emailNotifications The email channel, or null to leave it.
+	 * @param string|null $messageLanguage The message language, '' for none, or null to leave it.
+	 *
+	 * @return array<string, mixed>|null The fields to write, or null to refuse.
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	private function preferenceData(array $account, ?bool $emailNotifications, ?string $messageLanguage): ?array {
+		$data = [];
+		if ($emailNotifications !== null) {
+			$data['notificationChannels'] = $this->withEmailChannel(account: $account, emailNotifications: $emailNotifications);
+		}
+
+		if ($messageLanguage === null) {
+			return $data;
+		}
+
+		if ($messageLanguage !== '' && preg_match(self::LANGUAGE_TAG, $messageLanguage) !== 1) {
+			return null;
+		}
+
+		$data['messageLanguage'] = $messageLanguage;
+		return $data;
+	}//end preferenceData()
+
+	/**
+	 * The account's `notificationChannels` with the email key set, its other
+	 * channels (if any exist in future) left untouched.
+	 *
+	 * @param array<string, mixed> $account The account as it stands.
+	 * @param bool $emailNotifications The new value for the email channel.
+	 *
+	 * @return array<string, bool>
+	 *
+	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 */
+	private function withEmailChannel(array $account, bool $emailNotifications): array {
+		$channels = (array)($account['notificationChannels'] ?? []);
+		$channels['email'] = $emailNotifications;
+		return $channels;
+	}//end withEmailChannel()
 
 	/**
 	 * Confirm a new address through the link.
@@ -153,17 +330,8 @@ class PortalSelfServiceService {
 			return null;
 		}
 
-		$email = (string)($account['pendingEmail'] ?? '');
-		$written = $this->write(
-			account: $account,
-			data: [
-				'email' => $email,
-				'verifiedEmail' => true,
-				'pendingEmail' => '',
-				'pendingEmailTokenHash' => '',
-				'pendingEmailExpiresAt' => '',
-			]
-		);
+		$email   = (string)($account['pendingEmail'] ?? '');
+		$written = $this->write(account: $account, data: $this->addressChange->confirmedFields(account: $account));
 		if ($written === false) {
 			return null;
 		}
@@ -239,6 +407,7 @@ class PortalSelfServiceService {
 				'email' => '',
 				'pendingEmail' => '',
 				'pendingEmailTokenHash' => '',
+				'contactAddresses' => [],
 				'displayName' => '',
 				'verifiedEmail' => false,
 				// Every app's link to this person goes with the account. The

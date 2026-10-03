@@ -164,6 +164,29 @@ class ProposalControllerTest extends TestCase {
 	}//end testAColleagueProposesAsThemselvesOnTheStaffChannel()
 
 	/**
+	 * REQ-CPQ-002: a colleague proposes on a record they can read. The
+	 * route asked only whether anybody was logged in, so any account could
+	 * queue a proposal on any record id it named.
+	 *
+	 * @return void
+	 */
+	public function testAColleagueWhoCannotReadTheRecordProposesNothing(): void {
+		$controller = $this->controller(subject: null, user: $this->user('colleague-bob'), mayReview: false, mayRead: false);
+		$this->doubles['proposals']->expects($this->never())->method('propose');
+
+		$response = $controller->proposeAsColleague(
+			register: 'dossiq',
+			schema: 'zaak',
+			id: 'zaak-1',
+			changes: [['property' => 'applicantPhone', 'proposedValue' => '0687654321']],
+			proposable: ['applicantPhone']
+		);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testAColleagueWhoCannotReadTheRecordProposesNothing()
+
+	/**
 	 * REQ-CPQ-003, on the read side. The staff routes are gated by
 	 * `portal.review-proposal`, and this one was not: it asked only whether
 	 * anybody was logged in, then listed the proposals on whatever register,
@@ -219,6 +242,39 @@ class ProposalControllerTest extends TestCase {
 
 	}//end testTheQueueIsRefusedToACallerWithNoSession()
 
+	/**
+	 * `mine()` is filtered by the bearer's own subjectRef, never a
+	 * client-supplied value — there is no parameter on the route to widen it.
+	 *
+	 * @return void
+	 */
+	public function testMineIsFilteredByTheBearersOwnSubjectRefNeverAClientValue(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'guardian-1', 'organisation' => 'gemeente-x', 'audience' => 'parent']);
+		$this->doubles['proposals']->expects($this->once())
+			->method('mine')
+			->with($this->equalTo(value: 'guardian-1'))
+			->willReturn([['uuid' => 'proposal-1', 'state' => 'queued']]);
+
+		$response = $controller->mine();
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['proposals' => [['uuid' => 'proposal-1', 'state' => 'queued']]], actual: $response->getData());
+
+	}//end testMineIsFilteredByTheBearersOwnSubjectRefNeverAClientValue()
+
+	/**
+	 * No bearer, no subject, no read — refused before `mine()` is ever called.
+	 *
+	 * @return void
+	 */
+	public function testMineIsRefusedWithNoBearerAndIssuesNoRead(): void {
+		$controller = $this->controller(subject: null);
+		$this->doubles['proposals']->expects($this->never())->method('mine');
+
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $controller->mine()->getStatus());
+
+	}//end testMineIsRefusedWithNoBearerAndIssuesNoRead()
+
 
 	/**
 	 * The controller over doubles.
@@ -237,13 +293,14 @@ class ProposalControllerTest extends TestCase {
 		bool $mayReview = true,
 		?array $aggregate = null,
 		?array $subjectRow = ['applicantPhone' => '0612345678'],
+		bool $mayRead = true,
 	): ProposalController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 
 		$proposals = $this->getMockBuilder(ProposalService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['propose', 'accept', 'reject', 'withdraw', 'forSubject'])
+			->onlyMethods(['propose', 'accept', 'reject', 'withdraw', 'forSubject', 'mine'])
 			->getMock();
 
 		$registry = $this->getMockBuilder(PortalContributionRegistry::class)
@@ -283,9 +340,10 @@ class ProposalControllerTest extends TestCase {
 
 		$guard = $this->getMockBuilder(PortalCaseAccessGuard::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['mayAct'])
+			->onlyMethods(['mayAct', 'mayRead'])
 			->getMock();
 		$guard->method('mayAct')->willReturn($mayReview);
+		$guard->method('mayRead')->willReturn($mayRead);
 
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn($user);

@@ -37,17 +37,21 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { openPortaliqDemoPage } from './portal-nav.ts'
+import {
+	accountLink,
+	menuBadgeCount,
+	openPortaliqDemoPage,
+	PORTAL_API,
+	seedSiteSession,
+	siteAddress,
+} from './portal-nav.ts'
 
-// Pretty-URL app paths, matching the convention already used by
-// tests/e2e/portal-inbox.spec.ts (`/apps/portaliq/...`, no `index.php`).
-const PORTAL_PATH = '/apps/portaliq/portal'
-const API_BASE = '/apps/portaliq/portal/api'
+const API_BASE = PORTAL_API
 
 /**
- * Mint a low-trust supplier dev session and seed it into the SPA's
- * localStorage token slot BEFORE the app boots, so the portal loads already
- * authenticated (mirrors how a real bearer, once minted, is stored).
+ * Mint a low-trust supplier dev session and seed it into the site's session
+ * token slot BEFORE the app boots, so the site loads already signed in
+ * (mirrors how a real bearer, once minted, is stored).
  */
 async function loginAsSupplier(
 	request: APIRequestContext,
@@ -66,9 +70,7 @@ async function loginAsSupplier(
 	const token = body.token as string
 	expect(token).toBeTruthy()
 
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
+	await seedSiteSession(page, token)
 }
 
 test.describe('wmebv-submission-receipts', () => {
@@ -81,11 +83,11 @@ test.describe('wmebv-submission-receipts', () => {
 		const organisation = 'e2e-org'
 		await loginAsSupplier(request, page, subjectRef, organisation)
 
-		await page.goto(PORTAL_PATH)
+		await page.goto(siteAddress())
 		await page.waitForLoadState('domcontentloaded')
 		await openPortaliqDemoPage(page)
 
-		// Submit the demo create-action through the SPA form — the SAME
+		// Submit the demo create-action through the site's form — the SAME
 		// fixture portal-document-download.spec.ts uses to seed a fresh row,
 		// `title` being the ONE field the exampleDocument schema genuinely
 		// mandates (the WMEBV data-minimisation guard's positive path).
@@ -94,22 +96,23 @@ test.describe('wmebv-submission-receipts', () => {
 		await page.getByRole('button', { name: 'Aanmaken' }).click()
 		await expect(page.getByText('Voorbeeld aangemaakt')).toBeVisible()
 
-		// The Inbox nav gains an unread badge — the receipt landed in the
+		// The inbox menu link gains an unread badge — the receipt landed in the
 		// SAME unified inbox portal-inbox-v2 aggregates, not a separate surface.
-		const inboxNav = page.getByRole('button', { name: /Inbox/ })
-		await expect(inboxNav.locator('.portaliq-badge-count')).toHaveText('1')
+		const inboxNav = accountLink(page, 'inbox')
+		await expect(menuBadgeCount(inboxNav)).toHaveText('1')
 
 		await inboxNav.click()
 
-		const rows = page.locator('.portaliq-inbox-row')
+		const rows = page.locator('.pq-inbox-row')
 		await expect(rows).toHaveCount(1)
 
-		// Bilingual (NL / EN) B1-level receipt text with a reference id — never
+		// A B1-level receipt text in the portal's language with a reference id, never
 		// the raw client input rendered as if it were the receipt itself.
 		await expect(rows.first()).toContainText('Bevestiging van ontvangst')
-		await expect(rows.first()).toContainText('Confirmation of receipt')
-		await expect(
-			rows.first().locator('.portaliq-inbox-row__body'),
-		).toContainText('WMEBV-')
+		// One language, the portal's: no English line beside the Dutch one.
+		await expect(rows.first()).not.toContainText('Confirmation of receipt')
+		await expect(rows.first().locator('.pq-inbox-row__body')).toContainText(
+			'WMEBV-',
+		)
 	})
 })

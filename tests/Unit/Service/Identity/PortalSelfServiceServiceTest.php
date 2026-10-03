@@ -107,6 +107,162 @@ class PortalSelfServiceServiceTest extends TestCase {
 	}//end testAnUnknownSubjectChangesNothing()
 
 	/**
+	 * notification-preferences-per-role REQ: setting the channel opt-out
+	 * changes only that field.
+	 *
+	 * @return void
+	 */
+	public function testOptingOutOfEmailChangesOnlyThatField(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$changed = $service->updateDetails(subjectRef: 'subject-1', emailNotifications: false);
+
+		$this->assertSame(expected: '', actual: $changed['confirmationToken']);
+		$account = $this->account();
+		$this->assertSame(expected: false, actual: $account['notificationChannels']['email']);
+		$this->assertSame(expected: 'oud@example.org', actual: $account['email']);
+
+	}//end testOptingOutOfEmailChangesOnlyThatField()
+
+	/**
+	 * Omitting the field entirely leaves it exactly as it was — including
+	 * absent, for every account that predates this property.
+	 *
+	 * @return void
+	 */
+	public function testOmittingTheChannelPreferenceLeavesItUnset(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$service->updateDetails(subjectRef: 'subject-1', displayName: 'Iemand anders');
+
+		$this->assertArrayNotHasKey(key: 'notificationChannels', array: $this->account());
+
+	}//end testOmittingTheChannelPreferenceLeavesItUnset()
+
+	/**
+	 * The preference alone is enough to ask for a change — it does not need
+	 * a display name or email alongside it.
+	 *
+	 * @return void
+	 */
+	public function testTheChannelPreferenceAloneIsEnoughToAsk(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$this->assertNotNull($service->updateDetails(subjectRef: 'subject-1', emailNotifications: true));
+
+	}//end testTheChannelPreferenceAloneIsEnoughToAsk()
+
+	/**
+	 * translated-message-notice: a guardian picks, reads back and clears the
+	 * language school messages are shown in; only that field changes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function testTheMessageLanguageIsSetReadBackAndCleared(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$this->assertNotNull($service->updateDetails(subjectRef: 'subject-1', messageLanguage: 'ar'));
+		$this->assertSame('ar', $this->account()['messageLanguage']);
+		$this->assertSame('oud@example.org', $this->account()['email']);
+		$this->assertArrayNotHasKey('notificationChannels', $this->account());
+		$this->assertSame('ar', $service->messageLanguage(subjectRef: 'subject-1'));
+		$this->assertSame(
+			['displayName' => 'Ans de Vries', 'email' => 'oud@example.org', 'emailNotifications' => true, 'messageLanguage' => 'ar'],
+			// identity-profile-page T05 adds the addresses and the channel to
+			// the same read; this test is about the four it always had.
+			array_intersect_key($service->details(subjectRef: 'subject-1'), array_flip(['displayName', 'email', 'emailNotifications', 'messageLanguage']))
+		);
+
+		$this->assertNotNull($service->updateDetails(subjectRef: 'subject-1', messageLanguage: ''));
+		$this->assertSame('', $service->messageLanguage(subjectRef: 'subject-1'));
+
+	}//end testTheMessageLanguageIsSetReadBackAndCleared()
+
+	/**
+	 * A value that is not a language tag is refused and changes nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function testAMessageLanguageThatIsNotATagIsRefused(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$this->assertNull($service->updateDetails(subjectRef: 'subject-1', displayName: 'Nieuw', messageLanguage: 'Arabic please'));
+		$this->assertArrayNotHasKey('messageLanguage', $this->account());
+		$this->assertSame('Ans de Vries', $this->account()['displayName']);
+
+	}//end testAMessageLanguageThatIsNotATagIsRefused()
+
+	/**
+	 * An unknown subject has no details and no language.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownSubjectHasNoDetails(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$this->assertNull($service->details(subjectRef: 'someone-else'));
+		$this->assertSame('', $service->messageLanguage(subjectRef: 'someone-else'));
+
+	}//end testAnUnknownSubjectHasNoDetails()
+
+	/**
+	 * identity-profile-page T05 (REQ-IPP-001): the page's read shows the
+	 * addresses, the masked pending address and the channel, and never the
+	 * identity reference or a claim.
+	 *
+	 * @return void
+	 */
+	public function testTheDetailsShowAddressesAndChannelAndNoIdentity(): void {
+		$this->seedAccount();
+		$service = $this->service();
+		$service->updateDetails(subjectRef: 'subject-1', email: 'nieuw@example.org');
+
+		$details = $service->details(subjectRef: 'subject-1');
+
+		$this->assertSame('portal', $details['contactChannel'], 'an account from before reads as portal only');
+		$this->assertSame('n***@example.org', $details['pendingEmail']);
+		$this->assertSame(
+			[
+				['kind' => 'email', 'value' => 'oud@example.org', 'confirmed' => true, 'preferred' => true],
+				['kind' => 'email', 'value' => 'nieuw@example.org', 'confirmed' => false, 'preferred' => false],
+			],
+			$details['contactAddresses']
+		);
+		$this->assertArrayHasKey('notificationChannels', $details);
+		$this->assertArrayNotHasKey('identityRef', $details);
+		$this->assertArrayNotHasKey('claims', $details);
+		$this->assertStringNotContainsString('bsn-1', (string)json_encode($details));
+
+	}//end testTheDetailsShowAddressesAndChannelAndNoIdentity()
+
+	/**
+	 * identity-profile-page REQ-IPP-006: removal also takes the phone numbers
+	 * and addresses, which are the person's data too.
+	 *
+	 * @return void
+	 */
+	public function testRemovalTakesEveryAddress(): void {
+		$this->seedAccount();
+		$service = $this->service();
+		$service->updateDetails(subjectRef: 'subject-1', email: 'nieuw@example.org');
+
+		$service->removeAccount(subjectRef: 'subject-1');
+
+		$this->assertSame([], $this->account()['contactAddresses']);
+
+	}//end testRemovalTakesEveryAddress()
+
+	/**
 	 * The account row as it now stands.
 	 *
 	 * @return array<string, mixed>

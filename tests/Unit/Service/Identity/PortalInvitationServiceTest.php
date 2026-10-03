@@ -126,6 +126,43 @@ class PortalInvitationServiceTest extends TestCase {
 
 	}//end testAnInvitationIsAcceptedOnlyOnce()
 
+	/**
+	 * identity-staff-account-screens T02 (REQ-ISA-002): a withdrawn
+	 * invitation admits nobody, and one that was accepted cannot be withdrawn.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnInvitationAdmitsNobody(): void {
+		$service = $this->service();
+		$invited = $service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');
+		$id = $this->storedRows('portalInvitation')[0]['uuid'];
+
+		$this->assertSame('not_found', $service->revoke(id: $id, organisation: 'gemeente-y'), 'another organisation cannot withdraw it');
+		$this->assertSame('', $service->revoke(id: $id, organisation: 'gemeente-x'));
+		$this->assertSame('', $service->revoke(id: $id, organisation: 'gemeente-x'), 'withdrawing twice changes nothing');
+
+		$this->assertSame('revoked', $this->storedRows('portalInvitation')[0]['state']);
+		$this->assertNull($service->accept(token: $invited['token']));
+		$this->assertSame('revoked', $service->sentBy(invitedBy: 'clerk-anna', organisation: 'gemeente-x')[0]['state']);
+
+	}//end testAWithdrawnInvitationAdmitsNobody()
+
+	/**
+	 * An accepted invitation stays accepted.
+	 *
+	 * @return void
+	 */
+	public function testAnAcceptedInvitationCannotBeWithdrawn(): void {
+		$service = $this->service();
+		$invited = $service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');
+		$this->assertNotNull($service->accept(token: $invited['token']));
+		$id = $this->storedRows('portalInvitation')[0]['uuid'];
+
+		$this->assertSame('already_accepted', $service->revoke(id: $id, organisation: 'gemeente-x'));
+		$this->assertSame('accepted', $this->storedRows('portalInvitation')[0]['state']);
+
+	}//end testAnAcceptedInvitationCannotBeWithdrawn()
+
 	public function testAnUnknownSecretMatchesNothing(): void {
 		$service = $this->service();
 		$service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');

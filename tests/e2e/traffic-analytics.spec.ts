@@ -508,7 +508,10 @@ test.describe('traffic analytics: the rollup and the Traffic page', () => {
 			timeout: 15_000,
 		})
 		await expect(page.getByTestId('traffic-daily-chart')).toHaveCount(0)
-		await expect(page.getByTestId('traffic-tile-page-views')).toHaveCount(0)
+		// The KPI card stays and says so, never a zero (portal-traffic-kpi-cards).
+		await expect(page.getByTestId('traffic-tile-page-views')).toContainText(
+			'Not measured',
+		)
 	})
 })
 

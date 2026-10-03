@@ -139,7 +139,7 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 // hydra connection-registry design D6 and integriq's own classes on
 // `development`, and load only when the real classes are absent. Without OCP on
 // the autoload path their parent class is missing, so they are skipped then.
-foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent'] as $integriqStubEvent) {
+foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $integriqStubEvent) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false
 	) {

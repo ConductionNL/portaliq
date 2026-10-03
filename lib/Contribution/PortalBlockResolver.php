@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
  */
 
 declare(strict_types=1);
@@ -34,13 +34,29 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Filters a page's blocks to the registry with resolvable references.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
  */
 class PortalBlockResolver {
 	/**
 	 * The block-type registry. A block of any other type is dropped.
 	 */
-	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta', 'citizenCase'];
+	private const BLOCK_TYPES = [
+		'collection',
+		'action',
+		'detail',
+		'richText',
+		'cta',
+		'citizenCase',
+		'kpi',
+		'calendar',
+		'news',
+		'tasks',
+		'inbox',
+		'cases',
+		'steps',
+		'documents',
+		'timeline',
+	];
 
 	/**
 	 * The block types whose whole body is a reference to a collection.
@@ -57,19 +73,29 @@ class PortalBlockResolver {
 	 * @param mixed $blocks The declared blocks.
 	 * @param array<int, string> $collectionIds The valid collection ids.
 	 * @param array<int, string> $actionIds The valid action ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections
+	 *                                                      (the `tasks` and `inbox`
+	 *                                                      blocks read their kind
+	 *                                                      and projected fields).
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
-	public function normaliseBlocks(mixed $blocks, array $collectionIds, array $actionIds): array {
+	public function normaliseBlocks(mixed $blocks, array $collectionIds, array $actionIds, array $collections=[]): array {
 		if (is_array($blocks) === false) {
 			return [];
 		}
 
 		$out = [];
 		foreach ($blocks as $block) {
-			$entry = $this->normaliseBlock(block: $block, collectionIds: $collectionIds, actionIds: $actionIds);
+			$entry = $this->normaliseBlock(
+				block: $block,
+				collectionIds: $collectionIds,
+				actionIds: $actionIds,
+				collections: $collections
+			);
 			if ($entry !== null) {
 				$out[] = $entry;
 			}
@@ -85,10 +111,11 @@ class PortalBlockResolver {
 	 * @param mixed $block The declared block.
 	 * @param array<int, string> $collectionIds The valid collection ids.
 	 * @param array<int, string> $actionIds The valid action ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function normaliseBlock(mixed $block, array $collectionIds, array $actionIds): ?array {
+	private function normaliseBlock(mixed $block, array $collectionIds, array $actionIds, array $collections): ?array {
 		if (is_array($block) === false) {
 			return null;
 		}
@@ -99,12 +126,25 @@ class PortalBlockResolver {
 		}
 
 		if (in_array($type, self::COLLECTION_BLOCK_TYPES, true) === true) {
-			return $this->referenceBlock(
+			$entry = $this->referenceBlock(
 				type: $type,
 				key: 'collection',
 				ref: ($block['collection'] ?? null),
 				allowed: $collectionIds
 			);
+			if ($entry === null) {
+				return null;
+			}
+
+			// A block on a record page may narrow its rows to the open record
+			// (contribution-record-page).
+			$scopes = new RecordScopeNormaliser();
+			$entry = $scopes->scope(declared: $block, entry: $entry);
+			return $scopes->lookups(declared: $block, entry: $entry, collectionIds: $collectionIds);
+		}
+
+		if (in_array($type, ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps', 'documents', 'timeline'], true) === true) {
+			return $this->ownRulesBlock(type: $type, block: $block, collectionIds: $collectionIds, collections: $collections);
 		}
 
 		if ($type === 'action') {
@@ -122,6 +162,67 @@ class PortalBlockResolver {
 
 		return $this->richTextBlock(block: $block);
 	}//end normaliseBlock()
+
+	/**
+	 * A block whose type has a normaliser of its own, or null when its
+	 * references do not resolve.
+	 *
+	 * The `tasks`, `inbox`, `cases`, `steps`, `documents` and `timeline`
+	 * blocks show what the resident still has to do, their newest messages,
+	 * their cases, and where one case stands, its documents and its history
+	 * (site-mijn-omgeving-components REQ-SMO-021).
+	 *
+	 * @param string $type The block type.
+	 * @param array<string, mixed> $block The declared block.
+	 * @param array<int, string> $collectionIds The valid collection ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	private function ownRulesBlock(string $type, array $block, array $collectionIds, array $collections): ?array {
+		$lists = new ListBlockNormaliser();
+		$builders = [
+			'tasks' => static fn (): ?array => $lists->tasksBlock(block: $block, collections: $collections),
+			'inbox' => static fn (): ?array => $lists->inboxBlock(block: $block, collections: $collections),
+			'cases' => static fn (): ?array => $lists->casesBlock(block: $block, collections: $collections),
+		];
+		if (isset($builders[$type]) === true) {
+			return $builders[$type]();
+		}
+
+		if (in_array($type, ListBlockNormaliser::RECORD_BLOCKS, true) === true) {
+			return $lists->recordBlock(type: $type, block: $block, collections: $collections);
+		}
+
+		return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);
+	}//end ownRulesBlock()
+
+	/**
+	 * A `kpi`, `calendar` or `news` block (contribution-record-page), or null
+	 * when its collections do not resolve.
+	 *
+	 * @param string $type The block type.
+	 * @param array<string, mixed> $block The declared block.
+	 * @param array<int, string> $collectionIds The valid collection ids.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/contribution-record-page/tasks.md#T1
+	 */
+	private function recordPageBlock(string $type, array $block, array $collectionIds): ?array {
+		$blocks = new RecordBlockNormaliser();
+		if ($type === 'kpi') {
+			return $blocks->kpiBlock(block: $block, collectionIds: $collectionIds);
+		}
+
+		if ($type === 'calendar') {
+			return $blocks->calendarBlock(block: $block, collectionIds: $collectionIds);
+		}
+
+		return $blocks->newsBlock(block: $block);
+	}//end recordPageBlock()
 
 	/**
 	 * The richText block, or null when it carries no markdown to render.

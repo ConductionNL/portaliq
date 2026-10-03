@@ -59,14 +59,25 @@ class PortalFileWriter {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
+	 * The tag on a file a resident sent through the portal, so the case screen
+	 * can list it apart from what staff put in the same folder
+	 * (cases-documents-on-the-case, REQ-CDC-004).
+	 *
+	 * @var string
+	 */
+	public const TAG_FROM_APPLICANT = 'portal:from-applicant';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister's FileService.
 	 * @param LoggerInterface $logger The logger.
+	 * @param PortalWriteContext|null $writeContext Marks this writer's attaches as portaliq's own.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalWriteContext $writeContext = null,
 	) {
 	}//end __construct()
 
@@ -84,6 +95,7 @@ class PortalFileWriter {
 	 * @param string $id The owned object's id (ownership already verified).
 	 * @param string $fileName The sanitised upload filename.
 	 * @param string $content The raw file bytes.
+	 * @param array<int, string> $tags Tags OpenRegister puts on the file, such as TAG_FROM_APPLICANT.
 	 *
 	 * @return array<string, mixed>|null The attached file's metadata, or null on failure.
 	 *
@@ -95,6 +107,7 @@ class PortalFileWriter {
 		string $id,
 		string $fileName,
 		string $content,
+		array $tags = [],
 	): ?array {
 		$fileService = $this->fileService();
 		if ($fileService === null) {
@@ -114,13 +127,14 @@ class PortalFileWriter {
 		}
 
 		try {
-			$file = $fileService->addFile(
+			$file = $this->insideWriteContext(write: static fn () => $fileService->addFile(
 				objectEntity: $entity,
 				fileName: $fileName,
 				content: $content,
+				tags: $tags,
 				_schema: $schema,
 				_register: $register
-			);
+			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR file attach failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
@@ -213,4 +227,22 @@ class PortalFileWriter {
 			return null;
 		}//end try
 	}//end resolveObjectEntity()
+
+	/**
+	 * Run an OpenRegister write inside the write context, so the change
+	 * listener knows portaliq itself made it.
+	 *
+	 * @param callable $write The write.
+	 *
+	 * @return mixed What the write returned.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-is-not-told-about-their-own-change-req-nap-003
+	 */
+	private function insideWriteContext(callable $write): mixed {
+		if ($this->writeContext === null) {
+			return $write();
+		}
+
+		return $this->writeContext->run(write: $write);
+	}//end insideWriteContext()
 }//end class

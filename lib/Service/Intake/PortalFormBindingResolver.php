@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalObjectReader;
 
 /**
@@ -76,9 +77,16 @@ class PortalFormBindingResolver {
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads the binding and the form.
+	 * @param CaseTypeVisibility|null $caseTypes The case types a portal hides
+	 *                                           (operate-show-per-case-type).
+	 *                                           Absent hides nothing.
+	 * @param VisibleWhenLocal $visibleWhen Which field conditions the portal
+	 *                                      can check on submit.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
+		private readonly ?CaseTypeVisibility $caseTypes = null,
+		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
 	) {
 	}//end __construct()
 
@@ -139,31 +147,8 @@ class PortalFormBindingResolver {
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function declaredCaseTypes(string $portal): array {
-		if ($portal === '') {
-			return [];
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'portal',
-			subjectRef: $portal,
-			organisation: '',
-			limit: 200,
-			filter: ['portal' => $portal]
-		);
-
 		$declared = [];
-		foreach ($rows as $row) {
-			if (is_array($row) === false || ($row['portal'] ?? '') !== $portal) {
-				continue;
-			}
-
-			if ((string)($row['status'] ?? 'draft') !== 'published') {
-				// A draft binding declares nothing yet.
-				continue;
-			}
-
+		foreach ($this->publishedBindings(portal: $portal) as $row) {
 			$triple = [
 				(string)($row['typeRegister'] ?? ''),
 				(string)($row['typeSchema'] ?? ''),
@@ -178,6 +163,47 @@ class PortalFormBindingResolver {
 
 		return $declared;
 	}//end declaredCaseTypes()
+
+	/**
+	 * A portal's published bindings.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 */
+	public function publishedBindings(string $portal): array {
+		if ($portal === '') {
+			return [];
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'portal',
+			subjectRef: $portal,
+			organisation: '',
+			limit: 200,
+			filter: ['portal' => $portal]
+		);
+
+		$published = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === false || ($row['portal'] ?? '') !== $portal) {
+				continue;
+			}
+
+			if ((string)($row['status'] ?? 'draft') !== 'published') {
+				// A draft binding declares nothing yet.
+				continue;
+			}
+
+			$published[] = $row;
+		}
+
+		return $published;
+	}//end publishedBindings()
 
 	/**
 	 * Whether a case type is inside the scope a portal declared.
@@ -216,6 +242,8 @@ class PortalFormBindingResolver {
 	 *         surface prints.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
 	 */
 	public function render(array $binding): array {
 		$settings = [
@@ -224,6 +252,18 @@ class PortalFormBindingResolver {
 			'challenge' => (($binding['challenge'] ?? false) === true),
 			'confirmationText' => (string)($binding['confirmationText'] ?? ''),
 		];
+
+		if ($this->caseTypes?->hidesBinding(binding: $binding) === true) {
+			// The portal does not show this case type, so its form does not
+			// open (operate-show-per-case-type REQ-OSC-002).
+			return [
+				'kind' => (string)($binding['intakeKind'] ?? self::KIND_HOSTED),
+				'resolvesToNoForm' => true,
+				'reason' => 'hiddenCaseType',
+				'fields' => [],
+				'settings' => $settings,
+			];
+		}
 
 		if ((string)($binding['intakeKind'] ?? self::KIND_HOSTED) === self::KIND_EXTERNAL) {
 			$url = (string)($binding['externalUrl'] ?? '');
@@ -250,6 +290,19 @@ class PortalFormBindingResolver {
 			];
 		}
 
+		$fields = $this->fieldsOf(form: $form);
+		if ($this->visibleWhen->decidesEveryField(fields: $fields) === false) {
+			// The server could not repeat on submit what the screen decided,
+			// so the form is refused rather than half checked (REQ-ICQ-003).
+			return [
+				'kind' => self::KIND_HOSTED,
+				'resolvesToNoForm' => true,
+				'reason' => 'unsupportedCondition',
+				'fields' => [],
+				'settings' => $settings,
+			];
+		}
+
 		$confirmation = (string)($form['confirmationText'] ?? '');
 		if ($confirmation !== '') {
 			// The confirmation the citizen reads is the form's own words when
@@ -262,10 +315,33 @@ class PortalFormBindingResolver {
 			'resolvesToNoForm' => false,
 			'formId' => (string)($form['uuid'] ?? $form['id'] ?? ''),
 			'formName' => (string)($form['name'] ?? ''),
-			'fields' => $this->fieldsOf(form: $form),
+			'fields' => $fields,
 			'settings' => $settings,
+			// The sign-in level the maker chose for this form (buildiq#935).
+			// Carried as declared; requiredTrust() decides what it means.
+			'minTrust' => ($form['minTrust'] ?? null),
 		];
 	}//end render()
+
+	/**
+	 * The sign-in level a submission of this form needs, or null for none.
+	 *
+	 * The strictest of the portal's, the binding's and the form's own level;
+	 * see PortalFormTrustLevel for what each declared value means.
+	 *
+	 * @param array<string, mixed> $site The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render What render() returned for it.
+	 *
+	 * @return string|null `low`, `substantial`, `high`,
+	 *                     PortalFormTrustLevel::UNRECOGNISED, or null when an
+	 *                     anonymous visitor may fill the form in.
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	public function requiredTrust(array $site, array $binding, array $render): ?string {
+		return (new PortalFormTrustLevel())->required(site: $site, binding: $binding, render: $render);
+	}//end requiredTrust()
 
 	/**
 	 * The published form a binding resolves to today, or null.
