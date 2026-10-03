@@ -202,6 +202,15 @@ class PortalBlockResolverTest extends TestCase {
 		$this->assertSame([], $this->blocks(blocks: [['type' => 'steps', 'collection' => 'zaken']]), 'not a record page');
 		$this->assertSame([], $this->blocks(blocks: [['type' => 'steps', 'collection' => 'zaken']], record: 'vragenAanU'), 'another record');
 		$this->assertSame([], $this->blocks(blocks: [['type' => 'steps', 'collection' => 'vragenAanU']], record: 'vragenAanU'), 'no steps provider');
+
+		$out = (new PortalManifestNormaliser())->normalise(
+			[
+				'collections' => [['id' => 'zaken', 'schema' => 'case', 'kind' => 'cases', 'steps' => ['provider' => 'caseSteps']]],
+				'actions'     => [],
+				'pages'       => [['id' => 'alleen-stappen', 'blocks' => [['type' => 'steps', 'collection' => 'zaken']]]],
+			]
+		);
+		$this->assertNotContains('alleen-stappen', array_column($out['pages'], 'id'), 'a page left without blocks is dropped');
 	}//end testAStepsBlockStaysOnlyOnItsRecordPage()
 
 	/**

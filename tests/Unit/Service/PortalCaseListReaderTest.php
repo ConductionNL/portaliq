@@ -442,7 +442,12 @@ class PortalCaseListReaderTest extends TestCase {
 			$this->assertArrayNotHasKey('_caseTypeName', $row);
 		}
 
-		$this->assertSame(0, $objects->reads, 'no source, no read');
+		$halfSource = $this->casesCollection() + ['caseTypeSource' => ['register' => 'dossiq', 'schema' => '']];
+		foreach ($cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $halfSource)) as $row) {
+			$this->assertArrayNotHasKey('_caseTypeName', $row);
+		}
+
+		$this->assertSame(0, $objects->reads, 'no source, or half a source, no read');
 		$this->assertArrayNotHasKey('_caseTypeName', $names->stamp(row: [], collection: $withSource, typeId: 'type-blank'));
 	}//end testAnUnknownTypeLeavesNoName()
 
