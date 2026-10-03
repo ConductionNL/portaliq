@@ -127,18 +127,8 @@ class PortalBlockResolver {
 			return $scopes->lookups(declared: $block, entry: $entry, collectionIds: $collectionIds);
 		}
 
-		if (in_array($type, ['kpi', 'calendar', 'news'], true) === true) {
-			return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);
-		}
-
-		// What the resident still has to do, and their newest messages
-		// (site-mijn-omgeving-components REQ-SMO-021).
-		if ($type === 'tasks') {
-			return (new ListBlockNormaliser())->tasksBlock(block: $block, collections: $collections);
-		}
-
-		if ($type === 'inbox') {
-			return (new ListBlockNormaliser())->inboxBlock(block: $block, collections: $collections);
+		if (in_array($type, ['kpi', 'calendar', 'news', 'tasks', 'inbox'], true) === true) {
+			return $this->ownRulesBlock(type: $type, block: $block, collectionIds: $collectionIds, collections: $collections);
 		}
 
 		if ($type === 'action') {
@@ -156,6 +146,34 @@ class PortalBlockResolver {
 
 		return $this->richTextBlock(block: $block);
 	}//end normaliseBlock()
+
+	/**
+	 * A block whose type has a normaliser of its own, or null when its
+	 * references do not resolve.
+	 *
+	 * The `tasks` and `inbox` blocks show what the resident still has to do
+	 * and their newest messages (site-mijn-omgeving-components REQ-SMO-021).
+	 *
+	 * @param string $type The block type.
+	 * @param array<string, mixed> $block The declared block.
+	 * @param array<int, string> $collectionIds The valid collection ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	private function ownRulesBlock(string $type, array $block, array $collectionIds, array $collections): ?array {
+		if ($type === 'tasks') {
+			return (new ListBlockNormaliser())->tasksBlock(block: $block, collections: $collections);
+		}
+
+		if ($type === 'inbox') {
+			return (new ListBlockNormaliser())->inboxBlock(block: $block, collections: $collections);
+		}
+
+		return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);
+	}//end ownRulesBlock()
 
 	/**
 	 * A `kpi`, `calendar` or `news` block (contribution-record-page), or null
