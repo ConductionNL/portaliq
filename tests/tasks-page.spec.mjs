@@ -307,19 +307,66 @@ test('the completion form labels every control and ties the rules to the file fi
 	)
 })
 
-test('the list shows each open task with its due date, and an empty list says so', async () => {
+test('the list shows each open task as an action row with its deadline badge, and an empty list says so', async () => {
+	// site-mijn-omgeving-components REQ-SMO-004 and REQ-SMO-009.
+	const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
 	const list = await renderComponent(
-		inState(TasksPage, { loading: false, tasks: [{ ...TASK, overdue: true }] }),
+		inState(TasksPage, {
+			loading: false,
+			tasks: [
+				{ ...TASK, overdue: true },
+				{
+					uuid: 'task-2',
+					title: 'Stuur uw bewijs',
+					dueAt: soon.toISOString(),
+				},
+			],
+		}),
 		{ api: fakeApi(), t, locale: 'en' },
 	)
-	assert.match(list, /<span class="pq-task-title">Lever het formulier in<\/span>/)
-	assert.match(list, /Finish before 15\/10\/2026/)
-	assert.match(list, /· Overdue/, 'overdue in text, not colour alone')
+	const rows = list.split('<li class="pq-action-row"').slice(1)
+	assert.equal(rows.length, 2, 'one action row per task')
+	for (const row of rows) {
+		assert.match(
+			row,
+			/^ data-testid="mijn-action-row"><button class="denhaag-action denhaag-action--single pq-action-row__control" type="button">/,
+			'each task is one button that opens it on this page',
+		)
+	}
+	// The badge sits inside the button, so it is read with the task's name,
+	// and it is text, not colour alone.
+	assert.match(
+		rows[0],
+		/<span class="pq-action-row__title">Lever het formulier in<\/span>.*nl-data-badge--error[^>]*>(<!--\[-->)?Overdue(<!--\]-->)?<\/span>.*<\/button>/,
+	)
+	const day = [
+		soon.getFullYear(),
+		String(soon.getMonth() + 1).padStart(2, '0'),
+		String(soon.getDate()).padStart(2, '0'),
+	].join('-')
+	assert.match(
+		rows[1],
+		new RegExp(
+			`nl-data-badge--warning[^>]*><time datetime="${day}">3 days left</time>.*</button>`,
+		),
+	)
 
 	const empty = await renderComponent(
 		inState(TasksPage, { loading: false, tasks: [] }),
 		{ api: fakeApi(), t, locale: 'nl' },
 	)
-	assert.match(empty, /<em>U heeft geen open taken\.<\/em>/)
+	assert.match(
+		empty,
+		/data-testid="mijn-empty-state"><p class="utrecht-paragraph pq-empty-state__text">U heeft geen open taken\.<\/p>/,
+	)
+	assert.doesNotMatch(empty, /<ul/, 'no empty list')
+
+	const loading = await renderComponent(inState(TasksPage, { loading: true }), {
+		api: fakeApi(),
+		t,
+		locale: 'nl',
+	})
+	assert.match(loading, /<p class="sr-only" role="status">Bezig met laden<\/p>/)
+	assert.match(loading, /class="pq-skeleton__rows" aria-hidden="true"/)
 	assert.equal(typeof pages.tasks, 'function')
 })

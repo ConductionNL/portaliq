@@ -172,6 +172,34 @@
 				:locale="lang"
 				@navigate="$emit('navigate', $event)" />
 
+			<!-- What the resident still has to do and their newest messages
+			     (site-mijn-omgeving-components), loaded on demand. -->
+			<TasksBlock
+				v-else-if="item.kind === 'tasks'"
+				:block="item.block"
+				:collection="item.collection"
+				:rows="rowsOf(item)"
+				:loading="loadedOf(item.collection).loading"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:nav="nav"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)" />
+
+			<InboxBlock
+				v-else-if="item.kind === 'inbox'"
+				:block="item.block"
+				:api="api"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:nav="nav"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)" />
+
 			<SlotHost
 				v-else-if="item.kind === 'citizenCase'"
 				name="citizenCase"
@@ -210,6 +238,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import CalendarBlock from '../../components/collections/CalendarBlock.vue'
 import CollectionTable from '../../components/collections/CollectionTable.vue'
 import DetailCard from '../../components/collections/DetailCard.vue'
@@ -236,6 +265,7 @@ import {
 import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'
 import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
+import { blocks as mijnBlocks } from '../../components/mijn/index.js'
 import { createCollectionLoader, openRecordState } from './collectionLoader.js'
 import { resolveBlocks } from './pageBlocks.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
@@ -285,6 +315,10 @@ export default {
 		NewsBlock,
 		RichTextBlock,
 		SlotHost,
+		// Each loads with its action rows and Den Haag CSS only when a page
+		// holds one (site-mijn-omgeving-components design D1).
+		TasksBlock: defineAsyncComponent(mijnBlocks.tasks),
+		InboxBlock: defineAsyncComponent(mijnBlocks.inbox),
 	},
 
 	// The shell hands every page the whole contract (session, portal, nav, …);
@@ -316,6 +350,8 @@ export default {
 		initialFeed: { type: Array, default: null },
 		/** Today, for the calendar; a test passes a fixed day. */
 		today: { type: Date, default: null },
+		/** Every navigation entry, so a task or message row finds its page. */
+		nav: { type: Array, default: () => [] },
 	},
 
 	emits: ['navigate', 'unread', 'refresh', 'recordOpened'],

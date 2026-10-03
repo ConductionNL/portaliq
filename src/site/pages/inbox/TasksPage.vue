@@ -121,35 +121,31 @@
 			</section>
 		</template>
 
-		<BusyStatus v-else-if="loading" :t="tr" />
+		<!-- The list as Den Haag action rows (site-mijn-omgeving-components
+		     REQ-SMO-004, REQ-SMO-009): a skeleton while it loads, a sentence
+		     when it is empty, each task one button with its deadline badge. -->
+		<Skeleton v-else-if="loading" :label="mt('Loading')" />
 
-		<p v-else-if="tasks.length === 0" class="utrecht-paragraph pq-empty">
-			<em>{{ tr('No open tasks.') }}</em>
-		</p>
+		<EmptyState v-else-if="tasks.length === 0" :text="tr('No open tasks.')" />
 
 		<ul v-else class="pq-tasks">
-			<li v-for="task in tasks" :key="task.uuid" class="pq-task-row">
-				<button
-					type="button"
-					class="utrecht-button utrecht-button--subtle pq-task-open"
-					@click="openTask(task.uuid)">
-					<span class="pq-task-title">{{
-						task.displayTitle || task.title
-					}}</span>
-					<span v-if="task.dueAt" class="pq-task-row-due">
-						{{ tr('Finish before {date}', { date: due(task) }) }}
-						<strong v-if="task.overdue === true" class="pq-task-overdue">
-							· {{ tr('Overdue') }}
-						</strong>
-					</span>
-				</button>
-			</li>
+			<ActionRow
+				v-for="task in tasks"
+				:key="task.uuid"
+				:title="task.displayTitle || task.title || tr('Task')"
+				:button="true"
+				:badges="badgesOf(task)"
+				@open="openTask(task.uuid)" />
 		</ul>
 	</div>
 </template>
 
 <script>
 import BusyStatus from '../../components/inbox/BusyStatus.vue'
+import ActionRow from '../../components/mijn/ActionRow.vue'
+import EmptyState from '../../components/mijn/EmptyState.vue'
+import Skeleton from '../../components/mijn/Skeleton.vue'
+import { deadlineBadge, mijnTranslator } from '../../components/mijn/rows.js'
 import { formatDate, sessionStore, takeTaskToOpen } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import {
@@ -167,7 +163,7 @@ import { pageLocale, withStrings } from './translate.js'
 export default {
 	name: 'TasksPage',
 
-	components: { BusyStatus },
+	components: { ActionRow, BusyStatus, EmptyState, Skeleton },
 
 	props: {
 		...PAGE_PROPS,
@@ -205,6 +201,14 @@ export default {
 		 */
 		tr() {
 			return withStrings(this.t, this.lang)
+		},
+
+		/**
+		 * @return {(key: string, vars?: object) => string} The translator of the mijn omgeving components.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 */
+		mt() {
+			return mijnTranslator(this.t, this.lang)
 		},
 
 		/**
@@ -322,6 +326,22 @@ export default {
 		},
 
 		/**
+		 * A task row's deadline badge: the server's overdue mark wins, else
+		 * the deadline in words.
+		 *
+		 * @param {object} task A task row.
+		 * @return {Array<object>} No badge or one.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 */
+		badgesOf(task) {
+			if (task?.overdue === true) {
+				return [{ text: this.mt('Overdue'), state: 'error' }]
+			}
+			const badge = deadlineBadge(task?.dueAt, new Date(), this.mt, this.lang)
+			return badge ? [badge] : []
+		},
+
+		/**
 		 * Check the files, then send the comment and files through the proxy.
 		 *
 		 * @return {Promise<void>}
@@ -361,13 +381,6 @@ export default {
 	margin: 0;
 	padding: 0;
 	list-style: none;
-}
-
-.pq-task-open {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	text-align: start;
 }
 
 .pq-task-form {

@@ -16,7 +16,7 @@ import { rowFor } from '../../../shared/openRecord.js'
 
 /**
  * The ids of the collections a page's blocks read: every `collection`,
- * `detail` and `kpi` block, every calendar source, and a record page's
+ * `detail`, `kpi` and `tasks` block, every calendar source, and a record page's
  * record collection.
  *
  * @param {object} page The contribution page.
@@ -32,7 +32,7 @@ export function collectionIdsFor(page) {
 	// A record page reads its record collection first (contribution-record-page).
 	add(page?.record?.collection)
 	for (const block of page?.blocks || []) {
-		if (['collection', 'detail', 'kpi'].includes(block?.type)) {
+		if (['collection', 'detail', 'kpi', 'tasks'].includes(block?.type)) {
 			add(block.collection)
 		}
 		for (const lookup of block?.lookups || []) {
