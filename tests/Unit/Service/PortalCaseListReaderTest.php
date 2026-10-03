@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\CaseTypeNames;
+use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * portal-identity-space REQ-PIS-004: "Mijn zaken" is every `kind: cases`
@@ -378,6 +382,138 @@ class PortalCaseListReaderTest extends TestCase {
 	 *
 	 * @return PortalMandateService
 	 */
+	/**
+	 * site-mijn-omgeving-components REQ-SMO-030: each own and mandated row of
+	 * a collection with a case type source names its type, read once per
+	 * list, the source's label field first.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+	 */
+	public function testEachRowCarriesItsCaseTypeName(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'WOO-1', 'caseType' => 'type-woo'],
+			['reference' => 'WOO-2', 'caseType' => ['id' => 'type-woo']],
+			['reference' => 'VERG-1', 'caseType' => 'type-verg'],
+		]);
+		$objects = $this->caseTypeObjects([
+			['id' => 'type-woo', 'title' => 'Woo verzoek (intern)', 'publicName' => 'Woo-verzoek'],
+			['@self' => ['id' => 'type-verg'], 'name' => 'Omgevingsvergunning'],
+		]);
+		$cases = new PortalCaseListReader($reader, $this->mandateService(), typeNames: new CaseTypeNames(new CaseTypeReader($this->container($objects), new NullLogger())));
+		$collection = $this->mandatedCollection() + ['caseTypeSource' => ['register' => 'dossiq', 'schema' => 'caseType', 'labelField' => 'publicName']];
+
+		$own = $cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection));
+		$this->assertSame(
+			['WOO-1' => 'Woo-verzoek', 'WOO-2' => 'Woo-verzoek', 'VERG-1' => 'Omgevingsvergunning'],
+			array_column($own, '_caseTypeName', 'reference')
+		);
+
+		$mandated = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection), mandates: [$this->mandate()]);
+		$this->assertSame('Woo-verzoek', $mandated[0]['_caseTypeName']);
+		$this->assertSame(1, $objects->reads, 'one read of the source for the whole request');
+	}//end testEachRowCarriesItsCaseTypeName()
+
+	/**
+	 * A type the source does not know, a row without a type and a collection
+	 * without a source all leave the row without a name, never with an id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+	 */
+	public function testAnUnknownTypeLeavesNoName(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'X-1', 'caseType' => 'type-gone'],
+			['reference' => 'X-2'],
+		]);
+		$objects = $this->caseTypeObjects([['id' => 'type-woo', 'title' => 'Woo-verzoek'], ['id' => 'type-blank', 'title' => '  ']]);
+		$names = new CaseTypeNames(new CaseTypeReader($this->container($objects), new NullLogger()));
+		$cases = new PortalCaseListReader($reader, typeNames: $names);
+
+		$withSource = $this->casesCollection() + ['caseTypeSource' => ['register' => 'dossiq', 'schema' => 'caseType']];
+		foreach ($cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $withSource)) as $row) {
+			$this->assertArrayNotHasKey('_caseTypeName', $row);
+		}
+
+		$objects->reads = 0;
+		foreach ($cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->casesCollection())) as $row) {
+			$this->assertArrayNotHasKey('_caseTypeName', $row);
+		}
+
+		$this->assertSame(0, $objects->reads, 'no source, no read');
+		$this->assertArrayNotHasKey('_caseTypeName', $names->stamp(row: [], collection: $withSource, typeId: 'type-blank'));
+	}//end testAnUnknownTypeLeavesNoName()
+
+	/**
+	 * A stand-in for OpenRegister's ObjectService answering case types.
+	 *
+	 * @param array<int, array<string, mixed>> $types The case types.
+	 *
+	 * @return object
+	 */
+	private function caseTypeObjects(array $types): object {
+		return new class($types) {
+			/**
+			 * How many lists were read.
+			 *
+			 * @var int
+			 */
+			public int $reads = 0;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param array<int, array<string, mixed>> $types The case types.
+			 */
+			public function __construct(private array $types) {
+			}
+
+			/**
+			 * @param string $register The register.
+			 *
+			 * @return void
+			 */
+			public function setRegister(string $register): void {
+			}
+
+			/**
+			 * @param string $schema The schema.
+			 *
+			 * @return void
+			 */
+			public function setSchema(string $schema): void {
+			}
+
+			/**
+			 * @param array<string, mixed> $config The query.
+			 * @param bool $_rbac RBAC.
+			 * @param bool $_multitenancy Multitenancy.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->reads++;
+				return $this->types;
+			}
+		};
+	}//end caseTypeObjects()
+
+	/**
+	 * A container that hands out the object service stand-in.
+	 *
+	 * @param object $objects The stand-in.
+	 *
+	 * @return ContainerInterface
+	 */
+	private function container(object $objects): ContainerInterface {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($objects);
+
+		return $container;
+	}//end container()
+
 	private function mandateService(): PortalMandateService {
 		$reader = $this->getMockBuilder(PortalObjectReader::class)
 			->disableOriginalConstructor()
