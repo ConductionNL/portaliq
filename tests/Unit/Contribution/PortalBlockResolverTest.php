@@ -116,6 +116,12 @@ class PortalBlockResolverTest extends TestCase {
 			['type' => 'tasks', 'collection' => 'open', 'dueField' => 'deadline', 'titleFields' => ['naam']],
 			$blocks[1]
 		);
+
+		$this->assertSame(
+			[['type' => 'tasks', 'collection' => 'open']],
+			$this->blocks([['type' => 'tasks', 'collection' => 'open', 'titleFields' => 'naam']]),
+			'titleFields must be a list'
+		);
 	}//end testATasksBlockKeepsOnlyProjectedFields()
 
 	/**
