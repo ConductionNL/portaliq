@@ -102,6 +102,7 @@ class ActionConfigNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 */
 	public function normaliseActions(array $actions): array {
 		$out = [];
@@ -122,6 +123,9 @@ class ActionConfigNormaliser {
 			// What the schema says a field holds (a date, a number, one of a
 			// list) shapes its input, after the manifest had its say.
 			$action = (new SchemaInputHintNormaliser())->apply(action: $action, whitelist: $whitelist, definition: $definition);
+			// A widget hint that does not fit its field (choice cards without
+			// options, named days on a field that is no date) is dropped.
+			$action = (new FieldWidgetNormaliser())->reconcile(action: $action);
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
@@ -294,6 +298,7 @@ class ActionConfigNormaliser {
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
 	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
 	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 */
 	private function fieldConfigEntry(string $field, array $config, array $mandatory, string $actionType = ''): array {
 		$entry = [];
@@ -306,6 +311,7 @@ class ActionConfigNormaliser {
 		$entry = $this->applyFieldFlags(entry: $entry, field: $field, config: $config, mandatory: $mandatory);
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
 		$entry = (new ValueLabelsNormaliser())->apply(entry: $entry, source: $config);
+		$entry = (new FieldWidgetNormaliser())->apply(entry: $entry, source: $config);
 
 		return (new FileFieldConfigNormaliser())->apply(entry: $entry, config: $config, actionType: $actionType);
 	}//end fieldConfigEntry()
