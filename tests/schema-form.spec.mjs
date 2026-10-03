@@ -211,7 +211,7 @@ test('an empty required field gets an inline error and nothing is sent', async (
 	// The error summary takes focus and links each error, in field order (REQ-SMF-002).
 	const heading = form.find('error-summary-heading')
 	assert.equal(form.textOf(heading), 'Something is still missing')
-	assert.equal(form.focused(), heading, 'the summary heading has focus')
+	assert.ok(form.focused() === heading, 'the summary heading has focus')
 	const links = form.findAll((n) =>
 		String(n.props['data-testid'] || '').startsWith('error-summary-link-'),
 	)
@@ -222,7 +222,7 @@ test('an empty required field gets an inline error and nothing is sent', async (
 			['#f-createExcuseRequest-reasonKind', 'Kind of absence is required.'],
 		],
 	)
-	assert.equal(form.find('schema-form-error'), null, 'no second top alert')
+	assert.ok(form.find('schema-form-error') === null, 'no second top alert')
 	assert.equal(
 		form.textOf(form.find('schema-field-error-dateFrom')),
 		'First day absent is required.',

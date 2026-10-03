@@ -8,6 +8,11 @@
 // and year that sends yyyy-mm-dd and refuses 31-2-2026. The published intake
 // form and the landing page form run through the same layer.
 //
+// Mounted elements are compared with `assert.ok(a === b)`, never
+// `assert.equal(a, b)`: a failing `equal` renders both values, and an
+// element links to its parent, its component and the whole app, so the diff
+// grew to 10 to 20 GB and the machine ran out of memory (2026-10-03).
+//
 // Usage:
 //   node --test tests/site-form-fields.spec.mjs
 
@@ -158,7 +163,7 @@ test('the suffix sits inside the label of an optional field, never on a required
 		label: 'Naam',
 		required: true,
 	})
-	assert.equal(required.find('label-suffix'), null)
+	assert.ok(required.find('label-suffix') === null)
 	assert.doesNotMatch(required.text(), /\*/)
 
 	const group = await mountSfc(SHELL, {
@@ -200,14 +205,14 @@ test('the summary heading takes focus, each link focuses its field, the title sa
 	assert.equal(summary.textOf(heading), 'Er ontbreekt nog iets')
 	assert.equal(heading.props.tabindex, '-1')
 	summary.vm.focus()
-	assert.equal(summary.focused(), heading)
+	assert.ok(summary.focused() === heading)
 
 	const link = summary.find('error-summary-link-tot')
 	assert.equal(link.tag, 'a')
 	assert.equal(link.props.href, '#f-tot')
 	assert.equal(summary.textOf(link), 'Kies de laatste dag dat Vera afwezig is')
 	await summary.fire(link, 'click')
-	assert.equal(focusedField, target, 'the link moved focus to the field')
+	assert.ok(focusedField === target, 'the link moved focus to the field')
 	assert.equal(
 		summary.find('error-summary-link-server'),
 		null,
@@ -316,13 +321,12 @@ test('a published form marks optional fields, summarises a missed date and refus
 	await form.fire(form.findAll((n) => n.tag === 'form')[0], 'submit')
 	assert.equal(sent.length, 0)
 	const heading = form.find('error-summary-heading')
-	assert.equal(form.focused(), heading)
+	assert.ok(form.focused() === heading)
 	const link = form.find('error-summary-link-tot')
 	assert.equal(form.textOf(link), 'Tot en met welke dag? is verplicht.')
 	await form.fire(link, 'click')
-	assert.equal(
-		form.focused(),
-		form.find('intake-field-tot'),
+	assert.ok(
+		form.focused() === form.find('intake-field-tot'),
 		'the link lands in the Dag box',
 	)
 	assert.equal(form.find('intake-field-tot').props.id, 'pq-intake-field-tot')
@@ -353,7 +357,7 @@ test('a published form marks optional fields, summarises a missed date and refus
 		'Dit e-mailadres kunnen wij niet gebruiken.',
 		'the message also stands under the field',
 	)
-	assert.equal(form.focused(), form.find('error-summary-heading'))
+	assert.ok(form.focused() === form.find('error-summary-heading'))
 })
 
 test('the landing page form marks optional fields and summarises a missed required one', async () => {
@@ -391,10 +395,10 @@ test('the landing page form marks optional fields and summarises a missed requir
 	assert.doesNotMatch(form.text(), /\*/)
 
 	await form.fire(formEl, 'submit')
-	assert.equal(form.focused(), form.find('error-summary-heading'))
+	assert.ok(form.focused() === form.find('error-summary-heading'))
 	assert.equal(
 		form.textOf(form.find('error-summary-link-name')),
 		'Naam is verplicht.',
 	)
-	assert.equal(form.find('form-status-success'), null, 'nothing was sent')
+	assert.ok(form.find('form-status-success') === null, 'nothing was sent')
 })
