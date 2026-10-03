@@ -51,7 +51,10 @@ Every route reads the party from the session and compares it with the row. A row
 - "Uw machtiging" on the grantee's account page and under the acting-for bar: label, end date, given by, given on, "Machtiging stoppen".
 - The grantee's display name comes from the accepted account. An invitation shows its email address until it is accepted.
 
-## Decisions for Ruben
+## Decided
 
-- A mandate held by one person (this design) or by every session of a company that accepted.
-- Whether a person may give mandates on their own behalf at all, or only companies (the mockups show the company side and a parent who was given one).
+- **A private person may give a mandate** (Ruben, 3 October 2026). It works by email invitation, as for a company: the person signs in once with DigiD to send it, and the invitee accepts after their own sign-in. The represented party is then `subject:<the person's subjectRef>` (D1).
+
+## Open
+
+- **Who holds a mandate**: the one person who accepted (this design), or every session of the company that accepted. Not decided. Until it is, build the one-person holder only.

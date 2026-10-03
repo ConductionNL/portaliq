@@ -38,6 +38,12 @@ Portaliq holds no BSN, so a person who never signed in cannot be named. "Iemand 
 - THEN a mandate exists for Tom's account on behalf of `kvk:12345678` with that label, scope and end date
 - AND the company list shows Tom as "Actief"
 
+#### Scenario: A private person authorises their daughter
+- GIVEN H. Bakker signs in with DigiD and invites linda@example.nl to act for him on all cases
+- WHEN Linda Bakker signs in and accepts
+- THEN a mandate exists for Linda's account on behalf of `subject:<H. Bakker's subjectRef>`
+- AND H. Bakker's list shows Linda as "Actief"
+
 #### Scenario: An end date in the past is refused
 - GIVEN the invitation form with end date 1 January 2026
 - WHEN the party sends it on 2 October 2026

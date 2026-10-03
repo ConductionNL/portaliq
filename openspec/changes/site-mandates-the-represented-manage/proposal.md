@@ -29,11 +29,15 @@ A company is different: its KVK number is public and is what eHerkenning returns
 - The grantee sees "Uw machtiging" and can stop it ("Machtiging stoppen").
 - Every write records who did it and when.
 
+## Decided
+
+- A private person may give a mandate, by email invitation: they sign in once with DigiD to send it, and the invitee accepts after their own sign-in (Ruben, 3 October 2026).
+
 ## Not in this change
 
 - Looking up a person by BSN or name. Impossible by design, see above.
 - Mandates through an external register (eHerkenning ketenmachtigingen, DigiD Machtigen). Portaliq reads only its own records.
-- A mandate held by a whole company rather than by the person who accepted. Listed as a decision for Ruben.
+- A mandate held by a whole company rather than by the person who accepted. Open, not decided (design, "Open").
 - The case filtering on `portalParty`: dossiq's change, over `mandateField` (REQ-CMC-003).
 
 ## Affected projects
