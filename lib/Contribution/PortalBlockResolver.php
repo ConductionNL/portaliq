@@ -54,6 +54,8 @@ class PortalBlockResolver {
 		'inbox',
 		'cases',
 		'steps',
+		'documents',
+		'timeline',
 	];
 
 	/**
@@ -141,7 +143,7 @@ class PortalBlockResolver {
 			return $scopes->lookups(declared: $block, entry: $entry, collectionIds: $collectionIds);
 		}
 
-		if (in_array($type, ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps'], true) === true) {
+		if (in_array($type, ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps', 'documents', 'timeline'], true) === true) {
 			return $this->ownRulesBlock(type: $type, block: $block, collectionIds: $collectionIds, collections: $collections);
 		}
 
@@ -165,9 +167,10 @@ class PortalBlockResolver {
 	 * A block whose type has a normaliser of its own, or null when its
 	 * references do not resolve.
 	 *
-	 * The `tasks`, `inbox`, `cases` and `steps` blocks show what the resident
-	 * still has to do, their newest messages, their cases and where one case
-	 * stands (site-mijn-omgeving-components REQ-SMO-021).
+	 * The `tasks`, `inbox`, `cases`, `steps`, `documents` and `timeline`
+	 * blocks show what the resident still has to do, their newest messages,
+	 * their cases, and where one case stands, its documents and its history
+	 * (site-mijn-omgeving-components REQ-SMO-021).
 	 *
 	 * @param string $type The block type.
 	 * @param array<string, mixed> $block The declared block.
@@ -184,10 +187,13 @@ class PortalBlockResolver {
 			'tasks' => static fn (): ?array => $lists->tasksBlock(block: $block, collections: $collections),
 			'inbox' => static fn (): ?array => $lists->inboxBlock(block: $block, collections: $collections),
 			'cases' => static fn (): ?array => $lists->casesBlock(block: $block, collections: $collections),
-			'steps' => static fn (): ?array => $lists->stepsBlock(block: $block, collections: $collections),
 		];
 		if (isset($builders[$type]) === true) {
 			return $builders[$type]();
+		}
+
+		if (in_array($type, ListBlockNormaliser::RECORD_BLOCKS, true) === true) {
+			return $lists->recordBlock(type: $type, block: $block, collections: $collections);
 		}
 
 		return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);

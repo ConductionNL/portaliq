@@ -56,6 +56,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Service\CaseTypeNames;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
@@ -161,6 +162,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                           Absent hides nothing.
 	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
 	 * @param PortalUserDisplayNames $userNames Reads a `render: "user"` column as the user's name.
+	 * @param CaseTypeNames|null $typeNames Names each case's type on a `cases` collection
+	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -183,6 +186,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
+		private readonly ?CaseTypeNames $typeNames = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -568,6 +572,10 @@ class ContributionController extends Controller implements PortalProtected {
 		// A `render: "user"` column answers the user's name, never the user id
 		// (contribution-user-display-name).
 		$objects = $this->userNames->rows(rows: $objects, collection: $collection);
+
+		// A case card names its case's type, as Mijn zaken does
+		// (site-mijn-omgeving-components REQ-SMO-030).
+		$objects = ($this->typeNames?->stampRows(rows: $objects, collection: $collection) ?? $objects);
 
 		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
 	}//end collection()
