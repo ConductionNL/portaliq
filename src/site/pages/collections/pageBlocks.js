@@ -20,7 +20,8 @@
 //     calendar and news (contribution-record-page);
 //   - `tasks` and `inbox` blocks are action rows of what the resident still
 //     has to do and of their newest messages, `cases` blocks case cards, and
-//     a `steps` block where the open case stands (site-mijn-omgeving-components).
+//     a `steps` block where the open case stands, and `documents` and
+//     `timeline` blocks its file items and history (site-mijn-omgeving-components).
 //
 // @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
@@ -73,6 +74,7 @@ export function rowActionsOf(contribution, collection) {
  * tableActions?, proposeAction?, viewAction?}`, where `kind` is one of
  * `richText`, `table`, `timedTask`, `detail`, `citizenCase`, `action`, `cta`,
  * `kpi`, `calendar`, `news`, `tasks`, `inbox`, `cases`, `steps`,
+ * `documents`, `timeline`,
  * or `none` for a block that renders nothing.
  *
  * @param {object} page The contribution page.
@@ -190,8 +192,8 @@ function resolveEachBlock(page, contribution) {
 		if (type === 'inbox') {
 			return { index, block, kind: 'inbox' }
 		}
-		if (type === 'cases' || type === 'steps') {
-			// site-mijn-omgeving-components REQ-SMO-002, REQ-SMO-003.
+		if (['cases', 'steps', 'documents', 'timeline'].includes(type)) {
+			// site-mijn-omgeving-components REQ-SMO-002, REQ-SMO-003, REQ-SMO-005.
 			const collection = findCollection(contribution, block.collection)
 			return collection
 				? { index, block, kind: type, collection }
