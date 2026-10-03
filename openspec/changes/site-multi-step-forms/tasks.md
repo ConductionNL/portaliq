@@ -12,8 +12,8 @@ Four waves. Each wave is one PR to `development`. Every PR runs `npm run build:s
 
 ## Wave 2: file input, choice cards, named days (REQ-SMF-004, REQ-SMF-005)
 
-- [ ] **T3**: `FileUpload.vue` in `SchemaField.vue` (design D1). Size hint from the action's declared limit when present.
-- [ ] **T4**: `ActionConfigNormaliser` keeps `fieldConfigs.<field>.widget` (`choices`, `dateChoices`), `choiceOptions` (a subset of the options) and `otherLabel` and `dateChoices` count 1 to 5; `ChoiceCards.vue`; the named-day picker in `DateInputGroup.vue` (design D5). Adds `@utrecht/radio-button-css` to the form chunk only.
+- [x] **T3**: `FileUpload.vue` in `SchemaField.vue` (design D1). Size hint from the action's declared limit when present.
+- [x] **T4**: `ActionConfigNormaliser` keeps `fieldConfigs.<field>.widget` (`choices`, `dateChoices`), `choiceOptions` (a subset of the options) and `otherLabel` and `dateChoices` count 1 to 5; `ChoiceCards.vue`; the named-day picker in `DateInputGroup.vue` (design D5). Adds `@utrecht/radio-button-css` to the form chunk only.
   - PHPUnit `ActionConfigNormaliserTest::testAWidgetHintIsKeptOnlyWhenKnown`
   - Mutation: dropping the allow-list lets `slider` through and fails the test
 

@@ -198,3 +198,78 @@ export function plainFieldErrors(fields, values, text = DUTCH) {
 	}
 	return errors
 }
+
+/**
+ * A local date as `yyyy-mm-dd`, in the resident's own time zone.
+ *
+ * @param {Date} date The date.
+ * @return {string} The ISO date.
+ */
+function localIso(date) {
+	return [
+		String(date.getFullYear()),
+		String(date.getMonth() + 1).padStart(2, '0'),
+		String(date.getDate()).padStart(2, '0'),
+	].join('-')
+}
+
+/**
+ * The named days a `dateChoices` field offers: today, then the next working
+ * days (Monday to Friday) until there are `count`. Today reads "Vandaag,
+ * vrijdag 2 oktober"; the others read "Maandag 5 oktober", in the locale.
+ *
+ * @param {Date} now The moment the form opened.
+ * @param {number} count How many days, 1 to 5.
+ * @param {string} locale The site's language, e.g. `nl`.
+ * @param {string} todayWord The word for today, e.g. "Vandaag".
+ * @return {Array<{value: string, label: string}>} The days, today first.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+ */
+export function namedDays(now, count, locale, todayWord) {
+	const total = Number.isInteger(count) && count >= 1 && count <= 5 ? count : 2
+	const format = new Intl.DateTimeFormat(locale || 'nl', {
+		weekday: 'long',
+		day: 'numeric',
+		month: 'long',
+	})
+	const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1)
+	const day = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+	const days = [
+		{ value: localIso(day), label: `${todayWord}, ${format.format(day)}` },
+	]
+	while (days.length < total) {
+		day.setDate(day.getDate() + 1)
+		if (day.getDay() !== 0 && day.getDay() !== 6) {
+			days.push({ value: localIso(day), label: capital(format.format(day)) })
+		}
+	}
+	return days
+}
+
+/**
+ * Split a field's options into the cards and the rest. Without a subset
+ * every option is a card. With `choiceOptions` the cards are those options
+ * in that order (values the field does not offer are skipped), and the rest
+ * go behind the "other" card.
+ *
+ * @param {Array<{value: string, label: string}>} options The field's options.
+ * @param {string[]|undefined} choiceOptions The subset to show as cards.
+ * @return {{cards: Array<{value: string, label: string}>, rest: Array<{value: string, label: string}>}} The split.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+ */
+export function choiceSplit(options, choiceOptions) {
+	const list = Array.isArray(options) ? options : []
+	const subset = Array.isArray(choiceOptions) ? choiceOptions.map(String) : []
+	const cards = subset
+		.map((value) => list.find((option) => String(option.value) === value))
+		.filter(Boolean)
+	if (cards.length === 0) {
+		return { cards: list, rest: [] }
+	}
+	return {
+		cards,
+		rest: list.filter((option) => !subset.includes(String(option.value))),
+	}
+}

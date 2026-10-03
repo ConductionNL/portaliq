@@ -13,41 +13,45 @@
 		:optionalLabel="translate('(optional)')"
 		:help="help"
 		:error="error"
-		:group="input === 'date'"
+		:group="group"
 		:errorTestid="`schema-field-error-${field}`"
 		:data-testid="`schema-field-${field}`">
-		<template v-if="input === 'file'">
-			<input
-				:id="id"
-				:key="fileKey"
-				type="file"
-				class="pq-field__file"
-				:multiple="config.multiple === true"
-				:accept="accept || undefined"
-				:disabled="config.disabled === true"
-				:aria-required="ariaRequired"
-				:aria-invalid="error !== '' ? 'true' : undefined"
-				:aria-labelledby="`${id}-label`"
-				:aria-describedby="describedBy"
-				@change="$emit('pick', $event.target.files)" />
-			<p
-				v-if="files.length > 0"
-				:id="`${id}-picked`"
-				class="utrecht-form-field-description">
-				{{
-					translate('Selected: {files}', {
-						files: files.map((f) => f.name).join(', '),
-					})
-				}}
-			</p>
-			<p :id="`${id}-limit`" class="utrecht-form-field-description">
-				{{
-					translate('Up to {size} MB per file', {
-						size: config.maxSizeMb || defaultMaxSize,
-					})
-				}}
-			</p>
-		</template>
+		<FileUpload
+			v-if="input === 'file'"
+			:id="id"
+			:files="files"
+			:fileKey="fileKey"
+			:multiple="config.multiple === true"
+			:accept="accept"
+			:required="required"
+			:invalid="error !== ''"
+			:disabled="config.disabled === true"
+			:labelledBy="`${id}-label`"
+			:describedBy="shellDescribedBy"
+			:buttonLabel="translate('Choose a file or photo')"
+			:limitText="
+				translate('Up to {size} MB per file', {
+					size: config.maxSizeMb || defaultMaxSize,
+				})
+			"
+			:removeLabel="translate('Remove {file}')"
+			@pick="(picked) => $emit('pick', picked)" />
+		<DateChoices
+			v-else-if="input === 'date' && config.widget === 'dateChoices'"
+			:id="id"
+			:modelValue="modelValue"
+			:count="config.dateChoices || 2"
+			:locale="dayLocale"
+			:todayWord="translate('Today')"
+			:otherDayLabel="translate('Another day')"
+			:hint="translate('For example 1 3 2026')"
+			:required="required"
+			:invalid="error !== ''"
+			:disabled="config.disabled === true"
+			:dayLabel="translate('Day')"
+			:monthLabel="translate('Month')"
+			:yearLabel="translate('Year')"
+			@update:modelValue="(value) => $emit('update:modelValue', value)" />
 		<DateInputGroup
 			v-else-if="input === 'date'"
 			:id="id"
@@ -58,6 +62,18 @@
 			:dayLabel="translate('Day')"
 			:monthLabel="translate('Month')"
 			:yearLabel="translate('Year')"
+			@update:modelValue="(value) => $emit('update:modelValue', value)" />
+		<ChoiceCards
+			v-else-if="input === 'select' && config.widget === 'choices'"
+			:id="id"
+			:options="options"
+			:modelValue="modelValue"
+			:choiceOptions="config.choiceOptions || []"
+			:otherLabel="config.otherLabel || ''"
+			:required="required"
+			:invalid="error !== ''"
+			:disabled="config.disabled === true"
+			:selectPlaceholder="translate('Choose an option')"
 			@update:modelValue="(value) => $emit('update:modelValue', value)" />
 		<select
 			v-else-if="input === 'select'"
@@ -112,8 +128,11 @@
 </template>
 
 <script>
+import ChoiceCards from '../forms/ChoiceCards.vue'
+import DateChoices from '../forms/DateChoices.vue'
 import DateInputGroup from '../forms/DateInputGroup.vue'
 import FieldShell from '../forms/FieldShell.vue'
+import FileUpload from '../forms/FileUpload.vue'
 import { DEFAULT_MAX_SIZE_MB } from '../../../shared/fileFieldSubmit.js'
 import { translatorOr } from './forms.js'
 
@@ -134,7 +153,7 @@ import '@utrecht/textarea-css/dist/index.css'
 export default {
 	name: 'SchemaField',
 
-	components: { DateInputGroup, FieldShell },
+	components: { ChoiceCards, DateChoices, DateInputGroup, FieldShell, FileUpload },
 
 	props: {
 		/** The input's id; the label points at it. */
@@ -159,6 +178,8 @@ export default {
 		error: { type: String, default: '' },
 		/** The translator `t(key, vars)`. */
 		t: { type: Function, default: null },
+		/** The site's language, for named days; else the page's `lang`. */
+		locale: { type: String, default: '' },
 	},
 
 	emits: ['update:modelValue', 'pick'],
@@ -196,7 +217,7 @@ export default {
 			if (typeof this.config.help === 'string' && this.config.help !== '') {
 				return this.config.help
 			}
-			return this.input === 'date'
+			return this.input === 'date' && this.config.widget !== 'dateChoices'
 				? this.translate('For example 1 3 2026')
 				: ''
 		},
@@ -211,21 +232,62 @@ export default {
 			return DEFAULT_MAX_SIZE_MB
 		},
 
-		describedBy() {
+		/**
+		 * The ids of the field's description and error, for the input's
+		 * `aria-describedby` (a file field adds its limit and list itself).
+		 *
+		 * @return {string} The ids, or ''.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		shellDescribedBy() {
 			const ids = []
 			if (this.help !== '') {
 				ids.push(`${this.id}-help`)
 			}
-			if (this.input === 'file') {
-				if (this.files.length > 0) {
-					ids.push(`${this.id}-picked`)
-				}
-				ids.push(`${this.id}-limit`)
-			}
 			if (this.error !== '') {
 				ids.push(`${this.id}-error`)
 			}
-			return ids.length > 0 ? ids.join(' ') : undefined
+			return ids.join(' ')
+		},
+
+		/**
+		 * The same ids, or undefined when there are none.
+		 *
+		 * @return {string|undefined} The ids.
+		 */
+		describedBy() {
+			return this.shellDescribedBy || undefined
+		},
+
+		/**
+		 * Whether the field is a fieldset: a date, or choice cards.
+		 *
+		 * @return {boolean} True for a group.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+		 */
+		group() {
+			return (
+				this.input === 'date'
+				|| (this.input === 'select' && this.config.widget === 'choices')
+			)
+		},
+
+		/**
+		 * The language the named days are written in.
+		 *
+		 * @return {string} The locale.
+		 */
+		dayLocale() {
+			if (this.locale !== '') {
+				return this.locale
+			}
+			const lang =
+				typeof document !== 'undefined' && document.documentElement
+					? document.documentElement.lang
+					: ''
+			return lang || 'nl'
 		},
 	},
 }
