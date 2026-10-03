@@ -68,7 +68,11 @@ class StepsProviderMethod {
 		$steps = $declared['steps'];
 		if (is_array($steps) === true && (new TimelineProviderMethod())->accepts(name: ($steps['provider'] ?? null)) === true) {
 			$label = ($steps['label'] ?? '');
-			$collection['steps'] = ['label' => (is_string($label) === true ? $label : ''), 'provider' => $steps['provider']];
+			if (is_string($label) === false) {
+				$label = '';
+			}
+
+			$collection['steps'] = ['label' => $label, 'provider' => $steps['provider']];
 		}
 
 		foreach (['dueField', 'turnField'] as $key) {
