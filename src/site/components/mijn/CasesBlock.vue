@@ -282,7 +282,7 @@ export default {
 .pq-cases-block__list {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-	gap: var(--utrecht-space-block-md, 1rem);
+	gap: var(--utrecht-space-block-lg, 1.5rem) var(--utrecht-space-inline-md, 1rem);
 	margin: 0;
 	padding: 0;
 }

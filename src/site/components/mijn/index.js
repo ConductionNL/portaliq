@@ -18,6 +18,7 @@ export const blocks = {
 	inbox: () => import('./InboxBlock.vue'),
 	cases: () => import('./CasesBlock.vue'),
 	steps: () => import('./StepsBlock.vue'),
+	recordSwitcher: () => import('./RecordSwitcher.vue'),
 	documents: () => import('./DocumentsBlock.vue'),
 	timeline: () => import('./TimelineBlock.vue'),
 }

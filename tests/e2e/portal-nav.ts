@@ -47,8 +47,9 @@ export const SITE_PATH = '/apps/portaliq/site'
 /**
  * The portal the specs serve the site as: `open-tilburg`, seeded by
  * tests/e2e/fixtures/seed-cms.sh (organisation `dev-org`, domain `localhost`).
+ * PORTALIQ_E2E_PORTAL serves another, e.g. `wilgenboom` on a demo instance.
  */
-export const SITE_PORTAL = 'open-tilburg'
+export const SITE_PORTAL = process.env.PORTALIQ_E2E_PORTAL || 'open-tilburg'
 
 /** The portal auth edge; these API routes stay where they were. */
 export const PORTAL_API = '/apps/portaliq/portal/api'

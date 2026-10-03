@@ -4,29 +4,27 @@
   -->
 
 <!--
-	One case as a Den Haag case card (list form): ONE control whose name
-	starts with the case title. Above the title the status in words and the
-	reference, under it the case type. When the collection supplies them: the
-	step position as text ("Stap 2 van 4") with a decorative bar, the answer
-	date and whose turn it is. Colour never carries the status alone.
+	One case as a Den Haag case card, the default (folder) appearance: the
+	card body is Den Haag's own `__background`, a finished case takes its
+	`--archived` colours. On top the status in words and the reference, then
+	the title and the case type; when the collection supplies them, the step
+	position as text ("Stap 2 van 4") with a decorative bar, the answer date
+	and whose turn it is. Colour never carries the status alone.
 
-	With a route the card is a link with a real address; with `button` it
-	opens the case on this page; otherwise it is text.
+	The title is the card's ONE control, so the control's name is the case
+	title. It stretches over the whole card (as Den Haag's own action link
+	does), so the card is one target. With a route it is a link with a real
+	address; with `button` it opens the case on this page; otherwise it is
+	text.
 -->
 <template>
 	<li class="pq-case-card-item" data-testid="mijn-case-card">
-		<component
-			:is="tag"
-			class="denhaag-case-card denhaag-case-card--list pq-case-card"
-			:class="{ 'denhaag-case-card--archived': card.closed }"
-			:href="tag === 'a' ? href : undefined"
-			:type="tag === 'button' ? 'button' : undefined"
-			@click="onClick">
-			<span class="denhaag-case-card__wrapper">
-				<span class="denhaag-case-card__title pq-case-card__title">{{
-					card.title
-				}}</span>
-				<span class="denhaag-case-card__context pq-case-card__top">
+		<div
+			class="denhaag-case-card pq-case-card"
+			:class="{ 'denhaag-case-card--archived': card.closed }">
+			<div class="denhaag-case-card__wrapper">
+				<span class="denhaag-case-card__background" aria-hidden="true" />
+				<div class="denhaag-case-card__context pq-case-card__top">
 					<DataBadge
 						v-if="card.status"
 						:text="card.status"
@@ -34,15 +32,30 @@
 					<span v-if="card.reference" class="pq-case-card__reference">{{
 						card.reference
 					}}</span>
-				</span>
-				<span
-					v-if="card.typeName"
-					class="denhaag-case-card__subtitle pq-case-card__type"
-					>{{ card.typeName }}</span
-				>
-				<span
-					v-if="card.position || card.due"
-					class="pq-case-card__progress">
+				</div>
+				<div>
+					<p class="denhaag-case-card__title pq-case-card__title">
+						<a
+							v-if="tag === 'a'"
+							class="pq-case-card__link"
+							:href="href"
+							@click="onClick"
+							>{{ card.title }}</a
+						><button
+							v-else-if="tag === 'button'"
+							class="pq-case-card__link"
+							type="button"
+							@click="onClick">
+							{{ card.title }}</button
+						><span v-else>{{ card.title }}</span>
+					</p>
+					<p
+						v-if="card.typeName"
+						class="denhaag-case-card__subtitle pq-case-card__type">
+						{{ card.typeName }}
+					</p>
+				</div>
+				<div v-if="card.position || card.due" class="pq-case-card__progress">
 					<span class="pq-case-card__progress-text">
 						<span v-if="card.position">{{ card.position.text }}</span>
 						<span v-if="card.due">{{ card.due }}</span>
@@ -53,23 +66,21 @@
 						aria-hidden="true"
 						><span :style="{ inlineSize: barWidth }"
 					/></span>
-				</span>
-				<span v-if="card.turn" class="pq-case-card__turn">{{
-					card.turn
-				}}</span>
-				<span
-					v-if="mandate"
-					class="pq-case-card__mandate"
-					data-testid="mijn-case-card-mandate"
-					>{{ mandate }}</span
-				>
-				<span
-					v-if="meta"
-					class="denhaag-case-card__footer pq-case-card__meta"
-					>{{ meta }}</span
-				>
-			</span>
-		</component>
+				</div>
+				<p v-if="card.turn" class="pq-case-card__turn">{{ card.turn }}</p>
+				<div
+					v-if="mandate || meta"
+					class="denhaag-case-card__footer pq-case-card__meta">
+					<span
+						v-if="mandate"
+						class="pq-case-card__mandate"
+						data-testid="mijn-case-card-mandate"
+						>{{ mandate }}</span
+					>
+					<span v-if="meta">{{ meta }}</span>
+				</div>
+			</div>
+		</div>
 	</li>
 </template>
 
@@ -102,14 +113,14 @@ export default {
 
 	computed: {
 		/**
-		 * @return {string} a, button or div.
+		 * @return {string} a, button or span.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		tag() {
 			if (this.route) {
 				return 'a'
 			}
-			return this.button ? 'button' : 'div'
+			return this.button ? 'button' : 'span'
 		},
 
 		/**
@@ -141,7 +152,7 @@ export default {
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		onClick(event) {
-			if (this.tag === 'div') {
+			if (this.tag === 'span') {
 				return
 			}
 			if (
@@ -167,27 +178,15 @@ export default {
 	list-style: none;
 }
 
+/* The card grows with its content: Den Haag's fixed height (the
+   --denhaag-case-card-height token, 240px) is kept as the least height. */
 .pq-case-card {
-	display: block;
-	inline-size: 100%;
-	margin: 0;
-	border: 0;
-	background: none;
-	color: var(--utrecht-document-color, inherit);
-	font: inherit;
-	text-align: start;
-	text-decoration: none;
+	block-size: auto;
+	min-block-size: var(--denhaag-case-card-height, 15rem);
 }
 
-div.pq-case-card {
-	cursor: default;
-}
-
-.pq-case-card:focus-visible {
-	outline: var(--utrecht-focus-outline-width, 2px)
-		var(--utrecht-focus-outline-style, solid)
-		var(--utrecht-focus-outline-color, currentcolor);
-	outline-offset: 2px;
+.pq-case-card .denhaag-case-card__wrapper {
+	gap: var(--utrecht-space-block-sm, 0.5rem);
 }
 
 .pq-case-card__top,
@@ -195,25 +194,52 @@ div.pq-case-card {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-between;
+	align-items: center;
 	gap: 0.5rem;
 }
 
-.pq-case-card__title {
-	display: block;
-	font-weight: bold;
-}
-
-/* The status line shows above the title, as in DossiqOverview.dc.html, while
-   the title comes first in the markup so the card's name starts with it. */
-.pq-case-card__top {
-	order: -1;
-}
-
+.pq-case-card__title,
 .pq-case-card__type,
-.pq-case-card__mandate,
-.pq-case-card__turn,
-.pq-case-card__meta {
-	display: block;
+.pq-case-card__turn {
+	margin: 0;
+}
+
+.pq-case-card__title {
+	color: var(--denhaag-case-card-title-color, inherit);
+	font-family: var(--denhaag-case-card-title-font-family, inherit);
+	font-size: var(--denhaag-case-card-title-font-size, 1.25rem);
+	font-weight: var(--denhaag-case-card-title-font-weight, bold);
+	line-height: var(--denhaag-case-card-title-line-height, 1.4);
+}
+
+.pq-case-card__type {
+	color: var(--denhaag-case-card-subtitle-color, inherit);
+}
+
+/* The title's control stretches over the card, as Den Haag's action link. */
+.pq-case-card__link {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-align: start;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.pq-case-card__link::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+}
+
+.pq-case-card__link:focus-visible {
+	outline: var(--utrecht-focus-outline-width, 2px)
+		var(--utrecht-focus-outline-style, solid)
+		var(--utrecht-focus-outline-color, currentcolor);
+	outline-offset: 2px;
 }
 
 .pq-case-card__progress {
@@ -227,7 +253,7 @@ div.pq-case-card {
 	display: block;
 	block-size: 0.375rem;
 	border-radius: 0.25rem;
-	background-color: var(--utrecht-color-grey-90, #e6e6e6);
+	background-color: var(--denhaag-case-card-paper-color, #fff);
 	overflow: hidden;
 }
 
@@ -238,5 +264,13 @@ div.pq-case-card {
 		--utrecht-button-primary-action-background-color,
 		currentcolor
 	);
+}
+
+.pq-case-card__meta {
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	gap: 0.5rem 1rem;
+	font-size: 0.875em;
+	color: var(--denhaag-case-card-context-color, inherit);
 }
 </style>
