@@ -451,3 +451,34 @@ test('the language picker has a visible label and a hint tied to the select', as
 	)
 	assert.match(html, /role="alert">Oops<\/p>/)
 })
+
+test('a news item says when it was published, and nothing while it has no date', async () => {
+	const NewsItem = await loadSfc('src/site/components/inbox/NewsItem.vue')
+	const item = {
+		id: 'n1',
+		title: 'Studiedag',
+		body: 'Vrijdag dicht.',
+		publishedAt: '2026-10-03T09:00:00+00:00',
+	}
+	const nl = await renderComponent(NewsItem, {
+		item,
+		t: withStrings(null, 'nl'),
+		locale: 'nl',
+	})
+	assert.match(
+		nl,
+		/<p class="utrecht-paragraph pq-news__date"[^>]*>\s*Gepubliceerd op 3-10-2026\s*<\/p>/,
+	)
+	const en = await renderComponent(NewsItem, {
+		item,
+		t: withStrings(null, 'en'),
+		locale: 'en',
+	})
+	assert.match(en, /Published on 03\/10\/2026/)
+	const undated = await renderComponent(NewsItem, {
+		item: { id: 'n2', title: 'Kort', body: 'Tekst' },
+		t: withStrings(null, 'nl'),
+		locale: 'nl',
+	})
+	assert.doesNotMatch(undated, /pq-news__date/)
+})

@@ -2025,7 +2025,9 @@
         "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "Dit formulier gebruikt een voorwaarde die het portaal niet kan controleren. Maak er een voorwaarde op een ander antwoord van.",
         "This request has already been withdrawn.": "Deze aanvraag is al ingetrokken.",
         "This request cannot be withdrawn from the portal.": "Deze aanvraag kunt u niet vanuit het portaal intrekken.",
-        "The request could not be withdrawn. Please try again.": "De aanvraag kon niet worden ingetrokken. Probeer het opnieuw."
+        "The request could not be withdrawn. Please try again.": "De aanvraag kon niet worden ingetrokken. Probeer het opnieuw.",
+        "Published on": "Gepubliceerd op",
+        "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable.": "Wordt door de server bijgehouden. Wanneer een medewerker het bericht voor het laatst publiceerde, in ISO 8601; leeg zolang het een concept is. Het nieuwsoverzicht sorteert hierop, nieuwste eerst. Gezet bij publiceren, gewist bij terugnemen; nooit door een client te schrijven."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -842,3 +842,23 @@ test('a calendar source shows only the rows its rule names', () => {
 		['2026-11-03', '2026-11-05'],
 	)
 })
+
+test('a draft written long ago and published today is the newest news', () => {
+	const items = [
+		{
+			id: 'recent',
+			publishedAt: '2026-09-26T08:00:00+00:00',
+			'@self': { created: '2026-09-26T07:00:00+00:00' },
+		},
+		{
+			id: 'late',
+			publishedAt: '2026-10-03T09:00:00+00:00',
+			'@self': { created: '2026-08-01T08:00:00+00:00' },
+		},
+		{ id: 'unstamped', '@self': { created: '2026-09-30T08:00:00+00:00' } },
+	]
+	assert.deepEqual(
+		newestNewsFirst(items).map((item) => item.id),
+		['late', 'unstamped', 'recent'],
+	)
+})

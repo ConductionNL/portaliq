@@ -61,6 +61,7 @@ export default {
 		'No conversations yet.': 'Nog geen gesprekken.',
 		'No messages.': 'Geen berichten.',
 		'No news yet.': 'Nog geen nieuws.',
+		'Published on {date}': 'Gepubliceerd op {date}',
 		'No open tasks.': 'U heeft geen open taken.',
 		'No tests are open for you right now.':
 			'Er staan nu geen toetsen voor je open.',
@@ -182,6 +183,7 @@ export default {
 		'No conversations yet.': 'No conversations yet.',
 		'No messages.': 'No messages.',
 		'No news yet.': 'No news yet.',
+		'Published on {date}': 'Published on {date}',
 		'No open tasks.': 'No open tasks.',
 		'No tests are open for you right now.':
 			'No tests are open for you right now.',
