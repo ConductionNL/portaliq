@@ -258,6 +258,11 @@ export default {
 		},
 	},
 
+	/**
+	 * Read on arrival.
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+	 */
 	created() {
 		this.loadList()
 		const uuid = this.initialTaskUuid || takeTaskToOpen(sessionStore())

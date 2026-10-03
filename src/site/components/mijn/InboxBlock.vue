@@ -174,6 +174,11 @@ export default {
 		},
 	},
 
+	/**
+	 * Read on arrival.
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+	 */
 	created() {
 		if (this.messages === null) {
 			this.load()
