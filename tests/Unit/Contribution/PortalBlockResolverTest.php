@@ -41,6 +41,8 @@ class PortalBlockResolverTest extends TestCase {
 						'schema' => 'case',
 						'kind'   => 'cases',
 						'steps'  => ['label' => 'Stappen', 'provider' => 'caseSteps'],
+						'documents' => ['label' => 'Documenten', 'provider' => 'caseDocuments'],
+						'timeline'  => ['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline'],
 					],
 				],
 				'actions'     => [],
@@ -212,6 +214,34 @@ class PortalBlockResolverTest extends TestCase {
 		);
 		$this->assertNotContains('alleen-stappen', array_column($out['pages'], 'id'), 'a page left without blocks is dropped');
 	}//end testAStepsBlockStaysOnlyOnItsRecordPage()
+
+	/**
+	 * A documents and a timeline block read their collection's provider of
+	 * the same name, and stay only on that collection's record page
+	 * (site-mijn-omgeving-components REQ-SMO-021, wave 4).
+	 *
+	 * @return void
+	 */
+	public function testADocumentsAndATimelineBlockStayOnlyOnTheirRecordPage(): void {
+		$this->assertSame(
+			[
+				['type' => 'documents', 'collection' => 'zaken'],
+				['type' => 'timeline', 'collection' => 'zaken', 'label' => 'Wat er gebeurde'],
+			],
+			$this->blocks(
+				blocks: [
+					['type' => 'documents', 'collection' => 'zaken'],
+					['type' => 'timeline', 'collection' => 'zaken', 'label' => 'Wat er gebeurde'],
+				],
+				record: 'zaken'
+			)
+		);
+
+		foreach (['documents', 'timeline'] as $type) {
+			$this->assertSame([], $this->blocks(blocks: [['type' => $type, 'collection' => 'zaken']]), $type.': not a record page');
+			$this->assertSame([], $this->blocks(blocks: [['type' => $type, 'collection' => 'vragenAanU']], record: 'vragenAanU'), $type.': no provider');
+		}
+	}//end testADocumentsAndATimelineBlockStayOnlyOnTheirRecordPage()
 
 	/**
 	 * The placeholder names the app lanes used before the names were fixed

@@ -30,8 +30,10 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
 
 ## Wave 4: documents, timeline, description list (REQ-SMO-005; blocks `documents`, `timeline`)
 
-- [ ] **T8**: `FileItem.vue`, `ContactTimeline.vue`, `DescriptionList.vue`; blocks `documents` and `timeline` over the existing providers; `DetailCard.vue` and `CitizenCase.vue` use them.
+- [x] **T8**: `FileItem.vue`, `ContactTimeline.vue`, `DescriptionList.vue`; blocks `documents` and `timeline` over the existing providers; `DetailCard.vue` and `CitizenCase.vue` use them.
   - `check:case-timeline`, `check:case-documents-screen` updated
+  - Built in wave 4: `FileItem` (@gemeente-denhaag/file 2.5.3), `ContactTimeline` (contact-timeline 4.1.3), `DescriptionList` (Utrecht data list look, own CSS); `DocumentsBlock` reads the case screen's route, `TimelineBlock` the timeline route; `ListBlockNormaliser::recordBlock()` keeps `steps`, `documents` and `timeline` only on their record page. `TimelineList` and `DetailCard` render the timeline and description list, `CitizenCase` the file items. Node `check:mijn-documents`; e2e `tests/e2e/site-mijn-description-list.spec.ts` (the two blocks need an app provider, not in CI).
+  - Also in wave 4 (left by wave 3): the collection read of a `cases` collection stamps `_caseTypeName` (`CaseTypeNames::stampRows()` in `ContributionController::collection()`), so a `cases` block names each type.
 
 ## Wave 5: pages, menu, home, switching (REQ-SMO-006, REQ-SMO-007, REQ-SMO-008, REQ-SMO-020; `limit`, `sort`, `range` of REQ-SMO-021)
 

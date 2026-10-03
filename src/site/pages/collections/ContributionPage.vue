@@ -231,6 +231,26 @@
 				:locale="lang"
 				:today="today || undefined" />
 
+			<DocumentsBlock
+				v-else-if="item.kind === 'documents'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
+			<TimelineBlock
+				v-else-if="item.kind === 'timeline'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
 			<InboxBlock
 				v-else-if="item.kind === 'inbox'"
 				:block="item.block"
@@ -367,6 +387,8 @@ export default {
 		CasesBlock: defineAsyncComponent(mijnBlocks.cases),
 		StepsBlock: defineAsyncComponent(mijnBlocks.steps),
 		RecordSwitcher: defineAsyncComponent(mijnBlocks.recordSwitcher),
+		DocumentsBlock: defineAsyncComponent(mijnBlocks.documents),
+		TimelineBlock: defineAsyncComponent(mijnBlocks.timeline),
 	},
 
 	// The shell hands every page the whole contract (session, portal, nav, …);
@@ -581,6 +603,14 @@ export default {
 				: ''
 		},
 
+		/**
+		 * The record link to open on this page: one whose collection a block
+		 * here reads, or the page's own record collection, so a route that
+		 * chooses a record opens it.
+		 *
+		 * @return {object|null}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
 		targetOnPage() {
 			const target = this.target
 			if (!target || target.app !== this.currentContribution?.app) {
@@ -614,6 +644,12 @@ export default {
 		},
 	},
 
+	/**
+	 * Load the page's collections, and take the record to open from the
+	 * route, else from a record link.
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+	 */
 	mounted() {
 		this.loader = createCollectionLoader({ api: this.api, store: this.store })
 		if (!this.target && this.routeRecordId && this.recordPage) {

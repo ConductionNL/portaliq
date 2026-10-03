@@ -54,6 +54,19 @@ export default {
 		'Running cases': 'Lopende zaken',
 		'New messages': 'Nieuwe berichten',
 		'Choose for whom': 'Kies voor wie',
+		'From you': 'Van u',
+		'From the municipality': 'Van de gemeente',
+		Documents: 'Documenten',
+		'What happened': 'Wat er is gebeurd',
+		'The documents could not be loaded.':
+			'De documenten konden niet worden geladen.',
+		'What happened could not be loaded.':
+			'Wat er is gebeurd kon niet worden geladen.',
+		'There are no documents on this case yet.':
+			'Er staan nog geen documenten bij deze zaak.',
+		'Nothing has happened yet.': 'Er is nog niets gebeurd.',
+		'The document could not be opened. Try again.':
+			'Het document kon niet worden geopend. Probeer het opnieuw.',
 	},
 	en: {
 		'Before {date}': 'Before {date}',
@@ -95,5 +108,16 @@ export default {
 		'Running cases': 'Running cases',
 		'New messages': 'New messages',
 		'Choose for whom': 'Choose for whom',
+		'From you': 'From you',
+		'From the municipality': 'From the municipality',
+		Documents: 'Documents',
+		'What happened': 'What happened',
+		'The documents could not be loaded.': 'The documents could not be loaded.',
+		'What happened could not be loaded.': 'What happened could not be loaded.',
+		'There are no documents on this case yet.':
+			'There are no documents on this case yet.',
+		'Nothing has happened yet.': 'Nothing has happened yet.',
+		'The document could not be opened. Try again.':
+			'The document could not be opened. Try again.',
 	},
 }

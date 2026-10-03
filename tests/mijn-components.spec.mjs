@@ -48,7 +48,9 @@ const en = mijnTranslator(null, 'en')
 const PINNED = {
 	'@gemeente-denhaag/action': '4.4.2',
 	'@gemeente-denhaag/card': '5.1.4',
+	'@gemeente-denhaag/contact-timeline': '4.1.3',
 	'@gemeente-denhaag/data-badge': '2.2.2',
+	'@gemeente-denhaag/file': '2.5.3',
 	'@gemeente-denhaag/process-steps': '4.3.3',
 	'@gemeente-denhaag/step-marker': '3.1.3',
 }
@@ -510,8 +512,12 @@ test("the components take only the Den Haag CSS, at thematiq's pinned versions, 
 	assert.deepEqual(denhaag.sort(), [
 		'@gemeente-denhaag/action/index.css',
 		'@gemeente-denhaag/card/index.css',
+		'@gemeente-denhaag/contact-timeline/index.css',
 		'@gemeente-denhaag/data-badge/index.css',
+		'@gemeente-denhaag/file/index.css',
 		'@gemeente-denhaag/process-steps/index.css',
+		'@gemeente-denhaag/process-steps/index.css',
+		'@gemeente-denhaag/step-marker/index.css',
 		'@gemeente-denhaag/step-marker/index.css',
 	])
 })

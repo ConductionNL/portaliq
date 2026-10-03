@@ -75,7 +75,8 @@ export function ownAreaLink(session, t, hrefFor) {
  * @param {(key: string, vars?: object) => string} t The translator.
  * @param {number} unread The inbox's unread count.
  * @param {(route: string) => string} hrefFor A real address for a route.
- * @return {object} `{key, name, link, href, badge?, badgeLabel?}`.
+ * @return {object} `{key, name, link, href, icon?, badge?, badgeLabel?}`.
+ * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
 function itemFor(entry, t, unread, hrefFor) {
 	const link = routeForNav(entry)

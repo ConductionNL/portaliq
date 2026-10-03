@@ -188,7 +188,12 @@ test('site: the case shows its status, closed answers with their reason, open an
 		decision > 0 && decision < documents && documents < yours,
 		'decision, then documents, then what you sent',
 	)
-	assert.match(html, /<button[^>]*pq-case-document[^>]*>Besluit<\/button>/)
+	// Each document is a Den Haag file item: one button named after it
+	// (site-mijn-omgeving-components REQ-SMO-005).
+	assert.match(
+		html,
+		/data-testid="case-document"><button type="button" class="denhaag-file pq-file-item__control">[\s\S]*?<span class="pq-file-item__name">Besluit<\/span>/,
+	)
 	assert.match(
 		html,
 		/<label for="pq-case-add-document"[^>]*>Add a document<\/label>/,

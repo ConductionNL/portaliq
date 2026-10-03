@@ -152,7 +152,9 @@ async function submitFormBlock(formId) {
 	const vm = {
 		formId,
 		portal: 'gemeente',
+		fields: [],
 		values: { email: 'a@example.nl' },
+		errors: {},
 		submitting: false,
 		status: null,
 	}
