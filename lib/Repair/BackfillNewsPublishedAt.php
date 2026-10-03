@@ -87,6 +87,8 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 * The step's name.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/news-publish-date/tasks.md#T3
 	 */
 	public function getName(): string {
 		return 'Give published news items their publish moment';
@@ -113,13 +115,14 @@ class BackfillNewsPublishedAt implements IRepairStep {
 		do {
 			$pages++;
 			$page    = $this->page(objectService: $objectService, offset: $offset);
-			$offset += count($page);
+			$read    = count($page);
+			$offset += $read;
 			foreach ($page as $row) {
 				if ($this->stamp(objectService: $objectService, row: $row) === true) {
 					$stamped++;
 				}
 			}
-		} while (count($page) === self::PAGE && $pages < self::MAX_PAGES);
+		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
 
 		$output->info('BackfillNewsPublishedAt: stamped ' . $stamped . ' news items.');
 	}//end run()

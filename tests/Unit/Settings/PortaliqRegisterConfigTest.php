@@ -318,8 +318,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.55.0 (portalAccount 0.14.0): `activationTokenHash` and
 		// `activationExpiresAt`, the activation link of a self-registration
 		// (identity-ways-in-screens T03). Additive.
-		$this->assertSame('0.55.0', self::$register['info']['version']);
-		$this->assertSame('0.55.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.56.0 (newsItem 0.3.0): `publishedAt`, the moment staff published
+		// the item, stamped by NewsController::publish and back-filled by the
+		// repair step BackfillNewsPublishedAt (news-publish-date). Additive.
+		$this->assertSame('0.56.0', self::$register['info']['version']);
+		$this->assertSame('0.56.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['newsItem']['version']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
 		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
@@ -344,7 +349,6 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsletter']['properties']);
 		$this->assertSame('array', self::$register['components']['schemas']['newsletter']['properties']['translations']['type']);
 		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsletter']['properties']['translations']['description']);
-		$this->assertSame('0.2.1', self::$register['components']['schemas']['newsItem']['version']);
 		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsItem']['properties']['translations']['description']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsItem']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalReporterContact']['version']);
