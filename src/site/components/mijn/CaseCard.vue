@@ -58,6 +58,12 @@
 					card.turn
 				}}</span>
 				<span
+					v-if="mandate"
+					class="pq-case-card__mandate"
+					data-testid="mijn-case-card-mandate"
+					>{{ mandate }}</span
+				>
+				<span
 					v-if="meta"
 					class="denhaag-case-card__footer pq-case-card__meta"
 					>{{ meta }}</span
@@ -82,7 +88,9 @@ export default {
 	props: {
 		/** What caseCard() in cases.js answers for the row. */
 		card: { type: Object, required: true },
-		/** One more line: the app, the mandate, the date; or ''. */
+		/** For whom the case is read, when under a mandate; or ''. */
+		mandate: { type: String, default: '' },
+		/** One more line: the app and the date; or ''. */
 		meta: { type: String, default: '' },
 		/** The in-site route the card opens, or ''. */
 		route: { type: String, default: '' },
@@ -202,6 +210,7 @@ div.pq-case-card {
 }
 
 .pq-case-card__type,
+.pq-case-card__mandate,
 .pq-case-card__turn,
 .pq-case-card__meta {
 	display: block;
