@@ -90,6 +90,20 @@ class ContributionControllerCaseTypeNamesTest extends TestCase {
 	}//end testAnotherKindOfCollectionIsLeftAlone()
 
 	/**
+	 * A row that is not a record passes through untouched; the rest are named.
+	 *
+	 * @return void
+	 */
+	public function testARowThatIsNotARecordPassesThrough(): void {
+		$names = new CaseTypeNames(new CaseTypeReader($this->container(), new NullLogger()));
+
+		$this->assertSame(
+			['not a row', ['zaaktype' => 'type-woo', '_caseTypeName' => 'Woo-verzoek']],
+			$names->stampRows(rows: ['not a row', ['zaaktype' => 'type-woo']], collection: self::COLLECTION)
+		);
+	}//end testARowThatIsNotARecordPassesThrough()
+
+	/**
 	 * The controller under test, reading the given rows.
 	 *
 	 * @param array<string, mixed>             $collection The collection the resident may read.
@@ -111,6 +125,32 @@ class ContributionControllerCaseTypeNamesTest extends TestCase {
 		$reader = $this->createMock(PortalObjectReader::class);
 		$reader->method('readCollection')->willReturn($rows);
 
+		return new ContributionController(
+			request: $request,
+			registry: $registry,
+			session: $session,
+			reader: $reader,
+			writer: $this->createMock(PortalObjectWriter::class),
+			fileWriter: $this->createMock(PortalFileWriter::class),
+			fileReader: $this->createMock(PortalFileReader::class),
+			schemaReader: $this->createMock(PortalSchemaReader::class),
+			inboxReader: $this->createMock(PortalInboxReader::class),
+			auditHook: $this->createMock(PortalAuditHook::class),
+			forwarder: $this->createMock(PortalActionForwarder::class),
+			auditor: $this->createMock(AuditTrailService::class),
+			receiptService: $this->createMock(SubmissionReceiptService::class),
+			notificationDispatch: $this->createMock(NotificationDispatchService::class),
+			logger: $this->createMock(LoggerInterface::class),
+			typeNames: new CaseTypeNames(new CaseTypeReader($this->container(), new NullLogger()))
+		);
+	}//end controller()
+
+	/**
+	 * A container whose object service answers one case type, Woo-verzoek.
+	 *
+	 * @return ContainerInterface
+	 */
+	private function container(): ContainerInterface {
 		$types = new class {
 			/**
 			 * @param string $register The register.
@@ -142,23 +182,7 @@ class ContributionControllerCaseTypeNamesTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($types);
 
-		return new ContributionController(
-			request: $request,
-			registry: $registry,
-			session: $session,
-			reader: $reader,
-			writer: $this->createMock(PortalObjectWriter::class),
-			fileWriter: $this->createMock(PortalFileWriter::class),
-			fileReader: $this->createMock(PortalFileReader::class),
-			schemaReader: $this->createMock(PortalSchemaReader::class),
-			inboxReader: $this->createMock(PortalInboxReader::class),
-			auditHook: $this->createMock(PortalAuditHook::class),
-			forwarder: $this->createMock(PortalActionForwarder::class),
-			auditor: $this->createMock(AuditTrailService::class),
-			receiptService: $this->createMock(SubmissionReceiptService::class),
-			notificationDispatch: $this->createMock(NotificationDispatchService::class),
-			logger: $this->createMock(LoggerInterface::class),
-			typeNames: new CaseTypeNames(new CaseTypeReader($container, new NullLogger()))
-		);
-	}//end controller()
+		return $container;
+
+	}//end container()
 }//end class
