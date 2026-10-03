@@ -38,6 +38,12 @@ namespace OCA\Portaliq\Contribution;
  */
 class ListBlockNormaliser {
 	/**
+	 * The blocks that read one open record through a provider of the same
+	 * name on its collection.
+	 */
+	public const RECORD_BLOCKS = ['steps', 'documents', 'timeline'];
+
+	/**
 	 * The most rows a list block may ask for.
 	 */
 	private const MAX_LIMIT = 50;
@@ -136,10 +142,12 @@ class ListBlockNormaliser {
 	}//end casesBlock()
 
 	/**
-	 * A `steps` block, or null when its collection declares no steps
-	 * provider. Whether the page is that collection's record page is the
-	 * page resolver's check (recordPageOnly()).
+	 * A block that reads one open record through its collection's provider:
+	 * `steps`, `documents` or `timeline`, or null when the collection declares
+	 * no provider of that name. Whether the page is that collection's record
+	 * page is the page resolver's check (recordPageOnly()).
 	 *
+	 * @param string                           $type        `steps`, `documents` or `timeline`.
 	 * @param array<string, mixed>             $block       The declared block.
 	 * @param array<int, array<string, mixed>> $collections The contribution's sanitised collections.
 	 *
@@ -147,18 +155,22 @@ class ListBlockNormaliser {
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
-	public function stepsBlock(array $block, array $collections): ?array {
+	public function recordBlock(string $type, array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
-		if ($collection === null || is_array($collection['steps'] ?? null) === false) {
+		if (in_array($type, self::RECORD_BLOCKS, true) === false
+			|| $collection === null
+			|| is_array($collection[$type] ?? null) === false
+		) {
 			return null;
 		}
 
-		return ['type' => 'steps', 'collection' => $collection['id']] + $this->common(block: $block);
-	}//end stepsBlock()
+		return ['type' => $type, 'collection' => $collection['id']] + $this->common(block: $block);
+	}//end recordBlock()
 
 	/**
-	 * The blocks without a `steps` block that does not read the page's own
-	 * record collection: steps belong to one open case.
+	 * The blocks without a `steps`, `documents` or `timeline` block that does
+	 * not read the page's own record collection: each belongs to one open
+	 * record.
 	 *
 	 * @param array<int, array<string, mixed>> $blocks            The page's normalised blocks.
 	 * @param array<int, string>               $recordCollections The page's `record` and `records` collections.
@@ -171,7 +183,7 @@ class ListBlockNormaliser {
 		return array_values(
 			array_filter(
 				$blocks,
-				static fn (array $block): bool => ($block['type'] ?? null) !== 'steps'
+				static fn (array $block): bool => in_array(($block['type'] ?? null), self::RECORD_BLOCKS, true) === false
 					|| in_array(($block['collection'] ?? null), $recordCollections, true) === true
 			)
 		);

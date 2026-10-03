@@ -83,6 +83,43 @@ class CaseTypeNames {
 	}//end stamp()
 
 	/**
+	 * The rows of one `cases` collection, each with `_caseTypeName` when its
+	 * type resolves. The type id is read from the collection's
+	 * `caseTypeField` (default `caseType`): a plain id, or a reference
+	 * carrying `id` or `uuid`. Any other kind of collection is left alone.
+	 *
+	 * @param array<int, mixed>    $rows       The collection's rows.
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<int, mixed>
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+	 */
+	public function stampRows(array $rows, array $collection): array {
+		if (($collection['kind'] ?? null) !== 'cases' || is_array($collection['caseTypeSource'] ?? null) === false) {
+			return $rows;
+		}
+
+		$field = (string)($collection['caseTypeField'] ?? 'caseType');
+		foreach ($rows as $index => $row) {
+			if (is_array($row) === false) {
+				continue;
+			}
+
+			$value = ($row[$field] ?? '');
+			if (is_array($value) === true) {
+				$value = ($value['id'] ?? $value['uuid'] ?? '');
+			}
+
+			if (is_scalar($value) === true) {
+				$rows[$index] = $this->stamp(row: $row, collection: $collection, typeId: (string)$value);
+			}
+		}
+
+		return $rows;
+	}//end stampRows()
+
+	/**
 	 * The names of a collection's case types, by id; [] without a source.
 	 *
 	 * @param array<string, mixed> $collection The `cases` collection.

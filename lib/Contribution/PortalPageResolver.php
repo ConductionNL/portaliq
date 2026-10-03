@@ -161,9 +161,9 @@ class PortalPageResolver {
 	}//end identity()
 
 	/**
-	 * The page without a steps block that does not read its own record
-	 * collection, or null when no block is left: steps belong to one open
-	 * case (site-mijn-omgeving-components REQ-SMO-021).
+	 * The page without a steps, documents or timeline block that does not
+	 * read its own record collection, or null when no block is left: each
+	 * belongs to one open record (site-mijn-omgeving-components REQ-SMO-021).
 	 *
 	 * @param array<string, mixed> $entry The normalised page.
 	 *

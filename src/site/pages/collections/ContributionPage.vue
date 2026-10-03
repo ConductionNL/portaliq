@@ -218,6 +218,26 @@
 				:locale="lang"
 				:today="today || undefined" />
 
+			<DocumentsBlock
+				v-else-if="item.kind === 'documents'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
+			<TimelineBlock
+				v-else-if="item.kind === 'timeline'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
 			<InboxBlock
 				v-else-if="item.kind === 'inbox'"
 				:block="item.block"
@@ -351,6 +371,8 @@ export default {
 		InboxBlock: defineAsyncComponent(mijnBlocks.inbox),
 		CasesBlock: defineAsyncComponent(mijnBlocks.cases),
 		StepsBlock: defineAsyncComponent(mijnBlocks.steps),
+		DocumentsBlock: defineAsyncComponent(mijnBlocks.documents),
+		TimelineBlock: defineAsyncComponent(mijnBlocks.timeline),
 	},
 
 	// The shell hands every page the whole contract (session, portal, nav, …);

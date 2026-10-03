@@ -19,26 +19,16 @@
 			class="utrecht-paragraph pq-timeline__empty">
 			<em>{{ t('Nothing has happened yet.') }}</em>
 		</p>
-		<ol v-else class="utrecht-ordered-list pq-timeline__list">
-			<li
-				v-for="(entry, index) in ordered"
-				:key="entry.id || index"
-				class="utrecht-ordered-list__item"
-				data-testid="timeline-entry">
-				<time
-					v-if="hasMoment(entry)"
-					class="pq-timeline__moment"
-					:datetime="entry.occurredAt || entry.date"
-					>{{ dateOf(entry) }}</time
-				>
-				<span>{{ textOf(entry) }}</span>
-			</li>
-		</ol>
+		<!-- A Den Haag contact timeline (site-mijn-omgeving-components
+		     REQ-SMO-005), newest first, each event its moment and sentence. -->
+		<ContactTimeline v-else :entries="ordered" :tr="mijnTr" :locale="locale" />
 	</section>
 </template>
 
 <script>
-import { momentOf, newestFirst, textOf } from './timeline.js'
+import ContactTimeline from '../mijn/ContactTimeline.vue'
+import { mijnTranslator } from '../mijn/rows.js'
+import { newestFirst } from './timeline.js'
 
 /**
  * The history of one record as its contributing app returned it (slice b,
@@ -48,6 +38,8 @@ import { momentOf, newestFirst, textOf } from './timeline.js'
  */
 export default {
 	name: 'TimelineList',
+
+	components: { ContactTimeline },
 
 	props: {
 		/** The heading the app declared. */
@@ -61,34 +53,36 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {string} The declared label, else "What happened".
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
+		 */
 		heading() {
 			return this.label || this.t('What happened')
 		},
 
+		/**
+		 * @return {Array<object>} The entries, newest first.
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
+		 */
 		ordered() {
 			return newestFirst(this.entries)
 		},
-	},
 
-	methods: {
-		textOf,
-		hasMoment(entry) {
-			return momentOf(entry) !== -Infinity
-		},
-
-		dateOf(entry) {
-			try {
-				return new Date(momentOf(entry)).toLocaleDateString(this.locale)
-			} catch {
-				return String(entry.occurredAt || entry.date)
-			}
+		/**
+		 * @return {(key: string, vars?: object) => string} The translator of the mijn omgeving components.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 */
+		mijnTr() {
+			return mijnTranslator(this.t, this.locale)
 		},
 	},
 }
 </script>
 
 <style scoped>
-.pq-timeline__moment {
-	margin-inline-end: var(--utrecht-space-inline-sm, 0.5rem);
+/* The list's look comes from ContactTimeline. */
+.pq-timeline {
+	margin-block-start: var(--utrecht-space-block-md, 1rem);
 }
 </style>
