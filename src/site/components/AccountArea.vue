@@ -304,14 +304,15 @@ export default {
 	},
 
 	watch: {
-		/**
-		 * Load the home the first time `/mijn` itself is on screen.
-		 *
-		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
-		 */
 		isHome: {
 			immediate: true,
+			/**
+			 * Load the home the first time `/mijn` itself is on screen.
+			 *
+			 * @param {boolean} home Whether `/mijn` itself is on screen.
+			 * @return {void}
+			 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+			 */
 			handler(home) {
 				if (home && !this.homeComponent) {
 					import('./mijn/MijnHome.vue')
