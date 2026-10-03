@@ -24,6 +24,11 @@
 			{{ label }}
 		</component>
 		<Skeleton v-if="loading && entries.length === 0" :label="tr('Loading')" />
+		<LoadError
+			v-else-if="failed"
+			:text="tr('What you still have to do could not be loaded.')"
+			:retryLabel="tr('Try again')"
+			@retry="$emit('retry')" />
 		<EmptyState
 			v-else-if="entries.length === 0"
 			:text="tr('You have nothing to do right now.')" />
@@ -42,6 +47,7 @@
 <script>
 import ActionRow from './ActionRow.vue'
 import EmptyState from './EmptyState.vue'
+import LoadError from './LoadError.vue'
 import Skeleton from './Skeleton.vue'
 import {
 	keepRecordToOpen,
@@ -56,7 +62,7 @@ import { deadlineBadge, mijnTranslator, taskRows } from './rows.js'
 export default {
 	name: 'TasksBlock',
 
-	components: { ActionRow, EmptyState, Skeleton },
+	components: { ActionRow, EmptyState, LoadError, Skeleton },
 
 	props: {
 		/** The normalised block: `collection`, `dueField?`, `titleFields?`, `limit?`, `label?`. */
@@ -67,6 +73,8 @@ export default {
 		rows: { type: Array, default: () => [] },
 		/** Whether the rows are still loading. */
 		loading: { type: Boolean, default: false },
+		/** Whether the rows could not be read: an alert, never "nothing to do". */
+		failed: { type: Boolean, default: false },
 		/** The app of the contribution the block belongs to. */
 		app: { type: String, default: '' },
 		/** Every navigation entry, to find the page that shows a row. */
@@ -81,7 +89,7 @@ export default {
 		today: { type: Date, default: null },
 	},
 
-	emits: ['navigate'],
+	emits: ['navigate', 'retry'],
 
 	computed: {
 		/**

@@ -47,7 +47,10 @@ const en = mijnTranslator(null, 'en')
 /** The versions thematiq's Den Haag token mapping pins (thematiq#892). */
 const PINNED = {
 	'@gemeente-denhaag/action': '4.4.2',
+	'@gemeente-denhaag/card': '5.1.4',
 	'@gemeente-denhaag/data-badge': '2.2.2',
+	'@gemeente-denhaag/process-steps': '4.3.3',
+	'@gemeente-denhaag/step-marker': '3.1.3',
 }
 
 const NAV = [
@@ -425,10 +428,10 @@ test('no messages yet reads as a sentence; a failed read says so and is not empt
 			locale: 'nl',
 		},
 	)
-	assert.match(
-		failed,
-		/role="alert">\s*Uw berichten konden niet worden geladen\.\s*</,
-	)
+	assert.match(failed, /data-testid="mijn-load-error"/)
+	assert.match(failed, /Uw berichten konden niet worden geladen\./)
+	assert.match(failed, /Opnieuw proberen/)
+	assert.doesNotMatch(failed, /U heeft nog geen berichten/)
 
 	const loaded = instance(InboxBlock, {
 		block: { type: 'inbox' },
@@ -506,6 +509,9 @@ test("the components take only the Den Haag CSS, at thematiq's pinned versions, 
 	}
 	assert.deepEqual(denhaag.sort(), [
 		'@gemeente-denhaag/action/index.css',
+		'@gemeente-denhaag/card/index.css',
 		'@gemeente-denhaag/data-badge/index.css',
+		'@gemeente-denhaag/process-steps/index.css',
+		'@gemeente-denhaag/step-marker/index.css',
 	])
 })

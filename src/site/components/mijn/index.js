@@ -16,4 +16,6 @@
 export const blocks = {
 	tasks: () => import('./TasksBlock.vue'),
 	inbox: () => import('./InboxBlock.vue'),
+	cases: () => import('./CasesBlock.vue'),
+	steps: () => import('./StepsBlock.vue'),
 }

@@ -25,9 +25,11 @@
 			v-if="messages === null && !failed"
 			:label="tr('Loading')"
 			:rows="2" />
-		<p v-else-if="failed" class="utrecht-paragraph" role="alert">
-			{{ tr('Your messages could not be loaded.') }}
-		</p>
+		<LoadError
+			v-else-if="failed"
+			:text="tr('Your messages could not be loaded.')"
+			:retryLabel="tr('Try again')"
+			@retry="retry" />
 		<EmptyState
 			v-else-if="entries.length === 0"
 			:text="tr('You have no messages yet.')" />
@@ -57,6 +59,7 @@
 <script>
 import ActionRow from './ActionRow.vue'
 import EmptyState from './EmptyState.vue'
+import LoadError from './LoadError.vue'
 import Skeleton from './Skeleton.vue'
 import { routeForNav } from '../../../shared/portalNav.js'
 import {
@@ -75,7 +78,7 @@ const INBOX_ROUTE = routeForNav({ special: 'inbox' })
 export default {
 	name: 'InboxBlock',
 
-	components: { ActionRow, EmptyState, Skeleton },
+	components: { ActionRow, EmptyState, LoadError, Skeleton },
 
 	props: {
 		/** The normalised block: `collection?`, `limit?`, `label?`. */
@@ -201,6 +204,18 @@ export default {
 			}
 			this.failed = !Array.isArray(answer)
 			this.messages = Array.isArray(answer) ? answer : []
+		},
+
+		/**
+		 * Try the read again after it failed, showing the skeleton meanwhile.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+		 */
+		async retry() {
+			this.failed = false
+			this.messages = null
+			await this.load()
 		},
 
 		/**
