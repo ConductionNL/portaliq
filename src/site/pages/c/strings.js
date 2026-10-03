@@ -55,6 +55,19 @@ export default {
 		'Choose an option': 'Kies een optie',
 		'Not everything is filled in yet. Check the fields below.':
 			'Nog niet alles is ingevuld. Controleer de velden hieronder.',
+		'(optional)': '(niet verplicht)',
+		'A field without "optional" must be filled in.':
+			'Een veld zonder "niet verplicht" moet u invullen.',
+		'Something is still missing': 'Er ontbreekt nog iets',
+		'Fill this in. Then you can send the form.':
+			'Vul dit aan. Daarna kunt u het formulier versturen.',
+		'Error: ': 'Fout: ',
+		Day: 'Dag',
+		Month: 'Maand',
+		Year: 'Jaar',
+		'For example 1 3 2026': 'Bijvoorbeeld 1 3 2026',
+		'{field}: enter a real date, for example 1 3 2026.':
+			'{field}: vul een geldige datum in, bijvoorbeeld 1 3 2026.',
 		'Propose a change': 'Wijziging voorstellen',
 		Note: 'Toelichting',
 		'Send proposal': 'Voorstel indienen',
@@ -111,6 +124,19 @@ export default {
 		'Choose an option': 'Choose an option',
 		'Not everything is filled in yet. Check the fields below.':
 			'Not everything is filled in yet. Check the fields below.',
+		'(optional)': '(optional)',
+		'A field without "optional" must be filled in.':
+			'A field without "optional" must be filled in.',
+		'Something is still missing': 'Something is still missing',
+		'Fill this in. Then you can send the form.':
+			'Fill this in. Then you can send the form.',
+		'Error: ': 'Error: ',
+		Day: 'Day',
+		Month: 'Month',
+		Year: 'Year',
+		'For example 1 3 2026': 'For example 1 3 2026',
+		'{field}: enter a real date, for example 1 3 2026.':
+			'{field}: enter a real date, for example 1 3 2026.',
 		'Propose a change': 'Propose a change',
 		Note: 'Note',
 		'Send proposal': 'Send proposal',

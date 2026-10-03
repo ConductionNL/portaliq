@@ -4,9 +4,9 @@ Four waves. Each wave is one PR to `development`. Every PR runs `npm run build:s
 
 ## Wave 1: the shared field layer (REQ-SMF-001, REQ-SMF-002, REQ-SMF-003)
 
-- [ ] **T1**: `src/site/components/forms/FieldShell.vue`, `LabelSuffix.vue`, `ErrorSummary.vue`, `DateInputGroup.vue` (design D1 to D4).
+- [x] **T1**: `src/site/components/forms/FieldShell.vue`, `LabelSuffix.vue`, `ErrorSummary.vue`, `DateInputGroup.vue` (design D1 to D4).
   - node tests: the suffix sits inside the label; the summary heading takes focus and each link focuses its field; the date group sends `yyyy-mm-dd` and refuses 31-2-2026
-- [ ] **T2**: `IntakeFormBlock.vue`, `c/SchemaForm.vue` + `c/SchemaField.vue` and `FormBlock.vue` use the layer. The `*` goes, `aria-required` comes, the summary replaces `SchemaForm`'s top alert and `focusFirstError()`.
+- [x] **T2**: `IntakeFormBlock.vue`, `c/SchemaForm.vue` + `c/SchemaField.vue` and `FormBlock.vue` use the layer. The `*` goes, `aria-required` comes, the summary replaces `SchemaForm`'s top alert and `focusFirstError()`.
   - Existing suites stay green: `check:schema-form`, `check:schema-form-file-field`, `check:intake-conditional-site` (after #1071), `check:intake-entry`
   - e2e: the absence-form error summary on a phone width, keyboard only
 
