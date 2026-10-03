@@ -40,7 +40,7 @@ class PortalBlockResolver {
 	/**
 	 * The block-type registry. A block of any other type is dropped.
 	 */
-	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta', 'citizenCase', 'kpi', 'calendar', 'news'];
+	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta', 'citizenCase', 'kpi', 'calendar', 'news', 'tasks', 'inbox'];
 
 	/**
 	 * The block types whose whole body is a reference to a collection.
@@ -57,19 +57,29 @@ class PortalBlockResolver {
 	 * @param mixed $blocks The declared blocks.
 	 * @param array<int, string> $collectionIds The valid collection ids.
 	 * @param array<int, string> $actionIds The valid action ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections
+	 *                                                      (the `tasks` and `inbox`
+	 *                                                      blocks read their kind
+	 *                                                      and projected fields).
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
-	public function normaliseBlocks(mixed $blocks, array $collectionIds, array $actionIds): array {
+	public function normaliseBlocks(mixed $blocks, array $collectionIds, array $actionIds, array $collections=[]): array {
 		if (is_array($blocks) === false) {
 			return [];
 		}
 
 		$out = [];
 		foreach ($blocks as $block) {
-			$entry = $this->normaliseBlock(block: $block, collectionIds: $collectionIds, actionIds: $actionIds);
+			$entry = $this->normaliseBlock(
+				block: $block,
+				collectionIds: $collectionIds,
+				actionIds: $actionIds,
+				collections: $collections
+			);
 			if ($entry !== null) {
 				$out[] = $entry;
 			}
@@ -85,10 +95,11 @@ class PortalBlockResolver {
 	 * @param mixed $block The declared block.
 	 * @param array<int, string> $collectionIds The valid collection ids.
 	 * @param array<int, string> $actionIds The valid action ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function normaliseBlock(mixed $block, array $collectionIds, array $actionIds): ?array {
+	private function normaliseBlock(mixed $block, array $collectionIds, array $actionIds, array $collections): ?array {
 		if (is_array($block) === false) {
 			return null;
 		}
@@ -116,8 +127,8 @@ class PortalBlockResolver {
 			return $scopes->lookups(declared: $block, entry: $entry, collectionIds: $collectionIds);
 		}
 
-		if (in_array($type, ['kpi', 'calendar', 'news'], true) === true) {
-			return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);
+		if (in_array($type, ['kpi', 'calendar', 'news', 'tasks', 'inbox'], true) === true) {
+			return $this->ownRulesBlock(type: $type, block: $block, collectionIds: $collectionIds, collections: $collections);
 		}
 
 		if ($type === 'action') {
@@ -135,6 +146,34 @@ class PortalBlockResolver {
 
 		return $this->richTextBlock(block: $block);
 	}//end normaliseBlock()
+
+	/**
+	 * A block whose type has a normaliser of its own, or null when its
+	 * references do not resolve.
+	 *
+	 * The `tasks` and `inbox` blocks show what the resident still has to do
+	 * and their newest messages (site-mijn-omgeving-components REQ-SMO-021).
+	 *
+	 * @param string $type The block type.
+	 * @param array<string, mixed> $block The declared block.
+	 * @param array<int, string> $collectionIds The valid collection ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	private function ownRulesBlock(string $type, array $block, array $collectionIds, array $collections): ?array {
+		if ($type === 'tasks') {
+			return (new ListBlockNormaliser())->tasksBlock(block: $block, collections: $collections);
+		}
+
+		if ($type === 'inbox') {
+			return (new ListBlockNormaliser())->inboxBlock(block: $block, collections: $collections);
+		}
+
+		return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);
+	}//end ownRulesBlock()
 
 	/**
 	 * A `kpi`, `calendar` or `news` block (contribution-record-page), or null

@@ -10,11 +10,12 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
 
 ## Wave 2: rows, badges, empty and loading states (REQ-SMO-001, REQ-SMO-004, REQ-SMO-009; blocks `tasks`, `inbox` of REQ-SMO-021)
 
-- [ ] **T2**: exact-pinned `@gemeente-denhaag/action` and `data-badge` CSS; `ActionRow.vue`, `DataBadge.vue`, `EmptyState.vue`, `Skeleton.vue` under `src/site/components/mijn/`; a build test that no chunk holds `react` or a Den Haag JS module (design D1).
-- [ ] **T3**: `TasksPage.vue` and `MessagesPage.vue` render rows as `ActionRow`; empty and loading states.
+- [x] **T2**: exact-pinned `@gemeente-denhaag/action` and `data-badge` CSS; `ActionRow.vue`, `DataBadge.vue`, `EmptyState.vue`, `Skeleton.vue` under `src/site/components/mijn/`; a build test that no chunk holds `react` or a Den Haag JS module (design D1).
+- [x] **T3**: `TasksPage.vue` and `MessagesPage.vue` render rows as `ActionRow`; empty and loading states.
   - `check:tasks-page`, `check:site-inbox-pages` stay green
-- [ ] **T4**: `PortalBlockResolver` accepts `tasks` and `inbox`; the site renders them.
+- [x] **T4**: `PortalBlockResolver` accepts `tasks` and `inbox`; the site renders them.
   - PHPUnit `PortalBlockResolverTest::testATasksBlockNamesAContributedCollection`, `::testAnInboxBlockMayNameAnInboxCollection`, `::testAPlaceholderNameIsDropped`
+  - Built in wave 2: `ListBlockNormaliser`; node `check:mijn-components`; build check `scripts/check-site-chunks.js` after `build:site`; e2e `tests/e2e/site-mijn-action-rows.spec.ts`. The CSS is imported as `@gemeente-denhaag/<name>/index.css`, the path each package exports for `dist/index.css`.
 
 ## Wave 3: case cards and steps (REQ-SMO-002, REQ-SMO-003, REQ-SMO-022, REQ-SMO-030; blocks `cases`, `steps`)
 

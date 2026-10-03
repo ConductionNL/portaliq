@@ -17,7 +17,9 @@
 //   - `citizenCase`, `action` and `cta` blocks belong to other slices and are
 //     handed to their slot;
 //   - `kpi`, `calendar` and `news` blocks are the record page's figure cards,
-//     calendar and news (contribution-record-page).
+//     calendar and news (contribution-record-page);
+//   - `tasks` and `inbox` blocks are action rows of what the resident still
+//     has to do and of their newest messages (site-mijn-omgeving-components).
 //
 // @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
@@ -69,7 +71,7 @@ export function rowActionsOf(contribution, collection) {
  * Each entry is `{index, block, kind, collection?, action?, rowActions?,
  * tableActions?, proposeAction?, viewAction?}`, where `kind` is one of
  * `richText`, `table`, `timedTask`, `detail`, `citizenCase`, `action`, `cta`,
- * `kpi`, `calendar`, `news`,
+ * `kpi`, `calendar`, `news`, `tasks`, `inbox`,
  * or `none` for a block that renders nothing.
  *
  * @param {object} page The contribution page.
@@ -176,6 +178,16 @@ function resolveEachBlock(page, contribution) {
 		}
 		if (type === 'news') {
 			return { index, block, kind: 'news' }
+		}
+		if (type === 'tasks') {
+			// site-mijn-omgeving-components REQ-SMO-004: what is still to do.
+			const collection = findCollection(contribution, block.collection)
+			return collection
+				? { index, block, kind: 'tasks', collection }
+				: { index, block, kind: 'none' }
+		}
+		if (type === 'inbox') {
+			return { index, block, kind: 'inbox' }
 		}
 		if (type === 'action' || type === 'cta') {
 			const action = findAction(contribution, block.action)
