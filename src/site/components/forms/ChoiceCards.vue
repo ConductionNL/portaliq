@@ -150,6 +150,8 @@ export default {
 		 * Whether the value is one of the options behind the "other" card.
 		 *
 		 * @return {boolean} True when it is.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 		 */
 		inRest() {
 			return this.split.rest.some(
@@ -161,6 +163,8 @@ export default {
 		 * Whether the "other" card is chosen and its select shows.
 		 *
 		 * @return {boolean} True when open.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 		 */
 		otherOpen() {
 			return this.otherChosen || this.inRest

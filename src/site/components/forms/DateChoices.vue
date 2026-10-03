@@ -143,6 +143,8 @@ export default {
 		 * The values of the named days.
 		 *
 		 * @return {string[]} The ISO dates.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 		 */
 		namedValues() {
 			return this.days.map((day) => day.value)
@@ -153,6 +155,8 @@ export default {
 		 * named day.
 		 *
 		 * @return {boolean} True when the date group shows.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 		 */
 		otherOpen() {
 			return (

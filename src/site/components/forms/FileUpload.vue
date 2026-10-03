@@ -108,6 +108,8 @@ export default {
 		 * file can be chosen again.
 		 *
 		 * @return {string} The key.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-file-field-on-an-action-must-look-like-a-button-and-list-the-chosen-file-req-smf-004
 		 */
 		inputKey() {
 			return `${this.fileKey}-${this.own}`
@@ -168,6 +170,8 @@ export default {
 		 *
 		 * @param {object} file The file.
 		 * @return {string} The words.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-file-field-on-an-action-must-look-like-a-button-and-list-the-chosen-file-req-smf-004
 		 */
 		removeText(file) {
 			return this.removeLabel.split('{file}').join(file.name)

@@ -255,6 +255,8 @@ export default {
 		 * The same ids, or undefined when there are none.
 		 *
 		 * @return {string|undefined} The ids.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
 		 */
 		describedBy() {
 			return this.shellDescribedBy || undefined
@@ -278,6 +280,8 @@ export default {
 		 * The language the named days are written in.
 		 *
 		 * @return {string} The locale.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 		 */
 		dayLocale() {
 			if (this.locale !== '') {
