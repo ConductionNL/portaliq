@@ -191,6 +191,12 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The mandate the list is read under: the page's own, else the session's choice.
+		 *
+		 * @return {string} The mandate id, or `self`.
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 */
 		actingUnder() {
 			return this.mandateId || actingFor.id
 		},
@@ -203,10 +209,22 @@ export default {
 			return mijnTranslator(this.t, readerLocale(this.locale))
 		},
 
+		/**
+		 * The cases, open and closed apart.
+		 *
+		 * @return {{open: Array<object>, closed: Array<object>}} The two lists.
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 */
 		split() {
 			return splitCases(this.data?.cases)
 		},
 
+		/**
+		 * The cases of the tab on screen.
+		 *
+		 * @return {Array<object>} The rows.
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 */
 		shown() {
 			return this.closedMarker && this.tab === 'closed'
 				? this.split.closed
@@ -253,11 +271,22 @@ export default {
 	},
 
 	watch: {
+		/**
+		 * Another mandate chosen: read the list again.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 */
 		actingUnder() {
 			this.load()
 		},
 	},
 
+	/**
+	 * Read the list on arrival, unless a test handed one in.
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+	 */
 	mounted() {
 		if (this.initialData === null) {
 			this.load()

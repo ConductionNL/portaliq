@@ -196,14 +196,14 @@ export default {
 	},
 
 	watch: {
-		/**
-		 * Ask the steps provider for the cards that came on screen.
-		 *
-		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
-		 */
 		shown: {
 			immediate: true,
+			/**
+			 * Ask the steps provider for the cards that came on screen.
+			 *
+			 * @return {void}
+			 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+			 */
 			handler() {
 				this.loadSteps()
 			},
