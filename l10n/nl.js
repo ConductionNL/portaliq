@@ -2065,7 +2065,6 @@ OC.L10N.register(
         "Record page": "Recordpagina",
         "The collection this page shows one record of.": "De verzameling waarvan deze pagina één record toont.",
         "Record switcher": "Recordkeuze",
-        "The collection whose records this page switches between.": "De verzameling tussen wier records deze pagina wisselt.",
         "Per record": "Per record",
         "The menu lists the page once for each record of this collection.": "Het menu toont de pagina één keer voor elk record van deze verzameling.",
         "The blocks of the page, in order. A block of an unknown type is left out.": "De blokken van de pagina, op volgorde. Een blok van een onbekend type wordt weggelaten.",
@@ -2098,7 +2097,8 @@ OC.L10N.register(
         "Record groups field": "Veld voor groepen van het record",
         "Narrow the rows to the open record's groups.": "Beperk de rijen tot de groepen van het open record.",
         "Lookups": "Opzoekingen",
-        "Values added to each row from another collection.": "Waarden die uit een andere verzameling aan elke rij worden toegevoegd."
+        "Values added to each row from another collection.": "Waarden die uit een andere verzameling aan elke rij worden toegevoegd.",
+        "The collection whose records this page switches between, as an object with collection and the fields that name the records. An app may also name only the collection.": "De verzameling tussen wier records deze pagina wisselt, als object met de verzameling en de velden die de records een naam geven. Een app mag ook alleen de verzameling noemen."
     },
     "nplurals=2; plural=(n != 1);"
 )
