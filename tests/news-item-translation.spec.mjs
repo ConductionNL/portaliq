@@ -133,9 +133,15 @@ test('newsItem declares translations and the register moved', () => {
 		),
 	)
 	const newsItem = register.components.schemas.newsItem
+	// The version is pinned so a register change has to be deliberate, and
+	// the list is widened WITH the change that moves it. #1166 bumped the
+	// schema to 0.3.0 for `publishedAt` and left this list behind, which
+	// turned `validate` and `check:specs` red on development itself and so on
+	// every open pull request.
 	assert.ok(
-		['0.2.0', '0.2.1'].includes(newsItem.version),
-		`newsItem ${newsItem.version}`,
+		['0.2.0', '0.2.1', '0.3.0'].includes(newsItem.version),
+		`newsItem ${newsItem.version} is not a version this test knows; widen the list`
+			+ ' in the same change that moves the schema',
 	)
 	assert.equal(newsItem.properties.translations.type, 'array')
 	assert.equal(

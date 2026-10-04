@@ -41,4 +41,12 @@ export const loaders = {
 	nlAccordion: () => import('./nlAccordion/NlAccordion.vue'),
 	nlVideo: () => import('./nlVideo/NlVideo.vue'),
 	nlYouTube: () => import('./nlYouTube/NlYouTube.vue'),
+	nlAlert: () => import('./nlAlert/NlAlert.vue'),
+	nlNote: () => import('./nlNote/NlNote.vue'),
+	nlBanner: () => import('./nlBanner/NlBanner.vue'),
+	nlDialog: () => import('./nlDialog/NlDialog.vue'),
+	nlDrawer: () => import('./nlDrawer/NlDrawer.vue'),
+	nlProgressBar: () => import('./nlProgressBar/NlProgressBar.vue'),
+	nlProgressCircle: () => import('./nlProgressCircle/NlProgressCircle.vue'),
+	nlToggletip: () => import('./nlToggletip/NlToggletip.vue'),
 }
