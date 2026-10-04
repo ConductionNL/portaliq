@@ -174,7 +174,13 @@
 							v-for="field in fields"
 							:key="field.name"
 							class="page-grid-editor__field">
-							<label :for="`field-${field.name}`">{{
+							<!-- A text block's markdown gets the toolbar, so an editor needs no markdown. -->
+							<MarkdownField
+								v-if="field.kind === 'markdown'"
+								:id="`field-${field.name}`"
+								:modelValue="fieldValue(field)"
+								@update:modelValue="onFieldInput(field, $event)" />
+							<label v-else :for="`field-${field.name}`">{{
 								field.label
 							}}</label>
 							<textarea
@@ -195,7 +201,7 @@
 									editor.setProp(field.name, $event.target.checked)
 								" />
 							<input
-								v-else
+								v-else-if="field.kind !== 'markdown'"
 								:id="`field-${field.name}`"
 								class="page-grid-editor__input"
 								:type="field.kind === 'number' ? 'number' : 'text'"
@@ -232,6 +238,7 @@ import { CnDashboardGrid, dashboardWidgetRegistry } from '@conduction/nextcloud-
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import { PALETTE_DRAG_TYPE } from '../dialogs/WidgetPaletteDialog.vue'
+import MarkdownField from './MarkdownField.vue'
 import {
 	fieldsFor,
 	isPublicWidget,
@@ -250,7 +257,7 @@ import {
 export default {
 	name: 'PageGridEditor',
 
-	components: { CnDashboardGrid, NcButton, NcNoteCard },
+	components: { CnDashboardGrid, MarkdownField, NcButton, NcNoteCard },
 
 	props: {
 		/** The controller from createPageEditor(). */

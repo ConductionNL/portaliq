@@ -19,13 +19,76 @@
 			<p v-if="messages.length === 0" class="utrecht-paragraph pq-empty">
 				<em>{{ tr('No messages.') }}</em>
 			</p>
-			<ul v-else class="pq-inbox">
+			<div v-if="deletableIds.length > 0" class="pq-inbox__bulk">
+				<label class="pq-inbox__select-all">
+					<input
+						type="checkbox"
+						:checked="allSelected"
+						data-testid="inbox-select-all"
+						@change="toggleAll()" />
+					{{ tr('Select all') }}
+				</label>
+				<button
+					v-if="selected.length > 0"
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action"
+					data-testid="inbox-delete-selected"
+					@click="askDelete(selectedMessages)">
+					{{ tr('Delete selected ({count})', { count: selected.length }) }}
+				</button>
+			</div>
+			<div
+				v-if="confirming.length > 0"
+				ref="confirm"
+				class="pq-inbox__confirm"
+				role="group"
+				aria-labelledby="pq-inbox-confirm-question"
+				tabindex="-1"
+				data-testid="inbox-delete-confirm">
+				<p id="pq-inbox-confirm-question" class="utrecht-paragraph">
+					{{ question }}
+				</p>
+				<div class="pq-inbox__confirm-actions">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--primary-action"
+						:disabled="deleting"
+						data-testid="inbox-delete-yes"
+						@click="confirmDelete()">
+						{{ tr('Yes, delete') }}
+					</button>
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						:disabled="deleting"
+						@click="cancelDelete()">
+						{{ tr('Cancel') }}
+					</button>
+				</div>
+			</div>
+			<p class="utrecht-paragraph pq-inbox__notice" role="status">
+				{{ notice }}
+			</p>
+			<p v-if="failed" class="utrecht-paragraph pq-inbox__failed" role="alert">
+				{{ tr('Not every message could be deleted. Please try again.') }}
+			</p>
+			<ul v-if="messages.length > 0" class="pq-inbox">
 				<li
 					v-for="(message, i) in messages"
 					:key="idOf(message, i)"
 					class="pq-inbox-row"
 					:class="{ 'pq-inbox-row--unread': message.read !== true }">
 					<div class="pq-inbox-row__header">
+						<label
+							v-if="deletable(message)"
+							class="pq-inbox-row__select">
+							<input
+								type="checkbox"
+								:checked="selected.includes(idOf(message, i))"
+								@change="toggleSelected(idOf(message, i))" />
+							{{ tr('Select') }}
+							<span class="sr-only">{{ message.subject || '' }}</span>
+						</label>
 						<strong
 							v-if="message.read !== true"
 							class="pq-inbox-row__unread">
@@ -137,6 +200,15 @@
 									: tr('Mark as read')
 							}}
 						</button>
+						<button
+							v-if="deletable(message)"
+							type="button"
+							class="utrecht-button utrecht-button--subtle"
+							data-testid="inbox-delete"
+							:disabled="deleting"
+							@click="askDelete([message])">
+							{{ tr('Delete') }}
+						</button>
 					</div>
 				</li>
 			</ul>
@@ -154,6 +226,7 @@ import {
 	attachmentsOf,
 	bodyParts,
 	bodyWithoutOpenLink,
+	canDelete,
 	downloadCollection,
 	formatDateTime,
 	hasReadiness,
@@ -164,6 +237,7 @@ import {
 	rowId,
 	sessionStore,
 	TASKS_ROUTE,
+	withoutMessages,
 } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
@@ -200,6 +274,11 @@ export default {
 			busyId: null,
 			downloadingId: null,
 			downloadFailedFor: null,
+			selected: [],
+			confirming: [],
+			deleting: false,
+			notice: '',
+			failed: false,
 			origin: pageOrigin(),
 		}
 	},
@@ -232,6 +311,45 @@ export default {
 		 */
 		unread() {
 			return unreadIn(this.messages)
+		},
+
+		/**
+		 * @return {Array<string>} The ids of the rows the resident may delete.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		deletableIds() {
+			return this.messages.filter(canDelete).map((m) => rowId(m))
+		},
+
+		/**
+		 * @return {boolean} Whether every deletable row is chosen.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		allSelected() {
+			return (
+				this.deletableIds.length > 0
+				&& this.deletableIds.every((id) => this.selected.includes(id))
+			)
+		},
+
+		/**
+		 * @return {Array<object>} The chosen messages.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		selectedMessages() {
+			return this.messages.filter((m) => this.selected.includes(rowId(m)))
+		},
+
+		/**
+		 * @return {string} The question before a delete, singular or plural.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		question() {
+			return this.confirming.length === 1
+				? this.tr('Delete this message? You cannot undo this.')
+				: this.tr('Delete {count} messages? You cannot undo this.', {
+						count: this.confirming.length,
+					})
 		},
 	},
 
@@ -427,6 +545,108 @@ export default {
 		},
 
 		/**
+		 * @param {object} message A message.
+		 * @return {boolean} Whether the resident may delete it.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		deletable(message) {
+			return canDelete(message)
+		},
+
+		/**
+		 * Choose a row, or leave it out again. A row the resident may not
+		 * delete is never chosen.
+		 *
+		 * @param {string} id The row id.
+		 * @return {void}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		toggleSelected(id) {
+			if (!this.deletableIds.includes(id)) {
+				return
+			}
+			this.selected = this.selected.includes(id)
+				? this.selected.filter((other) => other !== id)
+				: [...this.selected, id]
+		},
+
+		/**
+		 * Choose every deletable row, or none when all are chosen already.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		toggleAll() {
+			this.selected = this.allSelected ? [] : [...this.deletableIds]
+		},
+
+		/**
+		 * Ask on the page before deleting: nothing is deleted until the
+		 * resident answers "Yes, delete".
+		 *
+		 * @param {Array<object>} messages The messages to delete.
+		 * @return {void}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		askDelete(messages) {
+			this.confirming = (messages || []).filter(canDelete).map((m) => rowId(m))
+			this.notice = ''
+			this.failed = false
+			// Outside a mounted page (a render or a test) there is nothing to focus.
+			if (this.confirming.length > 0 && this.$refs) {
+				this.$nextTick(() => this.$refs?.confirm?.focus?.())
+			}
+		},
+
+		/**
+		 * Leave the question without deleting anything.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		cancelDelete() {
+			this.confirming = []
+		},
+
+		/**
+		 * Delete the messages the question named, one call each; the server
+		 * checks each is the resident's own. A message it refuses stays, and
+		 * stays chosen.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		async confirmDelete() {
+			const ids = [...this.confirming]
+			const deleted = []
+			this.deleting = true
+			for (const message of this.messages.filter((m) =>
+				ids.includes(rowId(m)),
+			)) {
+				const result = await this.api.deleteMessage(message)
+				if (result?.ok) {
+					deleted.push(rowId(message))
+				}
+			}
+			this.deleting = false
+			this.confirming = []
+			this.messages = withoutMessages(this.messages, deleted)
+			this.selected = this.selected.filter((id) => !deleted.includes(id))
+			this.failed = deleted.length < ids.length
+			this.notice =
+				deleted.length === 1
+					? this.tr('The message is deleted.')
+					: deleted.length > 1
+						? this.tr('{count} messages are deleted.', {
+								count: deleted.length,
+							})
+						: ''
+			if (deleted.length > 0) {
+				this.$emit('unread', this.unread)
+			}
+		},
+
+		/**
 		 * Open the record a message is about, as a link from the e-mail does.
 		 *
 		 * @param {{app: string, collection: string, id: string}} link The record link.
@@ -513,6 +733,31 @@ export default {
 .pq-inbox-row__files-title {
 	margin-block-end: 4px;
 	font-weight: bold;
+}
+
+.pq-inbox__bulk,
+.pq-inbox__confirm-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.pq-inbox__confirm {
+	margin-block: 12px;
+	padding: 12px;
+	border: 2px solid var(--utrecht-color-grey-80, currentcolor);
+	border-radius: 4px;
+}
+
+.pq-inbox__notice:empty {
+	display: none;
+}
+
+.pq-inbox-row__select {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
 }
 
 .pq-inbox-row__file-list {

@@ -137,6 +137,50 @@ class RecordPageNormaliserTest extends TestCase {
 		);
 	}
 
+	/**
+	 * @spec openspec/changes/kpi-unit-singular-and-plural/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
+	 */
+	public function testAKpiUnitMayNameItsSingularAndPlural(): void {
+		$blocks = $this->blocks(
+			[
+				[
+					'type' => 'kpi',
+					'collection' => 'summary',
+					'cards' => [
+						[
+							'field' => 'absentDays',
+							'label' => 'Absence',
+							'unit' => ['one' => 'day', 'other' => 'days', 'extra' => 'x'],
+							'details' => [
+								['field' => 'lateMinutes', 'label' => ['one' => 'minute', 'other' => 'minutes']],
+								['field' => 'halfForm', 'label' => ['one' => 'minute']],
+							],
+						],
+						['field' => 'a', 'label' => 'A', 'unit' => ['one' => 'day']],
+						['field' => 'b', 'label' => 'B', 'unit' => ['one' => '', 'other' => 'days']],
+						['field' => 'c', 'label' => 'C', 'unit' => ['one' => 1, 'other' => 'days']],
+					],
+				],
+			]
+		);
+
+		$this->assertSame(
+			[
+				[
+					'field' => 'absentDays',
+					'label' => 'Absence',
+					'unit' => ['one' => 'day', 'other' => 'days'],
+					'details' => [['field' => 'lateMinutes', 'label' => ['one' => 'minute', 'other' => 'minutes']]],
+				],
+				['field' => 'a', 'label' => 'A'],
+				['field' => 'b', 'label' => 'B'],
+				['field' => 'c', 'label' => 'C'],
+			],
+			$blocks[0]['cards'],
+			'a unit or detail label is a string or both forms; half a pair is dropped'
+		);
+	}
+
 	public function testACalendarBlockKeepsOnlyResolvableSources(): void {
 		$blocks = $this->blocks(
 			[
