@@ -2130,7 +2130,16 @@
         "Save address": "Adres opslaan",
         "This address is not valid. Use http or https, without a password, a query or \"..\".": "Dit adres is niet geldig. Gebruik http of https, zonder wachtwoord, zoekvraag of \"..\".",
         "Saving the address failed.": "Het opslaan van het adres is mislukt.",
-        "Saved.": "Opgeslagen."
+        "Saved.": "Opgeslagen.",
+        "Text formatting": "Tekstopmaak",
+        "Heading": "Kop",
+        "Bold": "Vet",
+        "Bold ({shortcut})": "Vet ({shortcut})",
+        "Italic": "Cursief",
+        "Italic ({shortcut})": "Cursief ({shortcut})",
+        "List": "Lijst",
+        "Web address": "Webadres",
+        "Insert link": "Link invoegen"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

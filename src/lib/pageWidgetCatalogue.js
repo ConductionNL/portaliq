@@ -108,8 +108,11 @@ const FIELD_OVERRIDES = {
 	markdown: [
 		{
 			name: 'markdown',
-			kind: 'text',
-			label: 'Markdown',
+			// Its own kind: the designer shows a toolbar over the textarea, so
+			// an editor shapes the text without typing markdown, and the label
+			// reads "Tekst" (MarkdownField.vue).
+			kind: 'markdown',
+			label: 'Text',
 		},
 	],
 }

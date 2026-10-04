@@ -140,7 +140,8 @@
     "check:service-worker": "node --test tests/service-worker.spec.mjs",
     "check:install-banner": "node --test tests/install-banner.spec.mjs",
     "check:embed-frame": "node --test tests/embed-frame.spec.mjs",
-    "check:case-type-portal-header": "node --test tests/case-type-portal-header.spec.mjs"
+    "check:case-type-portal-header": "node --test tests/case-type-portal-header.spec.mjs",
+    "check:editor-text-toolbar": "node --test tests/editor-text-toolbar.spec.mjs"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"

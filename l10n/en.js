@@ -2054,7 +2054,16 @@ OC.L10N.register(
         "On a collection block: cards instead of a table.": "On a collection block: cards instead of a table.",
         "Progress": "Progress",
         "On cards: the fields with the value and the total, and the unit, shown as a figure.": "On cards: the fields with the value and the total, and the unit, shown as a figure.",
-        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection."
+        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.",
+        "Text formatting": "Text formatting",
+        "Heading": "Heading",
+        "Bold": "Bold",
+        "Bold ({shortcut})": "Bold ({shortcut})",
+        "Italic": "Italic",
+        "Italic ({shortcut})": "Italic ({shortcut})",
+        "List": "List",
+        "Web address": "Web address",
+        "Insert link": "Insert link"
     },
     "nplurals=2; plural=(n != 1);"
 )
