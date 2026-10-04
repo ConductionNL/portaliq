@@ -35,6 +35,7 @@ use OCA\Portaliq\Contribution\GuestActionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -195,6 +196,13 @@ class GuestActionController extends Controller {
 		}
 
 		$body[(string)$action['tokenField']] = $token;
+
+		// The action's required fields (REQ-SMF-024): refused before the audit
+		// and the forward.
+		$missing = (new RequiredFieldsGuard())->refusal(action: $action, body: $body);
+		if ($missing !== null) {
+			return $missing;
+		}
 
 		return $this->relay(action: $action, appId: $appId, auditAs: $actionId, token: $token, body: $body);
 	}//end act()

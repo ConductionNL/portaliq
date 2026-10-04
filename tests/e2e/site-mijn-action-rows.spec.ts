@@ -12,6 +12,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { pageFixture } from './mijn-fixtures.ts'
 import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
@@ -60,22 +61,7 @@ async function openOverview(
 ): Promise<void> {
 	const stamp = Date.now()
 	const label = `Overzicht ${stamp}`
-	await seed(request, 'portalPage', {
-		label,
-		audience: AUDIENCE,
-		status: 'active',
-		collections: [],
-		pages: [
-			{
-				id: `overzicht-${stamp}`,
-				label,
-				blocks: [
-					{ type: 'richText', markdown: 'Welkom' },
-					{ type: 'inbox', label: 'Nieuwe berichten', limit: 3 },
-				],
-			},
-		],
-	})
+	await seed(request, 'portalPage', pageFixture('action-rows', stamp, AUDIENCE))
 	const subjectRef = `e2e-rows-${stamp}`
 	for (const message of messages) {
 		await seed(request, 'portalMessage', {

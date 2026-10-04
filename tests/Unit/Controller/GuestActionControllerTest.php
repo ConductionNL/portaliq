@@ -83,6 +83,32 @@ class GuestActionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A guest action that names a required field refuses an empty one before
+	 * the audit and the forward (site-multi-step-forms REQ-SMF-024). The
+	 * action goes through the real registry and normaliser.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyRequiredFieldIsRefusedBeforeTheForward(): void {
+		$actions = self::ACTIONS;
+		$actions[0]['requiredFields'] = ['reason'];
+		$calls   = [];
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		$answer = $this->controller(['token' => 'A', 'reason' => ''], $calls, $auditor, '{"ok":true}', $actions)->act('portaliq', 'withdraw');
+
+		$this->assertSame(400, $answer->getStatus());
+		$this->assertSame(['error' => 'required_missing', 'errors' => ['reason' => '']], $answer->getData());
+		$this->assertSame([], $calls, 'nothing is forwarded');
+
+		$calls  = [];
+		$filled = $this->controller(['token' => 'A', 'reason' => 'changed my mind'], $calls, null, '{"ok":true}', $actions)->act('portaliq', 'withdraw');
+		$this->assertSame(200, $filled->getStatus());
+		$this->assertCount(1, $calls);
+	}//end testAnEmptyRequiredFieldIsRefusedBeforeTheForward()
+
 	public function testUnknownActionIs404AndNotForwarded(): void {
 		$calls = [];
 		$controller = $this->controller(['token' => 'A'], $calls);
@@ -188,11 +214,11 @@ class GuestActionControllerTest extends TestCase {
 	 *
 	 * @return GuestActionController
 	 */
-	private function controller(array $params, array &$calls, ?AuditTrailService $auditor = null, string $answerBody = '{"ok":true}'): GuestActionController {
+	private function controller(array $params, array &$calls, ?AuditTrailService $auditor = null, string $answerBody = '{"ok":true}', array $actions = self::ACTIONS): GuestActionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(fn (string $key, $default = null) => ($params[$key] ?? $default));
 
-		$provider = new class(self::ACTIONS) {
+		$provider = new class($actions) {
 			public function __construct(private array $actions) {
 			}
 

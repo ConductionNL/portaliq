@@ -67,6 +67,9 @@ export default {
 		'Nothing has happened yet.': 'Er is nog niets gebeurd.',
 		'The document could not be opened. Try again.':
 			'Het document kon niet worden geopend. Probeer het opnieuw.',
+		'On whose behalf you act': 'Namens wie u werkt',
+		'You are now acting for {party}': 'U regelt nu zaken voor {party}',
+		'Switch to yourself': 'Wissel naar uzelf',
 	},
 	en: {
 		'Before {date}': 'Before {date}',
@@ -119,5 +122,8 @@ export default {
 		'Nothing has happened yet.': 'Nothing has happened yet.',
 		'The document could not be opened. Try again.':
 			'The document could not be opened. Try again.',
+		'On whose behalf you act': 'On whose behalf you act',
+		'You are now acting for {party}': 'You are now acting for {party}',
+		'Switch to yourself': 'Switch to yourself',
 	},
 }

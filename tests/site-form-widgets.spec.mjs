@@ -323,3 +323,91 @@ test('an action field may word its own error; the summary line is the same on ev
 		/Fill this in\. Then you can continue\./,
 	)
 })
+
+test('the server refusal of an empty required field lands in the summary of an action form', async () => {
+	const action = {
+		id: 'bookConferenceSlot',
+		type: 'create',
+		label: 'Tijd boeken',
+		register: 'learniq',
+		schema: 'conference-signup',
+		fields: ['slotId', 'notes'],
+		// What a stale page holds: it does not know slotId became required.
+		fieldConfigs: { slotId: { label: 'Tijd' }, notes: { label: 'Toelichting' } },
+	}
+	const api = {
+		calls: [],
+		async fetchOptions() {
+			return []
+		},
+		async createObject(a, body) {
+			api.calls.push(body)
+			return {
+				ok: false,
+				status: 400,
+				object: null,
+				error: 'required_missing',
+				errors: { slotId: '', ghost: 'not on this form' },
+			}
+		},
+	}
+	const form = await mountSfc(FORM, { action, api })
+	await form.flush()
+	await form.fire(form.find('schema-form'), 'submit')
+
+	assert.equal(
+		api.calls.length,
+		1,
+		'the client let it through; the server refused',
+	)
+	assert.equal(
+		form.textOf(form.find('error-summary-link-slotId')),
+		'Tijd is required.',
+	)
+	assert.ok(
+		form.find('error-summary-link-ghost') === null,
+		'a field the form does not show is not listed',
+	)
+	assert.ok(form.focused() === form.find('error-summary-heading'))
+	assert.ok(form.find('schema-form-error') === null, 'no generic failure line')
+})
+
+test('an attached action shows the server refusal in its summary too', async () => {
+	const api = {
+		forwardRowAction: async () => ({
+			ok: false,
+			status: 400,
+			body: {
+				error: 'required_missing',
+				errors: { onderwerp: 'Vertel waar uw verzoek over gaat' },
+			},
+		}),
+	}
+	const collection = {
+		id: 'mijnDossiers',
+		register: 'opencatalogi',
+		schema: 'collection',
+		attachedActions: [
+			{
+				app: 'dossiq',
+				id: 'startWooVerzoek',
+				label: 'Start een Woo-verzoek',
+				fields: ['onderwerp'],
+				fieldConfigs: { onderwerp: { label: 'Waar gaat uw verzoek over?' } },
+			},
+		],
+	}
+	const block = await mountSfc('src/site/components/c/AttachedActions.vue', {
+		collection,
+		row: { id: 'dos-1' },
+		api,
+	})
+	await block.fire(block.find('attached-action-startWooVerzoek'), 'click')
+	await block.fire(block.findAll((n) => n.tag === 'form')[0], 'submit')
+
+	assert.equal(
+		block.textOf(block.find('error-summary-link-onderwerp')),
+		'Vertel waar uw verzoek over gaat',
+	)
+	assert.ok(block.focused() === block.find('error-summary-heading'))
+})

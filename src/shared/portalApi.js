@@ -126,7 +126,19 @@ export function createPortalApi(config, store = {}) {
 			body: JSON.stringify(body || {}),
 		})
 		if (!res.ok) {
-			return { ok: false, status: res.status, object: null }
+			// A refusal may name fields, e.g. a required field left empty
+			// (site-multi-step-forms REQ-SMF-024): keep `error` and `errors`.
+			const refusal = await res.json().catch(() => ({}))
+			return {
+				ok: false,
+				status: res.status,
+				object: null,
+				error: typeof refusal?.error === 'string' ? refusal.error : '',
+				errors:
+					refusal?.errors && typeof refusal.errors === 'object'
+						? refusal.errors
+						: {},
+			}
 		}
 		const json = await res.json().catch(() => ({}))
 		return { ok: true, status: res.status, object: json.object || json }
