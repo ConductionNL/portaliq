@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.55.0"
+        "version": "0.56.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.55.0",
+                "version": "0.56.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1568,7 +1568,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -1707,9 +1707,11 @@
                                     "title": "Kind",
                                     "type": "string",
                                     "enum": [
-                                        "inbox"
+                                        "inbox",
+                                        "cases",
+                                        "timedTask"
                                     ],
-                                    "description": "Marks this collection as an INBOX collection (portal-inbox-v2). PortalInboxReader merges every `kind: inbox` collection across the subject's contributions into one sorted inbox, and ContributionController::markRead() refuses to write to a collection that is not one. Omit for an ordinary data collection.",
+                                    "description": "What the portal's own surfaces select on: `inbox` feeds the unified inbox (portal-inbox-v2), `cases` feeds Mijn zaken and the `cases` block (portal-identity-space, site-mijn-omgeving-components), `timedTask` a timed task (TimedTaskConfigNormaliser). Omit for an ordinary data collection.",
                                     "example": "inbox"
                                 },
                                 "rowActions": {
@@ -1752,6 +1754,114 @@
                                     "type": "boolean",
                                     "description": "Opt IN to the scoped file-download block (portal-document-download). Fail-closed on the same terms as filesUpload — a collection that has not declared it 404s with the identical body a missing file returns, so the flag is never an existence oracle. Default false.",
                                     "example": false
+                                },
+                                "fieldConfigs": {
+                                    "title": "Field configs",
+                                    "type": "object",
+                                    "description": "Per projected field: `label`, `valueLabels` (value to words) and input hints (CollectionFieldConfigNormaliser). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "closedField": {
+                                    "title": "Closed field",
+                                    "type": "string",
+                                    "description": "The projected field whose value marks a case closed (REQ-CMC-002). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "statusLabelField": {
+                                    "title": "Status label field",
+                                    "type": "string",
+                                    "description": "The projected field holding a case status in words (CaseStatusLabelField). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "groupByField": {
+                                    "title": "Group by field",
+                                    "type": "string",
+                                    "description": "Show the rows in groups, one per value of this projected field (collection-group-by-field). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "caseTypeField": {
+                                    "title": "Case type field",
+                                    "type": "string",
+                                    "description": "The field holding a case's type id (CaseTypeVisibility); `caseType` when absent. Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "caseTypeSource": {
+                                    "title": "Case type source",
+                                    "type": "object",
+                                    "description": "Where a `cases` collection's case types live: `{register, schema, labelField?}` (PortalCaseTypeCatalogue, CaseTypeNames). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "mandateField": {
+                                    "title": "Mandate field",
+                                    "type": "string",
+                                    "description": "The party field a mandate reads this collection by (portal-identity-and-the-organisations-cases). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "parentReachableTypes": {
+                                    "title": "Parent reachable types",
+                                    "type": "array",
+                                    "description": "Case types reachable through a parent mandate (REQ-PTV-002). Read by PortalManifestNormaliser; a value that does not fit is dropped there.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "filter": {
+                                    "title": "Filter",
+                                    "type": "object",
+                                    "description": "A declared narrowing filter applied before the scope filter. Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "defaultFilters": {
+                                    "title": "Default filters",
+                                    "type": "object",
+                                    "description": "Filters the list opens with. Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "rowAction": {
+                                    "title": "Row action",
+                                    "type": "string",
+                                    "description": "One row action id; see rowActions. Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "noticeField": {
+                                    "title": "Notice field",
+                                    "type": "string",
+                                    "description": "The field a change notice names the row by (RowActionResolver). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "timeline": {
+                                    "title": "Timeline",
+                                    "type": "object",
+                                    "description": "`{label, provider}`: the provider method on the app's provider that answers one object's history (TimelineProviderMethod). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "documents": {
+                                    "title": "Documents",
+                                    "type": "object",
+                                    "description": "`{label, provider}`: the provider method that lists one case's documents (DocumentsProviderMethod). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "itemList": {
+                                    "title": "Item list",
+                                    "type": "object",
+                                    "description": "`{label, provider, removeAction?}`: a record's item list (ItemListConfigNormaliser). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "messageBox": {
+                                    "title": "Message box",
+                                    "type": "object",
+                                    "description": "Message box delivery settings of an inbox collection (MessageBoxConfigNormaliser). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "messageFields": {
+                                    "title": "Message fields",
+                                    "type": "object",
+                                    "description": "Which fields of an inbox collection hold the subject, body and date (InboxMessageFields). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "timedTask": {
+                                    "title": "Timed task",
+                                    "type": "object",
+                                    "description": "The endpoint actions of a `kind: timedTask` collection (TimedTaskConfigNormaliser). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "steps": {
+                                    "title": "Steps",
+                                    "type": "object",
+                                    "description": "On a `cases` collection: `{label?, provider}`, the provider method that answers where one case stands (StepsProviderMethod, site-mijn-omgeving-components REQ-SMO-022). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "dueField": {
+                                    "title": "Answer date field",
+                                    "type": "string",
+                                    "description": "On a `cases` collection: the projected field with the date the organisation answers by (REQ-SMO-022). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "turnField": {
+                                    "title": "Turn field",
+                                    "type": "string",
+                                    "description": "On a `cases` collection: the projected field whose value labels say whose turn it is (REQ-SMO-022). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
                                 }
                             }
                         }
@@ -1927,7 +2037,7 @@
                                 "blocks": {
                                     "title": "Blocks",
                                     "type": "array",
-                                    "description": "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta|citizenCase (PortalBlockResolver::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
+                                    "description": "Ordered UI blocks composing the page; type is one of PortalBlockResolver::BLOCK_TYPES. An unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
                                     "items": {
                                         "type": "object",
                                         "required": [
@@ -1937,20 +2047,29 @@
                                             "type": {
                                                 "title": "Block type",
                                                 "type": "string",
-                                                "description": "The block's kind — which of the below reference fields applies, and how the SPA renders it (PortalManifestNormaliser::BLOCK_TYPES).",
+                                                "description": "The block's kind (PortalBlockResolver::BLOCK_TYPES). An unknown type, or a reference that does not resolve, is dropped by the normaliser.",
                                                 "enum": [
                                                     "collection",
                                                     "action",
                                                     "detail",
                                                     "richText",
                                                     "cta",
-                                                    "citizenCase"
+                                                    "citizenCase",
+                                                    "kpi",
+                                                    "calendar",
+                                                    "news",
+                                                    "tasks",
+                                                    "inbox",
+                                                    "cases",
+                                                    "steps",
+                                                    "documents",
+                                                    "timeline"
                                                 ]
                                             },
                                             "collection": {
                                                 "title": "Collection reference",
                                                 "type": "string",
-                                                "description": "References collections[].id (for type=collection/detail)."
+                                                "description": "References collections[].id."
                                             },
                                             "action": {
                                                 "title": "Action reference",
@@ -1961,9 +2080,125 @@
                                                 "title": "Markdown",
                                                 "type": "string",
                                                 "description": "For type=richText."
+                                            },
+                                            "label": {
+                                                "title": "Label",
+                                                "type": "string",
+                                                "description": "The block's heading. Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "limit": {
+                                                "title": "Limit",
+                                                "type": "integer",
+                                                "description": "How many rows: 1 to 50 on collection, tasks, inbox and cases blocks, 1 to 20 on a news block. Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "sort": {
+                                                "title": "Sort",
+                                                "type": "object",
+                                                "description": "On a collection block: `{field, direction: asc|desc}`, the field projected (REQ-SMO-021). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "range": {
+                                                "title": "Range",
+                                                "type": "string",
+                                                "description": "On a calendar block: only today, this week or this month (REQ-SMO-021). Read by PortalManifestNormaliser; a value that does not fit is dropped there.",
+                                                "enum": [
+                                                    "day",
+                                                    "week",
+                                                    "month"
+                                                ]
+                                            },
+                                            "open": {
+                                                "title": "Open only",
+                                                "type": "boolean",
+                                                "description": "On a cases block: `true` shows running cases only (REQ-SMO-021). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "dueField": {
+                                                "title": "Due field",
+                                                "type": "string",
+                                                "description": "On a tasks block: the projected field with each row's deadline (REQ-SMO-021). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "titleFields": {
+                                                "title": "Title fields",
+                                                "type": "array",
+                                                "description": "On a tasks block: the projected fields that name a row. Read by PortalManifestNormaliser; a value that does not fit is dropped there.",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "cards": {
+                                                "title": "Cards",
+                                                "type": "array",
+                                                "description": "On a kpi block: `[{field, label, unit?}]` (contribution-record-page). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "pick": {
+                                                "title": "Pick",
+                                                "type": "object",
+                                                "description": "On a kpi block: which row the cards read (contribution-record-page). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "caption": {
+                                                "title": "Caption",
+                                                "type": "object",
+                                                "description": "On a kpi block: a caption from one field (contribution-record-page). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "sources": {
+                                                "title": "Sources",
+                                                "type": "array",
+                                                "description": "On a calendar block: the collections and date fields it shows (CalendarSourceNormaliser). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "recordField": {
+                                                "title": "Record field",
+                                                "type": "string",
+                                                "description": "On a record page: the field that narrows a block's rows to the open record (RecordScopeNormaliser). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "recordKey": {
+                                                "title": "Record key",
+                                                "type": "string",
+                                                "description": "The open record's field recordField is compared with (RecordScopeNormaliser). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "recordGroupsField": {
+                                                "title": "Record groups field",
+                                                "type": "string",
+                                                "description": "Narrow rows to the open record's groups (RecordScopeNormaliser). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                            },
+                                            "lookups": {
+                                                "title": "Lookups",
+                                                "type": "array",
+                                                "description": "One-hop lookups that add a value from another collection to each row (RecordScopeNormaliser). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
                                             }
                                         }
                                     }
+                                },
+                                "group": {
+                                    "title": "Menu group",
+                                    "type": "string",
+                                    "description": "The menu heading the page sits under, 1 to 80 characters (resident-sees-words-not-codes). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "menu": {
+                                    "title": "In the menu",
+                                    "type": "boolean",
+                                    "description": "Only `false`: the page keeps its route and leaves the menu (PageMenuKeys, REQ-SMO-020). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "home": {
+                                    "title": "Home",
+                                    "type": "boolean",
+                                    "description": "Only `true`: the page is part of /mijn, the resident's home (PageMenuKeys, REQ-SMO-007). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "record": {
+                                    "title": "Record page",
+                                    "type": "object",
+                                    "description": "`{collection, titleFields?}`: the page is the record page of that collection (contribution-record-page). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "records": {
+                                    "title": "Record switcher",
+                                    "type": [
+                                        "object",
+                                        "string"
+                                    ],
+                                    "description": "`{collection, titleFields?, subtitleFields?}`, or a bare collection id: the page switches between that collection's rows (PageMenuKeys, REQ-SMO-008). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
+                                },
+                                "perRecord": {
+                                    "title": "Per record",
+                                    "type": "string",
+                                    "description": "A collection id: the menu lists the page once per row of it; the page must be its record page (PageMenuKeys, REQ-SMO-020). Read by PortalManifestNormaliser; a value that does not fit is dropped there."
                                 }
                             }
                         }

@@ -11,6 +11,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { pageFixture } from './mijn-fixtures.ts'
 import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
@@ -59,36 +60,7 @@ async function signIn(
 ): Promise<string> {
 	const stamp = Date.now()
 	const label = `Overzicht ${stamp}`
-	await seed(request, 'portalPage', {
-		label,
-		audience: AUDIENCE,
-		status: 'active',
-		collections: [
-			{
-				id: `zaken-${stamp}`,
-				kind: 'cases',
-				label: 'Zaken',
-				register: 'portaliq',
-				schema: 'portalCase',
-				scopeField: 'subjectRef',
-				closedField: 'withdrawnAt',
-			},
-		],
-		pages: [
-			{
-				id: `overzicht-${stamp}`,
-				label,
-				blocks: [
-					{
-						type: 'cases',
-						collection: `zaken-${stamp}`,
-						open: true,
-						label: 'Lopende zaken',
-					},
-				],
-			},
-		],
-	})
+	await seed(request, 'portalPage', pageFixture('case-cards', stamp, AUDIENCE))
 	const subjectRef = `subject-cards-${stamp}`
 	for (const row of cases) {
 		await seed(request, 'portalCase', {

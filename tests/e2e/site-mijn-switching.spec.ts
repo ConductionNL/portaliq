@@ -16,6 +16,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { pageFixture } from './mijn-fixtures.ts'
 import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
@@ -75,29 +76,7 @@ async function signIn(
 }> {
 	const stamp = Date.now()
 	const pageId = `kinderen-${stamp}`
-	await seed(request, 'portalPage', {
-		label: `Kinderen ${stamp}`,
-		audience: AUDIENCE,
-		status: 'active',
-		collections: [
-			{
-				id: `kind-${stamp}`,
-				kind: 'cases',
-				label: 'Kinderen',
-				register: 'portaliq',
-				schema: 'portalCase',
-				scopeField: 'subjectRef',
-			},
-		],
-		pages: [
-			{
-				id: pageId,
-				label: `Kinderen ${stamp}`,
-				records: { collection: `kind-${stamp}`, titleFields: ['reference'] },
-				blocks: [{ type: 'detail', collection: `kind-${stamp}` }],
-			},
-		],
-	})
+	await seed(request, 'portalPage', pageFixture('switching', stamp, AUDIENCE))
 	const subjectRef = `subject-switch-${stamp}`
 	const mine = { subjectRef, organisation: ORGANISATION }
 	await seed(request, 'portalCase', { ...mine, reference: 'Vera' })
