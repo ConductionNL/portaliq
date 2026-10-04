@@ -91,13 +91,6 @@ class InstanceLoopback {
 	private ?string $workingRoute = null;
 
 	/**
-	 * Whether the fallback was already reported at info level in this request.
-	 *
-	 * @var boolean
-	 */
-	private bool $fallbackReported = false;
-
-	/**
 	 * Whether an invalid configured address was already reported in this request.
 	 *
 	 * @var boolean
@@ -308,14 +301,13 @@ class InstanceLoopback {
 			throw $failure;
 		}
 
+		// Remembered for the rest of this request, so this runs, and logs,
+		// at most once per request.
 		$this->workingRoute = 'loopback';
-		if ($this->fallbackReported === false) {
-			$this->fallbackReported = true;
-			$this->logger->info(
-				'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use the loopback for this request. Set internal_base_url to skip the failed attempt.',
-				['app' => Application::APP_ID, 'reason' => $failure->getMessage()]
-			);
-		}
+		$this->logger->info(
+			'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use the loopback for this request. Set internal_base_url to skip the failed attempt.',
+			['app' => Application::APP_ID, 'reason' => $failure->getMessage()]
+		);
 
 		return $response;
 	}//end retryOnLoopback()
