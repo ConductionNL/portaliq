@@ -35,6 +35,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -66,6 +67,7 @@ class NewsController extends Controller {
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 * @param NewsAudienceOptions|null $audienceOptions The school and group choices for the News screen.
+	 * @param ITimeFactory|null $timeFactory The server clock that stamps the publish moment.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -73,6 +75,7 @@ class NewsController extends Controller {
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly ?NewsAudienceOptions $audienceOptions=null,
+		private readonly ?ITimeFactory $timeFactory=null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -192,48 +195,45 @@ class NewsController extends Controller {
 	}//end audiences()
 
 	/**
-	 * Publish a news item.
+	 * Publish a news item and stamp `publishedAt` from the server clock, so
+	 * the feed sorts it by when it went out, not by when it was written.
 	 *
 	 * @param string $id The news item id.
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		return $this->setStatus(id: $id, status: 'published');
+		$now = time();
+		if ($this->timeFactory !== null) {
+			$now = $this->timeFactory->getTime();
+		}
+
+		return $this->write(id: $id, data: ['status' => 'published', 'publishedAt' => gmdate(DATE_ATOM, $now)]);
 	}//end publish()
 
 	/**
-	 * Revert a news item to draft.
+	 * Revert a news item to draft and clear its publish moment: a draft has
+	 * not gone out, and publishing it again stamps a new one.
 	 *
 	 * @param string $id The news item id.
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
 	 */
 	#[NoAdminRequired]
 	public function unpublish(string $id): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		return $this->setStatus(id: $id, status: 'draft');
+		return $this->write(id: $id, data: ['status' => 'draft', 'publishedAt' => null]);
 	}//end unpublish()
-
-	/**
-	 * Set a news item's status, preserving everything else.
-	 *
-	 * @param string $id The news item id.
-	 * @param string $status The new status.
-	 *
-	 * @return JSONResponse
-	 */
-	private function setStatus(string $id, string $status): JSONResponse {
-		return $this->write(id: $id, data: ['status' => $status]);
-	}//end setStatus()
 
 	/**
 	 * Write fields onto a news item, preserving everything else.

@@ -26,9 +26,17 @@ Six waves (design D7), one PR each, to `development`. Every PR runs `npm run bui
 
 ## Wave 2: content and layout (REQ-SNW-010)
 
-- [ ] **T5**: `nlHeading`, `nlParagraph`, `nlLink`, `nlLinkList`, `nlList`, `nlQuote`, `nlButtonLink`, `nlActionGroup`, `nlDescriptionList`, `nlImage`, `nlTable`, `nlSeparator`, `nlCodeBlock`, `nlAccordion`, `nlVideo`, `nlYouTube`, each with its CSS package (design D1).
-- [ ] **T6**: `MarkdownBlock`'s class map gains `strong`, `em`, `sub`, `sup`, `mark`, `code`, `pre`, `hr`, `img`; the matching CSS packages load with the text widget's chunk.
-  - the existing sanitiser e2e (S9) stays green
+The entry after this wave: **364,872 bytes** of the 412 KiB budget, up 1,607 bytes from 363,265, which is the sixteen arrow functions in `loaders.js`. Nothing else under `src/site/widgets/` reached it, and `check-site-chunks.js` fails if it ever does.
+
+- [x] **T5**: `nlHeading`, `nlParagraph`, `nlLink`, `nlLinkList`, `nlList`, `nlQuote`, `nlButtonLink`, `nlActionGroup`, `nlDescriptionList`, `nlImage`, `nlTable`, `nlSeparator`, `nlCodeBlock`, `nlAccordion`, `nlVideo`, `nlYouTube`, each with its CSS package (design D1).
+  - 15 CSS packages added, exact-pinned. Each widget imports its own, so it arrives in that widget's chunk.
+  - **Labels and synonyms are what a Dutch author would type**, not translations of the English component name: "Uitklapbare tekst" for Accordion (synonyms veelgestelde vragen, faq, inklappen), "Opsomming" for Unordered List (lijst, bullets, punten), "Gegevens op een rij" for Description List (kenmerken, in het kort, feiten), "Lijst met links" for Link List (handige links, doorverwijzingen), "Knop" for Button (actie, link als knop), "Groep knoppen" for Action Group (knoppenbalk, keuzes), "Scheidingslijn" for Separator (lijn, streep, witruimte), "Codeblok" for Code Block, "Citaat" for Blockquote (aanhaling, uitspraak), "Afbeelding" for Image (foto, plaatje, beeld).
+  - What each widget refuses, rather than renders: an address that is not http, https, mailto, tel or a path inside this site (link, button, link list); a heading level outside 1 to 6; a YouTube value that is not an id, because the embed address is built here and a field taking a whole URL would let an author point the frame anywhere; a table row shorter than its header is padded, since cells sliding under the wrong header is a wrong table, not an untidy one.
+  - Accessibility carried in the markup: the accordion's titles are real buttons inside headings with `aria-expanded`; table headers are `th scope="col"`; the YouTube frame has a `title` and uses `youtube-nocookie.com` with `loading="lazy"`; a video is `preload="none"`.
+  - `check:widget-registry` reads every widget's source and asserts it imports a design-system stylesheet and renders a design-system class, and that the three without upstream CSS name no colour of their own.
+- [x] **T6**: `MarkdownBlock`'s class map gains `strong`, `em`, `sub`, `sup`, `mark`, `code`, `pre`, `hr`, `img`.
+  - `li` is deliberately NOT in the map: the list element styles its items, and a class on every `li` would be a second opinion on the same pixels.
+  - A class is still added only where one is absent, so authored HTML that already carries design-system classes is left alone. `check:rich-text` stays green, and `check:widget-registry` asserts each new tag is in the map and that `LI` is not.
 
 ## Wave 3: feedback
 

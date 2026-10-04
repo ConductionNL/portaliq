@@ -297,6 +297,10 @@ return [
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
+        // Delete ONE of the resident's own inbox messages: portaliq's own notices,
+        // or an app's inbox that declares `deletable: true`; ownership and tenant
+        // re-verified, a shared row refused (inbox-delete-own-messages).
+        ['name' => 'contribution#deleteMessage', 'url' => '/portal/api/inbox/{register}/{schema}/{id}', 'verb' => 'DELETE'],
         // The embedded intake form (embedded-intake-form). The frame is served
         // from the portal's own origin with `frame-ancestors` built from that
         // form's own list, and its submit route is the ordinary anonymous

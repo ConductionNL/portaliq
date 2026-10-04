@@ -2120,6 +2120,8 @@ OC.L10N.register(
         "This address is not valid. Use http or https, without a password, a query or \"..\".": "Dit adres is niet geldig. Gebruik http of https, zonder wachtwoord, zoekvraag of \"..\".",
         "Saving the address failed.": "Het opslaan van het adres is mislukt.",
         "Saved.": "Opgeslagen.",
+        "Published on": "Gepubliceerd op",
+        "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable.": "Wordt door de server bijgehouden. Wanneer een medewerker het bericht voor het laatst publiceerde, in ISO 8601; leeg zolang het een concept is. Het nieuwsoverzicht sorteert hierop, nieuwste eerst. Gezet bij publiceren, gewist bij terugnemen; nooit door een client te schrijven.",
         "Text formatting": "Tekstopmaak",
         "Heading": "Kop",
         "Bold": "Vet",
