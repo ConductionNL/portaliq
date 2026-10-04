@@ -288,9 +288,9 @@ test.describe('site-widget-palette', () => {
 		const canvas = page.getByTestId('designer-canvas')
 		await entry.dragTo(canvas, { targetPosition: { x: 40, y: 40 } })
 
-		await expect(
-			canvas.locator('[data-widget-key="nlHeading"]'),
-		).toBeVisible({ timeout: BRIEFLY })
+		await expect(canvas.locator('[data-widget-key="nlHeading"]')).toBeVisible({
+			timeout: BRIEFLY,
+		})
 	})
 
 	// @e2e site-nlds-widget-palette::keyboard-only
