@@ -199,6 +199,13 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		'nlProgressBar',
 		'nlProgressCircle',
 		'nlToggletip',
+		// Wave 4. D5 lists Tabs and Task Navigation among the components with
+		// no upstream CSS. `nlSignIn` draws no colour of its own at all: its
+		// only rule is the row's layout, and the buttons bring their own
+		// colours from `@utrecht/digid-button-css` and `button-css`.
+		'nlTabs',
+		'nlTaskNav',
+		'nlSignIn',
 	]
 
 	for (const { key, source } of components()) {

@@ -49,4 +49,8 @@ export const loaders = {
 	nlProgressBar: () => import('./nlProgressBar/NlProgressBar.vue'),
 	nlProgressCircle: () => import('./nlProgressCircle/NlProgressCircle.vue'),
 	nlToggletip: () => import('./nlToggletip/NlToggletip.vue'),
+	nlLanguageNav: () => import('./nlLanguageNav/NlLanguageNav.vue'),
+	nlSignIn: () => import('./nlSignIn/NlSignIn.vue'),
+	nlTaskNav: () => import('./nlTaskNav/NlTaskNav.vue'),
+	nlTabs: () => import('./nlTabs/NlTabs.vue'),
 }
