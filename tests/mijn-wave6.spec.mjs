@@ -252,6 +252,64 @@ test('report Vera sick, and a tile to a page with Sami chosen', () => {
 			['Bericht sturen', '/mijn/messages'],
 		],
 	)
+
+	// 🔑 A ROUTE THAT NAMES THE RECORD MUST NOT ALSO KEEP IT IN STORAGE.
+	// Measured on :8090: the tile's href was right and the address never
+	// moved, because the shell reads a kept record back
+	// (followAccountRoute -> openRecordEntry -> navKeyFor) and replaces the
+	// route with the page that LISTS the collection — the page the tile is on.
+	const kept = []
+	const savedWindow = globalThis.window
+	globalThis.window = {
+		sessionStorage: {
+			setItem: (key, value) => kept.push([key, value]),
+			getItem: () => null,
+			removeItem: () => {},
+		},
+	}
+	try {
+		const [toGrades, toMessages] = ctx.tilesOf(tiles)
+		assert.equal(toGrades.carriesRecord, true, 'the route names the record')
+		assert.equal(toMessages.carriesRecord, false)
+		ctx.openTile(toGrades)
+		assert.deepEqual(kept, [], 'so nothing is kept to open on arrival')
+		assert.deepEqual(ctx.emitted, [
+			['navigate', '/mijn/learniq/parentGrades/sami'],
+		])
+
+		// A page that shows the collection as a list cannot name the record in
+		// its route, so there the record IS kept and the page selects it.
+		const listing = {
+			id: 'parentList',
+			blocks: [{ type: 'detail', collection: 'parentChildren' }],
+		}
+		const listNav = [
+			nav[0],
+			{ key: 'learniq:parentList', page: listing, contribution },
+		]
+		const onList = instance(ContributionPage, {
+			entry: listNav[0],
+			nav: listNav,
+			t,
+			initialData: { parentChildren: { loading: false, objects: CHILDREN } },
+			initialSelected: { parentChildren: CHILDREN[1] },
+		})
+		const toList = onList.tileTarget({
+			type: 'cta',
+			page: 'parentList',
+			label: 'Lijst',
+			withRecord: true,
+		})
+		assert.deepEqual(toList, {
+			route: '/mijn/learniq/parentList',
+			carriesRecord: false,
+		})
+		onList.openTile({ block: { withRecord: true }, route: toList.route, carriesRecord: false })
+		assert.equal(kept.length, 1, 'there the record is kept')
+		assert.match(kept[0][1], /"id":"sami"/)
+	} finally {
+		globalThis.window = savedWindow
+	}
 	assert.deepEqual(
 		groupTiles([
 			{ index: 0, kind: 'tile', block: 'a' },
