@@ -39,7 +39,19 @@
 		</div>
 
 		<div v-else class="page-grid-editor__panes">
-			<section class="page-grid-editor__canvas" data-testid="designer-canvas">
+			<!--
+				A DROP TARGET AROUND THE GRID, not on each cell: the fleet's
+				grid owns what is inside it, and an empty page has no cell to
+				drop on at all. The cell comes from the pointer against the
+				canvas rectangle (`cellFromDrop`), so a drop near the right
+				edge places in the last columns and a drop on an empty canvas
+				places in the first (site-nlds-widget-palette REQ-SNW-002).
+			-->
+			<section
+				class="page-grid-editor__canvas"
+				data-testid="designer-canvas"
+				@dragover="onDragOver"
+				@drop="onDrop">
 				<CnDashboardGrid
 					v-if="state.widgets.length"
 					:layout="state.widgets"
@@ -219,6 +231,7 @@
 import { CnDashboardGrid, dashboardWidgetRegistry } from '@conduction/nextcloud-vue'
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
+import { PALETTE_DRAG_TYPE } from '../dialogs/WidgetPaletteDialog.vue'
 import {
 	fieldsFor,
 	isPublicWidget,
@@ -226,6 +239,7 @@ import {
 } from '../lib/pageWidgetCatalogue.js'
 import { widgetLabel } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
+import { cellFromDrop } from './geometry.js'
 import {
 	formWidgetFor,
 	inspectorModeFor,
@@ -346,6 +360,59 @@ export default {
 
 	methods: {
 		/**
+		 * Accept a palette drag over the canvas, and nothing else.
+		 *
+		 * The default has to be prevented for a drop to happen at all; it is
+		 * prevented only for the palette's own media type, so dragging a file
+		 * or a selection onto the canvas keeps the browser's behaviour.
+		 *
+		 * @param {DragEvent} event The drag.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		onDragOver(event) {
+			if (!event?.dataTransfer?.types?.includes(PALETTE_DRAG_TYPE)) {
+				return
+			}
+
+			event.preventDefault()
+			event.dataTransfer.dropEffect = 'copy'
+		},
+
+		/**
+		 * Place the dragged widget where it was dropped.
+		 *
+		 * @param {DragEvent} event The drop.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		onDrop(event) {
+			const key = event?.dataTransfer?.getData?.(PALETTE_DRAG_TYPE) || ''
+			if (key === '') {
+				return
+			}
+
+			event.preventDefault()
+			const rect = event.currentTarget?.getBoundingClientRect?.() || {
+				left: 0,
+				top: 0,
+				width: 0,
+			}
+			this.editor.addWidgetAt(
+				key,
+				cellFromDrop({
+					x: event.clientX,
+					y: event.clientY,
+					left: rect.left,
+					top: rect.top,
+					width: rect.width,
+				}),
+			)
+		},
+
+		/**
 		 * Translate. Imported rather than taken from the page's globals, so the
 		 * editor works the same in the admin app and on the portal.
 		 *
@@ -380,7 +447,7 @@ export default {
 		},
 
 		/**
-		 * The name an author reads for a widget key ("Tekst (markdown)",
+		 * The name an author reads for a widget key ("Tekst",
 		 * never "markdown").
 		 *
 		 * @param {string} key The widget key.

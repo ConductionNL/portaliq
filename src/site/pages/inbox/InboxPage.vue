@@ -45,13 +45,15 @@
 					</div>
 
 					<TranslatedText
-						v-if="message.body"
+						v-if="shownBody(message)"
 						:id="idOf(message, i)"
-						:text="message.body"
-						:translation="message.translation || null"
+						:text="shownBody(message)"
+						:translation="shownTranslation(message)"
+						:partsOf="partsOf"
 						:t="tr"
 						:locale="lang"
-						bodyClass="utrecht-paragraph pq-inbox-row__body" />
+						bodyClass="utrecht-paragraph pq-inbox-row__body"
+						@navigate="go" />
 
 					<dl v-if="readiness(message)" class="pq-inbox-row__meta">
 						<div v-if="message.nature">
@@ -150,6 +152,8 @@ import { unreadIn } from '../../../shared/inboxUnread.js'
 import { deliveryLine } from '../../../shared/messageBox.js'
 import {
 	attachmentsOf,
+	bodyParts,
+	bodyWithoutOpenLink,
 	downloadCollection,
 	formatDateTime,
 	hasReadiness,
@@ -163,6 +167,19 @@ import {
 } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
+
+/**
+ * The page's origin, or '' where there is no window (a render in node).
+ *
+ * @return {string} The origin.
+ */
+function pageOrigin() {
+	try {
+		return typeof window !== 'undefined' ? window.location.origin : ''
+	} catch {
+		return ''
+	}
+}
 
 /**
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
@@ -183,6 +200,7 @@ export default {
 			busyId: null,
 			downloadingId: null,
 			downloadFailedFor: null,
+			origin: pageOrigin(),
 		}
 	},
 
@@ -260,6 +278,70 @@ export default {
 		 */
 		dateTime(value) {
 			return formatDateTime(value, this.lang)
+		},
+
+		/**
+		 * The route the row's "Open" button leads to, or null without one.
+		 *
+		 * @param {object} message A message.
+		 * @return {string|null} The route.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 */
+		openRouteOf(message) {
+			return message?.recordLink?.id ? this.routeOf(message.recordLink) : null
+		},
+
+		/**
+		 * The body as the row shows it: without the web address that leads
+		 * where "Open" leads, which the e-mail needs and the row does not.
+		 *
+		 * @param {object} message A message.
+		 * @return {string} The body to show.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 */
+		shownBody(message) {
+			return bodyWithoutOpenLink(
+				message?.body || '',
+				message?.recordLink || null,
+				this.openRouteOf(message),
+			)
+		},
+
+		/**
+		 * A shown text as text and named links: an address into this site
+		 * becomes a link with a name, any other address stays text.
+		 *
+		 * @param {string} text The shown body or translation.
+		 * @return {Array<object>} The parts.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
+		 */
+		partsOf(text) {
+			return bodyParts(text, this.origin, {
+				publication: this.tr('View the publication'),
+				link: this.tr('View the link'),
+			})
+		},
+
+		/**
+		 * The reader's translation, with the same address taken out.
+		 *
+		 * @param {object} message A message.
+		 * @return {object|null} The translation entry, or null.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 */
+		shownTranslation(message) {
+			const translation = message?.translation || null
+			if (!translation || typeof translation.text !== 'string') {
+				return translation
+			}
+			return {
+				...translation,
+				text: bodyWithoutOpenLink(
+					translation.text,
+					message.recordLink || null,
+					this.openRouteOf(message),
+				),
+			}
 		},
 
 		/**

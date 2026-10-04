@@ -34,10 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
 use OCP\IRequest;
-use OCP\IURLGenerator;
 use Throwable;
 
 /**
@@ -60,14 +58,12 @@ class PortalActionForwarder {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request (source of the raw relayed body).
-	 * @param IClientService $clientService HTTP client for the A6 action forward.
-	 * @param IURLGenerator $urlGenerator Resolves instance-local endpoint paths.
+	 * @param InstanceLoopback $loopback Sends the A6 action forward to this instance.
 	 * @param PortalSessionService $session Mints the signed `X-Portal-Subject` assertion.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly IClientService $clientService,
-		private readonly IURLGenerator $urlGenerator,
+		private readonly InstanceLoopback $loopback,
 		private readonly PortalSessionService $session,
 	) {
 	}//end __construct()
@@ -93,6 +89,7 @@ class PortalActionForwarder {
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
 	 */
 	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = ''): ?IResponse {
 		$scopeClaim = '';
@@ -125,16 +122,14 @@ class PortalActionForwarder {
 		];
 
 		try {
-			$client = $this->clientService->newClient();
-			$url = $this->urlGenerator->getAbsoluteURL((string)$action['endpoint']);
-
-			return match (strtoupper((string)($action['method'] ?? 'POST'))) {
-				'GET' => $client->get($url, $options),
-				'PUT' => $client->put($url, $options),
-				'PATCH' => $client->patch($url, $options),
-				'DELETE' => $client->delete($url, $options),
-				default => $client->post($url, $options),
-			};
+			// InstanceLoopback picks the address that answers from inside the
+			// server (configured, absolute, or the loopback after a transport
+			// failure); the method maps as before, anything unknown is a POST.
+			return $this->loopback->request(
+				method: strtoupper((string)($action['method'] ?? 'POST')),
+				path: (string)$action['endpoint'],
+				options: $options
+			);
 		} catch (Throwable) {
 			// Transport failure. The caller mirrors the writer's 502 posture;
 			// transport internals never leak to the portal client.

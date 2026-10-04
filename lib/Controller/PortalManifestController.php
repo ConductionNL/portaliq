@@ -40,6 +40,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
+use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 
@@ -152,6 +153,15 @@ class PortalManifestController extends Controller {
 				'Service-Worker-Allowed' => $this->serviceWorkerScope(),
 			]
 		);
+
+		// A worker's own fetch() follows the policy its script is served
+		// with. Nextcloud's empty default has no connect-src, so it falls
+		// back to default-src 'none' and every fetch of the worker failed:
+		// returning visitors got net::ERR_FAILED on /site. Same origin only,
+		// nothing wider; every other directive stays at the empty default.
+		$policy = new EmptyContentSecurityPolicy();
+		$policy->addAllowedConnectDomain("'self'");
+		$response->setContentSecurityPolicy($policy);
 
 		return $response;
 	}//end serviceWorker()

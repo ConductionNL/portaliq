@@ -127,6 +127,67 @@ class PortalTimelineControllerTest extends TestCase {
 	}//end testATimelineThatCouldNotBeReadIsA502NotAnEmptyHistory()
 
 	/**
+	 * Where a case stands (site-mijn-omgeving-components REQ-SMO-022): the
+	 * steps provider's answer under its label, an entry with a bad state or
+	 * no label dropped, the rest in the order given.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+	 */
+	public function testTheStepsOfTheOwnersCaseAreServedAndABadStateLosesItsEntry(): void {
+		$collection = self::COLLECTION + ['steps' => ['label' => 'Waar staat uw aanvraag?', 'provider' => 'caseSteps']];
+		$controller = $this->controller(collection: $collection);
+		$this->doubles['timelines']->expects($this->once())
+			->method('entries')
+			->with($this->equalTo('dossiq'), $this->equalTo('caseSteps'), $this->equalTo('case-1'))
+			->willReturn(
+				[
+					['label' => 'Ontvangen', 'state' => 'done', 'date' => '2026-10-02', 'secret' => 'x'],
+					['label' => 'In behandeling', 'state' => 'current', 'description' => 'Wij zoeken de documenten.'],
+					['label' => 'Geweigerd', 'state' => 'rejected'],
+					['state' => 'todo'],
+					'not a step',
+					['label' => 'Besluit', 'state' => 'todo'],
+				]
+			);
+
+		$response = $controller->steps(register: 'dossiq', schema: 'case', id: 'case-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			[
+				'label' => 'Waar staat uw aanvraag?',
+				'steps' => [
+					['label' => 'Ontvangen', 'state' => 'done', 'date' => '2026-10-02'],
+					['label' => 'In behandeling', 'state' => 'current', 'description' => 'Wij zoeken de documenten.'],
+					['label' => 'Besluit', 'state' => 'todo'],
+				],
+			],
+			$response->getData()
+		);
+	}//end testTheStepsOfTheOwnersCaseAreServedAndABadStateLosesItsEntry()
+
+	/**
+	 * Steps that could not be read are a 502, and a collection without a
+	 * steps provider has none: its provider is never asked.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+	 */
+	public function testStepsThatCouldNotBeReadAreA502AndNoProviderIsA404(): void {
+		$collection = self::COLLECTION + ['steps' => ['label' => '', 'provider' => 'caseSteps']];
+		$failing = $this->controller(collection: $collection);
+		$this->doubles['timelines']->method('entries')->willReturn(null);
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $failing->steps(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+
+		$none = $this->controller();
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $none->steps(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+	}//end testStepsThatCouldNotBeReadAreA502AndNoProviderIsA404()
+
+	/**
 	 * The controller over doubles.
 	 *
 	 * @param array<string, mixed>|null $subject The subject behind the bearer.

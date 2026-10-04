@@ -16,6 +16,20 @@
 			{{ tr('This record is not in your list, so nothing of it is shown.') }}
 		</p>
 
+		<!-- A page that switches between records (`records`): for whom it
+		     shows, as a radio group; the choice is the route
+		     (site-mijn-omgeving-components REQ-SMO-008). -->
+		<RecordSwitcher
+			v-if="switching && recordRows.length > 0"
+			:rows="recordRows"
+			:chosen="recordId"
+			:titleFields="recordPage.titleFields || []"
+			:subtitleFields="recordPage.subtitleFields || []"
+			:subtitles="switcherSubtitles"
+			:legend="switcherLegend"
+			:name="`pq-switch-${currentPage ? currentPage.id : 'page'}`"
+			@choose="choose" />
+
 		<!-- A record page (contribution-record-page): the record's name and
 		     the way back once one is open, a hint while the list shows. -->
 		<div
@@ -31,7 +45,7 @@
 				{{ recordName }}
 			</h2>
 			<button
-				v-if="recordRows.length > 1"
+				v-if="recordRows.length > 1 && !switching"
 				type="button"
 				class="utrecht-button utrecht-button--secondary-action"
 				data-testid="record-back"
@@ -40,7 +54,7 @@
 			</button>
 		</div>
 		<p
-			v-else-if="recordPage && recordRows.length > 1"
+			v-else-if="recordPage && recordRows.length > 1 && !switching"
 			class="utrecht-paragraph"
 			data-testid="record-hint">
 			{{ tr('Open a name to see everything about it.') }}
@@ -50,6 +64,34 @@
 			<RichTextBlock
 				v-if="item.kind === 'richText'"
 				:markdown="item.block.markdown || ''" />
+
+			<!-- A text filled from the open record, as text (REQ-SMO-027). -->
+			<div
+				v-else-if="item.kind === 'template'"
+				class="pq-contribution-page__template"
+				data-testid="contribution-page-template">
+				<p
+					v-for="(sentence, s) in templateOf(item)"
+					:key="s"
+					class="utrecht-paragraph">
+					{{ sentence }}
+				</p>
+			</div>
+
+			<!-- Quick tiles: cta blocks that open a page or a route (REQ-SMO-024). -->
+			<QuickTiles
+				v-else-if="item.kind === 'tiles'"
+				:tiles="tilesOf(item)"
+				@open="openTile" />
+
+			<!-- Rows as cards with a progress figure (REQ-SMO-028). -->
+			<ProgressCards
+				v-else-if="item.kind === 'table' && item.block.display === 'cards'"
+				:rows="tableWindow(item).rows"
+				:block="item.block"
+				:titleFields="item.collection.titleFields || []"
+				:t="tr"
+				:locale="lang" />
 
 			<div
 				v-else-if="item.kind === 'table'"
@@ -98,7 +140,7 @@
 				<CollectionTable
 					v-if="groupsOf(item).length === 0"
 					:collection="item.collection"
-					:objects="rowsOf(item)"
+					:objects="tableWindow(item).rows"
 					:loading="loadedOf(item.collection).loading"
 					:selectable="true"
 					:selectedRow="selected[item.collection.id] || null"
@@ -110,6 +152,28 @@
 					:locale="lang"
 					@select="select(item.collection, $event)"
 					@rowAction="(action, row) => onRowAction(item, action, row)" />
+				<!-- A block that shows its first rows (`limit`) leads to all of
+				     them: the collection's own page, else the rest here
+				     (site-mijn-omgeving-components REQ-SMO-021). -->
+				<p
+					v-if="groupsOf(item).length === 0 && tableWindow(item).more"
+					class="utrecht-paragraph pq-contribution-page__more"
+					data-testid="contribution-page-more">
+					<a
+						v-if="allRouteOf(item)"
+						class="utrecht-link"
+						:href="hrefOf(allRouteOf(item))"
+						@click.prevent="$emit('navigate', allRouteOf(item))"
+						>{{ seeAll(item) }}</a
+					>
+					<button
+						v-else
+						type="button"
+						class="utrecht-button utrecht-button--subtle"
+						@click="expanded = { ...expanded, [item.index]: true }">
+						{{ seeAll(item) }}
+					</button>
+				</p>
 				<!-- Sign and decline get their own step, every other endpoint
 				     row action the plain confirm step: slice c fills it. -->
 				<SlotHost
@@ -172,6 +236,85 @@
 				:locale="lang"
 				@navigate="$emit('navigate', $event)" />
 
+			<!-- What the resident still has to do and their newest messages
+			     (site-mijn-omgeving-components), loaded on demand. -->
+			<TasksBlock
+				v-else-if="item.kind === 'tasks'"
+				:block="item.block"
+				:collection="item.collection"
+				:rows="rowsOf(item)"
+				:loading="loadedOf(item.collection).loading"
+				:failed="loadedOf(item.collection).failed === true"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:nav="nav"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)"
+				@retry="reload(item.collection)" />
+
+			<CasesBlock
+				v-else-if="item.kind === 'cases'"
+				:block="item.block"
+				:collection="item.collection"
+				:rows="rowsOf(item)"
+				:loading="loadedOf(item.collection).loading"
+				:failed="loadedOf(item.collection).failed === true"
+				:api="api"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:nav="nav"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)"
+				@retry="reload(item.collection)" />
+
+			<StepsBlock
+				v-else-if="item.kind === 'steps'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined" />
+
+			<DocumentsBlock
+				v-else-if="item.kind === 'documents'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
+			<TimelineBlock
+				v-else-if="item.kind === 'timeline'"
+				:block="item.block"
+				:collection="item.collection"
+				:record="activeRecord"
+				:api="api"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
+			<InboxBlock
+				v-else-if="item.kind === 'inbox'"
+				:block="item.block"
+				:record="activeRecord"
+				:api="api"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				:nav="nav"
+				:level="sectionLevel"
+				:t="tr"
+				:locale="lang"
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)" />
+
 			<SlotHost
 				v-else-if="item.kind === 'citizenCase'"
 				name="citizenCase"
@@ -198,7 +341,7 @@
 			<SlotHost
 				v-else-if="item.kind === 'action' || item.kind === 'cta'"
 				name="action"
-				:block="item.block"
+				:block="withTitle(item.block)"
 				:action="item.action"
 				:contribution="currentContribution"
 				:api="api"
@@ -210,6 +353,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import CalendarBlock from '../../components/collections/CalendarBlock.vue'
 import CollectionTable from '../../components/collections/CollectionTable.vue'
 import DetailCard from '../../components/collections/DetailCard.vue'
@@ -223,7 +367,13 @@ import {
 	groupLabelCollection,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
-import { consumeOpenTarget, forgetOpenTarget } from '../../../shared/openRecord.js'
+import { itemsInRange, sortRows, windowRows } from '../../../shared/listWindow.js'
+import {
+	consumeOpenTarget,
+	forgetOpenTarget,
+	navKeyFor,
+} from '../../../shared/openRecord.js'
+import { routeForNav } from '../../../shared/portalNav.js'
 import {
 	allGroups,
 	calendarItems,
@@ -236,6 +386,10 @@ import {
 import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'
 import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
+import { blocks as mijnBlocks } from '../../components/mijn/index.js'
+import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
+import { ctaLabel, fillTemplate } from '../../components/mijn/template.js'
+import { keepRecordToOpen, sessionStore as tabStore } from '../inbox/inbox.js'
 import { createCollectionLoader, openRecordState } from './collectionLoader.js'
 import { resolveBlocks } from './pageBlocks.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
@@ -285,6 +439,17 @@ export default {
 		NewsBlock,
 		RichTextBlock,
 		SlotHost,
+		// Each loads with its action rows and Den Haag CSS only when a page
+		// holds one (site-mijn-omgeving-components design D1).
+		TasksBlock: defineAsyncComponent(mijnBlocks.tasks),
+		InboxBlock: defineAsyncComponent(mijnBlocks.inbox),
+		CasesBlock: defineAsyncComponent(mijnBlocks.cases),
+		StepsBlock: defineAsyncComponent(mijnBlocks.steps),
+		RecordSwitcher: defineAsyncComponent(mijnBlocks.recordSwitcher),
+		QuickTiles: defineAsyncComponent(mijnBlocks.quickTiles),
+		ProgressCards: defineAsyncComponent(mijnBlocks.progressCards),
+		DocumentsBlock: defineAsyncComponent(mijnBlocks.documents),
+		TimelineBlock: defineAsyncComponent(mijnBlocks.timeline),
 	},
 
 	// The shell hands every page the whole contract (session, portal, nav, …);
@@ -316,6 +481,10 @@ export default {
 		initialFeed: { type: Array, default: null },
 		/** Today, for the calendar; a test passes a fixed day. */
 		today: { type: Date, default: null },
+		/** Every navigation entry, so a task or message row finds its page. */
+		nav: { type: Array, default: () => [] },
+		/** The record the route chooses (`/mijn/<app>/<page>/<id>`), or ''. */
+		routeRecordId: { type: String, default: '' },
 	},
 
 	emits: ['navigate', 'unread', 'refresh', 'recordOpened'],
@@ -328,6 +497,8 @@ export default {
 			busyRow: null,
 			recordNotFound: false,
 			target: this.openRecord,
+			// The limited tables a resident asked to see whole, by block index.
+			expanded: {},
 			loader: null,
 		}
 	},
@@ -360,7 +531,53 @@ export default {
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
 		 */
 		recordPage() {
-			return this.currentPage?.record || null
+			return this.currentPage?.record || this.currentPage?.records || null
+		},
+
+		/**
+		 * Whether the page switches between records (`records`): a record is
+		 * always open, the first by default, and a switcher picks another.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		switching() {
+			return Boolean(this.currentPage?.records)
+		},
+
+		/**
+		 * @return {string} The switcher's name for a screen reader.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		/**
+		 * The switcher's subtitle per record, from one related record
+		 * (`records.subtitleLookup`, REQ-SMO-026): the child's group.
+		 *
+		 * @return {Record<string, string>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-the-record-switcher-may-take-its-subtitle-from-a-related-record-req-smo-026
+		 */
+		switcherSubtitles() {
+			const lookup = this.currentPage?.records?.subtitleLookup
+			if (!lookup) {
+				return {}
+			}
+			const rows = this.store[lookup.collection]?.objects || []
+			const out = {}
+			for (const record of this.recordRows) {
+				const id = rowIdOf(record)
+				const match = rows.find(
+					(row) => String(row?.[lookup.matchField] ?? '') === id,
+				)
+				const value = match?.[lookup.valueField]
+				if (id && typeof value === 'string' && value.trim() !== '') {
+					out[id] = value.trim()
+				}
+			}
+			return out
+		},
+
+		switcherLegend() {
+			return mijnTranslator(this.t, this.lang)('Choose for whom')
 		},
 
 		recordRows() {
@@ -387,6 +604,10 @@ export default {
 				return rows.find((row) => rowIdOf(row) === id) || null
 			}
 			const loading = this.store[this.recordPage.collection]?.loading
+			if (this.switching && !loading && !this.target) {
+				// A switching page opens on its first record.
+				return rows[0] || null
+			}
 			return rows.length === 1 && !loading ? rows[0] : null
 		},
 
@@ -472,6 +693,14 @@ export default {
 				: ''
 		},
 
+		/**
+		 * The record link to open on this page: one whose collection a block
+		 * here reads, or the page's own record collection, so a route that
+		 * chooses a record opens it.
+		 *
+		 * @return {object|null}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
 		targetOnPage() {
 			const target = this.target
 			if (!target || target.app !== this.currentContribution?.app) {
@@ -480,7 +709,7 @@ export default {
 			return this.blocks.some(
 				(item) =>
 					item.collection && item.collection.id === target.collection,
-			)
+			) || this.recordPage?.collection === target.collection
 				? target
 				: null
 		},
@@ -505,8 +734,22 @@ export default {
 		},
 	},
 
+	/**
+	 * Load the page's collections, and take the record to open from the
+	 * route, else from a record link.
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+	 */
 	mounted() {
 		this.loader = createCollectionLoader({ api: this.api, store: this.store })
+		if (!this.target && this.routeRecordId && this.recordPage) {
+			// The route chooses the record (`/mijn/<app>/<page>/<id>`).
+			this.target = {
+				app: this.currentContribution?.app || '',
+				collection: this.recordPage.collection,
+				id: this.routeRecordId,
+			}
+		}
 		if (!this.target) {
 			this.target = consumeOpenTarget(
 				window.location,
@@ -620,12 +863,223 @@ export default {
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
 		 */
 		calendarOf(item) {
-			return calendarItems(
-				item.block,
-				this.store,
-				this.activeRecord,
-				this.scopeGroups,
+			// Only today, this week or this month when the block says so
+			// (site-mijn-omgeving-components REQ-SMO-021).
+			return itemsInRange(
+				calendarItems(
+					item.block,
+					this.store,
+					this.activeRecord,
+					this.scopeGroups,
+				),
+				item.block.range,
+				this.today || new Date(),
 			)
+		},
+
+		/**
+		 * The sentences of a template block, filled from the open record.
+		 *
+		 * @param {object} item The template block.
+		 * @return {Array<string>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-text-block-on-a-record-page-may-be-filled-from-the-record-req-smo-027
+		 */
+		templateOf(item) {
+			const collection = (this.currentContribution?.collections || []).find(
+				(c) => c && c.id === this.recordPage?.collection,
+			)
+			return fillTemplate(item.block.template, this.activeRecord, {
+				whenEmpty: item.block.whenEmpty || {},
+				fields: Array.isArray(collection?.fields) ? collection.fields : null,
+				locale: this.lang,
+			})
+		},
+
+		/**
+		 * A cta block with `{title}` in its label filled with the open
+		 * record's title.
+		 *
+		 * @param {object} block The block.
+		 * @return {object}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		withTitle(block) {
+			if (
+				block?.type !== 'cta'
+				|| !String(block.label || '').includes('{title}')
+			) {
+				return block
+			}
+			return { ...block, label: ctaLabel(block.label, this.recordName) }
+		},
+
+		/**
+		 * The tiles of a run of page and route ctas: label and route.
+		 *
+		 * @param {object} item The tiles item.
+		 * @return {Array<{key: string, label: string, route: string, block: object}>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		tilesOf(item) {
+			return item.tiles
+				.map((block, i) => {
+					const target = this.tileTarget(block)
+					return {
+						key: `${item.index}:${i}`,
+						label: ctaLabel(block.label, this.recordName),
+						route: target.route,
+						carriesRecord: target.carriesRecord,
+						block,
+					}
+				})
+				.filter((tile) => tile.route !== '')
+		},
+
+		/**
+		 * Where a tile goes: the page's route, with the open record chosen
+		 * when the tile says `withRecord` and the page is a record page; else
+		 * the declared route.
+		 *
+		 * `carriesRecord` says whether the record is IN the route. It decides
+		 * whether the open record is also kept in storage on the way out: a
+		 * route that already names the record must not be, because the shell
+		 * reads a kept record BACK (`followAccountRoute` → `openRecordEntry`)
+		 * and replaces the route with the page that LISTS the collection,
+		 * which on a family page is the page the tile sits on. Measured on
+		 * :8090: the tile's href was right and the address never moved.
+		 *
+		 * @param {object} block The cta block.
+		 * @return {{route: string, carriesRecord: boolean}} The target, route
+		 *         '' when the page is not offered.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		tileTarget(block) {
+			if (block.route) {
+				return { route: block.route, carriesRecord: false }
+			}
+			const app = this.currentContribution?.app || ''
+			const entry = (this.nav || []).find(
+				(candidate) =>
+					candidate.contribution?.app === app
+					&& candidate.page?.id === block.page,
+			)
+			if (!entry) {
+				return { route: '', carriesRecord: false }
+			}
+			const route = routeForNav(entry)
+			const recordPage = entry.page.record || entry.page.records
+			if (
+				block.withRecord
+				&& this.recordId
+				&& recordPage
+				&& recordPage.collection === this.recordPage?.collection
+			) {
+				return {
+					route: `${route}/${encodeURIComponent(this.recordId)}`,
+					carriesRecord: true,
+				}
+			}
+			return { route, carriesRecord: false }
+		},
+
+		/**
+		 * Where a tile goes. Kept for readers (and tests) that want the route
+		 * alone.
+		 *
+		 * @param {object} block The cta block.
+		 * @return {string} The route, or '' when the page is not offered.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		tileRoute(block) {
+			return this.tileTarget(block).route
+		},
+
+		/**
+		 * Open a tile; with `withRecord` the open record is kept for the page
+		 * that shows its collection, as a record link would.
+		 *
+		 * @param {object} tile The tile.
+		 * @return {void}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		openTile(tile) {
+			if (
+				tile.block.withRecord
+				&& tile.carriesRecord !== true
+				&& this.recordId
+				&& this.recordPage
+			) {
+				// Only when the route cannot name the record itself: the page
+				// shows the collection as a list, so it has to be told which
+				// record to open. A route that names it must not be kept as
+				// well, or the shell reads the kept record back and sends the
+				// resident to the listing page instead (see tileTarget()).
+				keepRecordToOpen(tabStore(), {
+					app: this.currentContribution?.app || '',
+					collection: this.recordPage.collection,
+					id: this.recordId,
+				})
+			}
+			this.$emit('navigate', tile.route)
+		},
+
+		/**
+		 * The rows a table shows: in its declared order, at most its limit
+		 * until the resident asks for the rest.
+		 *
+		 * @param {object} item The table block.
+		 * @return {{rows: Array<object>, more: boolean}}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 */
+		tableWindow(item) {
+			if (this.expanded[item.index]) {
+				return {
+					rows: sortRows(this.rowsOf(item), item.block?.sort),
+					more: false,
+				}
+			}
+			return windowRows(this.rowsOf(item), item.block)
+		},
+
+		/**
+		 * The route of the page that shows a collection whole, when that is
+		 * another page than this one; '' otherwise.
+		 *
+		 * @param {object} item The table block.
+		 * @return {string}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 */
+		allRouteOf(item) {
+			const others = (this.nav || []).filter(
+				(candidate) => candidate.key !== this.entry?.key,
+			)
+			const key = navKeyFor(others, {
+				app: this.currentContribution?.app || '',
+				collection: item.collection.id,
+			})
+			const entry = others.find((candidate) => candidate.key === key)
+			return entry ? routeForNav(entry) : ''
+		},
+
+		/**
+		 * @param {object} item The table block.
+		 * @return {string} "Bekijk alle cijfers".
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 */
+		seeAll(item) {
+			const label = String(item.collection.label || '')
+			return this.tr('See all {label}', {
+				label: label.charAt(0).toLocaleLowerCase() + label.slice(1),
+			})
+		},
+
+		/**
+		 * @param {string} route An in-site route.
+		 * @return {string} Its real address.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 */
+		hrefOf(route) {
+			return siteHref(route)
 		},
 
 		calendarLoading(item) {
@@ -701,6 +1155,17 @@ export default {
 			return `${this.headingId(item)}-group-${group.value ? group.value.replace(/[^A-Za-z0-9_-]/g, '') : 'rest'}`
 		},
 
+		/**
+		 * Read one collection again, after its read failed.
+		 *
+		 * @param {object} collection The collection.
+		 * @return {void}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+		 */
+		reload(collection) {
+			this.loader?.load(collection)
+		},
+
 		loadedOf(collection) {
 			return (
 				this.store[collection.id] || {
@@ -746,6 +1211,30 @@ export default {
 
 		offers(action, row) {
 			return offersRowAction(action, row)
+		},
+
+		/**
+		 * Switch to another record: open it, and put it in the route so the
+		 * choice survives a reload and a shared link.
+		 *
+		 * @param {string} id The chosen record's id.
+		 * @return {void}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		choose(id) {
+			const row = this.recordRows.find(
+				(candidate) => rowIdOf(candidate) === id,
+			)
+			if (!row || !this.recordPage) {
+				return
+			}
+			this.select({ id: this.recordPage.collection }, row)
+			if (this.entry) {
+				this.$emit(
+					'navigate',
+					`${routeForNav(this.entry)}/${encodeURIComponent(id)}`,
+				)
+			}
 		},
 
 		select(collection, row) {

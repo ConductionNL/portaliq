@@ -17,7 +17,11 @@
 //   - `citizenCase`, `action` and `cta` blocks belong to other slices and are
 //     handed to their slot;
 //   - `kpi`, `calendar` and `news` blocks are the record page's figure cards,
-//     calendar and news (contribution-record-page).
+//     calendar and news (contribution-record-page);
+//   - `tasks` and `inbox` blocks are action rows of what the resident still
+//     has to do and of their newest messages, `cases` blocks case cards, and
+//     a `steps` block where the open case stands, and `documents` and
+//     `timeline` blocks its file items and history (site-mijn-omgeving-components).
 //
 // @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
@@ -69,7 +73,8 @@ export function rowActionsOf(contribution, collection) {
  * Each entry is `{index, block, kind, collection?, action?, rowActions?,
  * tableActions?, proposeAction?, viewAction?}`, where `kind` is one of
  * `richText`, `table`, `timedTask`, `detail`, `citizenCase`, `action`, `cta`,
- * `kpi`, `calendar`, `news`,
+ * `kpi`, `calendar`, `news`, `tasks`, `inbox`, `cases`, `steps`,
+ * `documents`, `timeline`,
  * or `none` for a block that renders nothing.
  *
  * @param {object} page The contribution page.
@@ -77,7 +82,36 @@ export function rowActionsOf(contribution, collection) {
  * @return {Array<object>}
  */
 export function resolveBlocks(page, contribution) {
-	return quietCaseUnderDetail(resolveEachBlock(page, contribution))
+	return groupTiles(quietCaseUnderDetail(resolveEachBlock(page, contribution)))
+}
+
+/**
+ * Consecutive `cta` blocks that open a page or a route become one list of
+ * quick tiles (`kind: tiles`, the blocks in `tiles`), as the mockups draw
+ * them (site-mijn-omgeving-components REQ-SMO-024).
+ *
+ * @param {Array<object>} items The resolved blocks.
+ * @return {Array<object>} The same blocks, runs of tiles folded into one.
+ * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+ */
+export function groupTiles(items) {
+	const out = []
+	for (const item of items) {
+		const last = out[out.length - 1]
+		if (item.kind !== 'tile') {
+			out.push(item)
+		} else if (last && last.kind === 'tiles') {
+			last.tiles.push(item.block)
+		} else {
+			out.push({
+				index: item.index,
+				block: item.block,
+				kind: 'tiles',
+				tiles: [item.block],
+			})
+		}
+	}
+	return out
 }
 
 /**
@@ -115,7 +149,8 @@ function resolveEachBlock(page, contribution) {
 	return (page?.blocks || []).map((block, index) => {
 		const type = block?.type
 		if (type === 'richText') {
-			return { index, block, kind: 'richText' }
+			// A text filled from the open record (REQ-SMO-027).
+			return { index, block, kind: block.template ? 'template' : 'richText' }
 		}
 		if (COLLECTION_BLOCKS.includes(type)) {
 			const collection = findCollection(contribution, block.collection)
@@ -176,6 +211,27 @@ function resolveEachBlock(page, contribution) {
 		}
 		if (type === 'news') {
 			return { index, block, kind: 'news' }
+		}
+		if (type === 'tasks') {
+			// site-mijn-omgeving-components REQ-SMO-004: what is still to do.
+			const collection = findCollection(contribution, block.collection)
+			return collection
+				? { index, block, kind: 'tasks', collection }
+				: { index, block, kind: 'none' }
+		}
+		if (type === 'inbox') {
+			return { index, block, kind: 'inbox' }
+		}
+		if (['cases', 'steps', 'documents', 'timeline'].includes(type)) {
+			// site-mijn-omgeving-components REQ-SMO-002, REQ-SMO-003, REQ-SMO-005.
+			const collection = findCollection(contribution, block.collection)
+			return collection
+				? { index, block, kind: type, collection }
+				: { index, block, kind: 'none' }
+		}
+		if (type === 'cta' && (block.page || block.route)) {
+			// A tile to a page or a route (REQ-SMO-024).
+			return { index, block, kind: 'tile' }
 		}
 		if (type === 'action' || type === 'cta') {
 			const action = findAction(contribution, block.action)

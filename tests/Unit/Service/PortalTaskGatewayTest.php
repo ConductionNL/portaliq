@@ -11,8 +11,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\InstanceLoopback;
+use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
+use OCA\Portaliq\Tests\Unit\Service\Fixtures\FakeConnectException;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -30,6 +33,14 @@ use RuntimeException;
  * openregister + a configured secret, both required.
  *
  * @covers \OCA\Portaliq\Service\PortalTaskGateway
+ *
+ * The gateway reaches openregister through a REAL `InstanceLoopback` here, so
+ * the forwarded address is the one an instance would actually call. Code that
+ * runs without being declared is risky, and `failOnRisky` turns that into a
+ * red suite, so it is declared as used rather than covered: it is the
+ * collaborator, and `InstanceLoopbackTest` is what covers it.
+ *
+ * @uses \OCA\Portaliq\Service\InstanceLoopback
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
@@ -90,6 +101,46 @@ class PortalTaskGatewayTest extends TestCase {
 
 		$this->assertNull($this->gateway(client: $client)->listTasks(subject: self::SUBJECT));
 	}//end testTransportFailureDegradesToNull()
+
+	/**
+	 * The gateway reaches openregister through InstanceLoopback: when the
+	 * public address does not answer from inside the server (port mapping,
+	 * reverse proxy), the list is fetched once more on 127.0.0.1 with the
+	 * public Host, carrying the assertion and nothing of the client's own
+	 * credentials. Before, every call failed with cURL error 7 and the
+	 * resident read "Uw taken konden niet worden geladen".
+	 *
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
+	 */
+	public function testAnUnreachablePublicAddressFallsBackToTheLoopback(): void {
+		$urls = [];
+		$client = $this->createMock(IClient::class);
+		$client->method('get')->willReturnCallback(
+			function (string $url, array $options) use (&$urls): IResponse {
+				$urls[] = $url;
+				if (str_starts_with($url, 'https://cloud.example') === true) {
+					throw new FakeConnectException('cURL error 7: Failed to connect to cloud.example port 443', ['errno' => 7]);
+				}
+
+				$this->assertSame('cloud.example', $options['headers']['Host']);
+				$this->assertSame('minted-assertion', $options['headers']['X-Portal-Subject']);
+				$this->assertArrayNotHasKey('Authorization', $options['headers']);
+
+				return $this->response(status: 200, body: '{"results": []}');
+			}
+		);
+
+		$answer = $this->gateway(client: $client)->listTasks(subject: self::SUBJECT, limit: 5);
+
+		$this->assertSame(200, $answer['status']);
+		$this->assertSame(
+			[
+				'https://cloud.example/index.php/apps/openregister/api/portal-tasks?limit=5&offset=0',
+				'http://127.0.0.1/index.php/apps/openregister/api/portal-tasks?limit=5&offset=0',
+			],
+			$urls
+		);
+	}//end testAnUnreachablePublicAddressFallsBackToTheLoopback()
 
 	/**
 	 * An unmintable assertion (no dedicated signing secret) degrades to null
@@ -377,7 +428,7 @@ class PortalTaskGatewayTest extends TestCase {
 		$appManager->method('isInstalled')->willReturn($openregisterInstalled);
 
 		return new PortalTaskGateway(
-			$clientService,
+			new InstanceLoopback($clientService, $urlGenerator, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)),
 			$urlGenerator,
 			$session,
 			$appManager,

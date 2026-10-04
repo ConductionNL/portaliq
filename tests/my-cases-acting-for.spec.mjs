@@ -308,7 +308,7 @@ test('site: a mandated case carries its label, a group too large is refused, and
 	})
 	assert.match(
 		html,
-		/Terrasvergunning[\s\S]*data-testid="my-cases-mandate"[^>]*>Bakkerij Jansen BV</,
+		/Terrasvergunning[\s\S]*data-testid="mijn-case-card-mandate"[^>]*>Bakkerij Jansen BV</,
 	)
 	const refused = await renderSfc('src/site/pages/e/MyCasesPage.vue', {
 		api: {},

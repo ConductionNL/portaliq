@@ -110,6 +110,19 @@ class PageMenuKeys {
 			}
 		}
 
+		// A subtitle from one related record: the child's group (REQ-SMO-026).
+		$lookup = ($declared['subtitleLookup'] ?? null);
+		if (is_array($lookup) === true
+			&& in_array(($lookup['collection'] ?? null), $collectionIds, true) === true
+			&& count($this->names(value: [($lookup['matchField'] ?? null), ($lookup['valueField'] ?? null)])) === 2
+		) {
+			$out['subtitleLookup'] = [
+				'collection' => $lookup['collection'],
+				'matchField' => $lookup['matchField'],
+				'valueField' => $lookup['valueField'],
+			];
+		}
+
 		return $out;
 	}//end records()
 

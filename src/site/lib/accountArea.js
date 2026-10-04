@@ -46,9 +46,9 @@ export function loggedInAs(session, t) {
 }
 
 /**
- * Where an account route should go instead, or '' to stay: the bare `/mijn`
- * and a page the navigation does not offer open the default entry, once the
- * navigation has loaded.
+ * Where an account route should go instead, or '' to stay: a page the
+ * navigation does not offer opens the default entry, once the navigation has
+ * loaded. The bare `/mijn` stays: it is the home.
  *
  * @param {Array<object>} nav The navigation.
  * @param {string} route The route on screen.
@@ -57,6 +57,11 @@ export function loggedInAs(session, t) {
  */
 export function accountRedirect(nav, route) {
 	if (!isAccountRoute(route) || !Array.isArray(nav) || nav.length === 0) {
+		return ''
+	}
+	// `/mijn` itself opens the resident's home, it no longer redirects
+	// (site-mijn-omgeving-components REQ-SMO-007, design D4).
+	if (route === ACCOUNT_ROUTE) {
 		return ''
 	}
 	if (navEntryForRoute(nav, route)) {

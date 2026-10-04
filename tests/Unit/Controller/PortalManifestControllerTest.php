@@ -117,6 +117,33 @@ class PortalManifestControllerTest extends TestCase {
 	}//end testServiceWorkerAnswersTheAllowedScopeHeader()
 
 	/**
+	 * The worker's own fetch() follows the policy its script is served with.
+	 * Nextcloud's empty default leaves connect-src out, so it fell back to
+	 * default-src 'none' and every fetch of the worker failed: returning
+	 * visitors got net::ERR_FAILED on /site. Same origin is allowed, nothing
+	 * wider, and every other directive stays shut.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-service-worker-caches-the-app-shell-and-never-the-api
+	 */
+	public function testTheWorkerMayFetchItsOwnOriginAndNothingElse(): void {
+		$policy = $this->controller(orgSlug: '')->serviceWorker()->getContentSecurityPolicy()->buildPolicy();
+		$directives = array_values(array_filter(array_map('trim', explode(';', $policy))));
+
+		$this->assertContains(needle: "connect-src 'self'", haystack: $directives);
+		$this->assertContains(needle: "default-src 'none'", haystack: $directives);
+		$this->assertSame(
+			expected: ["connect-src 'self'"],
+			actual: array_values(array_filter($directives, static fn (string $d): bool => str_starts_with($d, 'connect-src'))),
+			message: 'one connect-src, same origin only'
+		);
+		foreach ($directives as $directive) {
+			$this->assertStringNotContainsString(needle: '*', haystack: $directive);
+		}
+	}//end testTheWorkerMayFetchItsOwnOriginAndNothingElse()
+
+	/**
 	 * The allowed scope is the route root the browser reached the worker on,
 	 * which is the scope the site registers it with (src/site/lib/pwa.js
 	 * turns `<root>/portal/api` into `<root>/`). An app installed in

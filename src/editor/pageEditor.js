@@ -20,6 +20,7 @@ import { restoredDraft } from '../lib/pageHistory.js'
 import { createEditHistory, HISTORY_LIMIT } from './editHistory.js'
 import {
 	addWidget,
+	addWidgetAt,
 	applyLayout,
 	cloneWidgets,
 	removeWidget,
@@ -195,6 +196,31 @@ export function createPageEditor({
 		addWidget(key) {
 			change(() => {
 				const result = addWidget(state.widgets, key, defaultSizeFor(key))
+				state.widgets = result.widgets
+				state.selectedId = result.id
+			})
+		},
+
+		/**
+		 * Place a widget at the cell it was dropped on, and select it.
+		 *
+		 * The same action as `addWidget` in every other respect, including the
+		 * selection and the undo entry: a drop and a key press differ in where
+		 * the widget lands, not in what placing one means
+		 * (site-nlds-widget-palette REQ-SNW-002).
+		 *
+		 * @param {string} key The widget key.
+		 * @param {{gridX: number, gridY: number}} cell Where it was dropped.
+		 * @return {void}
+		 */
+		addWidgetAt(key, cell) {
+			change(() => {
+				const result = addWidgetAt(
+					state.widgets,
+					key,
+					defaultSizeFor(key),
+					cell,
+				)
 				state.widgets = result.widgets
 				state.selectedId = result.id
 			})

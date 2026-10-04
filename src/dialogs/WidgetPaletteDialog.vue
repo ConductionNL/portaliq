@@ -31,28 +31,81 @@
 			}}
 		</p>
 
-		<ul class="palette__list">
-			<li v-for="entry in entries" :key="entry.key" class="palette__item">
-				<button
-					type="button"
-					class="palette__button"
-					:class="{ 'palette__button--warned': !entry.publicSafe }"
-					:data-testid="`widget-palette-${entry.key}`"
-					:data-public="entry.publicSafe ? 'true' : 'false'"
-					@click="choose(entry)">
-					<span class="palette__label">{{ entry.label }}</span>
-					<span class="palette__key">{{ entry.key }}</span>
+		<!--
+			The search, and the count it announces. The count is in a live
+			region because an author who types and reads nothing has no way to
+			tell a narrow search from a broken one; a screen reader says "3
+			widgets" as the list shrinks.
+		-->
+		<div class="palette__search">
+			<label class="palette__search-label" for="widget-palette-search">
+				{{ t('portaliq', 'Search widgets') }}
+			</label>
+			<input
+				id="widget-palette-search"
+				v-model="query"
+				type="search"
+				class="palette__search-input"
+				data-testid="widget-palette-search"
+				:placeholder="t('portaliq', 'For example: zaak, link, formulier')" />
+			<p
+				class="palette__hits"
+				role="status"
+				aria-live="polite"
+				data-testid="widget-palette-hits">
+				{{ hitsText }}
+			</p>
+		</div>
+
+		<p
+			v-if="groups.length === 0"
+			class="palette__empty"
+			data-testid="widget-palette-empty">
+			{{ t('portaliq', 'No widget matches your search.') }}
+		</p>
+
+		<section
+			v-for="group in groups"
+			:key="group.group"
+			class="palette__group"
+			:data-testid="`widget-palette-group-${group.group}`">
+			<h3 class="palette__group-heading">{{ group.label }}</h3>
+			<ul class="palette__list">
+				<li
+					v-for="entry in group.entries"
+					:key="entry.key"
+					class="palette__item">
 					<!--
-						The reason travels with the entry rather than sitting in
-						a legend somewhere: an author reading one row has to be
-						able to tell, from that row, what placing it will do.
+						DRAG AND KEY ARE THE SAME ACT, and the button is what
+						makes that true: it carries the key on a drag, and a
+						click or Enter places the widget without a pointer
+						(REQ-SNW-002). A div with a drag handler would leave an
+						author who cannot point with nothing to press.
 					-->
-					<span v-if="!entry.publicSafe" class="palette__reason">
-						{{ entry.reason }}
-					</span>
-				</button>
-			</li>
-		</ul>
+					<button
+						type="button"
+						class="palette__button"
+						:class="{ 'palette__button--warned': !entry.publicSafe }"
+						:data-testid="`widget-palette-${entry.key}`"
+						:data-public="entry.publicSafe ? 'true' : 'false'"
+						draggable="true"
+						@click="choose(entry)"
+						@dragstart="startDrag($event, entry)">
+						<span class="palette__label">{{ entry.label }}</span>
+						<span class="palette__key">{{ entry.key }}</span>
+						<!--
+							The reason travels with the entry rather than
+							sitting in a legend somewhere: an author reading one
+							row has to be able to tell, from that row, what
+							placing it will do.
+						-->
+						<span v-if="!entry.publicSafe" class="palette__reason">
+							{{ entry.reason }}
+						</span>
+					</button>
+				</li>
+			</ul>
+		</section>
 
 		<template #actions>
 			<NcButton
@@ -68,6 +121,17 @@
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcDialog } from '@nextcloud/vue'
 import { widgetCatalogue } from '../lib/pageWidgetCatalogue.js'
+import { paletteGroups, paletteHitCount } from '../lib/widgetPalette.js'
+
+/**
+ * The media type a dragged palette entry carries.
+ *
+ * Its own type rather than `text/plain`, so a drop that did not come from the
+ * palette is not mistaken for one that did.
+ *
+ * @type {string}
+ */
+export const PALETTE_DRAG_TYPE = 'application/x-portaliq-widget'
 
 export default {
 	name: 'WidgetPaletteDialog',
@@ -95,7 +159,14 @@ export default {
 		},
 	},
 
-	emits: ['update:open', 'choose'],
+	emits: ['update:open', 'choose', 'dragging'],
+
+	data() {
+		return {
+			/** What the author typed in the search field. */
+			query: '',
+		}
+	},
 
 	computed: {
 		/**
@@ -111,6 +182,29 @@ export default {
 			return this.publicOnly
 				? entries.filter((entry) => entry.publicSafe)
 				: entries
+		},
+
+		/**
+		 * The entries under their headings, filtered by the search.
+		 *
+		 * @return {Array<object>} The groups.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-the-palette-must-group-widgets-and-let-an-editor-search-them-req-snw-001
+		 */
+		groups() {
+			return paletteGroups(this.entries, this.query)
+		},
+
+		/**
+		 * The sentence the live region reads out.
+		 *
+		 * @return {string} The hit count in words.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-the-palette-must-group-widgets-and-let-an-editor-search-them-req-snw-001
+		 */
+		hitsText() {
+			const hits = paletteHitCount(this.entries, this.query)
+			return translate('portaliq', '%n widget found', '%n widgets found', hits)
 		},
 	},
 
@@ -142,6 +236,28 @@ export default {
 			this.$emit('choose', entry.key)
 			this.$emit('update:open', false)
 		},
+
+		/**
+		 * Carry the key on the drag, so a drop on a grid cell knows what to
+		 * place there.
+		 *
+		 * @param {DragEvent} event The drag.
+		 * @param {object} entry The catalogue entry.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		startDrag(event, entry) {
+			if (!event?.dataTransfer) {
+				return
+			}
+
+			event.dataTransfer.setData(PALETTE_DRAG_TYPE, entry.key)
+			// `copy` rather than `move`: the palette keeps its entry, which is
+			// what the cursor should say.
+			event.dataTransfer.effectAllowed = 'copy'
+			this.$emit('dragging', entry.key)
+		},
 	},
 }
 </script>
@@ -150,6 +266,36 @@ export default {
 .palette__intro {
 	margin-bottom: 12px;
 	color: var(--color-text-maxcontrast);
+}
+
+.palette__search {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 12px;
+}
+
+.palette__search-label {
+	font-weight: bold;
+}
+
+.palette__search-input {
+	width: 100%;
+}
+
+.palette__hits {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
+}
+
+.palette__empty {
+	color: var(--color-text-maxcontrast);
+}
+
+.palette__group-heading {
+	margin: 12px 0 6px;
+	font-size: 1em;
 }
 
 .palette__list {

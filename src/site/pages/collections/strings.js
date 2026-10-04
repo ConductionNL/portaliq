@@ -12,6 +12,7 @@
 
 export default {
 	nl: {
+		'See all {label}': 'Bekijk alle {label}',
 		'Loading…': 'Laden…',
 		Other: 'Overig',
 		'No items.': 'Geen items.',
@@ -56,6 +57,7 @@ export default {
 			'Open een naam om alles daarover te zien.',
 	},
 	en: {
+		'See all {label}': 'See all {label}',
 		'Loading…': 'Loading…',
 		Other: 'Other',
 		'No items.': 'No items.',

@@ -54,6 +54,87 @@ class PortalFormBindingResolverTest extends TestCase {
 
 	}//end testTheFieldsComeInTheFormsOwnOrder()
 
+	/**
+	 * The form's steps travel with the render, with a review step last
+	 * (site-multi-step-forms REQ-SMF-010).
+	 *
+	 * @return void
+	 */
+	public function testStepsTravelWithTheForm(): void {
+		$this->seedForm(
+			audience: 'client',
+			fields: [['name' => 'onderwerp', 'order' => 1], ['name' => 'periodeVan', 'order' => 2]],
+			extra: [
+				'steps' => [
+					['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['onderwerp']],
+					['id' => 'periode', 'title' => 'Periode en documenten', 'description' => 'Welke periode?', 'fields' => ['periodeVan']],
+					['id' => 'controle', 'title' => 'Controleren en versturen', 'review' => true],
+				],
+			]
+		);
+
+		$render = $this->resolver()->render(binding: $this->binding());
+
+		$this->assertSame(
+			[
+				['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['onderwerp']],
+				['id' => 'periode', 'title' => 'Periode en documenten', 'fields' => ['periodeVan'], 'description' => 'Welke periode?'],
+				['id' => 'controle', 'title' => 'Controleren en versturen', 'fields' => [], 'review' => true],
+			],
+			$render['steps']
+		);
+	}//end testStepsTravelWithTheForm()
+
+	/**
+	 * A step naming a field the form does not have is dropped; its known
+	 * fields go to the last step.
+	 *
+	 * @return void
+	 */
+	public function testAStepNamingAnUnknownFieldIsDropped(): void {
+		$this->seedForm(
+			audience: 'client',
+			fields: [['name' => 'onderwerp', 'order' => 1], ['name' => 'naam', 'order' => 2]],
+			extra: [
+				'steps' => [
+					['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['onderwerp']],
+					['id' => 'betalen', 'title' => 'Betalen', 'fields' => ['naam', 'iban']],
+				],
+			]
+		);
+
+		$steps = $this->resolver()->render(binding: $this->binding())['steps'];
+
+		$this->assertSame(['vraag', 'more'], array_column($steps, 'id'));
+		$this->assertSame(['naam'], $steps[1]['fields']);
+	}//end testAStepNamingAnUnknownFieldIsDropped()
+
+	/**
+	 * A field in no step goes in a last step of its own, before the review;
+	 * a form without steps renders as one page.
+	 *
+	 * @return void
+	 */
+	public function testLooseFieldsGetALastStep(): void {
+		$formId = $this->seedForm(
+			audience: 'client',
+			fields: [['name' => 'onderwerp', 'order' => 1], ['name' => 'toelichting', 'order' => 2]],
+			extra: [
+				'steps' => [
+					['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['onderwerp']],
+					['id' => 'controle', 'title' => 'Controleren', 'review' => true],
+				],
+			]
+		);
+
+		$steps = $this->resolver()->render(binding: $this->binding())['steps'];
+		$this->assertSame(['vraag', 'more', 'controle'], array_column($steps, 'id'));
+		$this->assertSame(['toelichting'], $steps[1]['fields']);
+
+		unset($this->rows[$formId]['steps']);
+		$this->assertSame([], $this->resolver()->render(binding: $this->binding())['steps']);
+	}//end testLooseFieldsGetALastStep()
+
 	public function testAnEditedFormReachesThePortalWithNoPortalChange(): void {
 		$formId = $this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]]);
 		$resolver = $this->resolver();

@@ -211,7 +211,25 @@ test('site: the shell offers "My account", consumes the link and shows the promp
 		app,
 		/this\.contactPrompt = await contactPromptWanted\(this\.session\)/,
 	)
-	assert.match(app, /<div v-if="session && contactPrompt"[^>]*>\s*<ContactPrompt/)
+	// On a `/mijn` page the prompt stands in the signed-in area's content
+	// column, above the page heading; it used to sit above `main`, over the
+	// menu column and half under the header. Elsewhere it stays above the page.
+	assert.match(
+		app,
+		/<div\s+v-if="session && contactPrompt && !accountRoute"[^>]*>\s*<ContactPrompt/,
+	)
+	assert.match(
+		app,
+		/<template v-if="session && contactPrompt" #prompt>\s*<ContactPrompt/,
+	)
+	const area = readFileSync(
+		join(ROOT, 'src', 'site', 'components', 'AccountArea.vue'),
+		'utf8',
+	)
+	assert.match(
+		area,
+		/<div class="pq-account__content">[\s\S]*?<slot name="prompt" \/>[\s\S]*?<h1/,
+	)
 })
 
 // The Vue port on the site (site-reaches-portal-parity T18, REQ-SRP-037).
