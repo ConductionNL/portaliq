@@ -20,6 +20,27 @@
 			</button>
 		</template>
 
+		<div
+			v-else-if="inSteps"
+			class="pq-save__form"
+			data-testid="attached-action-steps">
+			<h3 class="utrecht-heading-3">
+				{{ open.label || open.id }}
+			</h3>
+			<SchemaForm
+				:action="open"
+				:api="api"
+				:t="t"
+				:send="sendOpen"
+				@submitted="afterSteps" />
+			<button
+				type="button"
+				class="utrecht-button utrecht-button--subtle"
+				@click="open = null">
+				{{ translate('Cancel') }}
+			</button>
+		</div>
+
 		<form
 			v-else
 			class="pq-save__form"
@@ -79,6 +100,7 @@
 <script>
 import ErrorSummary from '../forms/ErrorSummary.vue'
 import SchemaField from './SchemaField.vue'
+import SchemaForm from './SchemaForm.vue'
 import {
 	attachedActionsOf,
 	fieldLabel,
@@ -106,7 +128,7 @@ import {
 export default {
 	name: 'AttachedActions',
 
-	components: { ErrorSummary, SchemaField },
+	components: { ErrorSummary, SchemaField, SchemaForm },
 
 	inheritAttrs: false,
 
@@ -154,6 +176,22 @@ export default {
 		},
 
 		/**
+		 * Whether the open action runs in steps, through the action form's step
+		 * flow (site-multi-step-forms REQ-SMF-020): dossiq's Woo request.
+		 *
+		 * @return {boolean} True with steps.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 */
+		inSteps() {
+			return (
+				this.open !== null
+				&& Array.isArray(this.open.steps)
+				&& this.open.steps.length > 0
+			)
+		},
+
+		/**
 		 * The error summary's lines, in field order.
 		 *
 		 * @return {Array<{field: string, target: string, message: string}>} The lines.
@@ -178,6 +216,48 @@ export default {
 
 		configOf(field) {
 			return fieldConfig(this.open, field)
+		},
+
+		/**
+		 * Forward the stepped form's body for the record on screen, in the
+		 * result shape the action form reads.
+		 *
+		 * @param {object} body What the resident answered.
+		 * @return {Promise<{ok: boolean, object: object, errors: object}>} The result.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 */
+		async sendOpen(body) {
+			const result = await runAttachedAction(
+				this.api,
+				this.collection,
+				this.row,
+				this.open,
+				body,
+			)
+			return {
+				ok: result.ok,
+				object: result.body,
+				errors: (result.body && result.body.errors) || {},
+			}
+		},
+
+		/**
+		 * After a stepped send: the action's own confirmation stays on screen;
+		 * without one the success line shows and the form closes.
+		 *
+		 * @return {void}
+		 */
+		afterSteps() {
+			if (this.open && this.open.confirmation) {
+				return
+			}
+			const success = this.open ? this.open.successMessage : ''
+			this.message =
+				typeof success === 'string' && success !== ''
+					? success
+					: this.translate('Done.')
+			this.open = null
 		},
 
 		/**

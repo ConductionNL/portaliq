@@ -4,12 +4,65 @@
   -->
 
 <template>
+	<section
+		v-if="confirmed !== null"
+		class="pq-schema-form__confirmation"
+		data-testid="schema-form-confirmation">
+		<h2
+			ref="confirmationHeading"
+			class="utrecht-heading-2"
+			tabindex="-1"
+			data-testid="schema-form-confirmation-heading">
+			{{ action.confirmation.title }}
+		</h2>
+		<p
+			v-if="confirmed.body !== ''"
+			class="utrecht-paragraph"
+			role="status"
+			data-testid="schema-form-confirmation-body">
+			{{ confirmed.body }}
+		</p>
+		<p
+			v-if="confirmed.next !== ''"
+			class="utrecht-paragraph"
+			data-testid="schema-form-confirmation-next">
+			{{ confirmed.next }}
+		</p>
+	</section>
 	<form
+		v-else
 		class="pq-schema-form"
 		:aria-label="action.label || action.id"
 		data-testid="schema-form"
 		novalidate
-		@submit.prevent="submit">
+		@submit.prevent="onSubmit">
+		<template v-if="hasSteps">
+			<FormProgress
+				:steps="flow"
+				:current="stepIndex"
+				:idBase="`f-${action.id}-progress`"
+				:label="translate('Progress')"
+				:shortPattern="translate('Step {n} of {m}')"
+				:showLabel="translate('Show all steps')"
+				:hideLabel="translate('Hide the steps')"
+				:doneLabel="translate('Done')"
+				:currentLabel="translate('Current step')"
+				:todoLabel="translate('To do')" />
+			<h2
+				ref="stepHeading"
+				class="utrecht-heading-2 pq-schema-form__step-heading"
+				tabindex="-1"
+				data-testid="schema-form-step-heading">
+				{{ stepHeadingText }}
+			</h2>
+			<p
+				v-if="currentStep.description"
+				class="utrecht-paragraph"
+				data-testid="schema-form-step-description">
+				{{ currentStep.description }}
+			</p>
+		</template>
+
 		<p
 			v-if="explainOptional"
 			class="utrecht-paragraph pq-schema-form__intro"
@@ -33,24 +86,51 @@
 			{{ error }}
 		</p>
 
-		<SchemaField
-			v-for="field in fields"
-			:id="inputId(field)"
-			:key="field"
-			v-model="values[field]"
-			:field="field"
-			:label="labelOf(field)"
-			:config="configOf(field)"
-			:input="inputOf(field)"
-			:options="options[field] || []"
-			:files="files[field] || []"
-			:fileKey="fileKey"
-			:error="errors[field] || ''"
-			:t="t"
-			@pick="(picked) => pick(field, picked)" />
+		<ReviewList
+			v-if="onReview"
+			:sections="reviewSections"
+			:editLabel="translate('Change')"
+			:editPattern="translate('Change step {n}')"
+			:emptyLabel="translate('Not answered')"
+			@edit="editStep" />
+
+		<template v-else>
+			<SchemaField
+				v-for="field in shownFields"
+				:id="inputId(field)"
+				:key="field"
+				v-model="values[field]"
+				:field="field"
+				:label="labelOf(field)"
+				:config="configOf(field)"
+				:input="inputOf(field)"
+				:options="options[field] || []"
+				:files="files[field] || []"
+				:fileKey="fileKey"
+				:error="errors[field] || ''"
+				:t="t"
+				@pick="(picked) => pick(field, picked)" />
+		</template>
 
 		<div class="pq-schema-form__buttons">
 			<button
+				v-if="hasSteps && stepIndex > 0"
+				type="button"
+				class="utrecht-button utrecht-button--secondary-action"
+				:disabled="submitting"
+				data-testid="schema-form-previous"
+				@click="previousStep">
+				{{ translate('Previous step') }}
+			</button>
+			<button
+				v-if="hasSteps && !onReview"
+				type="submit"
+				class="utrecht-button utrecht-button--primary-action"
+				data-testid="schema-form-next">
+				{{ translate('Next step') }}
+			</button>
+			<button
+				v-else
 				type="submit"
 				class="utrecht-button utrecht-button--primary-action"
 				:disabled="submitting"
@@ -79,6 +159,8 @@
 
 <script>
 import ErrorSummary from '../forms/ErrorSummary.vue'
+import FormProgress from '../forms/FormProgress.vue'
+import ReviewList from '../forms/ReviewList.vue'
 import SchemaField from './SchemaField.vue'
 import {
 	oversizedFiles,
@@ -86,6 +168,8 @@ import {
 	uploadFiles,
 } from '../../../shared/fileFieldSubmit.js'
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
+import stepFlow from '../forms/stepFlow.js'
+import { confirmationText, stepHeading } from '../forms/steps.js'
 import {
 	collectionProviders,
 	fieldConfig,
@@ -119,15 +203,22 @@ import {
 export default {
 	name: 'SchemaForm',
 
-	components: { ErrorSummary, SchemaField },
+	components: { ErrorSummary, FormProgress, ReviewList, SchemaField },
+
+	mixins: [stepFlow],
 
 	props: {
-		/** The normalised manifest action (`create` or `update`). */
+		/** The normalised manifest action (`create`, `update`, or an endpoint action with `fields`). */
 		action: { type: Object, required: true },
 		/** The portal api: `createObject`, `uploadFieldFile`, `fetchOptions`. */
 		api: { type: Object, required: true },
 		/** The translator `t(key, vars)`. */
 		t: { type: Function, default: null },
+		/**
+		 * Sends the body instead of creating a record, for an endpoint action
+		 * (an attached action): `(body) => Promise<{ok, object, errors?}>`.
+		 */
+		send: { type: Function, default: null },
 	},
 
 	emits: ['submitted'],
@@ -144,6 +235,7 @@ export default {
 			done: '',
 			submitting: false,
 			pending: null,
+			confirmed: null,
 		}
 	},
 
@@ -165,9 +257,91 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
 		 */
 		explainOptional() {
-			return explainsOptional(
-				this.fields.map((field) => this.configOf(field).required === true),
+			return (
+				!this.onReview
+				&& explainsOptional(
+					this.shownFields.map(
+						(field) => this.configOf(field).required === true,
+					),
+				)
 			)
+		},
+
+		/**
+		 * The fields on screen: the step's shown fields, or every field of a
+		 * one-page form.
+		 *
+		 * @return {string[]} The fields.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+		 */
+		shownFields() {
+			if (!this.hasSteps) {
+				return this.fields
+			}
+			return this.onReview
+				? []
+				: this.currentStep.fields.filter((field) => this.isShownField(field))
+		},
+
+		/**
+		 * The steps the server sent with the action.
+		 *
+		 * @return {Array<object>|undefined} The steps.
+		 */
+		rawSteps() {
+			return this.action.steps
+		},
+
+		/**
+		 * The titles of the loose step and of an undeclared review.
+		 *
+		 * @return {{other: string, review: string}} The titles.
+		 */
+		stepTitles() {
+			return {
+				other: this.translate('Other questions'),
+				review: this.translate('Check and send'),
+			}
+		},
+
+		/**
+		 * "Stap 2 van 4: periode en documenten".
+		 *
+		 * @return {string} The heading.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+		 */
+		stepHeadingText() {
+			return stepHeading(
+				this.translate('Step {n} of {m}: {title}'),
+				this.stepIndex + 1,
+				this.flow.length,
+				this.currentStep.title,
+			)
+		},
+
+		/**
+		 * The review: per step with shown fields, each answer under its question.
+		 *
+		 * @return {Array<object>} The sections.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
+		 */
+		reviewSections() {
+			return this.flow
+				.map((step, index) => ({
+					index,
+					title: step.title,
+					rows: step.fields
+						.filter((field) => this.isShownField(field))
+						.map((field) => ({
+							field,
+							label: this.labelOf(field),
+							value: this.answerText(field),
+						})),
+				}))
+				.filter((section) => section.rows.length > 0)
 		},
 
 		/**
@@ -282,6 +456,76 @@ export default {
 		},
 
 		/**
+		 * Whether a field shows: not declared `visible: false`.
+		 *
+		 * @param {string} field The field.
+		 * @return {boolean} True when it shows.
+		 */
+		isShownField(field) {
+			return this.configOf(field).visible !== false
+		},
+
+		/**
+		 * The errors of some fields, for one step's check.
+		 *
+		 * @param {string[]} fields The fields.
+		 * @return {Record<string, string>} The errors.
+		 */
+		checkFields(fields) {
+			const all = fieldErrors(this.action, this.values, this.files, this.t)
+			return Object.fromEntries(
+				Object.entries(all).filter(([field]) => fields.includes(field)),
+			)
+		},
+
+		/**
+		 * An answer as the review shows it: the option's label, the file
+		 * names, a date in words, or the text.
+		 *
+		 * @param {string} field The field.
+		 * @return {string} The answer.
+		 */
+		answerText(field) {
+			const input = this.inputOf(field)
+			if (input === 'file') {
+				return (this.files[field] || []).map((file) => file.name).join(', ')
+			}
+			const value = String(this.values[field] ?? '')
+			if (input === 'select') {
+				const option = (this.options[field] || []).find(
+					(entry) => String(entry.value) === value,
+				)
+				return option ? String(option.label) : value
+			}
+			if (input === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+				const [year, month, day] = value.split('-').map(Number)
+				const lang =
+					typeof document !== 'undefined' && document.documentElement
+						? document.documentElement.lang || 'nl'
+						: 'nl'
+				return new Intl.DateTimeFormat(lang, {
+					day: 'numeric',
+					month: 'long',
+					year: 'numeric',
+				}).format(new Date(year, month - 1, day))
+			}
+			return value
+		},
+
+		/**
+		 * The form's submit: "Volgende stap" on a step, sending on the review
+		 * or on a one-page form.
+		 *
+		 * @return {Promise<void>|void}
+		 */
+		onSubmit() {
+			if (this.hasSteps && !this.onReview) {
+				return this.nextStep()
+			}
+			return this.submit()
+		},
+
+		/**
 		 * Move focus to the error summary's heading.
 		 *
 		 * @return {void}
@@ -352,11 +596,14 @@ export default {
 		async submit() {
 			this.error = ''
 			this.done = ''
-			this.errors = fieldErrors(this.action, this.values, this.files, this.t)
-			if (Object.keys(this.errors).length > 0) {
-				this.$nextTick(() => this.focusSummary())
+			const wrong = this.checkFields(
+				this.fields.filter((field) => this.isShownField(field)),
+			)
+			if (Object.keys(wrong).length > 0) {
+				this.showErrors(wrong)
 				return
 			}
+			this.errors = {}
 			const tooLarge = oversizedFiles(this.action, this.files)
 			if (tooLarge.length > 0) {
 				this.error = this.translate('These files are too large: {files}', {
@@ -366,19 +613,17 @@ export default {
 			}
 
 			this.submitting = true
-			const result = await submitWithFiles(
-				this.api,
-				this.action,
-				formBody(this.action, this.values, this.options),
-				this.files,
-			)
+			const body = formBody(this.action, this.values, this.options)
+			const result = this.send
+				? await this.sendBody(body)
+				: await submitWithFiles(this.api, this.action, body, this.files)
 			this.submitting = false
 			if (!result.ok) {
 				// A refusal that names fields (a required field left empty)
-				// lands in the summary; anything else says it in words.
-				this.errors = serverFieldErrors(this.action, result.errors, this.t)
-				if (Object.keys(this.errors).length > 0) {
-					this.$nextTick(() => this.focusSummary())
+				// lands in the summary, on its step; anything else in words.
+				const refused = serverFieldErrors(this.action, result.errors, this.t)
+				if (Object.keys(refused).length > 0) {
+					this.showErrors(refused)
 					return
 				}
 				this.error = this.translate('Saving did not work.')
@@ -388,11 +633,55 @@ export default {
 			this.values = this.startValues()
 			this.files = {}
 			this.fileKey++
+			this.stepIndex = 0
 			this.reportFailed(result.id, result.failed)
+			this.$emit('submitted', result.object, this.action)
+			if (this.action.confirmation && result.failed.length === 0) {
+				this.confirm(result.object)
+				return
+			}
 			if (result.failed.length === 0) {
 				this.done = this.action.successMessage || this.translate('Saved.')
 			}
-			this.$emit('submitted', result.object, this.action)
+		},
+
+		/**
+		 * Send the body through the endpoint sender, in the same result shape
+		 * as a create.
+		 *
+		 * @param {object} body The body.
+		 * @return {Promise<{ok: boolean, object: object|null, id: string, failed: Array, errors: object}>} The result.
+		 */
+		async sendBody(body) {
+			const answer = (await this.send(body)) || {}
+			return {
+				ok: answer.ok === true,
+				object: answer.object || null,
+				id: '',
+				failed: [],
+				errors: answer.errors || {},
+			}
+		},
+
+		/**
+		 * Replace the form with the action's confirmation, its placeholders
+		 * filled from the answer, and put focus on its heading.
+		 *
+		 * @param {object|null} answer What the app answered.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-word-its-own-confirmation-req-smf-022
+		 */
+		confirm(answer) {
+			this.confirmed = {
+				body: confirmationText(this.action.confirmation.body, answer),
+				next: confirmationText(this.action.confirmation.next, answer),
+			}
+			this.$nextTick(() => {
+				if (this.$refs.confirmationHeading) {
+					this.$refs.confirmationHeading.focus()
+				}
+			})
 		},
 	},
 }
