@@ -2232,11 +2232,8 @@
                                 },
                                 "records": {
                                     "title": "Record switcher",
-                                    "type": [
-                                        "object",
-                                        "string"
-                                    ],
-                                    "description": "The collection whose records this page switches between, with the fields that name them and an optional subtitle from a related record."
+                                    "type": "object",
+                                    "description": "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection."
                                 },
                                 "perRecord": {
                                     "title": "Per record",

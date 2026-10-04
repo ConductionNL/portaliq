@@ -2076,7 +2076,6 @@
         "Record page": "Recordpagina",
         "The collection this page shows one record of.": "De verzameling waarvan deze pagina één record toont.",
         "Record switcher": "Recordkeuze",
-        "The collection whose records this page switches between.": "De verzameling tussen wier records deze pagina wisselt.",
         "Per record": "Per record",
         "The menu lists the page once for each record of this collection.": "Het menu toont de pagina één keer voor elk record van deze verzameling.",
         "The blocks of the page, in order. A block of an unknown type is left out.": "De blokken van de pagina, op volgorde. Een blok van een onbekend type wordt weggelaten.",
@@ -2124,7 +2123,7 @@
         "On a collection block: cards instead of a table.": "Bij een verzamelingsblok: kaarten in plaats van een tabel.",
         "Progress": "Voortgang",
         "On cards: the fields with the value and the total, and the unit, shown as a figure.": "Bij kaarten: de velden met de waarde en het totaal, en de eenheid, getoond als cijfer.",
-        "The collection whose records this page switches between, with the fields that name them and an optional subtitle from a related record.": "De verzameling tussen wier records deze pagina wisselt, met de velden die ze een naam geven en een ondertitel uit een gerelateerd record."
+        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "De verzameling tussen wier records deze pagina wisselt, als object met de verzameling, de velden die de records een naam geven en een ondertitel uit een gerelateerd record. Een app mag ook alleen de verzameling noemen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

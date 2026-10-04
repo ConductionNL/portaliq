@@ -109,7 +109,7 @@ class PortalPageSchemaTest extends TestCase {
 			$this->assertTrue($this->fits(record: $this->record(collection: $extra)), (string)json_encode($extra));
 		}
 
-		$pages = [['records' => ['collection' => 'zaken', 'subtitleLookup' => ['collection' => 'zaken', 'matchField' => 'a', 'valueField' => 'b']]], ['home' => true], ['menu' => false], ['group' => 'Zaken'], ['record' => ['collection' => 'zaken']], ['records' => ['collection' => 'zaken', 'titleFields' => ['reference']]], ['records' => 'zaken'], ['record' => ['collection' => 'zaken'], 'perRecord' => 'zaken']];
+		$pages = [['records' => ['collection' => 'zaken', 'subtitleLookup' => ['collection' => 'zaken', 'matchField' => 'a', 'valueField' => 'b']]], ['home' => true], ['menu' => false], ['group' => 'Zaken'], ['record' => ['collection' => 'zaken']], ['records' => ['collection' => 'zaken', 'titleFields' => ['reference']]], ['record' => ['collection' => 'zaken'], 'perRecord' => 'zaken']];
 		foreach ($pages as $extra) {
 			$this->assertTrue($this->fits(record: $this->record(page: $extra)), (string)json_encode($extra));
 		}
@@ -138,6 +138,9 @@ class PortalPageSchemaTest extends TestCase {
 		}
 
 		$this->assertFalse($this->fits(record: $this->record(collection: ['kind' => 'zaken'])), 'an unknown kind is refused');
+		// The importer takes one type per property, so a record names its
+		// switcher as an object; an app's provider may still name the bare id.
+		$this->assertFalse($this->fits(record: $this->record(page: ['records' => 'zaken'])), 'a bare id is not a record\'s records');
 		$this->assertFalse($this->fits(record: $this->record(block: ['type' => 'caseCards', 'collection' => 'zaken'])), 'a placeholder block type is refused');
 		$this->assertFalse($this->fits(record: $this->record(block: ['type' => 'calendar', 'sources' => [], 'range' => 'year'])), 'an unknown range is refused');
 		$this->assertFalse($this->fits(record: $this->record(block: ['type' => 'collection', 'collection' => 'zaken', 'display' => 'grid'])), 'an unknown display is refused');

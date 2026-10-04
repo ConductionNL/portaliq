@@ -2007,7 +2007,6 @@ OC.L10N.register(
         "Record page": "Record page",
         "The collection this page shows one record of.": "The collection this page shows one record of.",
         "Record switcher": "Record switcher",
-        "The collection whose records this page switches between.": "The collection whose records this page switches between.",
         "Per record": "Per record",
         "The menu lists the page once for each record of this collection.": "The menu lists the page once for each record of this collection.",
         "The blocks of the page, in order. A block of an unknown type is left out.": "The blocks of the page, in order. A block of an unknown type is left out.",
@@ -2055,7 +2054,7 @@ OC.L10N.register(
         "On a collection block: cards instead of a table.": "On a collection block: cards instead of a table.",
         "Progress": "Progress",
         "On cards: the fields with the value and the total, and the unit, shown as a figure.": "On cards: the fields with the value and the total, and the unit, shown as a figure.",
-        "The collection whose records this page switches between, with the fields that name them and an optional subtitle from a related record.": "The collection whose records this page switches between, with the fields that name them and an optional subtitle from a related record."
+        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection."
     },
     "nplurals=2; plural=(n != 1);"
 )
