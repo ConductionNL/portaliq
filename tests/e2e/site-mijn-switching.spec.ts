@@ -197,9 +197,26 @@ test.describe('site-mijn-switching', () => {
 		const tiles = page.getByTestId('mijn-quick-tile')
 		await expect(tiles).toHaveCount(2)
 		await expect(tiles.first()).toHaveText(/Vera bekijken/)
+
+		// The address the tile offers, before the click, so a tile that is
+		// right but does not navigate reads differently from one that points
+		// at the wrong page.
+		const target = `/mijn/portaliq/kind-detail-${stamp}/${vera}`
+		await expect(
+			tiles.first(),
+			'the tile must offer the record page of the open child',
+		).toHaveAttribute('href', new RegExp(encodeURIComponent(target)))
+
 		await tiles.first().click()
-		await expect(page).toHaveURL(
-			new RegExp(encodeURIComponent(`/kind-detail-${stamp}/${vera}`)),
+		await expect(
+			page,
+			`clicking the tile must open ${target}; staying on the family page`
+				+ ' means the navigation was undone, which a kept open-record'
+				+ ' target does (ContributionPage.openTile)',
+		).toHaveURL(new RegExp(encodeURIComponent(target)))
+		await expect(page.getByTestId('contribution-page')).toHaveAttribute(
+			'data-page',
+			`kind-detail-${stamp}`,
 		)
 	})
 
