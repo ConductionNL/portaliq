@@ -4,7 +4,8 @@
  * Portaliq Collection List Keys (site-mijn-omgeving-components)
  *
  * A `collection` block may show only its first rows (`limit`, 1 to 50) in a
- * declared order (`sort: {field, direction}` on a projected field); a
+ * declared order (`sort: {field, direction}` on a projected field), and as
+ * cards naming each row (`display: cards`, `titleFields`, `progress`); a
  * `calendar` block may show only today, this week or this month (`range`).
  * A value that does not fit is dropped and the block stays as it was.
  *
@@ -73,9 +74,20 @@ class CollectionListKeys {
 	}//end collectionKeys()
 
 	/**
-	 * `display: cards` and its `progress: {valueField, totalField, label}`,
-	 * both fields projected (REQ-SMO-028). A progress that does not fit is
-	 * dropped and the cards stay.
+	 * `display: cards`, the `titleFields` that name each card, and its
+	 * `progress: {valueField, totalField, label}`, every named field projected
+	 * (REQ-SMO-028). A progress that does not fit is dropped and the cards
+	 * stay.
+	 *
+	 * WHY `titleFields` IS KEPT HERE. REQ-SMO-028 says each card MUST show the
+	 * row's title, and ProgressCards.vue falls back to `name`, `title` and
+	 * `givenName` when nothing names the row. A schema with none of those three
+	 * drew a bar and a number and nothing identifying, which is merely
+	 * unhelpful with one row and unusable with several: the reader cannot tell
+	 * which row a bar belongs to. Measured on learniq's workplace-trainer
+	 * overview over `bpv-placement`, 4 October 2026. The key is the same
+	 * `titleFields` a `tasks` or `inbox` block already takes, so an app that
+	 * can name a task row can name a card with what it already knows.
 	 *
 	 * @param array<string, mixed>      $block      The declared block.
 	 * @param array<string, mixed>|null $collection The collection.
@@ -90,6 +102,11 @@ class CollectionListKeys {
 		}
 
 		$out = ['display' => 'cards'];
+		$titles = $this->titleFields(block: $block, collection: $collection);
+		if ($titles !== []) {
+			$out['titleFields'] = $titles;
+		}
+
 		$progress = ($block['progress'] ?? null);
 		if (is_array($progress) === true
 			&& $this->projects(collection: $collection, field: ($progress['valueField'] ?? null)) === true
@@ -103,6 +120,27 @@ class CollectionListKeys {
 
 		return $out;
 	}//end cards()
+
+	/**
+	 * The projected fields that name each card, in the order declared.
+	 *
+	 * @param array<string, mixed>      $block      The declared block.
+	 * @param array<string, mixed>|null $collection The collection.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
+	 */
+	private function titleFields(array $block, ?array $collection): array {
+		$titles = [];
+		foreach ((array)($block['titleFields'] ?? []) as $field) {
+			if ($this->projects(collection: $collection, field: $field) === true) {
+				$titles[] = $field;
+			}
+		}
+
+		return $titles;
+	}//end titleFields()
 
 	/**
 	 * The `range` a calendar block keeps: `day`, `week` or `month`.

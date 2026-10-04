@@ -150,8 +150,18 @@ A `richText` block on a record page MAY declare `template` instead of `markdown`
 
 A `collection` block MAY declare `display: cards` and `progress: { valueField, totalField, label }`, both fields projected. Each card MUST show the row's title, the figure as text ("120 van 400 uur") and a decorative bar. A row with no total MUST show no figure. A `progress` naming an unprojected field MUST be dropped.
 
+The block MAY declare `titleFields`, the projected fields that name each card, read in the order given and joined by a space. An unprojected name MUST be dropped. Where the block names none, the collection's own `titleFields` apply, and failing those the first of `name`, `title` and `givenName` the row carries. A card nothing can name MUST show no empty heading.
+
 #### Scenario: The trainer's students
 - GIVEN the trainer's students collection with `progress: { valueField: hoursDone, totalField: hoursRequired, label: "uur" }`
 - AND a student with 120 of 400 hours
 - WHEN the block renders
 - THEN the student's card reads "120 van 400 uur"
+
+#### Scenario: A card over a schema with no name, title or givenName
+- GIVEN a cards block over `bpv-placement`, which carries none of `name`, `title` or `givenName`
+- AND the block declares `titleFields: [trainingCompanyName]`
+- WHEN the block renders
+- THEN each card names its company
+- AND without that declaration the card would show a bar and a number and nothing identifying
+- @e2e tests/e2e/site-mijn-omgeving-live.spec.ts

@@ -360,6 +360,71 @@ test("the trainer's students: 120 van 400 uur", async () => {
 	)
 })
 
+test('a card over a schema with no name names itself from titleFields', async () => {
+	// REQ-SMO-028 scenario "A card over a schema with no name, title or
+	// givenName". Measured on learniq's workplace-trainer overview over
+	// bpv-placement, 4 October 2026: the row was there and in scope, and the
+	// card showed a bar and a number and nothing identifying, because the
+	// renderer fell back to name/title/givenName and the schema has none.
+	const rows = [
+		{
+			id: 'p1',
+			trainingCompanyName: 'Installatiebedrijf Van Dam',
+			hoursApprovedTotal: 312,
+			agreedHours: 640,
+		},
+		{
+			id: 'p2',
+			trainingCompanyName: 'Zorgcentrum De Vaartoever',
+			hoursApprovedTotal: 0,
+			agreedHours: 640,
+		},
+	]
+	const progress = {
+		valueField: 'hoursApprovedTotal',
+		totalField: 'agreedHours',
+		label: 'uur',
+	}
+
+	const named = await renderComponent(ProgressCards, {
+		rows,
+		block: { display: 'cards', titleFields: ['trainingCompanyName'], progress },
+		locale: 'nl',
+	})
+	const [first, second] = named.split('<li ').slice(1)
+	assert.match(
+		first,
+		/pq-progress-cards__title">\s*Installatiebedrijf Van Dam\s*<\/p>/,
+	)
+	assert.match(first, /pq-progress-cards__figure">312 van 640 uur<\/p>/)
+	assert.match(
+		second,
+		/pq-progress-cards__title">\s*Zorgcentrum De Vaartoever\s*<\/p>/,
+	)
+
+	// THE CONTROL: without the declaration the same rows name nothing, which
+	// is the state this fixes. The card must then carry no empty heading
+	// either, rather than an empty paragraph where a name should be.
+	const unnamed = await renderComponent(ProgressCards, {
+		rows,
+		block: { display: 'cards', progress },
+		locale: 'nl',
+	})
+	assert.doesNotMatch(unnamed, /Installatiebedrijf Van Dam/)
+	assert.doesNotMatch(unnamed, /pq-progress-cards__title/)
+	// The figure still renders, so the control differs in the title alone.
+	assert.match(unnamed, /pq-progress-cards__figure">312 van 640 uur<\/p>/)
+
+	// The collection's own titleFields stay the older fallback.
+	const viaCollection = await renderComponent(ProgressCards, {
+		rows,
+		block: { display: 'cards', progress },
+		titleFields: ['trainingCompanyName'],
+		locale: 'nl',
+	})
+	assert.match(viaCollection, /Installatiebedrijf Van Dam/)
+})
+
 test('a message about a case opens the case page with that case chosen', () => {
 	// REQ-SMO-010 scenario "A message about a case opens the case page".
 	const contribution = { app: 'dossiq' }

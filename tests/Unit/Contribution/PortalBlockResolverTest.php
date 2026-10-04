@@ -402,6 +402,56 @@ class PortalBlockResolverTest extends TestCase {
 	}//end testACollectionBlockMayShowCardsWithProgress()
 
 	/**
+	 * A cards block says what names each card, and an unprojected name is
+	 * dropped the way an unprojected progress field is.
+	 *
+	 * WHY THIS TEST EXISTS. REQ-SMO-028 says each card MUST show the row's
+	 * title, and the renderer fell back to `name`, `title` and `givenName`
+	 * when nothing named the row. A schema with none of those three drew a bar
+	 * and a number and nothing identifying. Measured on learniq's
+	 * workplace-trainer overview over `bpv-placement`, 4 October 2026: the two
+	 * API assertions beside it passed, so the row was there and in scope, and
+	 * only the on-screen name was missing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
+	 */
+	public function testACardsBlockSaysWhatNamesEachCard(): void {
+		$cards = ['type' => 'collection', 'collection' => 'vragenAanU', 'display' => 'cards'];
+
+		$this->assertSame(
+			expected: [($cards + ['titleFields' => ['onderwerp']])],
+			actual: $this->blocks(blocks: [($cards + ['titleFields' => ['onderwerp']])])
+		);
+
+		// Two names read as one line, in the order the app declared them.
+		$this->assertSame(
+			expected: [($cards + ['titleFields' => ['onderwerp', 'zaak']])],
+			actual: $this->blocks(blocks: [($cards + ['titleFields' => ['onderwerp', 'zaak']])])
+		);
+
+		// A field the collection does not project cannot name a card: it would
+		// name it with nothing, and the reader could not tell the rows apart.
+		$this->assertSame(
+			expected: [($cards + ['titleFields' => ['onderwerp']])],
+			actual: $this->blocks(blocks: [($cards + ['titleFields' => ['geheim', 'onderwerp']])]),
+			message: 'an unprojected name is dropped and the projected one stays'
+		);
+		$this->assertSame(
+			expected: [$cards],
+			actual: $this->blocks(blocks: [($cards + ['titleFields' => ['geheim']])]),
+			message: 'no projected name leaves no titleFields at all'
+		);
+
+		// A table keeps no titleFields: it names its rows with its columns.
+		$this->assertSame(
+			expected: [['type' => 'collection', 'collection' => 'vragenAanU']],
+			actual: $this->blocks(blocks: [['type' => 'collection', 'collection' => 'vragenAanU', 'titleFields' => ['onderwerp']]])
+		);
+	}//end testACardsBlockSaysWhatNamesEachCard()
+
+	/**
 	 * The placeholder names the app lanes used before the names were fixed
 	 * are not blocks.
 	 *
