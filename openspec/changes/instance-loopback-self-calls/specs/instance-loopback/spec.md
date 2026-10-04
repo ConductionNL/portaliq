@@ -32,7 +32,7 @@ Without a configured address the service MUST call the absolute URL first. When 
 - WHEN portaliq calls its own instance
 - THEN it calls `http://127.0.0.1` with the same path and `Host: localhost:8090`
 - AND the next call in the same request goes to the loopback directly
-- @e2e exclude pinned by `InstanceLoopbackTest::testATransportFailureIsRetriedOnceOnTheLoopbackWithTheOriginalHost`
+- @e2e exclude pinned by `InstanceLoopbackTest::testATransportFailureIsRetriedOnceOnTheLoopbackWithTheOriginalHost` and `::testTheHandlerContextNumberCounts`
 
 #### Scenario: Both addresses fail
 - GIVEN neither the absolute URL nor the loopback answers
@@ -70,4 +70,4 @@ An administrator MAY set `internal_base_url` in the app config, in the admin set
 - GIVEN an administrator enters `http://user:pw@evil/../x`
 - WHEN they save it
 - THEN the settings answer that it was refused and the stored address stays
-- @e2e exclude pinned by `SettingsServiceTest::testTheInternalAddressIsValidatedBeforeItIsStored` and `InstanceLoopbackTest::testAnInvalidConfiguredUrlIsIgnoredWithAWarning`
+- @e2e exclude pinned by `InternalBaseUrlTest::testTheAdminSettingsStoreAndShowTheAddress`, `::testStoreValidatesFirst`, `::testAnInvalidStoredValueIsIgnoredWithOneWarning` and `InstanceLoopbackTest::testAnInvalidConfiguredUrlIsIgnoredWithAWarning`
