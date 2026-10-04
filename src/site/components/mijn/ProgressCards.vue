@@ -7,12 +7,14 @@
 	A collection's rows as cards with a progress figure ("120 van 400 uur"),
 	as LearniqTrainer.dc.html draws the trainer's students. The figure is
 	text; the bar beside it is decorative. A row without a total shows no
-	figure.
+	figure, and a row nothing can name shows no empty heading.
 -->
 <template>
 	<ul class="pq-progress-cards" data-testid="mijn-progress-cards">
 		<li v-for="card in cards" :key="card.key" class="pq-progress-cards__card">
-			<p class="pq-progress-cards__title">{{ card.title }}</p>
+			<p v-if="card.title !== ''" class="pq-progress-cards__title">
+				{{ card.title }}
+			</p>
 			<template v-if="card.figure">
 				<p class="pq-progress-cards__figure">{{ card.figure }}</p>
 				<span class="pq-progress-cards__bar" aria-hidden="true"
@@ -37,7 +39,7 @@ export default {
 		rows: { type: Array, required: true },
 		/** The block: `progress: {valueField, totalField, label?}`. */
 		block: { type: Object, required: true },
-		/** The fields that name a row. */
+		/** The collection's own naming fields, used when the block names none. */
 		titleFields: { type: Array, default: () => [] },
 		/** The site translator. */
 		t: { type: Function, default: null },
@@ -53,10 +55,16 @@ export default {
 		cards() {
 			const tr = mijnTranslator(this.t, this.locale)
 			const progress = this.block?.progress || null
+			// The block names its rows (REQ-SMO-028), then the collection, then
+			// the three properties a schema happens to call a name. A schema
+			// with none of the three drew a bar and nothing identifying, which
+			// is why a cards block may say what names it.
+			const declared =
+				this.block?.titleFields?.length > 0
+					? this.block.titleFields
+					: this.titleFields
 			const fields =
-				this.titleFields.length > 0
-					? this.titleFields
-					: ['name', 'title', 'givenName']
+				declared.length > 0 ? declared : ['name', 'title', 'givenName']
 			return this.rows.map((row, index) => {
 				const title = fields
 					.map((field) => row?.[field])
