@@ -94,6 +94,33 @@ class PortalCrossRefGuardTest extends TestCase {
 	}//end testAReferenceOutsideTheSubjectsScopeRefuses()
 
 	/**
+	 * The controller's answer: 403 naming the field, or null for a body whose
+	 * references resolve.
+	 *
+	 * @return void
+	 */
+	public function testTheRefusalIsA403NamingTheField(): void {
+		$refusal = $this->guard()->refusal(
+			action: $this->action(),
+			data: ['tegenZaakId' => 'case-theirs', 'rationale' => 'Niet eens.'],
+			subject: $this->subject(),
+			app: 'dossiq'
+		);
+
+		$this->assertNotNull($refusal);
+		$this->assertSame(403, $refusal->getStatus());
+		$this->assertSame(['error' => 'cross_ref_refused', 'field' => 'tegenZaakId'], $refusal->getData());
+		$this->assertNull(
+			$this->guard()->refusal(
+				action: $this->action(),
+				data: ['tegenZaakId' => 'case-mine', 'rationale' => 'Niet eens.'],
+				subject: $this->subject(),
+				app: 'dossiq'
+			)
+		);
+	}//end testTheRefusalIsA403NamingTheField()
+
+	/**
 	 * Scenario: A citizen names their own case.
 	 *
 	 * @return void

@@ -15,7 +15,7 @@
  * @type {Record<string, string>}
  */
 const PUBLIC_LABELS = {
-	markdown: 'Tekst (markdown)',
+	markdown: 'Tekst',
 	hero: 'Hero',
 	search: 'Zoekbalk',
 	section: 'Sectie',

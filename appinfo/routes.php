@@ -367,6 +367,8 @@ return [
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
         // The declared history of one object the subject owns (portaliq#723).
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
+        // Where one case stands, from its app's steps provider (site-mijn-omgeving-components REQ-SMO-022).
+        ['name' => 'portalTimeline#steps', 'url' => '/portal/api/collections/{register}/{schema}/{id}/steps', 'verb' => 'GET'],
         // One object's items, e.g. a dossier's publications (my-dossiers).
         ['name' => 'portalTimeline#items', 'url' => '/portal/api/collections/{register}/{schema}/{id}/items', 'verb' => 'GET'],
         ['name' => 'contribution#update', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'PATCH'],

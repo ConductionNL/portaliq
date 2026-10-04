@@ -91,6 +91,9 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseDefaults(collection: $collection);
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
+			// Steps, answer date and whose turn, on a cases collection only
+			// (site-mijn-omgeving-components REQ-SMO-022).
+			$collection = (new StepsProviderMethod())->normalise(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
 			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
 			$collection = $this->normaliseGroupByField(collection: $collection);

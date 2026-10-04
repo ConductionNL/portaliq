@@ -4,138 +4,156 @@
   -->
 
 <template>
-	<div
-		class="utrecht-form-field pq-field"
-		:class="[
-			`pq-field--${size}`,
-			{ 'utrecht-form-field--invalid': error !== '' },
-		]"
+	<FieldShell
+		:id="id"
+		class="pq-field"
+		:class="`pq-field--${size}`"
+		:label="label"
+		:required="required"
+		:optionalLabel="translate('(optional)')"
+		:help="help"
+		:error="error"
+		:group="group"
+		:errorTestid="`schema-field-error-${field}`"
 		:data-testid="`schema-field-${field}`">
-		<div class="utrecht-form-field__label">
-			<label :for="id" class="utrecht-form-label">
-				{{ label
-				}}<span
-					v-if="required"
-					class="pq-field__required"
-					aria-hidden="true">
-					*</span
-				>
-			</label>
-		</div>
-		<div
-			v-if="help !== ''"
-			:id="`${id}-help`"
-			class="utrecht-form-field-description">
-			{{ help }}
-		</div>
-		<div
-			v-if="error !== ''"
-			:id="`${id}-error`"
-			class="utrecht-form-field-error-message"
-			:data-testid="`schema-field-error-${field}`">
-			{{ error }}
-		</div>
-		<div class="utrecht-form-field__input">
-			<template v-if="input === 'file'">
-				<input
-					:id="id"
-					:key="fileKey"
-					type="file"
-					class="pq-field__file"
-					:multiple="config.multiple === true"
-					:accept="accept || undefined"
-					:disabled="config.disabled === true"
-					:required="required"
-					:aria-invalid="error !== '' ? 'true' : undefined"
-					:aria-describedby="describedBy"
-					@change="$emit('pick', $event.target.files)" />
-				<p
-					v-if="files.length > 0"
-					:id="`${id}-picked`"
-					class="utrecht-form-field-description">
-					{{
-						translate('Selected: {files}', {
-							files: files.map((f) => f.name).join(', '),
-						})
-					}}
-				</p>
-				<p :id="`${id}-limit`" class="utrecht-form-field-description">
-					{{
-						translate('Up to {size} MB per file', {
-							size: config.maxSizeMb || defaultMaxSize,
-						})
-					}}
-				</p>
-			</template>
-			<select
-				v-else-if="input === 'select'"
-				:id="id"
-				class="utrecht-select utrecht-select--html-select"
-				:class="{ 'utrecht-select--invalid': error !== '' }"
-				:value="modelValue"
-				:disabled="config.disabled === true"
-				:required="required"
-				:aria-invalid="error !== '' ? 'true' : undefined"
-				:aria-describedby="describedBy"
-				@change="$emit('update:modelValue', $event.target.value)">
-				<option value="">
-					{{ translate('Choose an option') }}
-				</option>
-				<option
-					v-for="option in options"
-					:key="option.value"
-					:value="String(option.value)">
-					{{ option.label }}
-				</option>
-			</select>
-			<textarea
-				v-else-if="input === 'textarea'"
-				:id="id"
-				class="utrecht-textarea utrecht-textarea--html-textarea"
-				:class="{ 'utrecht-textarea--invalid': error !== '' }"
-				:value="modelValue"
-				:placeholder="config.placeholder || undefined"
-				:disabled="config.disabled === true"
-				:required="required"
-				:aria-invalid="error !== '' ? 'true' : undefined"
-				:aria-describedby="describedBy"
-				@input="$emit('update:modelValue', $event.target.value)" />
-			<input
-				v-else
-				:id="id"
-				:type="input"
-				class="utrecht-textbox utrecht-textbox--html-input"
-				:class="{ 'utrecht-textbox--invalid': error !== '' }"
-				:value="modelValue"
-				:placeholder="config.placeholder || undefined"
-				:disabled="config.disabled === true"
-				:required="required"
-				:aria-invalid="error !== '' ? 'true' : undefined"
-				:aria-describedby="describedBy"
-				@input="$emit('update:modelValue', $event.target.value)" />
-		</div>
-	</div>
+		<FileUpload
+			v-if="input === 'file'"
+			:id="id"
+			:files="files"
+			:fileKey="fileKey"
+			:multiple="config.multiple === true"
+			:accept="accept"
+			:required="required"
+			:invalid="error !== ''"
+			:disabled="config.disabled === true"
+			:labelledBy="`${id}-label`"
+			:describedBy="shellDescribedBy"
+			:buttonLabel="translate('Choose a file or photo')"
+			:limitText="
+				translate('Up to {size} MB per file', {
+					size: config.maxSizeMb || defaultMaxSize,
+				})
+			"
+			:removeLabel="translate('Remove {file}')"
+			@pick="(picked) => $emit('pick', picked)" />
+		<DateChoices
+			v-else-if="input === 'date' && config.widget === 'dateChoices'"
+			:id="id"
+			:modelValue="modelValue"
+			:count="config.dateChoices || 2"
+			:locale="dayLocale"
+			:todayWord="translate('Today')"
+			:otherDayLabel="translate('Another day')"
+			:hint="translate('For example 1 3 2026')"
+			:required="required"
+			:invalid="error !== ''"
+			:disabled="config.disabled === true"
+			:dayLabel="translate('Day')"
+			:monthLabel="translate('Month')"
+			:yearLabel="translate('Year')"
+			@update:modelValue="(value) => $emit('update:modelValue', value)" />
+		<DateInputGroup
+			v-else-if="input === 'date'"
+			:id="id"
+			:modelValue="modelValue"
+			:required="required"
+			:invalid="error !== ''"
+			:disabled="config.disabled === true"
+			:dayLabel="translate('Day')"
+			:monthLabel="translate('Month')"
+			:yearLabel="translate('Year')"
+			@update:modelValue="(value) => $emit('update:modelValue', value)" />
+		<ChoiceCards
+			v-else-if="input === 'select' && config.widget === 'choices'"
+			:id="id"
+			:options="options"
+			:modelValue="modelValue"
+			:choiceOptions="config.choiceOptions || []"
+			:otherLabel="config.otherLabel || ''"
+			:required="required"
+			:invalid="error !== ''"
+			:disabled="config.disabled === true"
+			:selectPlaceholder="translate('Choose an option')"
+			@update:modelValue="(value) => $emit('update:modelValue', value)" />
+		<select
+			v-else-if="input === 'select'"
+			:id="id"
+			class="utrecht-select utrecht-select--html-select"
+			:class="{ 'utrecht-select--invalid': error !== '' }"
+			:value="modelValue"
+			:disabled="config.disabled === true"
+			:aria-required="ariaRequired"
+			:aria-invalid="error !== '' ? 'true' : undefined"
+			:aria-labelledby="`${id}-label`"
+			:aria-describedby="describedBy"
+			@change="$emit('update:modelValue', $event.target.value)">
+			<option value="">
+				{{ translate('Choose an option') }}
+			</option>
+			<option
+				v-for="option in options"
+				:key="option.value"
+				:value="String(option.value)">
+				{{ option.label }}
+			</option>
+		</select>
+		<textarea
+			v-else-if="input === 'textarea'"
+			:id="id"
+			class="utrecht-textarea utrecht-textarea--html-textarea"
+			:class="{ 'utrecht-textarea--invalid': error !== '' }"
+			:value="modelValue"
+			:placeholder="config.placeholder || undefined"
+			:disabled="config.disabled === true"
+			:aria-required="ariaRequired"
+			:aria-invalid="error !== '' ? 'true' : undefined"
+			:aria-labelledby="`${id}-label`"
+			:aria-describedby="describedBy"
+			@input="$emit('update:modelValue', $event.target.value)" />
+		<input
+			v-else
+			:id="id"
+			:type="input"
+			class="utrecht-textbox utrecht-textbox--html-input"
+			:class="{ 'utrecht-textbox--invalid': error !== '' }"
+			:value="modelValue"
+			:placeholder="config.placeholder || undefined"
+			:disabled="config.disabled === true"
+			:aria-required="ariaRequired"
+			:aria-invalid="error !== '' ? 'true' : undefined"
+			:aria-labelledby="`${id}-label`"
+			:aria-describedby="describedBy"
+			@input="$emit('update:modelValue', $event.target.value)" />
+	</FieldShell>
 </template>
 
 <script>
+import ChoiceCards from '../forms/ChoiceCards.vue'
+import DateChoices from '../forms/DateChoices.vue'
+import DateInputGroup from '../forms/DateInputGroup.vue'
+import FieldShell from '../forms/FieldShell.vue'
+import FileUpload from '../forms/FileUpload.vue'
 import { DEFAULT_MAX_SIZE_MB } from '../../../shared/fileFieldSubmit.js'
 import { translatorOr } from './forms.js'
 
-import '@utrecht/form-field-css/dist/index.css'
-import '@utrecht/form-field-description-css/dist/index.css'
-import '@utrecht/form-field-error-message-css/dist/index.css'
 import '@utrecht/select-css/dist/index.css'
 import '@utrecht/textarea-css/dist/index.css'
 
 /**
  * One labelled field of a schema form: a text box, a date or number input, a
- * select, a textarea or a file picker, with its required marker, help text and
- * inline error tied to the input for a screen reader.
+ * select, a textarea or a file picker, with its help text and inline error tied
+ * to the input for a screen reader. A field the resident may leave empty reads
+ * "(niet verplicht)"; a required one has `aria-required` and no mark. A date
+ * is asked as day, month and year in a fieldset (DateInputGroup).
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  */
 export default {
 	name: 'SchemaField',
+
+	components: { ChoiceCards, DateChoices, DateInputGroup, FieldShell, FileUpload },
 
 	props: {
 		/** The input's id; the label points at it. */
@@ -160,6 +178,8 @@ export default {
 		error: { type: String, default: '' },
 		/** The translator `t(key, vars)`. */
 		t: { type: Function, default: null },
+		/** The site's language, for named days; else the page's `lang`. */
+		locale: { type: String, default: '' },
 	},
 
 	emits: ['update:modelValue', 'pick'],
@@ -173,14 +193,33 @@ export default {
 			return this.config.required === true
 		},
 
+		/**
+		 * `aria-required` for a required field, nothing for an optional one.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+		 */
+		ariaRequired() {
+			return this.required ? 'true' : undefined
+		},
+
 		size() {
 			return ['small', 'medium', 'large', 'full'].includes(this.config.size)
 				? this.config.size
 				: 'medium'
 		},
 
+		/**
+		 * The description: the field's own help, else a date's example.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
+		 */
 		help() {
-			return typeof this.config.help === 'string' ? this.config.help : ''
+			if (typeof this.config.help === 'string' && this.config.help !== '') {
+				return this.config.help
+			}
+			return this.input === 'date' && this.config.widget !== 'dateChoices'
+				? this.translate('For example 1 3 2026')
+				: ''
 		},
 
 		accept() {
@@ -193,21 +232,66 @@ export default {
 			return DEFAULT_MAX_SIZE_MB
 		},
 
-		describedBy() {
+		/**
+		 * The ids of the field's description and error, for the input's
+		 * `aria-describedby` (a file field adds its limit and list itself).
+		 *
+		 * @return {string} The ids, or ''.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		shellDescribedBy() {
 			const ids = []
 			if (this.help !== '') {
 				ids.push(`${this.id}-help`)
 			}
-			if (this.input === 'file') {
-				if (this.files.length > 0) {
-					ids.push(`${this.id}-picked`)
-				}
-				ids.push(`${this.id}-limit`)
-			}
 			if (this.error !== '') {
 				ids.push(`${this.id}-error`)
 			}
-			return ids.length > 0 ? ids.join(' ') : undefined
+			return ids.join(' ')
+		},
+
+		/**
+		 * The same ids, or undefined when there are none.
+		 *
+		 * @return {string|undefined} The ids.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		describedBy() {
+			return this.shellDescribedBy || undefined
+		},
+
+		/**
+		 * Whether the field is a fieldset: a date, or choice cards.
+		 *
+		 * @return {boolean} True for a group.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+		 */
+		group() {
+			return (
+				this.input === 'date'
+				|| (this.input === 'select' && this.config.widget === 'choices')
+			)
+		},
+
+		/**
+		 * The language the named days are written in.
+		 *
+		 * @return {string} The locale.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+		 */
+		dayLocale() {
+			if (this.locale !== '') {
+				return this.locale
+			}
+			const lang =
+				typeof document !== 'undefined' && document.documentElement
+					? document.documentElement.lang
+					: ''
+			return lang || 'nl'
 		},
 	},
 }
@@ -234,9 +318,5 @@ export default {
 .pq-field .utrecht-select,
 .pq-field .utrecht-textarea {
 	inline-size: 100%;
-}
-
-.pq-field__required {
-	color: var(--utrecht-form-field-invalid-color, inherit);
 }
 </style>

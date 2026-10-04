@@ -44,14 +44,18 @@
 			</a>
 		</div>
 
-		<div
-			v-else-if="state === 'done'"
-			data-testid="intake-form-done"
-			role="status">
-			<p class="utrecht-paragraph">
-				{{ confirmationText || doneLabel }}
+		<div v-else-if="state === 'done'" data-testid="intake-form-done">
+			<h2
+				ref="doneHeading"
+				class="utrecht-heading-2"
+				tabindex="-1"
+				data-testid="intake-form-done-heading">
+				{{ doneLabel }}
+			</h2>
+			<p v-if="confirmationText" class="utrecht-paragraph">
+				{{ confirmationText }}
 			</p>
-			<p class="utrecht-paragraph">
+			<p class="utrecht-paragraph" role="status">
 				{{ referenceLabel }}
 				<strong data-testid="intake-form-reference">{{ reference }}</strong>
 			</p>
@@ -64,30 +68,88 @@
 			v-else-if="state === 'form'"
 			class="pq-intake-form__form"
 			novalidate
-			@submit.prevent="submit">
+			@submit.prevent="onSubmit">
 			<h2 v-if="render.formName && !hideFormName" class="utrecht-heading-2">
 				{{ render.formName }}
 			</h2>
 
-			<div
-				v-for="field in fields"
+			<template v-if="hasSteps">
+				<FormProgress
+					:steps="flow"
+					:current="stepIndex"
+					idBase="pq-intake-progress"
+					:label="text.progress"
+					:shortPattern="text.stepOf"
+					:showLabel="text.showSteps"
+					:hideLabel="text.hideSteps"
+					:doneLabel="text.stepDone"
+					:currentLabel="text.stepCurrent"
+					:todoLabel="text.stepTodo" />
+				<h3
+					ref="stepHeading"
+					class="utrecht-heading-3 pq-intake-form__step-heading"
+					tabindex="-1"
+					data-testid="intake-form-step-heading">
+					{{ stepHeadingText }}
+				</h3>
+				<p v-if="currentStep.description" class="utrecht-paragraph">
+					{{ currentStep.description }}
+				</p>
+			</template>
+
+			<p
+				v-if="explainOptional"
+				class="utrecht-paragraph pq-intake-form__note"
+				data-testid="intake-form-optional-note">
+				{{ text.optionalNote }}
+			</p>
+
+			<ErrorSummary
+				ref="summary"
+				:entries="summary"
+				idBase="pq-intake-summary"
+				:heading="text.summaryHeading"
+				:intro="text.summaryIntro"
+				:titlePrefix="text.titlePrefix" />
+
+			<ReviewList
+				v-if="onReview"
+				:sections="reviewSections"
+				:editLabel="text.change"
+				:editPattern="text.changeStep"
+				:emptyLabel="text.notAnswered"
+				@edit="editStep" />
+
+			<FieldShell
+				v-for="field in shownFields"
+				:id="elementId(field)"
 				:key="field.name"
-				class="pq-intake-form__field">
-				<label :for="elementId(field)" class="utrecht-form-label">
-					{{ field.label || field.name }}
-					<span v-if="field.required" aria-hidden="true">*</span>
-				</label>
+				v-slot="{ describedBy }"
+				class="pq-intake-form__field"
+				:label="field.label || field.name"
+				:required="field.required === true"
+				:optionalLabel="text.optional"
+				:help="helpOf(field)"
+				:error="errors[field.name] || ''"
+				:group="isDate(field)"
+				:errorTestid="`intake-field-error-${field.name}`">
+				<DateInputGroup
+					v-if="isDate(field)"
+					:id="elementId(field)"
+					v-model="values[field.name]"
+					:required="field.required === true"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`" />
 
 				<select
-					v-if="Array.isArray(field.options) && field.options.length"
+					v-else-if="Array.isArray(field.options) && field.options.length"
 					:id="elementId(field)"
 					v-model="values[field.name]"
 					class="utrecht-select"
-					:required="field.required === true"
+					:aria-required="field.required === true ? 'true' : undefined"
 					:aria-invalid="errors[field.name] ? 'true' : 'false'"
-					:aria-describedby="
-						errors[field.name] ? `${elementId(field)}-error` : undefined
-					"
+					:aria-labelledby="`${elementId(field)}-label`"
+					:aria-describedby="describedBy"
 					:data-testid="`intake-field-${field.name}`">
 					<option value="" disabled>
 						{{ selectPlaceholder }}
@@ -105,11 +167,10 @@
 					:id="elementId(field)"
 					v-model="values[field.name]"
 					class="utrecht-textarea"
-					:required="field.required === true"
+					:aria-required="field.required === true ? 'true' : undefined"
 					:aria-invalid="errors[field.name] ? 'true' : 'false'"
-					:aria-describedby="
-						errors[field.name] ? `${elementId(field)}-error` : undefined
-					"
+					:aria-labelledby="`${elementId(field)}-label`"
+					:aria-describedby="describedBy"
 					:data-testid="`intake-field-${field.name}`" />
 
 				<input
@@ -118,29 +179,38 @@
 					v-model="values[field.name]"
 					class="utrecht-textbox"
 					:type="inputType(field)"
-					:required="field.required === true"
+					:aria-required="field.required === true ? 'true' : undefined"
 					:aria-invalid="errors[field.name] ? 'true' : 'false'"
-					:aria-describedby="
-						errors[field.name] ? `${elementId(field)}-error` : undefined
-					"
+					:aria-labelledby="`${elementId(field)}-label`"
+					:aria-describedby="describedBy"
 					:data-testid="`intake-field-${field.name}`" />
+			</FieldShell>
 
-				<p
-					v-if="errors[field.name]"
-					:id="`${elementId(field)}-error`"
-					class="utrecht-form-field-error-message"
-					:data-testid="`intake-field-error-${field.name}`">
-					{{ errors[field.name] }}
-				</p>
+			<div class="pq-intake-form__buttons">
+				<button
+					v-if="hasSteps && stepIndex > 0"
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action"
+					data-testid="intake-form-previous"
+					@click="previousStep">
+					{{ text.previousStep }}
+				</button>
+				<button
+					v-if="hasSteps && !onReview"
+					type="submit"
+					class="utrecht-button utrecht-button--primary-action"
+					data-testid="intake-form-next">
+					{{ text.nextStep }}
+				</button>
+				<button
+					v-else
+					type="submit"
+					class="utrecht-button utrecht-button--primary-action"
+					:disabled="submitting"
+					data-testid="intake-form-submit">
+					{{ submitLabel }}
+				</button>
 			</div>
-
-			<button
-				type="submit"
-				class="utrecht-button utrecht-button--primary-action"
-				:disabled="submitting"
-				data-testid="intake-form-submit">
-				{{ submitLabel }}
-			</button>
 
 			<p
 				v-if="sendFailed"
@@ -154,6 +224,11 @@
 </template>
 
 <script>
+import DateInputGroup from './forms/DateInputGroup.vue'
+import ErrorSummary from './forms/ErrorSummary.vue'
+import FieldShell from './forms/FieldShell.vue'
+import FormProgress from './forms/FormProgress.vue'
+import ReviewList from './forms/ReviewList.vue'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import {
@@ -162,6 +237,14 @@ import {
 	loadForm,
 	submitIntake,
 } from '../lib/intakeApi.js'
+import {
+	DUTCH,
+	explainsOptional,
+	plainFieldErrors,
+	summaryEntries,
+} from './forms/fields.js'
+import stepFlow from './forms/stepFlow.js'
+import { stepHeading } from './forms/steps.js'
 
 /**
  * The form a catalogue entry starts, rendered on a portal page
@@ -173,9 +256,28 @@ import {
  * bearer when they are signed in, so their own details arrive prefilled; an
  * anonymous visitor gets no prefill. A valid submission answers with a
  * reference at once, before the case exists.
+ *
+ * The fields follow the NL Design System form guidance (site-multi-step-forms
+ * REQ-SMF-001 to 003): "(niet verplicht)" on optional fields and
+ * `aria-required` on required ones, a date as day, month and year, and an
+ * error summary above the fields whose heading takes focus. The client
+ * checks only empty required fields and impossible dates; the server's
+ * refusal per field lands in the same summary.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
  */
 export default {
 	name: 'IntakeFormBlock',
+
+	components: {
+		DateInputGroup,
+		ErrorSummary,
+		FieldShell,
+		FormProgress,
+		ReviewList,
+	},
+
+	mixins: [stepFlow],
 
 	props: {
 		/** The serving portal's slug. Supplied by the host, never authored. */
@@ -316,6 +418,135 @@ export default {
 				Array.isArray(this.render.fields) ? this.render.fields : []
 			).filter((field) => field && field.name)
 		},
+
+		/**
+		 * The fields on screen: the step's, or every field of a one-page form.
+		 *
+		 * @return {Array<object>} The fields.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+		 */
+		shownFields() {
+			if (!this.hasSteps) {
+				return this.fields
+			}
+			if (this.onReview) {
+				return []
+			}
+			return this.fields.filter((field) =>
+				this.currentStep.fields.includes(field.name),
+			)
+		},
+
+		/**
+		 * The steps the form render carries.
+		 *
+		 * @return {Array<object>|undefined} The steps.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+		 */
+		rawSteps() {
+			return this.render.steps
+		},
+
+		/**
+		 * The titles of the loose step and of an undeclared review.
+		 *
+		 * @return {{other: string, review: string}} The titles.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
+		 */
+		stepTitles() {
+			return {
+				other: this.text.otherQuestions,
+				review: this.text.checkAndSend,
+			}
+		},
+
+		/**
+		 * "Stap 2 van 4: periode en documenten".
+		 *
+		 * @return {string} The heading.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+		 */
+		stepHeadingText() {
+			return stepHeading(
+				this.text.stepHeading,
+				this.stepIndex + 1,
+				this.flow.length,
+				this.currentStep.title,
+			)
+		},
+
+		/**
+		 * The review: each answer under its question, per step.
+		 *
+		 * @return {Array<object>} The sections.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
+		 */
+		reviewSections() {
+			const byName = Object.fromEntries(
+				this.fields.map((field) => [field.name, field]),
+			)
+			return this.flow
+				.map((step, index) => ({
+					index,
+					title: step.title,
+					rows: step.fields
+						.filter((name) => byName[name])
+						.map((name) => ({
+							field: name,
+							label: byName[name].label || name,
+							value: this.answerText(byName[name]),
+						})),
+				}))
+				.filter((section) => section.rows.length > 0)
+		},
+
+		/**
+		 * The layer's Dutch words.
+		 *
+		 * @return {object} The words.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+		 */
+		text() {
+			return DUTCH
+		},
+
+		/**
+		 * Whether the form explains "(niet verplicht)": only when it mixes
+		 * required and optional fields.
+		 *
+		 * @return {boolean} True to show the sentence.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+		 */
+		explainOptional() {
+			return (
+				!this.onReview
+				&& explainsOptional(
+					this.shownFields.map((field) => field.required === true),
+				)
+			)
+		},
+
+		/**
+		 * The error summary's lines: client and server errors, in field order.
+		 *
+		 * @return {Array<{field: string, target: string, message: string}>} The lines.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		summary() {
+			return summaryEntries(
+				this.fields.map((field) => field.name),
+				this.errors,
+				(name) => this.elementId({ name }),
+			)
+		},
 	},
 
 	watch: {
@@ -376,9 +607,15 @@ export default {
 		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
 		 */
 		async submit() {
-			this.submitting = true
 			this.sendFailed = false
+			const wrong = this.checkFields(this.fields.map((field) => field.name))
+			if (Object.keys(wrong).length > 0) {
+				this.showErrors(wrong)
+				return
+			}
 			this.errors = {}
+
+			this.submitting = true
 			try {
 				const outcome = await submitIntake(
 					authBaseFrom(resolveApiBase()),
@@ -388,18 +625,162 @@ export default {
 					adoptSessionToken(),
 				)
 				if (outcome.reference === '') {
-					this.errors = outcome.errors
+					this.showErrors(this.messagesOf(outcome.errors))
 					return
 				}
 
 				this.reference = outcome.reference
 				this.confirmationText = outcome.confirmationText
 				this.state = 'done'
+				this.$nextTick(() => {
+					if (this.$refs.doneHeading) {
+						this.$refs.doneHeading.focus()
+					}
+				})
 			} catch {
 				this.sendFailed = true
 			} finally {
 				this.submitting = false
 			}
+		},
+
+		/**
+		 * The server's refusal per field as one message each: a list of
+		 * messages is joined, anything that is not text is left out.
+		 *
+		 * @param {object} errors The server's `errors`.
+		 * @return {Record<string, string>} The message per field.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		messagesOf(errors) {
+			const out = {}
+			for (const [name, message] of Object.entries(errors || {})) {
+				const text = Array.isArray(message)
+					? message.filter((m) => typeof m === 'string').join(' ')
+					: typeof message === 'string'
+						? message
+						: ''
+				if (text !== '') {
+					out[name] = text
+				}
+			}
+			return out
+		},
+
+		/**
+		 * Every field of a published form shows; conditions arrive with #1071.
+		 *
+		 * @return {boolean} True.
+		 */
+		isShownField() {
+			return true
+		},
+
+		/**
+		 * The client errors of some fields: empty required ones and
+		 * impossible dates.
+		 *
+		 * @param {string[]} names The field names.
+		 * @return {Record<string, string>} The errors.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+		 */
+		checkFields(names) {
+			return plainFieldErrors(
+				this.fields
+					.filter((field) => names.includes(field.name))
+					.map((field) => ({
+						name: field.name,
+						label: field.label || field.name,
+						required: field.required === true,
+						date: this.isDate(field),
+					})),
+				this.values,
+			)
+		},
+
+		/**
+		 * An answer as the review shows it: the option's label, a date as
+		 * written in Dutch, or the text.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The answer.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
+		 */
+		answerText(field) {
+			const value = String(this.values[field.name] ?? '')
+			const option = (Array.isArray(field.options) ? field.options : []).find(
+				(entry) => String(entry?.value ?? entry) === value,
+			)
+			if (option !== undefined) {
+				return String(option?.label ?? option)
+			}
+			if (this.isDate(field) && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+				const [year, month, day] = value.split('-').map(Number)
+				return new Intl.DateTimeFormat('nl', {
+					day: 'numeric',
+					month: 'long',
+					year: 'numeric',
+				}).format(new Date(year, month - 1, day))
+			}
+			return value
+		},
+
+		/**
+		 * The form's submit: "Volgende stap" on a step, sending on the review
+		 * or on a one-page form.
+		 *
+		 * @return {Promise<void>|void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+		 */
+		onSubmit() {
+			if (this.hasSteps && !this.onReview) {
+				return this.nextStep()
+			}
+			return this.submit()
+		},
+
+		/**
+		 * Move focus to the error summary's heading.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		focusSummary() {
+			if (this.$refs.summary) {
+				this.$refs.summary.focus()
+			}
+		},
+
+		/**
+		 * Whether a field is a date, asked as day, month and year.
+		 *
+		 * @param {object} field The field.
+		 * @return {boolean} True for `type: date`.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
+		 */
+		isDate(field) {
+			return field.type === 'date'
+		},
+
+		/**
+		 * The description under a field's label: its own, else a date's example.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The description, or ''.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
+		 */
+		helpOf(field) {
+			if (typeof field.description === 'string' && field.description !== '') {
+				return field.description
+			}
+			return this.isDate(field) ? this.text.dateHint : ''
 		},
 
 		/**
@@ -431,8 +812,12 @@ export default {
 </script>
 
 <style scoped>
+.pq-intake-form__note {
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+
 .pq-intake-form__field + .pq-intake-form__field,
-.pq-intake-form__form > button,
+.pq-intake-form__buttons,
 .pq-intake-form__error {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
 }

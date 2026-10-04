@@ -21,7 +21,7 @@ Placement: `widget` = standalone on the grid; `field` = a field type inside the 
 | 13 | Checkbox Group | X | field | `checkboxes` | forms | legend, options, minimum | own | 6 |
 | 14 | Code | T | inline | | | | `@nl-design-system-candidate/code-css` | 2 |
 | 15 | Code Block | T | widget | `nlCodeBlock` | content | code, label | `@nl-design-system-candidate/code-block-css` | 2 |
-| 16 | Color Sample | X | none | | | | | |
+| 16 | Color Sample | X | none | a swatch for documenting a palette, not content a portal publishes | | | | |
 | 17 | Contact Timeline | C | widget | `nlTimeline` | mijn | collection (record page) | `@gemeente-denhaag/contact-timeline` | 5 |
 | 18 | Customizable Text Input | X | field | `textAffixed` | forms | label, prefix, suffix | `@utrecht/customizable-text-input-css` | 6 |
 | 19 | Data Badge | X | part | in tasks, inbox, cards | | | `@gemeente-denhaag/data-badge` | 5 |
@@ -76,7 +76,7 @@ Placement: `widget` = standalone on the grid; `field` = a field type inside the 
 | 68 | Page Layout | S | shell | | | | | |
 | 69 | Page Number Navigation | C | part | in list widgets that page | | | `@utrecht/pagination-css` | 4 |
 | 70 | Paragraph | T | widget | `nlParagraph` | content | text, lead | `@utrecht/paragraph-css` (installed) | 2 |
-| 71 | Password Input | X | none | | | | | |
+| 71 | Password Input | X | none | the portal never asks for a password: a resident signs in through DigiD, eHerkenning or the broker | | | | |
 | 72 | Progress Bar | X | widget | `nlProgressBar` | feedback | value, maximum, label | own | 3 |
 | 73 | Progress Circle | X | widget | `nlProgressCircle` | feedback | value, label | own | 3 |
 | 74 | Progress List | X | widget | `nlSteps` | content | steps (label, state, text) | `@gemeente-denhaag/process-steps` | 5 |

@@ -1,0 +1,253 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
+//
+// widget-registry.spec.mjs: the NL Design System widget registry and the
+// coverage record (site-nlds-widget-palette REQ-SNW-010, REQ-SNW-011).
+//
+// It reads the registry and the record as DATA, so it runs without Vue: a
+// meta carries no imports by design, which is what makes that possible and
+// is also what keeps the editor bundle out of the site's chunks.
+//
+// Usage:
+//   node --test tests/widget-registry.spec.mjs
+
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { test } from 'node:test'
+import {
+	coverageByPlacement,
+	NLDS_COVERAGE,
+	NLDS_PLACEMENTS,
+} from '../src/site/widgets/coverage.js'
+import {
+	loaders,
+	metaProblems,
+	metas,
+	registryProblems,
+	WIDGET_GROUPS,
+} from '../src/site/widgets/index.js'
+
+/**
+ * The shared registry's keys, read from the library's source rather than
+ * imported: its entry point pulls `.vue` files, which node cannot load, and
+ * what this test needs is the KEY LIST, not the components.
+ *
+ * @return {Set<string>} The keys the shared site registry declares.
+ */
+function sharedKeys() {
+	const source = readFileSync(
+		new URL(
+			'../node_modules/@conduction/nextcloud-vue/src/public/index.js',
+			import.meta.url,
+		),
+		'utf8',
+	)
+	const block = source.slice(source.indexOf('siteBlockRegistry'))
+	const keys = new Set()
+	for (const match of block.matchAll(/^\t([A-Za-z][A-Za-z0-9]*):/gm)) {
+		keys.add(match[1])
+	}
+
+	return keys
+}
+
+/** The design that fixes the record, read as the authority it is. */
+const DESIGN = new URL(
+	'../openspec/changes/site-nlds-widget-palette/design.md',
+	import.meta.url,
+)
+
+/**
+ * Design D1's table, as rows.
+ *
+ * @return {Array<Array<string>>} The cells of each numbered row.
+ */
+function designRows() {
+	return readFileSync(DESIGN, 'utf8')
+		.split('\n')
+		.filter((line) => /^\|\s*\d+\s*\|/.test(line))
+		.map((line) =>
+			line
+				.trim()
+				.replace(/^\|/, '')
+				.replace(/\|$/, '')
+				.split('|')
+				.map((cell) => cell.trim()),
+		)
+}
+
+test('every meta describes itself, and every widget has both halves', () => {
+	assert.deepEqual(registryProblems(), [], 'the registry must be sound')
+	assert.ok(
+		Object.keys(metas).length > 0,
+		'a registry nothing is registered in proves nothing',
+	)
+
+	// The check can fail: a meta missing its group, its label or its size is
+	// reported, with the key named.
+	const broken = metaProblems(
+		{
+			key: 'nlBroken',
+			group: 'nowhere',
+			label: '',
+			nlds: '',
+			synonyms: 'no',
+			fields: 'no',
+			defaultSize: {},
+			scope: 'maybe',
+		},
+		'nlBroken',
+	)
+	assert.equal(broken.length, 7, broken.join('; '))
+	assert.deepEqual(metaProblems(null, 'nlGone'), ['nlGone: no meta'])
+})
+
+test('no widget key is a key of the shared dashboard registry', () => {
+	// REQ-SNW-011: the shared registry already has `table` and friends, and a
+	// widget renders publicly if and only if it is in the public map. A key
+	// reused here would take over what that key renders, which is why they are
+	// all `nl`-prefixed.
+	const shared = sharedKeys()
+	for (const key of Object.keys(metas)) {
+		assert.ok(!shared.has(key), `${key} is also a shared registry key`)
+		assert.match(key, /^nl[A-Z]/, `${key} must be nl-prefixed`)
+	}
+
+	// The guard is real: were `table` registered here, this is what would fire.
+	assert.ok(
+		shared.size > 0,
+		'the shared registry must be readable for this to mean anything',
+	)
+})
+
+test('the groups are the six of REQ-SNW-001, in order', () => {
+	assert.deepEqual(
+		WIDGET_GROUPS.map((entry) => entry.label),
+		[
+			'Inhoud',
+			'Navigatie',
+			'Formulieren',
+			'Terugkoppeling',
+			'Mijn omgeving',
+			'Opmaak',
+		],
+	)
+	for (const key of Object.keys(metas)) {
+		assert.ok(
+			WIDGET_GROUPS.some((entry) => entry.group === metas[key].group),
+			`${key} sits in no group, so no heading would show it`,
+		)
+	}
+})
+
+test('each of the 101 components has exactly one placement', () => {
+	// REQ-SNW-010 scenario "The count adds up".
+	assert.equal(NLDS_COVERAGE.length, 101)
+
+	const seen = new Map()
+	for (const entry of NLDS_COVERAGE) {
+		assert.ok(
+			NLDS_PLACEMENTS.includes(entry.placement),
+			`${entry.component}: ${entry.placement} is not a placement`,
+		)
+		assert.ok(entry.component !== '', `component ${entry.number} has no name`)
+		assert.ok(
+			!seen.has(entry.number),
+			`component ${entry.number} is recorded twice`,
+		)
+		seen.set(entry.number, entry)
+	}
+
+	// Numbered 1 to 101 with nothing missing, so "exactly one each" is a
+	// statement about every component rather than about the rows that happen
+	// to be here.
+	for (let number = 1; number <= 101; number++) {
+		assert.ok(seen.has(number), `component ${number} is not recorded`)
+	}
+
+	const counts = coverageByPlacement()
+	const total = Object.values(counts).reduce((sum, count) => sum + count, 0)
+	assert.equal(total, 101, JSON.stringify(counts))
+	assert.ok(
+		counts.none <= 3,
+		'a component that is not offered needs its reason read, not grown',
+	)
+})
+
+test('a widget or field placement names a key, and the others say where instead', () => {
+	for (const entry of NLDS_COVERAGE) {
+		if (entry.placement === 'widget' || entry.placement === 'field') {
+			assert.notEqual(
+				entry.key,
+				'',
+				`${entry.component} is placeable but names no key`,
+			)
+			continue
+		}
+
+		assert.equal(
+			entry.key,
+			'',
+			`${entry.component} is ${entry.placement} and should name no key`,
+		)
+
+		// `shell` and `inline` are their own reason: the page frame draws it,
+		// or the text widget does. A `part` has to say WHICH widget draws it,
+		// and a component that is not offered at all has to say why, or
+		// "not offered" is a shrug rather than a decision (REQ-SNW-010).
+		if (entry.placement === 'part' || entry.placement === 'none') {
+			assert.notEqual(
+				entry.note,
+				'',
+				`${entry.component} is ${entry.placement} and must say where it is drawn or why not`,
+			)
+		}
+	}
+})
+
+test('the record and design D1 say the same thing', () => {
+	// The record lives beside the registry so a test can count it; the design
+	// is where it was decided. Two copies drift unless something compares
+	// them, and this is that something.
+	const rows = designRows()
+	assert.equal(rows.length, 101, 'design D1 must still hold 101 rows')
+
+	for (const row of rows) {
+		const [number, component, , placement] = row
+		const entry = NLDS_COVERAGE.find(
+			(candidate) => candidate.number === Number(number),
+		)
+		assert.ok(entry, `design row ${number} is not in the record`)
+		assert.equal(entry.component, component, `row ${number}: the name differs`)
+		assert.equal(
+			entry.placement,
+			placement,
+			`row ${number} (${component}): the placement differs`,
+		)
+	}
+})
+
+test('every built widget is in the record as a widget, under its own key', () => {
+	// A widget that exists but is recorded as a part, or under another key,
+	// would make the count read as covered while the palette offered
+	// something else.
+	for (const key of Object.keys(loaders)) {
+		const recorded = NLDS_COVERAGE.filter((entry) => entry.key === key)
+		assert.equal(
+			recorded.length,
+			1,
+			`${key} is recorded ${recorded.length} times`,
+		)
+		assert.equal(
+			recorded[0].placement,
+			'widget',
+			`${key} is recorded as ${recorded[0].placement}`,
+		)
+		assert.equal(
+			recorded[0].group,
+			metas[key].group,
+			`${key}: the record says ${recorded[0].group}, the meta says ${metas[key].group}`,
+		)
+	}
+})

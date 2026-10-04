@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCP\Http\Client\IClientService;
+use OCP\Http\Client\IResponse;
 use OCP\IRequest;
-use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * The endpoint rule every forward shares (contribution-pay-screen): an
@@ -26,8 +27,7 @@ class PortalActionForwarderTest extends TestCase {
 	private function forwarder(): PortalActionForwarder {
 		return new PortalActionForwarder(
 			$this->createMock(IRequest::class),
-			$this->createMock(IClientService::class),
-			$this->createMock(IURLGenerator::class),
+			$this->createMock(InstanceLoopback::class),
 			$this->createMock(PortalSessionService::class),
 		);
 	}//end forwarder()
@@ -52,6 +52,61 @@ class PortalActionForwarderTest extends TestCase {
 	}//end testOnlyAnInstanceLocalEndpointWithAnAllowedMethodIsForwardable()
 
 	/**
+	 * The forward goes through InstanceLoopback with the endpoint PATH, so a
+	 * public address the server cannot reach falls back like every other
+	 * self-call. The assertion travels; the client's Authorization does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
+	 */
+	public function testTheForwardGoesThroughTheInstanceLoopback(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer client-token');
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('issueAssertion')->willReturn('minted-assertion');
+		$response = $this->createMock(IResponse::class);
+
+		$loopback = $this->getMockBuilder(InstanceLoopback::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['request'])
+			->getMock();
+		$loopback->expects($this->once())->method('request')->with(
+			'PATCH',
+			'/apps/filinq/api/portal/signing/sign',
+			$this->callback(
+				static fn (array $options): bool => $options['headers']['X-Portal-Subject'] === 'minted-assertion'
+					&& isset($options['headers']['Authorization']) === false
+					&& $options['body'] === '{"a":1}'
+			)
+		)->willReturn($response);
+
+		$forwarder = new PortalActionForwarder($request, $loopback, $session);
+
+		$this->assertSame(
+			$response,
+			$forwarder->forward(action: ['endpoint' => '/apps/filinq/api/portal/signing/sign', 'method' => 'patch'], subject: ['subjectRef' => 's-1'], whitelisted: ['a' => 1])
+		);
+	}//end testTheForwardGoesThroughTheInstanceLoopback()
+
+	/**
+	 * When no address answers, the forward degrades to null as before.
+	 *
+	 * @return void
+	 */
+	public function testAForwardThatReachesNoAddressDegradesToNull(): void {
+		$loopback = $this->getMockBuilder(InstanceLoopback::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['request'])
+			->getMock();
+		$loopback->method('request')->willThrowException(new RuntimeException('cURL error 7: refused'));
+
+		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+
+		$this->assertNull($forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: []));
+	}//end testAForwardThatReachesNoAddressDegradesToNull()
+
+	/**
 	 * The body a resident sends must reach the domain endpoint. Nextcloud's
 	 * real request declares getContent() protected, so calling it threw
 	 * "Call to protected method" and every forwarded action answered 500 (found
@@ -65,8 +120,7 @@ class PortalActionForwarderTest extends TestCase {
 	public function testTheRawBodyIsRelayedWhenTheRequestHidesGetContent(): void {
 		$forwarder = new class(
 			$this->createMock(IRequest::class),
-			$this->createMock(IClientService::class),
-			$this->createMock(IURLGenerator::class),
+			$this->createMock(InstanceLoopback::class),
 			$this->createMock(PortalSessionService::class),
 		) extends PortalActionForwarder {
 			protected function rawInput(): string {

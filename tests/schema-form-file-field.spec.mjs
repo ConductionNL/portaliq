@@ -95,7 +95,9 @@ test('renders a file input for a file field, labelled, with the limit through th
 	const picker = byId('f-createSubmission-attachmentRefs')
 	assert.equal(picker.tag, 'input')
 	assert.equal(picker.props.type, 'file')
-	assert.equal(form.textOf(labelFor(picker.props.id)), 'Your work')
+	// An optional field says so inside its label (REQ-SMF-001).
+	assert.equal(form.textOf(labelFor(picker.props.id)), 'Your work (optional)|{}')
+	assert.equal(picker.props['aria-required'], undefined)
 	// The size limit is shown through the translator.
 	assert.match(form.text(), /Up to \{size\} MB per file\|\{"size":1\}/)
 	// The other field is still a text box.
@@ -211,7 +213,7 @@ test('a form without a translator renders the English source and the picker opti
 	assert.equal(picker.props.accept, '.pdf')
 	assert.match(
 		form.textOf(form.find('schema-field-attachmentRefs')),
-		/Your work Up to 1 MB per file/,
+		/Your work \(optional\) Choose a file or photo Up to 1 MB per file/,
 	)
 })
 

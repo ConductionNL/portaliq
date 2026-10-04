@@ -85,6 +85,27 @@ class AttachedActionResolverTest extends TestCase {
 	}//end testAttachesToTheNamedSchemaOnly()
 
 	/**
+	 * An attached action that runs in steps carries its steps, draft and
+	 * confirmation to the renderer (site-multi-step-forms REQ-SMF-020).
+	 *
+	 * @return void
+	 */
+	public function testTheListingCarriesTheStepFlow(): void {
+		$flow = [
+			'steps'        => [['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['question']]],
+			'draft'        => ['retentionDays' => 30],
+			'confirmation' => ['title' => 'Ontvangen'],
+		];
+		$out    = (new AttachedActionResolver())->resolve(contributions: $this->contributions(action: $this->ask($flow)));
+		$listed = $out[0]['collections'][0]['attachedActions'][0];
+
+		self::assertSame($flow['steps'], $listed['steps']);
+		self::assertSame($flow['draft'], $listed['draft']);
+		self::assertSame($flow['confirmation'], $listed['confirmation']);
+		self::assertArrayNotHasKey('endpoint', $listed);
+	}//end testTheListingCarriesTheStepFlow()
+
+	/**
 	 * A provider cannot declare attached actions on its own collection.
 	 *
 	 * @return void

@@ -30,6 +30,7 @@ import IntakeFormBlock from '../site/components/IntakeFormBlock.vue'
 import IntakeStatusBlock from '../site/components/IntakeStatusBlock.vue'
 import PublicationDetailBlock from '../site/components/PublicationDetailBlock.vue'
 import { publicWidgetFor, publicWidgetKeys } from '../site/components/WidgetGrid.vue'
+import { metas as siteWidgetMetas } from '../site/widgets/index.js'
 import { humanise, widgetLabel } from './widgetLabels.js'
 
 /**
@@ -197,12 +198,34 @@ function kindFor(name, definition) {
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
  */
 export function widgetCatalogue() {
-	const entries = publicWidgetKeys().map((key) => ({
-		key,
-		label: widgetLabel(key, dashboardWidgetRegistry),
-		publicSafe: true,
-		reason: '',
-	}))
+	const entries = publicWidgetKeys().map((key) => {
+		// A widget that describes itself is read from its own meta: the label
+		// an editor sees, the group it sits under and the words they may search
+		// for are the widget's to state, not this file's to guess
+		// (site-nlds-widget-palette design D3).
+		const meta = siteWidgetMetas[key]
+		if (meta) {
+			return {
+				key,
+				label: meta.label,
+				publicSafe: true,
+				reason: '',
+				group: meta.group,
+				nlds: meta.nlds,
+				synonyms: meta.synonyms,
+			}
+		}
+
+		return {
+			key,
+			label: widgetLabel(key, dashboardWidgetRegistry),
+			publicSafe: true,
+			reason: '',
+			group: '',
+			nlds: '',
+			synonyms: [],
+		}
+	})
 
 	const known = new Set(entries.map((entry) => entry.key))
 	for (const key of Object.keys(dashboardWidgetRegistry)) {
@@ -214,7 +237,10 @@ export function widgetCatalogue() {
 			key,
 			label: widgetLabel(key, dashboardWidgetRegistry),
 			publicSafe: false,
-			reason: 'Deze widget wordt niet getoond op een openbare pagina — bezoekers zien een lege plek.',
+			reason: 'Deze widget wordt niet getoond op een openbare pagina. Bezoekers zien een lege plek.',
+			group: '',
+			nlds: '',
+			synonyms: [],
 		})
 	}
 
@@ -230,6 +256,15 @@ export function widgetCatalogue() {
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
  */
 export function fieldsFor(key) {
+	// A meta states its fields, so nothing is introspected for a widget that
+	// describes itself. Introspection stays for the widgets that were here
+	// first: it reads what a component ACCEPTS, which is not the same question
+	// as what an author should be asked, and that is why new widgets answer it
+	// themselves.
+	if (siteWidgetMetas[key]) {
+		return siteWidgetMetas[key].fields
+	}
+
 	if (FIELD_OVERRIDES[key]) {
 		return FIELD_OVERRIDES[key]
 	}
@@ -262,6 +297,10 @@ export function fieldsFor(key) {
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
  */
 export function defaultSizeFor(key) {
+	if (siteWidgetMetas[key]) {
+		return siteWidgetMetas[key].defaultSize
+	}
+
 	return DEFAULT_SIZES[key] || { gridWidth: 6, gridHeight: 4 }
 }
 

@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Service\PageEditorService;
 use OCA\Portaliq\Service\SettingsService;
 use OCP\AppFramework\Controller;
@@ -40,12 +41,14 @@ class SettingsController extends Controller {
 	 *
 	 * @param IRequest $request The request object
 	 * @param SettingsService $settingsService The settings service
+	 * @param InternalBaseUrl|null $internalBaseUrl The internal address for calls to this instance.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
 		private SettingsService $settingsService,
+		private ?InternalBaseUrl $internalBaseUrl = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -61,6 +64,7 @@ class SettingsController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-001
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
 	 */
 	public function index(): JSONResponse {
 		$settings = $this->settingsService->getSettings();
@@ -77,6 +81,12 @@ class SettingsController extends Controller {
 			// The geography provider and the MaxMind account id are instance
 			// configuration; a non-admin has no form for them either.
 			unset($settings[SettingsService::GEO_KEY]);
+		}
+
+		// The internal address for calls to this instance names where the
+		// server reaches itself: administrators only.
+		if ($isAdmin === true && $this->internalBaseUrl !== null) {
+			$settings[InternalBaseUrl::CONFIG_KEY] = $this->internalBaseUrl->stored();
 		}
 
 		return new JSONResponse($settings);
@@ -123,10 +133,22 @@ class SettingsController extends Controller {
 	 *       above), which would widen the route to delegated settings admins.
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-002
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
 	 */
 	public function update(): JSONResponse {
 		$data = $this->request->getParams();
 		$config = $this->settingsService->updateSettings($data);
+
+		// The internal address for calls to this instance
+		// (instance-loopback-self-calls): validated before it is stored; an
+		// invalid one is refused and the stored address stays.
+		if ($this->internalBaseUrl !== null && is_string($data[InternalBaseUrl::CONFIG_KEY] ?? null) === true) {
+			if ($this->internalBaseUrl->store(value: $data[InternalBaseUrl::CONFIG_KEY]) === false) {
+				$config['internal_base_url_refused'] = true;
+			}
+
+			$config[InternalBaseUrl::CONFIG_KEY] = $this->internalBaseUrl->stored();
+		}
 
 		return new JSONResponse(
 			[
