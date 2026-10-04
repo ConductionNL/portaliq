@@ -87,6 +87,24 @@ class RequiredFieldsGuardTest extends TestCase {
 	}//end testTheRefusalNamesEveryMissingField()
 
 	/**
+	 * A forward: an unresolved scope is 403, an action without `fields` is
+	 * never checked, and a declared body is checked.
+	 *
+	 * @return void
+	 */
+	public function testAForwardRefusal(): void {
+		$guard = new RequiredFieldsGuard();
+
+		$scope = $guard->forwardRefusal(action: $this->action(), scoped: null, declaresFields: true);
+		$this->assertNotNull($scope);
+		$this->assertSame(403, $scope->getStatus());
+		$this->assertNull($guard->forwardRefusal(action: $this->action(), scoped: ['body' => [], 'scopeValue' => ''], declaresFields: false));
+		$empty = $guard->forwardRefusal(action: $this->action(), scoped: ['body' => ['onderwerp' => 'x'], 'scopeValue' => ''], declaresFields: true);
+		$this->assertNotNull($empty);
+		$this->assertSame(['documentSoorten' => ''], $empty->getData()['errors']);
+	}//end testAForwardRefusal()
+
+	/**
 	 * An action without field configs, or with a malformed one, requires
 	 * nothing.
 	 *

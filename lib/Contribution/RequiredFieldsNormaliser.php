@@ -63,10 +63,8 @@ class RequiredFieldsNormaliser {
 	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-an-action-may-name-its-required-fields-req-smf-023
 	 */
 	public function apply(array $action, array $whitelist, array $mandatory): array {
-		$configs = ($action['fieldConfigs'] ?? []);
-		if (is_array($configs) === false) {
-			$configs = [];
-		}
+		// ActionConfigNormaliser has already removed a malformed `fieldConfigs`.
+		$configs = (array)($action['fieldConfigs'] ?? []);
 
 		$askable = array_values(array_diff($whitelist, $this->serverFilled(action: $action)));
 		$named   = $this->named(value: ($action[self::KEY] ?? null), whitelist: $askable, configs: $configs);
