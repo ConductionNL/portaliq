@@ -35,6 +35,12 @@ const [ADMIN_USER, ADMIN_PASS] = ADMIN.split(':')
 const BASIC = Buffer.from(ADMIN).toString('base64')
 const PORTAL = process.env.PORTALIQ_E2E_PORTAL || 'demo'
 
+/** How long a presence check may wait: it is there, or it is not coming. */
+const BRIEFLY = 3_000
+
+/** How long the designer may take to paint, which is a real navigation. */
+const A_WHILE = 30_000
+
 /** What this run created, as `schema/id`, to delete afterwards. */
 const created: string[] = []
 
@@ -49,24 +55,67 @@ async function login(page: Page): Promise<void> {
 	await page.locator('input[name="user"]').fill(ADMIN_USER)
 	await page.locator('input[name="password"]').fill(ADMIN_PASS)
 	await page.locator('button[type="submit"], input[type="submit"]').first().click()
-	await page.waitForSelector('#header, header.header', { timeout: 60_000 })
+	await page.waitForSelector('#header, header.header', { timeout: A_WHILE })
 }
 
 /**
- * Close the first-run setup wizard when it is open: its modal swallows every
- * pointer event, which reads as a broken screen rather than a modal.
+ * Close the first-run setup wizard IF one is open.
+ *
+ * ⚠️ WAITING FOR IT IS WRONG. The wizard opens on a fresh instance and not on
+ * one that has been set up, so a wait for its close button costs the default
+ * timeout on every instance where there is nothing to close: three tests times
+ * 90 seconds is a quarter of an hour to learn that a modal is absent. It is
+ * looked for briefly, dismissed when it is there, and skipped when it is not.
+ *
+ * Its close control is looked up four ways because none of them is reliable
+ * across locales and library versions: the instance here runs in Dutch, where
+ * the accessible name is "Sluiten" rather than "Close", and Nextcloud's own
+ * modal uses an icon button instead of a named one. Escape is the last resort
+ * and usually the one that works.
  *
  * @param page The page.
  * @return nothing
  */
 async function dismissSetupWizard(page: Page): Promise<void> {
-	const modal = page.locator('[data-testid="cn-modal"]')
-	if ((await modal.count()) === 0) {
+	const modal = page.locator('[data-testid="cn-modal"], .modal-container').first()
+	if (!(await modal.isVisible({ timeout: BRIEFLY }).catch(() => false))) {
 		return
 	}
 
-	await modal.first().getByRole('button', { name: 'Close' }).click()
-	await expect(modal).toHaveCount(0, { timeout: 15_000 })
+	const closers = [
+		modal.getByRole('button', {
+			name: /close|sluiten|afsluiten|overslaan|skip/i,
+		}),
+		modal.locator('[aria-label*="luiten" i], [aria-label*="lose" i]'),
+		modal.locator('button.icon-close, .modal-container__close'),
+	]
+	for (const closer of closers) {
+		if (
+			await closer
+				.first()
+				.isVisible({ timeout: BRIEFLY })
+				.catch(() => false)
+		) {
+			await closer.first().click()
+			break
+		}
+	}
+
+	if (await modal.isVisible({ timeout: BRIEFLY }).catch(() => false)) {
+		await page.keyboard.press('Escape')
+	}
+
+	// Say what it looked for and what it found, so a failure here is read as
+	// "the wizard would not close" rather than as a missing test id later.
+	const text =
+		(await modal.textContent().catch(() => ''))?.trim().slice(0, 200) ?? ''
+	await expect(
+		modal,
+		'a modal stayed open over the designer. Looked for a close button named'
+			+ ' close/sluiten/afsluiten/overslaan, an aria-label with sluiten or close,'
+			+ " Nextcloud's own icon-close, then Escape. The modal reads: "
+			+ text,
+	).toBeHidden({ timeout: BRIEFLY })
 }
 
 /**
@@ -125,7 +174,7 @@ async function openDesigner(page: Page, request: APIRequestContext): Promise<voi
 	await expect(
 		page.getByTestId('designer-add-widget'),
 		'the designer must open on the seeded page; a login form here means the session was not set',
-	).toBeVisible({ timeout: 30_000 })
+	).toBeVisible({ timeout: A_WHILE })
 }
 
 test.describe('site-widget-palette', () => {
@@ -158,14 +207,18 @@ test.describe('site-widget-palette', () => {
 
 		// An author types the word for the thing, not the component's name.
 		await page.getByTestId('widget-palette-search').fill('kop')
-		await expect(page.getByTestId('widget-palette-nlHeading')).toBeVisible()
+		await expect(page.getByTestId('widget-palette-nlHeading')).toBeVisible({
+			timeout: BRIEFLY,
+		})
 		await expect(
 			page.getByTestId('widget-palette-hits'),
 			'the hit count is announced, so a narrow search is not read as a broken one',
-		).toHaveText(/\d+ widget/)
+		).toHaveText(/\d+ widget/, { timeout: BRIEFLY })
 
 		await page.getByTestId('widget-palette-search').fill('parkeervergunning')
-		await expect(page.getByTestId('widget-palette-empty')).toBeVisible()
+		await expect(page.getByTestId('widget-palette-empty')).toBeVisible({
+			timeout: BRIEFLY,
+		})
 	})
 
 	// @e2e site-nlds-widget-palette::a-heading-dropped-at-the-top
@@ -178,7 +231,9 @@ test.describe('site-widget-palette', () => {
 		const canvas = page.getByTestId('designer-canvas')
 		await entry.dragTo(canvas, { targetPosition: { x: 40, y: 40 } })
 
-		await expect(canvas.getByTestId('nl-heading')).toBeVisible()
+		await expect(canvas.getByTestId('nl-heading')).toBeVisible({
+			timeout: BRIEFLY,
+		})
 	})
 
 	// @e2e site-nlds-widget-palette::keyboard-only
@@ -191,15 +246,19 @@ test.describe('site-widget-palette', () => {
 		// Everything from here on is keys: no click, no drag. If any step needs
 		// a pointer, this test cannot pass, which is the point of it.
 		await page.getByTestId('designer-add-widget').press('Enter')
-		await expect(page.getByTestId('widget-palette')).toBeVisible()
+		await expect(page.getByTestId('widget-palette')).toBeVisible({
+			timeout: BRIEFLY,
+		})
 
 		await page.getByTestId('widget-palette-search').fill('kop')
 		await page.getByTestId('widget-palette-nlHeading').press('Enter')
 
-		await expect(page.getByTestId('widget-palette')).toBeHidden()
+		await expect(page.getByTestId('widget-palette')).toBeHidden({
+			timeout: BRIEFLY,
+		})
 		await expect(
 			page.getByTestId('designer-canvas').getByTestId('nl-heading'),
 			'the widget is on the canvas, placed below everything so the author can see it',
-		).toBeVisible()
+		).toBeVisible({ timeout: BRIEFLY })
 	})
 })
