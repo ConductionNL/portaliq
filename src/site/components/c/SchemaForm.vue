@@ -94,6 +94,7 @@ import {
 	fieldLabel,
 	formBody,
 	formFields,
+	serverFieldErrors,
 	staticOptions,
 	translatorOr,
 	withSingleOptions,
@@ -373,6 +374,13 @@ export default {
 			)
 			this.submitting = false
 			if (!result.ok) {
+				// A refusal that names fields (a required field left empty)
+				// lands in the summary; anything else says it in words.
+				this.errors = serverFieldErrors(this.action, result.errors, this.t)
+				if (Object.keys(this.errors).length > 0) {
+					this.$nextTick(() => this.focusSummary())
+					return
+				}
 				this.error = this.translate('Saving did not work.')
 				return
 			}

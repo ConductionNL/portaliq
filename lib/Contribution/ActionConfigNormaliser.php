@@ -103,6 +103,7 @@ class ActionConfigNormaliser {
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-an-action-may-name-its-required-fields-req-smf-023
 	 */
 	public function normaliseActions(array $actions): array {
 		$out = [];
@@ -119,6 +120,10 @@ class ActionConfigNormaliser {
 			$definition = $this->schemaDefinition(action: $action);
 			$mandatory = $this->mandatoryFields(definition: $definition);
 			$action = $this->normaliseFieldConfigs(action: $action, whitelist: $whitelist, mandatory: $mandatory);
+			// Which fields the resident must fill in: the schema's required
+			// fields on a create, plus the action's own `requiredFields`, only
+			// ever among its `fields` (REQ-SMF-023).
+			$action = (new RequiredFieldsNormaliser())->apply(action: $action, whitelist: $whitelist, mandatory: $mandatory);
 			$action = $this->options->normaliseOptionsProviders(action: $action, whitelist: $whitelist);
 			// What the schema says a field holds (a date, a number, one of a
 			// list) shapes its input, after the manifest had its say.

@@ -57,7 +57,7 @@ NL Design System: mark the non-required field, not the required one. Use "(niet 
 ## D6. Steps on a published form and on a create action
 
 - A create action, or an endpoint action with `fields` (the dossiq Woo actions are endpoint actions), MAY declare `steps` in the same shape. `draft` and `confirmation` likewise.
-- `required` on an action that names no `schema` is dropped today (`ActionConfigNormaliser::applyFieldFlags()`: no schema, empty mandatory set). That stays; every field of such an action reads "(niet verplicht)" (REQ-SMF-023).
+- Which fields are required is decided by D10: the schema's required fields on a create, plus the action's own `requiredFields` (REQ-SMF-023). A field config alone still requires nothing.
 - A create action MAY declare `steps` in the same shape. `ActionConfigNormaliser` keeps a step whose `fields` are all in the action's `fields`, drops the rest, and puts loose fields in a last step. A step with `review: true` is the review step (D7) and carries no fields. `SchemaForm.vue` renders the steps as `IntakeFormBlock.vue` does.
 - `PortalFormBindingResolver` passes the form's `steps` (`[{ id, title, description?, fields[] }]`, the shape `CnFormPage` reads) through in the form render, after keeping only steps whose `fields` name known fields. A field in no step goes in a last step of its own. Without `steps` the block renders as today, one page, no progress.
 - The block shows one step at a time. `FormProgress` lists every step with its state: done, current (`aria-current="step"`), to do. On a phone it collapses to "Stap 2 van 4" with the list behind a button.
@@ -90,6 +90,16 @@ The retention sentence ("Wij bewaren uw antwoorden 30 dagen. U kunt later verder
 ## D9. Confirmation from the action
 
 A create action MAY declare `confirmation: { title, body?, next? }`. `{identifier}` and `{deadline}` are filled from the action's answer (dossiq's `start()` returns `identifier` and `deadline`). A sentence whose placeholder has no value is left out. Without `confirmation` the action keeps `successMessage`, as today.
+
+## D10. An action names its required fields (Ruben, 3 October 2026)
+
+- `requiredFields` on a create action or an endpoint action with `fields`. `RequiredFieldsNormaliser` keeps only names in the action's own `fields`, never a file field, never a field the server fills (`defaults`, `subjectField`), and writes the set as `fieldConfigs.<field>.required: true`. On a create, every schema-required field the action asks for joins the set, so a schema-required field never reads "(niet verplicht)". An update keeps to its named fields: it changes a few fields and does not ask for every mandatory one again.
+- The marker is never decorative. `RequiredFieldsGuard` runs on the body each submit path is about to write or forward: `ContributionController::create()` (signed in and anonymous) and `::action()`, `PortalRowActionController::forward()` (row and attached actions) and `GuestActionController::act()`. An empty field answers 400 `required_missing` with one entry per field, before the cross-reference check, the audit, the write and the forward. A single choke point does not exist: `PortalObjectWriter` and `PortalActionForwarder` also serve jobs and intake without an action, so each caller asks the guard, and each caller has a test.
+- The site reads the same flag: the label loses "(niet verplicht)", the input gets `aria-required`, the client check names the field, and a server refusal (a page holding an older manifest) lands in the same error summary.
+
+### Data minimisation: why this is safe, and what it does not allow
+
+The WMEBV rule is that an electronic form may not demand more than it needs. `requiredFields` cannot widen what a form asks: it may only name fields the action already sends, so it collects nothing new. What it changes is whether an answer may be left out, and the organisation states that openly, per action, in its manifest, where review can see it. It does not allow requiring a field outside `fields`, a file (uploaded after the record exists, so never checked), or a field the server fills. It does not let a field config make a field required, and it never makes a schema-required field optional. A route that serves staff as well (dossiq's `start()`, called by pipelinq for a phone request) keeps its own, looser server rules: the portal action is the stricter door, not the only one.
 
 ## Risks
 

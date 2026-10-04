@@ -29,6 +29,13 @@
 			<h3 class="utrecht-heading-3">
 				{{ open.label || open.id }}
 			</h3>
+			<ErrorSummary
+				ref="summary"
+				:entries="summary"
+				:idBase="`attached-${open.id}-summary`"
+				:heading="translate('Something is still missing')"
+				:intro="translate('Fill this in. Then you can continue.')"
+				:titlePrefix="translate('Error: ')" />
 			<SchemaField
 				v-for="field in fields"
 				:id="`attached-${open.id}-${field}`"
@@ -70,13 +77,21 @@
 </template>
 
 <script>
+import ErrorSummary from '../forms/ErrorSummary.vue'
 import SchemaField from './SchemaField.vue'
 import {
 	attachedActionsOf,
 	fieldLabel,
 	runAttachedAction,
 } from '../../../shared/attachedActions.js'
-import { fieldConfig, fieldErrors, formFields, translatorOr } from './forms.js'
+import { summaryEntries } from '../forms/fields.js'
+import {
+	fieldConfig,
+	fieldErrors,
+	formFields,
+	serverFieldErrors,
+	translatorOr,
+} from './forms.js'
 
 /**
  * Another app's actions on this record (the Vue port of AttachedActions.jsx):
@@ -91,7 +106,7 @@ import { fieldConfig, fieldErrors, formFields, translatorOr } from './forms.js'
 export default {
 	name: 'AttachedActions',
 
-	components: { SchemaField },
+	components: { ErrorSummary, SchemaField },
 
 	inheritAttrs: false,
 
@@ -137,6 +152,23 @@ export default {
 		fields() {
 			return this.open ? formFields(this.open) : []
 		},
+
+		/**
+		 * The error summary's lines, in field order.
+		 *
+		 * @return {Array<{field: string, target: string, message: string}>} The lines.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		summary() {
+			return this.open
+				? summaryEntries(
+						this.fields,
+						this.errors,
+						(field) => `attached-${this.open.id}-${field}`,
+					)
+				: []
+		},
 	},
 
 	methods: {
@@ -146,6 +178,19 @@ export default {
 
 		configOf(field) {
 			return fieldConfig(this.open, field)
+		},
+
+		/**
+		 * Move focus to the error summary's heading.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		focusSummary() {
+			if (this.$refs.summary) {
+				this.$refs.summary.focus()
+			}
 		},
 
 		/**
@@ -172,6 +217,7 @@ export default {
 		async submit() {
 			this.errors = fieldErrors(this.open, this.values, {}, this.t)
 			if (Object.keys(this.errors).length > 0) {
+				this.$nextTick(() => this.focusSummary())
 				return
 			}
 			this.busy = true
@@ -183,6 +229,14 @@ export default {
 				this.values,
 			)
 			this.busy = false
+			// The server refuses an empty required field per field
+			// (REQ-SMF-024); those land in the summary like the form's own.
+			const refused = serverFieldErrors(this.open, result.body?.errors, this.t)
+			if (!result.ok && Object.keys(refused).length > 0) {
+				this.errors = refused
+				this.$nextTick(() => this.focusSummary())
+				return
+			}
 			const success = this.open.successMessage
 			this.message =
 				result.ok && typeof success === 'string' && success !== ''
