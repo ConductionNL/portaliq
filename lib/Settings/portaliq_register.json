@@ -6876,7 +6876,7 @@
                         "authenticated"
                     ]
                 },
-                "icon": "ContentSaveEdit",
+                "icon": "FileDocumentEdit",
                 "version": "0.1.0",
                 "title": "Portal Draft",
                 "description": "A resident's unfinished answers to one action, kept so they can carry on later (site-multi-step-forms REQ-SMF-021). It holds what they typed and nothing else: no file, no record, and nothing the contributing app ever sees. Portaliq reads it back only for the subject that wrote it, by that subject's own scope and never by the id, and deletes it when the action is sent or when expiresAt passes.",
