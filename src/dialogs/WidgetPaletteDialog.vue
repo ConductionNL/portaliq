@@ -81,12 +81,21 @@
 						click or Enter places the widget without a pointer
 						(REQ-SNW-002). A div with a drag handler would leave an
 						author who cannot point with nothing to press.
+
+						⚠️ THE TILE TESTID CARRIES ITS OWN `tile-` SEGMENT. A
+						widget key comes from the registry, so that part of the
+						name is unbounded, and it used to sit in the same
+						namespace as this dialog's fixed ids: a widget keyed
+						`search`, `hits`, `empty` or `close` collided with the
+						search box, the hit count, the empty state or the close
+						button. The `search` widget really does exist, and the
+						e2e read two elements for one id.
 					-->
 					<button
 						type="button"
 						class="palette__button"
 						:class="{ 'palette__button--warned': !entry.publicSafe }"
-						:data-testid="`widget-palette-${entry.key}`"
+						:data-testid="`widget-palette-tile-${entry.key}`"
 						:data-public="entry.publicSafe ? 'true' : 'false'"
 						draggable="true"
 						@click="choose(entry)"

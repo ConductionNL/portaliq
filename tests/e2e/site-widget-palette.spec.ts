@@ -242,7 +242,7 @@ test.describe('site-widget-palette', () => {
 
 		// An author types the word for the thing, not the component's name.
 		await page.getByTestId('widget-palette-search').fill('kop')
-		await expect(page.getByTestId('widget-palette-nlHeading')).toBeVisible({
+		await expect(page.getByTestId('widget-palette-tile-nlHeading')).toBeVisible({
 			timeout: BRIEFLY,
 		})
 		await expect(
@@ -262,7 +262,7 @@ test.describe('site-widget-palette', () => {
 		await page.getByTestId('designer-add-widget').click()
 		await page.getByTestId('widget-palette-search').fill('kop')
 
-		const entry = page.getByTestId('widget-palette-nlHeading')
+		const entry = page.getByTestId('widget-palette-tile-nlHeading')
 		const canvas = page.getByTestId('designer-canvas')
 		await entry.dragTo(canvas, { targetPosition: { x: 40, y: 40 } })
 
@@ -286,7 +286,7 @@ test.describe('site-widget-palette', () => {
 		})
 
 		await page.getByTestId('widget-palette-search').fill('kop')
-		await page.getByTestId('widget-palette-nlHeading').press('Enter')
+		await page.getByTestId('widget-palette-tile-nlHeading').press('Enter')
 
 		await expect(page.getByTestId('widget-palette')).toBeHidden({
 			timeout: BRIEFLY,
