@@ -103,6 +103,7 @@ class ActionConfigNormaliser {
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 	 */
 	public function normaliseActions(array $actions): array {
 		$out = [];
@@ -128,6 +129,9 @@ class ActionConfigNormaliser {
 			$action = (new FieldWidgetNormaliser())->reconcile(action: $action);
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
+			// Steps, a draft and a confirmation on a create or endpoint action
+			// (site-multi-step-forms REQ-SMF-020, -021, -022).
+			$action = (new FormStepsNormaliser())->applyToAction(action: $action, whitelist: $whitelist);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
 			// The citizen write declaration (what-the-citizen-may-write-on-their-
 			// own-case). An absent normaliser drops the key, which closes the
