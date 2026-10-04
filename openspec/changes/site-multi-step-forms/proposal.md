@@ -43,9 +43,9 @@ The dossiq lane's Woo request (`site-woo-request-in-steps`, dossiq PR #3249) is 
 - "Opslaan en later verdergaan" in the step navigation. On a published form its store is `intake-conditional-questions-and-drafts` (T06, T07, openregister journey runs). On a create action the store is new and portaliq's: a `portalDraft` object per signed-in subject and action, holding the visible answers and the step reached, removed when sent or when `retentionDays` passes. The app stores nothing until the request is sent.
 - Action keys: `steps` (`[{ id, title, description?, fields[], review? }]`, the shape published forms use), `draft` (`{ retentionDays }`, 1 to 90) and `confirmation` (`{ title, body, next }` with `{identifier}` and `{deadline}` filled from the action's answer, a sentence with an empty value dropped). Dossiq writes `hint` on a step; the final key is `description`, as in `CnFormPage` and published forms.
 
-### Open decision: a form stricter than its server
+### Decided: an action names its required fields
 
-Dossiq wants fields required in the form that the server keeps optional (`periodeVan`, `documentSoorten`, the requester's name and address), so a call taken by phone can still be saved by staff. Portaliq forbids that today: `ActionConfigNormaliser` honours `fieldConfigs.required: true` only for fields in the schema's `required` set (`supplier-portal`, "Form data minimisation: no non-mandatory field may be required"). This change does not lift that rule. Either dossiq makes those fields required on its portal route, or Ruben relaxes the rule for actions that declare their own server check. Listed for Ruben.
+Dossiq wants fields required in the form that its server keeps optional (`omschrijving`, `periodeVan`, `documentSoorten`, the requester's name and e-mail), so a call taken by phone can still be saved by staff. Ruben decided on 3 October 2026: "Let an action name its required fields". An action may declare `requiredFields` from its own `fields`; portaliq marks them in the form and refuses an empty one on the server (REQ-SMF-023, REQ-SMF-024, design D10). The `supplier-portal` rule is amended to match: a field config alone still requires nothing.
 
 ## Existing work this builds on, and does not redo
 
