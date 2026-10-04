@@ -380,7 +380,7 @@ export default {
 		},
 
 		/**
-		 * The name an author reads for a widget key ("Tekst (markdown)",
+		 * The name an author reads for a widget key ("Tekst",
 		 * never "markdown").
 		 *
 		 * @param {string} key The widget key.
