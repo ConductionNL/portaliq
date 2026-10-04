@@ -141,7 +141,11 @@ import PlaceholderPage from '../pages/PlaceholderPage.vue'
 import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
 import { ACTING_FOR_SELF } from '../../shared/myCases.js'
-import { navKeyFor, OPEN_STORAGE_KEY } from '../../shared/openRecord.js'
+import {
+	navKeyFor,
+	OPEN_STORAGE_KEY,
+	opensAsRecordPage,
+} from '../../shared/openRecord.js'
 import {
 	ACCOUNT_ROUTE,
 	recordIdOfRoute,
@@ -418,7 +422,13 @@ export default {
 			} catch {
 				// Without storage the page opens without the case selected.
 			}
-			this.$emit('navigate', routeForNav(entry))
+			// A record page opens on that record's route (REQ-SMO-010).
+			this.$emit(
+				'navigate',
+				opensAsRecordPage(entry, target.collection)
+					? `${routeForNav(entry)}/${encodeURIComponent(target.id)}`
+					: routeForNav(entry),
+			)
 		},
 	},
 }

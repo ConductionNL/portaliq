@@ -87,6 +87,8 @@ export default {
 		api: { type: Object, default: null },
 		/** The app of the contribution the block belongs to. */
 		app: { type: String, default: '' },
+		/** The open record, when the block narrows to it (`recordField`). */
+		record: { type: Object, default: null },
 		/** Every navigation entry, to find the page that shows a record. */
 		nav: { type: Array, default: () => [] },
 		/** The heading level of the block's label. */
@@ -136,6 +138,30 @@ export default {
 		},
 
 		/**
+		 * The messages about the open record when the block names a
+		 * `recordField` (REQ-SMO-025); every message otherwise. Without an
+		 * open record such a block shows none.
+		 *
+		 * @return {Array<object>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
+		 */
+		aboutTheRecord() {
+			const field = this.block?.recordField
+			if (!field) {
+				return this.messages
+			}
+			const id = String(
+				this.record?.id
+					|| this.record?.uuid
+					|| this.record?.['@self']?.id
+					|| '',
+			)
+			return (this.messages || []).filter(
+				(message) => id !== '' && String(message?.[field] ?? '') === id,
+			)
+		},
+
+		/**
 		 * @return {string} The inbox's real address.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
@@ -150,7 +176,7 @@ export default {
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		entries() {
-			return inboxRows(this.messages, this.block, this.app).map(
+			return inboxRows(this.aboutTheRecord, this.block, this.app).map(
 				(message, index) => {
 					const link = message.recordLink?.id ? message.recordLink : null
 					const recordAt = link ? recordRoute(this.nav, link) : null

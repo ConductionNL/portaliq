@@ -489,7 +489,7 @@ import {
 	routeForNav,
 	shellSections,
 } from '../shared/portalNav.js'
-import { forgetActingFor } from './components/e/actingFor.js'
+import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
 import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
@@ -1462,6 +1462,12 @@ export default {
 				contributions?.contributions,
 				this.api,
 			)
+			// The mandates the resident holds, so the acting-for bar can name
+			// its party before Mijn zaken was opened (REQ-SMO-008). Only when
+			// the portal lists cases: that answer carries the mandates.
+			if (contributions?.cases?.enabled === true) {
+				learnMandates(await this.api.fetchMyCases().catch(() => null))
+			}
 		},
 
 		/**

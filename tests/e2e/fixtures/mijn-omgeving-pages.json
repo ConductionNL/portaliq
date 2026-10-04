@@ -207,5 +207,85 @@
 				]
 			}
 		]
+	},
+	"wave-6": {
+		"label": "Gezin {stamp}",
+		"audience": "{audience}",
+		"status": "active",
+		"collections": [
+			{
+				"id": "kind-{stamp}",
+				"kind": "cases",
+				"label": "Kinderen",
+				"register": "portaliq",
+				"schema": "portalCase",
+				"scopeField": "subjectRef"
+			},
+			{
+				"id": "groep-{stamp}",
+				"label": "Groepen",
+				"register": "portaliq",
+				"schema": "portalMessage",
+				"scopeField": "subjectRef"
+			}
+		],
+		"pages": [
+			{
+				"id": "gezin-{stamp}",
+				"label": "Gezin {stamp}",
+				"records": {
+					"collection": "kind-{stamp}",
+					"titleFields": [
+						"reference"
+					],
+					"subtitleLookup": {
+						"collection": "groep-{stamp}",
+						"matchField": "referenceId",
+						"valueField": "subject"
+					}
+				},
+				"blocks": [
+					{
+						"type": "richText",
+						"template": "Dit is het overzicht van {reference}. Einddatum {withdrawnAt}.",
+						"whenEmpty": {
+							"withdrawnAt": "Er is geen einddatum."
+						}
+					},
+					{
+						"type": "cta",
+						"page": "kind-detail-{stamp}",
+						"label": "{title} bekijken",
+						"withRecord": true
+					},
+					{
+						"type": "cta",
+						"route": "/mijn/inbox",
+						"label": "Berichten"
+					},
+					{
+						"type": "detail",
+						"collection": "kind-{stamp}"
+					}
+				]
+			},
+			{
+				"id": "kind-detail-{stamp}",
+				"label": "Kind {stamp}",
+				"menu": false,
+				"record": {
+					"collection": "kind-{stamp}",
+					"titleFields": [
+						"reference"
+					]
+				},
+				"blocks": [
+					{
+						"type": "detail",
+						"collection": "kind-{stamp}"
+					}
+				]
+			}
+		]
 	}
 }

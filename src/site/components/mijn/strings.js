@@ -70,6 +70,7 @@ export default {
 		'On whose behalf you act': 'Namens wie u werkt',
 		'You are now acting for {party}': 'U regelt nu zaken voor {party}',
 		'Switch to yourself': 'Wissel naar uzelf',
+		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
 		'Before {date}': 'Before {date}',
@@ -125,5 +126,6 @@ export default {
 		'On whose behalf you act': 'On whose behalf you act',
 		'You are now acting for {party}': 'You are now acting for {party}',
 		'Switch to yourself': 'Switch to yourself',
+		'{value} of {total} {label}': '{value} of {total} {label}',
 	},
 }

@@ -76,6 +76,8 @@ export default {
 		titleFields: { type: Array, default: () => [] },
 		/** The fields under its name. */
 		subtitleFields: { type: Array, default: () => [] },
+		/** A subtitle per row id, from a related record; wins over subtitleFields. */
+		subtitles: { type: Object, default: () => ({}) },
 		/** The group's name for a screen reader, "Kies voor wie". */
 		legend: { type: String, required: true },
 		/** The radio group's name, unique on the page. */
@@ -111,7 +113,8 @@ export default {
 						id,
 						key: id.replace(/[^A-Za-z0-9_-]/g, ''),
 						title,
-						subtitle: pick(row, this.subtitleFields, []),
+						subtitle:
+							this.subtitles[id] || pick(row, this.subtitleFields, []),
 						initials: initialsOf(title),
 					}
 				})

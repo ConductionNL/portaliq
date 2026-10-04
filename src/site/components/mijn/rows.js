@@ -169,18 +169,33 @@ export function taskRows(rows, block, collection) {
 		? block.titleFields
 		: collection?.titleFields) || ['title', 'name', 'subject', 'onderwerp']
 	const dueField = block?.dueField || ''
-	const list = (Array.isArray(rows) ? rows : []).filter(Boolean).map((row) => ({
-		id: idOf(row),
-		title:
-			titleFields
-				.map((field) => row[field])
-				.filter((value) => typeof value === 'string' && value.trim() !== '')
-				.join(' ')
-			|| collection?.label
-			|| '',
-		due: dueField && row[dueField] ? String(row[dueField]) : '',
-		row,
-	}))
+	// A row whose lookup value is listed in excludeWhen is not a task: work
+	// already handed in (REQ-SMO-025).
+	const exclude = block?.excludeWhen
+	const lookup = (block?.lookups || []).find(
+		(candidate) => candidate?.as === exclude?.lookup,
+	)
+	const left = (row) =>
+		!exclude
+		|| !lookup
+		|| !(exclude.in || []).map(String).includes(String(row?.[lookup.as] ?? ''))
+	const list = (Array.isArray(rows) ? rows : [])
+		.filter(Boolean)
+		.filter(left)
+		.map((row) => ({
+			id: idOf(row),
+			title:
+				titleFields
+					.map((field) => row[field])
+					.filter(
+						(value) => typeof value === 'string' && value.trim() !== '',
+					)
+					.join(' ')
+				|| collection?.label
+				|| '',
+			due: dueField && row[dueField] ? String(row[dueField]) : '',
+			row,
+		}))
 	const time = (entry) => {
 		const ms = entry.due ? new Date(entry.due).getTime() : Number.NaN
 		return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms

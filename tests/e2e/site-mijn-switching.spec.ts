@@ -150,6 +150,52 @@ test.describe('site-mijn-switching', () => {
 		)
 	})
 
+	// @e2e site-mijn-omgeving::vera-groep-6
+	// @e2e site-mijn-omgeving::access-without-an-end-date
+	test('a family page: the switcher subtitle from the group, a text from the record, tiles for the open child', async ({
+		page,
+		request,
+	}) => {
+		const stamp = Date.now()
+		await seed(request, 'portalPage', pageFixture('wave-6', stamp, AUDIENCE))
+		const subjectRef = `subject-wave6-${stamp}`
+		const mine = { subjectRef, organisation: ORGANISATION }
+		const vera = await seed(request, 'portalCase', {
+			...mine,
+			reference: 'Vera',
+		})
+		await seed(request, 'portalMessage', {
+			...mine,
+			subject: 'Groep 6',
+			referenceId: vera,
+			read: true,
+		})
+		const login = await request.post(`${PORTAL_API}/session/dev-login`, {
+			data: { subjectRef, audience: AUDIENCE, organisation: ORGANISATION },
+		})
+		expect(login.ok(), 'dev-login must be enabled (debug mode)').toBeTruthy()
+		const { token } = await login.json()
+		await seedSiteSession(page, token)
+
+		const route = await routeOf(request, token, `gezin-${stamp}`)
+		await page.goto(siteAddress(route))
+		const switcher = page.getByTestId('mijn-record-switcher')
+		await expect(switcher).toContainText('Vera')
+		await expect(switcher).toContainText('Groep 6')
+
+		const text = page.getByTestId('contribution-page-template')
+		await expect(text).toContainText('Dit is het overzicht van Vera.')
+		await expect(text).toContainText('Er is geen einddatum.')
+
+		const tiles = page.getByTestId('mijn-quick-tile')
+		await expect(tiles).toHaveCount(2)
+		await expect(tiles.first()).toHaveText(/Vera bekijken/)
+		await tiles.first().click()
+		await expect(page).toHaveURL(
+			new RegExp(encodeURIComponent(`/kind-detail-${stamp}/${vera}`)),
+		)
+	})
+
 	// @e2e site-mijn-omgeving::linda-acts-for-her-father-dossiqphone-dc-html
 	test('Linda acts for her father: the bar names him on every page, on a phone', async ({
 		page,

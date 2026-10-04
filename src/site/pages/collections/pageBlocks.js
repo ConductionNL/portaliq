@@ -82,7 +82,36 @@ export function rowActionsOf(contribution, collection) {
  * @return {Array<object>}
  */
 export function resolveBlocks(page, contribution) {
-	return quietCaseUnderDetail(resolveEachBlock(page, contribution))
+	return groupTiles(quietCaseUnderDetail(resolveEachBlock(page, contribution)))
+}
+
+/**
+ * Consecutive `cta` blocks that open a page or a route become one list of
+ * quick tiles (`kind: tiles`, the blocks in `tiles`), as the mockups draw
+ * them (site-mijn-omgeving-components REQ-SMO-024).
+ *
+ * @param {Array<object>} items The resolved blocks.
+ * @return {Array<object>} The same blocks, runs of tiles folded into one.
+ * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+ */
+export function groupTiles(items) {
+	const out = []
+	for (const item of items) {
+		const last = out[out.length - 1]
+		if (item.kind !== 'tile') {
+			out.push(item)
+		} else if (last && last.kind === 'tiles') {
+			last.tiles.push(item.block)
+		} else {
+			out.push({
+				index: item.index,
+				block: item.block,
+				kind: 'tiles',
+				tiles: [item.block],
+			})
+		}
+	}
+	return out
 }
 
 /**
@@ -120,7 +149,8 @@ function resolveEachBlock(page, contribution) {
 	return (page?.blocks || []).map((block, index) => {
 		const type = block?.type
 		if (type === 'richText') {
-			return { index, block, kind: 'richText' }
+			// A text filled from the open record (REQ-SMO-027).
+			return { index, block, kind: block.template ? 'template' : 'richText' }
 		}
 		if (COLLECTION_BLOCKS.includes(type)) {
 			const collection = findCollection(contribution, block.collection)
@@ -198,6 +228,10 @@ function resolveEachBlock(page, contribution) {
 			return collection
 				? { index, block, kind: type, collection }
 				: { index, block, kind: 'none' }
+		}
+		if (type === 'cta' && (block.page || block.route)) {
+			// A tile to a page or a route (REQ-SMO-024).
+			return { index, block, kind: 'tile' }
 		}
 		if (type === 'action' || type === 'cta') {
 			const action = findAction(contribution, block.action)
