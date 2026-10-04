@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCP\Http\Client\IClientService;
 use OCP\IRequest;
-use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -26,8 +25,7 @@ class PortalActionForwarderTest extends TestCase {
 	private function forwarder(): PortalActionForwarder {
 		return new PortalActionForwarder(
 			$this->createMock(IRequest::class),
-			$this->createMock(IClientService::class),
-			$this->createMock(IURLGenerator::class),
+			$this->createMock(InstanceLoopback::class),
 			$this->createMock(PortalSessionService::class),
 		);
 	}//end forwarder()
@@ -65,8 +63,7 @@ class PortalActionForwarderTest extends TestCase {
 	public function testTheRawBodyIsRelayedWhenTheRequestHidesGetContent(): void {
 		$forwarder = new class(
 			$this->createMock(IRequest::class),
-			$this->createMock(IClientService::class),
-			$this->createMock(IURLGenerator::class),
+			$this->createMock(InstanceLoopback::class),
 			$this->createMock(PortalSessionService::class),
 		) extends PortalActionForwarder {
 			protected function rawInput(): string {

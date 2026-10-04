@@ -7,6 +7,8 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
@@ -15,16 +17,16 @@ use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\SubmissionReceiptService;
-use OCA\Portaliq\Service\CaseTypeVisibility;
-use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
+use OCP\IAppConfig;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
@@ -2563,8 +2565,12 @@ class ContributionControllerTest extends TestCase {
 
 		return new PortalActionForwarder(
 			$request,
-			($clientService ?? $this->createMock(IClientService::class)),
-			$urlGenerator,
+			new InstanceLoopback(
+				($clientService ?? $this->createMock(IClientService::class)),
+				$urlGenerator,
+				$this->createMock(IAppConfig::class),
+				$this->createMock(LoggerInterface::class)
+			),
 			$session
 		);
 

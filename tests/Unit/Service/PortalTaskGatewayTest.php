@@ -11,12 +11,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
+use OCP\IAppConfig;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -377,7 +379,7 @@ class PortalTaskGatewayTest extends TestCase {
 		$appManager->method('isInstalled')->willReturn($openregisterInstalled);
 
 		return new PortalTaskGateway(
-			$clientService,
+			new InstanceLoopback($clientService, $urlGenerator, $this->createMock(IAppConfig::class), $this->createMock(LoggerInterface::class)),
 			$urlGenerator,
 			$session,
 			$appManager,

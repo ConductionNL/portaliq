@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
@@ -21,6 +22,7 @@ use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
+use OCP\IAppConfig;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
@@ -209,7 +211,7 @@ class ContributionControllerSubjectFieldTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			new PortalActionForwarder($request, $clientService, $urls, $session),
+			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(IAppConfig::class), $this->createMock(LoggerInterface::class)), $session),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),

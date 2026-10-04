@@ -14,11 +14,13 @@ use OCA\Portaliq\BackgroundJob\AvailabilityProbeJob;
 use OCA\Portaliq\Service\Availability\AvailabilityProbe;
 use OCA\Portaliq\Service\Availability\AvailabilityRollup;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
+use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
+use OCP\IAppConfig;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -149,12 +151,15 @@ class AvailabilityProbeJobTest extends TestCase {
 		$clients->method('newClient')->willReturn($client);
 
 		$urls = $this->createMock(IURLGenerator::class);
-		$urls->method('linkToRouteAbsolute')->willReturnCallback(
+		$urls->method('linkToRoute')->willReturnCallback(
 			static fn (string $route, array $arguments = []): string => match ($route) {
-				'portaliq.content.site' => 'https://cloud.example/index.php/apps/portaliq/api/content/site?portal=' . ($arguments['portal'] ?? ''),
-				'portaliq.health.index' => 'https://cloud.example/index.php/apps/portaliq/api/health',
-				default => 'https://cloud.example/unknown',
+				'portaliq.content.site' => '/index.php/apps/portaliq/api/content/site?portal=' . ($arguments['portal'] ?? ''),
+				'portaliq.health.index' => '/index.php/apps/portaliq/api/health',
+				default => '/unknown',
 			}
+		);
+		$urls->method('getAbsoluteURL')->willReturnCallback(
+			static fn (string $path): string => 'https://cloud.example' . $path
 		);
 
 		$store = $this->getMockBuilder(AvailabilityStore::class)
@@ -181,7 +186,10 @@ class AvailabilityProbeJobTest extends TestCase {
 		$job = new AvailabilityProbeJob(
 			$time,
 			$portals,
-			new AvailabilityProbe($clients, $urls),
+			new AvailabilityProbe(
+				new InstanceLoopback($clients, $urls, $this->createMock(IAppConfig::class), $this->createMock(LoggerInterface::class)),
+				$urls
+			),
 			$store,
 			new AvailabilityRollup(),
 			$this->createMock(LoggerInterface::class)
