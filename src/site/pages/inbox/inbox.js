@@ -372,8 +372,13 @@ export function bodyWithoutOpenLink(body, link, openRoute) {
 		.trim()
 }
 
-/** The start of a list line: "- ", "* " or "\u2022 ". */
-const LIST_MARK = /^(\s*[-*\u2022]\s+)(.*?):\s*$/
+/**
+ * A list item before an address: "- Titel:" at the start of a line, or after
+ * the sentence before it on the same line ('… "Fietspad". - Titel:'). The
+ * first group is what stays before the item, the second the title. The mark
+ * itself ("- ", "* ", "\u2022 ") goes: the linked title reads on its own.
+ */
+const LIST_ITEM = /^(\s*|[\s\S]*?[.!?]["'\u201d)]?\s+)[-*\u2022]\s+(.*?):\s*$/
 
 /**
  * The route a link into this site's own pages names, or null: an http(s)
@@ -435,7 +440,8 @@ function pushPart(parts, part) {
  * A message body as text and named links, for the inbox row.
  *
  * Every address into this site's own pages becomes a link with a name: in a
- * list line ("- Titel: <url>") the title is the link and ": <url>" goes;
+ * list item ("- Titel: <url>", on its own line or after a sentence) the title
+ * is the link, and the mark "- " and ": <url>" go;
  * after a lead-in ("Lees het besluit hier: <url>") the link's name takes the
  * lead-in's place; else the name takes the address's place. The name is
  * `labels.publication` for a `/publicatie/<id>` page, `labels.link` for any
@@ -463,12 +469,17 @@ export function bodyParts(body, origin, labels) {
 				continue
 			}
 			const before = line.slice(cursor, match.index)
+			const atLineStart = cursor === 0
 			cursor = match.index + url.length
-			// Only the first address of a list line can take the title.
-			const listed =
-				line.slice(0, match.index) === before ? LIST_MARK.exec(before) : null
+			const listed = LIST_ITEM.exec(before)
 			if (listed && listed[2].trim() !== '') {
-				pushPart(parts, { text: listed[1] })
+				const kept = listed[1]
+				// The list mark goes; between two items on one line a space stays.
+				if (kept.trim() !== '') {
+					pushPart(parts, { text: kept })
+				} else if (!atLineStart) {
+					pushPart(parts, { text: ' ' })
+				}
 				pushPart(parts, { text: listed[2].trim(), ...link })
 				continue
 			}

@@ -65,7 +65,7 @@ it. In a list line it SHALL keep the line's title. Every other address SHALL sta
 
 Every other http(s) address in a notice body that leads into this site (the page's own origin, under
 `/apps/portaliq/site`) SHALL show in the Vue site's inbox as a link with a name, never as a raw address. In a list
-line ("- Title: <url>") the title SHALL be the link and ": <url>" SHALL go. After a lead-in ending in a colon, the
+item ("- Title: <url>", on its own line or after a sentence) the title SHALL be the link, and the mark "- " and ": <url>" SHALL go. After a lead-in ending in a colon, the
 link's name SHALL take the lead-in's place. The name SHALL be "Bekijk de publicatie" for a `?route=/publicatie/<id>`
 address and "Bekijk de link" for any other. An address outside this site SHALL stay plain text. A link with a
 `?route=` SHALL open through the site's own navigation.

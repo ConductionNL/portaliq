@@ -239,7 +239,7 @@ test('a saved-search line makes its title the link and drops ": <url>"', () => {
 	const parts = bodyParts(SAVED_SEARCH_BODY, ORIGIN, LABELS)
 	assert.deepEqual(parts, [
 		{
-			text: 'Er is een nieuwe publicatie die past bij uw zoekopdracht "brug".\n\n- ',
+			text: 'Er is een nieuwe publicatie die past bij uw zoekopdracht "brug".\n\n',
 		},
 		{
 			text: 'Besluit op Woo-verzoek over de brug',
@@ -326,4 +326,43 @@ test('a link with a route opens inside the site; with a modifier key the browser
 	page.follow(click(), { route: null })
 	assert.deepEqual(page.emitted, [['navigate', '/publicatie/p-1']])
 	assert.equal(prevented, 1)
+})
+
+test('the live one-line saved-search notice links its title without a dangling "-"', () => {
+	// As opencatalogi's notice reached the inbox on :8080, on one line.
+	const body =
+		'Er is een nieuwe publicatie die past bij uw zoekopdracht "Fietspad Lindelaan". - Verlichting fietspad Lindelaan: '
+		+ PUBLICATION_HREF
+	const parts = bodyParts(body, ORIGIN, LABELS)
+	assert.deepEqual(parts, [
+		{
+			text: 'Er is een nieuwe publicatie die past bij uw zoekopdracht "Fietspad Lindelaan". ',
+		},
+		{
+			text: 'Verlichting fietspad Lindelaan',
+			href: PUBLICATION_HREF,
+			route: '/publicatie/5d0e9f12-7a4b-4c3e-8f21-9b6a0c3d2e11',
+		},
+	])
+	assert.ok(
+		parts.every((part) => !/(^|\s)-(\s|$)/.test(part.text)),
+		'no dangling "-"',
+	)
+})
+
+test('two items on one line keep a space between their linked titles', () => {
+	const parts = bodyParts(
+		`Nieuw. - Een: ${SITE}?route=/publicatie/a - Twee: ${SITE}?route=/publicatie/b`,
+		ORIGIN,
+		LABELS,
+	)
+	assert.deepEqual(
+		parts.map((part) => [part.text, Boolean(part.href)]),
+		[
+			['Nieuw. ', false],
+			['Een', true],
+			[' ', false],
+			['Twee', true],
+		],
+	)
 })
