@@ -172,9 +172,9 @@ function isOffline() {
 function isCacheable(response) {
 	return Boolean(
 		response
-			&& response.ok
-			&& response.type === 'basic'
-			&& response.redirected !== true,
+		&& response.ok
+		&& response.type === 'basic'
+		&& response.redirected !== true,
 	)
 }
 
