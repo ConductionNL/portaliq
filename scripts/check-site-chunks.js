@@ -50,14 +50,33 @@ if (!maps.includes(ENTRY)) {
 	process.exit(1)
 }
 
+/**
+ * Modules under src/site/widgets/ the ENTRY may hold.
+ *
+ * Only the loader map, which is the public gate the renderer resolves
+ * against (ADR-084 §5, site-nlds-widget-palette REQ-SNW-011). A component, a
+ * meta or a stylesheet in the entry would mean every visitor of every public
+ * page downloads a widget nobody placed.
+ */
+const ENTRY_WIDGET_ALLOWED = [/\/src\/site\/widgets\/loaders\.js$/]
+
 const problems = []
 const cssChunks = []
+const entryWidgetModules = []
 for (const file of maps) {
 	const sources =
 		JSON.parse(fs.readFileSync(path.join(DIR, file), 'utf8')).sources || []
 	for (const source of sources) {
 		if (FORBIDDEN.some((re) => re.test(source))) {
 			problems.push(`${file}: ${source}`)
+		}
+		if (file === ENTRY && /\/src\/site\/widgets\//.test(source)) {
+			entryWidgetModules.push(source)
+			if (!ENTRY_WIDGET_ALLOWED.some((re) => re.test(source))) {
+				problems.push(
+					`${file} (the entry): ${source} — a widget must load on demand`,
+				)
+			}
 		}
 		if (/@gemeente-denhaag\//.test(source)) {
 			if (file === ENTRY) {
@@ -78,5 +97,5 @@ if (problems.length > 0) {
 }
 
 console.log(
-	`check-site-chunks: ${maps.length} maps read, no React or Den Haag JavaScript; Den Haag CSS only in ${cssChunks.length} lazy chunk(s).`,
+	`check-site-chunks: ${maps.length} maps read, no React or Den Haag JavaScript; Den Haag CSS only in ${cssChunks.length} lazy chunk(s); ${entryWidgetModules.length} widget module(s) in the entry, all allowed.`,
 )

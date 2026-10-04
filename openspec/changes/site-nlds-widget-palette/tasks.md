@@ -4,14 +4,19 @@ Six waves (design D7), one PR each, to `development`. Every PR runs `npm run bui
 
 ## Wave 1: the palette (REQ-SNW-001, REQ-SNW-002, REQ-SNW-011)
 
-- [ ] **T1**: `src/site/widgets/index.js` with `loaders` and `metas`; `meta.js` shape; `PUBLIC_WIDGETS` spreads the loaders; `pageWidgetCatalogue.js` reads `metas` for label, group, fields and size (design D3).
-  - node test: no key in `metas` equals a key of the shared dashboard registry; a key renders publicly only through `PUBLIC_WIDGETS`
-  - build test: no module under `src/site/widgets/` in the site entry
+- [x] **T1**: `src/site/widgets/` with `loaders.js` (the site's half) and `index.js` (`metas`, the groups and the meta checks); the `meta.js` shape; `PUBLIC_WIDGETS` spreads the loaders through `defineAsyncComponent`; `pageWidgetCatalogue.js` reads `metas` for label, group, fields and size (design D3).
+  - **The split is finer than the design drew it, for the reason the design gives.** `loaders` and `metas` cannot live in one module: the renderer imports the loader map eagerly, because that map IS the public gate, so the metas would ride into the site entry with it and every visitor of a public page would download forty widgets' worth of editor text. `loaders.js` holds the imports, `index.js` holds the descriptions and re-exports the loaders so a reader still finds both halves in one place.
+  - node test `tests/widget-registry.spec.mjs` (`check:widget-registry`, in `check:specs`): every meta describes itself and both halves exist for every key; no key is a shared dashboard key and every key is `nl`-prefixed; the six groups in REQ-SNW-001's order; and the record below. The meta check is exercised on a deliberately broken meta, so it is a check that can fail.
+  - build test in `scripts/check-site-chunks.js`: the entry may hold `loaders.js` and nothing else under `src/site/widgets/`. Controlled by planting a component in the entry map, which fails the script.
+  - First widget, so the mechanism is proven rather than described: `nlLink` (design D1 row 53, wave 2's content group), on the already-installed `@utrecht/link-css`, with no new dependency. It refuses an address that is not `http`, `https`, `mailto`, `tel` or a path inside this site, and renders the author's text as plain text instead.
 - [ ] **T2**: `WidgetPaletteDialog.vue`: groups with headings, search with an announced hit count, Dutch labels for `siteNavigation` and `form` (design D2).
   - `check:page-editor`, `check:site-edit-mode` extended
 - [ ] **T3**: drag-in from the palette onto the grid in `PageGridEditor.vue`; Enter and click keep placing at the first free cell.
   - `check:site-grid` extended; e2e drag and keyboard placement
-- [ ] **T4**: the coverage record: every one of the 101 components with its placement (design D1), and a node test that counts exactly one placement each (REQ-SNW-010).
+- [x] **T4**: the coverage record: every one of the 101 components with its placement (design D1), and a node test that counts exactly one placement each (REQ-SNW-010).
+  - `src/site/widgets/coverage.js`, beside the registry as the requirement asks, with `coverageByPlacement()` for the count: 48 widget, 17 field, 18 part, 5 inline, 10 shell, 3 none.
+  - The test counts it, refuses a component recorded twice or missing, requires a key for a `widget` or `field` and a reason for a `part` or a `none`, and **compares the record against design D1's own table row by row**, so the two cannot drift apart in silence.
+  - Two `none` rows had no reason written (Color Sample, Password Input). They have one now, in the design and in the record: a swatch for documenting a palette, and an input a portal never shows because a resident signs in through DigiD, eHerkenning or the broker.
 
 ## Wave 2: content and layout (REQ-SNW-010)
 
