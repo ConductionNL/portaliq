@@ -48,6 +48,7 @@ import { metaOf as dialogMeta } from './nlDialog/meta.js'
 import { metaOf as drawerMeta } from './nlDrawer/meta.js'
 import { metaOf as headingMeta } from './nlHeading/meta.js'
 import { metaOf as imageMeta } from './nlImage/meta.js'
+import { metaOf as languageNavMeta } from './nlLanguageNav/meta.js'
 import { metaOf as linkMeta } from './nlLink/meta.js'
 import { metaOf as linkListMeta } from './nlLinkList/meta.js'
 import { metaOf as listMeta } from './nlList/meta.js'
@@ -57,7 +58,10 @@ import { metaOf as progressBarMeta } from './nlProgressBar/meta.js'
 import { metaOf as progressCircleMeta } from './nlProgressCircle/meta.js'
 import { metaOf as quoteMeta } from './nlQuote/meta.js'
 import { metaOf as separatorMeta } from './nlSeparator/meta.js'
+import { metaOf as signInMeta } from './nlSignIn/meta.js'
 import { metaOf as tableMeta } from './nlTable/meta.js'
+import { metaOf as tabsMeta } from './nlTabs/meta.js'
+import { metaOf as taskNavMeta } from './nlTaskNav/meta.js'
 import { metaOf as toggletipMeta } from './nlToggletip/meta.js'
 import { metaOf as videoMeta } from './nlVideo/meta.js'
 import { metaOf as youTubeMeta } from './nlYouTube/meta.js'
@@ -108,6 +112,10 @@ export const metas = {
 	nlProgressBar: progressBarMeta,
 	nlProgressCircle: progressCircleMeta,
 	nlToggletip: toggletipMeta,
+	nlLanguageNav: languageNavMeta,
+	nlSignIn: signInMeta,
+	nlTaskNav: taskNavMeta,
+	nlTabs: tabsMeta,
 }
 
 /**

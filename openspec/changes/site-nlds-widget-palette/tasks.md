@@ -48,7 +48,14 @@ The entry after this wave: **364,872 bytes** of the 412 KiB budget, up 1,607 byt
 
 ## Wave 4: navigation
 
-- [ ] **T8**: `nlLanguageNav`, `nlSignIn`, `nlTaskNav`, `nlTabs`; Utrecht pagination inside paging widgets.
+- [x] **T8a**: `nlLanguageNav`, `nlSignIn`, `nlTaskNav`, `nlTabs`.
+  - **Neither nav widget lets a placement invent its own targets.** The language nav renders the locales the shell hands down from the portal, so a page cannot advertise a language the portal does not serve, and it has no author field at all. The sign-in widget renders the ways in the portal declares and **refuses an absolute address**: a sign-in link to another origin is the one link on a government page that must never be authorable.
+  - `nlTabs` follows the WAI-ARIA tabs pattern, as `MyCasesPage.vue` already does: a tablist of buttons, arrow keys between them, Home and End to the ends, roving tabindex so Tab leaves the tablist, and one panel at a time wired with `aria-controls` and `aria-labelledby`. The id prefix comes from the first tab's title, so two tab widgets on a page do not point both panels at the same tab.
+  - `nlTaskNav` carries each step's state **in words** as well as in weight: a tick and a tint say nothing to a screen reader and nothing to somebody who cannot tell the tints apart, which is WCAG 1.4.1. `aria-current="step"` marks the current one.
+  - Tokens only for `nlTabs`, `nlTaskNav` and `nlSignIn`'s layout, with `check:widget-tokens` extended to allow exactly those three and no others.
+- [ ] **T8b**: Utrecht pagination inside the paging widgets.
+  - **Not done, and not a small rename.** The one paging widget today is `FederatedSearchBlock`, and it draws Amsterdam's `ams-pagination` classes (measured against the reference at page 1 of 36, with the gap marker). Swapping them for `@utrecht/pagination-css` changes how a live public search looks, so it wants its own round with a live check rather than a last-minute edit inside another wave. The package is installed and the scope is one `<nav>` in that file.
+  - Design D1 row 69 records this as a `part`, not a widget, so the coverage record and its count are unaffected either way.
 
 ## Wave 5: Mijn omgeving (REQ-SNW-012, REQ-SNW-020)
 
