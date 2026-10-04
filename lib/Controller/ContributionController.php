@@ -105,6 +105,8 @@ use Psr\Log\LoggerInterface;
  * endpoint (appinfo/routes.php); the count tracks the API surface, not
  * incidental complexity.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- see ExcessiveParameterList.
+ * @SuppressWarnings(PHPMD.TooManyMethods)           -- see TooManyPublicMethods: each
+ * routed endpoint keeps its own guard beside it.
  */
 class ContributionController extends Controller implements PortalProtected {
 	/**
@@ -453,6 +455,76 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['object' => $updated]);
 	}//end markRead()
+
+	/**
+	 * Delete ONE of the resident's own inbox messages. The (register, schema)
+	 * must resolve to an inbox the subject may read (the same guard as
+	 * markRead()). Portaliq's own notices may always be deleted; an app's
+	 * inbox only when its collection declares `deletable: true`, because the
+	 * message is that app's record. The trust level is re-checked, and the
+	 * writer deletes the row only when it is the subject's alone (scope field
+	 * and tenant, never a row shared with someone else), so another
+	 * resident's message answers the same 404 as one that does not exist.
+	 *
+	 * @param string $register The register of the inbox collection.
+	 * @param string $schema The schema of the inbox collection.
+	 * @param string $id The message id (never trusted; ownership re-checked server-side).
+	 *
+	 * @return JSONResponse `{deleted: true}`, or 401 / 403 / 404.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function deleteMessage(string $register, string $schema, string $id): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+		if (PortalInboxReader::residentMayDelete(collection: $collection) === false
+			|| PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
+		) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$scopeValue = $this->reader->resolveScopeValue(
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			subject: $subject
+		);
+		if ($scopeValue === null || $scopeValue === '') {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		try {
+			$deleted = $this->writer->deleteObject(
+				register: $register,
+				schema: $schema,
+				scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+				subjectRef: $scopeValue,
+				organisation: (string)($subject['organisation'] ?? ''),
+				id: $id
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error('deleteMessage failed: ' . $e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		if ($deleted === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse(['deleted' => true]);
+	}//end deleteMessage()
 
 	/**
 	 * Find a `kind: inbox` collection matching (register, schema) in the
