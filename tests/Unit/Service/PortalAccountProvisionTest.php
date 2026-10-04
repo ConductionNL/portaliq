@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -243,6 +244,64 @@ class PortalAccountProvisionTest extends TestCase {
 		$this->assertSame('void', $this->rowBySubjectRef($waiting['subjectRef'])['status']);
 
 	}//end testAJoinNeverOverwritesAClaimTheAccountAlreadyHolds()
+
+	/**
+	 * 🔴 The join carries the invited address, and the portal stops asking
+	 * for one.
+	 *
+	 * Live finding: the banner "Add an e-mail address" stood on every page
+	 * for a guardian who HAD been invited by e-mail. The join took the
+	 * waiting account's claims and withdrew the row the address lived on, so
+	 * her own account had none, `needsContactPrompt()` was true forever and
+	 * notifications had nowhere to go either.
+	 *
+	 * @return void
+	 */
+	public function testTheJoinCarriesTheInvitedAddressSoThePortalStopsAskingForOne(): void {
+		$service = $this->service();
+		$values  = new ContactAddressValues();
+
+		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client');
+		$this->assertTrue($values->needsContactPrompt(account: $this->rowBySubjectRef($signedIn['subjectRef'])), 'with no address the portal does ask');
+
+		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'guardian@example.org', verifiedEmail: true);
+		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7');
+
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client', verifiedEmail: 'guardian@example.org');
+
+		$row = $this->rowBySubjectRef($signedIn['subjectRef']);
+		$this->assertSame('guardian@example.org', $row['email'], 'the address the invitation carried is hers now');
+		$this->assertTrue($row['verifiedEmail'], 'and it is verified, which is what matched it');
+		$this->assertFalse($values->needsContactPrompt(account: $row), 'so the portal does not ask her for one');
+		$this->assertSame('void', $this->rowBySubjectRef($waiting['subjectRef'])['status']);
+
+	}//end testTheJoinCarriesTheInvitedAddressSoThePortalStopsAskingForOne()
+
+	/**
+	 * An address of her own is kept: the join never writes over it.
+	 *
+	 * @return void
+	 */
+	public function testTheJoinKeepsAnAddressTheAccountAlreadyHas(): void {
+		$service = $this->service();
+
+		$signedIn = $service->provision(
+			audience: 'client',
+			organisation: 'gemeente-x',
+			identityType: 'digid',
+			identityRef: 'bsn-H',
+			email: 'hers@example.org'
+		);
+		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'invited@example.org', verifiedEmail: true);
+		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-8');
+
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-H', organisation: 'gemeente-x', audience: 'client', verifiedEmail: 'invited@example.org');
+
+		$row = $this->rowBySubjectRef($signedIn['subjectRef']);
+		$this->assertSame('hers@example.org', $row['email']);
+		$this->assertSame(['learniq' => ['guardianRef' => 'guardian-8']], $row['claims'], 'the claims still arrive');
+
+	}//end testTheJoinKeepsAnAddressTheAccountAlreadyHas()
 
 	public function testAClaimIsWrittenUnderTheDispatchingAppsOwnId(): void {
 		$service = $this->service();
