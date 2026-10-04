@@ -147,6 +147,8 @@ export default {
 		 * The roving tabindex: only the current button is a Tab stop.
 		 *
 		 * @return {Array<number>} One tabindex per button.
+		 *
+		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		tabindexes() {
 			return rovingTabindexes(this.current, this.actions.length)
@@ -156,6 +158,8 @@ export default {
 		 * The buttons, in the order an editor reads them.
 		 *
 		 * @return {Array<{name: string, text: string, label: string}>} The buttons.
+		 *
+		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		actions() {
 			const mac =
@@ -226,6 +230,8 @@ export default {
 		 * @param {string} text The English source string.
 		 * @param {object} [vars] Placeholders.
 		 * @return {string} The translation.
+		 *
+		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		t(app, text, vars) {
 			return translate(app, text, vars)
@@ -235,6 +241,8 @@ export default {
 		 * The textarea's value and selection right now.
 		 *
 		 * @return {{value: string, start: number, end: number}} The selection.
+		 *
+		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		currentSelection() {
 			const area = this.$refs.textarea
@@ -313,6 +321,8 @@ export default {
 		 * Ask for the link's address, inline under the toolbar.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		openLink() {
 			this.linkSelection = this.currentSelection()
@@ -343,6 +353,8 @@ export default {
 		 * Close the address form and go back to the text, selection kept.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		closeLink() {
 			const selection = this.linkSelection
