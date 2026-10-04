@@ -34,6 +34,14 @@ use RuntimeException;
  *
  * @covers \OCA\Portaliq\Service\PortalTaskGateway
  *
+ * The gateway reaches openregister through a REAL `InstanceLoopback` here, so
+ * the forwarded address is the one an instance would actually call. Code that
+ * runs without being declared is risky, and `failOnRisky` turns that into a
+ * red suite, so it is declared as used rather than covered: it is the
+ * collaborator, and `InstanceLoopbackTest` is what covers it.
+ *
+ * @uses \OCA\Portaliq\Service\InstanceLoopback
+ *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
 class PortalTaskGatewayTest extends TestCase {
