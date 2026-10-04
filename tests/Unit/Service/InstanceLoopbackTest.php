@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\InstanceLoopback;
+use OCA\Portaliq\Tests\Unit\Service\Fixtures\FakeConnectException;
+use OCA\Portaliq\Tests\Unit\Service\Fixtures\FakeResponseException;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -14,64 +16,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-
-/**
- * A transport failure shaped like Guzzle's ConnectException: no response,
- * and the cURL handler context (errno, connect_time) beside the message.
- */
-class FakeConnectException extends RuntimeException {
-	/**
-	 * Constructor.
-	 *
-	 * @param string $message The cURL message.
-	 * @param array<string, mixed> $context The handler context.
-	 */
-	public function __construct(string $message, private readonly array $context = []) {
-		parent::__construct($message);
-	}
-
-	/**
-	 * The cURL handler context, as Guzzle hands it over.
-	 *
-	 * @return array<string, mixed>
-	 */
-	public function getHandlerContext(): array {
-		return $this->context;
-	}
-}
-
-/**
- * A failure that carries an HTTP response, like Guzzle's RequestException
- * when `http_errors` is on: the server answered, so it is not transport.
- */
-class FakeResponseException extends RuntimeException {
-	/**
-	 * Constructor.
-	 *
-	 * @param IResponse $response The answer that came with the failure.
-	 */
-	public function __construct(private readonly IResponse $response) {
-		parent::__construct('cURL error 7: wrapped around a real answer');
-	}
-
-	/**
-	 * The response the server gave.
-	 *
-	 * @return IResponse
-	 */
-	public function getResponse(): IResponse {
-		return $this->response;
-	}
-
-	/**
-	 * A context that would otherwise read as a connect failure.
-	 *
-	 * @return array<string, mixed>
-	 */
-	public function getHandlerContext(): array {
-		return ['errno' => 7];
-	}
-}
 
 /**
  * InstanceLoopback: the one way portaliq calls its own instance.
