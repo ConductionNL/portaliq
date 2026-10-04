@@ -189,7 +189,11 @@ export default {
 						valueLabels: field.valueLabels,
 					}),
 				}))
-				.filter((field) => field.declared || field.text !== '')
+				// A fact without a value says nothing, declared or not: a
+				// case with no public team read "Behandeld door" over an
+				// empty line. `false` reads "No" and 0 reads "0", so only a
+				// value that is really absent is left out.
+				.filter((field) => field.text !== '')
 		},
 
 		/**

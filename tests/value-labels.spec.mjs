@@ -159,3 +159,46 @@ test('the detail card shows the fieldConfigs label and value label', async () =>
 	assert.match(html, /In behandeling/)
 	assert.doesNotMatch(html, />\s*(service|in_progress)\s*</)
 })
+
+// A declared detail field with no value is left out, so a case without a
+// public team name shows no "Behandeld door" row (dossiq #3257).
+test('the detail card leaves out a declared field without a value', async () => {
+	const cases = {
+		id: 'mijnZaken',
+		columns: [{ field: 'identifier', label: 'Zaaknummer' }],
+		fieldConfigs: {
+			assignedGroupPublicName: { label: 'Behandeld door' },
+			receivedOutsideWorkingHours: { label: 'Ontvangen buiten kantoortijd' },
+		},
+		detail: {
+			fields: ['identifier', 'assignedGroupPublicName', 'endDate', 'receivedOutsideWorkingHours'],
+		},
+	}
+	const html = await renderSfc('src/site/components/collections/DetailCard.vue', {
+		collection: cases,
+		row: {
+			id: 'c1',
+			identifier: 'ZAAK-1',
+			assignedGroupPublicName: '',
+			endDate: null,
+			receivedOutsideWorkingHours: false,
+		},
+		t,
+		locale: 'nl',
+	})
+	assert.match(html, /Zaaknummer/)
+	assert.match(html, /ZAAK-1/)
+	assert.doesNotMatch(html, /Behandeld door/)
+	assert.doesNotMatch(html, /endDate/)
+	// A false value is a fact, not an absence.
+	assert.match(html, /Ontvangen buiten kantoortijd/)
+
+	const named = await renderSfc('src/site/components/collections/DetailCard.vue', {
+		collection: cases,
+		row: { id: 'c2', identifier: 'ZAAK-2', assignedGroupPublicName: 'Team Woo' },
+		t,
+		locale: 'nl',
+	})
+	assert.match(named, /Behandeld door/)
+	assert.match(named, /Team Woo/)
+})
