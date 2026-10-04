@@ -256,7 +256,7 @@ class PortalBlockResolverTest extends TestCase {
 			$this->blocks([['type' => 'collection', 'collection' => 'vragenAanU', 'limit' => 3, 'sort' => ['field' => 'antwoordVoor', 'direction' => 'desc']]])
 		);
 
-		foreach ([['limit' => 0], ['limit' => 51], ['limit' => '3'], ['sort' => ['field' => 'geheim', 'direction' => 'asc']], ['sort' => ['field' => 'onderwerp', 'direction' => 'up']], ['sort' => 'onderwerp']] as $bad) {
+		foreach ([['limit' => 0], ['limit' => 51], ['limit' => '3'], ['sort' => ['field' => 'geheim', 'direction' => 'asc']], ['sort' => ['field' => 'onderwerp', 'direction' => 'up']], ['sort' => 'onderwerp'], ['sort' => ['field' => 7, 'direction' => 'asc']]] as $bad) {
 			$this->assertSame(
 				[['type' => 'collection', 'collection' => 'vragenAanU']],
 				$this->blocks([['type' => 'collection', 'collection' => 'vragenAanU'] + $bad])
