@@ -49,6 +49,7 @@ export default {
 		 * to nowhere.
 		 *
 		 * @return {Array<object>} The links.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeLinks() {
 			return (this.links || [])

@@ -55,6 +55,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The text, or the address when no text was given.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		text() {
 			const label = String(this.label || '').trim()
@@ -63,6 +64,7 @@ export default {
 
 		/**
 		 * @return {string} The address to link to, or '' when there is none to trust.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeHref() {
 			const href = String(this.href || '').trim()
@@ -85,6 +87,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether it leaves this site.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		external() {
 			return this.safeHref !== '' && !this.safeHref.startsWith('/')

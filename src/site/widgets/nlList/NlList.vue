@@ -41,6 +41,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<string>} The lines that have text.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeItems() {
 			return (this.items || [])

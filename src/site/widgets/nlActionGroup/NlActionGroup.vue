@@ -40,6 +40,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<object>} The buttons that have a text and an address.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeButtons() {
 			return (this.buttons || [])

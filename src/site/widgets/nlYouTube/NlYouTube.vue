@@ -48,6 +48,7 @@ export default {
 		 * origin they liked, which is not what a YouTube widget is for.
 		 *
 		 * @return {string} The id.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeId() {
 			const id = String(this.videoId || '').trim()

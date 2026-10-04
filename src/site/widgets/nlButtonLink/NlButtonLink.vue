@@ -44,6 +44,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The kind, or `primary` for anything unknown.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeKind() {
 			return ['primary', 'secondary', 'subtle'].includes(this.kind)
@@ -53,6 +54,7 @@ export default {
 
 		/**
 		 * @return {string} The address, or '' when it is not one to trust.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeHref() {
 			const href = String(this.href || '').trim()

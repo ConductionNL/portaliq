@@ -37,6 +37,7 @@ export default {
 	computed: {
 		/**
 		 * @return {number} The level, clamped into 1 to 6.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeLevel() {
 			const level = Math.round(Number(this.level) || 2)
@@ -45,6 +46,7 @@ export default {
 
 		/**
 		 * @return {string} The element to render.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		tag() {
 			return `h${this.safeLevel}`
@@ -52,6 +54,7 @@ export default {
 
 		/**
 		 * @return {string} Utrecht's class for that level.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		headingClass() {
 			return `utrecht-heading-${this.safeLevel}`

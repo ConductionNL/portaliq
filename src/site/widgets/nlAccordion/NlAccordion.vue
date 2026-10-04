@@ -63,6 +63,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<object>} The parts that have a title.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeItems() {
 			return (this.items || [])
@@ -75,6 +76,7 @@ export default {
 
 		/**
 		 * @return {string} The element the titles use, h2 to h6.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		headingTag() {
 			const level = Math.round(Number(this.headingLevel) || 3)
@@ -88,6 +90,7 @@ export default {
 		 *
 		 * @param {number} index Which part.
 		 * @return {void}
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		toggle(index) {
 			this.open = this.open.includes(index)

@@ -63,6 +63,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<string>} The headers as text.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeColumns() {
 			return (this.columns || []).map((column) => String(column ?? '').trim())
@@ -73,6 +74,7 @@ export default {
 		 * shift the cells after it under the wrong column.
 		 *
 		 * @return {Array<Array<string>>} The rows.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
 		 */
 		safeRows() {
 			const width = Math.max(this.safeColumns.length, 1)
