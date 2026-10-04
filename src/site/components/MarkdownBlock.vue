@@ -102,6 +102,20 @@ export default {
 				UL: 'utrecht-unordered-list',
 				OL: 'utrecht-ordered-list',
 				BLOCKQUOTE: 'utrecht-blockquote',
+				// site-nlds-widget-palette T6: the inline marks and the blocks
+				// an author writes in markdown but had no class for, so a
+				// portal's own tokens style them like everything else. The
+				// list is the design system's own: LI carries no class,
+				// because the list element styles its items.
+				STRONG: 'utrecht-strong',
+				EM: 'utrecht-em',
+				SUB: 'utrecht-sub',
+				SUP: 'utrecht-sup',
+				MARK: 'utrecht-mark',
+				CODE: 'utrecht-code',
+				PRE: 'utrecht-code-block',
+				HR: 'utrecht-separator',
+				IMG: 'utrecht-img',
 			}
 
 			for (const [tag, className] of Object.entries(MAP)) {

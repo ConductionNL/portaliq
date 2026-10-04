@@ -25,5 +25,20 @@
  * @type {Record<string, () => Promise<object>>}
  */
 export const loaders = {
+	nlHeading: () => import('./nlHeading/NlHeading.vue'),
+	nlParagraph: () => import('./nlParagraph/NlParagraph.vue'),
 	nlLink: () => import('./nlLink/NlLink.vue'),
+	nlLinkList: () => import('./nlLinkList/NlLinkList.vue'),
+	nlList: () => import('./nlList/NlList.vue'),
+	nlQuote: () => import('./nlQuote/NlQuote.vue'),
+	nlButtonLink: () => import('./nlButtonLink/NlButtonLink.vue'),
+	nlActionGroup: () => import('./nlActionGroup/NlActionGroup.vue'),
+	nlDescriptionList: () => import('./nlDescriptionList/NlDescriptionList.vue'),
+	nlImage: () => import('./nlImage/NlImage.vue'),
+	nlTable: () => import('./nlTable/NlTable.vue'),
+	nlSeparator: () => import('./nlSeparator/NlSeparator.vue'),
+	nlCodeBlock: () => import('./nlCodeBlock/NlCodeBlock.vue'),
+	nlAccordion: () => import('./nlAccordion/NlAccordion.vue'),
+	nlVideo: () => import('./nlVideo/NlVideo.vue'),
+	nlYouTube: () => import('./nlYouTube/NlYouTube.vue'),
 }
