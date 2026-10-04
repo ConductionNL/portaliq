@@ -55,8 +55,8 @@
 					<span class="pq-kpi__number">{{
 						figure(row, card.field, locale)
 					}}</span>
-					<span v-if="card.unit" class="pq-kpi__unit">{{
-						card.unit
+					<span v-if="unitOf(card)" class="pq-kpi__unit">{{
+						unitOf(card)
 					}}</span>
 				</p>
 				<p v-if="detailsOf(card)" class="pq-kpi__details">
@@ -74,7 +74,7 @@
 </template>
 
 <script>
-import { figure } from '../../../shared/recordPage.js'
+import { countedWord, figure } from '../../../shared/recordPage.js'
 
 let counter = 0
 
@@ -85,7 +85,10 @@ export default {
 	name: 'KpiCards',
 
 	props: {
-		/** The block's cards: `{field, label, unit?, details?, highlight?}`. */
+		/**
+		 * The block's cards: `{field, label, unit?, details?, highlight?}`. A
+		 * unit, and a detail's label, is a string or `{one, other}`.
+		 */
 		cards: { type: Array, default: () => [] },
 		/** The row the cards read, or null when there is none yet. */
 		row: { type: Object, default: null },
@@ -127,11 +130,21 @@ export default {
 		 */
 		detailsOf(card) {
 			return (card.details || [])
-				.map(
-					(detail) =>
-						`${figure(this.row, detail.field, this.locale)} ${detail.label}`,
+				.map((detail) =>
+					`${figure(this.row, detail.field, this.locale)} ${countedWord(detail.label, this.row?.[detail.field])}`.trim(),
 				)
 				.join(', ')
+		},
+
+		/**
+		 * The card's unit for its figure: "1 dag", "5 dagen".
+		 *
+		 * @param {object} card The card.
+		 * @return {string}
+		 * @spec openspec/changes/kpi-unit-singular-and-plural/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
+		 */
+		unitOf(card) {
+			return countedWord(card.unit, this.row?.[card.field])
 		},
 
 		/**

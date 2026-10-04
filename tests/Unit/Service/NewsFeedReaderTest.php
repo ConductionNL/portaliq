@@ -238,6 +238,28 @@ class NewsFeedReaderTest extends TestCase {
 		$this->assertSame(['newest', 'published', 'middle', 'oldest', 'undated'], array_column($feed, 'id'));
 	}//end testFeedIsNewestFirstWhateverTheStorageOrder()
 
+	/**
+	 * A draft written long ago and published today is today's news: the
+	 * feed sorts on `publishedAt` first, ahead of OpenRegister's own dates.
+	 *
+	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 */
+	public function testFeedSortsOnThePublishMomentFirst(): void {
+		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
+		$audienceReader->method('resolveAudience')->willReturn(['schoolRef' => '', 'groupRefs' => ['groep-7'], 'childRefs' => [], 'photoConsent' => []]);
+
+		$target = ['groupRefs' => ['groep-7']];
+		$rows = [
+			['id' => 'recent', 'status' => 'published', 'target' => $target, 'title' => 'Written and published last week', 'publishedAt' => '2026-09-26T08:00:00+00:00', '@self' => ['created' => '2026-09-26T07:00:00+00:00']],
+			['id' => 'late', 'status' => 'published', 'target' => $target, 'title' => 'Old draft, published today', 'publishedAt' => '2026-10-03T09:00:00+00:00', '@self' => ['created' => '2026-08-01T08:00:00+00:00']],
+			['id' => 'unstamped', 'status' => 'published', 'target' => $target, 'title' => 'No publish moment', '@self' => ['created' => '2026-09-30T08:00:00+00:00']],
+		];
+
+		$reader = new NewsFeedReader($this->container($rows), $audienceReader, $this->passThroughGate(), $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(['late', 'unstamped', 'recent'], array_column($reader->feedFor('guardian-fatima'), 'id'));
+	}//end testFeedSortsOnThePublishMomentFirst()
+
 	public function testArchiveReturnsOnlySentInAudienceNewslettersMostRecentFirst(): void {
 		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
 		$audienceReader->method('resolveAudience')->willReturn(['schoolRef' => 'school-a', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []]);

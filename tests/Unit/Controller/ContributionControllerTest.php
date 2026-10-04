@@ -1947,6 +1947,84 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->markRead('other', 'portalMessage', 'm-1')->getStatus());
 	}//end testMarkReadFallbackOpensNothingButPortaliqsOwnMessages()
 
+	/**
+	 * A resident deletes one of portaliq's own notices: the delete is scoped
+	 * on `subjectRef` with the bearer's own reference and tenant.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testDeleteMessageRemovesTheResidentsOwnNotice(): void {
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('deleteObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id) use (&$received): bool {
+				$received = [$register, $schema, $scopeField, $subjectRef, $organisation, $id];
+				return true;
+			}
+		);
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'portalMessages']);
+		$response = $controller->deleteMessage('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['deleted' => true], $response->getData());
+		$this->assertSame(['portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1', 'm-1'], $received);
+	}//end testDeleteMessageRemovesTheResidentsOwnNotice()
+
+	/**
+	 * Another resident's message, or one that does not exist, is the same
+	 * 404; nothing is deleted. Without a bearer it is 401.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testDeleteMessageOfAnotherResidentIs404(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('deleteObject')->willReturn(false);
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'portalMessages']);
+		$response = $controller->deleteMessage('portaliq', 'portalMessage', 'not-mine');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'not_found'], $response->getData());
+
+		$anonymous = $this->controller(aggregate: $this->aggregate(), subject: null);
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->deleteMessage('portaliq', 'portalMessage', 'm-1')->getStatus());
+	}//end testDeleteMessageOfAnotherResidentIs404()
+
+	/**
+	 * An app's inbox is the app's record: a resident deletes from it only
+	 * when the collection declares `deletable: true`. A collection that is
+	 * no inbox, or that asks more trust than the session has, stays 403.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testDeleteMessageFromAnAppsInboxNeedsItsConsent(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'berichten', 'kind' => 'inbox', 'register' => 'dossiq', 'schema' => 'portaalBericht', 'scopeField' => 'recipientRef'],
+				['id' => 'meldingen', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'notice', 'scopeField' => 'guardianRef', 'deletable' => true],
+				['id' => 'strict', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'secret', 'deletable' => true, 'minTrust' => 'high'],
+				['id' => 'docs', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'deletable' => true],
+			]
+		);
+
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('deleteObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField) use (&$received): bool {
+				$received = [$register, $schema, $scopeField];
+				return true;
+			}
+		);
+
+		$controller = $this->controller(aggregate: $aggregate, writer: $writer);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->deleteMessage('dossiq', 'portaalBericht', 'b-1')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->deleteMessage('learniq', 'secret', 'x-1')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->deleteMessage('portaliq', 'exampleDocument', 'd-1')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $controller->deleteMessage('learniq', 'notice', 'n-1')->getStatus());
+		$this->assertSame(['learniq', 'notice', 'guardianRef'], $received);
+	}//end testDeleteMessageFromAnAppsInboxNeedsItsConsent()
+
 	public function testUploadRequiresTheCollectionToOptIntoFileUploads(): void {
 		// The collection does NOT declare filesUpload → 403, no read, no attach.
 		$aggregate = $this->aggregate(

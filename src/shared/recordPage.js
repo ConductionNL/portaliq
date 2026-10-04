@@ -234,6 +234,28 @@ export function figure(row, field, locale) {
 	return String(value)
 }
 
+/**
+ * The word beside a figure: a plain string as it is, or from `{one, other}`
+ * the singular for exactly 1 and the plural for any other figure (also for
+ * none), the rule Nextcloud's own plural forms follow for Dutch and English.
+ * Half a pair, or anything else, reads as nothing.
+ *
+ * @param {string|{one: string, other: string}|undefined} word The declared word.
+ * @param {unknown} value The figure the word follows.
+ * @return {string}
+ * @spec openspec/changes/kpi-unit-singular-and-plural/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
+ */
+export function countedWord(word, value) {
+	if (typeof word === 'string') {
+		return word
+	}
+	if (!word || typeof word.one !== 'string' || typeof word.other !== 'string') {
+		return ''
+	}
+	const isOne = value !== null && value !== '' && Number(value) === 1
+	return isOne ? word.one : word.other
+}
+
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
 
 /**
@@ -489,15 +511,16 @@ export function allGroups(contribution, store) {
 }
 
 /**
- * When a news item was published, for sorting: OpenRegister's
- * `@self.published`, else `@self.created`; -Infinity when undated.
+ * When a news item was published, for sorting: its own `publishedAt`
+ * (stamped when staff publish it), else OpenRegister's `@self.published`,
+ * else `@self.created`; -Infinity when undated.
  *
  * @param {object} item A news item.
  * @return {number} Milliseconds since the epoch, or -Infinity.
  */
 function publishedMoment(item) {
 	const self = item?.['@self'] || {}
-	for (const value of [self.published, self.created]) {
+	for (const value of [item?.publishedAt, self.published, self.created]) {
 		const time = Date.parse(value || '')
 		if (!Number.isNaN(time)) {
 			return time
