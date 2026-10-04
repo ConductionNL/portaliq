@@ -168,6 +168,21 @@ export const DUTCH = Object.freeze({
 	required: '{field} is verplicht.',
 	date: '{field}: vul een geldige datum in, bijvoorbeeld 1 3 2026.',
 	dateHint: 'Bijvoorbeeld 1 3 2026',
+	progress: 'Voortgang',
+	stepOf: 'Stap {n} van {m}',
+	stepHeading: 'Stap {n} van {m}: {title}',
+	showSteps: 'Toon alle stappen',
+	hideSteps: 'Verberg de stappen',
+	stepDone: 'Klaar',
+	stepCurrent: 'Huidige stap',
+	stepTodo: 'Nog te doen',
+	previousStep: 'Vorige stap',
+	nextStep: 'Volgende stap',
+	checkAndSend: 'Controleren en versturen',
+	otherQuestions: 'Overige vragen',
+	change: 'Wijzigen',
+	changeStep: 'Stap {n} wijzigen',
+	notAnswered: 'Niet ingevuld',
 })
 
 /**
