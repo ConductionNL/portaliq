@@ -336,6 +336,8 @@
 	"Change": "Change",
 	"Change step {n}": "Change step {n}",
 	"Not answered": "Not answered",
+	"Save and continue later": "Save and continue later",
+	"Your answers are saved. We keep them until {date}, so you can continue later.": "Your answers are saved. We keep them until {date}, so you can continue later.",
 	"Propose a change": "Propose a change",
 	"Note": "Note",
 	"Send proposal": "Send proposal",

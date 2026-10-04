@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.57.0"
+        "version": "0.58.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.57.0",
+                "version": "0.58.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -51,6 +51,7 @@
                     "portalAccessRequest",
                     "portalFormBinding",
                     "portalIntakeSubmission",
+                    "portalDraft",
                     "changeProposal",
                     "portalPoll",
                     "portalPollResponse",
@@ -6865,6 +6866,79 @@
                         "format": "date-time",
                         "description": "When the case was created.",
                         "example": ""
+                    }
+                }
+            },
+            "portalDraft": {
+                "slug": "portalDraft",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "ContentSaveEdit",
+                "version": "0.1.0",
+                "title": "Portal Draft",
+                "description": "A resident's unfinished answers to one action, kept so they can carry on later (site-multi-step-forms REQ-SMF-021). It holds what they typed and nothing else: no file, no record, and nothing the contributing app ever sees. Portaliq reads it back only for the subject that wrote it, by that subject's own scope and never by the id, and deletes it when the action is sent or when expiresAt passes.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "contributionApp",
+                    "actionId",
+                    "expiresAt"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The portal account whose draft this is. The only field a read is scoped by.",
+                        "example": "b3d9c2a1"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant the session belonged to.",
+                        "example": "gemeente-x"
+                    },
+                    "contributionApp": {
+                        "title": "Contributing app",
+                        "type": "string",
+                        "description": "The app whose action was being filled in.",
+                        "example": "dossiq"
+                    },
+                    "actionId": {
+                        "title": "Action id",
+                        "type": "string",
+                        "description": "The action being filled in. One draft per subject, app and action.",
+                        "example": "startWooVerzoek"
+                    },
+                    "answers": {
+                        "title": "Answers",
+                        "type": "object",
+                        "description": "What the resident typed, keyed by field name, as text. A file field is never in here: a file is uploaded after a record exists, so the step that asks for one asks again.",
+                        "example": {
+                            "onderwerp": "De nieuwe brug"
+                        }
+                    },
+                    "step": {
+                        "title": "Step reached",
+                        "type": "integer",
+                        "description": "Which step was on screen when they saved, counted from zero. A resumed draft opens on the first step with a missing required answer, so this is a hint, not a promise.",
+                        "example": 1
+                    },
+                    "savedAt": {
+                        "title": "Saved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the resident last saved.",
+                        "example": "2026-10-02T14:12:00+00:00"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When portaliq deletes these answers. Derived from the action's declared retentionDays (1 to 90) at the moment of saving, and what the screen tells the resident.",
+                        "example": "2026-11-01T14:12:00+00:00"
                     }
                 }
             },

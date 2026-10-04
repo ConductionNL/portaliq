@@ -155,6 +155,17 @@ export function createPortalApi(config, store = {}) {
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T07
 	 */
+	/**
+	 * The path of one action's drafts.
+	 *
+	 * @param {string} app The contributing app.
+	 * @param {string} actionId The action.
+	 * @return {string} The path.
+	 */
+	function draftPath(app, actionId) {
+		return `/drafts/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`
+	}
+
 	async function answer(method, path, body) {
 		try {
 			const res = await fetch(`${base}${path}`, {
@@ -813,6 +824,51 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @spec openspec/changes/create-names-its-action/tasks.md#T2
 		 */
+		/**
+		 * The resident's own saved answers to one action, or null when there
+		 * are none (site-multi-step-forms REQ-SMF-021). The session is the
+		 * only way in: no draft id travels to the browser.
+		 *
+		 * @param {string} app The contributing app.
+		 * @param {string} actionId The action.
+		 * @return {Promise<object|null>} `{answers, step, savedAt, expiresAt}` or null.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+		 */
+		async myDraft(app, actionId) {
+			const got = await answer('GET', draftPath(app, actionId))
+			return got.ok && got.data ? got.data.draft || null : null
+		},
+
+		/**
+		 * Save what the resident has typed so far.
+		 *
+		 * @param {string} app The contributing app.
+		 * @param {string} actionId The action.
+		 * @param {object} body The answers plus `step`.
+		 * @return {Promise<object|null>} The stored draft, or null.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		async saveDraft(app, actionId, body) {
+			const saved = await answer('PUT', draftPath(app, actionId), body)
+			return saved.ok && saved.data ? saved.data.draft || null : null
+		},
+
+		/**
+		 * Throw the resident's own draft away, once the action is sent.
+		 *
+		 * @param {string} app The contributing app.
+		 * @param {string} actionId The action.
+		 * @return {Promise<boolean>} Whether one was there.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		async discardDraft(app, actionId) {
+			const removed = await answer('DELETE', draftPath(app, actionId))
+			return removed.ok === true
+		},
+
 		async createObject(action, data) {
 			const id = action && typeof action.id === 'string' ? action.id : ''
 			const query = id !== '' ? `?actionId=${encodeURIComponent(id)}` : ''
