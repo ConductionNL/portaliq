@@ -40,3 +40,23 @@ of loaded rows not marked read, also when notices arrived after sign-in.
 - **WHEN** they open the inbox
 - **THEN** the badge says 8
 - @e2e exclude the e2e drives the API, not a renderer; pinned by tests/inbox-unread.spec.mjs (React portal) and tests/site-inbox-pages.spec.mjs (Vue site)
+
+### Requirement: The inbox does not repeat the open link in the text (REQ-NAP-012)
+
+A notice body MAY end with a web address, because the same text is the e-mail. When the Vue site's inbox shows a row
+with an "Open" button, it SHALL NOT show a web address in the body that leads where that button leads (a link into
+the site naming the same record with `#open=` or the same route with `?route=`), nor the words that only introduce
+it. In a list line it SHALL keep the line's title. Every other address SHALL stay as written.
+
+#### Scenario: An answered question
+- **GIVEN** a pipelinq notice "Er is een antwoord op uw vraag "X". Lees het antwoord hier: <site>#open=pipelinq/myQuestions/<id>"
+- **AND** its record link is that question, which a page of the resident shows
+- **WHEN** the resident opens the inbox
+- **THEN** the row reads "Er is een antwoord op uw vraag "X"." and has "Openen"
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+#### Scenario: An address that leads elsewhere
+- **GIVEN** a notice whose address leads to another record or route than its "Open" button
+- **WHEN** the resident opens the inbox
+- **THEN** the body shows the address as written
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs

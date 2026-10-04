@@ -13,6 +13,7 @@ import {
 	navKeyFor,
 	OPEN_STORAGE_KEY,
 	opensAsRecordPage,
+	parseOpenFragment,
 } from '../../../shared/openRecord.js'
 import { routeForNav } from '../../../shared/portalNav.js'
 
@@ -225,4 +226,138 @@ export function downloadCollection(message) {
 		register: source.register,
 		schema: source.schema,
 	}
+}
+
+/** A web address in a message body, up to the first white space. */
+const URL_PATTERN = /https?:\/\/\S+/g
+
+/** The site's own address, the part every link into it shares. */
+const SITE_PATH = /\/apps\/portaliq\/site\/?$/
+
+/** Punctuation that closes a sentence after an address, not part of it. */
+const TRAILING_PUNCTUATION = /[.,;:!?)\]]+$/
+
+/**
+ * A route as one comparable string: decoded, without a trailing slash.
+ *
+ * @param {string} route A site route.
+ * @return {string} The route to compare.
+ */
+function comparableRoute(route) {
+	let value = String(route || '')
+	try {
+		value = decodeURIComponent(value)
+	} catch {
+		// A route that does not decode compares as written.
+	}
+	return value.replace(/\/+$/, '')
+}
+
+/**
+ * Whether a web address leads where the row's "Open" button leads: a link
+ * into this site naming the same record (`#open=<app>/<collection>/<id>`) or
+ * the same route (`?route=<route>`). Anything else is a different place.
+ *
+ * @param {string} url The address in the text.
+ * @param {{app: string, collection: string, id: string}} link The row's record link.
+ * @param {string} openRoute The route "Open" navigates to.
+ * @return {boolean}
+ */
+function leadsWhereOpenLeads(url, link, openRoute) {
+	let parsed
+	try {
+		parsed = new URL(url)
+	} catch {
+		return false
+	}
+	if (!SITE_PATH.test(parsed.pathname)) {
+		return false
+	}
+	const record = parseOpenFragment(parsed.hash)
+	if (record) {
+		return (
+			record.app === link.app
+			&& record.collection === link.collection
+			&& record.id === String(link.id)
+		)
+	}
+	const route = parsed.searchParams.get('route')
+	return Boolean(route) && comparableRoute(route) === comparableRoute(openRoute)
+}
+
+/**
+ * One line of a body without the addresses that lead where "Open" leads.
+ *
+ * The words that only introduce such an address go with it: "Lees het
+ * antwoord hier: <url>" goes as a whole, from the start of its sentence. In a
+ * list line ("- Titel: <url>") only ": <url>" goes, so the title stays.
+ *
+ * @param {string} line One line of the body.
+ * @param {(url: string) => boolean} isOpenTarget Whether an address leads where "Open" leads.
+ * @return {{line: string, changed: boolean}} The line, and whether anything went.
+ */
+function lineWithoutOpenLinks(line, isOpenTarget) {
+	const listItem = /^\s*[-*\u2022]\s/.test(line)
+	const found = [...line.matchAll(URL_PATTERN)].reverse()
+	let result = line
+	let changed = false
+	for (const match of found) {
+		const url = match[0].replace(TRAILING_PUNCTUATION, '')
+		if (!isOpenTarget(url)) {
+			continue
+		}
+		let before = result.slice(0, match.index).trimEnd()
+		let after = result.slice(match.index + url.length)
+		if (before.endsWith(':')) {
+			before = before.slice(0, -1)
+			if (!listItem) {
+				// Keep what ends a sentence before the lead-in, drop the rest.
+				const ends = [...before.matchAll(/[.!?]["'\u201d)]?\s+/g)]
+				const last = ends[ends.length - 1]
+				before = last ? before.slice(0, last.index + last[0].length) : ''
+			}
+		}
+		if (/^[.,;:!?]*\s*$/.test(after) && before.trim() === '') {
+			after = ''
+		}
+		result = (before.trimEnd() + after).trimEnd()
+		changed = true
+	}
+	return { line: result, changed }
+}
+
+/**
+ * A message body without the web addresses that lead where the row's
+ * "Open" button leads.
+ *
+ * The apps that write a notice keep the address in the text on purpose: the
+ * same text is the e-mail. In the inbox the row already has "Open" to that
+ * place, so the bare address, and the words that only introduce it, go. An
+ * address that leads anywhere else stays, and so does every address of a row
+ * without "Open".
+ *
+ * @param {string} body The message body.
+ * @param {{app: string, collection: string, id: string}|null} link The row's record link.
+ * @param {string|null} openRoute The route "Open" navigates to, or null without the button.
+ * @return {string} The body to show.
+ * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+ */
+export function bodyWithoutOpenLink(body, link, openRoute) {
+	if (typeof body !== 'string' || body === '' || !link?.id || !openRoute) {
+		return typeof body === 'string' ? body : ''
+	}
+	const isOpenTarget = (url) => leadsWhereOpenLeads(url, link, openRoute)
+	const lines = []
+	for (const line of body.split('\n')) {
+		const shown = lineWithoutOpenLinks(line, isOpenTarget)
+		// A line that held only the address and its lead-in goes as a whole.
+		if (shown.changed && shown.line.trim() === '') {
+			continue
+		}
+		lines.push(shown.line)
+	}
+	return lines
+		.join('\n')
+		.replace(/\n{3,}/g, '\n\n')
+		.trim()
 }

@@ -45,10 +45,10 @@
 					</div>
 
 					<TranslatedText
-						v-if="message.body"
+						v-if="shownBody(message)"
 						:id="idOf(message, i)"
-						:text="message.body"
-						:translation="message.translation || null"
+						:text="shownBody(message)"
+						:translation="shownTranslation(message)"
 						:t="tr"
 						:locale="lang"
 						bodyClass="utrecht-paragraph pq-inbox-row__body" />
@@ -150,6 +150,7 @@ import { unreadIn } from '../../../shared/inboxUnread.js'
 import { deliveryLine } from '../../../shared/messageBox.js'
 import {
 	attachmentsOf,
+	bodyWithoutOpenLink,
 	downloadCollection,
 	formatDateTime,
 	hasReadiness,
@@ -260,6 +261,55 @@ export default {
 		 */
 		dateTime(value) {
 			return formatDateTime(value, this.lang)
+		},
+
+		/**
+		 * The route the row's "Open" button leads to, or null without one.
+		 *
+		 * @param {object} message A message.
+		 * @return {string|null} The route.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 */
+		openRouteOf(message) {
+			return message?.recordLink?.id ? this.routeOf(message.recordLink) : null
+		},
+
+		/**
+		 * The body as the row shows it: without the web address that leads
+		 * where "Open" leads, which the e-mail needs and the row does not.
+		 *
+		 * @param {object} message A message.
+		 * @return {string} The body to show.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 */
+		shownBody(message) {
+			return bodyWithoutOpenLink(
+				message?.body || '',
+				message?.recordLink || null,
+				this.openRouteOf(message),
+			)
+		},
+
+		/**
+		 * The reader's translation, with the same address taken out.
+		 *
+		 * @param {object} message A message.
+		 * @return {object|null} The translation entry, or null.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 */
+		shownTranslation(message) {
+			const translation = message?.translation || null
+			if (!translation || typeof translation.text !== 'string') {
+				return translation
+			}
+			return {
+				...translation,
+				text: bodyWithoutOpenLink(
+					translation.text,
+					message.recordLink || null,
+					this.openRouteOf(message),
+				),
+			}
 		},
 
 		/**
