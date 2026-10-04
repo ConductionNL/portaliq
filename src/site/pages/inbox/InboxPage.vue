@@ -224,9 +224,9 @@ import { unreadIn } from '../../../shared/inboxUnread.js'
 import { deliveryLine } from '../../../shared/messageBox.js'
 import {
 	attachmentsOf,
-	canDelete,
 	bodyParts,
 	bodyWithoutOpenLink,
+	canDelete,
 	downloadCollection,
 	formatDateTime,
 	hasReadiness,
@@ -592,7 +592,8 @@ export default {
 			this.confirming = (messages || []).filter(canDelete).map((m) => rowId(m))
 			this.notice = ''
 			this.failed = false
-			if (this.confirming.length > 0 && typeof this.$nextTick === 'function') {
+			// Outside a mounted page (a render or a test) there is nothing to focus.
+			if (this.confirming.length > 0 && this.$refs) {
 				this.$nextTick(() => this.$refs?.confirm?.focus?.())
 			}
 		},

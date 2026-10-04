@@ -19,19 +19,21 @@ import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 
 const InboxPage = await loadSfc('src/site/pages/inbox/InboxPage.vue')
 
-const own = (id, subject, read = false) => ({
-	id,
-	subject,
-	read,
-	receivedAt: '2026-10-03T09:00:00+02:00',
-	_source: {
-		appId: 'portaliq',
-		register: 'portaliq',
-		schema: 'portalMessage',
-		collection: 'portalMessages',
-		deletable: true,
-	},
-})
+function own(id, subject, read = false) {
+	return {
+		id,
+		subject,
+		read,
+		receivedAt: '2026-10-03T09:00:00+02:00',
+		_source: {
+			appId: 'portaliq',
+			register: 'portaliq',
+			schema: 'portalMessage',
+			collection: 'portalMessages',
+			deletable: true,
+		},
+	}
+}
 
 const MESSAGES = [
 	own('m1', 'Ziekmelding ontvangen'),
