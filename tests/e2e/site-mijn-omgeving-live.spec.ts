@@ -14,23 +14,48 @@
  * Everything it seeds is deleted again afterwards, so a shared demo
  * instance keeps no test pages on its residents' home.
  *
+ * Every run seeds its own audience (`<base>-live-<stamp>`), because the
+ * built-in provider serves ONE portalPage row per audience and picks the
+ * lowest row id when there are several: a leftover row, or a sibling spec
+ * seeding at the same moment, would otherwise replace this run's pages.
+ *
  * Environment (all optional): PORTALIQ_E2E_PORTAL (default open-tilburg),
- * PORTALIQ_E2E_ORG (default dev-org), PORTALIQ_E2E_AUDIENCE (default
- * client), PORTALIQ_E2E_ADMIN (default admin:admin).
+ * PORTALIQ_E2E_ORG (default dev-org), PORTALIQ_E2E_AUDIENCE (the base of this
+ * run's audience, default client), PORTALIQ_E2E_ADMIN (default admin:admin).
  */
 
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import { pageFixture } from './mijn-fixtures.ts'
-import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
+import { devLogin, PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from(process.env.PORTALIQ_E2E_ADMIN || 'admin:admin').toString(
 	'base64',
 )
 const ORGANISATION = process.env.PORTALIQ_E2E_ORG || 'dev-org'
-const AUDIENCE = process.env.PORTALIQ_E2E_AUDIENCE || 'client'
+const AUDIENCE_BASE = process.env.PORTALIQ_E2E_AUDIENCE || 'client'
+
+/**
+ * This run's own audience.
+ *
+ * 🔑 THE BUILT-IN PROVIDER SERVES ONE portalPage ROW PER AUDIENCE: with
+ * several active rows it sorts by row id and picks the FIRST, logging
+ * "multiple active portalPage objects for one audience — picking the first,
+ * not merging" (lib/Portal/PortalContributionProvider.php). So a leftover row
+ * from an earlier run, or a sibling spec seeding at the same time, silently
+ * replaced this run's contribution: the menu showed the OTHER run's pages and
+ * the assertion read as "the menu drops the page". The audience is an open
+ * string set, and `getAudiences()` is derived from the rows themselves, so a
+ * per-run audience gives this run a contribution nothing else can win.
+ *
+ * @param stamp this run's stamp
+ * @return the audience to seed and sign in with
+ */
+function audienceFor(stamp: number): string {
+	return `${AUDIENCE_BASE}-live-${stamp}`
+}
 
 /** What this run created, as `schema/id`, to delete afterwards. */
 const created: string[] = []
@@ -79,11 +104,18 @@ function inDays(days: number): string {
 async function signIn(
 	request: APIRequestContext,
 	page: Page,
-): Promise<{ stamp: number; token: string; home: string; hidden: string }> {
+): Promise<{
+	stamp: number
+	token: string
+	home: string
+	hidden: string
+	audience: string
+}> {
 	const stamp = Date.now()
 	const home = `overzicht-${stamp}`
 	const hidden = `archief-${stamp}`
-	await seed(request, 'portalPage', pageFixture('omgeving-live', stamp, AUDIENCE))
+	const audience = audienceFor(stamp)
+	await seed(request, 'portalPage', pageFixture('omgeving-live', stamp, audience))
 	const subjectRef = `subject-live-${stamp}`
 	const mine = { subjectRef, organisation: ORGANISATION }
 	await seed(request, 'portalCase', {
@@ -100,13 +132,9 @@ async function signIn(
 		read: false,
 		receivedAt: new Date().toISOString(),
 	})
-	const login = await request.post(`${PORTAL_API}/session/dev-login`, {
-		data: { subjectRef, audience: AUDIENCE, organisation: ORGANISATION },
-	})
-	expect(login.ok(), 'dev-login must be enabled (debug mode)').toBeTruthy()
-	const { token } = await login.json()
+	const token = await devLogin(request, subjectRef, audience, ORGANISATION)
 	await seedSiteSession(page, token)
-	return { stamp, token, home, hidden }
+	return { stamp, token, home, hidden, audience }
 }
 
 test.describe('site-mijn-omgeving-live', () => {
@@ -158,22 +186,32 @@ test.describe('site-mijn-omgeving-live', () => {
 		request,
 	}) => {
 		const { stamp, token, hidden } = await signIn(request, page)
-		await page.goto(siteAddress('/mijn'))
-		const menu = page.getByTestId('site-resident-menu')
-		await expect(menu).toContainText(`Overzicht ${stamp}`)
-		await expect(menu).not.toContainText(`Archief ${stamp}`)
 
+		// Read what the edge serves FIRST: when this run's contribution lost
+		// to another active row for the same audience, the menu assertion
+		// below would blame the menu for it. This says which it is.
 		const answer = await request.get(`${PORTAL_API}/contributions`, {
 			headers: { Authorization: `Bearer ${token}` },
 		})
 		const contributions = (await answer.json()).contributions as Array<{
 			app: string
+			label?: string
 			pages?: Array<{ id: string }>
 		}>
 		const owner = contributions.find((c) =>
 			(c.pages || []).some((p) => p.id === hidden),
 		)
-		expect(owner, 'the seeded contribution is served').toBeTruthy()
+		expect(
+			owner,
+			`this run's contribution must be the one served; got ${contributions
+				.map((c) => `${c.app}:${c.label || ''}`)
+				.join(', ')}`,
+		).toBeTruthy()
+
+		await page.goto(siteAddress('/mijn'))
+		const menu = page.getByTestId('site-resident-menu')
+		await expect(menu).toContainText(`Overzicht ${stamp}`)
+		await expect(menu).not.toContainText(`Archief ${stamp}`)
 		await page.goto(siteAddress(`/mijn/${owner!.app}/${hidden}`))
 		await expect(page.getByTestId('contribution-page')).toHaveAttribute(
 			'data-page',

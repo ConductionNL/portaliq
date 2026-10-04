@@ -117,6 +117,38 @@ class PortalContributionProviderTest extends TestCase {
 	}//end testMultipleActiveForSameAudiencePicksFirstAndLogsWarning()
 
 	/**
+	 * A row on its own audience is served whole while another row holds the
+	 * base audience, and nothing is warned about.
+	 *
+	 * This is what the mijn omgeving e2e specs rely on since they started
+	 * seeding `<base>-live-<stamp>`: on a shared instance an earlier run's
+	 * row, or a sibling spec's, used to win the audience by row id and
+	 * replace the run's own pages, which read as "the menu dropped the page".
+	 *
+	 * @return void
+	 */
+	public function testARowOnItsOwnAudienceIsServedBesideOneOnTheBaseAudience(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
+
+		$reader = $this->readerReturning(
+			[
+				['id' => 'a-shared', 'audience' => 'client', 'status' => 'active', 'label' => 'Leftover', 'collections' => [], 'actions' => [], 'pages' => [['id' => 'oud']]],
+				['id' => 'z-run', 'audience' => 'client-live-17', 'status' => 'active', 'label' => 'This run', 'collections' => [], 'actions' => [], 'pages' => [['id' => 'overzicht-17']]],
+			]
+		);
+
+		$provider = new PortalContributionProvider($reader, $this->randomStub(), $logger);
+
+		$this->assertSame(['client', 'client-live-17'], $provider->getAudiences(), 'the run\'s audience is one the provider serves');
+
+		$contribution = $provider->getContribution(['audience' => 'client-live-17']);
+		$this->assertSame('This run', $contribution['label']);
+		$this->assertSame([['id' => 'overzicht-17']], $contribution['pages'], 'and it is the run\'s own pages, not the leftover row\'s');
+
+	}//end testARowOnItsOwnAudienceIsServedBesideOneOnTheBaseAudience()
+
+	/**
 	 * An entry that does not declare its OWN `minTrust` inherits the
 	 * contribution-level default; an entry that DOES declare one is never
 	 * touched — the entry's own value always wins.
