@@ -30,6 +30,7 @@
 			<SchemaForm
 				:action="open"
 				:api="api"
+				:app="open.app || ''"
 				:t="t"
 				:send="sendOpen"
 				@submitted="afterSteps" />

@@ -315,6 +315,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.54.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
 		// another app writes, so it is also sent by email
 		// (woo-journey-entry-points T07). Additive.
+		// 0.58.0 (portalDraft 0.1.0): a resident's unfinished answers to one
+		// action, so they can carry on later (site-multi-step-forms
+		// REQ-SMF-021, PortalDraftStoreTest). Additive.
 		// 0.57.0 (portalPage 0.5.0): the wave 6 block keys.
 		// 0.56.1 (portalPage 0.4.1): `records` is one type, as OpenRegister's
 		// importer requires (EveryRegisterPropertyFitsTheImporterTest).
@@ -323,8 +326,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.55.0 (portalAccount 0.14.0): `activationTokenHash` and
 		// `activationExpiresAt`, the activation link of a self-registration
 		// (identity-ways-in-screens T03). Additive.
-		$this->assertSame('0.57.0', self::$register['info']['version']);
-		$this->assertSame('0.57.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.58.0', self::$register['info']['version']);
+		$this->assertSame('0.58.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalDraft']['version']);
 		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);

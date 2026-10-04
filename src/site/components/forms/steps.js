@@ -171,3 +171,50 @@ export function confirmationText(text, answer) {
 		.join('')
 		.trim()
 }
+
+/**
+ * The step a resumed draft opens on: the first step that still has a missing
+ * required answer, else the review (site-multi-step-forms REQ-SMF-012). The
+ * step the resident saved on is a hint only: what matters is where the gap
+ * is, so nobody lands on a step they already finished.
+ *
+ * @param {Array<object>} steps The flow's steps.
+ * @param {Record<string, string>} values The answers restored from the draft.
+ * @param {(field: string) => boolean} isRequired Whether a field must be filled in.
+ * @return {number} The step's index.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+ */
+export function resumeStep(steps, values, isRequired) {
+	const empty = (field) =>
+		String((values || {})[field] ?? '').trim() === '' && isRequired(field)
+	const at = steps.findIndex(
+		(step) => !step.review && step.fields.some((field) => empty(field)),
+	)
+	return at >= 0 ? at : Math.max(0, steps.length - 1)
+}
+
+/**
+ * The sentence that tells the resident how long their answers are kept, in
+ * their own words and from the saved draft's own date, never from a number
+ * in the renderer.
+ *
+ * @param {string} pattern The words with `{date}`.
+ * @param {string} expiresAt The draft's `expiresAt`.
+ * @param {string} locale The site's language.
+ * @return {string} The sentence, or '' without a readable date.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+ */
+export function retentionSentence(pattern, expiresAt, locale) {
+	const date = new Date(String(expiresAt || ''))
+	if (Number.isNaN(date.getTime())) {
+		return ''
+	}
+	const written = new Intl.DateTimeFormat(locale || 'nl', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	}).format(date)
+	return String(pattern).split('{date}').join(written)
+}

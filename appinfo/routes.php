@@ -398,6 +398,14 @@ return [
         // PortalAuthMiddleware; registered before the /portal/{path} catch-all.
         ['name' => 'contribution#action', 'url' => '/portal/api/actions/{appId}/{actionId}', 'verb' => 'POST'],
 
+        // The resident's own unfinished answers to one action, so they can
+        // carry on later (site-multi-step-forms REQ-SMF-021). A session is
+        // required; the draft is found under the subject's own scope, so no
+        // route here takes a draft id.
+        ['name' => 'portalDraft#show', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'GET'],
+        ['name' => 'portalDraft#save', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'PUT'],
+        ['name' => 'portalDraft#destroy', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'DELETE'],
+
         // The resident task leg (portal-task-delivery): bearer-guarded proxy
         // over openregister's portal task seam. Portaliq mints the
         // X-Portal-Subject assertion server-side; the browser never calls

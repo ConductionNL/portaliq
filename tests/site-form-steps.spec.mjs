@@ -22,6 +22,8 @@ import { afterEach, test } from 'node:test'
 import {
 	confirmationText,
 	flowSteps,
+	resumeStep,
+	retentionSentence,
 	stepErrors,
 	stepHeading,
 	stepTo,
@@ -526,4 +528,204 @@ test('a published form in steps: the review, then the confirmation heading takes
 		form.textOf(form.find('intake-form-done')),
 		/Wij halen het op\. Uw kenmerk: MLD-7/,
 	)
+})
+
+test('the draft helpers: where a resumed draft opens, and the retention sentence', () => {
+	const flow = flowSteps(
+		[
+			{ id: 'vraag', title: 'Uw vraag', fields: ['onderwerp'] },
+			{
+				id: 'periode',
+				title: 'Periode',
+				fields: ['periodeVan', 'periodeTot'],
+			},
+			{ id: 'gegevens', title: 'Uw gegevens', fields: ['naam'] },
+		],
+		{ other: 'Overige vragen', review: 'Controleren en versturen' },
+	)
+	const required = (field) => field !== 'periodeTot'
+
+	assert.equal(
+		resumeStep(
+			flow,
+			{ onderwerp: 'Brug', periodeVan: '2026-03-01', naam: '' },
+			required,
+		),
+		2,
+		'the first step with a gap',
+	)
+	assert.equal(
+		resumeStep(
+			flow,
+			{ onderwerp: 'Brug', periodeVan: '', naam: 'Sanne' },
+			required,
+		),
+		1,
+	)
+	assert.equal(
+		resumeStep(
+			flow,
+			{ onderwerp: 'Brug', periodeVan: '2026-03-01', naam: 'Sanne' },
+			required,
+		),
+		3,
+		'nothing missing: the review',
+	)
+	assert.equal(
+		resumeStep(
+			flow,
+			{
+				onderwerp: 'Brug',
+				periodeVan: '2026-03-01',
+				periodeTot: '',
+				naam: 'Sanne',
+			},
+			required,
+		),
+		3,
+		'an empty optional answer is not a gap',
+	)
+
+	assert.equal(
+		retentionSentence(
+			'Uw antwoorden zijn opgeslagen. Wij bewaren ze tot {date}, zodat u later verder kunt.',
+			'2026-11-04T12:00:00+00:00',
+			'nl',
+		),
+		'Uw antwoorden zijn opgeslagen. Wij bewaren ze tot 4 november 2026, zodat u later verder kunt.',
+	)
+	assert.equal(
+		retentionSentence('tot {date}', '', 'nl'),
+		'',
+		'no date, no promise',
+	)
+})
+
+test('save and resume: the button saves the answers, and the form comes back where the gap is', async () => {
+	globalThis.document = {
+		title: 'Woo',
+		getElementById: () => null,
+		documentElement: { lang: 'nl' },
+		createElement: () => ({}),
+	}
+	const calls = { saved: [], read: 0, discarded: [] }
+	const api = {
+		fetchOptions: async () => [],
+		async myDraft() {
+			calls.read++
+			return {
+				answers: { onderwerp: 'De nieuwe brug' },
+				step: 0,
+				expiresAt: '2026-11-04T12:00:00+00:00',
+			}
+		},
+		async saveDraft(app, actionId, body) {
+			calls.saved.push([app, actionId, body])
+			return {
+				answers: body,
+				step: body.step,
+				expiresAt: '2026-11-04T12:00:00+00:00',
+			}
+		},
+		async discardDraft(app, actionId) {
+			calls.discarded.push([app, actionId])
+			return true
+		},
+	}
+	const action = wooAction({
+		app: 'dossiq',
+		draft: { retentionDays: 30 },
+		fields: ['onderwerp', 'periodeVan'],
+		fieldConfigs: {
+			onderwerp: { label: 'Waar gaat uw verzoek over?', required: true },
+			periodeVan: {
+				label: 'Vanaf welke datum?',
+				required: true,
+				input: 'date',
+			},
+		},
+		steps: [
+			{ id: 'vraag', title: 'Uw vraag', fields: ['onderwerp'] },
+			{
+				id: 'periode',
+				title: 'Periode en documenten',
+				fields: ['periodeVan'],
+			},
+			{
+				id: 'controle',
+				title: 'Controleren en versturen',
+				fields: [],
+				review: true,
+			},
+		],
+	})
+	const send = async () => ({ ok: true, object: { identifier: '2026-0003' } })
+	const form = await mountSfc(FORM, { action, api, send, t, app: 'dossiq' })
+	await form.flush()
+
+	// The saved answer came back and step 1 opened, because step 1 is the gap.
+	assert.equal(calls.read, 1)
+	assert.equal(
+		form.textOf(form.find('schema-form-step-heading')),
+		'Stap 2 van 3: periode en documenten',
+	)
+	assert.equal(
+		form.textOf(form.find('schema-form-retention')),
+		'Uw antwoorden zijn opgeslagen. Wij bewaren ze tot 4 november 2026, zodat u later verder kunt.',
+	)
+
+	// The button sits in the step navigation and sends what is typed so far.
+	await type(form, 'f-startWooVerzoek-periodeVan', '1')
+	await type(form, 'f-startWooVerzoek-periodeVan-month', '3')
+	await type(form, 'f-startWooVerzoek-periodeVan-year', '2026')
+	const save = form.find('schema-form-save-draft')
+	assert.equal(form.textOf(save), 'Opslaan en later verdergaan')
+	await form.fire(save, 'click')
+	assert.deepEqual(calls.saved, [
+		[
+			'dossiq',
+			'startWooVerzoek',
+			{ onderwerp: 'De nieuwe brug', periodeVan: '2026-03-01', step: 1 },
+		],
+	])
+
+	// Sending the action spends the draft: portaliq keeps no copy.
+	await press(form)
+	await press(form)
+	assert.deepEqual(calls.discarded, [['dossiq', 'startWooVerzoek']])
+	assert.ok(
+		form.find('schema-form-retention') === null,
+		'the promise goes with the draft',
+	)
+})
+
+test('without a draft declaration, or without a session, the form offers no saving', async () => {
+	globalThis.document = {
+		title: 'Woo',
+		getElementById: () => null,
+		documentElement: { lang: 'nl' },
+		createElement: () => ({}),
+	}
+	const plain = await mountSfc(FORM, {
+		action: wooAction(),
+		api: { fetchOptions: async () => [] },
+		send: async () => ({ ok: true, object: {} }),
+		t,
+	})
+	await plain.flush()
+	assert.ok(
+		plain.find('schema-form-save-draft') === null,
+		'the action never asked for drafts',
+	)
+
+	// A signed-out visitor: the api has no draft methods at all.
+	const signedOut = await mountSfc(FORM, {
+		action: wooAction({ draft: { retentionDays: 30 } }),
+		api: { fetchOptions: async () => [] },
+		send: async () => ({ ok: true, object: {} }),
+		t,
+	})
+	await signedOut.flush()
+	assert.ok(signedOut.find('schema-form-save-draft') === null)
+	assert.ok(signedOut.find('schema-form-retention') === null)
 })

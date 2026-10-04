@@ -147,6 +147,9 @@ class ActionConfigNormaliser {
 			// Steps, a draft and a confirmation on a create or endpoint action
 			// (site-multi-step-forms REQ-SMF-020, -021, -022).
 			$action = $this->form->flow(action: $action, whitelist: $whitelist);
+			// The field a cta with `withRecord` presets to the open record
+			// (site-mijn-omgeving-components REQ-SMO-024).
+			$action = $this->form->recordField(action: $action, whitelist: $whitelist);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
 			// The citizen write declaration (what-the-citizen-may-write-on-their-
 			// own-case). An absent normaliser drops the key, which closes the

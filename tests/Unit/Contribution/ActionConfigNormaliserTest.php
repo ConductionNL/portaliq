@@ -326,6 +326,31 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testOnlyCreateAndEndpointActionsRunInSteps()
 
 	/**
+	 * A cta with `withRecord` presets one field to the open record: the
+	 * action keeps `recordField` only when it names one of its own fields,
+	 * and never a file field (site-mijn-omgeving-components REQ-SMO-024).
+	 *
+	 * @return void
+	 */
+	public function testARecordFieldMustBeOneOfTheActionsOwnFields(): void {
+		$kept = $this->wooAction(['recordField' => 'onderwerp']);
+		$this->assertSame('onderwerp', $kept['recordField']);
+
+		foreach (['collectionId', '', 7, ['onderwerp']] as $declared) {
+			$this->assertArrayNotHasKey(
+				'recordField',
+				$this->wooAction(['recordField' => $declared]),
+				var_export($declared, true)
+			);
+		}
+
+		$file = $this->absenceAction(
+			['fields' => ['reason', 'attachmentRef'], 'fieldConfigs' => ['attachmentRef' => ['type' => 'file']], 'recordField' => 'attachmentRef']
+		);
+		$this->assertArrayNotHasKey('recordField', $file);
+	}//end testARecordFieldMustBeOneOfTheActionsOwnFields()
+
+	/**
 	 * dossiq's Woo endpoint action, normalised.
 	 *
 	 * @param array<string, mixed> $overrides Keys to declare.

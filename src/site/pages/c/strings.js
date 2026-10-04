@@ -86,6 +86,9 @@ export default {
 		Change: 'Wijzigen',
 		'Change step {n}': 'Stap {n} wijzigen',
 		'Not answered': 'Niet ingevuld',
+		'Save and continue later': 'Opslaan en later verdergaan',
+		'Your answers are saved. We keep them until {date}, so you can continue later.':
+			'Uw antwoorden zijn opgeslagen. Wij bewaren ze tot {date}, zodat u later verder kunt.',
 		'Propose a change': 'Wijziging voorstellen',
 		Note: 'Toelichting',
 		'Send proposal': 'Voorstel indienen',
@@ -174,6 +177,9 @@ export default {
 		Change: 'Change',
 		'Change step {n}': 'Change step {n}',
 		'Not answered': 'Not answered',
+		'Save and continue later': 'Save and continue later',
+		'Your answers are saved. We keep them until {date}, so you can continue later.':
+			'Your answers are saved. We keep them until {date}, so you can continue later.',
 		'Propose a change': 'Propose a change',
 		Note: 'Note',
 		'Send proposal': 'Send proposal',

@@ -85,7 +85,19 @@ The button and the landing step are the same for both:
 - The button "Opslaan en later verdergaan" sits in the step navigation, after "Volgende stap", styled subtle (`DossiqWoo.dc.html`).
 - A resumed draft opens on the first step that has a missing required answer, else on the review.
 
-The retention sentence ("Wij bewaren uw antwoorden 30 dagen. U kunt later verdergaan.") reads the declared `retentionDays` or the run's own date, never a number in the renderer.
+The retention sentence reads the saved draft's own `expiresAt`, never a number in the renderer: "Uw antwoorden zijn opgeslagen. Wij bewaren ze tot 4 november 2026, zodat u later verder kunt." Without a readable date there is no sentence, because a promise nobody can date is not one.
+
+### What a draft holds, and what it does not
+
+It holds the text the resident typed under the action's own field names, the step they were on, when they saved and when the answers go. It holds no file: a file is uploaded after a record exists, so a draft could only keep its name, and the step that asks for one asks again. It holds nothing the contributing app is ever sent, and no record of anything: until the resident presses send, nothing has been requested.
+
+### Who may read one
+
+Only the session that wrote it. `PortalDraftStore` reads through `PortalObjectReader::readCollection()` with `scopeField: subjectRef`, which filters inside OpenRegister on the subject's own ref, the same proof every other portal read uses. The draft's id never reaches the browser and no route takes one: `/portal/api/drafts/{appId}/{actionId}` finds the caller's own draft or answers 404. The two filter conditions (app and action) are checked again on each row, so a store that ignored a property filter could not hand somebody another action's answers.
+
+### How a resident gets back to it
+
+By opening the same form again while signed in. The form asks `GET /portal/api/drafts/{app}/{action}` on mount, fills the answers back in and opens on the first step with a missing required answer, else on the review. No link is minted and no token is mailed: portaliq has no signed-link mechanism of its own to reuse (the guest page of `identity-guest-page-for-signed-links` verifies a token a *contributing app* signed and mailed, which portaliq cannot mint and which would turn a draft into a bearer secret). The saved `step` is a hint only; the gap decides, so nobody lands on a step they already finished.
 
 ## D9. Confirmation from the action
 

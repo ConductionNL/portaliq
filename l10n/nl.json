@@ -2123,7 +2123,19 @@
         "On a collection block: cards instead of a table.": "Bij een verzamelingsblok: kaarten in plaats van een tabel.",
         "Progress": "Voortgang",
         "On cards: the fields with the value and the total, and the unit, shown as a figure.": "Bij kaarten: de velden met de waarde en het totaal, en de eenheid, getoond als cijfer.",
-        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "De verzameling tussen wier records deze pagina wisselt, als object met de verzameling, de velden die de records een naam geven en een ondertitel uit een gerelateerd record. Een app mag ook alleen de verzameling noemen."
+        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "De verzameling tussen wier records deze pagina wisselt, als object met de verzameling, de velden die de records een naam geven en een ondertitel uit een gerelateerd record. Een app mag ook alleen de verzameling noemen.",
+        "Portal Draft": "Concept",
+        "Contributing app": "Bijdragende app",
+        "The app whose action was being filled in.": "De app van de actie die werd ingevuld.",
+        "The action being filled in. One draft per subject, app and action.": "De actie die werd ingevuld. Eén concept per persoon, app en actie.",
+        "The portal account whose draft this is. The only field a read is scoped by.": "Het portaalaccount van wie dit concept is. Het enige veld waarop een leesactie wordt afgebakend.",
+        "The tenant the session belonged to.": "De organisatie waar de sessie bij hoorde.",
+        "What the resident typed, keyed by field name, as text. A file field is never in here: a file is uploaded after a record exists, so the step that asks for one asks again.": "Wat de inwoner typte, per veldnaam, als tekst. Een bestandsveld staat hier nooit in: een bestand wordt pas geüpload als er een record is, dus de stap die erom vraagt, vraagt het opnieuw.",
+        "Step reached": "Stap tot waar",
+        "Which step was on screen when they saved, counted from zero. A resumed draft opens on the first step with a missing required answer, so this is a hint, not a promise.": "Welke stap op het scherm stond bij het opslaan, geteld vanaf nul. Een hervat concept opent op de eerste stap met een ontbrekend verplicht antwoord, dus dit is een aanwijzing, geen belofte.",
+        "Saved at": "Opgeslagen op",
+        "When the resident last saved.": "Wanneer de inwoner voor het laatst opslde.",
+        "When portaliq deletes these answers. Derived from the action's declared retentionDays (1 to 90) at the moment of saving, and what the screen tells the resident.": "Wanneer portaliq deze antwoorden verwijdert. Afgeleid van de opgegeven retentionDays (1 tot 90) op het moment van opslaan, en wat het scherm de inwoner vertelt."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

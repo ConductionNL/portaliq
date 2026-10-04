@@ -52,6 +52,34 @@ class ActionFormShape {
 	}//end fieldWidget()
 
 	/**
+	 * The field a cta with `withRecord` presets to the open record
+	 * (site-mijn-omgeving-components REQ-SMO-024). Kept only when it names one
+	 * of the action's own fields, so a tile can never preset a field the
+	 * action does not send, and never a file field.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 * @param array<int, string> $whitelist The action's `fields`.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+	 */
+	public function recordField(array $action, array $whitelist): array {
+		$field = ($action['recordField'] ?? null);
+		unset($action['recordField']);
+		if (is_string($field) === false || in_array($field, $whitelist, true) === false) {
+			return $action;
+		}
+
+		if ((($action['fieldConfigs'][$field]['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE)) {
+			return $action;
+		}
+
+		$action['recordField'] = $field;
+		return $action;
+	}//end recordField()
+
+	/**
 	 * Mark the fields the resident must fill in: the action's own
 	 * `requiredFields`, plus the schema's required fields on a create.
 	 *

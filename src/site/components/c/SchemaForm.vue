@@ -138,6 +138,19 @@
 				{{ submitting ? translate('Please wait…') : submitLabel }}
 			</button>
 			<button
+				v-if="canSaveDraft"
+				type="button"
+				class="utrecht-button utrecht-button--subtle"
+				:disabled="submitting || savingDraft"
+				data-testid="schema-form-save-draft"
+				@click="saveDraft">
+				{{
+					savingDraft
+						? translate('Please wait…')
+						: translate('Save and continue later')
+				}}
+			</button>
+			<button
 				v-if="pending !== null"
 				type="button"
 				class="utrecht-button utrecht-button--secondary-action"
@@ -147,6 +160,14 @@
 				{{ translate('Try these files again') }}
 			</button>
 		</div>
+
+		<p
+			v-if="retentionText !== ''"
+			class="utrecht-paragraph pq-schema-form__retention"
+			role="status"
+			data-testid="schema-form-retention">
+			{{ retentionText }}
+		</p>
 
 		<p
 			class="utrecht-paragraph pq-schema-form__done"
@@ -169,7 +190,12 @@ import {
 } from '../../../shared/fileFieldSubmit.js'
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
 import stepFlow from '../forms/stepFlow.js'
-import { confirmationText, stepHeading } from '../forms/steps.js'
+import {
+	confirmationText,
+	resumeStep,
+	retentionSentence,
+	stepHeading,
+} from '../forms/steps.js'
 import {
 	collectionProviders,
 	fieldConfig,
@@ -219,6 +245,8 @@ export default {
 		 * (an attached action): `(body) => Promise<{ok, object, errors?}>`.
 		 */
 		send: { type: Function, default: null },
+		/** The app the action belongs to, for its drafts. */
+		app: { type: String, default: '' },
 	},
 
 	emits: ['submitted'],
@@ -236,6 +264,8 @@ export default {
 			submitting: false,
 			pending: null,
 			confirmed: null,
+			draft: null,
+			savingDraft: false,
 		}
 	},
 
@@ -361,6 +391,44 @@ export default {
 			)
 		},
 
+		/**
+		 * Whether this form offers "Opslaan en later verdergaan": the action
+		 * declares a `draft` and the api can keep one for a signed-in
+		 * resident. It sits after "Volgende stap" in the step navigation.
+		 *
+		 * @return {boolean} True to show the button.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+		 */
+		canSaveDraft() {
+			return (
+				this.confirmed === null
+				&& this.action.draft !== undefined
+				&& typeof this.api.saveDraft === 'function'
+			)
+		},
+
+		/**
+		 * The sentence that says how long the answers are kept, read from the
+		 * saved draft's own date.
+		 *
+		 * @return {string} The sentence, or ''.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+		 */
+		retentionText() {
+			if (this.draft === null || this.confirmed !== null) {
+				return ''
+			}
+			return retentionSentence(
+				this.translate(
+					'Your answers are saved. We keep them until {date}, so you can continue later.',
+				),
+				this.draft.expiresAt,
+				this.dayLocale,
+			)
+		},
+
 		submitLabel() {
 			return (
 				this.action.submitLabel
@@ -378,8 +446,14 @@ export default {
 		},
 	},
 
+	/**
+	 * Load the options, then take back the resident's own saved answers.
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+	 */
 	mounted() {
 		this.loadOptions()
+		this.resumeDraft()
 	},
 
 	methods: {
@@ -644,6 +718,7 @@ export default {
 			this.files = {}
 			this.fileKey++
 			this.stepIndex = 0
+			this.forgetDraft()
 			this.reportFailed(result.id, result.failed)
 			this.$emit('submitted', result.object, this.action)
 			if (this.action.confirmation && result.failed.length === 0) {
@@ -653,6 +728,81 @@ export default {
 			if (result.failed.length === 0) {
 				this.done = this.action.successMessage || this.translate('Saved.')
 			}
+		},
+
+		/**
+		 * Save what the resident has typed, so they can carry on later. The
+		 * server keeps the action's own fields and no file, and answers with
+		 * the date it will keep them until.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		async saveDraft() {
+			this.savingDraft = true
+			const saved = await this.api.saveDraft(this.appOf(), this.action.id, {
+				...formBody(this.action, this.values, this.options),
+				step: this.stepIndex,
+			})
+			this.savingDraft = false
+			if (saved !== null) {
+				this.draft = saved
+			}
+		},
+
+		/**
+		 * On opening the form, take back the resident's own saved answers and
+		 * open on the first step with a gap, else on the review.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+		 */
+		async resumeDraft() {
+			if (
+				this.action.draft === undefined
+				|| typeof this.api.myDraft !== 'function'
+			) {
+				return
+			}
+			const draft = await this.api.myDraft(this.appOf(), this.action.id)
+			if (draft === null || typeof draft !== 'object') {
+				return
+			}
+			this.draft = draft
+			const answers =
+				draft.answers && typeof draft.answers === 'object'
+					? draft.answers
+					: {}
+			const values = { ...this.values }
+			for (const field of this.fields) {
+				if (typeof answers[field] === 'string') {
+					values[field] = answers[field]
+				}
+			}
+			this.values = values
+			if (this.hasSteps) {
+				this.openStep(
+					resumeStep(
+						this.flow,
+						values,
+						(field) => this.configOf(field).required === true,
+					),
+				)
+			}
+		},
+
+		/**
+		 * The app the action belongs to: the one the host named, else the
+		 * action's own.
+		 *
+		 * @return {string} The app id.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		appOf() {
+			return this.app !== '' ? this.app : String(this.action.app || '')
 		},
 
 		/**
@@ -673,6 +823,22 @@ export default {
 				failed: [],
 				errors: answer.errors || {},
 			}
+		},
+
+		/**
+		 * The draft is spent once the action is sent: the answers are a record
+		 * now, so portaliq keeps no copy.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		forgetDraft() {
+			if (this.draft === null || typeof this.api.discardDraft !== 'function') {
+				return
+			}
+			this.draft = null
+			this.api.discardDraft(this.appOf(), this.action.id)
 		},
 
 		/**
@@ -710,6 +876,10 @@ export default {
 	flex-wrap: wrap;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-schema-form__retention {
+	margin-block-start: var(--utrecht-space-block-sm, 0.75rem);
 }
 
 .pq-schema-form__intro {
