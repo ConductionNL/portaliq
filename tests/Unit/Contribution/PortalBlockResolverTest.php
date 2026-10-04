@@ -244,6 +244,54 @@ class PortalBlockResolverTest extends TestCase {
 	}//end testADocumentsAndATimelineBlockStayOnlyOnTheirRecordPage()
 
 	/**
+	 * A collection block keeps a limit of 1 to 50 and a sort on a projected
+	 * field, asc or desc; anything else is dropped and the block stays
+	 * (site-mijn-omgeving-components REQ-SMO-021, T10).
+	 *
+	 * @return void
+	 */
+	public function testACollectionBlockKeepsItsLimitAndSort(): void {
+		$this->assertSame(
+			[['type' => 'collection', 'collection' => 'vragenAanU', 'limit' => 3, 'sort' => ['field' => 'antwoordVoor', 'direction' => 'desc']]],
+			$this->blocks([['type' => 'collection', 'collection' => 'vragenAanU', 'limit' => 3, 'sort' => ['field' => 'antwoordVoor', 'direction' => 'desc']]])
+		);
+
+		foreach ([['limit' => 0], ['limit' => 51], ['limit' => '3'], ['sort' => ['field' => 'geheim', 'direction' => 'asc']], ['sort' => ['field' => 'onderwerp', 'direction' => 'up']], ['sort' => 'onderwerp']] as $bad) {
+			$this->assertSame(
+				[['type' => 'collection', 'collection' => 'vragenAanU']],
+				$this->blocks([['type' => 'collection', 'collection' => 'vragenAanU'] + $bad])
+			);
+		}
+
+		$this->assertSame(
+			[['type' => 'detail', 'collection' => 'vragenAanU']],
+			$this->blocks([['type' => 'detail', 'collection' => 'vragenAanU', 'limit' => 3]]),
+			'only a collection block takes them'
+		);
+		$this->assertSame(
+			[['type' => 'collection', 'collection' => 'open', 'sort' => ['field' => 'naam', 'direction' => 'asc']]],
+			$this->blocks([['type' => 'collection', 'collection' => 'open', 'sort' => ['field' => 'naam', 'direction' => 'asc']]]),
+			'a collection that projects nothing sorts on any field'
+		);
+	}//end testACollectionBlockKeepsItsLimitAndSort()
+
+	/**
+	 * A calendar block keeps a range of day, week or month.
+	 *
+	 * @return void
+	 */
+	public function testACalendarBlockKeepsItsRange(): void {
+		$source = ['collection' => 'vragenAanU', 'startField' => 'antwoordVoor', 'titleField' => 'onderwerp'];
+		foreach (['day', 'week', 'month'] as $range) {
+			$this->assertSame($range, $this->blocks([['type' => 'calendar', 'sources' => [$source], 'range' => $range]])[0]['range']);
+		}
+
+		foreach (['year', '', 7, null] as $range) {
+			$this->assertArrayNotHasKey('range', $this->blocks([['type' => 'calendar', 'sources' => [$source], 'range' => $range]])[0]);
+		}
+	}//end testACalendarBlockKeepsItsRange()
+
+	/**
 	 * The placeholder names the app lanes used before the names were fixed
 	 * are not blocks.
 	 *

@@ -136,11 +136,7 @@ class PortalBlockResolver {
 				return null;
 			}
 
-			// A block on a record page may narrow its rows to the open record
-			// (contribution-record-page).
-			$scopes = new RecordScopeNormaliser();
-			$entry = $scopes->scope(declared: $block, entry: $entry);
-			return $scopes->lookups(declared: $block, entry: $entry, collectionIds: $collectionIds);
+			return $this->collectionBlock(type: $type, block: $block, entry: $entry, collectionIds: $collectionIds, collections: $collections);
 		}
 
 		if (in_array($type, ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps', 'documents', 'timeline'], true) === true) {
@@ -162,6 +158,43 @@ class PortalBlockResolver {
 
 		return $this->richTextBlock(block: $block);
 	}//end normaliseBlock()
+
+	/**
+	 * A `collection`, `detail` or `citizenCase` block whose reference
+	 * resolved: the record scope and lookups (contribution-record-page), and
+	 * on a `collection` block its `limit` and `sort`
+	 * (site-mijn-omgeving-components REQ-SMO-021).
+	 *
+	 * @param string $type The block type.
+	 * @param array<string, mixed> $block The declared block.
+	 * @param array<string, mixed> $entry The block as resolved so far.
+	 * @param array<int, string> $collectionIds The valid collection ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	private function collectionBlock(string $type, array $block, array $entry, array $collectionIds, array $collections): array {
+		// A block on a record page may narrow its rows to the open record
+		// (contribution-record-page).
+		$scopes = new RecordScopeNormaliser();
+		$entry = $scopes->scope(declared: $block, entry: $entry);
+		$entry = $scopes->lookups(declared: $block, entry: $entry, collectionIds: $collectionIds);
+
+		if ($type !== 'collection') {
+			return $entry;
+		}
+
+		$collection = null;
+		foreach ($collections as $candidate) {
+			if (($candidate['id'] ?? null) === $entry['collection']) {
+				$collection = $candidate;
+			}
+		}
+
+		return $entry + (new CollectionListKeys())->collectionKeys(block: $block, collection: $collection);
+	}//end collectionBlock()
 
 	/**
 	 * A block whose type has a normaliser of its own, or null when its
@@ -218,7 +251,13 @@ class PortalBlockResolver {
 		}
 
 		if ($type === 'calendar') {
-			return $blocks->calendarBlock(block: $block, collectionIds: $collectionIds);
+			$calendar = $blocks->calendarBlock(block: $block, collectionIds: $collectionIds);
+			// Today, this week or this month (site-mijn-omgeving-components REQ-SMO-021).
+			if ($calendar === null) {
+				return null;
+			}
+
+			return $calendar + (new CollectionListKeys())->calendarKeys(block: $block);
 		}
 
 		return $blocks->newsBlock(block: $block);
