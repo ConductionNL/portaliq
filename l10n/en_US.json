@@ -358,7 +358,9 @@
         "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer.",
         "This request has already been withdrawn.": "This request has already been withdrawn.",
         "This request cannot be withdrawn from the portal.": "This request cannot be withdrawn from the portal.",
-        "The request could not be withdrawn. Please try again.": "The request could not be withdrawn. Please try again."
+        "The request could not be withdrawn. Please try again.": "The request could not be withdrawn. Please try again.",
+        "Published on": "Published on",
+        "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable.": "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable."
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

@@ -281,9 +281,9 @@ class NewsFeedReader {
 	}//end itemsFor()
 
 	/**
-	 * The items newest first by their publication moment: OpenRegister's
-	 * `@self.published`, else `@self.created` (the news item schema carries no
-	 * date of its own). Storage order is oldest first, so without this a
+	 * The items newest first by their publication moment: the item's own
+	 * `publishedAt` (stamped when staff publish it), else OpenRegister's
+	 * `@self.published`, else `@self.created`. Storage order is oldest first, so without this a
 	 * consumer that shows the first few showed the oldest. An undated item
 	 * sorts last; equal moments keep storage order.
 	 *
@@ -292,6 +292,7 @@ class NewsFeedReader {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
 	 */
 	private function newestFirst(array $items): array {
 		usort($items, fn (array $left, array $right): int => $this->momentOf(row: $right) <=> $this->momentOf(row: $left));
@@ -312,8 +313,7 @@ class NewsFeedReader {
 			$self = $row['@self'];
 		}
 
-		foreach (['published', 'created'] as $field) {
-			$value = $self[$field] ?? null;
+		foreach ([($row['publishedAt'] ?? null), ($self['published'] ?? null), ($self['created'] ?? null)] as $value) {
 			if (is_string($value) === false || $value === '') {
 				continue;
 			}
