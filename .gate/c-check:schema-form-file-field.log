@@ -1,0 +1,74 @@
+TAP version 13
+# (node:2614461) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/fileFieldSubmit.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: renders a file input for a file field, labelled, with the limit through the translator
+ok 1 - renders a file input for a file field, labelled, with the limit through the translator
+  ---
+  duration_ms: 771.298426
+  type: 'test'
+  ...
+# Subtest: a single file field renders without multiple, at the default limit
+ok 2 - a single file field renders without multiple, at the default limit
+  ---
+  duration_ms: 222.806095
+  type: 'test'
+  ...
+# Subtest: creates then uploads each file and names a failed one
+ok 3 - creates then uploads each file and names a failed one
+  ---
+  duration_ms: 3.519159
+  type: 'test'
+  ...
+# Subtest: a failed create uploads nothing
+ok 4 - a failed create uploads nothing
+  ---
+  duration_ms: 0.560752
+  type: 'test'
+  ...
+# Subtest: a form with no picked file only creates
+ok 5 - a form with no picked file only creates
+  ---
+  duration_ms: 0.65879
+  type: 'test'
+  ...
+# Subtest: oversized files are named before anything is saved
+ok 6 - oversized files are named before anything is saved
+  ---
+  duration_ms: 0.402182
+  type: 'test'
+  ...
+# Subtest: the saved id is read wherever the server put it
+ok 7 - the saved id is read wherever the server put it
+  ---
+  duration_ms: 0.416059
+  type: 'test'
+  ...
+# Subtest: a form without a translator renders the English source and the picker options
+ok 8 - a form without a translator renders the English source and the picker options
+  ---
+  duration_ms: 216.792402
+  type: 'test'
+  ...
+# Subtest: the site form creates, uploads, names the failed file and retries only that one
+ok 9 - the site form creates, uploads, names the failed file and retries only that one
+  ---
+  duration_ms: 264.266894
+  type: 'test'
+  ...
+# Subtest: the site form refuses an oversized file before saving
+ok 10 - the site form refuses an oversized file before saving
+  ---
+  duration_ms: 220.484792
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2319.413512

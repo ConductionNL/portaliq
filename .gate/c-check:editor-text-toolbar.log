@@ -1,0 +1,176 @@
+TAP version 13
+# (node:2628250) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/markdownToolbar.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Kop puts "\#\# " at the start of the line and keeps the selection on the words
+ok 1 - Kop puts "\#\# " at the start of the line and keeps the selection on the words
+  ---
+  duration_ms: 5.49967
+  type: 'test'
+  ...
+# Subtest: Kop with nothing selected on an empty line starts a heading there
+ok 2 - Kop with nothing selected on an empty line starts a heading there
+  ---
+  duration_ms: 0.890815
+  type: 'test'
+  ...
+# Subtest: Kop on a heading makes it a plain line again, and other levels become "\#\# "
+ok 3 - Kop on a heading makes it a plain line again, and other levels become "\#\# "
+  ---
+  duration_ms: 0.359406
+  type: 'test'
+  ...
+# Subtest: Vet wraps the selection in ** and keeps it selected
+ok 4 - Vet wraps the selection in ** and keeps it selected
+  ---
+  duration_ms: 0.527303
+  type: 'test'
+  ...
+# Subtest: Vet leaves whitespace at the edges outside the marks
+ok 5 - Vet leaves whitespace at the edges outside the marks
+  ---
+  duration_ms: 0.468826
+  type: 'test'
+  ...
+# Subtest: Vet with nothing selected writes the marks with the cursor between them
+ok 6 - Vet with nothing selected writes the marks with the cursor between them
+  ---
+  duration_ms: 0.268254
+  type: 'test'
+  ...
+# Subtest: Vet on bold text takes the marks away
+ok 7 - Vet on bold text takes the marks away
+  ---
+  duration_ms: 0.304945
+  type: 'test'
+  ...
+# Subtest: Cursief wraps the selection in _ and takes it away again
+ok 8 - Cursief wraps the selection in _ and takes it away again
+  ---
+  duration_ms: 0.420164
+  type: 'test'
+  ...
+# Subtest: Cursief with nothing selected writes the marks with the cursor between them
+ok 9 - Cursief with nothing selected writes the marks with the cursor between them
+  ---
+  duration_ms: 0.58579
+  type: 'test'
+  ...
+# Subtest: Lijst puts "- " before every selected line and skips the empty ones
+ok 10 - Lijst puts "- " before every selected line and skips the empty ones
+  ---
+  duration_ms: 1.747546
+  type: 'test'
+  ...
+# Subtest: Lijst takes in a line that is only partly selected
+ok 11 - Lijst takes in a line that is only partly selected
+  ---
+  duration_ms: 0.69367
+  type: 'test'
+  ...
+# Subtest: Lijst does not take in the line after a selection that ends on a newline
+ok 12 - Lijst does not take in the line after a selection that ends on a newline
+  ---
+  duration_ms: 0.952678
+  type: 'test'
+  ...
+# Subtest: Lijst on a list makes the lines plain again
+ok 13 - Lijst on a list makes the lines plain again
+  ---
+  duration_ms: 2.34681
+  type: 'test'
+  ...
+# Subtest: Lijst with a mix of items and plain lines makes them all items
+ok 14 - Lijst with a mix of items and plain lines makes them all items
+  ---
+  duration_ms: 0.328464
+  type: 'test'
+  ...
+# Subtest: Lijst with nothing selected makes the cursor line an item, also an empty one
+ok 15 - Lijst with nothing selected makes the cursor line an item, also an empty one
+  ---
+  duration_ms: 0.308969
+  type: 'test'
+  ...
+# Subtest: Link turns the selection into [text](url) and puts the cursor after it
+ok 16 - Link turns the selection into [text](url) and puts the cursor after it
+  ---
+  duration_ms: 0.275422
+  type: 'test'
+  ...
+# Subtest: Link with nothing selected uses the address as the text
+ok 17 - Link with nothing selected uses the address as the text
+  ---
+  duration_ms: 0.177407
+  type: 'test'
+  ...
+# Subtest: Link without an address changes nothing
+ok 18 - Link without an address changes nothing
+  ---
+  duration_ms: 0.183378
+  type: 'test'
+  ...
+# Subtest: a stale selection past the end is clamped, not sliced past the text
+ok 19 - a stale selection past the end is clamped, not sliced past the text
+  ---
+  duration_ms: 0.17548
+  type: 'test'
+  ...
+# Subtest: Ctrl+B and Ctrl+I (or Cmd) are the shortcuts, with Shift or Alt they are not
+ok 20 - Ctrl+B and Ctrl+I (or Cmd) are the shortcuts, with Shift or Alt they are not
+  ---
+  duration_ms: 0.356517
+  type: 'test'
+  ...
+# Subtest: the text field keeps its test id, a labelled toolbar and real buttons
+ok 21 - the text field keeps its test id, a labelled toolbar and real buttons
+  ---
+  duration_ms: 1.572339
+  type: 'test'
+  ...
+# Subtest: every string the toolbar shows reads Dutch for the editor
+ok 22 - every string the toolbar shows reads Dutch for the editor
+  ---
+  duration_ms: 5.856034
+  type: 'test'
+  ...
+# Subtest: Right and Left move between the five buttons and wrap around
+ok 23 - Right and Left move between the five buttons and wrap around
+  ---
+  duration_ms: 0.424067
+  type: 'test'
+  ...
+# Subtest: Home and End go to the first and the last button
+ok 24 - Home and End go to the first and the last button
+  ---
+  duration_ms: 0.189704
+  type: 'test'
+  ...
+# Subtest: other keys leave the focus where it is, so Enter and Space still press the button
+ok 25 - other keys leave the focus where it is, so Enter and Space still press the button
+  ---
+  duration_ms: 0.184626
+  type: 'test'
+  ...
+# Subtest: the toolbar is one Tab stop: only the current button has tabindex 0
+ok 26 - the toolbar is one Tab stop: only the current button has tabindex 0
+  ---
+  duration_ms: 2.592182
+  type: 'test'
+  ...
+# Subtest: the toolbar buttons are wired to the roving tabindex and the arrow keys
+ok 27 - the toolbar buttons are wired to the roving tabindex and the arrow keys
+  ---
+  duration_ms: 0.41479
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 218.047152

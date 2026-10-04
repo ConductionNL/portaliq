@@ -1,0 +1,86 @@
+TAP version 13
+# (node:2615520) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/intakeApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: every intake url names the portal slug when the site has one
+ok 1 - every intake url names the portal slug when the site has one
+  ---
+  duration_ms: 6.503707
+  type: 'test'
+  ...
+# Subtest: the catalogue is read, never kept: each call asks the endpoint again
+ok 2 - the catalogue is read, never kept: each call asks the endpoint again
+  ---
+  duration_ms: 2.697108
+  type: 'test'
+  ...
+# Subtest: an entry without a route is not offered, and a topic left empty is dropped
+ok 3 - an entry without a route is not offered, and a topic left empty is dropped
+  ---
+  duration_ms: 0.799341
+  type: 'test'
+  ...
+# Subtest: an entry opens the form page with the binding route as one segment
+ok 4 - an entry opens the form page with the binding route as one segment
+  ---
+  duration_ms: 0.553769
+  type: 'test'
+  ...
+# Subtest: the form is loaded with the bearer, so a signed-in visitor gets their own details
+ok 5 - the form is loaded with the bearer, so a signed-in visitor gets their own details
+  ---
+  duration_ms: 0.738216
+  type: 'test'
+  ...
+# Subtest: an anonymous visitor sends no bearer and gets an empty applicant block
+ok 6 - an anonymous visitor sends no bearer and gets an empty applicant block
+  ---
+  duration_ms: 0.464683
+  type: 'test'
+  ...
+# Subtest: a form that needs a sign-in, an unknown route, an external form and no form each say so
+ok 7 - a form that needs a sign-in, an unknown route, an external form and no form each say so
+  ---
+  duration_ms: 0.773758
+  type: 'test'
+  ...
+# Subtest: a valid submission answers with a reference, an invalid one with the field errors
+ok 8 - a valid submission answers with a reference, an invalid one with the field errors
+  ---
+  duration_ms: 1.503911
+  type: 'test'
+  ...
+# Subtest: the status of a reference is the real state, and a failed create names what to do
+ok 9 - the status of a reference is the real state, and a failed create names what to do
+  ---
+  duration_ms: 1.06786
+  type: 'test'
+  ...
+# Subtest: a queued request never claims a case, a registered one does
+ok 10 - a queued request never claims a case, a registered one does
+  ---
+  duration_ms: 0.722573
+  type: 'test'
+  ...
+# Subtest: no user-facing sentence carries an em-dash
+ok 11 - no user-facing sentence carries an em-dash
+  ---
+  duration_ms: 0.417209
+  type: 'test'
+  ...
+# Subtest: the public renderer mounts the three intake blocks and hands them the portal
+ok 12 - the public renderer mounts the three intake blocks and hands them the portal
+  ---
+  duration_ms: 58.673009
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 276.539037

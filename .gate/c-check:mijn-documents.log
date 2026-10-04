@@ -1,0 +1,57 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2627118) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/mijn/documents.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the receipt reads who sent it, when, its type and its size
+ok 1 - the receipt reads who sent it, when, its type and its size
+  ---
+  duration_ms: 20.242821
+  type: 'test'
+  ...
+# Subtest: a file item is one button named after the document, with its line
+ok 2 - a file item is one button named after the document, with its line
+  ---
+  duration_ms: 9.5888
+  type: 'test'
+  ...
+# Subtest: the contact timeline lists events newest first, each a moment and a sentence
+ok 3 - the contact timeline lists events newest first, each a moment and a sentence
+  ---
+  duration_ms: 5.172524
+  type: 'test'
+  ...
+# Subtest: a description list is a dl of keys and values
+ok 4 - a description list is a dl of keys and values
+  ---
+  duration_ms: 1.811603
+  type: 'test'
+  ...
+# Subtest: the documents block lists the case documents as file items, and a failed read says so
+ok 5 - the documents block lists the case documents as file items, and a failed read says so
+  ---
+  duration_ms: 8.15044
+  type: 'test'
+  ...
+# Subtest: the timeline block shows the history as a contact timeline, and a failed read says so
+ok 6 - the timeline block shows the history as a contact timeline, and a failed read says so
+  ---
+  duration_ms: 3.387654
+  type: 'test'
+  ...
+# Subtest: a page renders its documents and timeline blocks, loaded on demand
+ok 7 - a page renders its documents and timeline blocks, loaded on demand
+  ---
+  duration_ms: 0.885522
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 597.178183

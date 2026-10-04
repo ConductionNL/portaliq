@@ -1,0 +1,44 @@
+TAP version 13
+# (node:2617904) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/mediaLibrary.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the dialog reads the portal's published items from OpenRegister
+ok 1 - the dialog reads the portal's published items from OpenRegister
+  ---
+  duration_ms: 4.140003
+  type: 'test'
+  ...
+# Subtest: no portal or no items reads as empty, a failure as an error
+ok 2 - no portal or no items reads as empty, a failure as an error
+  ---
+  duration_ms: 2.75591
+  type: 'test'
+  ...
+# Subtest: picking an item stores a reference as the hero or share image, not a copy
+ok 3 - picking an item stores a reference as the hero or share image, not a copy
+  ---
+  duration_ms: 1.054563
+  type: 'test'
+  ...
+# Subtest: a markdown reference carries the alternative text for an image and the title for a file
+ok 4 - a markdown reference carries the alternative text for an image and the title for a file
+  ---
+  duration_ms: 0.404187
+  type: 'test'
+  ...
+# Subtest: the designer opens the Media dialog, the site shows the hero with its alternative text, the manifest has the library
+ok 5 - the designer opens the Media dialog, the site shows the hero with its alternative text, the manifest has the library
+  ---
+  duration_ms: 4.447082
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 187.631767

@@ -1,0 +1,89 @@
+TAP version 13
+# (node:2614313) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/pageSiteUrl.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the layout designer
+    # Subtest: is a page with an :id route and a component
+    ok 1 - is a page with an :id route and a component
+      ---
+      duration_ms: 1.763785
+      type: 'test'
+      ...
+    # Subtest: is reached from the page detail by a header action
+    ok 2 - is reached from the page detail by a header action
+      ---
+      duration_ms: 0.450464
+      type: 'test'
+      ...
+    # Subtest: is reached from the pages list by a row action
+    ok 3 - is reached from the pages list by a row action
+      ---
+      duration_ms: 0.547561
+      type: 'test'
+      ...
+    # Subtest: shares its :id param name with PageLayout, so the detail action resolves
+    ok 4 - shares its :id param name with PageLayout, so the detail action resolves
+      ---
+      duration_ms: 3.223702
+      type: 'test'
+      ...
+    1..4
+ok 1 - the layout designer
+  ---
+  duration_ms: 7.586021
+  type: 'suite'
+  ...
+# Subtest: the actions that open it
+    # Subtest: name icons the app has registered
+    ok 1 - name icons the app has registered
+      ---
+      duration_ms: 0.825696
+      type: 'test'
+      ...
+    1..1
+ok 2 - the actions that open it
+  ---
+  duration_ms: 1.085867
+  type: 'suite'
+  ...
+# Subtest: pageSiteUrl
+    # Subtest: carries the page route and the portal slug
+    ok 1 - carries the page route and the portal slug
+      ---
+      duration_ms: 0.824473
+      type: 'test'
+      ...
+    # Subtest: omits the portal when the page names none
+    ok 2 - omits the portal when the page names none
+      ---
+      duration_ms: 0.494688
+      type: 'test'
+      ...
+    # Subtest: defaults a missing route to the portal front door
+    ok 3 - defaults a missing route to the portal front door
+      ---
+      duration_ms: 3.858998
+      type: 'test'
+      ...
+    # Subtest: encodes a slug or route that would otherwise split the query
+    ok 4 - encodes a slug or route that would otherwise split the query
+      ---
+      duration_ms: 0.475653
+      type: 'test'
+      ...
+    1..4
+ok 3 - pageSiteUrl
+  ---
+  duration_ms: 6.462664
+  type: 'suite'
+  ...
+1..3
+# tests 9
+# suites 3
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 200.497509

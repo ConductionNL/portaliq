@@ -1,0 +1,80 @@
+TAP version 13
+# (node:2616562) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the row forward sends the answers the dialog collected
+ok 1 - the row forward sends the answers the dialog collected
+  ---
+  duration_ms: 5.085237
+  type: 'test'
+  ...
+# Subtest: sign and decline open their own dialogs, other endpoint actions the plain confirm
+ok 2 - sign and decline open their own dialogs, other endpoint actions the plain confirm
+  ---
+  duration_ms: 0.607843
+  type: 'test'
+  ...
+# Subtest: viewing the document is not a row button of its own
+ok 3 - viewing the document is not a row button of its own
+  ---
+  duration_ms: 0.4485
+  type: 'test'
+  ...
+# Subtest: a document the receiver returned is shown, and a large one is offered as a download only
+ok 4 - a document the receiver returned is shown, and a large one is offered as a download only
+  ---
+  duration_ms: 0.469436
+  type: 'test'
+  ...
+# Subtest: the answer after signing or declining names the document, a refusal keeps the dialog open
+ok 5 - the answer after signing or declining names the document, a refusal keeps the dialog open
+  ---
+  duration_ms: 0.751836
+  type: 'test'
+  ...
+# Subtest: the site page opens the sign and decline dialogs from a row
+ok 6 - the site page opens the sign and decline dialogs from a row
+  ---
+  duration_ms: 2.174949
+  type: 'test'
+  ...
+# Subtest: every new string has a Dutch translation
+ok 7 - every new string has a Dutch translation
+  ---
+  duration_ms: 2.419647
+  type: 'test'
+  ...
+# Subtest: the site sign dialog shows the document, then signs only after the tick
+ok 8 - the site sign dialog shows the document, then signs only after the tick
+  ---
+  duration_ms: 366.880311
+  type: 'test'
+  ...
+# Subtest: the site sign dialog without a view action has nothing to sign
+ok 9 - the site sign dialog without a view action has nothing to sign
+  ---
+  duration_ms: 80.324663
+  type: 'test'
+  ...
+# Subtest: the site decline dialog asks why, forwards the reason and keeps a refusal open
+ok 10 - the site decline dialog asks why, forwards the reason and keeps a refusal open
+  ---
+  duration_ms: 190.145683
+  type: 'test'
+  ...
+# Subtest: the site row action step opens the sign dialog with the view action
+ok 11 - the site row action step opens the sign dialog with the view action
+  ---
+  duration_ms: 268.304313
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1593.202075

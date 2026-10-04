@@ -1,0 +1,56 @@
+TAP version 13
+# (node:2617760) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/portalThemeChoice.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the sets are read for the portal on the page
+ok 1 - the sets are read for the portal on the page
+  ---
+  duration_ms: 3.955726
+  type: 'test'
+  ...
+# Subtest: a verdict that measured nothing is not checked, never readable
+ok 2 - a verdict that measured nothing is not checked, never readable
+  ---
+  duration_ms: 0.408199
+  type: 'test'
+  ...
+# Subtest: saving sends the set and whether the administrator confirmed
+ok 3 - saving sends the set and whether the administrator confirmed
+  ---
+  duration_ms: 0.759402
+  type: 'test'
+  ...
+# Subtest: a hard-to-read set comes back with its findings, and is saved once confirmed
+ok 4 - a hard-to-read set comes back with its findings, and is saved once confirmed
+  ---
+  duration_ms: 0.495848
+  type: 'test'
+  ...
+# Subtest: a set the theme app no longer offers, and a failed save, are told apart
+ok 5 - a set the theme app no longer offers, and a failed save, are told apart
+  ---
+  duration_ms: 0.500402
+  type: 'test'
+  ...
+# Subtest: a refused house style says why, and cannot be picked
+ok 6 - a refused house style says why, and cannot be picked
+  ---
+  duration_ms: 0.414893
+  type: 'test'
+  ...
+# Subtest: the Theme widget sits on the portal page
+ok 7 - the Theme widget sits on the portal page
+  ---
+  duration_ms: 3.300024
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 175.939221

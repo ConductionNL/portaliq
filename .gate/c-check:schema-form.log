@@ -1,0 +1,80 @@
+TAP version 13
+# (node:2622429) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/c/forms.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a date property is a date input and an enum a select, never a text box
+ok 1 - a date property is a date input and an enum a select, never a text box
+  ---
+  duration_ms: 461.15133
+  type: 'test'
+  ...
+# Subtest: every input has a label pointing at it, and a required one says so
+ok 2 - every input has a label pointing at it, and a required one says so
+  ---
+  duration_ms: 184.141298
+  type: 'test'
+  ...
+# Subtest: a collection dropdown lists only what the subject-scoped api returned
+ok 3 - a collection dropdown lists only what the subject-scoped api returned
+  ---
+  duration_ms: 154.331646
+  type: 'test'
+  ...
+# Subtest: an empty required field gets an inline error and nothing is sent
+ok 4 - an empty required field gets an inline error and nothing is sent
+  ---
+  duration_ms: 152.578351
+  type: 'test'
+  ...
+# Subtest: a filled form sends only the whitelisted fields and shows the success message
+ok 5 - a filled form sends only the whitelisted fields and shows the success message
+  ---
+  duration_ms: 215.586849
+  type: 'test'
+  ...
+# Subtest: a refused save says so in words
+ok 6 - a refused save says so in words
+  ---
+  duration_ms: 122.995775
+  type: 'test'
+  ...
+# Subtest: the helpers: required checks, the body and a datetime value
+ok 7 - the helpers: required checks, the body and a datetime value
+  ---
+  duration_ms: 2.086796
+  type: 'test'
+  ...
+# Subtest: a required select with one option starts on it, and can still be changed
+ok 8 - a required select with one option starts on it, and can still be changed
+  ---
+  duration_ms: 245.575345
+  type: 'test'
+  ...
+# Subtest: a guardian with two children picks one
+ok 9 - a guardian with two children picks one
+  ---
+  duration_ms: 118.822024
+  type: 'test'
+  ...
+# Subtest: the single option helper: required selects only, never over a choice
+ok 10 - the single option helper: required selects only, never over a choice
+  ---
+  duration_ms: 1.174755
+  type: 'test'
+  ...
+# Subtest: the shell registry runs slice c, and every slice c string is in both shared bundles
+ok 11 - the shell registry runs slice c, and every slice c string is in both shared bundles
+  ---
+  duration_ms: 9.469127
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2192.598493

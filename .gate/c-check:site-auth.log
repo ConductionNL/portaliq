@@ -1,0 +1,42 @@
+authBaseFrom
+  ok   derives the auth edge from the content API base
+  ok   tolerates a trailing slash
+  ok   survives an empty base
+signInRoutes
+  ok   a public-only portal offers NO sign-in route
+  ok   a portal with no authentication block offers none either
+  ok   a malformed modes value offers none
+  ok   an unknown mode is not turned into a route
+  ok   digid becomes a labelled OIDC start
+  ok   nextcloud routes to the nextcloud edge, not to OIDC
+  ok   public is dropped from a MIXED list while the real modes survive
+  ok   the portal slug travels with the sign-in link, so a shared host cannot resolve the wrong portal
+  ok   the oidc mode starts the generic provider, which is the one the edge knows
+adoptSessionToken
+  ok   a bearer in the fragment is adopted
+  ok   and the fragment is stripped from the address bar
+  ok   a later read returns the stored bearer
+  ok   signing out forgets it
+  ok   a fragment without a token adopts nothing
+  ok   and is no failed sign-in
+  ok   a failed sign-in is read from the fragment
+  ok   and the fragment is stripped
+  ok   the message names no reason
+adoptLegacyToken
+  ok   the old key is portaliq_token
+  ok   a bearer under the old key is adopted
+  ok   into this tab's store
+  ok   and removed from localStorage
+  ok   a later read keeps it
+  ok   after signing out nothing comes back from the old key
+  ok   a bearer in the fragment wins over the old key
+  ok   the tab stores the fresh one
+  ok   and the old key is gone all the same
+  ok   the tab keeps its own bearer
+  ok   blocked storage adopts nothing and throws nothing
+
+all site-auth assertions held
+(node:2613722) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/authApi.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)

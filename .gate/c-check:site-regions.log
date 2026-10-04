@@ -1,0 +1,62 @@
+TAP version 13
+# (node:2618176) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/regions.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: each of the five regions resolves inherited, overridden and cleared: fifteen cases
+ok 1 - each of the five regions resolves inherited, overridden and cleared: fifteen cases
+  ---
+  duration_ms: 3.90949
+  type: 'test'
+  ...
+# Subtest: a truthiness test in place of a key test fails exactly the cleared cases
+ok 2 - a truthiness test in place of a key test fails exactly the cleared cases
+  ---
+  duration_ms: 2.389517
+  type: 'test'
+  ...
+# Subtest: a page inherits the portal header, and with no portal regions the default shell renders
+ok 3 - a page inherits the portal header, and with no portal regions the default shell renders
+  ---
+  duration_ms: 0.514271
+  type: 'test'
+  ...
+# Subtest: a page replaces one region: exactly one hero, and it is the page's
+ok 4 - a page replaces one region: exactly one hero, and it is the page's
+  ---
+  duration_ms: 0.345164
+  type: 'test'
+  ...
+# Subtest: a page clears a region, and every other page still shows the portal's
+ok 5 - a page clears a region, and every other page still shows the portal's
+  ---
+  duration_ms: 0.312279
+  type: 'test'
+  ...
+# Subtest: existing pages need no migration: slot body and an empty slot mean main
+ok 6 - existing pages need no migration: slot body and an empty slot mean main
+  ---
+  duration_ms: 0.396357
+  type: 'test'
+  ...
+# Subtest: the served body.regions wins over grouping the flat list
+ok 7 - the served body.regions wins over grouping the flat list
+  ---
+  duration_ms: 0.291671
+  type: 'test'
+  ...
+# Subtest: the renderer and the content contract name the same five regions
+ok 8 - the renderer and the content contract name the same five regions
+  ---
+  duration_ms: 4.116939
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 172.123075

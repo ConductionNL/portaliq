@@ -1,0 +1,407 @@
+TAP version 13
+# Could not find capabilities initial state fall back to _oc_capabilities
+# Subtest: the fixture carries cases
+ok 1 - the fixture carries cases
+  ---
+  duration_ms: 2.118736
+  type: 'test'
+  ...
+# Subtest: a null condition is always visible
+ok 2 - a null condition is always visible
+  ---
+  duration_ms: 0.645192
+  type: 'test'
+  ...
+# Subtest: a string is not a condition
+ok 3 - a string is not a condition
+  ---
+  duration_ms: 0.208068
+  type: 'test'
+  ...
+# Subtest: a number is not a condition
+ok 4 - a number is not a condition
+  ---
+  duration_ms: 0.253002
+  type: 'test'
+  ...
+# Subtest: a list is not a condition
+ok 5 - a list is not a condition
+  ---
+  duration_ms: 0.204753
+  type: 'test'
+  ...
+# Subtest: a condition without a field hides
+ok 6 - a condition without a field hides
+  ---
+  duration_ms: 0.233881
+  type: 'test'
+  ...
+# Subtest: a condition with an empty field hides
+ok 7 - a condition with an empty field hides
+  ---
+  duration_ms: 0.1635
+  type: 'test'
+  ...
+# Subtest: an endpoint condition is not local and hides
+ok 8 - an endpoint condition is not local and hides
+  ---
+  duration_ms: 0.18838
+  type: 'test'
+  ...
+# Subtest: a source condition is not local and hides
+ok 9 - a source condition is not local and hides
+  ---
+  duration_ms: 0.576688
+  type: 'test'
+  ...
+# Subtest: a dot-path reads into a nested answer
+ok 10 - a dot-path reads into a nested answer
+  ---
+  duration_ms: 1.022085
+  type: 'test'
+  ...
+# Subtest: a dot-path that does not match hides
+ok 11 - a dot-path that does not match hides
+  ---
+  duration_ms: 0.237865
+  type: 'test'
+  ...
+# Subtest: a dot-path through a missing answer hides
+ok 12 - a dot-path through a missing answer hides
+  ---
+  duration_ms: 0.147594
+  type: 'test'
+  ...
+# Subtest: eq holds on the same text
+ok 13 - eq holds on the same text
+  ---
+  duration_ms: 0.192729
+  type: 'test'
+  ...
+# Subtest: eq fails on other text
+ok 14 - eq fails on other text
+  ---
+  duration_ms: 0.197707
+  type: 'test'
+  ...
+# Subtest: neq holds on other text
+ok 15 - neq holds on other text
+  ---
+  duration_ms: 0.147107
+  type: 'test'
+  ...
+# Subtest: neq fails on the same text
+ok 16 - neq fails on the same text
+  ---
+  duration_ms: 0.435917
+  type: 'test'
+  ...
+# Subtest: gt
+ok 17 - gt
+  ---
+  duration_ms: 0.098484
+  type: 'test'
+  ...
+# Subtest: gt is strict
+ok 18 - gt is strict
+  ---
+  duration_ms: 0.098392
+  type: 'test'
+  ...
+# Subtest: gte
+ok 19 - gte
+  ---
+  duration_ms: 0.087676
+  type: 'test'
+  ...
+# Subtest: lt
+ok 20 - lt
+  ---
+  duration_ms: 0.232462
+  type: 'test'
+  ...
+# Subtest: lte
+ok 21 - lte
+  ---
+  duration_ms: 0.154822
+  type: 'test'
+  ...
+# Subtest: an omitted op is eq
+ok 22 - an omitted op is eq
+  ---
+  duration_ms: 0.206467
+  type: 'test'
+  ...
+# Subtest: an unknown op is eq
+ok 23 - an unknown op is eq
+  ---
+  duration_ms: 0.201195
+  type: 'test'
+  ...
+# Subtest: eq compares a number and its text alike
+ok 24 - eq compares a number and its text alike
+  ---
+  duration_ms: 0.136371
+  type: 'test'
+  ...
+# Subtest: eq compares a whole float and an integer alike
+ok 25 - eq compares a whole float and an integer alike
+  ---
+  duration_ms: 0.158938
+  type: 'test'
+  ...
+# Subtest: eq compares true and its text alike
+ok 26 - eq compares true and its text alike
+  ---
+  duration_ms: 0.151021
+  type: 'test'
+  ...
+# Subtest: neq tells true from false
+ok 27 - neq tells true from false
+  ---
+  duration_ms: 0.16346
+  type: 'test'
+  ...
+# Subtest: a hidden, so missing, answer never equals a text (cascade)
+ok 28 - a hidden, so missing, answer never equals a text (cascade)
+  ---
+  duration_ms: 0.106513
+  type: 'test'
+  ...
+# Subtest: ordering on text that is no number hides
+ok 29 - ordering on text that is no number hides
+  ---
+  duration_ms: 0.098068
+  type: 'test'
+  ...
+# Subtest: ordering on a missing answer hides
+ok 30 - ordering on a missing answer hides
+  ---
+  duration_ms: 0.089825
+  type: 'test'
+  ...
+# Subtest: ordering reads an empty answer as zero
+ok 31 - ordering reads an empty answer as zero
+  ---
+  duration_ms: 0.074597
+  type: 'test'
+  ...
+# Subtest: ordering reads a null answer as zero
+ok 32 - ordering reads a null answer as zero
+  ---
+  duration_ms: 0.174116
+  type: 'test'
+  ...
+# Subtest: ordering trims a number written with spaces
+ok 33 - ordering trims a number written with spaces
+  ---
+  duration_ms: 0.199289
+  type: 'test'
+  ...
+# Subtest: ordering reads true as one
+ok 34 - ordering reads true as one
+  ---
+  duration_ms: 0.151395
+  type: 'test'
+  ...
+# Subtest: ordering reads a decimal
+ok 35 - ordering reads a decimal
+  ---
+  duration_ms: 0.189941
+  type: 'test'
+  ...
+# Subtest: a missing answer is empty
+ok 36 - a missing answer is empty
+  ---
+  duration_ms: 0.142524
+  type: 'test'
+  ...
+# Subtest: a null answer is empty
+ok 37 - a null answer is empty
+  ---
+  duration_ms: 0.106574
+  type: 'test'
+  ...
+# Subtest: an empty text is empty
+ok 38 - an empty text is empty
+  ---
+  duration_ms: 0.101484
+  type: 'test'
+  ...
+# Subtest: an empty list is empty
+ok 39 - an empty list is empty
+  ---
+  duration_ms: 0.10703
+  type: 'test'
+  ...
+# Subtest: a missing answer is not notEmpty
+ok 40 - a missing answer is not notEmpty
+  ---
+  duration_ms: 0.100754
+  type: 'test'
+  ...
+# Subtest: text is notEmpty
+ok 41 - text is notEmpty
+  ---
+  duration_ms: 0.098565
+  type: 'test'
+  ...
+# Subtest: zero is notEmpty
+ok 42 - zero is notEmpty
+  ---
+  duration_ms: 0.226612
+  type: 'test'
+  ...
+# Subtest: false is notEmpty
+ok 43 - false is notEmpty
+  ---
+  duration_ms: 0.134556
+  type: 'test'
+  ...
+# Subtest: a list with an entry is notEmpty
+ok 44 - a list with an entry is notEmpty
+  ---
+  duration_ms: 0.168701
+  type: 'test'
+  ...
+# Subtest: zero is not empty
+ok 45 - zero is not empty
+  ---
+  duration_ms: 0.11575
+  type: 'test'
+  ...
+# Subtest: all holds when every part holds
+ok 46 - all holds when every part holds
+  ---
+  duration_ms: 0.296364
+  type: 'test'
+  ...
+# Subtest: all fails when one part fails
+ok 47 - all fails when one part fails
+  ---
+  duration_ms: 0.148922
+  type: 'test'
+  ...
+# Subtest: any holds when one part holds
+ok 48 - any holds when one part holds
+  ---
+  duration_ms: 0.128716
+  type: 'test'
+  ...
+# Subtest: any fails when no part holds
+ok 49 - any fails when no part holds
+  ---
+  duration_ms: 0.104395
+  type: 'test'
+  ...
+# Subtest: all of nothing holds
+ok 50 - all of nothing holds
+  ---
+  duration_ms: 0.126699
+  type: 'test'
+  ...
+# Subtest: any of nothing fails
+ok 51 - any of nothing fails
+  ---
+  duration_ms: 0.12167
+  type: 'test'
+  ...
+# Subtest: all nests
+ok 52 - all nests
+  ---
+  duration_ms: 0.129994
+  type: 'test'
+  ...
+# Subtest: an all that is no list falls through to any
+ok 53 - an all that is no list falls through to any
+  ---
+  duration_ms: 0.103644
+  type: 'test'
+  ...
+# Subtest: a part that is no condition hides inside all
+ok 54 - a part that is no condition hides inside all
+  ---
+  duration_ms: 0.103776
+  type: 'test'
+  ...
+# Subtest: @me is nobody on a public form, so it equals an empty answer
+ok 55 - @me is nobody on a public form, so it equals an empty answer
+  ---
+  duration_ms: 0.330002
+  type: 'test'
+  ...
+# Subtest: @me is nobody on a public form, so it never equals a name
+ok 56 - @me is nobody on a public form, so it never equals a name
+  ---
+  duration_ms: 0.17222
+  type: 'test'
+  ...
+# Subtest: @me does not equal a null answer
+ok 57 - @me does not equal a null answer
+  ---
+  duration_ms: 0.150817
+  type: 'test'
+  ...
+# Subtest: @object.<field> compares one answer with another
+ok 58 - @object.<field> compares one answer with another
+  ---
+  duration_ms: 0.135398
+  type: 'test'
+  ...
+# Subtest: @object.<field> compares one answer with another, and fails
+ok 59 - @object.<field> compares one answer with another, and fails
+  ---
+  duration_ms: 0.112434
+  type: 'test'
+  ...
+# Subtest: an unanswered @object.<field> stays the literal token
+ok 60 - an unanswered @object.<field> stays the literal token
+  ---
+  duration_ms: 1.695573
+  type: 'test'
+  ...
+# Subtest: a token nothing resolves stays literal
+ok 61 - a token nothing resolves stays literal
+  ---
+  duration_ms: 0.135215
+  type: 'test'
+  ...
+# Subtest: text that only starts like a token is literal
+ok 62 - text that only starts like a token is literal
+  ---
+  duration_ms: 0.098768
+  type: 'test'
+  ...
+# Subtest: an app nobody installed hides
+ok 63 - an app nobody installed hides
+  ---
+  duration_ms: 1.566147
+  type: 'test'
+  ...
+# Subtest: an app nobody installed hides a field condition that would pass
+ok 64 - an app nobody installed hides a field condition that would pass
+  ---
+  duration_ms: 0.133999
+  type: 'test'
+  ...
+# Subtest: the partner question shows when the resident lives together
+ok 65 - the partner question shows when the resident lives together
+  ---
+  duration_ms: 0.104932
+  type: 'test'
+  ...
+# Subtest: the partner question hides when the resident does not
+ok 66 - the partner question hides when the resident does not
+  ---
+  duration_ms: 0.143645
+  type: 'test'
+  ...
+1..66
+# tests 66
+# suites 0
+# pass 66
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 339.509717

@@ -1,0 +1,63 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2626793) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/openRecord.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: handed-in work is not a task
+ok 1 - handed-in work is not a task
+  ---
+  duration_ms: 3.228022
+  type: 'test'
+  ...
+# Subtest: messages about the chosen child only
+ok 2 - messages about the chosen child only
+  ---
+  duration_ms: 1.572475
+  type: 'test'
+  ...
+# Subtest: Vera, Groep 6: the switcher subtitle from a related record
+ok 3 - Vera, Groep 6: the switcher subtitle from a related record
+  ---
+  duration_ms: 9.38884
+  type: 'test'
+  ...
+# Subtest: a text filled from the record: plain text, words for an empty value, no sentence for an unprojected field
+ok 4 - a text filled from the record: plain text, words for an empty value, no sentence for an unprojected field
+  ---
+  duration_ms: 22.691562
+  type: 'test'
+  ...
+# Subtest: report Vera sick, and a tile to a page with Sami chosen
+ok 5 - report Vera sick, and a tile to a page with Sami chosen
+  ---
+  duration_ms: 2.839698
+  type: 'test'
+  ...
+# Subtest: the trainer's students: 120 van 400 uur
+ok 6 - the trainer's students: 120 van 400 uur
+  ---
+  duration_ms: 2.761223
+  type: 'test'
+  ...
+# Subtest: a message about a case opens the case page with that case chosen
+ok 7 - a message about a case opens the case page with that case chosen
+  ---
+  duration_ms: 0.712036
+  type: 'test'
+  ...
+# Subtest: the shell learns the mandates where the session loads
+ok 8 - the shell learns the mandates where the session loads
+  ---
+  duration_ms: 0.956918
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 842.466612

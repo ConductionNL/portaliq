@@ -1,0 +1,87 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2617581) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: fetchMyCases reads the merged list with the bearer, and names a mandate only when one is chosen
+ok 1 - fetchMyCases reads the merged list with the bearer, and names a mandate only when one is chosen
+  ---
+  duration_ms: 110.277936
+  type: 'test'
+  ...
+# Subtest: a refused list comes back as a refusal, never as an empty list
+ok 2 - a refused list comes back as a refusal, never as an empty list
+  ---
+  duration_ms: 2.136446
+  type: 'test'
+  ...
+# Subtest: open and closed cases are split by the server marker, keeping the order
+ok 3 - open and closed cases are split by the server marker, keeping the order
+  ---
+  duration_ms: 0.714871
+  type: 'test'
+  ...
+# Subtest: a case opens where it came from, and names itself by title or reference
+ok 4 - a case opens where it came from, and names itself by title or reference
+  ---
+  duration_ms: 5.101893
+  type: 'test'
+  ...
+# Subtest: a case shows the words for its status, and keeps the raw status for logic
+ok 5 - a case shows the words for its status, and keeps the raw status for logic
+  ---
+  duration_ms: 1.203743
+  type: 'test'
+  ...
+# Subtest: site: the shell offers "My cases" first when the server announces it, and both locales carry the strings
+ok 6 - site: the shell offers "My cases" first when the server announces it, and both locales carry the strings
+  ---
+  duration_ms: 3.002164
+  type: 'test'
+  ...
+# Subtest: site: every app's cases are in one list, each naming its source, with the tabs counted
+ok 7 - site: every app's cases are in one list, each naming its source, with the tabs counted
+  ---
+  duration_ms: 323.509892
+  type: 'test'
+  ...
+# Subtest: site: without the shell's page lookup a case is listed but not a button
+ok 8 - site: without the shell's page lookup a case is listed but not a button
+  ---
+  duration_ms: 76.820015
+  type: 'test'
+  ...
+# Subtest: site: the closed tab lists the closed cases, is not there when nothing can be closed, and nothing reads "No cases yet."
+ok 9 - site: the closed tab lists the closed cases, is not there when nothing can be closed, and nothing reads "No cases yet."
+  ---
+  duration_ms: 151.611937
+  type: 'test'
+  ...
+# Subtest: site: opening a case hands the shell the target and the row
+ok 10 - site: opening a case hands the shell the target and the row
+  ---
+  duration_ms: 20.403692
+  type: 'test'
+  ...
+# Subtest: a case status reads as its public label, never as a uuid
+ok 11 - a case status reads as its public label, never as a uuid
+  ---
+  duration_ms: 0.279838
+  type: 'test'
+  ...
+# Subtest: site: a case row shows the status label and no uuid
+ok 12 - site: a case row shows the status label and no uuid
+  ---
+  duration_ms: 33.317683
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1150.502435

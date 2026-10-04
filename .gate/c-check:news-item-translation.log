@@ -1,0 +1,67 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2614941) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalNav.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a translated news item shows the translation, the AI notice naming Dutch, and the original one button away
+ok 1 - a translated news item shows the translation, the AI notice naming Dutch, and the original one button away
+  ---
+  duration_ms: 33.710865
+  type: 'test'
+  ...
+# Subtest: a news item without a labelled translation renders as written with no notice
+ok 2 - a news item without a labelled translation renders as written with no notice
+  ---
+  duration_ms: 5.56926
+  type: 'test'
+  ...
+# Subtest: the news page appears only when the feed holds an item, and reads the feed
+ok 3 - the news page appears only when the feed holds an item, and reads the feed
+  ---
+  duration_ms: 1.614845
+  type: 'test'
+  ...
+# Subtest: the news page carries the same language picker as the messages page
+ok 4 - the news page carries the same language picker as the messages page
+  ---
+  duration_ms: 0.71529
+  type: 'test'
+  ...
+# Subtest: newsItem declares translations and the register moved
+not ok 5 - newsItem declares translations and the register moved
+  ---
+  duration_ms: 9.193106
+  type: 'test'
+  location: '/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/tests/news-item-translation.spec.mjs:128:1'
+  failureType: 'testCodeFailure'
+  error: 'newsItem 0.3.0'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/tests/news-item-translation.spec.mjs:136:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: every string has a Dutch value
+ok 6 - every string has a Dutch value
+  ---
+  duration_ms: 0.390271
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 764.38701

@@ -1,0 +1,134 @@
+TAP version 13
+# (node:2622777) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/pwa.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the site shell is cached: its bundle and its page
+ok 1 - the site shell is cached: its bundle and its page
+  ---
+  duration_ms: 18.517691
+  type: 'test'
+  ...
+# Subtest: the retired portal address is not cached: it redirects to the site
+ok 2 - the retired portal address is not cached: it redirects to the site
+  ---
+  duration_ms: 2.587457
+  type: 'test'
+  ...
+# Subtest: the cache name moved on, so the old shell cache is deleted
+ok 3 - the cache name moved on, so the old shell cache is deleted
+  ---
+  duration_ms: 0.626055
+  type: 'test'
+  ...
+# Subtest: the API is never answered by the worker, signed in or not
+ok 4 - the API is never answered by the worker, signed in or not
+  ---
+  duration_ms: 6.242039
+  type: 'test'
+  ...
+# Subtest: when every fetch of the worker fails, it leaves the page to the browser
+ok 5 - when every fetch of the worker fails, it leaves the page to the browser
+  ---
+  duration_ms: 2.620558
+  type: 'test'
+  ...
+# Subtest: an online page load is left to the browser, even when the worker holds the page
+ok 6 - an online page load is left to the browser, even when the worker holds the page
+  ---
+  duration_ms: 3.528079
+  type: 'test'
+  ...
+# Subtest: offline, a page the worker holds is answered from its cache
+ok 7 - offline, a page the worker holds is answered from its cache
+  ---
+  duration_ms: 3.78172
+  type: 'test'
+  ...
+# Subtest: offline, a page the worker does not hold is left to the browser
+ok 8 - offline, a page the worker does not hold is left to the browser
+  ---
+  duration_ms: 1.950038
+  type: 'test'
+  ...
+# Subtest: the sign-in token in the address is never written to the cache
+ok 9 - the sign-in token in the address is never written to the cache
+  ---
+  duration_ms: 2.175175
+  type: 'test'
+  ...
+# Subtest: a copy kept without its fragment answers the next offline load
+ok 10 - a copy kept without its fragment answers the next offline load
+  ---
+  duration_ms: 2.707941
+  type: 'test'
+  ...
+# Subtest: a response that followed a redirect, or is not plain same-origin, is never cached
+ok 11 - a response that followed a redirect, or is not plain same-origin, is never cached
+  ---
+  duration_ms: 5.163375
+  type: 'test'
+  ...
+# Subtest: the cached bundle is answered from the cache, even when the network fails
+ok 12 - the cached bundle is answered from the cache, even when the network fails
+  ---
+  duration_ms: 2.163235
+  type: 'test'
+  ...
+# Subtest: a first visit is fetched by the browser, the worker keeps a copy for the next one
+ok 13 - a first visit is fetched by the browser, the worker keeps a copy for the next one
+  ---
+  duration_ms: 2.529361
+  type: 'test'
+  ...
+# Subtest: a copy the browser evicted is forgotten, so the next load skips the worker
+ok 14 - a copy the browser evicted is forgotten, so the next load skips the worker
+  ---
+  duration_ms: 2.381419
+  type: 'test'
+  ...
+# Subtest: only GET requests are cached
+ok 15 - only GET requests are cached
+  ---
+  duration_ms: 1.958213
+  type: 'test'
+  ...
+# Subtest: the worker is served next to the auth edge and controls the whole app
+ok 16 - the worker is served next to the auth edge and controls the whole app
+  ---
+  duration_ms: 0.525994
+  type: 'test'
+  ...
+# Subtest: the scope the site registers is the scope the server allows, however the app is reached
+ok 17 - the scope the site registers is the scope the server allows, however the app is reached
+  ---
+  duration_ms: 1.329515
+  type: 'test'
+  ...
+# Subtest: the site registers the worker with the app as its scope
+ok 18 - the site registers the worker with the app as its scope
+  ---
+  duration_ms: 0.795731
+  type: 'test'
+  ...
+# Subtest: a browser that refuses service workers does not stop the site
+ok 19 - a browser that refuses service workers does not stop the site
+  ---
+  duration_ms: 0.679403
+  type: 'test'
+  ...
+# Subtest: without an auth edge nothing is registered
+ok 20 - without an auth edge nothing is registered
+  ---
+  duration_ms: 0.227948
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 215.419099

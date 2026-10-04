@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the bridge is pushed into the token layer, directly before the set
+ok 1 - the bridge is pushed into the token layer, directly before the set
+  ---
+  duration_ms: 1.939619
+  type: 'test'
+  ...
+# Subtest: the bridge is linked only when the controller named one
+ok 2 - the bridge is linked only when the controller named one
+  ---
+  duration_ms: 2.699004
+  type: 'test'
+  ...
+# Subtest: the token layer is linked after the vendored sheets and site-theme.css
+ok 3 - the token layer is linked after the vendored sheets and site-theme.css
+  ---
+  duration_ms: 0.700468
+  type: 'test'
+  ...
+# Subtest: the bundled faces are linked only when the controller named them
+ok 4 - the bundled faces are linked only when the controller named them
+  ---
+  duration_ms: 0.417153
+  type: 'test'
+  ...
+# Subtest: the bundled faces come after this app's faces and before the uploaded ones
+ok 5 - the bundled faces come after this app's faces and before the uploaded ones
+  ---
+  duration_ms: 0.337174
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 221.560016

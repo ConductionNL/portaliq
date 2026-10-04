@@ -1,0 +1,99 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2622683) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/openRecord.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the shell renders these pages for their sections and the timed test in its place
+ok 1 - the shell renders these pages for their sections and the timed test in its place
+  ---
+  duration_ms: 1.572552
+  type: 'test'
+  ...
+# Subtest: the pages register lazily by the portal's section keys
+ok 2 - the pages register lazily by the portal's section keys
+  ---
+  duration_ms: 2.333228
+  type: 'test'
+  ...
+# Subtest: every string says what the React portal says, in Dutch and English
+ok 3 - every string says what the React portal says, in Dutch and English
+  ---
+  duration_ms: 1.493842
+  type: 'test'
+  ...
+# Subtest: the shell's translator wins, and a key it does not know falls back to the folder's strings
+ok 4 - the shell's translator wins, and a key it does not know falls back to the folder's strings
+  ---
+  duration_ms: 0.482613
+  type: 'test'
+  ...
+# Subtest: marking a message read flips that row only and drops the unread count by one
+ok 5 - marking a message read flips that row only and drops the unread count by one
+  ---
+  duration_ms: 1.087573
+  type: 'test'
+  ...
+# Subtest: a page mounted again after a read counts from its rows, not from the sign-in count
+ok 6 - a page mounted again after a read counts from its rows, not from the sign-in count
+  ---
+  duration_ms: 0.859077
+  type: 'test'
+  ...
+# Subtest: an inbox the server did not answer leaves the shell its own count
+ok 7 - an inbox the server did not answer leaves the shell its own count
+  ---
+  duration_ms: 0.629677
+  type: 'test'
+  ...
+# Subtest: a refused mark-read changes nothing
+ok 8 - a refused mark-read changes nothing
+  ---
+  duration_ms: 0.535744
+  type: 'test'
+  ...
+# Subtest: "Open" goes to the page that shows the record and keeps the record to preselect
+ok 9 - "Open" goes to the page that shows the record and keeps the record to preselect
+  ---
+  duration_ms: 1.528967
+  type: 'test'
+  ...
+# Subtest: an inbox row shows unread in text, its readiness fields, its delivery and its ways out
+ok 10 - an inbox row shows unread in text, its readiness fields, its delivery and its ways out
+  ---
+  duration_ms: 53.443076
+  type: 'test'
+  ...
+# Subtest: the messages page opens the first thread and reloads it in the picked language
+ok 11 - the messages page opens the first thread and reloads it in the picked language
+  ---
+  duration_ms: 19.051538
+  type: 'test'
+  ...
+# Subtest: the news page reads the feed and the archive again after a new language
+ok 12 - the news page reads the feed and the archive again after a new language
+  ---
+  duration_ms: 2.567969
+  type: 'test'
+  ...
+# Subtest: the language picker has a visible label and a hint tied to the select
+ok 13 - the language picker has a visible label and a hint tied to the select
+  ---
+  duration_ms: 1.450937
+  type: 'test'
+  ...
+# Subtest: a news item says when it was published, and nothing while it has no date
+ok 14 - a news item says when it was published, and nothing while it has no date
+  ---
+  duration_ms: 21.02856
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 899.9367

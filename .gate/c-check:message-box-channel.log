@@ -1,0 +1,51 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2616947) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/messageBox.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a delivered message box send gives the delivery line
+ok 1 - a delivered message box send gives the delivery line
+  ---
+  duration_ms: 4.642607
+  type: 'test'
+  ...
+# Subtest: no delivery, another channel or no label gives no line
+ok 2 - no delivery, another channel or no label gives no line
+  ---
+  duration_ms: 0.399235
+  type: 'test'
+  ...
+# Subtest: the settings row shows only when the organisation offers the channel
+ok 3 - the settings row shows only when the organisation offers the channel
+  ---
+  duration_ms: 9.355347
+  type: 'test'
+  ...
+# Subtest: switching it sets messageBox.enabled and keeps the other choices
+ok 4 - switching it sets messageBox.enabled and keeps the other choices
+  ---
+  duration_ms: 0.751317
+  type: 'test'
+  ...
+# Subtest: the inbox and the settings section use it, and both locales say it
+ok 5 - the inbox and the settings section use it, and both locales say it
+  ---
+  duration_ms: 5.441581
+  type: 'test'
+  ...
+# Subtest: the settings show the message box row only when offered, and push only with a device
+ok 6 - the settings show the message box row only when offered, and push only with a device
+  ---
+  duration_ms: 491.116993
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 713.905612

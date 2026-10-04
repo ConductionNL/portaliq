@@ -1,0 +1,1837 @@
+
+> portaliq@0.1.0 check:specs
+> npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:federated-search && npm run check:campaign-tracking && npm run check:traffic-client && npm run check:traffic-summary && npm run check:traffic-paths && npm run check:page-traffic && npm run check:open-portal-site && npm run check:shared-instance && npm run check:connection-registry && npm run check:leaf-integrations && npm run check:page-layout-entry && npm run check:collection-table && npm run check:case-timeline && npm run check:schema-form-file-field && npm run check:timed-task && npm run check:row-action && npm run check:translated-message-notice && npm run check:access-requests && npm run check:news-item-translation && npm run check:news-title-and-newsletter-translation && npm run check:newsletter-title-translation && npm run check:intake-entry && npm run check:access-request-asker && npm run check:registered-details && npm run check:branch-choice && npm run check:account-page && npm run check:signing-dialog && npm run check:form-binding-preview && npm run check:open-record && npm run check:message-box-channel && npm run check:portal-live-regions && npm run check:case-withdraw-screen && npm run check:case-documents-screen && npm run check:my-cases-page && npm run check:my-cases-acting-for && npm run check:proposal-queue-leaf && npm run check:portal-theme-choice && npm run check:site-head && npm run check:page-history && npm run check:media-library && npm run check:broker-login && npm run check:portal-signin-settings && npm run check:site-shell-blocks && npm run check:site-grid && npm run check:site-regions && npm run check:page-editor && npm run check:page-editor-regions && npm run check:notices && npm run check:site-edit-mode && npm run check:site-page-tree && npm run check:branch-in-effect && npm run check:idle-session && npm run check:publication-documents && npm run check:woo-entry-points && npm run check:attached-actions && npm run check:my-dossiers && npm run check:staff-account-screens && npm run check:site-signed-in-shell && npm run check:site-resident-menu && npm run check:create-names-its-action && npm run check:site-shared-dossier && npm run check:guest-action-page && npm run check:ways-in-screens && npm run check:visible-when-local && npm run check:schema-form && npm run check:propose-change && npm run check:site-collections && npm run check:collection-loader && npm run check:rich-text && npm run check:tasks-page && npm run check:site-inbox-pages && npm run check:embed-copy && npm run check:embed-height && npm run check:service-worker && npm run check:install-banner && npm run check:embed-frame && npm run check:array-cells && npm run check:collection-groups && npm run check:record-page && npm run check:case-type-portal-header && npm run check:inbox-unread && npm run check:inbox-attachments && npm run check:inbox-open-link && npm run check:inbox-delete && npm run check:value-labels && npm run check:admin-menu-access && npm run check:news-list-refresh && npm run check:site-navigation && npm run check:site-theme-bridge && npm run check:mijn-components && npm run check:mijn-cases && npm run check:mijn-home && npm run check:mijn-lists && npm run check:mijn-wave6 && npm run check:mijn-documents && npm run check:site-form-fields && npm run check:widget-registry && npm run check:widget-palette && npm run check:editor-text-toolbar
+
+
+> portaliq@0.1.0 check:json-strict
+> node tests/validate-json-strict.js
+
+[validate-json-strict] src/manifest.json: OK
+[validate-json-strict] lib/Settings/portaliq_mock_register.json: OK
+[validate-json-strict] lib/Settings/portaliq_register.json: OK
+[validate-json-strict] PASS
+
+> portaliq@0.1.0 check:manifest-v2
+> node tests/manifest-v2.spec.js
+
+[manifest-v2.spec] manifest: /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/manifest.json
+[manifest-v2.spec] manifest.version: 0.2.0
+[manifest-v2.spec] manifest.$schema: https://github.com/ConductionNL/nextcloud-vue/raw/main/src/schemas/app-manifest-v2.schema.json
+[manifest-v2.spec] pages: 35
+[manifest-v2.spec] structural lint: PASS
+[manifest-v2.spec] schema: /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/node_modules/@conduction/nextcloud-vue/src/schemas/app-manifest-v2.schema.json
+[manifest-v2.spec] Ajv v2 validation: PASS (0 errors)
+
+> portaliq@0.1.0 check:register
+> node tests/validate-register.js
+
+[validate-register] WARN  lib/Settings/portaliq_register.json › groupStaffFixture: only 2 properties and no x-openregister-* declarations — verify this isn't a stub left by a bad merge
+[validate-register] WARN  lib/Settings/portaliq_register.json › notificationQuietHours: only 3 properties and no x-openregister-* declarations — verify this isn't a stub left by a bad merge
+[validate-register] PASS — 2 register file(s), 2 warning(s).
+
+> portaliq@0.1.0 check:registry
+> node tests/registry.spec.js
+
+[registry.spec] registry: /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/registry.js
+[registry.spec] entries: 29
+[registry.spec] required kinds present: cell-renderer, form-field, modal, page, widget
+[registry.spec] custom kind="widget" entries: 23 (scaffold target: 0 — ADR-049)
+[registry.spec] registry validation: PASS (0 errors)
+
+> portaliq@0.1.0 check:site-auth
+> node tests/site-auth.spec.mjs
+
+authBaseFrom
+  ok   derives the auth edge from the content API base
+  ok   tolerates a trailing slash
+  ok   survives an empty base
+signInRoutes
+  ok   a public-only portal offers NO sign-in route
+  ok   a portal with no authentication block offers none either
+  ok   a malformed modes value offers none
+  ok   an unknown mode is not turned into a route
+  ok   digid becomes a labelled OIDC start
+  ok   nextcloud routes to the nextcloud edge, not to OIDC
+  ok   public is dropped from a MIXED list while the real modes survive
+  ok   the portal slug travels with the sign-in link, so a shared host cannot resolve the wrong portal
+  ok   the oidc mode starts the generic provider, which is the one the edge knows
+adoptSessionToken
+  ok   a bearer in the fragment is adopted
+  ok   and the fragment is stripped from the address bar
+  ok   a later read returns the stored bearer
+  ok   signing out forgets it
+  ok   a fragment without a token adopts nothing
+  ok   and is no failed sign-in
+  ok   a failed sign-in is read from the fragment
+  ok   and the fragment is stripped
+  ok   the message names no reason
+adoptLegacyToken
+  ok   the old key is portaliq_token
+  ok   a bearer under the old key is adopted
+  ok   into this tab's store
+  ok   and removed from localStorage
+  ok   a later read keeps it
+  ok   after signing out nothing comes back from the old key
+  ok   a bearer in the fragment wins over the old key
+  ok   the tab stores the fresh one
+  ok   and the old key is gone all the same
+  ok   the tab keeps its own bearer
+  ok   blocked storage adopts nothing and throws nothing
+
+all site-auth assertions held
+(node:2601789) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/authApi.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> portaliq@0.1.0 check:federated-search
+> node tests/federated-search.spec.mjs
+
+buildRequestUrl
+  ok   resolves a relative endpoint against the origin
+  ok   keeps the OpenCatalogi path
+  ok   sends the page size
+  ok   sends the page
+  ok   omits an empty term entirely
+  ok   always asks for facet buckets in the same request
+  ok   sends a non-empty term
+  ok   repeats the facet field once per selected value
+  ok   accepts an absolute endpoint on another instance
+toBuckets — both dialects
+  ok   reads the object-field dialect (data.buckets, value/count)
+  ok   reads the virtual dialect (buckets, key/results)
+  ok   survives a missing facet envelope
+  ok   survives a facet field that is absent
+  ok   drops a bucket with no value rather than rendering a nameless filter
+toResult — a row from a federated peer
+  ok   maps a complete row
+  ok   names a row with no directory `local`, rather than leaving it blank
+  ok   falls back through landingUrl → url → @self.uri for the link
+  ok   uses @self.uri when the row carries no link of its own
+  ok   degrades an almost-empty row to a titled entry instead of throwing
+  ok   ignores a non-string description rather than rendering [object Object]
+  ok   truncates a long summary to 280 characters
+pageWindow
+  ok   windows around the current page
+  ok   does not run below page 1
+  ok   does not run past the last page
+  ok   collapses to a single page
+sorting
+  ok   omits _order entirely when no sort is chosen
+  ok   maps field:DIRECTION onto _order[field]
+  ok   ignores a malformed sort rather than sending half of it
+paginationItems
+  ok   matches the reference at page 1 of 36
+  ok   windows around a middle page, with a gap either side
+  ok   reaches the last page
+  ok   collapses to one page
+  ok   never emits a gap for a single skipped page
+formatDutchDate
+  ok   formats the way the reference does
+  ok   formats a February date
+  ok   survives an empty value
+  ok   survives a nonsense value
+toResult — detail id, date and type
+  ok   carries the id the detail route addresses
+  ok   formats publicationDate for the card
+  ok   does not mistake the numeric schema id for a type name
+  ok   uses a schema title when the instance supplies one
+facets per field
+  ok   asks a facet for the first field
+  ok   asks a facet for the second field in the same request
+  ok   sends the ticked category as a filter
+  ok   sends no filter for a field without a selection
+  ok   a state without facetFields keeps its single field
+period range
+  ok   sends the from date as a gte range
+  ok   sends the to date through the end of that day
+  ok   does not send a from date that is not a date
+  ok   refuses a date that rolls over
+  ok   uses another period field when the block names one
+address round trip
+  ok   keeps the route
+  ok   writes the category per field
+  ok   writes the from date
+  ok   reads the text back
+  ok   reads the facets back
+  ok   reads the from date back
+old _facets parameter
+  ok   an old link selects its value in the first field
+  ok   and nothing in the second
+search query object
+  ok   describes the search in the C2 shape, organization as organisation
+
+all federated-search assertions held
+(node:2601935) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/federatedSearch.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> portaliq@0.1.0 check:campaign-tracking
+> node tests/campaign-tracking.spec.mjs
+
+captureLanding / firstTouch / lastTouch
+  ok   no portal means nothing is captured
+  ok   no utm_* params means first/last touch stay unset
+  ok   first touch is captured
+  ok   last touch equals first touch on the first landing
+  ok   referrer is captured at first touch
+  ok   first touch is preserved, not overwritten
+  ok   last touch is overwritten by the later landing
+  ok   the referrer captured at FIRST touch is kept, not the later internal one
+  ok   a different portal has no capture of its own yet
+
+all campaign-tracking assertions held
+
+> portaliq@0.1.0 check:traffic-client
+> node --test tests/traffic-client.spec.mjs
+
+TAP version 13
+# (node:2602360) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/traffic/helpers.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: readConfig
+    # Subtest: takes the data attributes the Docusaurus plugin stamps
+    ok 1 - takes the data attributes the Docusaurus plugin stamps
+      ---
+      duration_ms: 4.093251
+      type: 'test'
+      ...
+    # Subtest: derives origin and app path from the src when the tag carries no data attributes
+    ok 2 - derives origin and app path from the src when the tag carries no data attributes
+      ---
+      duration_ms: 0.637835
+      type: 'test'
+      ...
+    # Subtest: names no portal when neither the tag nor the site config does, so the host resolves it
+    ok 3 - names no portal when neither the tag nor the site config does, so the host resolves it
+      ---
+      duration_ms: 0.579735
+      type: 'test'
+      ...
+    # Subtest: disables itself rather than guess when there is no origin
+    ok 4 - disables itself rather than guess when there is no origin
+      ---
+      duration_ms: 0.369421
+      type: 'test'
+      ...
+    1..4
+ok 1 - readConfig
+  ---
+  duration_ms: 8.082787
+  type: 'suite'
+  ...
+# Subtest: optedOut
+    # Subtest: honours Do Not Track and Global Privacy Control
+    ok 1 - honours Do Not Track and Global Privacy Control
+      ---
+      duration_ms: 5.059699
+      type: 'test'
+      ...
+    1..1
+ok 2 - optedOut
+  ---
+  duration_ms: 5.777163
+  type: 'suite'
+  ...
+# Subtest: allowedEvent
+    # Subtest: sends only what the portal enabled
+    ok 1 - sends only what the portal enabled
+      ---
+      duration_ms: 0.741589
+      type: 'test'
+      ...
+    # Subtest: sends nothing for a portal that is not measuring
+    ok 2 - sends nothing for a portal that is not measuring
+      ---
+      duration_ms: 0.513233
+      type: 'test'
+      ...
+    # Subtest: sends only the pre-consent events until consent is given
+    ok 3 - sends only the pre-consent events until consent is given
+      ---
+      duration_ms: 0.428484
+      type: 'test'
+      ...
+    1..3
+ok 3 - allowedEvent
+  ---
+  duration_ms: 2.278631
+  type: 'suite'
+  ...
+# Subtest: mayPersist
+    # Subtest: never persists in the default mode, whatever the consent
+    ok 1 - never persists in the default mode, whatever the consent
+      ---
+      duration_ms: 0.72676
+      type: 'test'
+      ...
+    # Subtest: persists only with the switch on and consent given
+    ok 2 - persists only with the switch on and consent given
+      ---
+      duration_ms: 0.409966
+      type: 'test'
+      ...
+    1..2
+ok 4 - mayPersist
+  ---
+  duration_ms: 1.387848
+  type: 'suite'
+  ...
+# Subtest: classifyLink
+    # Subtest: is an outbound click when the host differs
+    ok 1 - is an outbound click when the host differs
+      ---
+      duration_ms: 0.530484
+      type: 'test'
+      ...
+    # Subtest: is a download when the path ends in a document extension, on any host
+    ok 2 - is a download when the path ends in a document extension, on any host
+      ---
+      duration_ms: 0.364474
+      type: 'test'
+      ...
+    # Subtest: is nothing for an internal page link or a non-http link
+    ok 3 - is nothing for an internal page link or a non-http link
+      ---
+      duration_ms: 0.226005
+      type: 'test'
+      ...
+    1..3
+ok 5 - classifyLink
+  ---
+  duration_ms: 1.431139
+  type: 'suite'
+  ...
+# Subtest: searchTermFrom
+    # Subtest: reads q, zoek and search
+    ok 1 - reads q, zoek and search
+      ---
+      duration_ms: 0.508002
+      type: 'test'
+      ...
+    # Subtest: is empty without a term
+    ok 2 - is empty without a term
+      ---
+      duration_ms: 0.218342
+      type: 'test'
+      ...
+    1..2
+ok 6 - searchTermFrom
+  ---
+  duration_ms: 0.882664
+  type: 'suite'
+  ...
+# Subtest: scrollPercent
+    # Subtest: is 100 on a page that does not scroll and proportional otherwise
+    ok 1 - is 100 on a page that does not scroll and proportional otherwise
+      ---
+      duration_ms: 0.306598
+      type: 'test'
+      ...
+    1..1
+ok 7 - scrollPercent
+  ---
+  duration_ms: 0.416554
+  type: 'suite'
+  ...
+# Subtest: batching
+    # Subtest: cuts a queue into batches of at most fifty
+    ok 1 - cuts a queue into batches of at most fifty
+      ---
+      duration_ms: 0.618395
+      type: 'test'
+      ...
+    # Subtest: builds the envelope the collector reads, naming the portal only when known
+    ok 2 - builds the envelope the collector reads, naming the portal only when known
+      ---
+      duration_ms: 0.41697
+      type: 'test'
+      ...
+    1..2
+ok 8 - batching
+  ---
+  duration_ms: 1.178
+  type: 'suite'
+  ...
+# Subtest: randomId
+    # Subtest: is 32 hex characters with or without crypto
+    ok 1 - is 32 hex characters with or without crypto
+      ---
+      duration_ms: 0.614867
+      type: 'test'
+      ...
+    1..1
+ok 9 - randomId
+  ---
+  duration_ms: 0.729234
+  type: 'suite'
+  ...
+# Subtest: script errors (portal-traffic-reporting)
+    # Subtest: keeps the message, the source without its query, the position and a stack hash, never the stack
+    ok 1 - keeps the message, the source without its query, the position and a stack hash, never the stack
+      ---
+      duration_ms: 1.01048
+      type: 'test'
+      ...
+    1..1
+ok 10 - script errors (portal-traffic-reporting)
+  ---
+  duration_ms: 1.164032
+  type: 'suite'
+  ...
+# Subtest: form analytics (portal-traffic-outcomes)
+    # Subtest: names a form by data-portaliq-form first, then id, name, action
+    ok 1 - names a form by data-portaliq-form first, then id, name, action
+      ---
+      duration_ms: 0.341516
+      type: 'test'
+      ...
+    # Subtest: names a field by id or name and never reads its value
+    ok 2 - names a field by id or name and never reads its value
+      ---
+      duration_ms: 0.331137
+      type: 'test'
+      ...
+    1..2
+ok 11 - form analytics (portal-traffic-outcomes)
+  ---
+  duration_ms: 0.835308
+  type: 'suite'
+  ...
+# Subtest: custom dimensions (portal-traffic-outcomes)
+    # Subtest: attaches cd_<id> for declared ids with a value and nothing for the rest
+    ok 1 - attaches cd_<id> for declared ids with a value and nothing for the rest
+      ---
+      duration_ms: 0.537924
+      type: 'test'
+      ...
+    # Subtest: bounds a value to 256 characters and stringifies it
+    ok 2 - bounds a value to 256 characters and stringifies it
+      ---
+      duration_ms: 0.240854
+      type: 'test'
+      ...
+    1..2
+ok 12 - custom dimensions (portal-traffic-outcomes)
+  ---
+  duration_ms: 0.939051
+  type: 'suite'
+  ...
+# Subtest: page experiments (portal-traffic-experiments)
+    # Subtest: reads the in-site route from the route parameter, else the path, without a trailing slash
+    ok 1 - reads the in-site route from the route parameter, else the path, without a trailing slash
+      ---
+      duration_ms: 0.675836
+      type: 'test'
+      ...
+    # Subtest: finds the running experiment on a route and ignores a draft
+    ok 2 - finds the running experiment on a route and ignores a draft
+      ---
+      duration_ms: 0.338
+      type: 'test'
+      ...
+    # Subtest: splits by weight: over many seeds the 3:1 variant gets about three quarters
+    ok 3 - splits by weight: over many seeds the 3:1 variant gets about three quarters
+      ---
+      duration_ms: 31.900009
+      type: 'test'
+      ...
+    # Subtest: is sticky: the same seed always lands on the same variant
+    ok 4 - is sticky: the same seed always lands on the same variant
+      ---
+      duration_ms: 1.061019
+      type: 'test'
+      ...
+    # Subtest: builds the variant URL in the shape the location uses
+    ok 5 - builds the variant URL in the shape the location uses
+      ---
+      duration_ms: 0.732862
+      type: 'test'
+      ...
+    1..5
+ok 13 - page experiments (portal-traffic-experiments)
+  ---
+  duration_ms: 38.144579
+  type: 'suite'
+  ...
+# Subtest: heatmaps and recording (portal-traffic-experiments)
+    # Subtest: records a click as fractions, a width bucket, a tag and a safe selector
+    ok 1 - records a click as fractions, a width bucket, a tag and a safe selector
+      ---
+      duration_ms: 2.264967
+      type: 'test'
+      ...
+    # Subtest: never puts an id or an attribute into a selector
+    ok 2 - never puts an id or an attribute into a selector
+      ---
+      duration_ms: 0.385994
+      type: 'test'
+      ...
+    # Subtest: buckets a width and computes a scroll depth
+    ok 3 - buckets a width and computes a scroll depth
+      ---
+      duration_ms: 0.936294
+      type: 'test'
+      ...
+    # Subtest: records only when the switch is on, on a site this app serves, and with consent where required
+    ok 4 - records only when the switch is on, on a site this app serves, and with consent where required
+      ---
+      duration_ms: 0.636346
+      type: 'test'
+      ...
+    1..4
+ok 14 - heatmaps and recording (portal-traffic-experiments)
+  ---
+  duration_ms: 19.110594
+  type: 'suite'
+  ...
+# Subtest: the built files (when built)
+    # Subtest: holds the client under 20 KB and the recorder under 30 KB
+    ok 1 - holds the client under 20 KB and the recorder under 30 KB
+      ---
+      duration_ms: 1.498838
+      type: 'test'
+      ...
+    1..1
+ok 15 - the built files (when built)
+  ---
+  duration_ms: 2.070587
+  type: 'suite'
+  ...
+1..15
+# tests 34
+# suites 15
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 483.635647
+
+> portaliq@0.1.0 check:traffic-summary
+> node --test tests/traffic-summary.spec.mjs
+
+TAP version 13
+# (node:2602670) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/trafficSummary.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lastDays
+    # Subtest: ends today in UTC and counts back
+    ok 1 - ends today in UTC and counts back
+      ---
+      duration_ms: 9.288101
+      type: 'test'
+      ...
+    1..1
+ok 1 - lastDays
+  ---
+  duration_ms: 13.117129
+  type: 'suite'
+  ...
+# Subtest: daysBetween
+    # Subtest: is inclusive, in order, and empty when reversed or malformed
+    ok 1 - is inclusive, in order, and empty when reversed or malformed
+      ---
+      duration_ms: 0.853029
+      type: 'test'
+      ...
+    # Subtest: caps a custom range at a year from its start
+    ok 2 - caps a custom range at a year from its start
+      ---
+      duration_ms: 1.174169
+      type: 'test'
+      ...
+    1..2
+ok 2 - daysBetween
+  ---
+  duration_ms: 2.566397
+  type: 'suite'
+  ...
+# Subtest: hasDimension
+    # Subtest: is true only for a listed dimension; a portal that named none has the defaults
+    ok 1 - is true only for a listed dimension; a portal that named none has the defaults
+      ---
+      duration_ms: 2.582995
+      type: 'test'
+      ...
+    1..1
+ok 3 - hasDimension
+  ---
+  duration_ms: 2.842754
+  type: 'suite'
+  ...
+# Subtest: isMeasured and warnedSwitches
+    # Subtest: is measured only when enabled is literally true
+    ok 1 - is measured only when enabled is literally true
+      ---
+      duration_ms: 0.850444
+      type: 'test'
+      ...
+    # Subtest: lists the sensitive switches that are literally true, in contract order
+    ok 2 - lists the sensitive switches that are literally true, in contract order
+      ---
+      duration_ms: 1.078701
+      type: 'test'
+      ...
+    1..2
+ok 4 - isMeasured and warnedSwitches
+  ---
+  duration_ms: 2.469996
+  type: 'suite'
+  ...
+# Subtest: summarise
+    # Subtest: sums the totals over the range only
+    ok 1 - sums the totals over the range only
+      ---
+      duration_ms: 2.65422
+      type: 'test'
+      ...
+    # Subtest: draws a zero for a day without a record, so the axis stays a calendar
+    ok 2 - draws a zero for a day without a record, so the axis stays a calendar
+      ---
+      duration_ms: 0.587116
+      type: 'test'
+      ...
+    # Subtest: merges pages across days and ranks them
+    ok 3 - merges pages across days and ranks them
+      ---
+      duration_ms: 0.704088
+      type: 'test'
+      ...
+    # Subtest: groups referrers by channel with the busiest hosts
+    ok 4 - groups referrers by channel with the busiest hosts
+      ---
+      duration_ms: 0.640102
+      type: 'test'
+      ...
+    # Subtest: reports no data for an empty range, with zeros rather than NaN
+    ok 5 - reports no data for an empty range, with zeros rather than NaN
+      ---
+      duration_ms: 0.233692
+      type: 'test'
+      ...
+    1..5
+ok 5 - summarise
+  ---
+  duration_ms: 5.402988
+  type: 'suite'
+  ...
+# Subtest: summarise: visitors and breakdowns
+    # Subtest: reports new versus returning as not available when every day is null, never as zero
+    ok 1 - reports new versus returning as not available when every day is null, never as zero
+      ---
+      duration_ms: 0.329241
+      type: 'test'
+      ...
+    # Subtest: sums new, returning and accounts once any day carries a number
+    ok 2 - sums new, returning and accounts once any day carries a number
+      ---
+      duration_ms: 0.199747
+      type: 'test'
+      ...
+    # Subtest: merges the five breakdown maps across days and ranks them
+    ok 3 - merges the five breakdown maps across days and ranks them
+      ---
+      duration_ms: 0.48747
+      type: 'test'
+      ...
+    1..3
+ok 6 - summarise: visitors and breakdowns
+  ---
+  duration_ms: 1.195055
+  type: 'suite'
+  ...
+# Subtest: summarise: outcomes (portal-traffic-outcomes)
+    # Subtest: merges goals by id, keeps the latest name and re-derives the conversion rate from sessions
+    ok 1 - merges goals by id, keeps the latest name and re-derives the conversion rate from sessions
+      ---
+      duration_ms: 1.658132
+      type: 'test'
+      ...
+    # Subtest: sums funnel steps by position and recomputes the drop-off
+    ok 2 - sums funnel steps by position and recomputes the drop-off
+      ---
+      duration_ms: 0.619032
+      type: 'test'
+      ...
+    # Subtest: sums forms, ranks the fields by where people left and names the worst
+    ok 3 - sums forms, ranks the fields by where people left and names the worst
+      ---
+      duration_ms: 0.354923
+      type: 'test'
+      ...
+    # Subtest: ranks searches, missing pages and dimension values
+    ok 4 - ranks searches, missing pages and dimension values
+      ---
+      duration_ms: 0.447736
+      type: 'test'
+      ...
+    # Subtest: is empty, not absent, for records without outcomes
+    ok 5 - is empty, not absent, for records without outcomes
+      ---
+      duration_ms: 1.061728
+      type: 'test'
+      ...
+    1..5
+ok 7 - summarise: outcomes (portal-traffic-outcomes)
+  ---
+  duration_ms: 4.471705
+  type: 'suite'
+  ...
+# Subtest: segments, roll-ups and errors (portal-traffic-reporting)
+    # Subtest: lists the usable segments once each and the roll-up members without the portal itself
+    ok 1 - lists the usable segments once each and the roll-up members without the portal itself
+      ---
+      duration_ms: 0.64297
+      type: 'test'
+      ...
+    # Subtest: merges script errors by message and source across the days
+    ok 2 - merges script errors by message and source across the days
+      ---
+      duration_ms: 0.414013
+      type: 'test'
+      ...
+    1..2
+ok 8 - segments, roll-ups and errors (portal-traffic-reporting)
+  ---
+  duration_ms: 1.238146
+  type: 'suite'
+  ...
+# Subtest: experiments and heatmaps (portal-traffic-experiments)
+    # Subtest: sums variants across days and re-derives the verdict from the sums
+    ok 1 - sums variants across days and re-derives the verdict from the sums
+      ---
+      duration_ms: 5.060048
+      type: 'test'
+      ...
+    # Subtest: names no winner under thirty sessions per variant, and says so
+    ok 2 - names no winner under thirty sessions per variant, and says so
+      ---
+      duration_ms: 4.713976
+      type: 'test'
+      ...
+    # Subtest: matches the aggregation on a known table
+    ok 3 - matches the aggregation on a known table
+      ---
+      duration_ms: 0.297203
+      type: 'test'
+      ...
+    # Subtest: sums a page heatmap across days
+    ok 4 - sums a page heatmap across days
+      ---
+      duration_ms: 0.690877
+      type: 'test'
+      ...
+    1..4
+ok 9 - experiments and heatmaps (portal-traffic-experiments)
+  ---
+  duration_ms: 11.103694
+  type: 'suite'
+  ...
+1..9
+# tests 25
+# suites 9
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 404.691977
+
+> portaliq@0.1.0 check:traffic-paths
+> node --test tests/traffic-paths.spec.mjs
+
+TAP version 13
+# (node:2603147) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/trafficPaths.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: layoutPaths
+    # Subtest: puts step 0 on the left reading forward, one scale for the whole drawing
+    ok 1 - puts step 0 on the left reading forward, one scale for the whole drawing
+      ---
+      duration_ms: 10.081005
+      type: 'test'
+      ...
+    # Subtest: keeps a small node tall enough for its label, and its band at the true scale
+    ok 2 - keeps a small node tall enough for its label, and its band at the true scale
+      ---
+      duration_ms: 0.706767
+      type: 'test'
+      ...
+    # Subtest: stacks the bands leaving one node in target order, from its right edge to the next left edge
+    ok 3 - stacks the bands leaving one node in target order, from its right edge to the next left edge
+      ---
+      duration_ms: 0.773923
+      type: 'test'
+      ...
+    # Subtest: puts the drop-off stub under the bands that left
+    ok 4 - puts the drop-off stub under the bands that left
+      ---
+      duration_ms: 0.576133
+      type: 'test'
+      ...
+    # Subtest: mirrors the drawing reading backward: step 0 on the right, bands from left edges
+    ok 5 - mirrors the drawing reading backward: step 0 on the right, bands from left edges
+      ---
+      duration_ms: 0.577218
+      type: 'test'
+      ...
+    # Subtest: draws nothing for an empty answer and skips a link to a missing node
+    ok 6 - draws nothing for an empty answer and skips a link to a missing node
+      ---
+      duration_ms: 0.356161
+      type: 'test'
+      ...
+    1..6
+ok 1 - layoutPaths
+  ---
+  duration_ms: 15.40923
+  type: 'suite'
+  ...
+# Subtest: band
+    # Subtest: is a closed outline from the leaving edge to the arriving edge
+    ok 1 - is a closed outline from the leaving edge to the arriving edge
+      ---
+      duration_ms: 0.470725
+      type: 'test'
+      ...
+    1..1
+ok 2 - band
+  ---
+  duration_ms: 1.08799
+  type: 'suite'
+  ...
+# Subtest: pathRows
+    # Subtest: lists every node of every step, "+N more" included
+    ok 1 - lists every node of every step, "+N more" included
+      ---
+      duration_ms: 0.833172
+      type: 'test'
+      ...
+    1..1
+ok 3 - pathRows
+  ---
+  duration_ms: 1.140811
+  type: 'suite'
+  ...
+# Subtest: chooseNode
+    # Subtest: chooses a node, keeps earlier choices, drops later ones, and undoes a second choice
+    ok 1 - chooses a node, keeps earlier choices, drops later ones, and undoes a second choice
+      ---
+      duration_ms: 0.542839
+      type: 'test'
+      ...
+    1..1
+ok 4 - chooseNode
+  ---
+  duration_ms: 0.874567
+  type: 'suite'
+  ...
+1..4
+# tests 9
+# suites 4
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 299.136032
+
+> portaliq@0.1.0 check:page-traffic
+> node --test tests/page-traffic.spec.mjs
+
+TAP version 13
+# (node:2603513) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/pageTraffic.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: pageRoute
+    # Subtest: keys a page by its route with one leading slash and no trailing one
+    ok 1 - keys a page by its route with one leading slash and no trailing one
+      ---
+      duration_ms: 1.422706
+      type: 'test'
+      ...
+    # Subtest: answers nothing for a page without a route
+    ok 2 - answers nothing for a page without a route
+      ---
+      duration_ms: 0.321759
+      type: 'test'
+      ...
+    1..2
+ok 1 - pageRoute
+  ---
+  duration_ms: 3.619418
+  type: 'suite'
+  ...
+# Subtest: flowOf
+    # Subtest: reads the previous pages, entrances and referrers for incoming
+    ok 1 - reads the previous pages, entrances and referrers for incoming
+      ---
+      duration_ms: 3.168875
+      type: 'test'
+      ...
+    # Subtest: reads the next pages, exits and outbound links for outgoing
+    ok 2 - reads the next pages, exits and outbound links for outgoing
+      ---
+      duration_ms: 0.340823
+      type: 'test'
+      ...
+    # Subtest: keeps an uncounted list null, never empty
+    ok 3 - keeps an uncounted list null, never empty
+      ---
+      duration_ms: 0.457024
+      type: 'test'
+      ...
+    1..3
+ok 2 - flowOf
+  ---
+  duration_ms: 4.529279
+  type: 'suite'
+  ...
+1..2
+# tests 5
+# suites 2
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 241.856441
+
+> portaliq@0.1.0 check:open-portal-site
+> node tests/open-portal-site.spec.mjs
+
+portalSiteUrl
+  ok   keeps the index.php prefix the URL generator produces
+  ok   drops it where the instance rewrites URLs
+  ok   encodes a slug that would otherwise split the query
+  ok   encodes a non-ASCII slug
+createOpenPortalSite
+  ok   opens the row slug in a new tab, shielded from the opener
+  ok   returns the URL it opened
+  ok   says nothing when the row resolves
+  ok   opens nothing for a row without a usable slug
+  ok   reports the missing slug once per attempt
+  ok   addresses a padded slug exactly as stored, encoded
+  ok   reports the address it opened even though open() answered null
+  ok   shows no failure message for a tab that did open
+  ok   still shields the tab it could not hand back
+  ok   createOpenPortalSite() does not throw on a bare call
+
+all assertions passed
+(node:2603837) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/openPortalSite.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> portaliq@0.1.0 check:shared-instance
+> node --test tests/shared-instance.spec.mjs
+
+TAP version 13
+# (node:2604108) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/tests/e2e/shared-instance.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: portaliq shared-instance guard
+    # Subtest: folds every loopback spelling onto localhost
+    ok 1 - folds every loopback spelling onto localhost
+      ---
+      duration_ms: 21.426986
+      type: 'test'
+      ...
+    # Subtest: makes the implicit port explicit
+    ok 2 - makes the implicit port explicit
+      ---
+      duration_ms: 1.232739
+      type: 'test'
+      ...
+    # Subtest: calls loopback 80 and 8080 shared, and nothing else
+    ok 3 - calls loopback 80 and 8080 shared, and nothing else
+      ---
+      duration_ms: 27.540922
+      type: 'test'
+      ...
+    # Subtest: refuses a shared instance that no flag names
+    ok 4 - refuses a shared instance that no flag names
+      ---
+      duration_ms: 28.475125
+      type: 'test'
+      ...
+    # Subtest: refuses a flag holding a boolean rather than an origin
+    ok 5 - refuses a flag holding a boolean rather than an origin
+      ---
+      duration_ms: 21.139722
+      type: 'test'
+      ...
+    # Subtest: refuses a flag that names a different origin
+    ok 6 - refuses a flag that names a different origin
+      ---
+      duration_ms: 1.251209
+      type: 'test'
+      ...
+    # Subtest: permits the origin the flag names, in any loopback spelling
+    ok 7 - permits the origin the flag names, in any loopback spelling
+      ---
+      duration_ms: 0.619667
+      type: 'test'
+      ...
+    # Subtest: accepts the fleet-wide spelling too
+    ok 8 - accepts the fleet-wide spelling too
+      ---
+      duration_ms: 0.544012
+      type: 'test'
+      ...
+    # Subtest: lets a disposable rig through without a flag
+    ok 9 - lets a disposable rig through without a flag
+      ---
+      duration_ms: 15.22056
+      type: 'test'
+      ...
+    # Subtest: binds occ to a named container, and falls back to the server root
+    ok 10 - binds occ to a named container, and falls back to the server root
+      ---
+      duration_ms: 0.886311
+      type: 'test'
+      ...
+    1..10
+ok 1 - portaliq shared-instance guard
+  ---
+  duration_ms: 121.572971
+  type: 'suite'
+  ...
+1..1
+# tests 10
+# suites 1
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 680.585136
+
+> portaliq@0.1.0 check:connection-registry
+> node --test tests/connection-registry.spec.mjs
+
+TAP version 13
+# (node:2604388) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/connectionRegistry.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: connection strings
+    # Subtest: ships an English and a Dutch catalogue entry for every label the page declares
+    ok 1 - ships an English and a Dutch catalogue entry for every label the page declares
+      ---
+      duration_ms: 18.281207
+      type: 'test'
+      ...
+    1..1
+ok 1 - connection strings
+  ---
+  duration_ms: 20.214501
+  type: 'suite'
+  ...
+# Subtest: Add integration handler
+    # Subtest: opens integriq on the link dialog, preset to portaliq
+    ok 1 - opens integriq on the link dialog, preset to portaliq
+      ---
+      duration_ms: 2.457435
+      type: 'test'
+      ...
+    1..1
+ok 2 - Add integration handler
+  ---
+  duration_ms: 2.820294
+  type: 'suite'
+  ...
+# Subtest: the Integrations page declaration
+    # Subtest: lists integriq app_connection rows, admin only, and requires integriq
+    ok 1 - lists integriq app_connection rows, admin only, and requires integriq
+      ---
+      duration_ms: 0.447259
+      type: 'test'
+      ...
+    # Subtest: offers no generic Add button
+    ok 2 - offers no generic Add button
+      ---
+      duration_ms: 0.213173
+      type: 'test'
+      ...
+    # Subtest: scopes the rows to portaliq through the menu preset, in the gear
+    ok 3 - scopes the rows to portaliq through the menu preset, in the gear
+      ---
+      duration_ms: 0.237637
+      type: 'test'
+      ...
+    # Subtest: names only formatters the library ships and handlers that exist, and wires the handler into the app
+    ok 4 - names only formatters the library ships and handlers that exist, and wires the handler into the app
+      ---
+      duration_ms: 1.583585
+      type: 'test'
+      ...
+    # Subtest: lets the library label the statuses, disabled included
+    ok 5 - lets the library label the statuses, disabled included
+      ---
+      duration_ms: 0.879572
+      type: 'test'
+      ...
+    # Subtest: names an icon src/icons.js registers
+    ok 6 - names an icon src/icons.js registers
+      ---
+      duration_ms: 8.200922
+      type: 'test'
+      ...
+    # Subtest: keeps its id and route apart from every other page
+    ok 7 - keeps its id and route apart from every other page
+      ---
+      duration_ms: 0.803594
+      type: 'test'
+      ...
+    1..7
+ok 3 - the Integrations page declaration
+  ---
+  duration_ms: 15.082408
+  type: 'suite'
+  ...
+1..3
+# tests 9
+# suites 3
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 506.360218
+
+> portaliq@0.1.0 check:leaf-integrations
+> node --test tests/leaf-integrations.spec.mjs
+
+TAP version 13
+# Subtest: every integration widget names an integration
+ok 1 - every integration widget names an integration
+  ---
+  duration_ms: 1.923721
+  type: 'test'
+  ...
+# Subtest: every integration widget is placed in its page layout
+ok 2 - every integration widget is placed in its page layout
+  ---
+  duration_ms: 0.440743
+  type: 'test'
+  ...
+# Subtest: the bundle that renders a leaf installs the registry first
+ok 3 - the bundle that renders a leaf installs the registry first
+  ---
+  duration_ms: 0.423085
+  type: 'test'
+  ...
+# Subtest: every integration icon the manifest names is registered
+ok 4 - every integration icon the manifest names is registered
+  ---
+  duration_ms: 0.484956
+  type: 'test'
+  ...
+# Subtest: the schema behind an integration widget declares the same leaf
+ok 5 - the schema behind an integration widget declares the same leaf
+  ---
+  duration_ms: 0.423379
+  type: 'test'
+  ...
+# Subtest: a schema that declares a leaf had its version bumped to carry it
+ok 6 - a schema that declares a leaf had its version bumped to carry it
+  ---
+  duration_ms: 0.411476
+  type: 'test'
+  ...
+# Subtest: no portal-edge page renders an integration widget
+ok 7 - no portal-edge page renders an integration widget
+  ---
+  duration_ms: 0.340045
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 211.837784
+
+> portaliq@0.1.0 check:page-layout-entry
+> node --test tests/page-layout-entry.spec.mjs
+
+TAP version 13
+# (node:2604903) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/pageSiteUrl.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the layout designer
+    # Subtest: is a page with an :id route and a component
+    ok 1 - is a page with an :id route and a component
+      ---
+      duration_ms: 1.096462
+      type: 'test'
+      ...
+    # Subtest: is reached from the page detail by a header action
+    ok 2 - is reached from the page detail by a header action
+      ---
+      duration_ms: 0.354089
+      type: 'test'
+      ...
+    # Subtest: is reached from the pages list by a row action
+    ok 3 - is reached from the pages list by a row action
+      ---
+      duration_ms: 0.490894
+      type: 'test'
+      ...
+    # Subtest: shares its :id param name with PageLayout, so the detail action resolves
+    ok 4 - shares its :id param name with PageLayout, so the detail action resolves
+      ---
+      duration_ms: 1.743177
+      type: 'test'
+      ...
+    1..4
+ok 1 - the layout designer
+  ---
+  duration_ms: 4.904843
+  type: 'suite'
+  ...
+# Subtest: the actions that open it
+    # Subtest: name icons the app has registered
+    ok 1 - name icons the app has registered
+      ---
+      duration_ms: 0.536482
+      type: 'test'
+      ...
+    1..1
+ok 2 - the actions that open it
+  ---
+  duration_ms: 0.746132
+  type: 'suite'
+  ...
+# Subtest: pageSiteUrl
+    # Subtest: carries the page route and the portal slug
+    ok 1 - carries the page route and the portal slug
+      ---
+      duration_ms: 0.484923
+      type: 'test'
+      ...
+    # Subtest: omits the portal when the page names none
+    ok 2 - omits the portal when the page names none
+      ---
+      duration_ms: 0.571265
+      type: 'test'
+      ...
+    # Subtest: defaults a missing route to the portal front door
+    ok 3 - defaults a missing route to the portal front door
+      ---
+      duration_ms: 1.80285
+      type: 'test'
+      ...
+    # Subtest: encodes a slug or route that would otherwise split the query
+    ok 4 - encodes a slug or route that would otherwise split the query
+      ---
+      duration_ms: 0.320714
+      type: 'test'
+      ...
+    1..4
+ok 3 - pageSiteUrl
+  ---
+  duration_ms: 3.710998
+  type: 'suite'
+  ...
+1..3
+# tests 9
+# suites 3
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 171.405566
+
+> portaliq@0.1.0 check:collection-table
+> node --test tests/collection-table-keyboard.spec.mjs
+
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2605151) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/collections/cells.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: site: every selectable row carries a button that selects that row
+ok 1 - site: every selectable row carries a button that selects that row
+  ---
+  duration_ms: 291.571161
+  type: 'test'
+  ...
+# Subtest: site: the button is named by the row it opens, the header by the declared label
+ok 2 - site: the button is named by the row it opens, the header by the declared label
+  ---
+  duration_ms: 24.531958
+  type: 'test'
+  ...
+# Subtest: site: the open row is announced as the current one
+ok 3 - site: the open row is announced as the current one
+  ---
+  duration_ms: 20.157456
+  type: 'test'
+  ...
+# Subtest: site: a table nobody can select from renders no select button
+ok 4 - site: a table nobody can select from renders no select button
+  ---
+  duration_ms: 19.868689
+  type: 'test'
+  ...
+# Subtest: site: row buttons follow offers, and the busy row cannot fire twice
+ok 5 - site: row buttons follow offers, and the busy row cannot fire twice
+  ---
+  duration_ms: 20.540621
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 793.424251
+
+> portaliq@0.1.0 check:case-timeline
+> node --test tests/case-timeline.spec.mjs
+
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2605714) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the API asks the scoped timeline route of the selected case
+ok 1 - the API asks the scoped timeline route of the selected case
+  ---
+  duration_ms: 129.883563
+  type: 'test'
+  ...
+# Subtest: a refused or failed timeline read is null, not an empty history
+ok 2 - a refused or failed timeline read is null, not an empty history
+  ---
+  duration_ms: 1.903001
+  type: 'test'
+  ...
+# Subtest: site: the entries render under the declared label, newest first, none dropped
+ok 3 - site: the entries render under the declared label, newest first, none dropped
+  ---
+  duration_ms: 188.312602
+  type: 'test'
+  ...
+# Subtest: site: ordering never changes the list the provider returned
+ok 4 - site: ordering never changes the list the provider returned
+  ---
+  duration_ms: 0.421096
+  type: 'test'
+  ...
+# Subtest: site: a case with no history says so, and one still loading says that
+ok 5 - site: a case with no history says so, and one still loading says that
+  ---
+  duration_ms: 39.447678
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 700.655505
+
+> portaliq@0.1.0 check:schema-form-file-field
+> node --test tests/schema-form-file-field.spec.mjs
+
+TAP version 13
+# (node:2606179) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/fileFieldSubmit.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: renders a file input for a file field, labelled, with the limit through the translator
+ok 1 - renders a file input for a file field, labelled, with the limit through the translator
+  ---
+  duration_ms: 370.978276
+  type: 'test'
+  ...
+# Subtest: a single file field renders without multiple, at the default limit
+ok 2 - a single file field renders without multiple, at the default limit
+  ---
+  duration_ms: 104.300052
+  type: 'test'
+  ...
+# Subtest: creates then uploads each file and names a failed one
+ok 3 - creates then uploads each file and names a failed one
+  ---
+  duration_ms: 2.322688
+  type: 'test'
+  ...
+# Subtest: a failed create uploads nothing
+ok 4 - a failed create uploads nothing
+  ---
+  duration_ms: 0.314227
+  type: 'test'
+  ...
+# Subtest: a form with no picked file only creates
+ok 5 - a form with no picked file only creates
+  ---
+  duration_ms: 0.550213
+  type: 'test'
+  ...
+# Subtest: oversized files are named before anything is saved
+ok 6 - oversized files are named before anything is saved
+  ---
+  duration_ms: 0.390726
+  type: 'test'
+  ...
+# Subtest: the saved id is read wherever the server put it
+ok 7 - the saved id is read wherever the server put it
+  ---
+  duration_ms: 0.344021
+  type: 'test'
+  ...
+# Subtest: a form without a translator renders the English source and the picker options
+ok 8 - a form without a translator renders the English source and the picker options
+  ---
+  duration_ms: 99.022258
+  type: 'test'
+  ...
+# Subtest: the site form creates, uploads, names the failed file and retries only that one
+ok 9 - the site form creates, uploads, names the failed file and retries only that one
+  ---
+  duration_ms: 199.714633
+  type: 'test'
+  ...
+# Subtest: the site form refuses an oversized file before saving
+ok 10 - the site form refuses an oversized file before saving
+  ---
+  duration_ms: 122.808759
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1224.041777
+
+> portaliq@0.1.0 check:timed-task
+> node --test tests/timed-task.spec.mjs
+
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2606941) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/timedTask.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: counts down from the server deadline, not the client clock
+ok 1 - counts down from the server deadline, not the client clock
+  ---
+  duration_ms: 1.803558
+  type: 'test'
+  ...
+# Subtest: runs an attempt from start to submit
+ok 2 - runs an attempt from start to submit
+  ---
+  duration_ms: 18.238693
+  type: 'test'
+  ...
+# Subtest: a closed attempt stops saving and hands in as handed in
+ok 3 - a closed attempt stops saving and hands in as handed in
+  ---
+  duration_ms: 1.269621
+  type: 'test'
+  ...
+# Subtest: a start refusal carries the leaf app message
+ok 4 - a start refusal carries the leaf app message
+  ---
+  duration_ms: 0.327202
+  type: 'test'
+  ...
+# Subtest: renders a control per item type
+ok 5 - renders a control per item type
+  ---
+  duration_ms: 14.726234
+  type: 'test'
+  ...
+# Subtest: the attempt payload is sanitised and answers are counted by shape
+ok 6 - the attempt payload is sanitised and answers are counted by shape
+  ---
+  duration_ms: 0.374908
+  type: 'test'
+  ...
+# Subtest: the task list shows the attempts with their results
+ok 7 - the task list shows the attempts with their results
+  ---
+  duration_ms: 3.38747
+  type: 'test'
+  ...
+# Subtest: the question screen counts down and names the question
+ok 8 - the question screen counts down and names the question
+  ---
+  duration_ms: 3.549202
+  type: 'test'
+  ...
+# Subtest: when the clock reaches zero the saved answers are handed in and the screen says so
+ok 9 - when the clock reaches zero the saved answers are handed in and the screen says so
+  ---
+  duration_ms: 36.462627
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 739.511257
+
+> portaliq@0.1.0 check:row-action
+> node --test tests/row-action.spec.mjs
+
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2607112) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/rowAction.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: an endpoint row action is told apart from an update transition
+ok 1 - an endpoint row action is told apart from an update transition
+  ---
+  duration_ms: 1.87451
+  type: 'test'
+  ...
+# Subtest: offersRowAction follows rowWhen and nothing else
+ok 2 - offersRowAction follows rowWhen and nothing else
+  ---
+  duration_ms: 0.647602
+  type: 'test'
+  ...
+# Subtest: the table shows the pay button only on the rows that can still be paid
+ok 3 - the table shows the pay button only on the rows that can still be paid
+  ---
+  duration_ms: 154.468112
+  type: 'test'
+  ...
+# Subtest: the table without offers keeps showing every action on every row
+ok 4 - the table without offers keeps showing every action on every row
+  ---
+  duration_ms: 22.011167
+  type: 'test'
+  ...
+# Subtest: an update row action follows its rowWhen too
+ok 5 - an update row action follows its rowWhen too
+  ---
+  duration_ms: 1.600811
+  type: 'test'
+  ...
+# Subtest: the table shows the cancel button only on a booked or acknowledged time
+ok 6 - the table shows the cancel button only on a booked or acknowledged time
+  ---
+  duration_ms: 32.903006
+  type: 'test'
+  ...
+# Subtest: the confirm step shows the notice on a voluntary contribution, and none otherwise
+ok 7 - the confirm step shows the notice on a voluntary contribution, and none otherwise
+  ---
+  duration_ms: 35.444651
+  type: 'test'
+  ...
+# Subtest: redirectTarget follows only an https URL from a 2xx answer
+ok 8 - redirectTarget follows only an https URL from a 2xx answer
+  ---
+  duration_ms: 0.447948
+  type: 'test'
+  ...
+# Subtest: redirectTarget refuses anything but https
+ok 9 - redirectTarget refuses anything but https
+  ---
+  duration_ms: 0.722404
+  type: 'test'
+  ...
+# Subtest: outcome maps each status to one message
+ok 10 - outcome maps each status to one message
+  ---
+  duration_ms: 0.899754
+  type: 'test'
+  ...
+# Subtest: running the action sends only the row and the action, then goes to the checkout
+ok 11 - running the action sends only the row and the action, then goes to the checkout
+  ---
+  duration_ms: 0.748295
+  type: 'test'
+  ...
+# Subtest: running the action when online payment is off stays on the portal with a message
+ok 12 - running the action when online payment is off stays on the portal with a message
+  ---
+  duration_ms: 0.434056
+  type: 'test'
+  ...
+# Subtest: rowNotice reads the declared field only
+ok 13 - rowNotice reads the declared field only
+  ---
+  duration_ms: 0.223869
+  type: 'test'
+  ...
+# Subtest: a page-level action shows the leaf app answer instead of discarding it (\#804)
+ok 14 - a page-level action shows the leaf app answer instead of discarding it (\#804)
+  ---
+  duration_ms: 0.557372
+  type: 'test'
+  ...
+# Subtest: the site confirm step shows the notice and sends nothing until Continue
+ok 15 - the site confirm step shows the notice and sends nothing until Continue
+  ---
+  duration_ms: 59.503182
+  type: 'test'
+  ...
+# Subtest: the site confirm step follows a checked redirect and never an unsafe one
+ok 16 - the site confirm step follows a checked redirect and never an unsafe one
+  ---
+  duration_ms: 49.857091
+  type: 'test'
+  ...
+# Subtest: an endpoint or cta action on a site page shows the leaf answer in a status region
+ok 17 - an endpoint or cta action on a site page shows the leaf answer in a status region
+  ---
+  duration_ms: 33.99531
+  type: 'test'
+  ...
+# Subtest: an action block renders a create action as a form and a cta as a labelled button
+ok 18 - an action block renders a create action as a form and a cta as a labelled button
+  ---
+  duration_ms: 608.700993
+  type: 'test'
+  ...
+# Subtest: the row action step picks the confirm step for a plain endpoint action
+ok 19 - the row action step picks the confirm step for a plain endpoint action
+  ---
+  duration_ms: 47.461946
+  type: 'test'
+  ...
+# Subtest: slice c fills slice b's four places on a contribution page
+ok 20 - slice c fills slice b's four places on a contribution page
+  ---
+  duration_ms: 1.997277
+  type: 'test'
+  ...
+# Subtest: the row action step takes the step and the view action the page chose
+ok 21 - the row action step takes the step and the view action the page chose
+  ---
+  duration_ms: 30.334599
+  type: 'test'
+  ...
+# Subtest: an action block takes the action the page resolved and reports the write as created
+ok 22 - an action block takes the action the page resolved and reports the write as created
+  ---
+  duration_ms: 116.168594
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1701.613466
+
+> portaliq@0.1.0 check:translated-message-notice
+> node --test tests/translated-message-notice.spec.mjs
+
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2607918) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/pages/inbox/strings.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a translated message shows the translation, then an aside landmark naming AI and the source language
+ok 1 - a translated message shows the translation, then an aside landmark naming AI and the source language
+  ---
+  duration_ms: 41.005437
+  type: 'test'
+  ...
+# Subtest: the original is one button away, wired with aria-expanded and aria-controls, and marked with its language
+ok 2 - the original is one button away, wired with aria-expanded and aria-controls, and marked with its language
+  ---
+  duration_ms: 5.0965
+  type: 'test'
+  ...
+# Subtest: a message without a labelled translation renders as written with no notice
+ok 3 - a message without a labelled translation renders as written with no notice
+  ---
+  duration_ms: 4.10258
+  type: 'test'
+  ...
+# Subtest: an undetermined source language is not named
+ok 4 - an undetermined source language is not named
+  ---
+  duration_ms: 1.403632
+  type: 'test'
+  ...
+# Subtest: the language is named in the page language, with the tag as a fallback
+ok 5 - the language is named in the page language, with the tag as a fallback
+  ---
+  duration_ms: 0.922594
+  type: 'test'
+  ...
+# Subtest: the Dutch notice reads naturally
+ok 6 - the Dutch notice reads naturally
+  ---
+  duration_ms: 0.507401
+  type: 'test'
+  ...
+# Subtest: every string has a Dutch value
+ok 7 - every string has a Dutch value
+  ---
+  duration_ms: 0.341226
+  type: 'test'
+  ...
+# Subtest: the inbox renders a translated row through the same notice
+ok 8 - the inbox renders a translated row through the same notice
+  ---
+  duration_ms: 2.964323
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 863.481797
+
+> portaliq@0.1.0 check:access-requests
+> node --test tests/access-requests.spec.mjs
+
+TAP version 13
+# (node:2608023) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/accessRequestActions.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a confirmed grant posts to the grant route with the row organisation
+ok 1 - a confirmed grant posts to the grant route with the row organisation
+  ---
+  duration_ms: 4.076016
+  type: 'test'
+  ...
+# Subtest: a grant that is not confirmed posts nothing
+ok 2 - a grant that is not confirmed posts nothing
+  ---
+  duration_ms: 0.501014
+  type: 'test'
+  ...
+# Subtest: a refusal carries its reason, and a cancelled or empty one posts nothing
+ok 3 - a refusal carries its reason, and a cancelled or empty one posts nothing
+  ---
+  duration_ms: 0.862727
+  type: 'test'
+  ...
+# Subtest: a failed answer says why and does not reload
+ok 4 - a failed answer says why and does not reload
+  ---
+  duration_ms: 1.197865
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 210.218883
+
+> portaliq@0.1.0 check:news-item-translation
+> node --test tests/news-item-translation.spec.mjs
+
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2608103) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalNav.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a translated news item shows the translation, the AI notice naming Dutch, and the original one button away
+ok 1 - a translated news item shows the translation, the AI notice naming Dutch, and the original one button away
+  ---
+  duration_ms: 51.185249
+  type: 'test'
+  ...
+# Subtest: a news item without a labelled translation renders as written with no notice
+ok 2 - a news item without a labelled translation renders as written with no notice
+  ---
+  duration_ms: 6.664893
+  type: 'test'
+  ...
+# Subtest: the news page appears only when the feed holds an item, and reads the feed
+ok 3 - the news page appears only when the feed holds an item, and reads the feed
+  ---
+  duration_ms: 1.797822
+  type: 'test'
+  ...
+# Subtest: the news page carries the same language picker as the messages page
+ok 4 - the news page carries the same language picker as the messages page
+  ---
+  duration_ms: 0.752876
+  type: 'test'
+  ...
+# Subtest: newsItem declares translations and the register moved
+not ok 5 - newsItem declares translations and the register moved
+  ---
+  duration_ms: 10.075547
+  type: 'test'
+  location: '/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/tests/news-item-translation.spec.mjs:128:1'
+  failureType: 'testCodeFailure'
+  error: 'newsItem 0.3.0'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/tests/news-item-translation.spec.mjs:136:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: every string has a Dutch value
+ok 6 - every string has a Dutch value
+  ---
+  duration_ms: 0.540277
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1093.552557

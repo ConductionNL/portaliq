@@ -1,0 +1,1792 @@
+﻿2026-10-04T13:25:43.2179513Z Current runner version: '2.337.0'
+2026-10-04T13:25:43.2205204Z ##[group]Runner Image Provisioner
+2026-10-04T13:25:43.2205976Z Hosted Compute Agent
+2026-10-04T13:25:43.2206569Z Version: 20260901.588
+2026-10-04T13:25:43.2207204Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-04T13:25:43.2207911Z Build Date: 2026-09-01T19:56:44Z
+2026-10-04T13:25:43.2208593Z Worker ID: {aa8bb32d-a7ad-41f1-99b8-630c543bb18a}
+2026-10-04T13:25:43.2209244Z Azure Region: westus3
+2026-10-04T13:25:43.2209761Z ##[endgroup]
+2026-10-04T13:25:43.2211635Z ##[group]Operating System
+2026-10-04T13:25:43.2212200Z Ubuntu
+2026-10-04T13:25:43.2212715Z 24.04.5
+2026-10-04T13:25:43.2213210Z LTS
+2026-10-04T13:25:43.2213662Z ##[endgroup]
+2026-10-04T13:25:43.2214290Z ##[group]Runner Image
+2026-10-04T13:25:43.2214880Z Image: ubuntu-24.04
+2026-10-04T13:25:43.2215413Z Version: 20260927.320.1
+2026-10-04T13:25:43.2216556Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-04T13:25:43.2217967Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+2026-10-04T13:25:43.2218923Z ##[endgroup]
+2026-10-04T13:25:43.2220215Z ##[group]GITHUB_TOKEN Permissions
+2026-10-04T13:25:43.2222324Z Actions: write
+2026-10-04T13:25:43.2222963Z Contents: write
+2026-10-04T13:25:43.2223477Z Issues: write
+2026-10-04T13:25:43.2223959Z Metadata: read
+2026-10-04T13:25:43.2224499Z PullRequests: write
+2026-10-04T13:25:43.2225005Z ##[endgroup]
+2026-10-04T13:25:43.2227109Z Secret source: Actions
+2026-10-04T13:25:43.2228071Z Cache mode: write
+2026-10-04T13:25:43.2228744Z Prepare workflow directory
+2026-10-04T13:25:43.2605770Z Prepare all required actions
+2026-10-04T13:25:43.2655166Z Getting action download info
+2026-10-04T13:25:43.6099666Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-04T13:25:43.7108306Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-04T13:25:43.8116729Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-04T13:25:44.0080174Z Uses: ConductionNL/.github/.github/workflows/quality.yml@refs/heads/main (1e69d38c9a386487860b6b2454d47b8c8ab391cd)
+2026-10-04T13:25:44.0086074Z ##[group] Inputs
+2026-10-04T13:25:44.0086573Z   app-name: portaliq
+2026-10-04T13:25:44.0086993Z   php-version: 8.3
+2026-10-04T13:25:44.0087415Z   php-test-versions: ["8.3", "8.4"]
+2026-10-04T13:25:44.0088011Z   nextcloud-test-refs: ["stable34", "stable32", "stable33"]
+2026-10-04T13:25:44.0088656Z   nextcloud-info-path: appinfo/info.xml
+2026-10-04T13:25:44.0089752Z   enable-php: true
+2026-10-04T13:25:44.0090176Z   enable-npm: true
+2026-10-04T13:25:44.0090594Z   enable-psalm: true
+2026-10-04T13:25:44.0091201Z   enable-phpstan: true
+2026-10-04T13:25:44.0091639Z   enable-phpmd: true
+2026-10-04T13:25:44.0092070Z   enable-phpcs: true
+2026-10-04T13:25:44.0092512Z   enable-phpmetrics: true
+2026-10-04T13:25:44.0092997Z   enable-frontend: true
+2026-10-04T13:25:44.0093432Z   enable-eslint: true
+2026-10-04T13:25:44.0093849Z   node-version: 24
+2026-10-04T13:25:44.0094234Z   frontend-path: .
+2026-10-04T13:25:44.0094631Z   enable-stylelint: true
+2026-10-04T13:25:44.0095068Z   frontend-setup-command: 
+2026-10-04T13:25:44.0095855Z   frontend-checks: ["check:specs", "check:manifest", "format", "check:l10n-js", "check:schema-l10n", "check:reuse"]
+2026-10-04T13:25:44.0096692Z   database-test-matrix: []
+2026-10-04T13:25:44.0097138Z   enable-check-code: false
+2026-10-04T13:25:44.0097586Z   check-code-blocking: false
+2026-10-04T13:25:44.0098024Z   enable-reuse: true
+2026-10-04T13:25:44.0098424Z   reuse-blocking: true
+2026-10-04T13:25:44.0098915Z   lockfile-sync-blocking: false
+2026-10-04T13:25:44.0099382Z   enable-license-check: true
+2026-10-04T13:25:44.0099833Z   enable-phpunit: true
+2026-10-04T13:25:44.0100235Z   enable-newman: true
+2026-10-04T13:25:44.0100682Z   newman-collection-path: tests/integration
+2026-10-04T13:25:44.0101587Z   newman-environment-path: 
+2026-10-04T13:25:44.0102134Z   newman-seed-command: 
+2026-10-04T13:25:44.0102702Z   enable-playwright: true
+2026-10-04T13:25:44.0103173Z   playwright-test-path: tests/e2e
+2026-10-04T13:25:44.0103797Z   playwright-seed-command: bash apps/portaliq/tests/e2e/ci-seed.sh
+2026-10-04T13:25:44.0104471Z   enable-playwright-coverage: false
+2026-10-04T13:25:44.0105840Z   playwright-coverage-threshold: 0
+2026-10-04T13:25:44.0106330Z   enable-axe: false
+2026-10-04T13:25:44.0106712Z   axe-routes: 
+2026-10-04T13:25:44.0107143Z   axe-include-selector: #content-vue, #content
+2026-10-04T13:25:44.0107665Z   axe-exclude-selector: 
+2026-10-04T13:25:44.0108088Z   axe-version: 4.12.1
+2026-10-04T13:25:44.0108514Z   enable-journeydoc-capture: false
+2026-10-04T13:25:44.0109087Z   journeydoc-output-path: docs/static/screenshots/tutorials
+2026-10-04T13:25:44.0109689Z   journeydoc-deploy-workflow: 
+2026-10-04T13:25:44.0111346Z   additional-apps: [{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]
+2026-10-04T13:25:44.0113108Z   e2e-additional-apps: [{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"}]
+2026-10-04T13:25:44.0113849Z   e2e-skip-blocking: false
+2026-10-04T13:25:44.0114291Z   e2e-promotion-only: true
+2026-10-04T13:25:44.0114767Z   e2e-shards: 1
+2026-10-04T13:25:44.0115165Z   enable-coverage-guard: true
+2026-10-04T13:25:44.0115613Z   enable-sbom: true
+2026-10-04T13:25:44.0116018Z   enable-features-extract: true
+2026-10-04T13:25:44.0116455Z   database: pgsql
+2026-10-04T13:25:44.0116843Z   enable-hydra-gates: true
+2026-10-04T13:25:44.0117273Z   hydra-gates-ref: main
+2026-10-04T13:25:44.0117718Z   hydra-gates-require-full-coverage: true
+2026-10-04T13:25:44.0118252Z   hydra-gates-e2e-anchor-blocking: false
+2026-10-04T13:25:44.0118750Z   enable-path-filtering: true
+2026-10-04T13:25:44.0119688Z   path-filter-code-globs: lib/** src/** tests/** appinfo/** composer.json composer.lock package.json package-lock.json .github/workflows/**
+2026-10-04T13:25:44.0120670Z   consolidate-tool-legs: false
+2026-10-04T13:25:44.0121205Z   reduce-pr-matrix: true
+2026-10-04T13:25:44.0121639Z ##[endgroup]
+2026-10-04T13:25:44.0122040Z Complete job name: quality / Hydra Gates
+2026-10-04T13:25:44.0861519Z ##[group]Run actions/checkout@v4
+2026-10-04T13:25:44.0862433Z with:
+2026-10-04T13:25:44.0862835Z   path: app
+2026-10-04T13:25:44.0863215Z   fetch-depth: 0
+2026-10-04T13:25:44.0863630Z   repository: ConductionNL/portaliq
+2026-10-04T13:25:44.0867190Z   token: ***
+2026-10-04T13:25:44.0867572Z   ssh-strict: true
+2026-10-04T13:25:44.0867961Z   ssh-user: git
+2026-10-04T13:25:44.0868378Z   persist-credentials: true
+2026-10-04T13:25:44.0868825Z   clean: true
+2026-10-04T13:25:44.0869239Z   sparse-checkout-cone-mode: true
+2026-10-04T13:25:44.0869725Z   fetch-tags: false
+2026-10-04T13:25:44.0870320Z   show-progress: true
+2026-10-04T13:25:44.0870865Z   lfs: false
+2026-10-04T13:25:44.0871565Z   submodules: false
+2026-10-04T13:25:44.0872221Z   set-safe-directory: true
+2026-10-04T13:25:44.0873029Z   allow-unsafe-pr-checkout: false
+2026-10-04T13:25:44.0874309Z ##[endgroup]
+2026-10-04T13:25:44.1934013Z Syncing repository: ConductionNL/portaliq
+2026-10-04T13:25:44.1936485Z ##[group]Getting Git version info
+2026-10-04T13:25:44.1937179Z Working directory is '/home/runner/work/portaliq/portaliq/app'
+2026-10-04T13:25:44.1938154Z [command]/usr/bin/git version
+2026-10-04T13:25:44.2012306Z git version 2.55.0
+2026-10-04T13:25:44.2031219Z ##[endgroup]
+2026-10-04T13:25:44.2043670Z Temporarily overriding HOME='/home/runner/work/_temp/f37244b8-598f-4e68-b4b4-09211f170a2d' before making global git config changes
+2026-10-04T13:25:44.2044906Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-04T13:25:44.2048509Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/portaliq/portaliq/app
+2026-10-04T13:25:44.2092143Z ##[group]Initializing the repository
+2026-10-04T13:25:44.2096912Z [command]/usr/bin/git init /home/runner/work/portaliq/portaliq/app
+2026-10-04T13:25:44.2185387Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-04T13:25:44.2186348Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-04T13:25:44.2187181Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-04T13:25:44.2188039Z hint: call:
+2026-10-04T13:25:44.2188670Z hint:
+2026-10-04T13:25:44.2189221Z hint: 	git config --global init.defaultBranch <name>
+2026-10-04T13:25:44.2189781Z hint:
+2026-10-04T13:25:44.2190307Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-04T13:25:44.2191328Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-04T13:25:44.2192518Z hint:
+2026-10-04T13:25:44.2193015Z hint: 	git branch -m <name>
+2026-10-04T13:25:44.2193760Z hint:
+2026-10-04T13:25:44.2194331Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-04T13:25:44.2195295Z Initialized empty Git repository in /home/runner/work/portaliq/portaliq/app/.git/
+2026-10-04T13:25:44.2198348Z [command]/usr/bin/git remote add origin https://github.com/ConductionNL/portaliq
+2026-10-04T13:25:44.2243150Z ##[endgroup]
+2026-10-04T13:25:44.2243970Z ##[group]Disabling automatic garbage collection
+2026-10-04T13:25:44.2246096Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-04T13:25:44.2270701Z ##[endgroup]
+2026-10-04T13:25:44.2271540Z ##[group]Setting up auth
+2026-10-04T13:25:44.2276827Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-04T13:25:44.2303548Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-04T13:25:44.2580614Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-04T13:25:44.2611570Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-04T13:25:44.2806925Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-04T13:25:44.2839180Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-04T13:25:44.3031407Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-04T13:25:44.3066749Z ##[endgroup]
+2026-10-04T13:25:44.3068181Z ##[group]Fetching the repository
+2026-10-04T13:25:44.3078290Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +fec675b02e718faa9faa4eac700fd4f2bc32a1fc:refs/remotes/pull/1164/merge
+2026-10-04T13:25:47.0846395Z From https://github.com/ConductionNL/portaliq
+2026-10-04T13:25:47.0873391Z  * [new branch]          beta                        -> origin/beta
+2026-10-04T13:25:47.0876476Z  * [new branch]          build-correspondents/feat/binding-preview-and-embed-height -> origin/build-correspondents/feat/binding-preview-and-embed-height
+2026-10-04T13:25:47.0879899Z  * [new branch]          build-correspondents/feat/embed-frame-renders-the-form -> origin/build-correspondents/feat/embed-frame-renders-the-form
+2026-10-04T13:25:47.0883785Z  * [new branch]          build-correspondents/feat/snippet-surface-and-entry-point -> origin/build-correspondents/feat/snippet-surface-and-entry-point
+2026-10-04T13:25:47.0887430Z  * [new branch]          build-datalink/announce-withdrawal-covered -> origin/build-datalink/announce-withdrawal-covered
+2026-10-04T13:25:47.0890483Z  * [new branch]          build-datalink/mandate-reach-covered -> origin/build-datalink/mandate-reach-covered
+2026-10-04T13:25:47.0892853Z  * [new branch]          build-datalink/t06-unconditional-login-offer -> origin/build-datalink/t06-unconditional-login-offer
+2026-10-04T13:25:47.0895338Z  * [new branch]          build-portaliq/docs/name-the-journey-step-that-shillinq-waits-on -> origin/build-portaliq/docs/name-the-journey-step-that-shillinq-waits-on
+2026-10-04T13:25:47.0897390Z  * [new branch]          build-portaliq/feat/leaf-integrations -> origin/build-portaliq/feat/leaf-integrations
+2026-10-04T13:25:47.0900004Z  * [new branch]          build-w-portal/feat/a-report-without-an-account -> origin/build-w-portal/feat/a-report-without-an-account
+2026-10-04T13:25:47.0902644Z  * [new branch]          chore/archive-built-contract-changes -> origin/chore/archive-built-contract-changes
+2026-10-04T13:25:47.0904149Z  * [new branch]          chore/archive-completed-changes -> origin/chore/archive-completed-changes
+2026-10-04T13:25:47.0905641Z  * [new branch]          chore/coverage-guard-deletion-neutral -> origin/chore/coverage-guard-deletion-neutral
+2026-10-04T13:25:47.0907062Z  * [new branch]          chore/drop-example-widget   -> origin/chore/drop-example-widget
+2026-10-04T13:25:47.0908274Z  * [new branch]          chore/drop-forgejo-ci       -> origin/chore/drop-forgejo-ci
+2026-10-04T13:25:47.0909383Z  * [new branch]          chore/finish-de-templating  -> origin/chore/finish-de-templating
+2026-10-04T13:25:47.0910610Z  * [new branch]          chore/fleet-shared-deps-20260824 -> origin/chore/fleet-shared-deps-20260824
+2026-10-04T13:25:47.0912099Z  * [new branch]          chore/fleet-shared-deps-20260914 -> origin/chore/fleet-shared-deps-20260914
+2026-10-04T13:25:47.0913462Z  * [new branch]          chore/hydra-gates-1.10      -> origin/chore/hydra-gates-1.10
+2026-10-04T13:25:47.0914504Z  * [new branch]          chore/hydra-gates-1.8.0     -> origin/chore/hydra-gates-1.8.0
+2026-10-04T13:25:47.0915535Z  * [new branch]          chore/nc-floor-32-main      -> origin/chore/nc-floor-32-main
+2026-10-04T13:25:47.0916591Z  * [new branch]          chore/ncvue-2.25.1          -> origin/chore/ncvue-2.25.1
+2026-10-04T13:25:47.0917544Z  * [new branch]          chore/ncvue-2.3.0           -> origin/chore/ncvue-2.3.0
+2026-10-04T13:25:47.0918651Z  * [new branch]          chore/ncvue-beta213-lockstep -> origin/chore/ncvue-beta213-lockstep
+2026-10-04T13:25:47.0919977Z  * [new branch]          chore/ncvue-beta220-glyph   -> origin/chore/ncvue-beta220-glyph
+2026-10-04T13:25:47.0921325Z  * [new branch]          chore/nextcloud-vue-2.22.1  -> origin/chore/nextcloud-vue-2.22.1
+2026-10-04T13:25:47.0922658Z  * [new branch]          chore/nextcloud-vue-2.57.1  -> origin/chore/nextcloud-vue-2.57.1
+2026-10-04T13:25:47.0923821Z  * [new branch]          chore/nextcloud-vue-back-to-2x -> origin/chore/nextcloud-vue-back-to-2x
+2026-10-04T13:25:47.0925306Z  * [new branch]          chore/npm11-supply-chain-cooldown -> origin/chore/npm11-supply-chain-cooldown
+2026-10-04T13:25:47.0927067Z  * [new branch]          chore/openspec-archive-completed-changes -> origin/chore/openspec-archive-completed-changes
+2026-10-04T13:25:47.0928888Z  * [new branch]          chore/parity-owner-slugs-2026-09-26 -> origin/chore/parity-owner-slugs-2026-09-26
+2026-10-04T13:25:47.0930830Z  * [new branch]          chore/phpstan-2             -> origin/chore/phpstan-2
+2026-10-04T13:25:47.0933074Z  * [new branch]          chore/portal-contribution-e2e-and-tooling -> origin/chore/portal-contribution-e2e-and-tooling
+2026-10-04T13:25:47.0935515Z  * [new branch]          chore/react-19              -> origin/chore/react-19
+2026-10-04T13:25:47.0937183Z  * [new branch]          chore/relax-dexie-pin       -> origin/chore/relax-dexie-pin
+2026-10-04T13:25:47.0939290Z  * [new branch]          chore/remove-unwired-customexample-demo -> origin/chore/remove-unwired-customexample-demo
+2026-10-04T13:25:47.0941814Z  * [new branch]          chore/site-parity-inventory -> origin/chore/site-parity-inventory
+2026-10-04T13:25:47.0943910Z  * [new branch]          chore/stylelint-17-coupled-bump -> origin/chore/stylelint-17-coupled-bump
+2026-10-04T13:25:47.0946407Z  * [new branch]          chore/traffic-cleanup-after-path-explorer -> origin/chore/traffic-cleanup-after-path-explorer
+2026-10-04T13:25:47.0947934Z  * [new branch]          ci/converge-release-yml     -> origin/ci/converge-release-yml
+2026-10-04T13:25:47.0949018Z  * [new branch]          ci/hydra-gates-pin-v1.2.0   -> origin/ci/hydra-gates-pin-v1.2.0
+2026-10-04T13:25:47.0950039Z  * [new branch]          ci/hydra-gates-v150         -> origin/ci/hydra-gates-v150
+2026-10-04T13:25:47.0951005Z  * [new branch]          ci/npm-jobs-on-node-24      -> origin/ci/npm-jobs-on-node-24
+2026-10-04T13:25:47.0952735Z  * [new branch]          dependabot/composer/development/nextcloud/ocp-35.0.1 -> origin/dependabot/composer/development/nextcloud/ocp-35.0.1
+2026-10-04T13:25:47.0955366Z  * [new branch]          dependabot/composer/development/phpstan/phpstan-2.2.16 -> origin/dependabot/composer/development/phpstan/phpstan-2.2.16
+2026-10-04T13:25:47.0957220Z  * [new branch]          dependabot/npm_and_yarn/development/babel/runtime-8.0.5 -> origin/dependabot/npm_and_yarn/development/babel/runtime-8.0.5
+2026-10-04T13:25:47.0958983Z  * [new branch]          dependabot/npm_and_yarn/development/dompurify-3.4.16 -> origin/dependabot/npm_and_yarn/development/dompurify-3.4.16
+2026-10-04T13:25:47.0960697Z  * [new branch]          dependabot/npm_and_yarn/development/gridstack-14.0.0 -> origin/dependabot/npm_and_yarn/development/gridstack-14.0.0
+2026-10-04T13:25:47.0962639Z  * [new branch]          dependabot/npm_and_yarn/development/marked-18.0.14 -> origin/dependabot/npm_and_yarn/development/marked-18.0.14
+2026-10-04T13:25:47.0964723Z  * [new branch]          dependabot/npm_and_yarn/development/nextcloud/vue-9.13.1 -> origin/dependabot/npm_and_yarn/development/nextcloud/vue-9.13.1
+2026-10-04T13:25:47.0967019Z  * [new branch]          dependabot/npm_and_yarn/development/prettier-3.9.9 -> origin/dependabot/npm_and_yarn/development/prettier-3.9.9
+2026-10-04T13:25:47.0974798Z  * [new branch]          dependabot/npm_and_yarn/development/sass-1.105.0 -> origin/dependabot/npm_and_yarn/development/sass-1.105.0
+2026-10-04T13:25:47.0978933Z  * [new branch]          dependabot/npm_and_yarn/development/typescript-eslint/parser-8.71.0 -> origin/dependabot/npm_and_yarn/development/typescript-eslint/parser-8.71.0
+2026-10-04T13:25:47.0982808Z  * [new branch]          dependabot/npm_and_yarn/development/vueuse/core-15.0.0 -> origin/dependabot/npm_and_yarn/development/vueuse/core-15.0.0
+2026-10-04T13:25:47.0984769Z  * [new branch]          dependabot/npm_and_yarn/npm_and_yarn-5aad460d22 -> origin/dependabot/npm_and_yarn/npm_and_yarn-5aad460d22
+2026-10-04T13:25:47.0986208Z  * [new branch]          development                 -> origin/development
+2026-10-04T13:25:47.0987609Z  * [new branch]          docs/broker-registered-addresses -> origin/docs/broker-registered-addresses
+2026-10-04T13:25:47.0989706Z  * [new branch]          docs/demo-environment       -> origin/docs/demo-environment
+2026-10-04T13:25:47.0991429Z  * [new branch]          docs/freeze-the-react-portal -> origin/docs/freeze-the-react-portal
+2026-10-04T13:25:47.0992989Z  * [new branch]          docs/mandates-a-person-may-authorise -> origin/docs/mandates-a-person-may-authorise
+2026-10-04T13:25:47.0994581Z  * [new branch]          docs/openspec-change-proposals -> origin/docs/openspec-change-proposals
+2026-10-04T13:25:47.0996120Z  * [new branch]          docs/portal-needs-publicatie-page -> origin/docs/portal-needs-publicatie-page
+2026-10-04T13:25:47.0997945Z  * [new branch]          docs/propose-retiring-the-vendored-woo-bundle -> origin/docs/propose-retiring-the-vendored-woo-bundle
+2026-10-04T13:25:47.0999606Z  * [new branch]          docs/publish-and-redirect   -> origin/docs/publish-and-redirect
+2026-10-04T13:25:47.1000826Z  * [new branch]          docs/site-design-specs      -> origin/docs/site-design-specs
+2026-10-04T13:25:47.1002186Z  * [new branch]          docs/woo-journey-specs      -> origin/docs/woo-journey-specs
+2026-10-04T13:25:47.1003398Z  * [new branch]          feat/access-requests-asker  -> origin/feat/access-requests-asker
+2026-10-04T13:25:47.1005010Z  * [new branch]          feat/action-required-fields -> origin/feat/action-required-fields
+2026-10-04T13:25:47.1006377Z  * [new branch]          feat/activity-parental-consent -> origin/feat/activity-parental-consent
+2026-10-04T13:25:47.1007824Z  * [new branch]          feat/adopt-connection-registry -> origin/feat/adopt-connection-registry
+2026-10-04T13:25:47.1009108Z  * [new branch]          feat/ai-companion-opt-in    -> origin/feat/ai-companion-opt-in
+2026-10-04T13:25:47.1010457Z  * [new branch]          feat/assignment-portal-file-upload -> origin/feat/assignment-portal-file-upload
+2026-10-04T13:25:47.1012104Z  * [new branch]          feat/attach-to-own-collection -> origin/feat/attach-to-own-collection
+2026-10-04T13:25:47.1013637Z  * [new branch]          feat/audit-proof-records-in-openregister -> origin/feat/audit-proof-records-in-openregister
+2026-10-04T13:25:47.1015088Z  * [new branch]          feat/case-documents         -> origin/feat/case-documents
+2026-10-04T13:25:47.1016259Z  * [new branch]          feat/case-withdraw-screen   -> origin/feat/case-withdraw-screen
+2026-10-04T13:25:47.1017548Z  * [new branch]          feat/cases-my-cases-acting-for -> origin/feat/cases-my-cases-acting-for
+2026-10-04T13:25:47.1018851Z  * [new branch]          feat/cases-my-cases-page    -> origin/feat/cases-my-cases-page
+2026-10-04T13:25:47.1020129Z  * [new branch]          feat/change-proposal-queue  -> origin/feat/change-proposal-queue
+2026-10-04T13:25:47.1021680Z  * [new branch]          feat/change-proposal-queue-leaves -> origin/feat/change-proposal-queue-leaves
+2026-10-04T13:25:47.1023260Z  * [new branch]          feat/claim-addressed-notifications -> origin/feat/claim-addressed-notifications
+2026-10-04T13:25:47.1024878Z  * [new branch]          feat/collections-grouped-per-child -> origin/feat/collections-grouped-per-child
+2026-10-04T13:25:47.1026684Z  * [new branch]          feat/connection-switch-and-built-in-formatters -> origin/feat/connection-switch-and-built-in-formatters
+2026-10-04T13:25:47.1028565Z  * [new branch]          feat/contribution-landing-page-action -> origin/feat/contribution-landing-page-action
+2026-10-04T13:25:47.1030339Z  * [new branch]          feat/contribution-pay-screen -> origin/feat/contribution-pay-screen
+2026-10-04T13:25:47.1032296Z  * [new branch]          feat/contribution-user-display-name -> origin/feat/contribution-user-display-name
+2026-10-04T13:25:47.1034166Z  * [new branch]          feat/contribution-value-labels -> origin/feat/contribution-value-labels
+2026-10-04T13:25:47.1035593Z  * [new branch]          feat/editor-text-toolbar    -> origin/feat/editor-text-toolbar
+2026-10-04T13:25:47.1036855Z  * [new branch]          feat/embedded-intake-form   -> origin/feat/embedded-intake-form
+2026-10-04T13:25:47.1038271Z  * [new branch]          feat/english-vocabulary-portaliq -> origin/feat/english-vocabulary-portaliq
+2026-10-04T13:25:47.1039577Z  * [new branch]          feat/eslint-10              -> origin/feat/eslint-10
+2026-10-04T13:25:47.1040739Z  * [new branch]          feat/events-and-signups     -> origin/feat/events-and-signups
+2026-10-04T13:25:47.1042396Z  * [new branch]          feat/extracurricular-activity-offer -> origin/feat/extracurricular-activity-offer
+2026-10-04T13:25:47.1043936Z  * [new branch]          feat/guardian-direct-messages -> origin/feat/guardian-direct-messages
+2026-10-04T13:25:47.1045462Z  * [new branch]          feat/guardian-self-service-profile -> origin/feat/guardian-self-service-profile
+2026-10-04T13:25:47.1047212Z  * [new branch]          feat/identity-guest-page-for-signed-links -> origin/feat/identity-guest-page-for-signed-links
+2026-10-04T13:25:47.1048860Z  * [new branch]          feat/identity-guest-page-site -> origin/feat/identity-guest-page-site
+2026-10-04T13:25:47.1050219Z  * [new branch]          feat/identity-profile-page  -> origin/feat/identity-profile-page
+2026-10-04T13:25:47.1051754Z  * [new branch]          feat/identity-registered-details -> origin/feat/identity-registered-details
+2026-10-04T13:25:47.1053461Z  * [new branch]          feat/identity-staff-account-screens -> origin/feat/identity-staff-account-screens
+2026-10-04T13:25:47.1055157Z  * [new branch]          feat/identity-staff-account-screens-ui -> origin/feat/identity-staff-account-screens-ui
+2026-10-04T13:25:47.1056833Z  * [new branch]          feat/identity-ways-in-screens -> origin/feat/identity-ways-in-screens
+2026-10-04T13:25:47.1058208Z  * [new branch]          feat/identity-ways-in-server -> origin/feat/identity-ways-in-server
+2026-10-04T13:25:47.1059527Z  * [new branch]          feat/identity-ways-in-site  -> origin/feat/identity-ways-in-site
+2026-10-04T13:25:47.1060908Z  * [new branch]          feat/inbox-berichtenbox-channel -> origin/feat/inbox-berichtenbox-channel
+2026-10-04T13:25:47.1062817Z  * [new branch]          feat/inbox-notifications-and-preferences -> origin/feat/inbox-notifications-and-preferences
+2026-10-04T13:25:47.1064402Z  * [new branch]          feat/intake-binding-preview -> origin/feat/intake-binding-preview
+2026-10-04T13:25:47.1065990Z  * [new branch]          feat/intake-conditional-questions-server -> origin/feat/intake-conditional-questions-server
+2026-10-04T13:25:47.1067570Z  * [new branch]          feat/intake-conditional-site -> origin/feat/intake-conditional-site
+2026-10-04T13:25:47.1068841Z  * [new branch]          feat/intake-entry-point     -> origin/feat/intake-entry-point
+2026-10-04T13:25:47.1070180Z  * [new branch]          feat/intake-pay-on-submit-server -> origin/feat/intake-pay-on-submit-server
+2026-10-04T13:25:47.1071744Z  * [new branch]          feat/ncvue-beta212-live-updates -> origin/feat/ncvue-beta212-live-updates
+2026-10-04T13:25:47.1073242Z  * [new branch]          feat/news-and-newsletter-authoring -> origin/feat/news-and-newsletter-authoring
+2026-10-04T13:25:47.1074883Z  * [new branch]          feat/news-audience-from-the-school-app -> origin/feat/news-audience-from-the-school-app
+2026-10-04T13:25:47.1076362Z  * [new branch]          feat/news-item-translation  -> origin/feat/news-item-translation
+2026-10-04T13:25:47.1078639Z  * [new branch]          feat/news-title-and-newsletter-translation -> origin/feat/news-title-and-newsletter-translation
+2026-10-04T13:25:47.1081003Z  * [new branch]          feat/newsletter-title-translation -> origin/feat/newsletter-title-translation
+2026-10-04T13:25:47.1083513Z  * [new branch]          feat/notification-preferences-per-role -> origin/feat/notification-preferences-per-role
+2026-10-04T13:25:47.1085879Z  * [new branch]          feat/operate-availability-report -> origin/feat/operate-availability-report
+2026-10-04T13:25:47.1088126Z  * [new branch]          feat/operate-maintenance-notice -> origin/feat/operate-maintenance-notice
+2026-10-04T13:25:47.1090333Z  * [new branch]          feat/operate-pages-per-portal -> origin/feat/operate-pages-per-portal
+2026-10-04T13:25:47.1092572Z  * [new branch]          feat/operate-show-per-case-type -> origin/feat/operate-show-per-case-type
+2026-10-04T13:25:47.1094446Z  * [new branch]          feat/page-traffic           -> origin/feat/page-traffic
+2026-10-04T13:25:47.1096177Z  * [new branch]          feat/parent-child-record    -> origin/feat/parent-child-record
+2026-10-04T13:25:47.1097879Z  * [new branch]          feat/parent-polls           -> origin/feat/parent-polls
+2026-10-04T13:25:47.1099786Z  * [new branch]          feat/parent-pwa-installability -> origin/feat/parent-pwa-installability
+2026-10-04T13:25:47.1102156Z  * [new branch]          feat/parity-capability-matrix -> origin/feat/parity-capability-matrix
+2026-10-04T13:25:47.1104552Z  * [new branch]          feat/partner-tasks-in-the-portal -> origin/feat/partner-tasks-in-the-portal
+2026-10-04T13:25:47.1106995Z  * [new branch]          feat/portal-create-cross-refs -> origin/feat/portal-create-cross-refs
+2026-10-04T13:25:47.1109031Z  * [new branch]          feat/portal-file-upload     -> origin/feat/portal-file-upload
+2026-10-04T13:25:47.1111845Z  * [new branch]          feat/portal-identity-and-the-organisations-cases -> origin/feat/portal-identity-and-the-organisations-cases
+2026-10-04T13:25:47.1114714Z  * [new branch]          feat/portal-identity-space  -> origin/feat/portal-identity-space
+2026-10-04T13:25:47.1116795Z  * [new branch]          feat/portal-in-place-editing-a1 -> origin/feat/portal-in-place-editing-a1
+2026-10-04T13:25:47.1118969Z  * [new branch]          feat/portal-in-place-editing-a2 -> origin/feat/portal-in-place-editing-a2
+2026-10-04T13:25:47.1121237Z  * [new branch]          feat/portal-in-place-editing-a3 -> origin/feat/portal-in-place-editing-a3
+2026-10-04T13:25:47.1123541Z  * [new branch]          feat/portal-in-place-editing-archive -> origin/feat/portal-in-place-editing-archive
+2026-10-04T13:25:47.1125971Z  * [new branch]          feat/portal-intake-form-as-an-object -> origin/feat/portal-intake-form-as-an-object
+2026-10-04T13:25:47.1128018Z  * [new branch]          feat/portal-kpi-cards       -> origin/feat/portal-kpi-cards
+2026-10-04T13:25:47.1129806Z  * [new branch]          feat/portal-nextcloud-signin -> origin/feat/portal-nextcloud-signin
+2026-10-04T13:25:47.1131773Z  * [new branch]          feat/portal-page-designer   -> origin/feat/portal-page-designer
+2026-10-04T13:25:47.1133602Z  * [new branch]          feat/portal-regions-in-editor -> origin/feat/portal-regions-in-editor
+2026-10-04T13:25:47.1135429Z  * [new branch]          feat/portal-shell-blocks    -> origin/feat/portal-shell-blocks
+2026-10-04T13:25:47.1137241Z  * [new branch]          feat/portal-spa-accessibility -> origin/feat/portal-spa-accessibility
+2026-10-04T13:25:47.1139092Z  * [new branch]          feat/portal-take-assessment -> origin/feat/portal-take-assessment
+2026-10-04T13:25:47.1140834Z  * [new branch]          feat/portal-task-delivery   -> origin/feat/portal-task-delivery
+2026-10-04T13:25:47.1142680Z  * [new branch]          feat/portal-theme-picker    -> origin/feat/portal-theme-picker
+2026-10-04T13:25:47.1144487Z  * [new branch]          feat/portal-traffic-analytics -> origin/feat/portal-traffic-analytics
+2026-10-04T13:25:47.1146866Z  * [new branch]          feat/portal-visibility-follows-the-party-tree -> origin/feat/portal-visibility-follows-the-party-tree
+2026-10-04T13:25:47.1149421Z  * [new branch]          feat/push-notifications-quiet-hours -> origin/feat/push-notifications-quiet-hours
+2026-10-04T13:25:47.1151997Z  * [new branch]          feat/rotterdam-federated-search-portal -> origin/feat/rotterdam-federated-search-portal
+2026-10-04T13:25:47.1154075Z  * [new branch]          feat/round2-dossiq-requests -> origin/feat/round2-dossiq-requests
+2026-10-04T13:25:47.1155679Z  * [new branch]          feat/sign-a-document        -> origin/feat/sign-a-document
+2026-10-04T13:25:47.1157224Z  * [new branch]          feat/signin-branch-choice   -> origin/feat/signin-branch-choice
+2026-10-04T13:25:47.1158862Z  * [new branch]          feat/signin-broker-route    -> origin/feat/signin-broker-route
+2026-10-04T13:25:47.1160633Z  * [new branch]          feat/signin-eherkenning-branch -> origin/feat/signin-eherkenning-branch
+2026-10-04T13:25:47.1162712Z  * [new branch]          feat/signin-idle-window-and-sso -> origin/feat/signin-idle-window-and-sso
+2026-10-04T13:25:47.1164576Z  * [new branch]          feat/site-account-and-cases -> origin/feat/site-account-and-cases
+2026-10-04T13:25:47.1166225Z  * [new branch]          feat/site-collections       -> origin/feat/site-collections
+2026-10-04T13:25:47.1167783Z  * [new branch]          feat/site-design-wave-1     -> origin/feat/site-design-wave-1
+2026-10-04T13:25:47.1169427Z  * [new branch]          feat/site-forms-and-actions -> origin/feat/site-forms-and-actions
+2026-10-04T13:25:47.1171197Z  * [new branch]          feat/site-forms-wave-1      -> origin/feat/site-forms-wave-1
+2026-10-04T13:25:47.1172759Z  * [new branch]          feat/site-forms-wave-2      -> origin/feat/site-forms-wave-2
+2026-10-04T13:25:47.1174310Z  * [new branch]          feat/site-forms-wave-3      -> origin/feat/site-forms-wave-3
+2026-10-04T13:25:47.1175854Z  * [new branch]          feat/site-forms-wave-4      -> origin/feat/site-forms-wave-4
+2026-10-04T13:25:47.1177694Z  * [new branch]          feat/site-inbox-news-and-tasks -> origin/feat/site-inbox-news-and-tasks
+2026-10-04T13:25:47.1179764Z  * [new branch]          feat/site-installable-and-embeddable -> origin/feat/site-installable-and-embeddable
+2026-10-04T13:25:47.1181962Z  * [new branch]          feat/site-mijn-omgeving-wave-2 -> origin/feat/site-mijn-omgeving-wave-2
+2026-10-04T13:25:47.1183815Z  * [new branch]          feat/site-mijn-omgeving-wave-3 -> origin/feat/site-mijn-omgeving-wave-3
+2026-10-04T13:25:47.1185671Z  * [new branch]          feat/site-mijn-omgeving-wave-4 -> origin/feat/site-mijn-omgeving-wave-4
+2026-10-04T13:25:47.1187505Z  * [new branch]          feat/site-mijn-omgeving-wave-5 -> origin/feat/site-mijn-omgeving-wave-5
+2026-10-04T13:25:47.1189379Z  * [new branch]          feat/site-mijn-omgeving-wave-5b -> origin/feat/site-mijn-omgeving-wave-5b
+2026-10-04T13:25:47.1191441Z  * [new branch]          feat/site-mijn-omgeving-wave-6 -> origin/feat/site-mijn-omgeving-wave-6
+2026-10-04T13:25:47.1193198Z  * [new branch]          feat/site-navigation-block  -> origin/feat/site-navigation-block
+2026-10-04T13:25:47.1194766Z  * [new branch]          feat/site-page-history      -> origin/feat/site-page-history
+2026-10-04T13:25:47.1196272Z  * [new branch]          feat/site-page-seo-head     -> origin/feat/site-page-seo-head
+2026-10-04T13:25:47.1197896Z  * [new branch]          feat/site-resident-left-menu -> origin/feat/site-resident-left-menu
+2026-10-04T13:25:47.1199764Z  * [new branch]          feat/site-retires-the-react-portal -> origin/feat/site-retires-the-react-portal
+2026-10-04T13:25:47.1201718Z  * [new branch]          feat/site-shared-dossier    -> origin/feat/site-shared-dossier
+2026-10-04T13:25:47.1203308Z  * [new branch]          feat/site-signed-in-shell   -> origin/feat/site-signed-in-shell
+2026-10-04T13:25:47.1205053Z  * [new branch]          feat/site-widget-palette-wave-1 -> origin/feat/site-widget-palette-wave-1
+2026-10-04T13:25:47.1206984Z  * [new branch]          feat/site-widget-palette-wave-2 -> origin/feat/site-widget-palette-wave-2
+2026-10-04T13:25:47.1208733Z  * [new branch]          feat/staff-news-screen      -> origin/feat/staff-news-screen
+2026-10-04T13:25:47.1210202Z  * [new branch]          feat/store-surface          -> origin/feat/store-surface
+2026-10-04T13:25:47.1212346Z  * [new branch]          feat/tasks-reminders-after-the-deadline -> origin/feat/tasks-reminders-after-the-deadline
+2026-10-04T13:25:47.1214408Z  * [new branch]          feat/teacher-inbox-per-group -> origin/feat/teacher-inbox-per-group
+2026-10-04T13:25:47.1216037Z  * [new branch]          feat/theme-custom-sets      -> origin/feat/theme-custom-sets
+2026-10-04T13:25:47.1218072Z  * [new branch]          feat/traffic-experiments-heatmaps-recording -> origin/feat/traffic-experiments-heatmaps-recording
+2026-10-04T13:25:47.1220330Z  * [new branch]          feat/traffic-goals-funnels-forms -> origin/feat/traffic-goals-funnels-forms
+2026-10-04T13:25:47.1222198Z  * [new branch]          feat/traffic-path-explorer  -> origin/feat/traffic-path-explorer
+2026-10-04T13:25:47.1223793Z  * [new branch]          feat/traffic-reporting      -> origin/feat/traffic-reporting
+2026-10-04T13:25:47.1225805Z  * [new branch]          feat/traffic-slug-fallback-is-configurable -> origin/feat/traffic-slug-fallback-is-configurable
+2026-10-04T13:25:47.1227856Z  * [new branch]          feat/traffic-visitors-geo   -> origin/feat/traffic-visitors-geo
+2026-10-04T13:25:47.1229580Z  * [new branch]          feat/translated-message-notice -> origin/feat/translated-message-notice
+2026-10-04T13:25:47.1231597Z  * [new branch]          feat/what-the-citizen-may-write -> origin/feat/what-the-citizen-may-write
+2026-10-04T13:25:47.1233885Z  * [new branch]          feat/withdrawing-your-own-case-from-the-portal -> origin/feat/withdrawing-your-own-case-from-the-portal
+2026-10-04T13:25:47.1236332Z  * [new branch]          feat/woo-571-portals-open-site-action -> origin/feat/woo-571-portals-open-site-action
+2026-10-04T13:25:47.1238102Z  * [new branch]          feat/woo-journey            -> origin/feat/woo-journey
+2026-10-04T13:25:47.1239562Z  * [new branch]          feat/woo-journey-e2e        -> origin/feat/woo-journey-e2e
+2026-10-04T13:25:47.1241226Z  * [new branch]          fix/722-keyboard-row-selection -> origin/fix/722-keyboard-row-selection
+2026-10-04T13:25:47.1242879Z  * [new branch]          fix/723-case-timeline       -> origin/fix/723-case-timeline
+2026-10-04T13:25:47.1244462Z  * [new branch]          fix/725-sign-in-level-per-form -> origin/fix/725-sign-in-level-per-form
+2026-10-04T13:25:47.1246137Z  * [new branch]          fix/731-low-means-signed-in -> origin/fix/731-low-means-signed-in
+2026-10-04T13:25:47.1247781Z  * [new branch]          fix/795-mail-identity-secrets -> origin/fix/795-mail-identity-secrets
+2026-10-04T13:25:47.1249406Z  * [new branch]          fix/796-reference-session   -> origin/fix/796-reference-session
+2026-10-04T13:25:47.1251121Z  * [new branch]          fix/797-owner-access-requests -> origin/fix/797-owner-access-requests
+2026-10-04T13:25:47.1253145Z  * [new branch]          fix/798-case-screen-released-files-only -> origin/fix/798-case-screen-released-files-only
+2026-10-04T13:25:47.1255469Z  * [new branch]          fix/799-report-staff-routes-need-a-handler -> origin/fix/799-report-staff-routes-need-a-handler
+2026-10-04T13:25:47.1257697Z  * [new branch]          fix/800-reporter-contact-admin-read -> origin/fix/800-reporter-contact-admin-read
+2026-10-04T13:25:47.1259893Z  * [new branch]          fix/801-unscoped-tenant-read-fails-closed -> origin/fix/801-unscoped-tenant-read-fails-closed
+2026-10-04T13:25:47.1262049Z  * [new branch]          fix/802-site-oidc-start-portal -> origin/fix/802-site-oidc-start-portal
+2026-10-04T13:25:47.1263630Z  * [new branch]          fix/803-reminder-mail       -> origin/fix/803-reminder-mail
+2026-10-04T13:25:47.1265021Z  * [new branch]          fix/804-signing-chain       -> origin/fix/804-signing-chain
+2026-10-04T13:25:47.1266580Z  * [new branch]          fix/activity-offer-contract -> origin/fix/activity-offer-contract
+2026-10-04T13:25:47.1268256Z  * [new branch]          fix/admin-menu-follows-roles -> origin/fix/admin-menu-follows-roles
+2026-10-04T13:25:47.1269797Z  * [new branch]          fix/adr-082-throttling      -> origin/fix/adr-082-throttling
+2026-10-04T13:25:47.1271703Z  * [new branch]          fix/app-chrome-spec-selectors -> origin/fix/app-chrome-spec-selectors
+2026-10-04T13:25:47.1273375Z  * [new branch]          fix/app-icon-svg-level-fill -> origin/fix/app-icon-svg-level-fill
+2026-10-04T13:25:47.1274877Z  * [new branch]          fix/appstore-metadata       -> origin/fix/appstore-metadata
+2026-10-04T13:25:47.1276549Z  * [new branch]          fix/array-cells-one-line-per-item -> origin/fix/array-cells-one-line-per-item
+2026-10-04T13:25:47.1278460Z  * [new branch]          fix/broker-login-keeps-the-portal -> origin/fix/broker-login-keeps-the-portal
+2026-10-04T13:25:47.1280917Z  * [new branch]          fix/citizen-and-connection-tests-declare-used-classes -> origin/fix/citizen-and-connection-tests-declare-used-classes
+2026-10-04T13:25:47.1283566Z  * [new branch]          fix/citizen-case-shows-only-its-fields -> origin/fix/citizen-case-shows-only-its-fields
+2026-10-04T13:25:47.1285918Z  * [new branch]          fix/citizen-case-test-declares-the-projection -> origin/fix/citizen-case-test-declares-the-projection
+2026-10-04T13:25:47.1288355Z  * [new branch]          fix/claim-scoped-create-stamps-the-claim -> origin/fix/claim-scoped-create-stamps-the-claim
+2026-10-04T13:25:47.1290330Z  * [new branch]          fix/closed-cases-and-sw-scope -> origin/fix/closed-cases-and-sw-scope
+2026-10-04T13:25:47.1292345Z  * [new branch]          fix/collection-table-headers-line-up -> origin/fix/collection-table-headers-line-up
+2026-10-04T13:25:47.1294202Z  * [new branch]          fix/composer-declare-ext-xsl -> origin/fix/composer-declare-ext-xsl
+2026-10-04T13:25:47.1295843Z  * [new branch]          fix/create-matches-action-id -> origin/fix/create-matches-action-id
+2026-10-04T13:25:47.1297945Z  * [new branch]          fix/cta-with-record-opens-the-record-page -> origin/fix/cta-with-record-opens-the-record-page
+2026-10-04T13:25:47.1300213Z  * [new branch]          fix/deep-links-in-the-index-php-url-form -> origin/fix/deep-links-in-the-index-php-url-form
+2026-10-04T13:25:47.1302394Z  * [new branch]          fix/dependabot-targets-development -> origin/fix/dependabot-targets-development
+2026-10-04T13:25:47.1304189Z  * [new branch]          fix/detail-hides-empty-facts -> origin/fix/detail-hides-empty-facts
+2026-10-04T13:25:47.1306044Z  * [new branch]          fix/detail-pages-and-portal-children -> origin/fix/detail-pages-and-portal-children
+2026-10-04T13:25:47.1307779Z  * [new branch]          fix/development-green       -> origin/fix/development-green
+2026-10-04T13:25:47.1309355Z  * [new branch]          fix/dispatch-concurrency-lane -> origin/fix/dispatch-concurrency-lane
+2026-10-04T13:25:47.1311249Z  * [new branch]          fix/e2e-citizen-seed-and-site-budget -> origin/fix/e2e-citizen-seed-and-site-budget
+2026-10-04T13:25:47.1313230Z  * [new branch]          fix/e2e-drop-first-upload-exclusion -> origin/fix/e2e-drop-first-upload-exclusion
+2026-10-04T13:25:47.1315322Z  * [new branch]          fix/e2e-seed-refuses-a-truncated-listing -> origin/fix/e2e-seed-refuses-a-truncated-listing
+2026-10-04T13:25:47.1317628Z  * [new branch]          fix/e2e-select-the-portaliq-page-explicitly -> origin/fix/e2e-select-the-portaliq-page-explicitly
+2026-10-04T13:25:47.1319729Z  * [new branch]          fix/enable-thematiq-not-nldesign -> origin/fix/enable-thematiq-not-nldesign
+2026-10-04T13:25:47.1321939Z  * [new branch]          fix/formatting-phpmd-icons-and-schema-l10n -> origin/fix/formatting-phpmd-icons-and-schema-l10n
+2026-10-04T13:25:47.1323894Z  * [new branch]          fix/frontend-check-portaliq -> origin/fix/frontend-check-portaliq
+2026-10-04T13:25:47.1325350Z  * [new branch]          fix/gate-7-oidc-start       -> origin/fix/gate-7-oidc-start
+2026-10-04T13:25:47.1326905Z  * [new branch]          fix/gate-84-supply-chain-config -> origin/fix/gate-84-supply-chain-config
+2026-10-04T13:25:47.1328545Z  * [new branch]          fix/github-cta-not-codeberg -> origin/fix/github-cta-not-codeberg
+2026-10-04T13:25:47.1330134Z  * [new branch]          fix/inbox-delete-own-messages -> origin/fix/inbox-delete-own-messages
+2026-10-04T13:25:47.1332287Z  * [new branch]          fix/inbox-links-email-prompt-text-label -> origin/fix/inbox-links-email-prompt-text-label
+2026-10-04T13:25:47.1334272Z  * [new branch]          fix/inbox-shows-dossiq-messages -> origin/fix/inbox-shows-dossiq-messages
+2026-10-04T13:25:47.1336025Z  * [new branch]          fix/inbox-shows-portal-messages -> origin/fix/inbox-shows-portal-messages
+2026-10-04T13:25:47.1337798Z  * [new branch]          fix/instance-loopback-self-calls -> origin/fix/instance-loopback-self-calls
+2026-10-04T13:25:47.1339853Z  * [new branch]          fix/invitation-joins-the-signed-in-account -> origin/fix/invitation-joins-the-signed-in-account
+2026-10-04T13:25:47.1341823Z  * [new branch]          fix/kpi-cards-period-token  -> origin/fix/kpi-cards-period-token
+2026-10-04T13:25:47.1343252Z  * [new branch]          fix/kpi-unit-plural         -> origin/fix/kpi-unit-plural
+2026-10-04T13:25:47.1344982Z  * [new branch]          fix/l10n-citizen-case-block-description -> origin/fix/l10n-citizen-case-block-description
+2026-10-04T13:25:47.1346715Z  * [new branch]          fix/l10n-flows-labels       -> origin/fix/l10n-flows-labels
+2026-10-04T13:25:47.1348114Z  * [new branch]          fix/local-lib-guard-semver  -> origin/fix/local-lib-guard-semver
+2026-10-04T13:25:47.1349602Z  * [new branch]          fix/manifest-l10n-coverage  -> origin/fix/manifest-l10n-coverage
+2026-10-04T13:25:47.1351164Z  * [new branch]          fix/message-box-letter-text -> origin/fix/message-box-letter-text
+2026-10-04T13:25:47.1352889Z  * [new branch]          fix/mijn-live-spec-and-two-findings -> origin/fix/mijn-live-spec-and-two-findings
+2026-10-04T13:25:47.1354666Z  * [new branch]          fix/nc34-register-repair-step -> origin/fix/nc34-register-repair-step
+2026-10-04T13:25:47.1356653Z  * [new branch]          fix/news-list-for-column-and-row-actions -> origin/fix/news-list-for-column-and-row-actions
+2026-10-04T13:25:47.1358554Z  * [new branch]          fix/news-list-keeps-its-page -> origin/fix/news-list-keeps-its-page
+2026-10-04T13:25:47.1360033Z  * [new branch]          fix/news-newest-first       -> origin/fix/news-newest-first
+2026-10-04T13:25:47.1361453Z  * [new branch]          fix/news-published-at       -> origin/fix/news-published-at
+2026-10-04T13:25:47.1363472Z  * [new branch]          fix/newsletter-and-emergency-reach-real-guardians -> origin/fix/newsletter-and-emergency-reach-real-guardians
+2026-10-04T13:25:47.1365826Z  * [new branch]          fix/no-notice-for-bookkeeping-updates -> origin/fix/no-notice-for-bookkeeping-updates
+2026-10-04T13:25:47.1367728Z  * [new branch]          fix/npm-overrides-self-reference -> origin/fix/npm-overrides-self-reference
+2026-10-04T13:25:47.1369313Z  * [new branch]          fix/ocs-identity-probe      -> origin/fix/ocs-identity-probe
+2026-10-04T13:25:47.1370696Z  * [new branch]          fix/package-lock-sync       -> origin/fix/package-lock-sync
+2026-10-04T13:25:47.1372700Z  * [new branch]          fix/parity-cross-lane-corrections-2026-09-26 -> origin/fix/parity-cross-lane-corrections-2026-09-26
+2026-10-04T13:25:47.1374867Z  * [new branch]          fix/parity-owner-normalise-2026-09-26 -> origin/fix/parity-owner-normalise-2026-09-26
+2026-10-04T13:25:47.1376955Z  * [new branch]          fix/pin-node-polyfill-to-the-exact-peer -> origin/fix/pin-node-polyfill-to-the-exact-peer
+2026-10-04T13:25:47.1378994Z  * [new branch]          fix/portal-action-forwards-its-body -> origin/fix/portal-action-forwards-its-body
+2026-10-04T13:25:47.1380592Z  * [new branch]          fix/portal-polish           -> origin/fix/portal-polish
+2026-10-04T13:25:47.1382617Z  * [new branch]          fix/portal-scope-list-membership -> origin/fix/portal-scope-list-membership
+2026-10-04T13:25:47.1384512Z  * [new branch]          fix/portal-sign-in-collects-its-token -> origin/fix/portal-sign-in-collects-its-token
+2026-10-04T13:25:47.1386498Z  * [new branch]          fix/portal-signin-on-its-own-address -> origin/fix/portal-signin-on-its-own-address
+2026-10-04T13:25:47.1389001Z  * [new branch]          fix/portalmessage-cannot-import-with-the-mcp-dialect -> origin/fix/portalmessage-cannot-import-with-the-mcp-dialect
+2026-10-04T13:25:47.1391352Z  * [new branch]          fix/public-endpoint-rate-limits -> origin/fix/public-endpoint-rate-limits
+2026-10-04T13:25:47.1393178Z  * [new branch]          fix/recordings-decide-on-recordings -> origin/fix/recordings-decide-on-recordings
+2026-10-04T13:25:47.1395113Z  * [new branch]          fix/register-portal-page-importable -> origin/fix/register-portal-page-importable
+2026-10-04T13:25:47.1397540Z  * [new branch]          fix/reporting-refuses-a-portal-whose-slug-has-capitals -> origin/fix/reporting-refuses-a-portal-whose-slug-has-capitals
+2026-10-04T13:25:47.1400202Z  * [new branch]          fix/resolve-provider-namespace-from-info-xml -> origin/fix/resolve-provider-namespace-from-info-xml
+2026-10-04T13:25:47.1402765Z  * [new branch]          fix/retire-the-example-document-admin-surface -> origin/fix/retire-the-example-document-admin-surface
+2026-10-04T13:25:47.1404672Z  * [new branch]          fix/row-action-condition    -> origin/fix/row-action-condition
+2026-10-04T13:25:47.1406410Z  * [new branch]          fix/service-worker-in-release-package -> origin/fix/service-worker-in-release-package
+2026-10-04T13:25:47.1408204Z  * [new branch]          fix/service-worker-may-fetch -> origin/fix/service-worker-may-fetch
+2026-10-04T13:25:47.1409688Z  * [new branch]          fix/setup-auth-declared     -> origin/fix/setup-auth-declared
+2026-10-04T13:25:47.1411432Z  * [new branch]          fix/signin-returns-to-the-portal -> origin/fix/signin-returns-to-the-portal
+2026-10-04T13:25:47.1413434Z  * [new branch]          fix/site-form-file-field-and-single-option -> origin/fix/site-form-file-field-and-single-option
+2026-10-04T13:25:47.1415549Z  * [new branch]          fix/site-header-names-the-person -> origin/fix/site-header-names-the-person
+2026-10-04T13:25:47.1417553Z  * [new branch]          fix/site-share-link-reply-and-edit-refresh -> origin/fix/site-share-link-reply-and-edit-refresh
+2026-10-04T13:25:47.1419528Z  * [new branch]          fix/sw-navigation-network-first -> origin/fix/sw-navigation-network-first
+2026-10-04T13:25:47.1421737Z  * [new branch]          fix/the-challenge-nonce-is-signed-by-the-instance -> origin/fix/the-challenge-nonce-is-signed-by-the-instance
+2026-10-04T13:25:47.1424376Z  * [new branch]          fix/the-new-class-is-named-in-the-coverage-metadata -> origin/fix/the-new-class-is-named-in-the-coverage-metadata
+2026-10-04T13:25:47.1427103Z  * [new branch]          fix/the-reference-link-route-stays-inside-the-portal -> origin/fix/the-reference-link-route-stays-inside-the-portal
+2026-10-04T13:25:47.1429633Z  * [new branch]          fix/the-traffic-widget-needs-its-own-version -> origin/fix/the-traffic-widget-needs-its-own-version
+2026-10-04T13:25:47.1431538Z  * [new branch]          fix/traffic-schema-l10n     -> origin/fix/traffic-schema-l10n
+2026-10-04T13:25:47.1433124Z  * [new branch]          fix/traffic-settings-are-editable -> origin/fix/traffic-settings-are-editable
+2026-10-04T13:25:47.1434756Z  * [new branch]          fix/unbreak-development-ci  -> origin/fix/unbreak-development-ci
+2026-10-04T13:25:47.1436476Z  * [new branch]          fix/update-keeps-stored-organisation -> origin/fix/update-keeps-stored-organisation
+2026-10-04T13:25:47.1438158Z  * [new branch]          fix/via-read-scoped-query   -> origin/fix/via-read-scoped-query
+2026-10-04T13:25:47.1439570Z  * [new branch]          fix/woo-571-review-round-3  -> origin/fix/woo-571-review-round-3
+2026-10-04T13:25:47.1441136Z  * [new branch]          fix/woo-round3-portal-polish -> origin/fix/woo-round3-portal-polish
+2026-10-04T13:25:47.1442461Z  * [new branch]          gh-pages                    -> origin/gh-pages
+2026-10-04T13:25:47.1443688Z  * [new branch]          hotfix/beta-sync-20260827   -> origin/hotfix/beta-sync-20260827
+2026-10-04T13:25:47.1445283Z  * [new branch]          hotfix/ci-branch-protection-job-id -> origin/hotfix/ci-branch-protection-job-id
+2026-10-04T13:25:47.1447306Z  * [new branch]          hotfix/ci-branch-protection-job-id-beta -> origin/hotfix/ci-branch-protection-job-id-beta
+2026-10-04T13:25:47.1448999Z  * [new branch]          hotfix/nc-floor-32-main     -> origin/hotfix/nc-floor-32-main
+2026-10-04T13:25:47.1450182Z  * [new branch]          main                        -> origin/main
+2026-10-04T13:25:47.1451536Z  * [new branch]          openspec/competitor-gaps    -> origin/openspec/competitor-gaps
+2026-10-04T13:25:47.1453002Z  * [new branch]          openspec/competitor-gaps-2  -> origin/openspec/competitor-gaps-2
+2026-10-04T13:25:47.1454690Z  * [new branch]          openspec/competitor-parity-umbrella -> origin/openspec/competitor-parity-umbrella
+2026-10-04T13:25:47.1456362Z  * [new branch]          openspec/discovery-wave-2   -> origin/openspec/discovery-wave-2
+2026-10-04T13:25:47.1457791Z  * [new branch]          openspec/parity-pending     -> origin/openspec/parity-pending
+2026-10-04T13:25:47.1459151Z  * [new branch]          parity/corrections-5        -> origin/parity/corrections-5
+2026-10-04T13:25:47.1460506Z  * [new branch]          parity/decide-portaliq      -> origin/parity/decide-portaliq
+2026-10-04T13:25:47.1462099Z  * [new branch]          parity/decide-portaliq-building -> origin/parity/decide-portaliq-building
+2026-10-04T13:25:47.1463647Z  * [new branch]          parity/openspec-pass-1      -> origin/parity/openspec-pass-1
+2026-10-04T13:25:47.1465027Z  * [new branch]          parity/openspec-pass-2      -> origin/parity/openspec-pass-2
+2026-10-04T13:25:47.1466430Z  * [new branch]          parity/openspec-pass-h1     -> origin/parity/openspec-pass-h1
+2026-10-04T13:25:47.1467821Z  * [new branch]          parity/openspec-pass-h2     -> origin/parity/openspec-pass-h2
+2026-10-04T13:25:47.1469240Z  * [new branch]          parity/owner-moves          -> origin/parity/owner-moves
+2026-10-04T13:25:47.1470439Z  * [new branch]          parity/round2               -> origin/parity/round2
+2026-10-04T13:25:47.1471702Z  * [new branch]          parity/sibling-rows         -> origin/parity/sibling-rows
+2026-10-04T13:25:47.1473281Z  * [new branch]          parity/wave5-competitor-source-read -> origin/parity/wave5-competitor-source-read
+2026-10-04T13:25:47.1475420Z  * [new branch]          refactor/the-phpmd-complexity-and-flag-findings -> origin/refactor/the-phpmd-complexity-and-flag-findings
+2026-10-04T13:25:47.1477571Z  * [new branch]          release/v0.1.19-unstable.20260831034936 -> origin/release/v0.1.19-unstable.20260831034936
+2026-10-04T13:25:47.1479431Z  * [new branch]          release/v0.1.2-unstable.20260818193344 -> origin/release/v0.1.2-unstable.20260818193344
+2026-10-04T13:25:47.1481405Z  * [new branch]          release/v0.1.2-unstable.20260818223306 -> origin/release/v0.1.2-unstable.20260818223306
+2026-10-04T13:25:47.1483246Z  * [new branch]          release/v0.1.2-unstable.20260819175800 -> origin/release/v0.1.2-unstable.20260819175800
+2026-10-04T13:25:47.1485086Z  * [new branch]          release/v0.1.2-unstable.20260819215235 -> origin/release/v0.1.2-unstable.20260819215235
+2026-10-04T13:25:47.1486921Z  * [new branch]          release/v0.1.2-unstable.20260819221646 -> origin/release/v0.1.2-unstable.20260819221646
+2026-10-04T13:25:47.1488756Z  * [new branch]          release/v0.1.2-unstable.20260820045258 -> origin/release/v0.1.2-unstable.20260820045258
+2026-10-04T13:25:47.1490577Z  * [new branch]          release/v0.1.2-unstable.20260820060038 -> origin/release/v0.1.2-unstable.20260820060038
+2026-10-04T13:25:47.1492577Z  * [new branch]          release/v0.1.2-unstable.20260820081557 -> origin/release/v0.1.2-unstable.20260820081557
+2026-10-04T13:25:47.1494399Z  * [new branch]          release/v0.1.2-unstable.20260820094753 -> origin/release/v0.1.2-unstable.20260820094753
+2026-10-04T13:25:47.1496210Z  * [new branch]          release/v0.1.2-unstable.20260820210848 -> origin/release/v0.1.2-unstable.20260820210848
+2026-10-04T13:25:47.1498029Z  * [new branch]          release/v0.1.2-unstable.20260820221324 -> origin/release/v0.1.2-unstable.20260820221324
+2026-10-04T13:25:47.1499956Z  * [new branch]          release/v0.1.2-unstable.20260820235231 -> origin/release/v0.1.2-unstable.20260820235231
+2026-10-04T13:25:47.1501830Z  * [new branch]          release/v0.1.2-unstable.20260821071509 -> origin/release/v0.1.2-unstable.20260821071509
+2026-10-04T13:25:47.1503650Z  * [new branch]          release/v0.1.2-unstable.20260821141455 -> origin/release/v0.1.2-unstable.20260821141455
+2026-10-04T13:25:47.1505494Z  * [new branch]          release/v0.1.2-unstable.20260821151355 -> origin/release/v0.1.2-unstable.20260821151355
+2026-10-04T13:25:47.1507302Z  * [new branch]          release/v0.1.2-unstable.20260822082902 -> origin/release/v0.1.2-unstable.20260822082902
+2026-10-04T13:25:47.1509124Z  * [new branch]          release/v0.1.2-unstable.20260822215323 -> origin/release/v0.1.2-unstable.20260822215323
+2026-10-04T13:25:47.1510945Z  * [new branch]          release/v0.1.2-unstable.20260823220939 -> origin/release/v0.1.2-unstable.20260823220939
+2026-10-04T13:25:47.1512811Z  * [new branch]          release/v0.1.2-unstable.20260823230244 -> origin/release/v0.1.2-unstable.20260823230244
+2026-10-04T13:25:47.1514616Z  * [new branch]          release/v0.1.2-unstable.20260823232151 -> origin/release/v0.1.2-unstable.20260823232151
+2026-10-04T13:25:47.1516421Z  * [new branch]          release/v0.1.2-unstable.20260823233621 -> origin/release/v0.1.2-unstable.20260823233621
+2026-10-04T13:25:47.1518234Z  * [new branch]          release/v0.1.2-unstable.20260824072801 -> origin/release/v0.1.2-unstable.20260824072801
+2026-10-04T13:25:47.1520038Z  * [new branch]          release/v0.1.2-unstable.20260824160146 -> origin/release/v0.1.2-unstable.20260824160146
+2026-10-04T13:25:47.1521907Z  * [new branch]          release/v0.1.2-unstable.20260824183241 -> origin/release/v0.1.2-unstable.20260824183241
+2026-10-04T13:25:47.1523797Z  * [new branch]          release/v0.1.2-unstable.20260824211021 -> origin/release/v0.1.2-unstable.20260824211021
+2026-10-04T13:25:47.1525627Z  * [new branch]          release/v0.1.2-unstable.20260825094515 -> origin/release/v0.1.2-unstable.20260825094515
+2026-10-04T13:25:47.1527437Z  * [new branch]          release/v0.1.2-unstable.20260826085747 -> origin/release/v0.1.2-unstable.20260826085747
+2026-10-04T13:25:47.1529233Z  * [new branch]          release/v0.1.2-unstable.20260826232901 -> origin/release/v0.1.2-unstable.20260826232901
+2026-10-04T13:25:47.1531144Z  * [new branch]          release/v0.1.2-unstable.20260826235340 -> origin/release/v0.1.2-unstable.20260826235340
+2026-10-04T13:25:47.1533008Z  * [new branch]          release/v0.1.2-unstable.20260827021206 -> origin/release/v0.1.2-unstable.20260827021206
+2026-10-04T13:25:47.1534826Z  * [new branch]          release/v0.1.2-unstable.20260827052321 -> origin/release/v0.1.2-unstable.20260827052321
+2026-10-04T13:25:47.1536636Z  * [new branch]          release/v0.1.2-unstable.20260827055250 -> origin/release/v0.1.2-unstable.20260827055250
+2026-10-04T13:25:47.1538444Z  * [new branch]          release/v0.1.2-unstable.20260827070456 -> origin/release/v0.1.2-unstable.20260827070456
+2026-10-04T13:25:47.1540160Z  * [new branch]          release/v0.1.3-beta.20260821091509 -> origin/release/v0.1.3-beta.20260821091509
+2026-10-04T13:25:47.1541606Z  * [new branch]          release/v0.2.0              -> origin/release/v0.2.0
+2026-10-04T13:25:47.1543064Z  * [new branch]          release/v0.2.2-unstable.20260908105409 -> origin/release/v0.2.2-unstable.20260908105409
+2026-10-04T13:25:47.1544869Z  * [new branch]          release/v0.2.2-unstable.20260910085900 -> origin/release/v0.2.2-unstable.20260910085900
+2026-10-04T13:25:47.1546661Z  * [new branch]          release/v0.2.6-unstable.20260922082621 -> origin/release/v0.2.6-unstable.20260922082621
+2026-10-04T13:25:47.1548460Z  * [new branch]          release/v0.2.6-unstable.20260922112037 -> origin/release/v0.2.6-unstable.20260922112037
+2026-10-04T13:25:47.1550262Z  * [new branch]          release/v0.2.6-unstable.20260922113057 -> origin/release/v0.2.6-unstable.20260922113057
+2026-10-04T13:25:47.1552107Z  * [new branch]          release/v0.2.7-beta.20260922140739 -> origin/release/v0.2.7-beta.20260922140739
+2026-10-04T13:25:47.1553810Z  * [new branch]          release/v0.2.8-unstable.20261004121959 -> origin/release/v0.2.8-unstable.20261004121959
+2026-10-04T13:25:47.1555920Z  * [new branch]          rescue/2026-08-26/deps-work-agentC-portaliq/after20 -> origin/rescue/2026-08-26/deps-work-agentC-portaliq/after20
+2026-10-04T13:25:47.1558254Z  * [new branch]          rescue/2026-08-26/deps-work-agentC-portaliq/after4 -> origin/rescue/2026-08-26/deps-work-agentC-portaliq/after4
+2026-10-04T13:25:47.1560624Z  * [new branch]          rescue/2026-08-26/fleet-es10-portaliq/chore/ncvue-2.3.0 -> origin/rescue/2026-08-26/fleet-es10-portaliq/chore/ncvue-2.3.0
+2026-10-04T13:25:47.1563616Z  * [new branch]          rescue/2026-08-26/fleet-es10-portaliq/chore/npm11-supply-chain-cooldown -> origin/rescue/2026-08-26/fleet-es10-portaliq/chore/npm11-supply-chain-cooldown
+2026-10-04T13:25:47.1566539Z  * [new branch]          rescue/2026-08-26/fleet-es10-portaliq/ci/npm-jobs-on-node-24 -> origin/rescue/2026-08-26/fleet-es10-portaliq/ci/npm-jobs-on-node-24
+2026-10-04T13:25:47.1569336Z  * [new branch]          rescue/2026-08-26/fleet-fixes-hygiene-portaliq/chore/repo-hygiene -> origin/rescue/2026-08-26/fleet-fixes-hygiene-portaliq/chore/repo-hygiene
+2026-10-04T13:25:47.1571590Z  * [new branch]          rescue/pq-fix-20260819      -> origin/rescue/pq-fix-20260819
+2026-10-04T13:25:47.1573414Z  * [new branch]          spec/portal-theme-blocks-and-contributed-pages -> origin/spec/portal-theme-blocks-and-contributed-pages
+2026-10-04T13:25:47.1575771Z  * [new branch]          sync/beta-to-development-0.1.16-beta.20260830190944 -> origin/sync/beta-to-development-0.1.16-beta.20260830190944
+2026-10-04T13:25:47.1578269Z  * [new branch]          sync/beta-to-development-0.1.20-beta.20260831102658 -> origin/sync/beta-to-development-0.1.20-beta.20260831102658
+2026-10-04T13:25:47.1580643Z  * [new branch]          sync/beta-to-development-0.1.23-beta.20260906101813 -> origin/sync/beta-to-development-0.1.23-beta.20260906101813
+2026-10-04T13:25:47.1583070Z  * [new branch]          sync/beta-to-development-0.2.5-beta.20260913171322 -> origin/sync/beta-to-development-0.2.5-beta.20260913171322
+2026-10-04T13:25:47.1585427Z  * [new branch]          sync/beta-to-development-0.2.6-beta.20260922131546 -> origin/sync/beta-to-development-0.2.6-beta.20260922131546
+2026-10-04T13:25:47.1587776Z  * [new branch]          sync/beta-to-development-0.2.7-beta.20260922140739 -> origin/sync/beta-to-development-0.2.7-beta.20260922140739
+2026-10-04T13:25:47.1589938Z  * [new branch]          sync/beta-to-development-20260830083556 -> origin/sync/beta-to-development-20260830083556
+2026-10-04T13:25:47.1591938Z  * [new branch]          sync/beta-to-development-20260830095515 -> origin/sync/beta-to-development-20260830095515
+2026-10-04T13:25:47.1593875Z  * [new branch]          sync/beta-to-development-20260830125235 -> origin/sync/beta-to-development-20260830125235
+2026-10-04T13:25:47.1595798Z  * [new branch]          sync/beta-to-development-20260830153329 -> origin/sync/beta-to-development-20260830153329
+2026-10-04T13:25:47.1597729Z  * [new branch]          sync/beta-to-development-20260830174240 -> origin/sync/beta-to-development-20260830174240
+2026-10-04T13:25:47.1599639Z  * [new branch]          sync/beta-to-development-20260830191259 -> origin/sync/beta-to-development-20260830191259
+2026-10-04T13:25:47.1601842Z  * [new branch]          sync/beta-to-development-20260831034816 -> origin/sync/beta-to-development-20260831034816
+2026-10-04T13:25:47.1603775Z  * [new branch]          sync/beta-to-development-20260906124841 -> origin/sync/beta-to-development-20260906124841
+2026-10-04T13:25:47.1605718Z  * [new branch]          sync/beta-to-development-20260912131940 -> origin/sync/beta-to-development-20260912131940
+2026-10-04T13:25:47.1607656Z  * [new branch]          sync/beta-to-development-20260913184518 -> origin/sync/beta-to-development-20260913184518
+2026-10-04T13:25:47.1609702Z  * [new branch]          sync/beta-to-development-20260922154420 -> origin/sync/beta-to-development-20260922154420
+2026-10-04T13:25:47.1611619Z  * [new branch]          sync/main-to-beta-20260830125227 -> origin/sync/main-to-beta-20260830125227
+2026-10-04T13:25:47.1613207Z  * [new branch]          sync/main-to-beta-20260830153322 -> origin/sync/main-to-beta-20260830153322
+2026-10-04T13:25:47.1614786Z  * [new branch]          sync/main-to-beta-20260830174233 -> origin/sync/main-to-beta-20260830174233
+2026-10-04T13:25:47.1616363Z  * [new branch]          sync/main-to-beta-20260830191251 -> origin/sync/main-to-beta-20260830191251
+2026-10-04T13:25:47.1617950Z  * [new branch]          sync/main-to-beta-20260831034808 -> origin/sync/main-to-beta-20260831034808
+2026-10-04T13:25:47.1619543Z  * [new branch]          sync/main-to-beta-20260906124833 -> origin/sync/main-to-beta-20260906124833
+2026-10-04T13:25:47.1621223Z  * [new branch]          sync/main-to-development-0.1.18 -> origin/sync/main-to-development-0.1.18
+2026-10-04T13:25:47.1622804Z  * [new branch]          sync/main-to-development-0.2.0 -> origin/sync/main-to-development-0.2.0
+2026-10-04T13:25:47.1624941Z  * [new branch]          test/declare-instance-loopback-in-the-task-gateway-test -> origin/test/declare-instance-loopback-in-the-task-gateway-test
+2026-10-04T13:25:47.1627023Z  * [new branch]          test/l10n-browser-catalogue -> origin/test/l10n-browser-catalogue
+2026-10-04T13:25:47.1628397Z  * [new branch]          test/schema-l10n-ratchet    -> origin/test/schema-l10n-ratchet
+2026-10-04T13:25:47.1629817Z  * [new branch]          test/seed-walkthrough-marker -> origin/test/seed-walkthrough-marker
+2026-10-04T13:25:47.1631818Z  * [new branch]          test/site-collections-heading-lives-in-the-shell -> origin/test/site-collections-heading-lives-in-the-shell
+2026-10-04T13:25:47.1633716Z  * [new branch]          wip/mcp-adoption            -> origin/wip/mcp-adoption
+2026-10-04T13:25:47.1634994Z  * [new branch]          wip/portaliq-e2e-2026-07-10 -> origin/wip/portaliq-e2e-2026-07-10
+2026-10-04T13:25:47.1636660Z  * [new branch]          wip/portaliq-session-apply-2026-07-10 -> origin/wip/portaliq-session-apply-2026-07-10
+2026-10-04T13:25:47.1638298Z  * [new branch]          wip/portaliq-woo-2026-07-10 -> origin/wip/portaliq-woo-2026-07-10
+2026-10-04T13:25:47.1639821Z  * [new branch]          wip/preserve-portaliq-2026-07-11 -> origin/wip/preserve-portaliq-2026-07-11
+2026-10-04T13:25:47.1641428Z  * [new branch]          wip/slice-g-e2e             -> origin/wip/slice-g-e2e
+2026-10-04T13:25:47.1642617Z  * [new branch]          wip/slice-g-specs-a         -> origin/wip/slice-g-specs-a
+2026-10-04T13:25:47.1643867Z  * [new branch]          wip/slice-g-specs-b         -> origin/wip/slice-g-specs-b
+2026-10-04T13:25:47.1645048Z  * [new tag]             v0.1.10-beta.20260830131238 -> v0.1.10-beta.20260830131238
+2026-10-04T13:25:47.1646236Z  * [new tag]             v0.1.10-unstable.20260830131240 -> v0.1.10-unstable.20260830131240
+2026-10-04T13:25:47.1647441Z  * [new tag]             v0.1.11-beta.20260830141315 -> v0.1.11-beta.20260830141315
+2026-10-04T13:25:47.1648648Z  * [new tag]             v0.1.11-unstable.20260830133126 -> v0.1.11-unstable.20260830133126
+2026-10-04T13:25:47.1649715Z  * [new tag]             v0.1.12                     -> v0.1.12
+2026-10-04T13:25:47.1650668Z  * [new tag]             v0.1.13-beta.20260830154248 -> v0.1.13-beta.20260830154248
+2026-10-04T13:25:47.1652022Z  * [new tag]             v0.1.13-unstable.20260830154340 -> v0.1.13-unstable.20260830154340
+2026-10-04T13:25:47.1653216Z  * [new tag]             v0.1.14-beta.20260830163402 -> v0.1.14-beta.20260830163402
+2026-10-04T13:25:47.1654198Z  * [new tag]             v0.1.15                     -> v0.1.15
+2026-10-04T13:25:47.1655058Z  * [new tag]             v0.1.16                     -> v0.1.16
+2026-10-04T13:25:47.1656011Z  * [new tag]             v0.1.16-beta.20260830180515 -> v0.1.16-beta.20260830180515
+2026-10-04T13:25:47.1657109Z  * [new tag]             v0.1.16-beta.20260830190944 -> v0.1.16-beta.20260830190944
+2026-10-04T13:25:47.1658415Z  * [new tag]             v0.1.16-unstable.20260830180847 -> v0.1.16-unstable.20260830180847
+2026-10-04T13:25:47.1659704Z  * [new tag]             v0.1.16-unstable.20260830190944 -> v0.1.16-unstable.20260830190944
+2026-10-04T13:25:47.1660897Z  * [new tag]             v0.1.17-beta.20260830202055 -> v0.1.17-beta.20260830202055
+2026-10-04T13:25:47.1662169Z  * [new tag]             v0.1.17-unstable.20260830202239 -> v0.1.17-unstable.20260830202239
+2026-10-04T13:25:47.1663247Z  * [new tag]             v0.1.18                     -> v0.1.18
+2026-10-04T13:25:47.1664297Z  * [new tag]             v0.1.18-unstable.20260830224840 -> v0.1.18-unstable.20260830224840
+2026-10-04T13:25:47.1665582Z  * [new tag]             v0.1.18-unstable.20260830231621 -> v0.1.18-unstable.20260830231621
+2026-10-04T13:25:47.1666858Z  * [new tag]             v0.1.18-unstable.20260831000945 -> v0.1.18-unstable.20260831000945
+2026-10-04T13:25:47.1668139Z  * [new tag]             v0.1.18-unstable.20260831013856 -> v0.1.18-unstable.20260831013856
+2026-10-04T13:25:47.1669337Z  * [new tag]             v0.1.19-beta.20260831034923 -> v0.1.19-beta.20260831034923
+2026-10-04T13:25:47.1670523Z  * [new tag]             v0.1.19-unstable.20260831034936 -> v0.1.19-unstable.20260831034936
+2026-10-04T13:25:47.1748844Z  * [new tag]             v0.1.19-unstable.20260831053655 -> v0.1.19-unstable.20260831053655
+2026-10-04T13:25:47.1751457Z  * [new tag]             v0.1.2-unstable.20260820210848 -> v0.1.2-unstable.20260820210848
+2026-10-04T13:25:47.1753449Z  * [new tag]             v0.1.2-unstable.20260820221324 -> v0.1.2-unstable.20260820221324
+2026-10-04T13:25:47.1755502Z  * [new tag]             v0.1.2-unstable.20260820235231 -> v0.1.2-unstable.20260820235231
+2026-10-04T13:25:47.1758182Z  * [new tag]             v0.1.2-unstable.20260821071509 -> v0.1.2-unstable.20260821071509
+2026-10-04T13:25:47.1760501Z  * [new tag]             v0.1.2-unstable.20260821141455 -> v0.1.2-unstable.20260821141455
+2026-10-04T13:25:47.1763141Z  * [new tag]             v0.1.2-unstable.20260821151355 -> v0.1.2-unstable.20260821151355
+2026-10-04T13:25:47.1765356Z  * [new tag]             v0.1.2-unstable.20260822082902 -> v0.1.2-unstable.20260822082902
+2026-10-04T13:25:47.1767242Z  * [new tag]             v0.1.2-unstable.20260822215323 -> v0.1.2-unstable.20260822215323
+2026-10-04T13:25:47.1768515Z  * [new tag]             v0.1.2-unstable.20260823220939 -> v0.1.2-unstable.20260823220939
+2026-10-04T13:25:47.1769763Z  * [new tag]             v0.1.2-unstable.20260823230244 -> v0.1.2-unstable.20260823230244
+2026-10-04T13:25:47.1771008Z  * [new tag]             v0.1.2-unstable.20260823232151 -> v0.1.2-unstable.20260823232151
+2026-10-04T13:25:47.1772441Z  * [new tag]             v0.1.2-unstable.20260823233621 -> v0.1.2-unstable.20260823233621
+2026-10-04T13:25:47.1773710Z  * [new tag]             v0.1.2-unstable.20260824072801 -> v0.1.2-unstable.20260824072801
+2026-10-04T13:25:47.1774961Z  * [new tag]             v0.1.2-unstable.20260824160146 -> v0.1.2-unstable.20260824160146
+2026-10-04T13:25:47.1776208Z  * [new tag]             v0.1.2-unstable.20260824183241 -> v0.1.2-unstable.20260824183241
+2026-10-04T13:25:47.1777442Z  * [new tag]             v0.1.2-unstable.20260824211021 -> v0.1.2-unstable.20260824211021
+2026-10-04T13:25:47.1778688Z  * [new tag]             v0.1.2-unstable.20260825094515 -> v0.1.2-unstable.20260825094515
+2026-10-04T13:25:47.1779930Z  * [new tag]             v0.1.2-unstable.20260826085747 -> v0.1.2-unstable.20260826085747
+2026-10-04T13:25:47.1781291Z  * [new tag]             v0.1.2-unstable.20260826232901 -> v0.1.2-unstable.20260826232901
+2026-10-04T13:25:47.1782522Z  * [new tag]             v0.1.2-unstable.20260826235340 -> v0.1.2-unstable.20260826235340
+2026-10-04T13:25:47.1783781Z  * [new tag]             v0.1.2-unstable.20260827021206 -> v0.1.2-unstable.20260827021206
+2026-10-04T13:25:47.1785022Z  * [new tag]             v0.1.2-unstable.20260827052321 -> v0.1.2-unstable.20260827052321
+2026-10-04T13:25:47.1786489Z  * [new tag]             v0.1.2-unstable.20260827055250 -> v0.1.2-unstable.20260827055250
+2026-10-04T13:25:47.1787742Z  * [new tag]             v0.1.2-unstable.20260827070456 -> v0.1.2-unstable.20260827070456
+2026-10-04T13:25:47.1788922Z  * [new tag]             v0.1.20-beta.20260831102658 -> v0.1.20-beta.20260831102658
+2026-10-04T13:25:47.1790125Z  * [new tag]             v0.1.20-unstable.20260831075109 -> v0.1.20-unstable.20260831075109
+2026-10-04T13:25:47.1791541Z  * [new tag]             v0.1.21-unstable.20260831105208 -> v0.1.21-unstable.20260831105208
+2026-10-04T13:25:47.1792840Z  * [new tag]             v0.1.21-unstable.20260831112641 -> v0.1.21-unstable.20260831112641
+2026-10-04T13:25:47.1794111Z  * [new tag]             v0.1.21-unstable.20260831114957 -> v0.1.21-unstable.20260831114957
+2026-10-04T13:25:47.1795416Z  * [new tag]             v0.1.22-unstable.20260831161259 -> v0.1.22-unstable.20260831161259
+2026-10-04T13:25:47.1796608Z  * [new tag]             v0.1.23-beta.20260906101813 -> v0.1.23-beta.20260906101813
+2026-10-04T13:25:47.1797802Z  * [new tag]             v0.1.23-unstable.20260901100639 -> v0.1.23-unstable.20260901100639
+2026-10-04T13:25:47.1799091Z  * [new tag]             v0.1.23-unstable.20260901110933 -> v0.1.23-unstable.20260901110933
+2026-10-04T13:25:47.1800361Z  * [new tag]             v0.1.23-unstable.20260901171032 -> v0.1.23-unstable.20260901171032
+2026-10-04T13:25:47.1801778Z  * [new tag]             v0.1.23-unstable.20260901190500 -> v0.1.23-unstable.20260901190500
+2026-10-04T13:25:47.1803054Z  * [new tag]             v0.1.23-unstable.20260902004914 -> v0.1.23-unstable.20260902004914
+2026-10-04T13:25:47.1804328Z  * [new tag]             v0.1.23-unstable.20260902181924 -> v0.1.23-unstable.20260902181924
+2026-10-04T13:25:47.1805742Z  * [new tag]             v0.1.23-unstable.20260903125256 -> v0.1.23-unstable.20260903125256
+2026-10-04T13:25:47.1807036Z  * [new tag]             v0.1.23-unstable.20260903171330 -> v0.1.23-unstable.20260903171330
+2026-10-04T13:25:47.1808331Z  * [new tag]             v0.1.23-unstable.20260904034615 -> v0.1.23-unstable.20260904034615
+2026-10-04T13:25:47.1809614Z  * [new tag]             v0.1.23-unstable.20260904070627 -> v0.1.23-unstable.20260904070627
+2026-10-04T13:25:47.1810911Z  * [new tag]             v0.1.23-unstable.20260904083541 -> v0.1.23-unstable.20260904083541
+2026-10-04T13:25:47.1812396Z  * [new tag]             v0.1.23-unstable.20260904140820 -> v0.1.23-unstable.20260904140820
+2026-10-04T13:25:47.1813695Z  * [new tag]             v0.1.23-unstable.20260905091522 -> v0.1.23-unstable.20260905091522
+2026-10-04T13:25:47.1814974Z  * [new tag]             v0.1.23-unstable.20260905093337 -> v0.1.23-unstable.20260905093337
+2026-10-04T13:25:47.1816240Z  * [new tag]             v0.1.23-unstable.20260905121339 -> v0.1.23-unstable.20260905121339
+2026-10-04T13:25:47.1817523Z  * [new tag]             v0.1.23-unstable.20260905133132 -> v0.1.23-unstable.20260905133132
+2026-10-04T13:25:47.1818792Z  * [new tag]             v0.1.23-unstable.20260905151512 -> v0.1.23-unstable.20260905151512
+2026-10-04T13:25:47.1820069Z  * [new tag]             v0.1.23-unstable.20260905182720 -> v0.1.23-unstable.20260905182720
+2026-10-04T13:25:47.1821536Z  * [new tag]             v0.1.23-unstable.20260905205109 -> v0.1.23-unstable.20260905205109
+2026-10-04T13:25:47.1822719Z  * [new tag]             v0.1.3-beta.20260820210755  -> v0.1.3-beta.20260820210755
+2026-10-04T13:25:47.1823799Z  * [new tag]             v0.1.3-beta.20260820225554  -> v0.1.3-beta.20260820225554
+2026-10-04T13:25:47.1824874Z  * [new tag]             v0.1.3-beta.20260821091509  -> v0.1.3-beta.20260821091509
+2026-10-04T13:25:47.1825839Z  * [new tag]             v0.1.4                      -> v0.1.4
+2026-10-04T13:25:47.1826864Z  * [new tag]             v0.1.4-unstable.20260827095113 -> v0.1.4-unstable.20260827095113
+2026-10-04T13:25:47.1828032Z  * [new tag]             v0.1.5-beta.20260827090249  -> v0.1.5-beta.20260827090249
+2026-10-04T13:25:47.1829193Z  * [new tag]             v0.1.5-unstable.20260827125628 -> v0.1.5-unstable.20260827125628
+2026-10-04T13:25:47.1830507Z  * [new tag]             v0.1.6-beta.20260829143641  -> v0.1.6-beta.20260829143641
+2026-10-04T13:25:47.1831727Z  * [new tag]             v0.1.6-beta.20260829201930  -> v0.1.6-beta.20260829201930
+2026-10-04T13:25:47.1832876Z  * [new tag]             v0.1.6-unstable.20260827172948 -> v0.1.6-unstable.20260827172948
+2026-10-04T13:25:47.1834130Z  * [new tag]             v0.1.6-unstable.20260827194904 -> v0.1.6-unstable.20260827194904
+2026-10-04T13:25:47.1835367Z  * [new tag]             v0.1.6-unstable.20260827213659 -> v0.1.6-unstable.20260827213659
+2026-10-04T13:25:47.1836598Z  * [new tag]             v0.1.6-unstable.20260828051013 -> v0.1.6-unstable.20260828051013
+2026-10-04T13:25:47.1837844Z  * [new tag]             v0.1.6-unstable.20260828075054 -> v0.1.6-unstable.20260828075054
+2026-10-04T13:25:47.1839094Z  * [new tag]             v0.1.6-unstable.20260828080845 -> v0.1.6-unstable.20260828080845
+2026-10-04T13:25:47.1840334Z  * [new tag]             v0.1.6-unstable.20260828084839 -> v0.1.6-unstable.20260828084839
+2026-10-04T13:25:47.1841717Z  * [new tag]             v0.1.6-unstable.20260828090817 -> v0.1.6-unstable.20260828090817
+2026-10-04T13:25:47.1842871Z  * [new tag]             v0.1.7-beta.20260830095840  -> v0.1.7-beta.20260830095840
+2026-10-04T13:25:47.1844029Z  * [new tag]             v0.1.7-unstable.20260828132150 -> v0.1.7-unstable.20260828132150
+2026-10-04T13:25:47.1845257Z  * [new tag]             v0.1.7-unstable.20260828134325 -> v0.1.7-unstable.20260828134325
+2026-10-04T13:25:47.1846490Z  * [new tag]             v0.1.7-unstable.20260828181013 -> v0.1.7-unstable.20260828181013
+2026-10-04T13:25:47.1847730Z  * [new tag]             v0.1.7-unstable.20260829024022 -> v0.1.7-unstable.20260829024022
+2026-10-04T13:25:47.1849058Z  * [new tag]             v0.1.7-unstable.20260829025130 -> v0.1.7-unstable.20260829025130
+2026-10-04T13:25:47.1850284Z  * [new tag]             v0.1.7-unstable.20260829032253 -> v0.1.7-unstable.20260829032253
+2026-10-04T13:25:47.1851678Z  * [new tag]             v0.1.7-unstable.20260829055355 -> v0.1.7-unstable.20260829055355
+2026-10-04T13:25:47.1852931Z  * [new tag]             v0.1.7-unstable.20260829095103 -> v0.1.7-unstable.20260829095103
+2026-10-04T13:25:47.1854151Z  * [new tag]             v0.1.7-unstable.20260829121634 -> v0.1.7-unstable.20260829121634
+2026-10-04T13:25:47.1855364Z  * [new tag]             v0.1.7-unstable.20260829123305 -> v0.1.7-unstable.20260829123305
+2026-10-04T13:25:47.1856593Z  * [new tag]             v0.1.7-unstable.20260829142137 -> v0.1.7-unstable.20260829142137
+2026-10-04T13:25:47.1857834Z  * [new tag]             v0.1.7-unstable.20260829153003 -> v0.1.7-unstable.20260829153003
+2026-10-04T13:25:47.1859061Z  * [new tag]             v0.1.7-unstable.20260829160134 -> v0.1.7-unstable.20260829160134
+2026-10-04T13:25:47.1860278Z  * [new tag]             v0.1.7-unstable.20260829195327 -> v0.1.7-unstable.20260829195327
+2026-10-04T13:25:47.1861625Z  * [new tag]             v0.1.7-unstable.20260829200659 -> v0.1.7-unstable.20260829200659
+2026-10-04T13:25:47.1862854Z  * [new tag]             v0.1.7-unstable.20260830084625 -> v0.1.7-unstable.20260830084625
+2026-10-04T13:25:47.1864010Z  * [new tag]             v0.1.8-beta.20260830104406  -> v0.1.8-beta.20260830104406
+2026-10-04T13:25:47.1865070Z  * [new tag]             v0.1.8-dev.20260806110251   -> v0.1.8-dev.20260806110251
+2026-10-04T13:25:47.1866122Z  * [new tag]             v0.1.8-dev.20260806115341   -> v0.1.8-dev.20260806115341
+2026-10-04T13:25:47.1867172Z  * [new tag]             v0.1.8-dev.20260806123004   -> v0.1.8-dev.20260806123004
+2026-10-04T13:25:47.1868775Z  * [new tag]             v0.1.8-dev.20260806130332   -> v0.1.8-dev.20260806130332
+2026-10-04T13:25:47.1870000Z  * [new tag]             v0.1.8-dev.20260806142813   -> v0.1.8-dev.20260806142813
+2026-10-04T13:25:47.1871201Z  * [new tag]             v0.1.8-dev.20260807105849   -> v0.1.8-dev.20260807105849
+2026-10-04T13:25:47.1872252Z  * [new tag]             v0.1.8-dev.20260807111354   -> v0.1.8-dev.20260807111354
+2026-10-04T13:25:47.1873442Z  * [new tag]             v0.1.8-dev.20260807130255   -> v0.1.8-dev.20260807130255
+2026-10-04T13:25:47.1874501Z  * [new tag]             v0.1.8-dev.20260808105520   -> v0.1.8-dev.20260808105520
+2026-10-04T13:25:47.1875550Z  * [new tag]             v0.1.8-dev.20260808111130   -> v0.1.8-dev.20260808111130
+2026-10-04T13:25:47.1876588Z  * [new tag]             v0.1.8-dev.20260808112502   -> v0.1.8-dev.20260808112502
+2026-10-04T13:25:47.1877624Z  * [new tag]             v0.1.8-dev.20260808113609   -> v0.1.8-dev.20260808113609
+2026-10-04T13:25:47.1878670Z  * [new tag]             v0.1.8-dev.20260808140824   -> v0.1.8-dev.20260808140824
+2026-10-04T13:25:47.1879714Z  * [new tag]             v0.1.8-dev.20260808145006   -> v0.1.8-dev.20260808145006
+2026-10-04T13:25:47.1880762Z  * [new tag]             v0.1.8-dev.20260808154723   -> v0.1.8-dev.20260808154723
+2026-10-04T13:25:47.1882109Z  * [new tag]             v0.1.8-dev.20260808162030   -> v0.1.8-dev.20260808162030
+2026-10-04T13:25:47.1883161Z  * [new tag]             v0.1.8-dev.20260809142550   -> v0.1.8-dev.20260809142550
+2026-10-04T13:25:47.1884204Z  * [new tag]             v0.1.8-dev.20260809143405   -> v0.1.8-dev.20260809143405
+2026-10-04T13:25:47.1885244Z  * [new tag]             v0.1.8-dev.20260809143618   -> v0.1.8-dev.20260809143618
+2026-10-04T13:25:47.1886290Z  * [new tag]             v0.1.8-dev.20260809203721   -> v0.1.8-dev.20260809203721
+2026-10-04T13:25:47.1887336Z  * [new tag]             v0.1.8-dev.20260810113846   -> v0.1.8-dev.20260810113846
+2026-10-04T13:25:47.1888387Z  * [new tag]             v0.1.8-dev.20260810210013   -> v0.1.8-dev.20260810210013
+2026-10-04T13:25:47.1889425Z  * [new tag]             v0.1.8-dev.20260811074620   -> v0.1.8-dev.20260811074620
+2026-10-04T13:25:47.1890563Z  * [new tag]             v0.1.8-dev.20260811091847   -> v0.1.8-dev.20260811091847
+2026-10-04T13:25:47.1891843Z  * [new tag]             v0.1.8-dev.20260812070802   -> v0.1.8-dev.20260812070802
+2026-10-04T13:25:47.1892911Z  * [new tag]             v0.1.8-dev.20260812073635   -> v0.1.8-dev.20260812073635
+2026-10-04T13:25:47.1893967Z  * [new tag]             v0.1.8-dev.20260812125834   -> v0.1.8-dev.20260812125834
+2026-10-04T13:25:47.1895015Z  * [new tag]             v0.1.8-dev.20260812191027   -> v0.1.8-dev.20260812191027
+2026-10-04T13:25:47.1896073Z  * [new tag]             v0.1.8-dev.20260812215902   -> v0.1.8-dev.20260812215902
+2026-10-04T13:25:47.1897114Z  * [new tag]             v0.1.8-dev.20260812220609   -> v0.1.8-dev.20260812220609
+2026-10-04T13:25:47.1898182Z  * [new tag]             v0.1.8-dev.20260812224741   -> v0.1.8-dev.20260812224741
+2026-10-04T13:25:47.1899225Z  * [new tag]             v0.1.8-dev.20260812225251   -> v0.1.8-dev.20260812225251
+2026-10-04T13:25:47.1900276Z  * [new tag]             v0.1.8-dev.20260812230303   -> v0.1.8-dev.20260812230303
+2026-10-04T13:25:47.1901371Z  * [new tag]             v0.1.8-dev.20260813092846   -> v0.1.8-dev.20260813092846
+2026-10-04T13:25:47.1902407Z  * [new tag]             v0.1.8-dev.20260813105645   -> v0.1.8-dev.20260813105645
+2026-10-04T13:25:47.1903454Z  * [new tag]             v0.1.8-dev.20260814114651   -> v0.1.8-dev.20260814114651
+2026-10-04T13:25:47.1904488Z  * [new tag]             v0.1.8-dev.20260814143514   -> v0.1.8-dev.20260814143514
+2026-10-04T13:25:47.1905550Z  * [new tag]             v0.1.8-dev.20260814172851   -> v0.1.8-dev.20260814172851
+2026-10-04T13:25:47.1906605Z  * [new tag]             v0.1.8-dev.20260814185459   -> v0.1.8-dev.20260814185459
+2026-10-04T13:25:47.1907631Z  * [new tag]             v0.1.8-dev.20260815181702   -> v0.1.8-dev.20260815181702
+2026-10-04T13:25:47.1908670Z  * [new tag]             v0.1.8-dev.20260815202351   -> v0.1.8-dev.20260815202351
+2026-10-04T13:25:47.1909703Z  * [new tag]             v0.1.8-dev.20260815205042   -> v0.1.8-dev.20260815205042
+2026-10-04T13:25:47.1910742Z  * [new tag]             v0.1.8-dev.20260815221833   -> v0.1.8-dev.20260815221833
+2026-10-04T13:25:47.1911839Z  * [new tag]             v0.1.8-dev.20260816011548   -> v0.1.8-dev.20260816011548
+2026-10-04T13:25:47.1912977Z  * [new tag]             v0.1.8-dev.20260816013255   -> v0.1.8-dev.20260816013255
+2026-10-04T13:25:47.1914015Z  * [new tag]             v0.1.8-dev.20260816022354   -> v0.1.8-dev.20260816022354
+2026-10-04T13:25:47.1915057Z  * [new tag]             v0.1.8-dev.20260816090538   -> v0.1.8-dev.20260816090538
+2026-10-04T13:25:47.1916115Z  * [new tag]             v0.1.8-dev.20260816100441   -> v0.1.8-dev.20260816100441
+2026-10-04T13:25:47.1917158Z  * [new tag]             v0.1.8-dev.20260816111359   -> v0.1.8-dev.20260816111359
+2026-10-04T13:25:47.1918194Z  * [new tag]             v0.1.8-dev.20260816113456   -> v0.1.8-dev.20260816113456
+2026-10-04T13:25:47.1919236Z  * [new tag]             v0.1.8-dev.20260816142256   -> v0.1.8-dev.20260816142256
+2026-10-04T13:25:47.1920291Z  * [new tag]             v0.1.8-dev.20260816143919   -> v0.1.8-dev.20260816143919
+2026-10-04T13:25:47.1921392Z  * [new tag]             v0.1.8-dev.20260817014101   -> v0.1.8-dev.20260817014101
+2026-10-04T13:25:47.1922453Z  * [new tag]             v0.1.8-dev.20260817060829   -> v0.1.8-dev.20260817060829
+2026-10-04T13:25:47.1923593Z  * [new tag]             v0.1.8-unstable.20260830092051 -> v0.1.8-unstable.20260830092051
+2026-10-04T13:25:47.1924828Z  * [new tag]             v0.1.8-unstable.20260830100955 -> v0.1.8-unstable.20260830100955
+2026-10-04T13:25:47.1926074Z  * [new tag]             v0.1.8-unstable.20260830112006 -> v0.1.8-unstable.20260830112006
+2026-10-04T13:25:47.1927119Z  * [new tag]             v0.1.9                      -> v0.1.9
+2026-10-04T13:25:47.1927945Z  * [new tag]             v0.2.0                      -> v0.2.0
+2026-10-04T13:25:47.1928897Z  * [new tag]             v0.2.1-beta.20260906130606  -> v0.2.1-beta.20260906130606
+2026-10-04T13:25:47.1930140Z  * [new tag]             v0.2.1-unstable.20260906130636 -> v0.2.1-unstable.20260906130636
+2026-10-04T13:25:47.1931531Z  * [new tag]             v0.2.2-unstable.20260907074801 -> v0.2.2-unstable.20260907074801
+2026-10-04T13:25:47.1932767Z  * [new tag]             v0.2.2-unstable.20260907082542 -> v0.2.2-unstable.20260907082542
+2026-10-04T13:25:47.1933997Z  * [new tag]             v0.2.2-unstable.20260907083848 -> v0.2.2-unstable.20260907083848
+2026-10-04T13:25:47.1935232Z  * [new tag]             v0.2.2-unstable.20260907085429 -> v0.2.2-unstable.20260907085429
+2026-10-04T13:25:47.1936477Z  * [new tag]             v0.2.2-unstable.20260907090628 -> v0.2.2-unstable.20260907090628
+2026-10-04T13:25:47.1937719Z  * [new tag]             v0.2.2-unstable.20260907144715 -> v0.2.2-unstable.20260907144715
+2026-10-04T13:25:47.1938963Z  * [new tag]             v0.2.2-unstable.20260907152545 -> v0.2.2-unstable.20260907152545
+2026-10-04T13:25:47.1940218Z  * [new tag]             v0.2.2-unstable.20260907180143 -> v0.2.2-unstable.20260907180143
+2026-10-04T13:25:47.1941505Z  * [new tag]             v0.2.2-unstable.20260907185822 -> v0.2.2-unstable.20260907185822
+2026-10-04T13:25:47.1942735Z  * [new tag]             v0.2.2-unstable.20260908081248 -> v0.2.2-unstable.20260908081248
+2026-10-04T13:25:47.1943961Z  * [new tag]             v0.2.2-unstable.20260908083809 -> v0.2.2-unstable.20260908083809
+2026-10-04T13:25:47.1945182Z  * [new tag]             v0.2.2-unstable.20260908105409 -> v0.2.2-unstable.20260908105409
+2026-10-04T13:25:47.1946408Z  * [new tag]             v0.2.2-unstable.20260910083419 -> v0.2.2-unstable.20260910083419
+2026-10-04T13:25:47.1947629Z  * [new tag]             v0.2.2-unstable.20260910085900 -> v0.2.2-unstable.20260910085900
+2026-10-04T13:25:47.1948863Z  * [new tag]             v0.2.2-unstable.20260910105123 -> v0.2.2-unstable.20260910105123
+2026-10-04T13:25:47.1950079Z  * [new tag]             v0.2.3-unstable.20260911092854 -> v0.2.3-unstable.20260911092854
+2026-10-04T13:25:47.1951367Z  * [new tag]             v0.2.3-unstable.20260911102402 -> v0.2.3-unstable.20260911102402
+2026-10-04T13:25:47.1952502Z  * [new tag]             v0.2.4-beta.20260912123848  -> v0.2.4-beta.20260912123848
+2026-10-04T13:25:47.1953725Z  * [new tag]             v0.2.4-unstable.20260912121046 -> v0.2.4-unstable.20260912121046
+2026-10-04T13:25:47.1954879Z  * [new tag]             v0.2.5-beta.20260913171322  -> v0.2.5-beta.20260913171322
+2026-10-04T13:25:47.1956019Z  * [new tag]             v0.2.5-unstable.20260912135817 -> v0.2.5-unstable.20260912135817
+2026-10-04T13:25:47.1957243Z  * [new tag]             v0.2.5-unstable.20260912203936 -> v0.2.5-unstable.20260912203936
+2026-10-04T13:25:47.1958388Z  * [new tag]             v0.2.6-beta.20260922131546  -> v0.2.6-beta.20260922131546
+2026-10-04T13:25:47.1959532Z  * [new tag]             v0.2.6-unstable.20260913171343 -> v0.2.6-unstable.20260913171343
+2026-10-04T13:25:47.1960748Z  * [new tag]             v0.2.6-unstable.20260913174914 -> v0.2.6-unstable.20260913174914
+2026-10-04T13:25:47.1962025Z  * [new tag]             v0.2.6-unstable.20260913185017 -> v0.2.6-unstable.20260913185017
+2026-10-04T13:25:47.1963245Z  * [new tag]             v0.2.6-unstable.20260913192129 -> v0.2.6-unstable.20260913192129
+2026-10-04T13:25:47.1964456Z  * [new tag]             v0.2.6-unstable.20260913204637 -> v0.2.6-unstable.20260913204637
+2026-10-04T13:25:47.1965679Z  * [new tag]             v0.2.6-unstable.20260914114651 -> v0.2.6-unstable.20260914114651
+2026-10-04T13:25:47.1966902Z  * [new tag]             v0.2.6-unstable.20260914142558 -> v0.2.6-unstable.20260914142558
+2026-10-04T13:25:47.1968124Z  * [new tag]             v0.2.6-unstable.20260914185704 -> v0.2.6-unstable.20260914185704
+2026-10-04T13:25:47.1969340Z  * [new tag]             v0.2.6-unstable.20260914210751 -> v0.2.6-unstable.20260914210751
+2026-10-04T13:25:47.1970562Z  * [new tag]             v0.2.6-unstable.20260914212942 -> v0.2.6-unstable.20260914212942
+2026-10-04T13:25:47.1971935Z  * [new tag]             v0.2.6-unstable.20260915043215 -> v0.2.6-unstable.20260915043215
+2026-10-04T13:25:47.1973234Z  * [new tag]             v0.2.6-unstable.20260916053511 -> v0.2.6-unstable.20260916053511
+2026-10-04T13:25:47.1974450Z  * [new tag]             v0.2.6-unstable.20260916072750 -> v0.2.6-unstable.20260916072750
+2026-10-04T13:25:47.1975676Z  * [new tag]             v0.2.6-unstable.20260916094956 -> v0.2.6-unstable.20260916094956
+2026-10-04T13:25:47.1976901Z  * [new tag]             v0.2.6-unstable.20260916204911 -> v0.2.6-unstable.20260916204911
+2026-10-04T13:25:47.1978124Z  * [new tag]             v0.2.6-unstable.20260916211423 -> v0.2.6-unstable.20260916211423
+2026-10-04T13:25:47.1979329Z  * [new tag]             v0.2.6-unstable.20260917133848 -> v0.2.6-unstable.20260917133848
+2026-10-04T13:25:47.1980544Z  * [new tag]             v0.2.6-unstable.20260918053152 -> v0.2.6-unstable.20260918053152
+2026-10-04T13:25:47.1981823Z  * [new tag]             v0.2.6-unstable.20260918060543 -> v0.2.6-unstable.20260918060543
+2026-10-04T13:25:47.1983037Z  * [new tag]             v0.2.6-unstable.20260918070023 -> v0.2.6-unstable.20260918070023
+2026-10-04T13:25:47.1984261Z  * [new tag]             v0.2.6-unstable.20260918071052 -> v0.2.6-unstable.20260918071052
+2026-10-04T13:25:47.1985473Z  * [new tag]             v0.2.6-unstable.20260918073255 -> v0.2.6-unstable.20260918073255
+2026-10-04T13:25:47.1986693Z  * [new tag]             v0.2.6-unstable.20260918141823 -> v0.2.6-unstable.20260918141823
+2026-10-04T13:25:47.1987906Z  * [new tag]             v0.2.6-unstable.20260919032848 -> v0.2.6-unstable.20260919032848
+2026-10-04T13:25:47.1989123Z  * [new tag]             v0.2.6-unstable.20260919073658 -> v0.2.6-unstable.20260919073658
+2026-10-04T13:25:47.1990327Z  * [new tag]             v0.2.6-unstable.20260919123142 -> v0.2.6-unstable.20260919123142
+2026-10-04T13:25:47.1991588Z  * [new tag]             v0.2.6-unstable.20260919123935 -> v0.2.6-unstable.20260919123935
+2026-10-04T13:25:47.1992807Z  * [new tag]             v0.2.6-unstable.20260919125232 -> v0.2.6-unstable.20260919125232
+2026-10-04T13:25:47.1994024Z  * [new tag]             v0.2.6-unstable.20260919130312 -> v0.2.6-unstable.20260919130312
+2026-10-04T13:25:47.1995231Z  * [new tag]             v0.2.6-unstable.20260919131116 -> v0.2.6-unstable.20260919131116
+2026-10-04T13:25:47.1996503Z  * [new tag]             v0.2.6-unstable.20260919131735 -> v0.2.6-unstable.20260919131735
+2026-10-04T13:25:47.1997719Z  * [new tag]             v0.2.6-unstable.20260919132625 -> v0.2.6-unstable.20260919132625
+2026-10-04T13:25:47.1998926Z  * [new tag]             v0.2.6-unstable.20260919133818 -> v0.2.6-unstable.20260919133818
+2026-10-04T13:25:47.2000129Z  * [new tag]             v0.2.6-unstable.20260919151510 -> v0.2.6-unstable.20260919151510
+2026-10-04T13:25:47.2001401Z  * [new tag]             v0.2.6-unstable.20260919152629 -> v0.2.6-unstable.20260919152629
+2026-10-04T13:25:47.2002617Z  * [new tag]             v0.2.6-unstable.20260919161324 -> v0.2.6-unstable.20260919161324
+2026-10-04T13:25:47.2003825Z  * [new tag]             v0.2.6-unstable.20260919162528 -> v0.2.6-unstable.20260919162528
+2026-10-04T13:25:47.2005045Z  * [new tag]             v0.2.6-unstable.20260922131146 -> v0.2.6-unstable.20260922131146
+2026-10-04T13:25:47.2006287Z  * [new tag]             v0.2.6-unstable.20260922135605 -> v0.2.6-unstable.20260922135605
+2026-10-04T13:25:47.2007431Z  * [new tag]             v0.2.7-beta.20260922140739  -> v0.2.7-beta.20260922140739
+2026-10-04T13:25:47.2008561Z  * [new tag]             v0.2.7-unstable.20260922140230 -> v0.2.7-unstable.20260922140230
+2026-10-04T13:25:47.2009770Z  * [new tag]             v0.2.8-unstable.20260922154834 -> v0.2.8-unstable.20260922154834
+2026-10-04T13:25:47.2010979Z  * [new tag]             v0.2.8-unstable.20260923081813 -> v0.2.8-unstable.20260923081813
+2026-10-04T13:25:47.2012374Z  * [new tag]             v0.2.8-unstable.20260924141627 -> v0.2.8-unstable.20260924141627
+2026-10-04T13:25:47.2013586Z  * [new tag]             v0.2.8-unstable.20260924143418 -> v0.2.8-unstable.20260924143418
+2026-10-04T13:25:47.2014889Z  * [new tag]             v0.2.8-unstable.20260924143643 -> v0.2.8-unstable.20260924143643
+2026-10-04T13:25:47.2016088Z  * [new tag]             v0.2.8-unstable.20260924145613 -> v0.2.8-unstable.20260924145613
+2026-10-04T13:25:47.2017297Z  * [new tag]             v0.2.8-unstable.20260924155635 -> v0.2.8-unstable.20260924155635
+2026-10-04T13:25:47.2018504Z  * [new tag]             v0.2.8-unstable.20260925074703 -> v0.2.8-unstable.20260925074703
+2026-10-04T13:25:47.2019733Z  * [new tag]             v0.2.8-unstable.20260926081717 -> v0.2.8-unstable.20260926081717
+2026-10-04T13:25:47.2020940Z  * [new tag]             v0.2.8-unstable.20260926112748 -> v0.2.8-unstable.20260926112748
+2026-10-04T13:25:47.2022218Z  * [new tag]             v0.2.8-unstable.20260926113957 -> v0.2.8-unstable.20260926113957
+2026-10-04T13:25:47.2023414Z  * [new tag]             v0.2.8-unstable.20260926120738 -> v0.2.8-unstable.20260926120738
+2026-10-04T13:25:47.2024617Z  * [new tag]             v0.2.8-unstable.20260926123629 -> v0.2.8-unstable.20260926123629
+2026-10-04T13:25:47.2025821Z  * [new tag]             v0.2.8-unstable.20260926211748 -> v0.2.8-unstable.20260926211748
+2026-10-04T13:25:47.2027021Z  * [new tag]             v0.2.8-unstable.20260926223052 -> v0.2.8-unstable.20260926223052
+2026-10-04T13:25:47.2028273Z  * [new tag]             v0.2.8-unstable.20260927065743 -> v0.2.8-unstable.20260927065743
+2026-10-04T13:25:47.2029482Z  * [new tag]             v0.2.8-unstable.20260927070739 -> v0.2.8-unstable.20260927070739
+2026-10-04T13:25:47.2030692Z  * [new tag]             v0.2.8-unstable.20260927071915 -> v0.2.8-unstable.20260927071915
+2026-10-04T13:25:47.2031956Z  * [new tag]             v0.2.8-unstable.20260927081444 -> v0.2.8-unstable.20260927081444
+2026-10-04T13:25:47.2033151Z  * [new tag]             v0.2.8-unstable.20260927130104 -> v0.2.8-unstable.20260927130104
+2026-10-04T13:25:47.2034365Z  * [new tag]             v0.2.8-unstable.20260927130318 -> v0.2.8-unstable.20260927130318
+2026-10-04T13:25:47.2035585Z  * [new tag]             v0.2.8-unstable.20260927130553 -> v0.2.8-unstable.20260927130553
+2026-10-04T13:25:47.2036807Z  * [new tag]             v0.2.8-unstable.20260927130809 -> v0.2.8-unstable.20260927130809
+2026-10-04T13:25:47.2038107Z  * [new tag]             v0.2.8-unstable.20260927161411 -> v0.2.8-unstable.20260927161411
+2026-10-04T13:25:47.2039318Z  * [new tag]             v0.2.8-unstable.20260927170601 -> v0.2.8-unstable.20260927170601
+2026-10-04T13:25:47.2040513Z  * [new tag]             v0.2.8-unstable.20260927172715 -> v0.2.8-unstable.20260927172715
+2026-10-04T13:25:47.2041776Z  * [new tag]             v0.2.8-unstable.20260928042444 -> v0.2.8-unstable.20260928042444
+2026-10-04T13:25:47.2042990Z  * [new tag]             v0.2.8-unstable.20260928050059 -> v0.2.8-unstable.20260928050059
+2026-10-04T13:25:47.2044205Z  * [new tag]             v0.2.8-unstable.20260928055411 -> v0.2.8-unstable.20260928055411
+2026-10-04T13:25:47.2045424Z  * [new tag]             v0.2.8-unstable.20260928074401 -> v0.2.8-unstable.20260928074401
+2026-10-04T13:25:47.2046635Z  * [new tag]             v0.2.8-unstable.20260928075654 -> v0.2.8-unstable.20260928075654
+2026-10-04T13:25:47.2047843Z  * [new tag]             v0.2.8-unstable.20260928080616 -> v0.2.8-unstable.20260928080616
+2026-10-04T13:25:47.2049066Z  * [new tag]             v0.2.8-unstable.20260928081124 -> v0.2.8-unstable.20260928081124
+2026-10-04T13:25:47.2050279Z  * [new tag]             v0.2.8-unstable.20260928083111 -> v0.2.8-unstable.20260928083111
+2026-10-04T13:25:47.2051648Z  * [new tag]             v0.2.8-unstable.20260928084018 -> v0.2.8-unstable.20260928084018
+2026-10-04T13:25:47.2052865Z  * [new tag]             v0.2.8-unstable.20260928090402 -> v0.2.8-unstable.20260928090402
+2026-10-04T13:25:47.2054097Z  * [new tag]             v0.2.8-unstable.20260928134446 -> v0.2.8-unstable.20260928134446
+2026-10-04T13:25:47.2055305Z  * [new tag]             v0.2.8-unstable.20260928140150 -> v0.2.8-unstable.20260928140150
+2026-10-04T13:25:47.2056520Z  * [new tag]             v0.2.8-unstable.20260928160159 -> v0.2.8-unstable.20260928160159
+2026-10-04T13:25:47.2057823Z  * [new tag]             v0.2.8-unstable.20260928161936 -> v0.2.8-unstable.20260928161936
+2026-10-04T13:25:47.2059030Z  * [new tag]             v0.2.8-unstable.20260928171610 -> v0.2.8-unstable.20260928171610
+2026-10-04T13:25:47.2060250Z  * [new tag]             v0.2.8-unstable.20260928174506 -> v0.2.8-unstable.20260928174506
+2026-10-04T13:25:47.2061521Z  * [new tag]             v0.2.8-unstable.20260928200700 -> v0.2.8-unstable.20260928200700
+2026-10-04T13:25:47.2062750Z  * [new tag]             v0.2.8-unstable.20260928203933 -> v0.2.8-unstable.20260928203933
+2026-10-04T13:25:47.2063965Z  * [new tag]             v0.2.8-unstable.20260928205715 -> v0.2.8-unstable.20260928205715
+2026-10-04T13:25:47.2065172Z  * [new tag]             v0.2.8-unstable.20260928211410 -> v0.2.8-unstable.20260928211410
+2026-10-04T13:25:47.2066381Z  * [new tag]             v0.2.8-unstable.20260928212032 -> v0.2.8-unstable.20260928212032
+2026-10-04T13:25:47.2067588Z  * [new tag]             v0.2.8-unstable.20260928213855 -> v0.2.8-unstable.20260928213855
+2026-10-04T13:25:47.2068785Z  * [new tag]             v0.2.8-unstable.20260928220913 -> v0.2.8-unstable.20260928220913
+2026-10-04T13:25:47.2069989Z  * [new tag]             v0.2.8-unstable.20260929051400 -> v0.2.8-unstable.20260929051400
+2026-10-04T13:25:47.2071248Z  * [new tag]             v0.2.8-unstable.20260929054634 -> v0.2.8-unstable.20260929054634
+2026-10-04T13:25:47.2072457Z  * [new tag]             v0.2.8-unstable.20260929071238 -> v0.2.8-unstable.20260929071238
+2026-10-04T13:25:47.2073666Z  * [new tag]             v0.2.8-unstable.20260929075637 -> v0.2.8-unstable.20260929075637
+2026-10-04T13:25:47.2074863Z  * [new tag]             v0.2.8-unstable.20260929081509 -> v0.2.8-unstable.20260929081509
+2026-10-04T13:25:47.2076074Z  * [new tag]             v0.2.8-unstable.20260929081749 -> v0.2.8-unstable.20260929081749
+2026-10-04T13:25:47.2077273Z  * [new tag]             v0.2.8-unstable.20260929083012 -> v0.2.8-unstable.20260929083012
+2026-10-04T13:25:47.2078486Z  * [new tag]             v0.2.8-unstable.20260929085206 -> v0.2.8-unstable.20260929085206
+2026-10-04T13:25:47.2079686Z  * [new tag]             v0.2.8-unstable.20260929091529 -> v0.2.8-unstable.20260929091529
+2026-10-04T13:25:47.2081138Z  * [new tag]             v0.2.8-unstable.20260929103053 -> v0.2.8-unstable.20260929103053
+2026-10-04T13:25:47.2082745Z  * [new tag]             v0.2.8-unstable.20260929110234 -> v0.2.8-unstable.20260929110234
+2026-10-04T13:25:47.2083956Z  * [new tag]             v0.2.8-unstable.20260929112637 -> v0.2.8-unstable.20260929112637
+2026-10-04T13:25:47.2085166Z  * [new tag]             v0.2.8-unstable.20260929114906 -> v0.2.8-unstable.20260929114906
+2026-10-04T13:25:47.2086376Z  * [new tag]             v0.2.8-unstable.20260929141220 -> v0.2.8-unstable.20260929141220
+2026-10-04T13:25:47.2087587Z  * [new tag]             v0.2.8-unstable.20260929152839 -> v0.2.8-unstable.20260929152839
+2026-10-04T13:25:47.2088800Z  * [new tag]             v0.2.8-unstable.20260929161751 -> v0.2.8-unstable.20260929161751
+2026-10-04T13:25:47.2090021Z  * [new tag]             v0.2.8-unstable.20260929164644 -> v0.2.8-unstable.20260929164644
+2026-10-04T13:25:47.2091401Z  * [new tag]             v0.2.8-unstable.20260929175756 -> v0.2.8-unstable.20260929175756
+2026-10-04T13:25:47.2092615Z  * [new tag]             v0.2.8-unstable.20260929190757 -> v0.2.8-unstable.20260929190757
+2026-10-04T13:25:47.2093820Z  * [new tag]             v0.2.8-unstable.20260929192823 -> v0.2.8-unstable.20260929192823
+2026-10-04T13:25:47.2095019Z  * [new tag]             v0.2.8-unstable.20260929201303 -> v0.2.8-unstable.20260929201303
+2026-10-04T13:25:47.2096222Z  * [new tag]             v0.2.8-unstable.20260929213238 -> v0.2.8-unstable.20260929213238
+2026-10-04T13:25:47.2097428Z  * [new tag]             v0.2.8-unstable.20260930034848 -> v0.2.8-unstable.20260930034848
+2026-10-04T13:25:47.2098647Z  * [new tag]             v0.2.8-unstable.20260930080106 -> v0.2.8-unstable.20260930080106
+2026-10-04T13:25:47.2099994Z  * [new tag]             v0.2.8-unstable.20260930081054 -> v0.2.8-unstable.20260930081054
+2026-10-04T13:25:47.2101262Z  * [new tag]             v0.2.8-unstable.20260930081628 -> v0.2.8-unstable.20260930081628
+2026-10-04T13:25:47.2102482Z  * [new tag]             v0.2.8-unstable.20260930091103 -> v0.2.8-unstable.20260930091103
+2026-10-04T13:25:47.2103689Z  * [new tag]             v0.2.8-unstable.20260930095411 -> v0.2.8-unstable.20260930095411
+2026-10-04T13:25:47.2104884Z  * [new tag]             v0.2.8-unstable.20260930114603 -> v0.2.8-unstable.20260930114603
+2026-10-04T13:25:47.2106120Z  * [new tag]             v0.2.8-unstable.20260930123132 -> v0.2.8-unstable.20260930123132
+2026-10-04T13:25:47.2107338Z  * [new tag]             v0.2.8-unstable.20260930124853 -> v0.2.8-unstable.20260930124853
+2026-10-04T13:25:47.2108550Z  * [new tag]             v0.2.8-unstable.20260930125422 -> v0.2.8-unstable.20260930125422
+2026-10-04T13:25:47.2109804Z  * [new tag]             v0.2.8-unstable.20260930125755 -> v0.2.8-unstable.20260930125755
+2026-10-04T13:25:47.2111068Z  * [new tag]             v0.2.8-unstable.20260930130040 -> v0.2.8-unstable.20260930130040
+2026-10-04T13:25:47.2112282Z  * [new tag]             v0.2.8-unstable.20260930130327 -> v0.2.8-unstable.20260930130327
+2026-10-04T13:25:47.2113493Z  * [new tag]             v0.2.8-unstable.20260930131509 -> v0.2.8-unstable.20260930131509
+2026-10-04T13:25:47.2114701Z  * [new tag]             v0.2.8-unstable.20260930134742 -> v0.2.8-unstable.20260930134742
+2026-10-04T13:25:47.2115909Z  * [new tag]             v0.2.8-unstable.20260930212819 -> v0.2.8-unstable.20260930212819
+2026-10-04T13:25:47.2117122Z  * [new tag]             v0.2.8-unstable.20261001050955 -> v0.2.8-unstable.20261001050955
+2026-10-04T13:25:47.2118327Z  * [new tag]             v0.2.8-unstable.20261001053057 -> v0.2.8-unstable.20261001053057
+2026-10-04T13:25:47.2119527Z  * [new tag]             v0.2.8-unstable.20261001063337 -> v0.2.8-unstable.20261001063337
+2026-10-04T13:25:47.2120732Z  * [new tag]             v0.2.8-unstable.20261001064725 -> v0.2.8-unstable.20261001064725
+2026-10-04T13:25:47.2121988Z  * [new tag]             v0.2.8-unstable.20261001133323 -> v0.2.8-unstable.20261001133323
+2026-10-04T13:25:47.2123275Z  * [new tag]             v0.2.8-unstable.20261001134335 -> v0.2.8-unstable.20261001134335
+2026-10-04T13:25:47.2124488Z  * [new tag]             v0.2.8-unstable.20261001200313 -> v0.2.8-unstable.20261001200313
+2026-10-04T13:25:47.2125693Z  * [new tag]             v0.2.8-unstable.20261001203247 -> v0.2.8-unstable.20261001203247
+2026-10-04T13:25:47.2126899Z  * [new tag]             v0.2.8-unstable.20261001203905 -> v0.2.8-unstable.20261001203905
+2026-10-04T13:25:47.2128099Z  * [new tag]             v0.2.8-unstable.20261001213320 -> v0.2.8-unstable.20261001213320
+2026-10-04T13:25:47.2129308Z  * [new tag]             v0.2.8-unstable.20261001215229 -> v0.2.8-unstable.20261001215229
+2026-10-04T13:25:47.2130501Z  * [new tag]             v0.2.8-unstable.20261001220606 -> v0.2.8-unstable.20261001220606
+2026-10-04T13:25:47.2131896Z  * [new tag]             v0.2.8-unstable.20261001223423 -> v0.2.8-unstable.20261001223423
+2026-10-04T13:25:47.2133084Z  * [new tag]             v0.2.8-unstable.20261001224554 -> v0.2.8-unstable.20261001224554
+2026-10-04T13:25:47.2134291Z  * [new tag]             v0.2.8-unstable.20261001225249 -> v0.2.8-unstable.20261001225249
+2026-10-04T13:25:47.2135493Z  * [new tag]             v0.2.8-unstable.20261001231238 -> v0.2.8-unstable.20261001231238
+2026-10-04T13:25:47.2136697Z  * [new tag]             v0.2.8-unstable.20261001233224 -> v0.2.8-unstable.20261001233224
+2026-10-04T13:25:47.2137905Z  * [new tag]             v0.2.8-unstable.20261001234113 -> v0.2.8-unstable.20261001234113
+2026-10-04T13:25:47.2139105Z  * [new tag]             v0.2.8-unstable.20261002041236 -> v0.2.8-unstable.20261002041236
+2026-10-04T13:25:47.2140295Z  * [new tag]             v0.2.8-unstable.20261002042444 -> v0.2.8-unstable.20261002042444
+2026-10-04T13:25:47.2141544Z  * [new tag]             v0.2.8-unstable.20261002043443 -> v0.2.8-unstable.20261002043443
+2026-10-04T13:25:47.2142842Z  * [new tag]             v0.2.8-unstable.20261002044809 -> v0.2.8-unstable.20261002044809
+2026-10-04T13:25:47.2144046Z  * [new tag]             v0.2.8-unstable.20261002050244 -> v0.2.8-unstable.20261002050244
+2026-10-04T13:25:47.2145246Z  * [new tag]             v0.2.8-unstable.20261002055926 -> v0.2.8-unstable.20261002055926
+2026-10-04T13:25:47.2146443Z  * [new tag]             v0.2.8-unstable.20261002075447 -> v0.2.8-unstable.20261002075447
+2026-10-04T13:25:47.2147643Z  * [new tag]             v0.2.8-unstable.20261002090320 -> v0.2.8-unstable.20261002090320
+2026-10-04T13:25:47.2148858Z  * [new tag]             v0.2.8-unstable.20261002090758 -> v0.2.8-unstable.20261002090758
+2026-10-04T13:25:47.2150069Z  * [new tag]             v0.2.8-unstable.20261002091538 -> v0.2.8-unstable.20261002091538
+2026-10-04T13:25:47.2151325Z  * [new tag]             v0.2.8-unstable.20261002091907 -> v0.2.8-unstable.20261002091907
+2026-10-04T13:25:47.2152529Z  * [new tag]             v0.2.8-unstable.20261002102547 -> v0.2.8-unstable.20261002102547
+2026-10-04T13:25:47.2153719Z  * [new tag]             v0.2.8-unstable.20261002112842 -> v0.2.8-unstable.20261002112842
+2026-10-04T13:25:47.2154912Z  * [new tag]             v0.2.8-unstable.20261002113416 -> v0.2.8-unstable.20261002113416
+2026-10-04T13:25:47.2156110Z  * [new tag]             v0.2.8-unstable.20261002130222 -> v0.2.8-unstable.20261002130222
+2026-10-04T13:25:47.2157305Z  * [new tag]             v0.2.8-unstable.20261002133652 -> v0.2.8-unstable.20261002133652
+2026-10-04T13:25:47.2158497Z  * [new tag]             v0.2.8-unstable.20261002135648 -> v0.2.8-unstable.20261002135648
+2026-10-04T13:25:47.2159690Z  * [new tag]             v0.2.8-unstable.20261002141250 -> v0.2.8-unstable.20261002141250
+2026-10-04T13:25:47.2160885Z  * [new tag]             v0.2.8-unstable.20261002145016 -> v0.2.8-unstable.20261002145016
+2026-10-04T13:25:47.2162142Z  * [new tag]             v0.2.8-unstable.20261002152637 -> v0.2.8-unstable.20261002152637
+2026-10-04T13:25:47.2163336Z  * [new tag]             v0.2.8-unstable.20261002195815 -> v0.2.8-unstable.20261002195815
+2026-10-04T13:25:47.2164528Z  * [new tag]             v0.2.8-unstable.20261002205513 -> v0.2.8-unstable.20261002205513
+2026-10-04T13:25:47.2165813Z  * [new tag]             v0.2.8-unstable.20261002220116 -> v0.2.8-unstable.20261002220116
+2026-10-04T13:25:47.2167002Z  * [new tag]             v0.2.8-unstable.20261002221821 -> v0.2.8-unstable.20261002221821
+2026-10-04T13:25:47.2168198Z  * [new tag]             v0.2.8-unstable.20261003061657 -> v0.2.8-unstable.20261003061657
+2026-10-04T13:25:47.2169399Z  * [new tag]             v0.2.8-unstable.20261003072636 -> v0.2.8-unstable.20261003072636
+2026-10-04T13:25:47.2170589Z  * [new tag]             v0.2.8-unstable.20261003074219 -> v0.2.8-unstable.20261003074219
+2026-10-04T13:25:47.2171960Z  * [new tag]             v0.2.8-unstable.20261003084453 -> v0.2.8-unstable.20261003084453
+2026-10-04T13:25:47.2173160Z  * [new tag]             v0.2.8-unstable.20261003110522 -> v0.2.8-unstable.20261003110522
+2026-10-04T13:25:47.2174366Z  * [new tag]             v0.2.8-unstable.20261003191506 -> v0.2.8-unstable.20261003191506
+2026-10-04T13:25:47.2175565Z  * [new tag]             v0.2.8-unstable.20261003212042 -> v0.2.8-unstable.20261003212042
+2026-10-04T13:25:47.2176754Z  * [new tag]             v0.2.8-unstable.20261003212716 -> v0.2.8-unstable.20261003212716
+2026-10-04T13:25:47.2177963Z  * [new tag]             v0.2.8-unstable.20261004054526 -> v0.2.8-unstable.20261004054526
+2026-10-04T13:25:47.2179156Z  * [new tag]             v0.2.8-unstable.20261004062004 -> v0.2.8-unstable.20261004062004
+2026-10-04T13:25:47.2180352Z  * [new tag]             v0.2.8-unstable.20261004062844 -> v0.2.8-unstable.20261004062844
+2026-10-04T13:25:47.2181605Z  * [new tag]             v0.2.8-unstable.20261004065623 -> v0.2.8-unstable.20261004065623
+2026-10-04T13:25:47.2182801Z  * [new tag]             v0.2.8-unstable.20261004073313 -> v0.2.8-unstable.20261004073313
+2026-10-04T13:25:47.2184108Z  * [new tag]             v0.2.8-unstable.20261004075705 -> v0.2.8-unstable.20261004075705
+2026-10-04T13:25:47.2185305Z  * [new tag]             v0.2.8-unstable.20261004081240 -> v0.2.8-unstable.20261004081240
+2026-10-04T13:25:47.2186517Z  * [new tag]             v0.2.8-unstable.20261004084450 -> v0.2.8-unstable.20261004084450
+2026-10-04T13:25:47.2187719Z  * [new tag]             v0.2.8-unstable.20261004101049 -> v0.2.8-unstable.20261004101049
+2026-10-04T13:25:47.2188914Z  * [new tag]             v0.2.8-unstable.20261004112539 -> v0.2.8-unstable.20261004112539
+2026-10-04T13:25:47.2190098Z  * [new tag]             v0.2.8-unstable.20261004114826 -> v0.2.8-unstable.20261004114826
+2026-10-04T13:25:47.2191360Z  * [new tag]             v0.2.8-unstable.20261004121959 -> v0.2.8-unstable.20261004121959
+2026-10-04T13:25:47.2192565Z  * [new ref]             fec675b02e718faa9faa4eac700fd4f2bc32a1fc -> pull/1164/merge
+2026-10-04T13:25:47.2194787Z ##[endgroup]
+2026-10-04T13:25:47.2195588Z ##[group]Determining the checkout info
+2026-10-04T13:25:47.2196507Z ##[endgroup]
+2026-10-04T13:25:47.2197006Z [command]/usr/bin/git sparse-checkout disable
+2026-10-04T13:25:47.2198593Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-04T13:25:47.2200490Z ##[group]Checking out the ref
+2026-10-04T13:25:47.2201430Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/1164/merge
+2026-10-04T13:25:47.3410917Z Note: switching to 'refs/remotes/pull/1164/merge'.
+2026-10-04T13:25:47.3412709Z 
+2026-10-04T13:25:47.3413902Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-04T13:25:47.3416705Z changes and commit them, and you can discard any commits you make in this
+2026-10-04T13:25:47.3419561Z state without impacting any branches by switching back to a branch.
+2026-10-04T13:25:47.3421365Z 
+2026-10-04T13:25:47.3422432Z If you want to create a new branch to retain commits you create, you may
+2026-10-04T13:25:47.3425078Z do so (now or later) by using -c with the switch command. Example:
+2026-10-04T13:25:47.3426709Z 
+2026-10-04T13:25:47.3427379Z   git switch -c <new-branch-name>
+2026-10-04T13:25:47.3428469Z 
+2026-10-04T13:25:47.3429162Z Or undo this operation with:
+2026-10-04T13:25:47.3430189Z 
+2026-10-04T13:25:47.3431164Z   git switch -
+2026-10-04T13:25:47.3431959Z 
+2026-10-04T13:25:47.3433203Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-04T13:25:47.3434902Z 
+2026-10-04T13:25:47.3436007Z HEAD is now at fec675b0 Merge d1e9f79326e94d7fd0da5f3efe0a0d9f3d8c3f00 into c58eae4ad6b052bf30c0632e22a16f74deceaa82
+2026-10-04T13:25:47.3442521Z ##[endgroup]
+2026-10-04T13:25:47.3487602Z [command]/usr/bin/git log -1 --format=%H
+2026-10-04T13:25:47.3510638Z fec675b02e718faa9faa4eac700fd4f2bc32a1fc
+2026-10-04T13:25:47.3873869Z ##[group]Run actions/checkout@v4
+2026-10-04T13:25:47.3874851Z with:
+2026-10-04T13:25:47.3875663Z   repository: ConductionNL/.github
+2026-10-04T13:25:47.3876632Z   ref: main
+2026-10-04T13:25:47.3877413Z   path: gates
+2026-10-04T13:25:47.3885154Z   token: ***
+2026-10-04T13:25:47.3886080Z   ssh-strict: true
+2026-10-04T13:25:47.3886907Z   ssh-user: git
+2026-10-04T13:25:47.3887752Z   persist-credentials: true
+2026-10-04T13:25:47.3888658Z   clean: true
+2026-10-04T13:25:47.3889510Z   sparse-checkout-cone-mode: true
+2026-10-04T13:25:47.3890488Z   fetch-depth: 1
+2026-10-04T13:25:47.3891494Z   fetch-tags: false
+2026-10-04T13:25:47.3892381Z   show-progress: true
+2026-10-04T13:25:47.3893233Z   lfs: false
+2026-10-04T13:25:47.3894030Z   submodules: false
+2026-10-04T13:25:47.3894891Z   set-safe-directory: true
+2026-10-04T13:25:47.3895825Z   allow-unsafe-pr-checkout: false
+2026-10-04T13:25:47.3896790Z ##[endgroup]
+2026-10-04T13:25:47.4711559Z Syncing repository: ConductionNL/.github
+2026-10-04T13:25:47.4717638Z ##[group]Getting Git version info
+2026-10-04T13:25:47.4718973Z Working directory is '/home/runner/work/portaliq/portaliq/gates'
+2026-10-04T13:25:47.4750878Z [command]/usr/bin/git version
+2026-10-04T13:25:47.4784024Z git version 2.55.0
+2026-10-04T13:25:47.4803884Z ##[endgroup]
+2026-10-04T13:25:47.4817585Z Temporarily overriding HOME='/home/runner/work/_temp/eadb1070-f964-478a-bce5-abc1edcfe975' before making global git config changes
+2026-10-04T13:25:47.4820318Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-04T13:25:47.4823013Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/portaliq/portaliq/gates
+2026-10-04T13:25:47.4852270Z ##[group]Initializing the repository
+2026-10-04T13:25:47.4856756Z [command]/usr/bin/git init /home/runner/work/portaliq/portaliq/gates
+2026-10-04T13:25:47.4890174Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-04T13:25:47.4892778Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-04T13:25:47.4894855Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-04T13:25:47.4896217Z hint: call:
+2026-10-04T13:25:47.4897346Z hint:
+2026-10-04T13:25:47.4898268Z hint: 	git config --global init.defaultBranch <name>
+2026-10-04T13:25:47.4899350Z hint:
+2026-10-04T13:25:47.4900399Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-04T13:25:47.4902366Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-04T13:25:47.4903752Z hint:
+2026-10-04T13:25:47.4904525Z hint: 	git branch -m <name>
+2026-10-04T13:25:47.4905388Z hint:
+2026-10-04T13:25:47.4906534Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-04T13:25:47.4908440Z Initialized empty Git repository in /home/runner/work/portaliq/portaliq/gates/.git/
+2026-10-04T13:25:47.4912083Z [command]/usr/bin/git remote add origin https://github.com/ConductionNL/.github
+2026-10-04T13:25:47.4927466Z ##[endgroup]
+2026-10-04T13:25:47.4929050Z ##[group]Disabling automatic garbage collection
+2026-10-04T13:25:47.4930649Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-04T13:25:47.4955944Z ##[endgroup]
+2026-10-04T13:25:47.4957308Z ##[group]Setting up auth
+2026-10-04T13:25:47.4961611Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-04T13:25:47.4988365Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-04T13:25:47.5169258Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-04T13:25:47.5204183Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-04T13:25:47.5386248Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-04T13:25:47.5417734Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-04T13:25:47.5601545Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-04T13:25:47.5635443Z ##[endgroup]
+2026-10-04T13:25:47.5636979Z ##[group]Fetching the repository
+2026-10-04T13:25:47.5644985Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/heads/main*:refs/remotes/origin/main* +refs/tags/main*:refs/tags/main*
+2026-10-04T13:25:49.0889068Z From https://github.com/ConductionNL/.github
+2026-10-04T13:25:49.0889528Z  * [new branch]      main       -> origin/main
+2026-10-04T13:25:49.0893651Z ##[endgroup]
+2026-10-04T13:25:49.0894153Z ##[group]Determining the checkout info
+2026-10-04T13:25:49.0902602Z [command]/usr/bin/git branch --list --remote origin/main
+2026-10-04T13:25:49.0926076Z   origin/main
+2026-10-04T13:25:49.0932426Z ##[endgroup]
+2026-10-04T13:25:49.0934238Z [command]/usr/bin/git sparse-checkout disable
+2026-10-04T13:25:49.0992218Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-04T13:25:49.0994092Z ##[group]Checking out the ref
+2026-10-04T13:25:49.1001250Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-10-04T13:25:49.1757425Z Switched to a new branch 'main'
+2026-10-04T13:25:49.1758107Z branch 'main' set up to track 'origin/main'.
+2026-10-04T13:25:49.1764175Z ##[endgroup]
+2026-10-04T13:25:49.1799326Z [command]/usr/bin/git log -1 --format=%H
+2026-10-04T13:25:49.1821281Z 1e69d38c9a386487860b6b2454d47b8c8ab391cd
+2026-10-04T13:25:49.1956456Z ##[group]Run set -u
+2026-10-04T13:25:49.1956845Z [36;1mset -u[0m
+2026-10-04T13:25:49.1957286Z [36;1mRUNNER="${GITHUB_WORKSPACE}/gates/hydra-gates/scripts/run-hydra-gates.sh"[0m
+2026-10-04T13:25:49.1957917Z [36;1mWRAPPER="${GITHUB_WORKSPACE}/gates/hydra-gates/bin/hydra-gates"[0m
+2026-10-04T13:25:49.1958485Z [36;1m# A missing file is a broken checkout, not an old package. Fail — a[0m
+2026-10-04T13:25:49.1958969Z [36;1m# capability probe that answers "no" to a question it could not read[0m
+2026-10-04T13:25:49.1959380Z [36;1m# is the same defect one layer up.[0m
+2026-10-04T13:25:49.1959681Z [36;1mfor f in "${RUNNER}" "${WRAPPER}"; do[0m
+2026-10-04T13:25:49.1959960Z [36;1m  if [ ! -f "${f}" ]; then[0m
+2026-10-04T13:25:49.1960682Z [36;1m    echo "::error::the hydra-gates checkout at ref '${GATES_REF}' has no ${f#"${GITHUB_WORKSPACE}/gates/"}. This is not a version difference — the package did not check out. Nothing was gated."[0m
+2026-10-04T13:25:49.1961819Z [36;1m    exit 1[0m
+2026-10-04T13:25:49.1962032Z [36;1m  fi[0m
+2026-10-04T13:25:49.1962224Z [36;1mdone[0m
+2026-10-04T13:25:49.1962432Z [36;1mCAP=0[0m
+2026-10-04T13:25:49.1962797Z [36;1mif grep -q '_NA_GATES' "${RUNNER}" && grep -q 'NOT APPLICABLE' "${WRAPPER}"; then[0m
+2026-10-04T13:25:49.1963170Z [36;1m  CAP=1[0m
+2026-10-04T13:25:49.1963360Z [36;1mfi[0m
+2026-10-04T13:25:49.1963599Z [36;1mecho "categories=${CAP}" >> "$GITHUB_OUTPUT"[0m
+2026-10-04T13:25:49.1963935Z [36;1mif [ "${CAP}" -eq 1 ]; then[0m
+2026-10-04T13:25:49.1964458Z [36;1m  echo "hydra-gates @ ${GATES_REF} reports NOT APPLICABLE separately from SKIPPED — coverage enforcement can be honoured."[0m
+2026-10-04T13:25:49.1964985Z [36;1melse[0m
+2026-10-04T13:25:49.1965318Z [36;1m  echo "hydra-gates @ ${GATES_REF} predates the coverage accounting fix (v1.3.0)."[0m
+2026-10-04T13:25:49.1965698Z [36;1mfi[0m
+2026-10-04T13:25:49.2144378Z shell: /usr/bin/bash -e {0}
+2026-10-04T13:25:49.2144697Z env:
+2026-10-04T13:25:49.2144943Z   GATES_REF: main
+2026-10-04T13:25:49.2145156Z ##[endgroup]
+2026-10-04T13:25:49.2248869Z hydra-gates @ main reports NOT APPLICABLE separately from SKIPPED — coverage enforcement can be honoured.
+2026-10-04T13:25:49.2332384Z ##[group]Run set -uo pipefail
+2026-10-04T13:25:49.2332727Z [36;1mset -uo pipefail[0m
+2026-10-04T13:25:49.2332960Z [36;1mREF='main'[0m
+2026-10-04T13:25:49.2333169Z [36;1mMISSING=""[0m
+2026-10-04T13:25:49.2333369Z [36;1mfor p in \[0m
+2026-10-04T13:25:49.2333625Z [36;1m  bin/hydra-gates \[0m
+2026-10-04T13:25:49.2333890Z [36;1m  scripts/run-hydra-gates.sh \[0m
+2026-10-04T13:25:49.2334165Z [36;1m  scripts/axe-run.cjs \[0m
+2026-10-04T13:25:49.2334446Z [36;1m  scripts/lib/check_spec_anchors.py \[0m
+2026-10-04T13:25:49.2334758Z [36;1m  scripts/lib/check_form_labels.py \[0m
+2026-10-04T13:25:49.2335066Z [36;1m  scripts/lib/check_license_triangle.py \[0m
+2026-10-04T13:25:49.2335377Z [36;1m  scripts/lib/check_no_admin_idor.py \[0m
+2026-10-04T13:25:49.2335676Z [36;1m  scripts/lib/check_semantic_auth.py \[0m
+2026-10-04T13:25:49.2335976Z [36;1m  scripts/lib/check_orphan_auth.py[0m
+2026-10-04T13:25:49.2336242Z [36;1mdo[0m
+2026-10-04T13:25:49.2336616Z [36;1m  [ -e "${GITHUB_WORKSPACE}/gates/hydra-gates/${p}" ] || MISSING="${MISSING} ${p}"[0m
+2026-10-04T13:25:49.2337001Z [36;1mdone[0m
+2026-10-04T13:25:49.2337205Z [36;1mif [ -n "${MISSING}" ]; then[0m
+2026-10-04T13:25:49.2337554Z [36;1m  echo "::error::hydra-gates-ref '${REF}' does not contain:${MISSING}"[0m
+2026-10-04T13:25:49.2338737Z [36;1m  echo "::error::This workflow floats on @main and executes those paths by name inside the PINNED package, so a pin older than them cannot run the gates they implement. Bump hydra-gates-ref to a tag that includes them. This is NOT a code-quality finding about your repository."[0m
+2026-10-04T13:25:49.2339685Z [36;1m  exit 1[0m
+2026-10-04T13:25:49.2339876Z [36;1mfi[0m
+2026-10-04T13:25:49.2340209Z [36;1mecho "Pinned gates package at '${REF}' provides every path this workflow executes."[0m
+2026-10-04T13:25:49.2378011Z shell: /usr/bin/bash -e {0}
+2026-10-04T13:25:49.2378283Z ##[endgroup]
+2026-10-04T13:25:49.2436171Z Pinned gates package at 'main' provides every path this workflow executes.
+2026-10-04T13:25:49.2477786Z ##[group]Run set -u
+2026-10-04T13:25:49.2478074Z [36;1mset -u[0m
+2026-10-04T13:25:49.2478302Z [36;1mDIR="${GITHUB_WORKSPACE}/app"[0m
+2026-10-04T13:25:49.2478599Z [36;1mif [ ! -f "${DIR}/package.json" ]; then[0m
+2026-10-04T13:25:49.2478929Z [36;1m  echo "install=false" >> "$GITHUB_OUTPUT"[0m
+2026-10-04T13:25:49.2479859Z [36;1m  echo "::notice::No package.json at the app root, so this repo has no node dependencies to install. Gates that need them (60 icon-vocabulary) will report NOT APPLICABLE or SKIPPED with their own reason — this step is not what decides that."[0m
+2026-10-04T13:25:49.2480769Z [36;1melif [ ! -f "${DIR}/package-lock.json" ]; then[0m
+2026-10-04T13:25:49.2481345Z [36;1m  echo "install=false" >> "$GITHUB_OUTPUT"[0m
+2026-10-04T13:25:49.2481750Z [36;1m  # NOTE the escaped backticks. Inside a double-quoted string bash[0m
+2026-10-04T13:25:49.2482212Z [36;1m  # treats a bare backtick pair as COMMAND SUBSTITUTION, so writing[0m
+2026-10-04T13:25:49.2482736Z [36;1m  # this message with plain backticks would have EXECUTED `npm ci`[0m
+2026-10-04T13:25:49.2483168Z [36;1m  # here and pasted its output into the warning — in the one branch[0m
+2026-10-04T13:25:49.2483610Z [36;1m  # that fires precisely when the install is supposed to be skipped.[0m
+2026-10-04T13:25:49.2484773Z [36;1m  echo "::warning::package.json is present at the app root but package-lock.json is not, and \`npm ci\` requires a lockfile. The app's node dependencies are NOT installed, so gate-60 cannot verify that a manifest icon exists upstream and will skip as 'wiring'. Commit a package-lock.json to close that gap."[0m
+2026-10-04T13:25:49.2485808Z [36;1melse[0m
+2026-10-04T13:25:49.2486042Z [36;1m  echo "install=true" >> "$GITHUB_OUTPUT"[0m
+2026-10-04T13:25:49.2486555Z [36;1m  echo "Found package.json + package-lock.json at the app root — the app's node dependencies will be installed."[0m
+2026-10-04T13:25:49.2487029Z [36;1mfi[0m
+2026-10-04T13:25:49.2525383Z shell: /usr/bin/bash -e {0}
+2026-10-04T13:25:49.2525704Z ##[endgroup]
+2026-10-04T13:25:49.2602810Z Found package.json + package-lock.json at the app root — the app's node dependencies will be installed.
+2026-10-04T13:25:49.2765315Z ##[group]Run actions/setup-node@v4
+2026-10-04T13:25:49.2765603Z with:
+2026-10-04T13:25:49.2765840Z   node-version: 24
+2026-10-04T13:25:49.2766047Z   cache: npm
+2026-10-04T13:25:49.2766292Z   cache-dependency-path: app/package-lock.json
+2026-10-04T13:25:49.2766587Z   always-auth: false
+2026-10-04T13:25:49.2766801Z   check-latest: false
+2026-10-04T13:25:49.2769172Z   token: ***
+2026-10-04T13:25:49.2769369Z ##[endgroup]
+2026-10-04T13:25:49.4131539Z Found in cache @ /opt/hostedtoolcache/node/24.21.0/x64
+2026-10-04T13:25:49.4133380Z (node:2344) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-04T13:25:49.4134484Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-04T13:25:49.4137206Z ##[group]Environment details
+2026-10-04T13:25:49.7756115Z node: v24.21.0
+2026-10-04T13:25:49.7756712Z npm: 11.19.0
+2026-10-04T13:25:49.7757134Z yarn: 1.22.22
+2026-10-04T13:25:49.7757989Z ##[endgroup]
+2026-10-04T13:25:49.7777320Z [command]/opt/hostedtoolcache/node/24.21.0/x64/bin/npm config get cache
+2026-10-04T13:25:49.8809306Z /home/runner/.npm
+2026-10-04T13:25:50.0983155Z Cache hit for: node-cache-Linux-x64-npm-480a44c5bed86377ad6153c11403fab3968b9b613783cac220125e84170ce359
+2026-10-04T13:25:50.1089853Z (node:2344) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-04T13:25:51.3090589Z Received 33554432 of 101945961 (32.9%), 32.0 MBs/sec
+2026-10-04T13:25:51.7428301Z Received 101945961 of 101945961 (100.0%), 67.8 MBs/sec
+2026-10-04T13:25:51.7429505Z Cache Size: ~97 MB (101945961 B)
+2026-10-04T13:25:51.7495209Z [command]/usr/bin/tar -xf /home/runner/work/_temp/87b1d947-baef-4ce9-a0e0-a6629a4fd67c/cache.tzst -P -C /home/runner/work/portaliq/portaliq --use-compress-program unzstd
+2026-10-04T13:25:51.9453239Z Cache restored successfully
+2026-10-04T13:25:51.9495768Z Cache restored from key: node-cache-Linux-x64-npm-480a44c5bed86377ad6153c11403fab3968b9b613783cac220125e84170ce359
+2026-10-04T13:25:51.9608799Z ##[group]Run npm ci --no-audit --no-fund --ignore-scripts
+2026-10-04T13:25:51.9609213Z [36;1mnpm ci --no-audit --no-fund --ignore-scripts[0m
+2026-10-04T13:25:51.9656531Z shell: /usr/bin/bash -e {0}
+2026-10-04T13:25:51.9656826Z ##[endgroup]
+2026-10-04T13:25:53.3900963Z npm warn ERESOLVE overriding peer dependency
+2026-10-04T13:25:53.3901853Z npm warn While resolving: stylelint-config-html@2.0.0
+2026-10-04T13:25:53.3902239Z npm warn Found: postcss-html@1.8.1
+2026-10-04T13:25:53.3902570Z npm warn node_modules/postcss-html
+2026-10-04T13:25:53.3903061Z npm warn   peer postcss-html@"^1.0.0" from stylelint-config-recommended-vue@1.6.1
+2026-10-04T13:25:53.3903579Z npm warn   node_modules/stylelint-config-recommended-vue
+2026-10-04T13:25:53.3904195Z npm warn     peer stylelint-config-recommended-vue@"^1.6.1" from @nextcloud/stylelint-config@3.2.2
+2026-10-04T13:25:53.3904973Z npm warn     node_modules/@nextcloud/stylelint-config
+2026-10-04T13:25:53.3907163Z npm warn
+2026-10-04T13:25:53.3907604Z npm warn Could not resolve dependency:
+2026-10-04T13:25:53.3909061Z npm warn peer postcss-html@"^2.0.0" from stylelint-config-html@2.0.0
+2026-10-04T13:25:53.3909511Z npm warn node_modules/stylelint-config-html
+2026-10-04T13:25:53.3910337Z npm warn   stylelint-config-html@">=1.0.0" from stylelint-config-recommended-vue@1.6.1
+2026-10-04T13:25:53.3910900Z npm warn   node_modules/stylelint-config-recommended-vue
+2026-10-04T13:25:53.3911523Z npm warn
+2026-10-04T13:25:53.3911851Z npm warn Conflicting peer dependency: postcss-html@2.0.0
+2026-10-04T13:25:53.3912269Z npm warn node_modules/postcss-html
+2026-10-04T13:25:53.3912752Z npm warn   peer postcss-html@"^2.0.0" from stylelint-config-html@2.0.0
+2026-10-04T13:25:53.3913945Z npm warn   node_modules/stylelint-config-html
+2026-10-04T13:25:53.3914462Z npm warn     stylelint-config-html@">=1.0.0" from stylelint-config-recommended-vue@1.6.1
+2026-10-04T13:25:53.3915053Z npm warn     node_modules/stylelint-config-recommended-vue
+2026-10-04T13:25:57.4136596Z npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
+2026-10-04T13:25:58.3642995Z npm warn deprecated @gemeente-denhaag/sidenav@2.0.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+2026-10-04T13:25:58.6048704Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+2026-10-04T13:25:59.3383541Z npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-04T13:26:05.4553171Z 
+2026-10-04T13:26:05.4553809Z added 1403 packages in 13s
+2026-10-04T13:26:05.5268995Z ##[group]Run npm --prefix gates/hydra-gates install --no-save --no-audit --no-fund ajv
+2026-10-04T13:26:05.5270026Z [36;1mnpm --prefix gates/hydra-gates install --no-save --no-audit --no-fund ajv[0m
+2026-10-04T13:26:05.5315020Z shell: /usr/bin/bash -e {0}
+2026-10-04T13:26:05.5315306Z ##[endgroup]
+2026-10-04T13:26:06.2831808Z 
+2026-10-04T13:26:06.2832614Z added 5 packages in 638ms
+2026-10-04T13:26:06.2928356Z ##[group]Run set -u
+2026-10-04T13:26:06.2928685Z [36;1mset -u[0m
+2026-10-04T13:26:06.2928905Z [36;1mEVENT="pull_request"[0m
+2026-10-04T13:26:06.2929298Z [36;1mif [ "${EVENT}" = "pull_request" ] || [ "${EVENT}" = "pull_request_target" ]; then[0m
+2026-10-04T13:26:06.2929791Z [36;1m  # The PR's real target branch. This is the only base that answers[0m
+2026-10-04T13:26:06.2930243Z [36;1m  # the question the gates are being asked: "what does this PR add?"[0m
+2026-10-04T13:26:06.2930606Z [36;1m  BASE="origin/development"[0m
+2026-10-04T13:26:06.2930858Z [36;1m  SCOPE="diff"[0m
+2026-10-04T13:26:06.2931479Z [36;1m  WHY="this is a ${EVENT}, so the PR's target branch is the base and ADR-020 diff-scoping applies."[0m
+2026-10-04T13:26:06.2931915Z [36;1m[0m
+2026-10-04T13:26:06.2932227Z [36;1m  # A RELEASE PROMOTION IS THE ONE PULL REQUEST WHOSE TARGET IS THE[0m
+2026-10-04T13:26:06.2932669Z [36;1m  # WRONG BASE.[0m
+2026-10-04T13:26:06.2932913Z [36;1m  #[0m
+2026-10-04T13:26:06.2933265Z [36;1m  # The fleet promotes feature -> development -> beta -> main. By the[0m
+2026-10-04T13:26:06.2933718Z [36;1m  # time `beta` is opened against `main`, every commit in that diff has[0m
+2026-10-04T13:26:06.2934169Z [36;1m  # already faced these gates twice: once entering development, once[0m
+2026-10-04T13:26:06.2934626Z [36;1m  # entering beta. Diffing against the TARGET asks "what does this add[0m
+2026-10-04T13:26:06.2935071Z [36;1m  # to main?", and the answer is every commit since the last release --[0m
+2026-10-04T13:26:06.2935488Z [36;1m  # so a diff-scoped gate reports the whole tree as changed.[0m
+2026-10-04T13:26:06.2935807Z [36;1m  #[0m
+2026-10-04T13:26:06.2936088Z [36;1m  # Measured 2026-08-28 on openregister#2975 (hotfix/... -> main,[0m
+2026-10-04T13:26:06.2936527Z [36;1m  # 5782 commits): gate-16 reported 256 changed methods missing @spec,[0m
+2026-10-04T13:26:06.2936980Z [36;1m  # plus gate-83 and gate-70, on a tree that is byte-identical to[0m
+2026-10-04T13:26:06.2937402Z [36;1m  # `beta` -- where the SAME content passed Hydra Gates green on[0m
+2026-10-04T13:26:06.2937846Z [36;1m  # #2972. Nothing was found that beta had not already cleared; the[0m
+2026-10-04T13:26:06.2938195Z [36;1m  # base was simply wrong.[0m
+2026-10-04T13:26:06.2938439Z [36;1m  #[0m
+2026-10-04T13:26:06.2938717Z [36;1m  # So for a promotion the base is the branch being promoted FROM.[0m
+2026-10-04T13:26:06.2939146Z [36;1m  # That keeps the gates real rather than skipping them: a hotfix[0m
+2026-10-04T13:26:06.2939569Z [36;1m  # carrying genuinely new code still shows that code in the diff[0m
+2026-10-04T13:26:06.2940005Z [36;1m  # against beta, and is still judged on it. What disappears is only[0m
+2026-10-04T13:26:06.2940417Z [36;1m  # the re-litigation of commits that already passed.[0m
+2026-10-04T13:26:06.2940738Z [36;1m  IS_PROMOTION=no[0m
+2026-10-04T13:26:06.2940979Z [36;1m  case "${PR_HEAD_REF:-}" in[0m
+2026-10-04T13:26:06.2941588Z [36;1m    # `release/beta-to-main-*` is a beta -> main promotion carried on[0m
+2026-10-04T13:26:06.2942039Z [36;1m    # a prepared branch. When the two have diverged the promotion[0m
+2026-10-04T13:26:06.2942508Z [36;1m    # CANNOT be sent with `beta` as the head -- the conflicts have to[0m
+2026-10-04T13:26:06.2942954Z [36;1m    # be resolved somewhere, and resolving them on `beta` would[0m
+2026-10-04T13:26:06.2943382Z [36;1m    # rewrite the release candidate -- so the merge is prepared off[0m
+2026-10-04T13:26:06.2943779Z [36;1m    # `main` with the beta tip as its second parent.[0m
+2026-10-04T13:26:06.2944075Z [36;1m    #[0m
+2026-10-04T13:26:06.2944362Z [36;1m    # Without this arm such a branch is judged against `main`, which[0m
+2026-10-04T13:26:06.2944781Z [36;1m    # is exactly the measurement this step exists to prevent:[0m
+2026-10-04T13:26:06.2945348Z [36;1m    # measured 2026-08-30, gate-16 reported 253 changed methods[0m
+2026-10-04T13:26:06.2945882Z [36;1m    # missing @spec on filinq, on content beta had already cleared.[0m
+2026-10-04T13:26:06.2946300Z [36;1m    # Same symptom as openregister#2975 above, same wrong base.[0m
+2026-10-04T13:26:06.2946631Z [36;1m    #[0m
+2026-10-04T13:26:06.2946915Z [36;1m    # Narrow on purpose: `release/v*`, the version bump release.yml[0m
+2026-10-04T13:26:06.2947356Z [36;1m    # commits, is NOT matched. That targets development as ordinary[0m
+2026-10-04T13:26:06.2947766Z [36;1m    # work and must keep being judged against it.[0m
+2026-10-04T13:26:06.2948192Z [36;1m    development|beta|release/beta-to-main-*) IS_PROMOTION=yes ;;[0m
+2026-10-04T13:26:06.2948544Z [36;1m    hotfix/*)[0m
+2026-10-04T13:26:06.2948780Z [36;1m      case "${BASE_REF:-}" in[0m
+2026-10-04T13:26:06.2949058Z [36;1m        beta|main) IS_PROMOTION=yes ;;[0m
+2026-10-04T13:26:06.2949326Z [36;1m      esac[0m
+2026-10-04T13:26:06.2949525Z [36;1m      ;;[0m
+2026-10-04T13:26:06.2949709Z [36;1m  esac[0m
+2026-10-04T13:26:06.2949895Z [36;1m[0m
+2026-10-04T13:26:06.2950104Z [36;1m  if [ "$IS_PROMOTION" = yes ]; then[0m
+2026-10-04T13:26:06.2950391Z [36;1m    case "${BASE_REF:-}" in[0m
+2026-10-04T13:26:06.2950653Z [36;1m      main) SRC=beta ;;[0m
+2026-10-04T13:26:06.2950902Z [36;1m      beta) SRC=development ;;[0m
+2026-10-04T13:26:06.2951325Z [36;1m      *)    SRC="" ;;[0m
+2026-10-04T13:26:06.2951551Z [36;1m    esac[0m
+2026-10-04T13:26:06.2951740Z [36;1m[0m
+2026-10-04T13:26:06.2952012Z [36;1m    # Only re-point at a source branch that actually exists. A repo[0m
+2026-10-04T13:26:06.2952449Z [36;1m    # without one keeps the target as its base and says so, rather[0m
+2026-10-04T13:26:06.2952903Z [36;1m    # than resolving to an empty ref and silently scoping to nothing[0m
+2026-10-04T13:26:06.2953327Z [36;1m    # -- a gate run against no base is the failure mode this whole[0m
+2026-10-04T13:26:06.2953678Z [36;1m    # step exists to avoid.[0m
+2026-10-04T13:26:06.2954121Z [36;1m    if [ -n "$SRC" ] && git -C app rev-parse --verify --quiet "refs/remotes/origin/${SRC}" >/dev/null; then[0m
+2026-10-04T13:26:06.2954583Z [36;1m      BASE="origin/${SRC}"[0m
+2026-10-04T13:26:06.2955643Z [36;1m      WHY="this is a release promotion (${PR_HEAD_REF} -> ${BASE_REF}), so the base is the branch being promoted FROM (${SRC}). Every commit in the diff against ${BASE_REF} already passed these gates entering ${SRC}; anything genuinely new in this pull request still appears in the diff against ${SRC} and is still judged."[0m
+2026-10-04T13:26:06.2956709Z [36;1m    else[0m
+2026-10-04T13:26:06.2957452Z [36;1m      WHY="this is a release promotion (${PR_HEAD_REF} -> ${BASE_REF}), but origin/${SRC:-<none for this target>} is not available, so the target branch remains the base. Expect diff-scoped gates to report the whole release delta."[0m
+2026-10-04T13:26:06.2958254Z [36;1m    fi[0m
+2026-10-04T13:26:06.2958471Z [36;1m  fi[0m
+2026-10-04T13:26:06.2958684Z [36;1melif [ "${EVENT}" = "push" ]; then[0m
+2026-10-04T13:26:06.2959055Z [36;1m  # A push HAS a previous tip. We deliberately set NOTHING and let the[0m
+2026-10-04T13:26:06.2959508Z [36;1m  # package's own precedence chain resolve origin/HEAD ->[0m
+2026-10-04T13:26:06.2959943Z [36;1m  # origin/development -> origin/main -> origin/master, then re-scope[0m
+2026-10-04T13:26:06.2960404Z [36;1m  # to github.event.before when that lands on HEAD. Inventing a base[0m
+2026-10-04T13:26:06.2960827Z [36;1m  # here would be the HEAD~1 mistake wearing a different name.[0m
+2026-10-04T13:26:06.2961305Z [36;1m  BASE=""[0m
+2026-10-04T13:26:06.2961560Z [36;1m  SCOPE="diff"[0m
+2026-10-04T13:26:06.2962010Z [36;1m  WHY="this is a push, so the previous tip (github.event.before) is a real base and ADR-020 diff-scoping applies."[0m
+2026-10-04T13:26:06.2962483Z [36;1melse[0m
+2026-10-04T13:26:06.2962798Z [36;1m  # workflow_dispatch, schedule, and anything else with no diff to[0m
+2026-10-04T13:26:06.2963348Z [36;1m  # take. Full-repo, stated out loud, never silently empty.[0m
+2026-10-04T13:26:06.2963669Z [36;1m  BASE=""[0m
+2026-10-04T13:26:06.2963994Z [36;1m  SCOPE="full"[0m
+2026-10-04T13:26:06.2964659Z [36;1m  WHY="this is a '${EVENT}' run, which has neither a pull-request target branch nor a previous pushed tip, so no diff exists to scope to. Scanning the ENTIRE tree instead of refusing to run."[0m
+2026-10-04T13:26:06.2965331Z [36;1mfi[0m
+2026-10-04T13:26:06.2965546Z [36;1mecho "base=${BASE}" >> "$GITHUB_OUTPUT"[0m
+2026-10-04T13:26:06.2965884Z [36;1mecho "scope=${SCOPE}" >> "$GITHUB_OUTPUT"[0m
+2026-10-04T13:26:06.2966171Z [36;1m{[0m
+2026-10-04T13:26:06.2966386Z [36;1m  echo "SCOPE FOR THIS RUN: ${SCOPE}"[0m
+2026-10-04T13:26:06.2966665Z [36;1m  echo "REASON: ${WHY}"[0m
+2026-10-04T13:26:06.2967064Z [36;1m  echo "Diff base: ${BASE:-<none set — see the run output for what the package resolved>}"[0m
+2026-10-04T13:26:06.2967499Z [36;1m} | tee -a "$GITHUB_STEP_SUMMARY"[0m
+2026-10-04T13:26:06.3003244Z shell: /usr/bin/bash -e {0}
+2026-10-04T13:26:06.3003508Z env:
+2026-10-04T13:26:06.3003730Z   PR_HEAD_REF: feat/editor-text-toolbar
+2026-10-04T13:26:06.3004020Z   BASE_REF: development
+2026-10-04T13:26:06.3004233Z ##[endgroup]
+2026-10-04T13:26:06.3077252Z SCOPE FOR THIS RUN: diff
+2026-10-04T13:26:06.3078582Z REASON: this is a pull_request, so the PR's target branch is the base and ADR-020 diff-scoping applies.
+2026-10-04T13:26:06.3079451Z Diff base: origin/development
+2026-10-04T13:26:06.3126862Z ##[group]Run set -u
+2026-10-04T13:26:06.3127208Z [36;1mset -u[0m
+2026-10-04T13:26:06.3127445Z [36;1mARGS="--app-dir ${GITHUB_WORKSPACE}/app"[0m
+2026-10-04T13:26:06.3127845Z [36;1m# Full-repo scope for a run that has no diff to take (see the scope[0m
+2026-10-04T13:26:06.3128328Z [36;1m# step above). Passed unconditionally at any pin: every published tag[0m
+2026-10-04T13:26:06.3128783Z [36;1m# of the gate package parses --full, so unlike --axe-enabled it[0m
+2026-10-04T13:26:06.3129223Z [36;1m# cannot be swallowed as a positional and clobber --app-dir.[0m
+2026-10-04T13:26:06.3129572Z [36;1mif [ "diff" = "full" ]; then[0m
+2026-10-04T13:26:06.3129822Z [36;1m  ARGS="${ARGS} --full"[0m
+2026-10-04T13:26:06.3130318Z [36;1m  echo "SCOPE: full-repo. pull_request has no diff base, so every gate is run against the entire tree rather than refused."[0m
+2026-10-04T13:26:06.3130890Z [36;1melse[0m
+2026-10-04T13:26:06.3131481Z [36;1m  echo "SCOPE: diff. ADR-020 diff-scoping against the base resolved above."[0m
+2026-10-04T13:26:06.3131865Z [36;1mfi[0m
+2026-10-04T13:26:06.3132073Z [36;1mif [ "true" = "true" ]; then[0m
+2026-10-04T13:26:06.3132330Z [36;1m  if [ "1" = "1" ]; then[0m
+2026-10-04T13:26:06.3132615Z [36;1m    ARGS="${ARGS} --require-full-coverage"[0m
+2026-10-04T13:26:06.3132910Z [36;1m  else[0m
+2026-10-04T13:26:06.3134714Z [36;1m    echo "::warning::hydra-gates-require-full-coverage is on, but this run pins hydra-gates-ref='main', whose gate package cannot tell a NOT-APPLICABLE gate from a real gap — it counts every gate it did not run against coverage. Enforcing it here would fail this run for gates that have no subject matter in this repo at all (measured: decidesk and doriath, both red on nothing but gates 4, 24 and 33). COVERAGE ENFORCEMENT IS THEREFORE NOT APPLIED TO THIS RUN — the coverage block below is printed but not enforced. Bump hydra-gates-ref to v1.3.0 or later to get it back."[0m
+2026-10-04T13:26:06.3136559Z [36;1m  fi[0m
+2026-10-04T13:26:06.3136751Z [36;1mfi[0m
+2026-10-04T13:26:06.3137043Z [36;1m# gate-33's input is the ONE input this runner cannot make for itself[0m
+2026-10-04T13:26:06.3137494Z [36;1m# — it comes from a browser in the Playwright job, and only when the[0m
+2026-10-04T13:26:06.3137956Z [36;1m# caller opted in. Since the split (see the note at the top of this[0m
+2026-10-04T13:26:06.3138395Z [36;1m# job) that input is judged by the `hydra-gates-axe` job, from the[0m
+2026-10-04T13:26:06.3139008Z [36;1m# same package, and this job never sees it. So the runner is told[0m
+2026-10-04T13:26:06.3139439Z [36;1m# the report is judged EXTERNALLY: gate-33 then reports NOT[0m
+2026-10-04T13:26:06.3139862Z [36;1m# APPLICABLE to this job by name, pointing at the job that owns it,[0m
+2026-10-04T13:26:06.3140293Z [36;1m# and stays out of this job's coverage tally. Without the flag the[0m
+2026-10-04T13:26:06.3140728Z [36;1m# runner would read "enable-axe set, no report" as a structural gap[0m
+2026-10-04T13:26:06.3141296Z [36;1m# and, under --require-full-coverage, fail this job for a report[0m
+2026-10-04T13:26:06.3141681Z [36;1m# that was never supposed to arrive here.[0m
+2026-10-04T13:26:06.3141960Z [36;1m#[0m
+2026-10-04T13:26:06.3142235Z [36;1m# Gated on a capability probe, because the runner floats on the[0m
+2026-10-04T13:26:06.3142686Z [36;1m# caller's `hydra-gates-ref` and an OLD wrapper's argument parser[0m
+2026-10-04T13:26:06.3143119Z [36;1m# ends in `*) APP_DIR="$1"` — an unrecognised flag is swallowed as[0m
+2026-10-04T13:26:06.3143560Z [36;1m# a POSITIONAL and CLOBBERS the app dir. At a pin that predates the[0m
+2026-10-04T13:26:06.3144007Z [36;1m# flag it is withheld with a warning; gate-33 then reports its[0m
+2026-10-04T13:26:06.3144442Z [36;1m# pre-split NOT APPLICABLE ("the caller did not set enable-axe"),[0m
+2026-10-04T13:26:06.3144883Z [36;1m# which is the wrong reason but the right category, and the axe job[0m
+2026-10-04T13:26:06.3145240Z [36;1m# still judges the report.[0m
+2026-10-04T13:26:06.3145614Z [36;1mif [ "false" = "true" ]; then[0m
+2026-10-04T13:26:06.3146044Z [36;1m  if grep -q -- '--axe-external' "${GITHUB_WORKSPACE}/gates/hydra-gates/bin/hydra-gates"; then[0m
+2026-10-04T13:26:06.3146491Z [36;1m    ARGS="${ARGS} --axe-external"[0m
+2026-10-04T13:26:06.3147256Z [36;1m    echo "enable-axe is on: gate-33 is judged by the 'Hydra Gates (axe)' job of this run, from the same package. This job passes --axe-external so the runner accounts for it by name rather than skipping it."[0m
+2026-10-04T13:26:06.3147995Z [36;1m  else[0m
+2026-10-04T13:26:06.3149048Z [36;1m    echo "::warning::enable-axe is on, but hydra-gates-ref='main' predates --axe-external and its argument parser would swallow the flag as the app directory, losing every gate. The flag is withheld; gate-33 will report NOT APPLICABLE with its pre-split reason here, and the 'Hydra Gates (axe)' job still judges the report."[0m
+2026-10-04T13:26:06.3150159Z [36;1m  fi[0m
+2026-10-04T13:26:06.3150347Z [36;1mfi[0m
+2026-10-04T13:26:06.3150628Z [36;1m# The default shell for a `run:` block is `bash -e {0}`. A bare[0m
+2026-10-04T13:26:06.3151149Z [36;1m# invocation followed by `RC=$?` would therefore never reach the[0m
+2026-10-04T13:26:06.3151608Z [36;1m# assignment — the step would abort on the first failing gate and the[0m
+2026-10-04T13:26:06.3152057Z [36;1m# exit code, which carries the FAILURE COUNT, would be lost. Putting[0m
+2026-10-04T13:26:06.3152515Z [36;1m# the call in an `&& / ||` list suspends errexit for it, so we get the[0m
+2026-10-04T13:26:06.3152964Z [36;1m# real code. This is the 0/1 collapse the contract forbids, and it is[0m
+2026-10-04T13:26:06.3153340Z [36;1m# one character away at all times.[0m
+2026-10-04T13:26:06.3153725Z [36;1m# Output goes to a FILE and is printed afterwards, rather than through[0m
+2026-10-04T13:26:06.3154171Z [36;1m# a pipe. `bash -e {0}` plus a pipeline is how the exit code — which[0m
+2026-10-04T13:26:06.3154590Z [36;1m# carries the failure COUNT — gets replaced by the last stage's[0m
+2026-10-04T13:26:06.3155034Z [36;1m# status. Redirecting keeps the proven `&& / ||` form byte-for-byte[0m
+2026-10-04T13:26:06.3155464Z [36;1m# while still giving the assertion below something to read.[0m
+2026-10-04T13:26:06.3155857Z [36;1mGATES_OUT="${RUNNER_TEMP}/hydra-gates-output.txt"[0m
+2026-10-04T13:26:06.3156383Z [36;1mbash "${GITHUB_WORKSPACE}/gates/hydra-gates/bin/hydra-gates" ${ARGS} > "${GATES_OUT}" 2>&1 && RC=0 || RC=$?[0m
+2026-10-04T13:26:06.3156937Z [36;1mcat "${GATES_OUT}"[0m
+2026-10-04T13:26:06.3157192Z [36;1mecho "rc=${RC}" >> "$GITHUB_OUTPUT"[0m
+2026-10-04T13:26:06.3157453Z [36;1m[0m
+2026-10-04T13:26:06.3157735Z [36;1m# ── A FORCED RUN MUST NEVER REPORT GREEN OVER NOTHING ──────────────[0m
+2026-10-04T13:26:06.3158085Z [36;1m#[0m
+2026-10-04T13:26:06.3158389Z [36;1m# Full-repo scope removes the empty-diff failure mode, but it does not[0m
+2026-10-04T13:26:06.3158846Z [36;1m# by itself prove that any gate actually inspected anything: a repo[0m
+2026-10-04T13:26:06.3159281Z [36;1m# with no PHP, no src/ and no manifest would legitimately reach[0m
+2026-10-04T13:26:06.3159694Z [36;1m# "0 applicable gates" and exit 0, and that green would be[0m
+2026-10-04T13:26:06.3160114Z [36;1m# indistinguishable from a real one — the exact defect making the[0m
+2026-10-04T13:26:06.3160534Z [36;1m# dispatch produce a verdict was supposed to eliminate.[0m
+2026-10-04T13:26:06.3160856Z [36;1m#[0m
+2026-10-04T13:26:06.3161200Z [36;1m# So the count is READ, not assumed. The wrapper emits exactly one[0m
+2026-10-04T13:26:06.3161634Z [36;1m# `COVERAGE: <n> of <m> declared gates reported a result` line; <n> is[0m
+2026-10-04T13:26:06.3162079Z [36;1m# the number of gates that returned PASS or FAIL. Zero is not a pass.[0m
+2026-10-04T13:26:06.3162432Z [36;1m#[0m
+2026-10-04T13:26:06.3162724Z [36;1m# A missing COVERAGE line is also failed, not ignored — an assertion[0m
+2026-10-04T13:26:06.3163151Z [36;1m# that cannot find its subject must never resolve to "fine".[0m
+2026-10-04T13:26:06.3163605Z [36;1mif [ "diff" = "full" ] && [ "${RC}" -eq 0 ]; then[0m
+2026-10-04T13:26:06.3164093Z [36;1m  REPORTED="$(sed -n 's/^\[hydra-gates\] COVERAGE: \([0-9][0-9]*\) of .*/\1/p' "${GATES_OUT}" | head -1)"[0m
+2026-10-04T13:26:06.3164536Z [36;1m  if [ -z "${REPORTED}" ]; then[0m
+2026-10-04T13:26:06.3165531Z [36;1m    echo "::error::This was a forced full-repo run that exited 0, but no COVERAGE line could be found in the gate output, so the number of gates that actually reported a result is UNKNOWN. An unverifiable green is not a green. Failing the job rather than publishing a verdict nothing backs."[0m
+2026-10-04T13:26:06.3166525Z [36;1m    exit 1[0m
+2026-10-04T13:26:06.3166726Z [36;1m  fi[0m
+2026-10-04T13:26:06.3166941Z [36;1m  if [ "${REPORTED}" -eq 0 ]; then[0m
+2026-10-04T13:26:06.3167971Z [36;1m    echo "::error::This was a forced full-repo run and ZERO gates reported a result — every gate found no subject matter in this repository. Exit 0 here means 'nothing was measured', not 'everything passed', and a forced run exists precisely to avoid publishing that as a green. Failing the job."[0m
+2026-10-04T13:26:06.3168981Z [36;1m    exit 1[0m
+2026-10-04T13:26:06.3169187Z [36;1m  fi[0m
+2026-10-04T13:26:06.3169531Z [36;1m  echo "Forced full-repo run: ${REPORTED} gate(s) reported a real PASS/FAIL result."[0m
+2026-10-04T13:26:06.3169948Z [36;1mfi[0m
+2026-10-04T13:26:06.3170146Z [36;1m[0m
+2026-10-04T13:26:06.3170352Z [36;1mif [ "${RC}" -eq 0 ]; then[0m
+2026-10-04T13:26:06.3170804Z [36;1m  echo "All gates that ran passed. Read the COVERAGE block above before treating this as complete."[0m
+2026-10-04T13:26:06.3171400Z [36;1m  exit 0[0m
+2026-10-04T13:26:06.3171626Z [36;1mfi[0m
+2026-10-04T13:26:06.3171844Z [36;1mif [ "${RC}" -eq 99 ]; then[0m
+2026-10-04T13:26:06.3172589Z [36;1m  echo "::error::hydra-gates COULD NOT RUN (exit 99). This is a configuration error, NOT a clean tree — nothing was gated. Most often: the diff base did not resolve, or the app checkout is shallow."[0m
+2026-10-04T13:26:06.3173321Z [36;1m  exit 1[0m
+2026-10-04T13:26:06.3173526Z [36;1mfi[0m
+2026-10-04T13:26:06.3173737Z [36;1mif [ "${RC}" -eq 98 ]; then[0m
+2026-10-04T13:26:06.3175099Z [36;1m  echo "::error::hydra-gates passed every gate that ran, but a gate whose SUBJECT MATTER EXISTS did not report, and hydra-gates-require-full-coverage is set. See the GATES THAT DID NOT RUN line above — each names itself as either 'structural' (nothing produced its input) or 'wiring' (its own helper or tool is missing). Gates listed under NOT APPLICABLE are NOT the cause: they were excluded from this verdict."[0m
+2026-10-04T13:26:06.3176550Z [36;1m  exit 1[0m
+2026-10-04T13:26:06.3176732Z [36;1mfi[0m
+2026-10-04T13:26:06.3177170Z [36;1mecho "::error::${RC} Hydra gate(s) failed. The exit code is the failure COUNT — see the named [gate-N] FAIL lines above."[0m
+2026-10-04T13:26:06.3177658Z [36;1mexit 1[0m
+2026-10-04T13:26:06.3211755Z shell: /usr/bin/bash -e {0}
+2026-10-04T13:26:06.3212017Z env:
+2026-10-04T13:26:06.3212269Z   HYDRA_GATE_BASE_REF: origin/development
+2026-10-04T13:26:06.3222517Z   HYDRA_GATE_PR_BODY: ## What changes
+
+A selected "Tekst" block showed a bare textarea labelled "Markdown" in the side panel, so a heading meant typing `## Fietspad Lindelaan`. Now:
+
+- The field reads **Tekst**.
+- A toolbar sits above the textarea (`role="toolbar"`, named "Tekstopmaak") with five real buttons: **Kop**, **Vet**, **Cursief**, **Lijst** and **Link**.
+  - Kop puts `## ` at the start of the line (again removes it; `#` or `###` becomes `##`).
+  - Vet wraps the selection in `**`, Cursief in `_` (again removes them). Edge whitespace stays outside the marks. With nothing selected the marks go in with the cursor between them.
+  - Lijst puts `- ` before every selected line with text and leaves empty lines empty; on a list it removes them.
+  - Link opens a small form in the panel asking for the web address (Enter inserts, Escape cancels), no `window.prompt`. It writes `[text](address)`; with nothing selected the address is the text.
+- Ctrl+B and Ctrl+I (Cmd on a Mac) do what Vet and Cursief do.
+- After a button the focus is back in the textarea with the selection on the changed text.
+- The block still stores markdown in `props.markdown`, so existing pages keep working. The textarea keeps `data-testid="designer-field-markdown"`. New test ids: `designer-text-toolbar`, `designer-text-{heading,bold,italic,list,link}`, `designer-text-link-form`, `designer-text-link-url`, `designer-text-link-insert`, `designer-text-link-cancel`.
+- Colours come from the existing editor variables (`--color-border`, `--color-main-background`, `--color-main-text`, `--color-background-hover`, `--color-primary-element`), with a visible focus ring.
+
+## Files
+
+- `src/editor/markdownToolbar.js` (new): the pure transformations, selection in, text and selection out.
+- `src/editor/MarkdownField.vue` (new): the field with its toolbar and link form.
+- `src/editor/PageGridEditor.vue`: renders `MarkdownField` for a field of kind `markdown`.
+- `src/lib/pageWidgetCatalogue.js`: the `markdown` field override gets kind `markdown`.
+- `l10n/{nl,en}.json` and the regenerated `.js`: nine new strings (Kop, Vet, Cursief, Lijst, Webadres, Link invoegen, ...).
+- `tests/editor-text-toolbar.spec.mjs` (new), `package.json` (`check:editor-text-toolbar`).
+- `openspec/changes/editor-text-toolbar/`: proposal, tasks and the ADDED requirement.
+
+## Relation to #1162
+
+#1162 changes the canvas (drag and drop) and the palette, not the inspector field; no overlap in behaviour. I did **not** chain `check:editor-text-toolbar` into `check:specs`, because #1162 rewrites that same line and the two PRs would conflict. Once #1162 lands, append `&& npm run check:editor-text-toolbar` to `check:specs` so CI runs the new tests.
+
+## Verified locally (once, on this head)
+
+- `npm run lint`: exit 0
+- `npm run format` (prettier check): exit 0
+- `npm run check:l10n-js`: exit 0
+- `npm run check:schema-l10n`: exit 0
+- `npm run check:specs`: exit 0
+- `npm run check:editor-text-toolbar`: exit 0 (22 tests: every button, empty selection, multi-line list, toggling off, shortcuts, wiring, Dutch strings)
+- `npm run check:page-editor`: exit 0
+- `npm run check:reuse`: exit 0
+
+Not done here: a live run on :8080 and a build (the coordinator does the live check and the re-film). Inherited reds: none seen in the checks above.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+2026-10-04T13:26:06.3232728Z   HYDRA_GATE_HEAD_SHA: d1e9f79326e94d7fd0da5f3efe0a0d9f3d8c3f00
+2026-10-04T13:26:06.3233159Z   HYDRA_GATE_SPEC_ANCHOR_E2E_BLOCKING: 0
+2026-10-04T13:26:06.3233421Z ##[endgroup]
+2026-10-04T13:26:06.3288765Z SCOPE: diff. ADR-020 diff-scoping against the base resolved above.
+2026-10-04T13:27:07.6310192Z [hydra-gates] Package:  /home/runner/work/portaliq/portaliq/gates/hydra-gates
+2026-10-04T13:27:07.6311377Z [hydra-gates] App dir:  /home/runner/work/portaliq/portaliq/app
+2026-10-04T13:27:07.6312593Z [hydra-gates] File scope: FULL — the entire tracked tree (the default; ADR-020 is superseded).
+2026-10-04T13:27:07.6313641Z [hydra-gates] Delta base: origin/development ($HYDRA_GATE_BASE_REF) = c58eae4a
+2026-10-04T13:27:07.6314674Z [hydra-gates] Gates 16, 29, 47, 48 and 61 judge that change set; every other gate reads the whole tree.
+2026-10-04T13:27:07.6315018Z 
+2026-10-04T13:27:07.6315223Z [hydra-gates] findings logs: /tmp/hydra-gates.LuwD678E
+2026-10-04T13:27:07.6316084Z [hydra-gates] gate package: 1e69d38c9a386487860b6b2454d47b8c8ab391cd (git checkout at /home/runner/work/portaliq/portaliq/gates/hydra-gates/scripts)
+2026-10-04T13:27:07.6316987Z [hydra-gates] App dir: /home/runner/work/portaliq/portaliq/app (absolute)
+2026-10-04T13:27:07.6317593Z [hydra-gates] SCOPE-MODE: full
+2026-10-04T13:27:07.6318858Z [hydra-gates] File scope: the ENTIRE tracked tree — the default. A gate added or tightened after this code was written WILL surface its inherited debt here, and that is the point (hydra-gates/ADR-020-SUPERSEDED.md).
+2026-10-04T13:27:07.6319738Z [hydra-gates] Scope: full repo
+2026-10-04T13:27:07.6320566Z [hydra-gates] Delta base: origin/development = c58eae4a — 13 changed file(s).
+2026-10-04T13:27:07.6321778Z [hydra-gates] The DELTA gates (16, 29, 47, 48, 61) judge that change set, and gate 19 counts only the scenarios in spec files it touched. Every other gate reads the whole tree.
+2026-10-04T13:27:07.6322546Z [gate-1] spdx-headers: PASS
+2026-10-04T13:27:07.6322951Z [gate-2] forbidden-patterns: PASS
+2026-10-04T13:27:07.6336181Z [gate-3] stub-scan: PASS
+2026-10-04T13:27:07.6336720Z [gate-4] composer-audit: PASS
+2026-10-04T13:27:07.6338745Z [hydra-gates] gate-5 route-auth: 2 routed entr(ies) NOT JUDGED (controller class unresolvable here) — see /tmp/hydra-gates.LuwD678E/hydra-gate-route-auth-unresolved.log. This is not a pass for them; reachability is gate-14's.
+2026-10-04T13:27:07.6340135Z [gate-5] route-auth: PASS
+2026-10-04T13:27:07.6340645Z [gate-6] orphan-auth: PASS
+2026-10-04T13:27:07.6341254Z [gate-7] no-admin-idor: PASS
+2026-10-04T13:27:07.6341751Z [gate-8] unsafe-auth-resolver: PASS
+2026-10-04T13:27:07.6342232Z [gate-9] semantic-auth: PASS
+2026-10-04T13:27:07.6342694Z [gate-10] initial-state: PASS
+2026-10-04T13:27:07.6343131Z [gate-11] admin-router: PASS
+2026-10-04T13:27:07.6343602Z [gate-12] nc-input-labels: PASS
+2026-10-04T13:27:07.6344052Z [gate-13] modal-isolation: PASS
+2026-10-04T13:27:07.6344508Z [gate-14] route-reachability: PASS
+2026-10-04T13:27:07.6345019Z [gate-15] dashboard-antipattern: PASS
+2026-10-04T13:27:07.6346373Z [gate-16] spec-coverage: FAIL — 6 changed method(s) missing @spec — see /tmp/hydra-gates.LuwD678E/hydra-gate-spec-coverage.log
+2026-10-04T13:27:07.6347408Z [gate-17] redundant-controller: PASS
+2026-10-04T13:27:07.6347920Z [gate-18] notification-dialect: PASS
+2026-10-04T13:27:07.6349680Z [gate-18] notification-dialect: WARNING — 1 imperative-dispatch site(s) (advisory, non-blocking) — see /tmp/hydra-gates.LuwD678E/hydra-gate-notification-dialect-warn.log
+2026-10-04T13:27:07.6353246Z [gate-19] e2e-coverage: WARNING — 6 scenario(s) missing @e2e; 6 of them NEW scenario(s) without a test — this change adds them, and an @e2e exclude does not satisfy a scenario it adds (advisory, non-blocking — see .github#477) — see /tmp/hydra-gates.LuwD678E/hydra-gate-e2e-coverage.log
+2026-10-04T13:27:07.6355169Z [gate-20] or-objectservice-api: PASS
+2026-10-04T13:27:07.6355752Z [gate-21] conflict-markers: PASS
+2026-10-04T13:27:07.6356307Z [gate-22] manifest-validation: PASS
+2026-10-04T13:27:07.6357780Z [hydra-gates] gate-23 or-abstraction-anti-patterns: 0 rule(s) matched (see /tmp/hydra-gates.LuwD678E/hydra-gate-or-abstraction-anti-patterns.log); BLOCK mode.
+2026-10-04T13:27:07.6359545Z [gate-23] or-abstraction-anti-patterns: PASS
+2026-10-04T13:27:07.6360168Z [gate-24] integration-parity: PASS
+2026-10-04T13:27:07.6360735Z [gate-25] contract-coverage: PASS
+2026-10-04T13:27:07.6361382Z [gate-26] visual-coverage: PASS
+2026-10-04T13:27:07.6361875Z [gate-27] no-phantom-cross-app-rpc: PASS
+2026-10-04T13:27:07.6362448Z [gate-28] license-triangle: PASS
+2026-10-04T13:27:07.6364768Z [gate-29] gitignore-then-commit: NOT APPLICABLE — the diff against 'origin/development' adds no non-comment line to .gitignore, so there is no new ignore rule whose path could already be tracked. Diff-scoped out under ADR-020.
+2026-10-04T13:27:07.6367780Z [hydra-gates] gate-30 public-monitoring: 2 monitoring endpoint(s) inspected of 2 name-matched candidate(s); 2 scrape target(s). See /tmp/hydra-gates.LuwD678E/hydra-gate-public-monitoring-notes.log for every candidate this run did NOT judge, and why.
+2026-10-04T13:27:07.6369508Z [gate-30] public-monitoring: PASS
+2026-10-04T13:27:07.6370350Z [hydra-gates] gate-31 img-alt: 158 markup file(s) inspected, 0 unlabelled <img>.
+2026-10-04T13:27:07.6371347Z [gate-31] img-alt: PASS
+2026-10-04T13:27:07.6372316Z [hydra-gates] gate-32 semantic-controls: 158 markup file(s) inspected, 0 mouse-only click target.
+2026-10-04T13:27:07.6373244Z [gate-32] semantic-controls: PASS
+2026-10-04T13:27:07.6377536Z [gate-33] axe-core: NOT APPLICABLE — no tests/axe/report.json, and the caller did not set enable-axe — this repo has not opted into runtime accessibility enforcement. Runtime a11y (contrast / landmark / ARIA-validity / live-region) is therefore NOT enforced here, by a choice recorded in the caller's workflow rather than in this run. To enforce it, set `enable-axe: true` on ConductionNL/.github's quality.yml; this gate then becomes blocking and its absence becomes a failure.
+2026-10-04T13:27:07.6380538Z [gate-34] window-confirm: PASS
+2026-10-04T13:27:07.6381861Z [hydra-gates] gate-35 img-alt-empty-only: 158 markup file(s) inspected, 0 content image silenced with alt="".
+2026-10-04T13:27:07.6382857Z [gate-35] img-alt-empty-only: PASS
+2026-10-04T13:27:07.6383749Z [hydra-gates] gate-36 tabindex-positive: 313 file(s) inspected, 0 positive tabindex.
+2026-10-04T13:27:07.6384584Z [gate-36] tabindex-positive: PASS
+2026-10-04T13:27:07.6385150Z [gate-37] aria-hidden-focusable: PASS
+2026-10-04T13:27:07.6385671Z [gate-38] skip-link: PASS
+2026-10-04T13:27:07.6386110Z [gate-39] button-name: PASS
+2026-10-04T13:27:07.6386627Z [gate-40] form-label-association: PASS
+2026-10-04T13:27:07.6387154Z [gate-41] html-lang: PASS
+2026-10-04T13:27:07.6387583Z [gate-42] link-text-quality: PASS
+2026-10-04T13:27:07.6388040Z [gate-43] table-headers: PASS
+2026-10-04T13:27:07.6388517Z [gate-44] autocomplete-attr: PASS
+2026-10-04T13:27:07.6389051Z [gate-45] prefers-reduced-motion: PASS
+2026-10-04T13:27:07.6389605Z [gate-46] spec-anchor-existence: PASS
+2026-10-04T13:27:07.6390171Z [gate-47] security-change-has-tests: PASS
+2026-10-04T13:27:07.6394241Z [gate-48] csrf-cochange: NOT APPLICABLE — the diff against 'origin/development' touches NO lib/Controller/*.php, so there was no controller for a #[NoCSRFRequired] to be dropped FROM — NOT ONE controller line was read by this run. A removal is a property of a change set, and this change set contains no candidate for one. This is NOT a clean bill of health for the app's CSRF posture; it runs on the next change that touches a controller.
+2026-10-04T13:27:07.6395897Z [gate-49] controller-exception-translation: PASS
+2026-10-04T13:27:07.6396295Z [gate-50] security-config-fail-mode: PASS
+2026-10-04T13:27:07.6396631Z [gate-51] schema-property-titles: PASS
+2026-10-04T13:27:07.6398261Z [hydra-gates] gate-52 custom-widget-ratchet: the RATCHET half was NOT computed — the helper printed no base/head/delta counts, which it does only when it has a base ref to compare against. The JUSTIFICATION half (every custom kind:"widget" entry needs a `_note`) did run over 309 file(s). A PASS below covers that half only.
+2026-10-04T13:27:07.6399904Z [gate-52] custom-widget-ratchet: PASS
+2026-10-04T13:27:07.6400776Z [gate-53] effective-manifest-crossref: 29 WARN finding(s) (non-blocking) — see /tmp/hydra-gates.LuwD678E/hydra-gate-effective-manifest-crossref.log
+2026-10-04T13:27:07.6401647Z [gate-53] effective-manifest-crossref: PASS
+2026-10-04T13:27:07.6401979Z [gate-54] relation-dialect: PASS
+2026-10-04T13:27:07.6402297Z [gate-55] detail-page-discipline: PASS
+2026-10-04T13:27:07.6402635Z [gate-56] register-handler-resolution: PASS
+2026-10-04T13:27:07.6402998Z [gate-57] orphaned-write-capability: PASS
+2026-10-04T13:27:07.6403333Z [gate-58] e2e-networkidle: PASS
+2026-10-04T13:27:07.6403619Z [gate-59] unclosable-gate: PASS
+2026-10-04T13:27:07.6404442Z WARN  src/manifest.json: Publish [id=publish-news-item]: concept "publish" must use "CloudUploadOutline", found "Check" (ADR-077 Tier B — SHOULD).
+2026-10-04T13:27:07.6405063Z [gate-60] icon-vocabulary: PASS
+2026-10-04T13:27:07.6408398Z [gate-61] listener-work-placement: NOT APPLICABLE — the diff against 'origin/development' put every post-event registration out of scope, so NONE were inspected. This gate is deliberately delta-scoped even at full file scope — the fleet's registration backlog is a work-list, not a reason to block an unrelated change. It runs on the next change that touches a listener registration. ADVISORY, and it decides nothing here: a whole-tree sweep of this same tree reaches 1 registration(s) carrying 0 finding(s), NONE of which this run judged — see /tmp/hydra-gates.LuwD678E/hydra-gate-listener-work-placement.advisory.log. See /tmp/hydra-gates.LuwD678E/hydra-gate-listener-work-placement.log.
+2026-10-04T13:27:07.6410691Z [gate-62] store-plane: PASS
+2026-10-04T13:27:07.6411003Z [gate-63] settings-surface: PASS
+2026-10-04T13:27:07.6411495Z [gate-64] apphost-autoload-prelude: PASS
+2026-10-04T13:27:07.6411851Z [gate-65] coding-standard-adoption: PASS
+2026-10-04T13:27:07.6412227Z [gate-66] openregister-dependency-shape: PASS
+2026-10-04T13:27:07.6413158Z [gate-67] openregister-contract-parity: NOT APPLICABLE — no lib/Contract/ — this repo does not own the OpenRegister contract, so it has nothing to keep in step.
+2026-10-04T13:27:07.6413862Z [gate-68] duplicate-index-pages: PASS
+2026-10-04T13:27:07.6414201Z [gate-104] reports-one-page: PASS
+2026-10-04T13:27:07.6414660Z [gate-107] at .: app-chrome: 5 of 5 declared chrome items present and correctly placed.
+2026-10-04T13:27:07.6415071Z [gate-107] app-chrome: PASS
+2026-10-04T13:27:07.6415374Z [gate-69] page-type-discipline: PASS
+2026-10-04T13:27:07.6415708Z [gate-82] public-endpoint-throttling: PASS
+2026-10-04T13:27:07.6416047Z [gate-84] npm-supply-chain-config: PASS
+2026-10-04T13:27:07.6416405Z [gate-93] composer-cooldown-config: PASS
+2026-10-04T13:27:07.6416748Z [gate-94] retired-git-host-metadata: PASS
+2026-10-04T13:27:07.6417067Z [gate-95] adr-number-collision: PASS
+2026-10-04T13:27:07.6417374Z [gate-96] manifest-copy-style: PASS
+2026-10-04T13:27:07.6417692Z [gate-102] manifest-l10n-coverage: PASS
+2026-10-04T13:27:07.6418016Z [gate-103] locale-duplication: PASS
+2026-10-04T13:27:07.6418329Z [gate-105] duplicate-page-refresh: PASS
+2026-10-04T13:27:07.6418661Z [gate-106] cross-app-schema-slug: PASS
+2026-10-04T13:27:07.6419002Z [gate-97] system-elevation-reachability: PASS
+2026-10-04T13:27:07.6420118Z [gate-100] setup-demo-data-first: NOT APPLICABLE — this diff touches no src/manifest.json, so no setup declaration needed its first step checked. See /tmp/hydra-gates.LuwD678E/hydra-gate-setup-demo-first.log.
+2026-10-04T13:27:07.6421872Z [gate-101] demo-data-coverage: NOT APPLICABLE — this diff touches no register descriptor under lib/, so no schema needed its demo data checked. See /tmp/hydra-gates.LuwD678E/hydra-gate-demo-data-coverage.log.
+2026-10-04T13:27:07.6422698Z [gate-109] seed-required-slugs: PASS
+2026-10-04T13:27:07.6423912Z [gate-108] shipped-object-properties: NOT APPLICABLE — this diff touches no shipped register/seed/demo JSON under lib/, so no object needed its properties checked. See /tmp/hydra-gates.LuwD678E/hydra-gate-shipped-object-properties.log.
+2026-10-04T13:27:07.6425778Z [gate-98] repair-step-registration: NOT APPLICABLE — this diff touches no lib/Repair/*.php, so no repair step needed its info.xml registration checked. See /tmp/hydra-gates.LuwD678E/hydra-gate-repair-registration.log.
+2026-10-04T13:27:07.6427465Z [gate-110] migration-version-bump: NOT APPLICABLE — this diff adds no migration and no upgrade-time repair step, so there was no version bump to require. See /tmp/hydra-gates.LuwD678E/hydra-gate-migration-version-bump.log.
+2026-10-04T13:27:07.6429902Z [gate-111] flow-node-taxonomy: NOT APPLICABLE — this repo ships no lib/Service/Flow/Nodes/, so it contributes no flow node of its own. A node it contributes from ANOTHER repository is deliberately not this gate's business — 38 of 65 step types on a measured instance are, and firing on them would be unfixable from the PR it fired on. See /tmp/hydra-gates.LuwD678E/hydra-gate-flow-node-taxonomy.log.
+2026-10-04T13:27:07.6431423Z [gate-70] walkthrough-flows-stop: PASS
+2026-10-04T13:27:07.6432439Z [gate-113] exclusion-evidence: 374 exclusion(s) — 259 name a test that is here, 1 name one in another repository, 104 claim a tier without naming a member of it, 10 name no evidence at all.
+2026-10-04T13:27:07.6433169Z [gate-113] exclusion-evidence: PASS
+2026-10-04T13:27:07.6433646Z [gate-115] stale-fleet-app-id: 0 cross-app lookup(s) naming a retired id or namespace
+2026-10-04T13:27:07.6435240Z [gate-115] stale-fleet-app-id: this gate reads NAMES only. It cannot see whether a method or route you point at exists on the other side, and a repoint that lands on a missing method fails exactly as silently as the stale name did. Closing that half needs cross-repo surface reading (gate-67's model). This is not it.
+2026-10-04T13:27:07.6436331Z [gate-115] stale-fleet-app-id: PASS
+2026-10-04T13:27:07.6436757Z [gate-112] newman-reach: 1 finding(s). 1 of 1 committed request(s) run.
+2026-10-04T13:27:07.6437676Z   V4  tests/integration/app-template.postman_collection.json is the unedited app scaffold: every request targets /status.php, which asserts that Nextcloud booted and nothing about this app.
+2026-10-04T13:27:07.6438839Z   Fix: move the collection under newman-collection-path, repoint that input, delete it, or put `@newman exclude <reason>` in the collection's info.description.
+2026-10-04T13:27:07.6440601Z [gate-112] newman-reach: WARNING — 1 committed Postman collection(s) that CI never runs, or that run without asserting anything. Report-only: set HYDRA_GATE_NEWMAN_REACH_BLOCKING=1 for this repo once they are worked down. See /tmp/hydra-gates.LuwD678E/hydra-gate-newman-reach.log
+2026-10-04T13:27:07.6441945Z [gate-114] [header-action-budget] pages=35 with-actions=5 total=6 max=2 on PortalAccounts
+2026-10-04T13:27:07.6442474Z [gate-114] header-action-budget: base=6 head=6 delta=+0
+2026-10-04T13:27:07.6442844Z [gate-114] header-action-budget: PASS
+2026-10-04T13:27:07.6443329Z [gate-116] [connections-declaration] checked 1 declaration file(s), 0 finding(s)
+2026-10-04T13:27:07.6443791Z [gate-116] connections-declaration: PASS
+2026-10-04T13:27:07.6443998Z 
+2026-10-04T13:27:07.6444941Z [gate-83] contract-surface-shift: NOT APPLICABLE — no lib/Contract/ — this repo publishes no contract interface, so it exposes no method surface whose magic-versus-declared shape consumers could have doubled.
+2026-10-04T13:27:07.6446113Z [hydra-gates] COVERAGE: 84 of 96 declared gates reported a result (12 not applicable to this repo/diff; 84 of 84 applicable gates ran).
+2026-10-04T13:27:07.6446932Z [hydra-gates] NOT APPLICABLE — subject matter absent from this repo or this diff.
+2026-10-04T13:27:07.6447524Z [hydra-gates] These do NOT count against coverage. Each stated its own reason above:
+2026-10-04T13:27:07.6447984Z [hydra-gates]   gate-29 gitignore-then-commit
+2026-10-04T13:27:07.6448326Z [hydra-gates]   gate-33 axe-core
+2026-10-04T13:27:07.6448625Z [hydra-gates]   gate-48 csrf-cochange
+2026-10-04T13:27:07.6448968Z [hydra-gates]   gate-61 listener-work-placement
+2026-10-04T13:27:07.6449362Z [hydra-gates]   gate-67 openregister-contract-parity
+2026-10-04T13:27:07.6449856Z [hydra-gates]   gate-83 contract-surface-shift
+2026-10-04T13:27:07.6450223Z [hydra-gates]   gate-98 repair-step-registration
+2026-10-04T13:27:07.6450585Z [hydra-gates]   gate-100 setup-demo-data-first
+2026-10-04T13:27:07.6450945Z [hydra-gates]   gate-101 demo-data-coverage
+2026-10-04T13:27:07.6451612Z [hydra-gates]   gate-108 shipped-object-properties
+2026-10-04T13:27:07.6452175Z [hydra-gates]   gate-110 migration-version-bump
+2026-10-04T13:27:07.6452614Z [hydra-gates]   gate-111 flow-node-taxonomy
+2026-10-04T13:27:07.6453475Z [hydra-gates] TIMING: 60.67 s of gate time across 96 verdict(s); one TIMING line per gate follows, slowest first (wall clock between consecutive verdict lines; the clock starts at gate 1).
+2026-10-04T13:27:07.6454272Z [hydra-gates] TIMING gate-20 or-objectservice-api: 11.49s
+2026-10-04T13:27:07.6454673Z [hydra-gates] TIMING gate-3 stub-scan: 9.81s
+2026-10-04T13:27:07.6455074Z [hydra-gates] TIMING gate-45 prefers-reduced-motion: 3.96s
+2026-10-04T13:27:07.6455468Z [hydra-gates] TIMING gate-5 route-auth: 3.79s
+2026-10-04T13:27:07.6455862Z [hydra-gates] TIMING gate-21 conflict-markers: 3.27s
+2026-10-04T13:27:07.6456253Z [hydra-gates] TIMING gate-13 modal-isolation: 3.15s
+2026-10-04T13:27:07.6456630Z [hydra-gates] TIMING gate-7 no-admin-idor: 2.47s
+2026-10-04T13:27:07.6457027Z [hydra-gates] TIMING gate-46 spec-anchor-existence: 2.26s
+2026-10-04T13:27:07.6457501Z [hydra-gates] TIMING gate-66 openregister-dependency-shape: 2.19s
+2026-10-04T13:27:07.6458075Z [hydra-gates] TIMING gate-113 exclusion-evidence: 1.21s
+2026-10-04T13:27:07.6458495Z [hydra-gates] TIMING gate-14 route-reachability: 1.19s
+2026-10-04T13:27:07.6458912Z [hydra-gates] TIMING gate-115 stale-fleet-app-id: 0.92s
+2026-10-04T13:27:07.6459345Z [hydra-gates] TIMING gate-4 composer-audit: 0.79s
+2026-10-04T13:27:07.6459720Z [hydra-gates] TIMING gate-6 orphan-auth: 0.76s
+2026-10-04T13:27:07.6460098Z [hydra-gates] TIMING gate-10 initial-state: 0.72s
+2026-10-04T13:27:07.6460490Z [hydra-gates] TIMING gate-2 forbidden-patterns: 0.71s
+2026-10-04T13:27:07.6460918Z [hydra-gates] TIMING gate-27 no-phantom-cross-app-rpc: 0.70s
+2026-10-04T13:27:07.6461559Z [hydra-gates] TIMING gate-59 unclosable-gate: 0.66s
+2026-10-04T13:27:07.6461964Z [hydra-gates] TIMING gate-22 manifest-validation: 0.65s
+2026-10-04T13:27:07.6462404Z [hydra-gates] TIMING gate-57 orphaned-write-capability: 0.60s
+2026-10-04T13:27:07.6462880Z [hydra-gates] TIMING gate-53 effective-manifest-crossref: 0.59s
+2026-10-04T13:27:07.6463317Z [hydra-gates] TIMING gate-25 contract-coverage: 0.55s
+2026-10-04T13:27:07.6463694Z [hydra-gates] TIMING gate-34 window-confirm: 0.45s
+2026-10-04T13:27:07.6464141Z [hydra-gates] TIMING gate-97 system-elevation-reachability: 0.45s
+2026-10-04T13:27:07.6464612Z [hydra-gates] TIMING gate-50 security-config-fail-mode: 0.35s
+2026-10-04T13:27:07.6465030Z [hydra-gates] TIMING gate-30 public-monitoring: 0.34s
+2026-10-04T13:27:07.6465411Z [hydra-gates] TIMING gate-62 store-plane: 0.34s
+2026-10-04T13:27:07.6465810Z [hydra-gates] TIMING gate-8 unsafe-auth-resolver: 0.32s
+2026-10-04T13:27:07.6466188Z [hydra-gates] TIMING gate-112 newman-reach: 0.32s
+2026-10-04T13:27:07.6466553Z [hydra-gates] TIMING gate-19 e2e-coverage: 0.30s
+2026-10-04T13:27:07.6466955Z [hydra-gates] TIMING gate-17 redundant-controller: 0.29s
+2026-10-04T13:27:07.6467357Z [hydra-gates] TIMING gate-36 tabindex-positive: 0.29s
+2026-10-04T13:27:07.6467732Z [hydra-gates] TIMING gate-9 semantic-auth: 0.28s
+2026-10-04T13:27:07.6468101Z [hydra-gates] TIMING gate-11 admin-router: 0.22s
+2026-10-04T13:27:07.6468473Z [hydra-gates] TIMING gate-28 license-triangle: 0.18s
+2026-10-04T13:27:07.6468864Z [hydra-gates] TIMING gate-35 img-alt-empty-only: 0.18s
+2026-10-04T13:27:07.6469256Z [hydra-gates] TIMING gate-26 visual-coverage: 0.17s
+2026-10-04T13:27:07.6469610Z [hydra-gates] TIMING gate-31 img-alt: 0.17s
+2026-10-04T13:27:07.6469981Z [hydra-gates] TIMING gate-32 semantic-controls: 0.17s
+2026-10-04T13:27:07.6470367Z [hydra-gates] TIMING gate-12 nc-input-labels: 0.16s
+2026-10-04T13:27:07.6470951Z [hydra-gates] TIMING gate-49 controller-exception-translation: 0.16s
+2026-10-04T13:27:07.6471615Z [hydra-gates] TIMING gate-24 integration-parity: 0.15s
+2026-10-04T13:27:07.6472019Z [hydra-gates] TIMING gate-54 relation-dialect: 0.13s
+2026-10-04T13:27:07.6472442Z [hydra-gates] TIMING gate-116 connections-declaration: 0.13s
+2026-10-04T13:27:07.6472898Z [hydra-gates] TIMING gate-51 schema-property-titles: 0.11s
+2026-10-04T13:27:07.6473330Z [hydra-gates] TIMING gate-52 custom-widget-ratchet: 0.11s
+2026-10-04T13:27:07.6473754Z [hydra-gates] TIMING gate-58 e2e-networkidle: 0.11s
+2026-10-04T13:27:07.6474169Z [hydra-gates] TIMING gate-61 listener-work-placement: 0.11s
+2026-10-04T13:27:07.6474572Z [hydra-gates] TIMING gate-16 spec-coverage: 0.10s
+2026-10-04T13:27:07.6474977Z [hydra-gates] TIMING gate-40 form-label-association: 0.10s
+2026-10-04T13:27:07.6475389Z [hydra-gates] TIMING gate-18 notification-dialect: 0.09s
+2026-10-04T13:27:07.6475798Z [hydra-gates] TIMING gate-37 aria-hidden-focusable: 0.09s
+2026-10-04T13:27:07.6476251Z [hydra-gates] TIMING gate-82 public-endpoint-throttling: 0.09s
+2026-10-04T13:27:07.6476660Z [hydra-gates] TIMING gate-39 button-name: 0.08s
+2026-10-04T13:27:07.6477029Z [hydra-gates] TIMING gate-42 link-text-quality: 0.08s
+2026-10-04T13:27:07.6477409Z [hydra-gates] TIMING gate-43 table-headers: 0.08s
+2026-10-04T13:27:07.6477786Z [hydra-gates] TIMING gate-44 autocomplete-attr: 0.08s
+2026-10-04T13:27:07.6478226Z [hydra-gates] TIMING gate-23 or-abstraction-anti-patterns: 0.07s
+2026-10-04T13:27:07.6478789Z [hydra-gates] TIMING gate-47 security-change-has-tests: 0.06s
+2026-10-04T13:27:07.6479223Z [hydra-gates] TIMING gate-55 detail-page-discipline: 0.06s
+2026-10-04T13:27:07.6479617Z [hydra-gates] TIMING gate-60 icon-vocabulary: 0.06s
+2026-10-04T13:27:07.6480042Z [hydra-gates] TIMING gate-94 retired-git-host-metadata: 0.06s
+2026-10-04T13:27:07.6480436Z [hydra-gates] TIMING gate-38 skip-link: 0.05s
+2026-10-04T13:27:07.6480815Z [hydra-gates] TIMING gate-101 demo-data-coverage: 0.05s
+2026-10-04T13:27:07.6481385Z [hydra-gates] TIMING gate-110 migration-version-bump: 0.05s
+2026-10-04T13:27:07.6481820Z [hydra-gates] TIMING gate-15 dashboard-antipattern: 0.04s
+2026-10-04T13:27:07.6482269Z [hydra-gates] TIMING gate-56 register-handler-resolution: 0.04s
+2026-10-04T13:27:07.6482701Z [hydra-gates] TIMING gate-63 settings-surface: 0.04s
+2026-10-04T13:27:07.6483130Z [hydra-gates] TIMING gate-64 apphost-autoload-prelude: 0.04s
+2026-10-04T13:27:07.6483563Z [hydra-gates] TIMING gate-68 duplicate-index-pages: 0.04s
+2026-10-04T13:27:07.6483991Z [hydra-gates] TIMING gate-69 page-type-discipline: 0.04s
+2026-10-04T13:27:07.6484418Z [hydra-gates] TIMING gate-70 walkthrough-flows-stop: 0.04s
+2026-10-04T13:27:07.6484861Z [hydra-gates] TIMING gate-84 npm-supply-chain-config: 0.04s
+2026-10-04T13:27:07.6485271Z [hydra-gates] TIMING gate-104 reports-one-page: 0.04s
+2026-10-04T13:27:07.6485696Z [hydra-gates] TIMING gate-105 duplicate-page-refresh: 0.04s
+2026-10-04T13:27:07.6486120Z [hydra-gates] TIMING gate-106 cross-app-schema-slug: 0.04s
+2026-10-04T13:27:07.6486515Z [hydra-gates] TIMING gate-107 app-chrome: 0.04s
+2026-10-04T13:27:07.6486939Z [hydra-gates] TIMING gate-108 shipped-object-properties: 0.04s
+2026-10-04T13:27:07.6487372Z [hydra-gates] TIMING gate-109 seed-required-slugs: 0.04s
+2026-10-04T13:27:07.6487781Z [hydra-gates] TIMING gate-114 header-action-budget: 0.04s
+2026-10-04T13:27:07.6488176Z [hydra-gates] TIMING gate-1 spdx-headers: 0.03s
+2026-10-04T13:27:07.6488529Z [hydra-gates] TIMING gate-41 html-lang: 0.03s
+2026-10-04T13:27:07.6488938Z [hydra-gates] TIMING gate-65 coding-standard-adoption: 0.03s
+2026-10-04T13:27:07.6489408Z [hydra-gates] TIMING gate-67 openregister-contract-parity: 0.03s
+2026-10-04T13:27:07.6489867Z [hydra-gates] TIMING gate-93 composer-cooldown-config: 0.03s
+2026-10-04T13:27:07.6490286Z [hydra-gates] TIMING gate-95 adr-number-collision: 0.03s
+2026-10-04T13:27:07.6490687Z [hydra-gates] TIMING gate-96 manifest-copy-style: 0.03s
+2026-10-04T13:27:07.6491279Z [hydra-gates] TIMING gate-98 repair-step-registration: 0.03s
+2026-10-04T13:27:07.6491913Z [hydra-gates] TIMING gate-100 setup-demo-data-first: 0.03s
+2026-10-04T13:27:07.6492347Z [hydra-gates] TIMING gate-102 manifest-l10n-coverage: 0.03s
+2026-10-04T13:27:07.6492777Z [hydra-gates] TIMING gate-103 locale-duplication: 0.03s
+2026-10-04T13:27:07.6493180Z [hydra-gates] TIMING gate-111 flow-node-taxonomy: 0.03s
+2026-10-04T13:27:07.6493586Z [hydra-gates] TIMING gate-29 gitignore-then-commit: 0.01s
+2026-10-04T13:27:07.6493987Z [hydra-gates] TIMING gate-48 csrf-cochange: 0.01s
+2026-10-04T13:27:07.6494387Z [hydra-gates] TIMING gate-83 contract-surface-shift: 0.01s
+2026-10-04T13:27:07.6494762Z [hydra-gates] TIMING gate-33 axe-core: 0.00s
+2026-10-04T13:27:07.6495432Z [hydra-gates] 2 gate(s) reported ADVISORY findings — real, measured, and NOT blocking this run.
+2026-10-04T13:27:07.6496067Z [hydra-gates] They are named WARNING above, each with its count and its tracking issue.
+2026-10-04T13:27:07.6496699Z [hydra-gates] A green verdict below means 'nothing BLOCKING failed', not 'nothing was found'.
+2026-10-04T13:27:07.6497173Z [hydra-gates] 1 gate(s) failed
+2026-10-04T13:27:07.6497330Z 
+2026-10-04T13:27:07.6497506Z ==============================================================
+2026-10-04T13:27:07.6498110Z [hydra-gates] COVERAGE: 84 of 96 declared gates reported a result (12 not applicable; 84 of 84 applicable gates ran).
+2026-10-04T13:27:07.6498741Z [hydra-gates] NOT APPLICABLE: 29 33 48 61 67 83 98 100 101 108 110 111
+2026-10-04T13:27:07.6499435Z [hydra-gates] Their subject matter does not exist in this repo or this diff — each said
+2026-10-04T13:27:07.6499970Z [hydra-gates] so by name above. They do NOT count against coverage.
+2026-10-04T13:27:07.6500471Z [hydra-gates] WAIVERS: 7 file(s) carry an '@spec exclude <reason>' tag.
+2026-10-04T13:27:07.6500976Z [hydra-gates] WAIVERS: 183 file(s) carry an '@e2e exclude <reason>' tag.
+2026-10-04T13:27:07.6501676Z [hydra-gates] WAIVERS: 1 file(s) carry an '@visual exclude <reason>' tag.
+2026-10-04T13:27:07.6502241Z [hydra-gates] Those waivers are honoured by gates 16/19/26. Each must carry a reason;
+2026-10-04T13:27:07.6502830Z [hydra-gates] a green above is partly a statement that someone justified them, not that
+2026-10-04T13:27:07.6503413Z [hydra-gates] the underlying coverage exists. Review them if the green matters.
+2026-10-04T13:27:07.6504007Z [hydra-gates] RESULT: 1 GATE(S) FAILED. Exit code is the failure COUNT, not a boolean.
+2026-10-04T13:27:07.6504941Z [hydra-gates]   [gate-16] spec-coverage: FAIL — 6 changed method(s) missing @spec — see /tmp/hydra-gates.LuwD678E/hydra-gate-spec-coverage.log
+2026-10-04T13:27:07.6505576Z ==============================================================
+2026-10-04T13:27:07.6524348Z ##[error]1 Hydra gate(s) failed. The exit code is the failure COUNT — see the named [gate-N] FAIL lines above.
+2026-10-04T13:27:07.6534144Z ##[error]Process completed with exit code 1.
+2026-10-04T13:27:07.6577189Z ##[group]Run mkdir -p quality-results
+2026-10-04T13:27:07.6577523Z [36;1mmkdir -p quality-results[0m
+2026-10-04T13:27:07.6577856Z [36;1mecho "failure" > quality-results/hydra-gates.txt[0m
+2026-10-04T13:27:07.6612517Z shell: /usr/bin/bash -e {0}
+2026-10-04T13:27:07.6612781Z ##[endgroup]
+2026-10-04T13:27:07.6721004Z ##[group]Run actions/upload-artifact@v4
+2026-10-04T13:27:07.6721519Z with:
+2026-10-04T13:27:07.6721730Z   name: result-hydra-gates
+2026-10-04T13:27:07.6721971Z   path: quality-results/
+2026-10-04T13:27:07.6722212Z   if-no-files-found: warn
+2026-10-04T13:27:07.6722441Z   compression-level: 6
+2026-10-04T13:27:07.6722660Z   overwrite: false
+2026-10-04T13:27:07.6722873Z   include-hidden-files: false
+2026-10-04T13:27:07.6723103Z ##[endgroup]
+2026-10-04T13:27:07.8363557Z (node:17997) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-04T13:27:07.8364326Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-04T13:27:07.8422944Z With the provided path, there will be 1 file uploaded
+2026-10-04T13:27:07.8424189Z Artifact name is valid!
+2026-10-04T13:27:07.8424696Z Root directory input is valid!
+2026-10-04T13:27:08.1914091Z Beginning upload of artifact content to blob storage
+2026-10-04T13:27:08.2090121Z (node:17997) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-04T13:27:08.4286524Z Uploaded bytes 154
+2026-10-04T13:27:08.4919907Z Finished uploading artifact content to blob storage!
+2026-10-04T13:27:08.4920704Z SHA256 digest of uploaded artifact zip is 5617090a2c5f84abcffde2b3122f9785852f35093259d62689259c1f633111c7
+2026-10-04T13:27:08.4922197Z Finalizing artifact upload
+2026-10-04T13:27:08.7562485Z Artifact result-hydra-gates.zip successfully finalized. Artifact ID 11303679642
+2026-10-04T13:27:08.7564183Z Artifact result-hydra-gates has been successfully uploaded! Final size is 154 bytes. Artifact ID is 11303679642
+2026-10-04T13:27:08.7568031Z Artifact download URL: https://github.com/ConductionNL/portaliq/actions/runs/37205570071/artifacts/11303679642
+2026-10-04T13:27:08.7738650Z Post job cleanup.
+2026-10-04T13:27:08.8551956Z [command]/usr/bin/git version
+2026-10-04T13:27:08.8586710Z git version 2.55.0
+2026-10-04T13:27:08.8624062Z Temporarily overriding HOME='/home/runner/work/_temp/47388f5d-33f2-4c82-b9a6-e7d13fda679a' before making global git config changes
+2026-10-04T13:27:08.8625063Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-04T13:27:08.8630563Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/portaliq/portaliq/gates
+2026-10-04T13:27:08.8665462Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-04T13:27:08.8696249Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-04T13:27:08.8884599Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-04T13:27:08.8909058Z http.https://github.com/.extraheader
+2026-10-04T13:27:08.8918306Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-04T13:27:08.8945517Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-04T13:27:08.9128357Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-04T13:27:08.9156987Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-04T13:27:08.9468475Z Post job cleanup.
+2026-10-04T13:27:09.0332152Z [command]/usr/bin/git version
+2026-10-04T13:27:09.0369672Z git version 2.55.0
+2026-10-04T13:27:09.0406034Z Temporarily overriding HOME='/home/runner/work/_temp/4c28720a-48cd-4857-bbf8-58b4167abe5c' before making global git config changes
+2026-10-04T13:27:09.0407690Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-04T13:27:09.0411789Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/portaliq/portaliq/app
+2026-10-04T13:27:09.0446367Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-04T13:27:09.0476923Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-04T13:27:09.0664711Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-04T13:27:09.0686469Z http.https://github.com/.extraheader
+2026-10-04T13:27:09.0697631Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-04T13:27:09.0727289Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-04T13:27:09.0907575Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-04T13:27:09.0937985Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-04T13:27:09.1246575Z Cleaning up orphan processes
+2026-10-04T13:27:09.1550183Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

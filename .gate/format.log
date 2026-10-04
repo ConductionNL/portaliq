@@ -1,0 +1,6 @@
+
+> portaliq@0.1.0 format
+> prettier --check "**/*.{js,ts,vue,css,scss}"
+
+Checking formatting...
+All matched files use Prettier code style!

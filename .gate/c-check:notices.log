@@ -1,0 +1,63 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2618405) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/notices.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a notice whose end has passed is not shown, even if the server sent it
+ok 1 - a notice whose end has passed is not shown, even if the server sent it
+  ---
+  duration_ms: 2.52007
+  type: 'test'
+  ...
+# Subtest: a closed notice stays closed for the visit and a second notice still shows
+ok 2 - a closed notice stays closed for the visit and a second notice still shows
+  ---
+  duration_ms: 0.39861
+  type: 'test'
+  ...
+# Subtest: a blocked storage never breaks the page
+ok 3 - a blocked storage never breaks the page
+  ---
+  duration_ms: 0.368519
+  type: 'test'
+  ...
+# Subtest: the site renders each notice in a labelled section, never as an alert
+ok 4 - the site renders each notice in a labelled section, never as an alert
+  ---
+  duration_ms: 186.059496
+  type: 'test'
+  ...
+# Subtest: no notice, no section
+ok 5 - no notice, no section
+  ---
+  duration_ms: 22.845769
+  type: 'test'
+  ...
+# Subtest: the site places the notices above the page content, signed in and signed out
+ok 6 - the site places the notices above the page content, signed in and signed out
+  ---
+  duration_ms: 1.471341
+  type: 'test'
+  ...
+# Subtest: the end-after-start guard is registered on every notice create and update
+ok 7 - the end-after-start guard is registered on every notice create and update
+  ---
+  duration_ms: 1.081946
+  type: 'test'
+  ...
+# Subtest: signed in, the site adds the signed-in notices the shell carries, each once
+ok 8 - signed in, the site adds the signed-in notices the shell carries, each once
+  ---
+  duration_ms: 1.42184
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 736.793207

@@ -1,0 +1,123 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2624510) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/pages/inbox/inbox.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: an answered question reads without its link and its lead-in
+ok 1 - an answered question reads without its link and its lead-in
+  ---
+  duration_ms: 2.977019
+  type: 'test'
+  ...
+# Subtest: a decision notice whose "Open" leads to the publication drops the link and its lead-in
+ok 2 - a decision notice whose "Open" leads to the publication drops the link and its lead-in
+  ---
+  duration_ms: 1.121255
+  type: 'test'
+  ...
+# Subtest: a lead-in on the same line as the sentence before it goes alone
+ok 3 - a lead-in on the same line as the sentence before it goes alone
+  ---
+  duration_ms: 0.478275
+  type: 'test'
+  ...
+# Subtest: a saved-search line keeps its title and drops ": <url>" when it leads where "Open" leads
+ok 4 - a saved-search line keeps its title and drops ": <url>" when it leads where "Open" leads
+  ---
+  duration_ms: 0.454115
+  type: 'test'
+  ...
+# Subtest: an address that leads somewhere else than "Open" stays, word for word
+ok 5 - an address that leads somewhere else than "Open" stays, word for word
+  ---
+  duration_ms: 0.674832
+  type: 'test'
+  ...
+# Subtest: only the address that leads where "Open" leads goes; the others stay
+ok 6 - only the address that leads where "Open" leads goes; the others stay
+  ---
+  duration_ms: 0.375549
+  type: 'test'
+  ...
+# Subtest: a row without "Open" keeps its body as written
+ok 7 - a row without "Open" keeps its body as written
+  ---
+  duration_ms: 0.336416
+  type: 'test'
+  ...
+# Subtest: the inbox shows the answered question without the address, and "Openen" stays
+ok 8 - the inbox shows the answered question without the address, and "Openen" stays
+  ---
+  duration_ms: 311.459767
+  type: 'test'
+  ...
+# Subtest: a translated row keeps its translation, without the same address
+ok 9 - a translated row keeps its translation, without the same address
+  ---
+  duration_ms: 57.771147
+  type: 'test'
+  ...
+# Subtest: the decision notice names its publication link in place of the lead-in
+ok 10 - the decision notice names its publication link in place of the lead-in
+  ---
+  duration_ms: 2.564496
+  type: 'test'
+  ...
+# Subtest: a saved-search line makes its title the link and drops ": <url>"
+ok 11 - a saved-search line makes its title the link and drops ": <url>"
+  ---
+  duration_ms: 0.462511
+  type: 'test'
+  ...
+# Subtest: another address into the site reads "Bekijk de link" and loads the site
+ok 12 - another address into the site reads "Bekijk de link" and loads the site
+  ---
+  duration_ms: 0.389246
+  type: 'test'
+  ...
+# Subtest: an address outside this site stays plain text, never a link
+ok 13 - an address outside this site stays plain text, never a link
+  ---
+  duration_ms: 0.275926
+  type: 'test'
+  ...
+# Subtest: the answered question still reads without any address or link
+ok 14 - the answered question still reads without any address or link
+  ---
+  duration_ms: 0.211136
+  type: 'test'
+  ...
+# Subtest: the inbox renders the decision notice with a named link and no raw address
+ok 15 - the inbox renders the decision notice with a named link and no raw address
+  ---
+  duration_ms: 43.519546
+  type: 'test'
+  ...
+# Subtest: a link with a route opens inside the site; with a modifier key the browser follows it
+ok 16 - a link with a route opens inside the site; with a modifier key the browser follows it
+  ---
+  duration_ms: 0.805504
+  type: 'test'
+  ...
+# Subtest: the live one-line saved-search notice links its title without a dangling "-"
+ok 17 - the live one-line saved-search notice links its title without a dangling "-"
+  ---
+  duration_ms: 0.352474
+  type: 'test'
+  ...
+# Subtest: two items on one line keep a space between their linked titles
+ok 18 - two items on one line keep a space between their linked titles
+  ---
+  duration_ms: 0.338505
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 800.821653

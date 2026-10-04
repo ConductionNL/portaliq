@@ -1,0 +1,7 @@
+[manifest-v2.spec] manifest: /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/manifest.json
+[manifest-v2.spec] manifest.version: 0.2.0
+[manifest-v2.spec] manifest.$schema: https://github.com/ConductionNL/nextcloud-vue/raw/main/src/schemas/app-manifest-v2.schema.json
+[manifest-v2.spec] pages: 35
+[manifest-v2.spec] structural lint: PASS
+[manifest-v2.spec] schema: /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/node_modules/@conduction/nextcloud-vue/src/schemas/app-manifest-v2.schema.json
+[manifest-v2.spec] Ajv v2 validation: PASS (0 errors)

@@ -1,0 +1,4 @@
+[validate-json-strict] src/manifest.json: OK
+[validate-json-strict] lib/Settings/portaliq_mock_register.json: OK
+[validate-json-strict] lib/Settings/portaliq_register.json: OK
+[validate-json-strict] PASS

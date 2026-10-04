@@ -1,0 +1,81 @@
+TAP version 13
+# (node:2614118) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/tests/e2e/shared-instance.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: portaliq shared-instance guard
+    # Subtest: folds every loopback spelling onto localhost
+    ok 1 - folds every loopback spelling onto localhost
+      ---
+      duration_ms: 5.920136
+      type: 'test'
+      ...
+    # Subtest: makes the implicit port explicit
+    ok 2 - makes the implicit port explicit
+      ---
+      duration_ms: 2.301954
+      type: 'test'
+      ...
+    # Subtest: calls loopback 80 and 8080 shared, and nothing else
+    ok 3 - calls loopback 80 and 8080 shared, and nothing else
+      ---
+      duration_ms: 1.745536
+      type: 'test'
+      ...
+    # Subtest: refuses a shared instance that no flag names
+    ok 4 - refuses a shared instance that no flag names
+      ---
+      duration_ms: 2.478946
+      type: 'test'
+      ...
+    # Subtest: refuses a flag holding a boolean rather than an origin
+    ok 5 - refuses a flag holding a boolean rather than an origin
+      ---
+      duration_ms: 5.943849
+      type: 'test'
+      ...
+    # Subtest: refuses a flag that names a different origin
+    ok 6 - refuses a flag that names a different origin
+      ---
+      duration_ms: 0.955269
+      type: 'test'
+      ...
+    # Subtest: permits the origin the flag names, in any loopback spelling
+    ok 7 - permits the origin the flag names, in any loopback spelling
+      ---
+      duration_ms: 0.627131
+      type: 'test'
+      ...
+    # Subtest: accepts the fleet-wide spelling too
+    ok 8 - accepts the fleet-wide spelling too
+      ---
+      duration_ms: 0.830206
+      type: 'test'
+      ...
+    # Subtest: lets a disposable rig through without a flag
+    ok 9 - lets a disposable rig through without a flag
+      ---
+      duration_ms: 0.807285
+      type: 'test'
+      ...
+    # Subtest: binds occ to a named container, and falls back to the server root
+    ok 10 - binds occ to a named container, and falls back to the server root
+      ---
+      duration_ms: 0.896092
+      type: 'test'
+      ...
+    1..10
+ok 1 - portaliq shared-instance guard
+  ---
+  duration_ms: 26.244119
+  type: 'suite'
+  ...
+1..1
+# tests 10
+# suites 1
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 357.150078

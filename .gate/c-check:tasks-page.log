@@ -1,0 +1,75 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2622652) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/pages/inbox/inbox.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the upload rules are read as frozen on the task
+ok 1 - the upload rules are read as frozen on the task
+  ---
+  duration_ms: 6.314429
+  type: 'test'
+  ...
+# Subtest: a file type matches by media type, wildcard or extension, as the server matches
+ok 2 - a file type matches by media type, wildcard or extension, as the server matches
+  ---
+  duration_ms: 0.625569
+  type: 'test'
+  ...
+# Subtest: the first broken rule is named before anything is sent
+ok 3 - the first broken rule is named before anything is sent
+  ---
+  duration_ms: 0.653046
+  type: 'test'
+  ...
+# Subtest: each proxy refusal reads as a plain sentence
+ok 4 - each proxy refusal reads as a plain sentence
+  ---
+  duration_ms: 0.28643
+  type: 'test'
+  ...
+# Subtest: the task to open is handed over once
+ok 5 - the task to open is handed over once
+  ---
+  duration_ms: 0.400159
+  type: 'test'
+  ...
+# Subtest: "View task" in the inbox opens My tasks with that task open
+ok 6 - "View task" in the inbox opens My tasks with that task open
+  ---
+  duration_ms: 9.765087
+  type: 'test'
+  ...
+# Subtest: completing a task sends the comment and the files, then says thank you
+ok 7 - completing a task sends the comment and the files, then says thank you
+  ---
+  duration_ms: 1.282126
+  type: 'test'
+  ...
+# Subtest: a refusal on completion and on opening reads as a sentence
+ok 8 - a refusal on completion and on opening reads as a sentence
+  ---
+  duration_ms: 0.676951
+  type: 'test'
+  ...
+# Subtest: the completion form labels every control and ties the rules to the file field
+ok 9 - the completion form labels every control and ties the rules to the file field
+  ---
+  duration_ms: 35.103182
+  type: 'test'
+  ...
+# Subtest: the list shows each open task as an action row with its deadline badge, and an empty list says so
+ok 10 - the list shows each open task as an action row with its deadline badge, and an empty list says so
+  ---
+  duration_ms: 18.010416
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 679.35463

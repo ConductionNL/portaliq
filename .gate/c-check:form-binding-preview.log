@@ -1,0 +1,50 @@
+TAP version 13
+# (node:2616865) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/formBindingPreview.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the row is posted to the preview route without its metadata
+ok 1 - the row is posted to the preview route without its metadata
+  ---
+  duration_ms: 1.973016
+  type: 'test'
+  ...
+# Subtest: a resolved binding names the form it opens today
+ok 2 - a resolved binding names the form it opens today
+  ---
+  duration_ms: 5.005313
+  type: 'test'
+  ...
+# Subtest: a binding that resolves to no form says so as a warning, with its reason
+ok 3 - a binding that resolves to no form says so as a warning, with its reason
+  ---
+  duration_ms: 1.113859
+  type: 'test'
+  ...
+# Subtest: an external binding names its destination
+ok 4 - an external binding names its destination
+  ---
+  duration_ms: 0.496611
+  type: 'test'
+  ...
+# Subtest: a failed check says so and claims nothing about the form
+ok 5 - a failed check says so and claims nothing about the form
+  ---
+  duration_ms: 0.64068
+  type: 'test'
+  ...
+# Subtest: the Form bindings page offers the action and the app registers its handler
+ok 6 - the Form bindings page offers the action and the app registers its handler
+  ---
+  duration_ms: 3.3637
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 290.5354

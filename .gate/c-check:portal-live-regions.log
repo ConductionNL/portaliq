@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: no loading indicator is a bare ellipsis
+ok 1 - no loading indicator is a bare ellipsis
+  ---
+  duration_ms: 12.108403
+  type: 'test'
+  ...
+# Subtest: every "Loading…" sits in a polite status region
+ok 2 - every "Loading…" sits in a polite status region
+  ---
+  duration_ms: 5.960902
+  type: 'test'
+  ...
+# Subtest: every error shown on an error value is an alert
+ok 3 - every error shown on an error value is an alert
+  ---
+  duration_ms: 32.938487
+  type: 'test'
+  ...
+# Subtest: the site uses no native prompt, alert or confirm dialog
+ok 4 - the site uses no native prompt, alert or confirm dialog
+  ---
+  duration_ms: 28.654835
+  type: 'test'
+  ...
+# Subtest: the shell announces its own loading state politely
+ok 5 - the shell announces its own loading state politely
+  ---
+  duration_ms: 1.991253
+  type: 'test'
+  ...
+# Subtest: "Loading…" is translated in both languages
+ok 6 - "Loading…" is translated in both languages
+  ---
+  duration_ms: 1.417851
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 397.168855

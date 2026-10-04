@@ -1,0 +1,150 @@
+
+> portaliq@0.1.0 check:editor-text-toolbar
+> node --test tests/editor-text-toolbar.spec.mjs
+
+TAP version 13
+# (node:1543632) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/markdownToolbar.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Kop puts "\#\# " at the start of the line and keeps the selection on the words
+ok 1 - Kop puts "\#\# " at the start of the line and keeps the selection on the words
+  ---
+  duration_ms: 2.635552
+  type: 'test'
+  ...
+# Subtest: Kop with nothing selected on an empty line starts a heading there
+ok 2 - Kop with nothing selected on an empty line starts a heading there
+  ---
+  duration_ms: 0.532324
+  type: 'test'
+  ...
+# Subtest: Kop on a heading makes it a plain line again, and other levels become "\#\# "
+ok 3 - Kop on a heading makes it a plain line again, and other levels become "\#\# "
+  ---
+  duration_ms: 0.343435
+  type: 'test'
+  ...
+# Subtest: Vet wraps the selection in ** and keeps it selected
+ok 4 - Vet wraps the selection in ** and keeps it selected
+  ---
+  duration_ms: 0.464892
+  type: 'test'
+  ...
+# Subtest: Vet leaves whitespace at the edges outside the marks
+ok 5 - Vet leaves whitespace at the edges outside the marks
+  ---
+  duration_ms: 0.500783
+  type: 'test'
+  ...
+# Subtest: Vet with nothing selected writes the marks with the cursor between them
+ok 6 - Vet with nothing selected writes the marks with the cursor between them
+  ---
+  duration_ms: 0.340662
+  type: 'test'
+  ...
+# Subtest: Vet on bold text takes the marks away
+ok 7 - Vet on bold text takes the marks away
+  ---
+  duration_ms: 0.298385
+  type: 'test'
+  ...
+# Subtest: Cursief wraps the selection in _ and takes it away again
+ok 8 - Cursief wraps the selection in _ and takes it away again
+  ---
+  duration_ms: 0.336371
+  type: 'test'
+  ...
+# Subtest: Cursief with nothing selected writes the marks with the cursor between them
+ok 9 - Cursief with nothing selected writes the marks with the cursor between them
+  ---
+  duration_ms: 0.512896
+  type: 'test'
+  ...
+# Subtest: Lijst puts "- " before every selected line and skips the empty ones
+ok 10 - Lijst puts "- " before every selected line and skips the empty ones
+  ---
+  duration_ms: 0.783353
+  type: 'test'
+  ...
+# Subtest: Lijst takes in a line that is only partly selected
+ok 11 - Lijst takes in a line that is only partly selected
+  ---
+  duration_ms: 0.33194
+  type: 'test'
+  ...
+# Subtest: Lijst does not take in the line after a selection that ends on a newline
+ok 12 - Lijst does not take in the line after a selection that ends on a newline
+  ---
+  duration_ms: 0.197713
+  type: 'test'
+  ...
+# Subtest: Lijst on a list makes the lines plain again
+ok 13 - Lijst on a list makes the lines plain again
+  ---
+  duration_ms: 0.255229
+  type: 'test'
+  ...
+# Subtest: Lijst with a mix of items and plain lines makes them all items
+ok 14 - Lijst with a mix of items and plain lines makes them all items
+  ---
+  duration_ms: 0.269729
+  type: 'test'
+  ...
+# Subtest: Lijst with nothing selected makes the cursor line an item, also an empty one
+ok 15 - Lijst with nothing selected makes the cursor line an item, also an empty one
+  ---
+  duration_ms: 0.301755
+  type: 'test'
+  ...
+# Subtest: Link turns the selection into [text](url) and puts the cursor after it
+ok 16 - Link turns the selection into [text](url) and puts the cursor after it
+  ---
+  duration_ms: 1.961251
+  type: 'test'
+  ...
+# Subtest: Link with nothing selected uses the address as the text
+ok 17 - Link with nothing selected uses the address as the text
+  ---
+  duration_ms: 0.247538
+  type: 'test'
+  ...
+# Subtest: Link without an address changes nothing
+ok 18 - Link without an address changes nothing
+  ---
+  duration_ms: 0.220045
+  type: 'test'
+  ...
+# Subtest: a stale selection past the end is clamped, not sliced past the text
+ok 19 - a stale selection past the end is clamped, not sliced past the text
+  ---
+  duration_ms: 0.264589
+  type: 'test'
+  ...
+# Subtest: Ctrl+B and Ctrl+I (or Cmd) are the shortcuts, with Shift or Alt they are not
+ok 20 - Ctrl+B and Ctrl+I (or Cmd) are the shortcuts, with Shift or Alt they are not
+  ---
+  duration_ms: 0.213893
+  type: 'test'
+  ...
+# Subtest: the text field keeps its test id, a labelled toolbar and real buttons
+ok 21 - the text field keeps its test id, a labelled toolbar and real buttons
+  ---
+  duration_ms: 1.111832
+  type: 'test'
+  ...
+# Subtest: every string the toolbar shows reads Dutch for the editor
+ok 22 - every string the toolbar shows reads Dutch for the editor
+  ---
+  duration_ms: 5.278561
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 184.143499

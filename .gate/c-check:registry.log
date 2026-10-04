@@ -1,0 +1,5 @@
+[registry.spec] registry: /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/registry.js
+[registry.spec] entries: 29
+[registry.spec] required kinds present: cell-renderer, form-field, modal, page, widget
+[registry.spec] custom kind="widget" entries: 23 (scaffold target: 0 — ADR-049)
+[registry.spec] registry validation: PASS (0 errors)

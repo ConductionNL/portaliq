@@ -1,0 +1,44 @@
+TAP version 13
+# (node:2617858) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/pageHistory.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the versions come from the page history endpoint, newest first as served
+ok 1 - the versions come from the page history endpoint, newest first as served
+  ---
+  duration_ms: 3.620986
+  type: 'test'
+  ...
+# Subtest: no versions reads as empty, a refusal as an error
+ok 2 - no versions reads as empty, a refusal as an error
+  ---
+  duration_ms: 2.912818
+  type: 'test'
+  ...
+# Subtest: restoring Monday puts Monday in the draft and leaves the published body alone
+ok 3 - restoring Monday puts Monday in the draft and leaves the published body alone
+  ---
+  duration_ms: 0.561759
+  type: 'test'
+  ...
+# Subtest: a version without its content cannot be restored
+ok 4 - a version without its content cannot be restored
+  ---
+  duration_ms: 0.610851
+  type: 'test'
+  ...
+# Subtest: the designer opens the History dialog and restores through a draft write
+ok 5 - the designer opens the History dialog and restores through a draft write
+  ---
+  duration_ms: 4.506633
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 174.915883

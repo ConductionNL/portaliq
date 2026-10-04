@@ -1,0 +1,81 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2618019) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/blockProps.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: an existing portal keeps its header: same markup as the hard-coded header, except the site name is not a heading
+ok 1 - an existing portal keeps its header: same markup as the hard-coded header, except the site name is not a heading
+  ---
+  duration_ms: 313.316319
+  type: 'test'
+  ...
+# Subtest: a single-bar header lists each link once, and an unknown variant renders double
+ok 2 - a single-bar header lists each link once, and an unknown variant renders double
+  ---
+  duration_ms: 69.726051
+  type: 'test'
+  ...
+# Subtest: no register destination, no register control; a declared one renders beside sign-in
+ok 3 - no register destination, no register control; a declared one renders beside sign-in
+  ---
+  duration_ms: 62.141619
+  type: 'test'
+  ...
+# Subtest: a failed sign-in is said on a portal with only public pages, as an alert and without sign-in links
+ok 4 - a failed sign-in is said on a portal with only public pages, as an alert and without sign-in links
+  ---
+  duration_ms: 85.188919
+  type: 'test'
+  ...
+# Subtest: a block mounts without Nextcloud and renders its default strings
+ok 5 - a block mounts without Nextcloud and renders its default strings
+  ---
+  duration_ms: 24.766101
+  type: 'test'
+  ...
+# Subtest: authored style and class never reach a block
+ok 6 - authored style and class never reach a block
+  ---
+  duration_ms: 0.674089
+  type: 'test'
+  ...
+# Subtest: menus split by position: 0 header, 1 footer column, 2 or higher the legal strip
+ok 7 - menus split by position: 0 header, 1 footer column, 2 or higher the legal strip
+  ---
+  duration_ms: 1.05167
+  type: 'test'
+  ...
+# Subtest: the legal bar always names someone: the colophon, else the portal title
+ok 8 - the legal bar always names someone: the colophon, else the portal title
+  ---
+  duration_ms: 47.053986
+  type: 'test'
+  ...
+# Subtest: every footer band names its role, and socials carry a screen-reader label
+ok 9 - every footer band names its role, and socials carry a screen-reader label
+  ---
+  duration_ms: 24.656844
+  type: 'test'
+  ...
+# Subtest: a third band changes nothing about the first two: every positional footer rule is restated by role
+ok 10 - a third band changes nothing about the first two: every positional footer rule is restated by role
+  ---
+  duration_ms: 22.173705
+  type: 'test'
+  ...
+# Subtest: App.vue imports every shell and block-prop helper it calls
+ok 11 - App.vue imports every shell and block-prop helper it calls
+  ---
+  duration_ms: 5.494889
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1116.976535

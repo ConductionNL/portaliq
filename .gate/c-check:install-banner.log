@@ -1,0 +1,69 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2622998) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/f/strings.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a browser that makes no offer shows nothing
+ok 1 - a browser that makes no offer shows nothing
+  ---
+  duration_ms: 166.112494
+  type: 'test'
+  ...
+# Subtest: the offer is kept instead of the browser showing its own bar
+ok 2 - the offer is kept instead of the browser showing its own bar
+  ---
+  duration_ms: 12.412169
+  type: 'test'
+  ...
+# Subtest: "Not now" hides the banner for this page view
+ok 3 - "Not now" hides the banner for this page view
+  ---
+  duration_ms: 11.245797
+  type: 'test'
+  ...
+# Subtest: "Install" hands the offer back to the browser once
+ok 4 - "Install" hands the offer back to the browser once
+  ---
+  duration_ms: 10.796876
+  type: 'test'
+  ...
+# Subtest: a browser that refuses its dialog does not break the page
+ok 5 - a browser that refuses its dialog does not break the page
+  ---
+  duration_ms: 10.162437
+  type: 'test'
+  ...
+# Subtest: an app installed from the browser menu hides the banner
+ok 6 - an app installed from the browser menu hides the banner
+  ---
+  duration_ms: 9.42625
+  type: 'test'
+  ...
+# Subtest: the banner listens on the window it is given, and stops when it goes
+ok 7 - the banner listens on the window it is given, and stops when it goes
+  ---
+  duration_ms: 8.016668
+  type: 'test'
+  ...
+# Subtest: every string the banner uses is in Dutch and English, as the portal said it
+ok 8 - every string the banner uses is in Dutch and English, as the portal said it
+  ---
+  duration_ms: 1.778213
+  type: 'test'
+  ...
+# Subtest: the shell mounts the banner and registers the worker after mounting
+ok 9 - the shell mounts the banner and registers the worker after mounting
+  ---
+  duration_ms: 1.499067
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 580.640539

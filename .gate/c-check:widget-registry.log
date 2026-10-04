@@ -1,0 +1,68 @@
+TAP version 13
+# (node:2627800) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/widgets/coverage.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: every meta describes itself, and every widget has both halves
+ok 1 - every meta describes itself, and every widget has both halves
+  ---
+  duration_ms: 6.316678
+  type: 'test'
+  ...
+# Subtest: no widget key is a key of the shared dashboard registry
+ok 2 - no widget key is a key of the shared dashboard registry
+  ---
+  duration_ms: 1.392217
+  type: 'test'
+  ...
+# Subtest: the groups are the six of REQ-SNW-001, in order
+ok 3 - the groups are the six of REQ-SNW-001, in order
+  ---
+  duration_ms: 0.469887
+  type: 'test'
+  ...
+# Subtest: each of the 101 components has exactly one placement
+ok 4 - each of the 101 components has exactly one placement
+  ---
+  duration_ms: 0.744744
+  type: 'test'
+  ...
+# Subtest: a widget or field placement names a key, and the others say where instead
+ok 5 - a widget or field placement names a key, and the others say where instead
+  ---
+  duration_ms: 0.542478
+  type: 'test'
+  ...
+# Subtest: the record and design D1 say the same thing
+ok 6 - the record and design D1 say the same thing
+  ---
+  duration_ms: 3.881723
+  type: 'test'
+  ...
+# Subtest: every widget renders its NL Design System classes and imports its CSS
+ok 7 - every widget renders its NL Design System classes and imports its CSS
+  ---
+  duration_ms: 2.244937
+  type: 'test'
+  ...
+# Subtest: the markdown class map covers the marks an author writes
+ok 8 - the markdown class map covers the marks an author writes
+  ---
+  duration_ms: 0.529992
+  type: 'test'
+  ...
+# Subtest: every built widget is in the record as a widget, under its own key
+ok 9 - every built widget is in the record as a widget, under its own key
+  ---
+  duration_ms: 1.294334
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 217.708722

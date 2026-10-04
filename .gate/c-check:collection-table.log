@@ -1,0 +1,45 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2614364) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/collections/cells.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: site: every selectable row carries a button that selects that row
+ok 1 - site: every selectable row carries a button that selects that row
+  ---
+  duration_ms: 280.323451
+  type: 'test'
+  ...
+# Subtest: site: the button is named by the row it opens, the header by the declared label
+ok 2 - site: the button is named by the row it opens, the header by the declared label
+  ---
+  duration_ms: 32.38412
+  type: 'test'
+  ...
+# Subtest: site: the open row is announced as the current one
+ok 3 - site: the open row is announced as the current one
+  ---
+  duration_ms: 25.179779
+  type: 'test'
+  ...
+# Subtest: site: a table nobody can select from renders no select button
+ok 4 - site: a table nobody can select from renders no select button
+  ---
+  duration_ms: 27.274529
+  type: 'test'
+  ...
+# Subtest: site: row buttons follow offers, and the busy row cannot fire twice
+ok 5 - site: row buttons follow offers, and the busy row cannot fire twice
+  ---
+  duration_ms: 30.180365
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 885.388474

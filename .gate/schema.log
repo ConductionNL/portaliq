@@ -1,0 +1,5 @@
+
+> portaliq@0.1.0 check:schema-l10n
+> node scripts/check-schema-l10n.js
+
+1484 schema string(s); 0 uncovered, baseline 0

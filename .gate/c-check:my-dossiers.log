@@ -1,0 +1,75 @@
+TAP version 13
+# (node:2621796) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/itemList.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: not public marker
+ok 1 - not public marker
+  ---
+  duration_ms: 3.703658
+  type: 'test'
+  ...
+# Subtest: remove body
+ok 2 - remove body
+  ---
+  duration_ms: 1.12771
+  type: 'test'
+  ...
+# Subtest: the remove action is not a table row button
+ok 3 - the remove action is not a table row button
+  ---
+  duration_ms: 1.459217
+  type: 'test'
+  ...
+# Subtest: answer link
+ok 4 - answer link
+  ---
+  duration_ms: 1.24628
+  type: 'test'
+  ...
+# Subtest: answer link on the site's own origin
+ok 5 - answer link on the site's own origin
+  ---
+  duration_ms: 223.645131
+  type: 'test'
+  ...
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# Subtest: the site confirm step shows the link the action answered
+ok 6 - the site confirm step shows the link the action answered
+  ---
+  duration_ms: 33.109454
+  type: 'test'
+  ...
+# Subtest: site: the item list marks an item that is no longer public and offers remove per item
+ok 7 - site: the item list marks an item that is no longer public and offers remove per item
+  ---
+  duration_ms: 49.185077
+  type: 'test'
+  ...
+# Subtest: site: removing one item forwards the remove action and reads the list again
+ok 8 - site: removing one item forwards the remove action and reads the list again
+  ---
+  duration_ms: 17.463824
+  type: 'test'
+  ...
+# Subtest: site: the detail card renders the item list, the table drops the remove action
+ok 9 - site: the detail card renders the item list, the table drops the remove action
+  ---
+  duration_ms: 0.951215
+  type: 'test'
+  ...
+# Subtest: site: a file downloads through the portal api with the record and the file
+ok 10 - site: a file downloads through the portal api with the record and the file
+  ---
+  duration_ms: 84.884577
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 811.50315

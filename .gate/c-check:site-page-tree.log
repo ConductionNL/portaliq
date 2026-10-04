@@ -1,0 +1,62 @@
+TAP version 13
+# (node:2619587) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/index.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the page schema carries parent and order, and the register version moved
+ok 1 - the page schema carries parent and order, and the register version moved
+  ---
+  duration_ms: 10.146824
+  type: 'test'
+  ...
+# Subtest: pages form a tree ordered by order, then title; an orphan sits at the top
+ok 2 - pages form a tree ordered by order, then title; an orphan sits at the top
+  ---
+  duration_ms: 76.300365
+  type: 'test'
+  ...
+# Subtest: an editor creates a page under another, as a draft the schema accepts
+ok 3 - an editor creates a page under another, as a draft the schema accepts
+  ---
+  duration_ms: 11.720944
+  type: 'test'
+  ...
+# Subtest: rename keeps the route, move keeps the route and refuses a move under itself
+ok 4 - rename keeps the route, move keeps the route and refuses a move under itself
+  ---
+  duration_ms: 7.141924
+  type: 'test'
+  ...
+# Subtest: a published page cannot be deleted from the portal, a draft can
+ok 5 - a published page cannot be deleted from the portal, a draft can
+  ---
+  duration_ms: 0.43759
+  type: 'test'
+  ...
+# Subtest: the portal objects client lists, creates, deletes and saves with the version check
+ok 6 - the portal objects client lists, creates, deletes and saves with the version check
+  ---
+  duration_ms: 1.625191
+  type: 'test'
+  ...
+# Subtest: an editor adds, renames, reorders and removes menu items, and the menu saves as the schema wants
+ok 7 - an editor adds, renames, reorders and removes menu items, and the menu saves as the schema wants
+  ---
+  duration_ms: 2.09805
+  type: 'test'
+  ...
+# Subtest: the site edit mode offers the pages and the menu panels
+ok 8 - the site edit mode offers the pages and the menu panels
+  ---
+  duration_ms: 1.811956
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 945.473361

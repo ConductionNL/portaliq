@@ -1,0 +1,45 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2614420) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the API asks the scoped timeline route of the selected case
+ok 1 - the API asks the scoped timeline route of the selected case
+  ---
+  duration_ms: 252.947079
+  type: 'test'
+  ...
+# Subtest: a refused or failed timeline read is null, not an empty history
+ok 2 - a refused or failed timeline read is null, not an empty history
+  ---
+  duration_ms: 2.16105
+  type: 'test'
+  ...
+# Subtest: site: the entries render under the declared label, newest first, none dropped
+ok 3 - site: the entries render under the declared label, newest first, none dropped
+  ---
+  duration_ms: 446.301991
+  type: 'test'
+  ...
+# Subtest: site: ordering never changes the list the provider returned
+ok 4 - site: ordering never changes the list the provider returned
+  ---
+  duration_ms: 0.433642
+  type: 'test'
+  ...
+# Subtest: site: a case with no history says so, and one still loading says that
+ok 5 - site: a case with no history says so, and one still loading says that
+  ---
+  duration_ms: 98.462778
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1343.655635

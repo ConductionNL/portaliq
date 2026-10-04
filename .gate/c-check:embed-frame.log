@@ -1,0 +1,87 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2623114) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/embed/frame.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the template owns its document and loads the embed entry, not the portal
+ok 1 - the template owns its document and loads the embed entry, not the portal
+  ---
+  duration_ms: 2.040429
+  type: 'test'
+  ...
+# Subtest: the embed entry pulls in neither the site nor the React portal
+ok 2 - the embed entry pulls in neither the site nor the React portal
+  ---
+  duration_ms: 0.602791
+  type: 'test'
+  ...
+# Subtest: the boot data is read from the JSON block
+ok 3 - the boot data is read from the JSON block
+  ---
+  duration_ms: 0.323739
+  type: 'test'
+  ...
+# Subtest: a missing or broken block gives a refusal, not an empty frame
+ok 4 - a missing or broken block gives a refusal, not an empty frame
+  ---
+  duration_ms: 0.428287
+  type: 'test'
+  ...
+# Subtest: every Dutch refusal is word for word what embedCopy.js says
+ok 5 - every Dutch refusal is word for word what embedCopy.js says
+  ---
+  duration_ms: 1.602196
+  type: 'test'
+  ...
+# Subtest: every string the frame uses exists in Dutch and English, without em-dashes
+ok 6 - every string the frame uses exists in Dutch and English, without em-dashes
+  ---
+  duration_ms: 0.591858
+  type: 'test'
+  ...
+# Subtest: a preset is sent even when the visitor leaves it alone
+ok 7 - a preset is sent even when the visitor leaves it alone
+  ---
+  duration_ms: 0.267695
+  type: 'test'
+  ...
+# Subtest: the answers go to the submit route with their form page
+ok 8 - the answers go to the submit route with their form page
+  ---
+  duration_ms: 0.338815
+  type: 'test'
+  ...
+# Subtest: the server's errors are shown per field and as a list
+ok 9 - the server's errors are shown per field and as a list
+  ---
+  duration_ms: 0.679397
+  type: 'test'
+  ...
+# Subtest: a refused frame renders its sentence and no form
+ok 10 - a refused frame renders its sentence and no form
+  ---
+  duration_ms: 221.920279
+  type: 'test'
+  ...
+# Subtest: a frame with a form renders each field with its label
+ok 11 - a frame with a form renders each field with its label
+  ---
+  duration_ms: 23.589751
+  type: 'test'
+  ...
+# Subtest: a sent form shows the reference; a refused one says why
+ok 12 - a sent form shows the reference; a refused one says why
+  ---
+  duration_ms: 16.439773
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 667.215166

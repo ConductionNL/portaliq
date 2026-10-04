@@ -1,0 +1,51 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2626714) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/listWindow.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the three newest grades, and a link to all of them
+ok 1 - the three newest grades, and a link to all of them
+  ---
+  duration_ms: 2.827413
+  type: 'test'
+  ...
+# Subtest: a sort orders dates, numbers and words, and rows without a value come last
+ok 2 - a sort orders dates, numbers and words, and rows without a value come last
+  ---
+  duration_ms: 0.436016
+  type: 'test'
+  ...
+# Subtest: this week only: Monday 28 September to Sunday 4 October
+ok 3 - this week only: Monday 28 September to Sunday 4 October
+  ---
+  duration_ms: 0.354811
+  type: 'test'
+  ...
+# Subtest: today only, this month, and no range
+ok 4 - today only, this month, and no range
+  ---
+  duration_ms: 0.576695
+  type: 'test'
+  ...
+# Subtest: a limited table shows its first rows and leads to all of them
+ok 5 - a limited table shows its first rows and leads to all of them
+  ---
+  duration_ms: 2.136394
+  type: 'test'
+  ...
+# Subtest: Linda acts for her father: a named bar with the way back to herself
+ok 6 - Linda acts for her father: a named bar with the way back to herself
+  ---
+  duration_ms: 10.988581
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 700.750855

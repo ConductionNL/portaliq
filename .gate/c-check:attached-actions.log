@@ -1,0 +1,74 @@
+TAP version 13
+# (node:2621719) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/attachedActions.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the collection lists only well-formed attached actions
+ok 1 - the collection lists only well-formed attached actions
+  ---
+  duration_ms: 2.687288
+  type: 'test'
+  ...
+# Subtest: an attached action shows only on the rows its rowWhen names
+ok 2 - an attached action shows only on the rows its rowWhen names
+  ---
+  duration_ms: 0.376499
+  type: 'test'
+  ...
+# Subtest: the body carries only the declared fields
+ok 3 - the body carries only the declared fields
+  ---
+  duration_ms: 0.376963
+  type: 'test'
+  ...
+# Subtest: a field label comes from fieldConfigs, else the field name
+ok 4 - a field label comes from fieldConfigs, else the field name
+  ---
+  duration_ms: 0.259904
+  type: 'test'
+  ...
+# Subtest: the forward names the action app
+ok 5 - the forward names the action app
+  ---
+  duration_ms: 0.796018
+  type: 'test'
+  ...
+# Subtest: the api sends actionApp and the site fills the detail slot with the actions
+ok 6 - the api sends actionApp and the site fills the detail slot with the actions
+  ---
+  duration_ms: 0.777958
+  type: 'test'
+  ...
+# Subtest: the site shows one button per attached action and forwards with actionApp
+ok 7 - the site shows one button per attached action and forwards with actionApp
+  ---
+  duration_ms: 474.26486
+  type: 'test'
+  ...
+# Subtest: the site offers an attached action only on the records its rowWhen names
+ok 8 - the site offers an attached action only on the records its rowWhen names
+  ---
+  duration_ms: 337.278816
+  type: 'test'
+  ...
+# Subtest: the site renders nothing without attached actions or without a record
+ok 9 - the site renders nothing without attached actions or without a record
+  ---
+  duration_ms: 176.540069
+  type: 'test'
+  ...
+# Subtest: site: the detail card leaves a place for the attached actions
+ok 10 - site: the detail card leaves a place for the attached actions
+  ---
+  duration_ms: 1.921672
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1396.18933

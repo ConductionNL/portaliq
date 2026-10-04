@@ -1,0 +1,50 @@
+TAP version 13
+# (node:2622332) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/guestAction.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the fragment is read once and removed from the address bar (REQ-GST-002)
+ok 1 - the fragment is read once and removed from the address bar (REQ-GST-002)
+  ---
+  duration_ms: 7.435068
+  type: 'test'
+  ...
+# Subtest: preview and act post the token to the guest routes
+ok 2 - preview and act post the token to the guest routes
+  ---
+  duration_ms: 1.829753
+  type: 'test'
+  ...
+# Subtest: a preview shows the summary, or the reason and no button (REQ-GST-004)
+ok 3 - a preview shows the summary, or the reason and no button (REQ-GST-004)
+  ---
+  duration_ms: 0.715562
+  type: 'test'
+  ...
+# Subtest: the answer of the act: https checkout, message, or refusal (REQ-GST-004)
+ok 4 - the answer of the act: https checkout, message, or refusal (REQ-GST-004)
+  ---
+  duration_ms: 0.47994
+  type: 'test'
+  ...
+# Subtest: English and Dutch carry the same strings, without em-dashes
+ok 5 - English and Dutch carry the same strings, without em-dashes
+  ---
+  duration_ms: 0.551684
+  type: 'test'
+  ...
+# Subtest: the site mounts the guest page on demand, before any other page
+ok 6 - the site mounts the guest page on demand, before any other page
+  ---
+  duration_ms: 1.939806
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 218.367028

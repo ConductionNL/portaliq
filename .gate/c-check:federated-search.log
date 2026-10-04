@@ -1,0 +1,79 @@
+buildRequestUrl
+  ok   resolves a relative endpoint against the origin
+  ok   keeps the OpenCatalogi path
+  ok   sends the page size
+  ok   sends the page
+  ok   omits an empty term entirely
+  ok   always asks for facet buckets in the same request
+  ok   sends a non-empty term
+  ok   repeats the facet field once per selected value
+  ok   accepts an absolute endpoint on another instance
+toBuckets — both dialects
+  ok   reads the object-field dialect (data.buckets, value/count)
+  ok   reads the virtual dialect (buckets, key/results)
+  ok   survives a missing facet envelope
+  ok   survives a facet field that is absent
+  ok   drops a bucket with no value rather than rendering a nameless filter
+toResult — a row from a federated peer
+  ok   maps a complete row
+  ok   names a row with no directory `local`, rather than leaving it blank
+  ok   falls back through landingUrl → url → @self.uri for the link
+  ok   uses @self.uri when the row carries no link of its own
+  ok   degrades an almost-empty row to a titled entry instead of throwing
+  ok   ignores a non-string description rather than rendering [object Object]
+  ok   truncates a long summary to 280 characters
+pageWindow
+  ok   windows around the current page
+  ok   does not run below page 1
+  ok   does not run past the last page
+  ok   collapses to a single page
+sorting
+  ok   omits _order entirely when no sort is chosen
+  ok   maps field:DIRECTION onto _order[field]
+  ok   ignores a malformed sort rather than sending half of it
+paginationItems
+  ok   matches the reference at page 1 of 36
+  ok   windows around a middle page, with a gap either side
+  ok   reaches the last page
+  ok   collapses to one page
+  ok   never emits a gap for a single skipped page
+formatDutchDate
+  ok   formats the way the reference does
+  ok   formats a February date
+  ok   survives an empty value
+  ok   survives a nonsense value
+toResult — detail id, date and type
+  ok   carries the id the detail route addresses
+  ok   formats publicationDate for the card
+  ok   does not mistake the numeric schema id for a type name
+  ok   uses a schema title when the instance supplies one
+facets per field
+  ok   asks a facet for the first field
+  ok   asks a facet for the second field in the same request
+  ok   sends the ticked category as a filter
+  ok   sends no filter for a field without a selection
+  ok   a state without facetFields keeps its single field
+period range
+  ok   sends the from date as a gte range
+  ok   sends the to date through the end of that day
+  ok   does not send a from date that is not a date
+  ok   refuses a date that rolls over
+  ok   uses another period field when the block names one
+address round trip
+  ok   keeps the route
+  ok   writes the category per field
+  ok   writes the from date
+  ok   reads the text back
+  ok   reads the facets back
+  ok   reads the from date back
+old _facets parameter
+  ok   an old link selects its value in the first field
+  ok   and nothing in the second
+search query object
+  ok   describes the search in the C2 shape, organization as organisation
+
+all federated-search assertions held
+(node:2613748) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/federatedSearch.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)

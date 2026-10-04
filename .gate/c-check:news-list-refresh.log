@@ -1,0 +1,44 @@
+TAP version 13
+# (node:2625065) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/listRefresh.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the News list is fetched again on the page, sort and filters it had
+ok 1 - the News list is fetched again on the page, sort and filters it had
+  ---
+  duration_ms: 8.610588
+  type: 'test'
+  ...
+# Subtest: a list never fetched here says so, so the caller can reload instead
+ok 2 - a list never fetched here says so, so the caller can reload instead
+  ---
+  duration_ms: 1.166355
+  type: 'test'
+  ...
+# Subtest: without a recorded store nothing is fetched
+ok 3 - without a recorded store nothing is fetched
+  ---
+  duration_ms: 0.441417
+  type: 'test'
+  ...
+# Subtest: the News list key is the manifest page's register and schema
+ok 4 - the News list key is the manifest page's register and schema
+  ---
+  duration_ms: 2.618017
+  type: 'test'
+  ...
+# Subtest: the News handlers refresh the list, and reload the page only as a fallback
+ok 5 - the News handlers refresh the list, and reload the page only as a fallback
+  ---
+  duration_ms: 1.578803
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 350.51626

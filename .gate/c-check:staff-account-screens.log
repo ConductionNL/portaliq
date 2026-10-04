@@ -1,0 +1,140 @@
+TAP version 13
+# (node:2621859) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/registrationSettings.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: issuing an account posts the validated provision route and says it is issued
+ok 1 - issuing an account posts the validated provision route and says it is issued
+  ---
+  duration_ms: 4.827927
+  type: 'test'
+  ...
+# Subtest: a duplicate identity is refused in words and no second account is claimed
+ok 2 - a duplicate identity is refused in words and no second account is claimed
+  ---
+  duration_ms: 0.693393
+  type: 'test'
+  ...
+# Subtest: an issue without organisation or identity posts nothing and says what is missing
+ok 3 - an issue without organisation or identity posts nothing and says what is missing
+  ---
+  duration_ms: 0.359847
+  type: 'test'
+  ...
+# Subtest: a refused or forbidden issue says why
+ok 4 - a refused or forbidden issue says why
+  ---
+  duration_ms: 0.619786
+  type: 'test'
+  ...
+# Subtest: an invitation is sent and the clerk reads its expiry, never a link
+ok 5 - an invitation is sent and the clerk reads its expiry, never a link
+  ---
+  duration_ms: 0.713148
+  type: 'test'
+  ...
+# Subtest: an invitation whose mail was not sent says nobody was invited
+ok 6 - an invitation whose mail was not sent says nobody was invited
+  ---
+  duration_ms: 2.149929
+  type: 'test'
+  ...
+# Subtest: withdrawing an invitation posts its revoke route with the row organisation
+ok 7 - withdrawing an invitation posts its revoke route with the row organisation
+  ---
+  duration_ms: 0.763809
+  type: 'test'
+  ...
+# Subtest: an accepted invitation cannot be withdrawn and the clerk reads why
+ok 8 - an accepted invitation cannot be withdrawn and the clerk reads why
+  ---
+  duration_ms: 0.553066
+  type: 'test'
+  ...
+# Subtest: only a pending account offers withdrawal, and withdrawing needs a reason
+ok 9 - only a pending account offers withdrawal, and withdrawing needs a reason
+  ---
+  duration_ms: 1.557403
+  type: 'test'
+  ...
+# Subtest: the header actions open their dialog and reload after a success only
+ok 10 - the header actions open their dialog and reload after a success only
+  ---
+  duration_ms: 1.289404
+  type: 'test'
+  ...
+# Subtest: withdraw invitation asks first, and a refusal is shown without a reload
+ok 11 - withdraw invitation asks first, and a refusal is shown without a reload
+  ---
+  duration_ms: 0.821631
+  type: 'test'
+  ...
+# Subtest: the registration of a portal reads off when it declares none
+ok 12 - the registration of a portal reads off when it declares none
+  ---
+  duration_ms: 0.421233
+  type: 'test'
+  ...
+# Subtest: allowed domains are one per line, lower case, without @, without repeats
+ok 13 - allowed domains are one per line, lower case, without @, without repeats
+  ---
+  duration_ms: 0.430818
+  type: 'test'
+  ...
+# Subtest: the saved portal keeps its other sign-in settings and drops the envelope
+ok 14 - the saved portal keeps its other sign-in settings and drops the envelope
+  ---
+  duration_ms: 1.818009
+  type: 'test'
+  ...
+# Subtest: saving reads the portal fresh, writes it back and says so
+ok 15 - saving reads the portal fresh, writes it back and says so
+  ---
+  duration_ms: 1.454718
+  type: 'test'
+  ...
+# Subtest: the waiting list reads the organisation's pending self-registrations only
+ok 16 - the waiting list reads the organisation's pending self-registrations only
+  ---
+  duration_ms: 1.013598
+  type: 'test'
+  ...
+# Subtest: approve and refuse post the account routes, and a refusal needs a reason
+ok 17 - approve and refuse post the account routes, and a refusal needs a reason
+  ---
+  duration_ms: 1.604317
+  type: 'test'
+  ...
+# Subtest: the accounts index offers "Issue an account" instead of the generic add
+ok 18 - the accounts index offers "Issue an account" instead of the generic add
+  ---
+  duration_ms: 0.347161
+  type: 'test'
+  ...
+# Subtest: an Invitations page lists the invitations with a withdraw action and a menu entry
+ok 19 - an Invitations page lists the invitations with a withdraw action and a menu entry
+  ---
+  duration_ms: 0.443201
+  type: 'test'
+  ...
+# Subtest: the handlers are in the map the index action dispatcher reads
+ok 20 - the handlers are in the map the index action dispatcher reads
+  ---
+  duration_ms: 0.686324
+  type: 'test'
+  ...
+# Subtest: the account page and the portal page carry the withdraw and registration widgets
+ok 21 - the account page and the portal page carry the withdraw and registration widgets
+  ---
+  duration_ms: 1.004871
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 230.832479

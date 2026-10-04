@@ -1,0 +1,81 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2626422) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/openRecord.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a deadline badge says the date in words, counts down from seven days out, and says when it is late
+ok 1 - a deadline badge says the date in words, counts down from seven days out, and says when it is late
+  ---
+  duration_ms: 21.70979
+  type: 'test'
+  ...
+# Subtest: a tasks block lists the soonest deadline first, rows without one last, within its limit
+ok 2 - a tasks block lists the soonest deadline first, rows without one last, within its limit
+  ---
+  duration_ms: 0.744036
+  type: 'test'
+  ...
+# Subtest: an inbox block shows its own inbox, unread first, then newest first, within its limit
+ok 3 - an inbox block shows its own inbox, unread first, then newest first, within its limit
+  ---
+  duration_ms: 0.482484
+  type: 'test'
+  ...
+# Subtest: when a message came in reads as words
+ok 4 - when a message came in reads as words
+  ---
+  duration_ms: 0.986774
+  type: 'test'
+  ...
+# Subtest: the words fall back to this folder, in both languages, with the same keys and no em-dash
+ok 5 - the words fall back to this folder, in both languages, with the same keys and no em-dash
+  ---
+  duration_ms: 0.767458
+  type: 'test'
+  ...
+# Subtest: an action row is one link with the badge inside it; a row with nowhere to go is text
+ok 6 - an action row is one link with the badge inside it; a row with nowhere to go is text
+  ---
+  duration_ms: 15.037981
+  type: 'test'
+  ...
+# Subtest: a tasks block links each row to the page that shows it and keeps the row to open
+ok 7 - a tasks block links each row to the page that shows it and keeps the row to open
+  ---
+  duration_ms: 13.074931
+  type: 'test'
+  ...
+# Subtest: an unread message carries "Nieuw" inside its link, and "Alle berichten" leads to the inbox
+ok 8 - an unread message carries "Nieuw" inside its link, and "Alle berichten" leads to the inbox
+  ---
+  duration_ms: 6.079616
+  type: 'test'
+  ...
+# Subtest: no messages yet reads as a sentence; a failed read says so and is not empty
+ok 9 - no messages yet reads as a sentence; a failed read says so and is not empty
+  ---
+  duration_ms: 4.001801
+  type: 'test'
+  ...
+# Subtest: a page renders its tasks and inbox blocks, and loads the tasks block's collection
+ok 10 - a page renders its tasks and inbox blocks, and loads the tasks block's collection
+  ---
+  duration_ms: 1.329484
+  type: 'test'
+  ...
+# Subtest: the components take only the Den Haag CSS, at thematiq's pinned versions, and declare no tokens
+ok 11 - the components take only the Den Haag CSS, at thematiq's pinned versions, and declare no tokens
+  ---
+  duration_ms: 2.354332
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 597.536685

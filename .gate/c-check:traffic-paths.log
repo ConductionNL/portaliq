@@ -1,0 +1,96 @@
+TAP version 13
+# (node:2613891) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/trafficPaths.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: layoutPaths
+    # Subtest: puts step 0 on the left reading forward, one scale for the whole drawing
+    ok 1 - puts step 0 on the left reading forward, one scale for the whole drawing
+      ---
+      duration_ms: 8.423851
+      type: 'test'
+      ...
+    # Subtest: keeps a small node tall enough for its label, and its band at the true scale
+    ok 2 - keeps a small node tall enough for its label, and its band at the true scale
+      ---
+      duration_ms: 0.614729
+      type: 'test'
+      ...
+    # Subtest: stacks the bands leaving one node in target order, from its right edge to the next left edge
+    ok 3 - stacks the bands leaving one node in target order, from its right edge to the next left edge
+      ---
+      duration_ms: 0.788428
+      type: 'test'
+      ...
+    # Subtest: puts the drop-off stub under the bands that left
+    ok 4 - puts the drop-off stub under the bands that left
+      ---
+      duration_ms: 0.641445
+      type: 'test'
+      ...
+    # Subtest: mirrors the drawing reading backward: step 0 on the right, bands from left edges
+    ok 5 - mirrors the drawing reading backward: step 0 on the right, bands from left edges
+      ---
+      duration_ms: 0.709231
+      type: 'test'
+      ...
+    # Subtest: draws nothing for an empty answer and skips a link to a missing node
+    ok 6 - draws nothing for an empty answer and skips a link to a missing node
+      ---
+      duration_ms: 0.581678
+      type: 'test'
+      ...
+    1..6
+ok 1 - layoutPaths
+  ---
+  duration_ms: 14.38687
+  type: 'suite'
+  ...
+# Subtest: band
+    # Subtest: is a closed outline from the leaving edge to the arriving edge
+    ok 1 - is a closed outline from the leaving edge to the arriving edge
+      ---
+      duration_ms: 0.506286
+      type: 'test'
+      ...
+    1..1
+ok 2 - band
+  ---
+  duration_ms: 1.247507
+  type: 'suite'
+  ...
+# Subtest: pathRows
+    # Subtest: lists every node of every step, "+N more" included
+    ok 1 - lists every node of every step, "+N more" included
+      ---
+      duration_ms: 1.315297
+      type: 'test'
+      ...
+    1..1
+ok 3 - pathRows
+  ---
+  duration_ms: 1.792193
+  type: 'suite'
+  ...
+# Subtest: chooseNode
+    # Subtest: chooses a node, keeps earlier choices, drops later ones, and undoes a second choice
+    ok 1 - chooses a node, keeps earlier choices, drops later ones, and undoes a second choice
+      ---
+      duration_ms: 0.74663
+      type: 'test'
+      ...
+    1..1
+ok 4 - chooseNode
+  ---
+  duration_ms: 1.132387
+  type: 'suite'
+  ...
+1..4
+# tests 9
+# suites 4
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 393.926328

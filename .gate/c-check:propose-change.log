@@ -1,0 +1,44 @@
+TAP version 13
+# (node:2622467) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/c/forms.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: only the changed field is proposed
+ok 1 - only the changed field is proposed
+  ---
+  duration_ms: 3.715154
+  type: 'test'
+  ...
+# Subtest: the form sends only the phone number and the note
+ok 2 - the form sends only the phone number and the note
+  ---
+  duration_ms: 452.474509
+  type: 'test'
+  ...
+# Subtest: nothing changed is refused before anything is sent
+ok 3 - nothing changed is refused before anything is sent
+  ---
+  duration_ms: 93.318147
+  type: 'test'
+  ...
+# Subtest: a refused proposal says so
+ok 4 - a refused proposal says so
+  ---
+  duration_ms: 106.068112
+  type: 'test'
+  ...
+# Subtest: the queue shows this record only, the state in words, and withdraws
+ok 5 - the queue shows this record only, the state in words, and withdraws
+  ---
+  duration_ms: 135.395152
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1272.618023

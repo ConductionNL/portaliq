@@ -1,0 +1,57 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2615809) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: asking posts the party and the reason with the bearer, and a refusal names its error
+ok 1 - asking posts the party and the reason with the bearer, and a refusal names its error
+  ---
+  duration_ms: 253.903028
+  type: 'test'
+  ...
+# Subtest: the asker reads their own requests, and a failure reads as none
+ok 2 - the asker reads their own requests, and a failure reads as none
+  ---
+  duration_ms: 8.128593
+  type: 'test'
+  ...
+# Subtest: site: the shell offers the page to every signed-in user
+ok 3 - site: the shell offers the page to every signed-in user
+  ---
+  duration_ms: 2.997924
+  type: 'test'
+  ...
+# Subtest: every new string has a Dutch translation
+ok 4 - every new string has a Dutch translation
+  ---
+  duration_ms: 13.538356
+  type: 'test'
+  ...
+# Subtest: site: a request needs a party and a reason, the newest comes first, and each state reads as words
+ok 5 - site: a request needs a party and a reason, the newest comes first, and each state reads as words
+  ---
+  duration_ms: 0.603545
+  type: 'test'
+  ...
+# Subtest: site: the list shows a pending request and a refusal with its reason, with a label for each field
+ok 6 - site: the list shows a pending request and a refusal with its reason, with a label for each field
+  ---
+  duration_ms: 416.357397
+  type: 'test'
+  ...
+# Subtest: site: sending checks the form first, then asks, empties the form and lists the request as waiting
+ok 7 - site: sending checks the form first, then asks, empties the form and lists the request as waiting
+  ---
+  duration_ms: 24.763565
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1142.629124

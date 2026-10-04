@@ -1,0 +1,63 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2622157) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/instanceRoot.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the route opencatalogi hands out names a shared dossier and carries its token
+ok 1 - the route opencatalogi hands out names a shared dossier and carries its token
+  ---
+  duration_ms: 1.773
+  type: 'test'
+  ...
+# Subtest: the page keeps the title, the note and per item a title, a safe link and a note, never the owner
+ok 2 - the page keeps the title, the note and per item a title, a safe link and a note, never the owner
+  ---
+  duration_ms: 113.052649
+  type: 'test'
+  ...
+# Subtest: the read goes to opencatalogi under the instance root the content API names
+ok 3 - the read goes to opencatalogi under the instance root the content API names
+  ---
+  duration_ms: 2.310592
+  type: 'test'
+  ...
+# Subtest: the read is anonymous, and a 404 and a failure are told apart
+ok 4 - the read is anonymous, and a 404 and a failure are told apart
+  ---
+  duration_ms: 1.211257
+  type: 'test'
+  ...
+# Subtest: the page shows the dossier, its public documents with links and notes, and no owner
+ok 5 - the page shows the dossier, its public documents with links and notes, and no owner
+  ---
+  duration_ms: 215.697889
+  type: 'test'
+  ...
+# Subtest: the page says when the dossier is empty, the link is gone, or the read failed
+ok 6 - the page says when the dossier is empty, the link is gone, or the read failed
+  ---
+  duration_ms: 65.790204
+  type: 'test'
+  ...
+# Subtest: the shell renders the page for the route without reading a CMS page, and loads it on demand
+ok 7 - the shell renders the page for the route without reading a CMS page, and loads it on demand
+  ---
+  duration_ms: 1.434577
+  type: 'test'
+  ...
+# Subtest: every string the page shows exists in English and Dutch
+ok 8 - every string the page shows exists in English and Dutch
+  ---
+  duration_ms: 2.013612
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 733.070749

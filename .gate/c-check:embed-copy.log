@@ -1,0 +1,50 @@
+TAP version 13
+# (node:2622716) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/embedCopy.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a payload carrying a form produces no refusal
+ok 1 - a payload carrying a form produces no refusal
+  ---
+  duration_ms: 1.067321
+  type: 'test'
+  ...
+# Subtest: every refusal the controller can return has its own sentence
+ok 2 - every refusal the controller can return has its own sentence
+  ---
+  duration_ms: 0.40571
+  type: 'test'
+  ...
+# Subtest: a reason nobody has written copy for still says something
+ok 3 - a reason nobody has written copy for still says something
+  ---
+  duration_ms: 0.378613
+  type: 'test'
+  ...
+# Subtest: a labelled field uses its label
+ok 4 - a labelled field uses its label
+  ---
+  duration_ms: 1.71441
+  type: 'test'
+  ...
+# Subtest: an unlabelled field falls back to its name rather than to silence
+ok 5 - an unlabelled field falls back to its name rather than to silence
+  ---
+  duration_ms: 0.277159
+  type: 'test'
+  ...
+# Subtest: a field with nothing at all still yields a string
+ok 6 - a field with nothing at all still yields a string
+  ---
+  duration_ms: 0.309419
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 140.962262

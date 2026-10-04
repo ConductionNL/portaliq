@@ -1,0 +1,44 @@
+TAP version 13
+# (node:2620303) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/branch.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a login for one branch is named as such
+ok 1 - a login for one branch is named as such
+  ---
+  duration_ms: 10.128892
+  type: 'test'
+  ...
+# Subtest: a chosen branch is named without the login wording
+ok 2 - a chosen branch is named without the login wording
+  ---
+  duration_ms: 0.370235
+  type: 'test'
+  ...
+# Subtest: a whole-company session and a malformed branch show nothing
+ok 3 - a whole-company session and a malformed branch show nothing
+  ---
+  duration_ms: 12.847542
+  type: 'test'
+  ...
+# Subtest: both strings are translated for every locale the portal ships
+ok 4 - both strings are translated for every locale the portal ships
+  ---
+  duration_ms: 1.722606
+  type: 'test'
+  ...
+# Subtest: the site header shows the branch in effect
+ok 5 - the site header shows the branch in effect
+  ---
+  duration_ms: 0.730589
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 615.118804

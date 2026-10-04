@@ -1,0 +1,87 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2616499) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the api calls the own-account routes with the bearer and keeps the refusal
+ok 1 - the api calls the own-account routes with the bearer and keeps the refusal
+  ---
+  duration_ms: 107.897399
+  type: 'test'
+  ...
+# Subtest: the confirmation link is read once and stripped from the address bar
+ok 2 - the confirmation link is read once and stripped from the address bar
+  ---
+  duration_ms: 0.907811
+  type: 'test'
+  ...
+# Subtest: each refusal has its own sentence
+ok 3 - each refusal has its own sentence
+  ---
+  duration_ms: 0.398624
+  type: 'test'
+  ...
+# Subtest: a dismissed prompt for an address stays away this session
+ok 4 - a dismissed prompt for an address stays away this session
+  ---
+  duration_ms: 0.467062
+  type: 'test'
+  ...
+# Subtest: site: the shell offers "My account", consumes the link and shows the prompt
+ok 5 - site: the shell offers "My account", consumes the link and shows the prompt
+  ---
+  duration_ms: 2.37365
+  type: 'test'
+  ...
+# Subtest: site: "My account" shows the name, both kinds of address with the preferred ones marked, and the channel
+ok 6 - site: "My account" shows the name, both kinds of address with the preferred ones marked, and the channel
+  ---
+  duration_ms: 206.471669
+  type: 'test'
+  ...
+# Subtest: site: the removal step says the cases stay, and a failed read says so
+ok 7 - site: the removal step says the cases stay, and a failed read says so
+  ---
+  duration_ms: 59.165254
+  type: 'test'
+  ...
+# Subtest: site: an address action shows the outcome, reads the account again, and a refusal keeps its sentence
+ok 8 - site: an address action shows the outcome, reads the account again, and a refusal keeps its sentence
+  ---
+  duration_ms: 19.458267
+  type: 'test'
+  ...
+# Subtest: site: the confirmation link is read once, posted, and answered with a sentence
+ok 9 - site: the confirmation link is read once, posted, and answered with a sentence
+  ---
+  duration_ms: 1.495784
+  type: 'test'
+  ...
+# Subtest: site: the prompt for an address opens My account and stays away once dismissed
+ok 10 - site: the prompt for an address opens My account and stays away once dismissed
+  ---
+  duration_ms: 19.242797
+  type: 'test'
+  ...
+# Subtest: site: the slice exports its pages by the React section keys, each a lazy chunk
+ok 11 - site: the slice exports its pages by the React section keys, each a lazy chunk
+  ---
+  duration_ms: 1.039692
+  type: 'test'
+  ...
+# Subtest: site: every string slice e uses is in strings.js in both languages, without em-dashes
+ok 12 - site: every string slice e uses is in strings.js in both languages, without em-dashes
+  ---
+  duration_ms: 3.257156
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 775.401544

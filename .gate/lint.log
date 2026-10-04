@@ -1,0 +1,169 @@
+
+> portaliq@0.1.0 lint
+> eslint src tests scripts
+
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/SiteMenuPanel.vue
+   46:21  warning  Variable 'menu' is already declared in the upper scope  vue/no-template-shadow
+  264:1   warning  Prefer a more specific type to `Function`               jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/SitePagesPanel.vue
+  308:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/gridModel.js
+  231:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/pageEditor.js
+   47:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+   48:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+   49:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+   97:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  116:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  269:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  302:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/pageSaver.js
+  42:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  54:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  55:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  56:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/portalObjects.js
+  21:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  22:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  23:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  24:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  25:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/widgetForms.js
+  46:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/embed/frame.js
+  91:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/integrations/ProposalQueueWidget.vue
+  302:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/integrations/proposalQueue.js
+  44:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  61:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  62:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  63:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/mediaLibrary.js
+  25:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/newsAuthoring.js
+  213:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  214:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  215:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  216:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  295:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  296:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  297:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  298:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  299:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  300:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  421:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/pageHistory.js
+  24:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  25:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/portalThemeChoice.js
+  55:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  56:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  57:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/staffAccountActions.js
+  277:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  278:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  283:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  283:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  283:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/embedHeight.js
+  84:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  85:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/messageBox.js
+  16:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/openRecord.js
+  50:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  51:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  51:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  51:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  92:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js
+   40:1  warning  Missing JSDoc @param "token" description   jsdoc/require-param-description
+   40:1  warning  Missing JSDoc @param "token" type          jsdoc/require-param-type
+   96:1  warning  Missing JSDoc @param "path" description    jsdoc/require-param-description
+   96:1  warning  Missing JSDoc @param "path" type           jsdoc/require-param-type
+  114:1  warning  Missing JSDoc @param "method" description  jsdoc/require-param-description
+  114:1  warning  Missing JSDoc @param "method" type         jsdoc/require-param-type
+  115:1  warning  Missing JSDoc @param "path" description    jsdoc/require-param-description
+  115:1  warning  Missing JSDoc @param "path" type           jsdoc/require-param-type
+  116:1  warning  Missing JSDoc @param "body" description    jsdoc/require-param-description
+  116:1  warning  Missing JSDoc @param "body" type           jsdoc/require-param-type
+  871:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/App.vue
+  1241:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/BrandHeader.vue
+  187:45  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/HeroBlock.vue
+  109:45  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/IntakeFormBlock.vue
+  89:10  warning  'stepHeading' is defined as ref, but never used  vue/no-unused-refs
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/c/SchemaForm.vue
+  52:9  warning  'stepHeading' is defined as ref, but never used  vue/no-unused-refs
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/guestAction.js
+  110:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  170:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  190:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  206:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/loadSiteEditor.js
+  33:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/residentActions.js
+  182:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  240:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/waysIn.js
+   20:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+   22:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  198:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  234:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  255:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  285:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/pages/e/AccessRequestsPage.vue
+  132:3  warning  'session' of property found, but never used   vue/no-unused-properties
+  134:3  warning  'portal' of property found, but never used    vue/no-unused-properties
+  140:3  warning  'navigate' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/pages/e/AccountPage.vue
+  140:3  warning  'session' of property found, but never used   vue/no-unused-properties
+  142:3  warning  'portal' of property found, but never used    vue/no-unused-properties
+  148:3  warning  'navigate' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/pages/e/MyCasesPage.vue
+  162:3  warning  'session' of property found, but never used   vue/no-unused-properties
+  164:3  warning  'portal' of property found, but never used    vue/no-unused-properties
+  170:3  warning  'navigate' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/pages/e/RegisteredDetailsPage.vue
+  134:3  warning  'session' of property found, but never used   vue/no-unused-properties
+  136:3  warning  'portal' of property found, but never used    vue/no-unused-properties
+  142:3  warning  'navigate' of property found, but never used  vue/no-unused-properties
+
+✖ 98 problems (0 errors, 98 warnings)
+

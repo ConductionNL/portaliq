@@ -1,0 +1,75 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2617633) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the case screen is read under the mandate the case was listed under
+ok 1 - the case screen is read under the mandate the case was listed under
+  ---
+  duration_ms: 106.395871
+  type: 'test'
+  ...
+# Subtest: acting for is yourself plus every mandate held, and the choice is kept for the session
+ok 2 - acting for is yourself plus every mandate held, and the choice is kept for the session
+  ---
+  duration_ms: 50.422131
+  type: 'test'
+  ...
+# Subtest: site: the shell, the page, the case screen and both locales are wired
+ok 3 - site: the shell, the page, the case screen and both locales are wired
+  ---
+  duration_ms: 5.353898
+  type: 'test'
+  ...
+# Subtest: site: the switcher names yourself and each mandate with the choice selected, and is absent without a mandate
+ok 4 - site: the switcher names yourself and each mandate with the choice selected, and is absent without a mandate
+  ---
+  duration_ms: 88.474237
+  type: 'test'
+  ...
+# Subtest: site: the store learns the mandates from "My cases", keeps the choice for the session, and a refusal forgets nothing
+ok 5 - site: the store learns the mandates from "My cases", keeps the choice for the session, and a refusal forgets nothing
+  ---
+  duration_ms: 3.677806
+  type: 'test'
+  ...
+# Subtest: site: sign-out forgets whom the resident acted for and the mandates held
+ok 6 - site: sign-out forgets whom the resident acted for and the mandates held
+  ---
+  duration_ms: 1.910461
+  type: 'test'
+  ...
+# Subtest: site: the header switcher with only `t` follows the store
+ok 7 - site: the header switcher with only `t` follows the store
+  ---
+  duration_ms: 27.687285
+  type: 'test'
+  ...
+# Subtest: site: "My cases" is read under the mandate in effect and tells the store what it holds
+ok 8 - site: "My cases" is read under the mandate in effect and tells the store what it holds
+  ---
+  duration_ms: 110.568866
+  type: 'test'
+  ...
+# Subtest: site: a mandated case carries its label, a group too large is refused, and the case screen reads under the mandate
+ok 9 - site: a mandated case carries its label, a group too large is refused, and the case screen reads under the mandate
+  ---
+  duration_ms: 163.362333
+  type: 'test'
+  ...
+# Subtest: site: a case opened under a mandate uses the row the list handed over
+ok 10 - site: a case opened under a mandate uses the row the list handed over
+  ---
+  duration_ms: 1.476523
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 925.843584

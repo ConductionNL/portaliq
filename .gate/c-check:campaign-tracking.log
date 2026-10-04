@@ -1,0 +1,12 @@
+captureLanding / firstTouch / lastTouch
+  ok   no portal means nothing is captured
+  ok   no utm_* params means first/last touch stay unset
+  ok   first touch is captured
+  ok   last touch equals first touch on the first landing
+  ok   referrer is captured at first touch
+  ok   first touch is preserved, not overwritten
+  ok   last touch is overwritten by the later landing
+  ok   the referrer captured at FIRST touch is kept, not the later internal one
+  ok   a different portal has no capture of its own yet
+
+all campaign-tracking assertions held

@@ -1,0 +1,181 @@
+TAP version 13
+# (node:2623709) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the contributions and a collection are asked for in the site language
+ok 1 - the contributions and a collection are asked for in the site language
+  ---
+  duration_ms: 2.191869
+  type: 'test'
+  ...
+# Subtest: without a site language the browser decides
+ok 2 - without a site language the browser decides
+  ---
+  duration_ms: 0.881528
+  type: 'test'
+  ...
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2623710) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/recordPage.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: rows narrow to the open record, on a value or in a list
+ok 3 - rows narrow to the open record, on a value or in a list
+  ---
+  duration_ms: 3.779794
+  type: 'test'
+  ...
+# Subtest: a kpi block reads the latest row of the open record
+ok 4 - a kpi block reads the latest row of the open record
+  ---
+  duration_ms: 0.263844
+  type: 'test'
+  ...
+# Subtest: a record title joins its title fields
+ok 5 - a record title joins its title fields
+  ---
+  duration_ms: 0.318712
+  type: 'test'
+  ...
+# Subtest: calendar items: one per row or expanded element, narrowed, deduplicated and in date order
+ok 6 - calendar items: one per row or expanded element, narrowed, deduplicated and in date order
+  ---
+  duration_ms: 11.088353
+  type: 'test'
+  ...
+# Subtest: a month starts on Monday
+ok 7 - a month starts on Monday
+  ---
+  duration_ms: 0.633022
+  type: 'test'
+  ...
+# Subtest: news narrows to the record: its school, its group or the record itself
+ok 8 - news narrows to the record: its school, its group or the record itself
+  ---
+  duration_ms: 0.865146
+  type: 'test'
+  ...
+# Subtest: the record page loads its record collection and every block source
+ok 9 - the record page loads its record collection and every block source
+  ---
+  duration_ms: 1.556732
+  type: 'test'
+  ...
+# Subtest: with two children the page opens on the list and asks to open one
+ok 10 - with two children the page opens on the list and asks to open one
+  ---
+  duration_ms: 474.544092
+  type: 'test'
+  ...
+# Subtest: an open record shows the child's name, the way back and only her blocks
+ok 11 - an open record shows the child's name, the way back and only her blocks
+  ---
+  duration_ms: 176.199082
+  type: 'test'
+  ...
+# Subtest: kpi cards read the latest school year, with details and a worded mark
+ok 12 - kpi cards read the latest school year, with details and a worded mark
+  ---
+  duration_ms: 106.235136
+  type: 'test'
+  ...
+# Subtest: a kpi block without a row says there are no figures yet
+ok 13 - a kpi block without a row says there are no figures yet
+  ---
+  duration_ms: 138.832987
+  type: 'test'
+  ...
+# Subtest: the calendar lists the child's coming items per month, with her school's holidays
+ok 14 - the calendar lists the child's coming items per month, with her school's holidays
+  ---
+  duration_ms: 123.618116
+  type: 'test'
+  ...
+# Subtest: the month view is a table with weekday headers, today marked
+ok 15 - the month view is a table with weekday headers, today marked
+  ---
+  duration_ms: 20.742708
+  type: 'test'
+  ...
+# Subtest: the news block shows the news for this child only
+ok 16 - the news block shows the news for this child only
+  ---
+  duration_ms: 92.09803
+  type: 'test'
+  ...
+# Subtest: the news block shows the newest three, whatever order the feed came in
+ok 17 - the news block shows the newest three, whatever order the feed came in
+  ---
+  duration_ms: 17.589277
+  type: 'test'
+  ...
+# Subtest: a draft written long ago and published today is the newest news
+ok 18 - a draft written long ago and published today is the newest news
+  ---
+  duration_ms: 0.340705
+  type: 'test'
+  ...
+# Subtest: one child opens at once, without a way back
+ok 19 - one child opens at once, without a way back
+  ---
+  duration_ms: 80.300646
+  type: 'test'
+  ...
+# Subtest: another child's record does not open
+ok 20 - another child's record does not open
+  ---
+  duration_ms: 84.925326
+  type: 'test'
+  ...
+# Subtest: group-bound rows show for the record's groups, school-wide rows for everyone
+ok 21 - group-bound rows show for the record's groups, school-wide rows for everyone
+  ---
+  duration_ms: 0.364198
+  type: 'test'
+  ...
+# Subtest: a lookup labels each homework row with the child's own submission
+ok 22 - a lookup labels each homework row with the child's own submission
+  ---
+  duration_ms: 0.300048
+  type: 'test'
+  ...
+# Subtest: a calendar source without a title value takes its fixed title
+ok 23 - a calendar source without a title value takes its fixed title
+  ---
+  duration_ms: 0.208507
+  type: 'test'
+  ...
+# Subtest: a kpi caption names the school year the cards show
+ok 24 - a kpi caption names the school year the cards show
+  ---
+  duration_ms: 8.692384
+  type: 'test'
+  ...
+# Subtest: a calendar source shows only the rows its rule names
+ok 25 - a calendar source shows only the rows its rule names
+  ---
+  duration_ms: 0.351057
+  type: 'test'
+  ...
+# Subtest: a unit reads singular for one and plural for every other figure
+ok 26 - a unit reads singular for one and plural for every other figure
+  ---
+  duration_ms: 0.280126
+  type: 'test'
+  ...
+# Subtest: a kpi card says "1 dag" and "1 minuut", and "5 dagen" beside it
+ok 27 - a kpi card says "1 dag" and "1 minuut", and "5 dagen" beside it
+  ---
+  duration_ms: 6.931186
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1720.217577

@@ -1,0 +1,227 @@
+TAP version 13
+# (node:2613862) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/trafficSummary.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lastDays
+    # Subtest: ends today in UTC and counts back
+    ok 1 - ends today in UTC and counts back
+      ---
+      duration_ms: 3.800151
+      type: 'test'
+      ...
+    1..1
+ok 1 - lastDays
+  ---
+  duration_ms: 4.737822
+  type: 'suite'
+  ...
+# Subtest: daysBetween
+    # Subtest: is inclusive, in order, and empty when reversed or malformed
+    ok 1 - is inclusive, in order, and empty when reversed or malformed
+      ---
+      duration_ms: 0.584364
+      type: 'test'
+      ...
+    # Subtest: caps a custom range at a year from its start
+    ok 2 - caps a custom range at a year from its start
+      ---
+      duration_ms: 0.840516
+      type: 'test'
+      ...
+    1..2
+ok 2 - daysBetween
+  ---
+  duration_ms: 1.656983
+  type: 'suite'
+  ...
+# Subtest: hasDimension
+    # Subtest: is true only for a listed dimension; a portal that named none has the defaults
+    ok 1 - is true only for a listed dimension; a portal that named none has the defaults
+      ---
+      duration_ms: 0.326416
+      type: 'test'
+      ...
+    1..1
+ok 3 - hasDimension
+  ---
+  duration_ms: 0.477781
+  type: 'suite'
+  ...
+# Subtest: isMeasured and warnedSwitches
+    # Subtest: is measured only when enabled is literally true
+    ok 1 - is measured only when enabled is literally true
+      ---
+      duration_ms: 0.739655
+      type: 'test'
+      ...
+    # Subtest: lists the sensitive switches that are literally true, in contract order
+    ok 2 - lists the sensitive switches that are literally true, in contract order
+      ---
+      duration_ms: 0.635362
+      type: 'test'
+      ...
+    1..2
+ok 4 - isMeasured and warnedSwitches
+  ---
+  duration_ms: 1.795877
+  type: 'suite'
+  ...
+# Subtest: summarise
+    # Subtest: sums the totals over the range only
+    ok 1 - sums the totals over the range only
+      ---
+      duration_ms: 2.535352
+      type: 'test'
+      ...
+    # Subtest: draws a zero for a day without a record, so the axis stays a calendar
+    ok 2 - draws a zero for a day without a record, so the axis stays a calendar
+      ---
+      duration_ms: 0.995315
+      type: 'test'
+      ...
+    # Subtest: merges pages across days and ranks them
+    ok 3 - merges pages across days and ranks them
+      ---
+      duration_ms: 0.546018
+      type: 'test'
+      ...
+    # Subtest: groups referrers by channel with the busiest hosts
+    ok 4 - groups referrers by channel with the busiest hosts
+      ---
+      duration_ms: 0.613353
+      type: 'test'
+      ...
+    # Subtest: reports no data for an empty range, with zeros rather than NaN
+    ok 5 - reports no data for an empty range, with zeros rather than NaN
+      ---
+      duration_ms: 0.251642
+      type: 'test'
+      ...
+    1..5
+ok 5 - summarise
+  ---
+  duration_ms: 5.42161
+  type: 'suite'
+  ...
+# Subtest: summarise: visitors and breakdowns
+    # Subtest: reports new versus returning as not available when every day is null, never as zero
+    ok 1 - reports new versus returning as not available when every day is null, never as zero
+      ---
+      duration_ms: 0.778353
+      type: 'test'
+      ...
+    # Subtest: sums new, returning and accounts once any day carries a number
+    ok 2 - sums new, returning and accounts once any day carries a number
+      ---
+      duration_ms: 0.214602
+      type: 'test'
+      ...
+    # Subtest: merges the five breakdown maps across days and ranks them
+    ok 3 - merges the five breakdown maps across days and ranks them
+      ---
+      duration_ms: 0.425579
+      type: 'test'
+      ...
+    1..3
+ok 6 - summarise: visitors and breakdowns
+  ---
+  duration_ms: 1.577269
+  type: 'suite'
+  ...
+# Subtest: summarise: outcomes (portal-traffic-outcomes)
+    # Subtest: merges goals by id, keeps the latest name and re-derives the conversion rate from sessions
+    ok 1 - merges goals by id, keeps the latest name and re-derives the conversion rate from sessions
+      ---
+      duration_ms: 1.093664
+      type: 'test'
+      ...
+    # Subtest: sums funnel steps by position and recomputes the drop-off
+    ok 2 - sums funnel steps by position and recomputes the drop-off
+      ---
+      duration_ms: 1.110081
+      type: 'test'
+      ...
+    # Subtest: sums forms, ranks the fields by where people left and names the worst
+    ok 3 - sums forms, ranks the fields by where people left and names the worst
+      ---
+      duration_ms: 0.288241
+      type: 'test'
+      ...
+    # Subtest: ranks searches, missing pages and dimension values
+    ok 4 - ranks searches, missing pages and dimension values
+      ---
+      duration_ms: 0.264415
+      type: 'test'
+      ...
+    # Subtest: is empty, not absent, for records without outcomes
+    ok 5 - is empty, not absent, for records without outcomes
+      ---
+      duration_ms: 0.198747
+      type: 'test'
+      ...
+    1..5
+ok 7 - summarise: outcomes (portal-traffic-outcomes)
+  ---
+  duration_ms: 3.146767
+  type: 'suite'
+  ...
+# Subtest: segments, roll-ups and errors (portal-traffic-reporting)
+    # Subtest: lists the usable segments once each and the roll-up members without the portal itself
+    ok 1 - lists the usable segments once each and the roll-up members without the portal itself
+      ---
+      duration_ms: 0.561592
+      type: 'test'
+      ...
+    # Subtest: merges script errors by message and source across the days
+    ok 2 - merges script errors by message and source across the days
+      ---
+      duration_ms: 0.291715
+      type: 'test'
+      ...
+    1..2
+ok 8 - segments, roll-ups and errors (portal-traffic-reporting)
+  ---
+  duration_ms: 0.960703
+  type: 'suite'
+  ...
+# Subtest: experiments and heatmaps (portal-traffic-experiments)
+    # Subtest: sums variants across days and re-derives the verdict from the sums
+    ok 1 - sums variants across days and re-derives the verdict from the sums
+      ---
+      duration_ms: 1.782613
+      type: 'test'
+      ...
+    # Subtest: names no winner under thirty sessions per variant, and says so
+    ok 2 - names no winner under thirty sessions per variant, and says so
+      ---
+      duration_ms: 0.430258
+      type: 'test'
+      ...
+    # Subtest: matches the aggregation on a known table
+    ok 3 - matches the aggregation on a known table
+      ---
+      duration_ms: 0.127067
+      type: 'test'
+      ...
+    # Subtest: sums a page heatmap across days
+    ok 4 - sums a page heatmap across days
+      ---
+      duration_ms: 0.770902
+      type: 'test'
+      ...
+    1..4
+ok 9 - experiments and heatmaps (portal-traffic-experiments)
+  ---
+  duration_ms: 5.369337
+  type: 'suite'
+  ...
+1..9
+# tests 25
+# suites 9
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 248.728746

@@ -1,0 +1,68 @@
+TAP version 13
+# (node:2620651) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/idleSession.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the warning opens two minutes before expiry, or at 40 percent of a short window
+ok 1 - the warning opens two minutes before expiry, or at 40 percent of a short window
+  ---
+  duration_ms: 1.944774
+  type: 'test'
+  ...
+# Subtest: only activity since the last refresh, in the second half of the window, refreshes
+ok 2 - only activity since the last refresh, in the second half of the window, refreshes
+  ---
+  duration_ms: 0.656637
+  type: 'test'
+  ...
+# Subtest: the session can be extended only before the cap
+ok 3 - the session can be extended only before the cap
+  ---
+  duration_ms: 0.431412
+  type: 'test'
+  ...
+# Subtest: the remaining time reads in whole minutes, then seconds
+ok 4 - the remaining time reads in whole minutes, then seconds
+  ---
+  duration_ms: 0.624387
+  type: 'test'
+  ...
+# Subtest: an inactivity sign-out is remembered once for the login screen
+ok 5 - an inactivity sign-out is remembered once for the login screen
+  ---
+  duration_ms: 0.468363
+  type: 'test'
+  ...
+# Subtest: silent sign-in is tried once per browser session, and only when turned on
+ok 6 - silent sign-in is tried once per browser session, and only when turned on
+  ---
+  duration_ms: 0.463481
+  type: 'test'
+  ...
+# Subtest: only an http(s) broker sign-out address is followed
+ok 7 - only an http(s) broker sign-out address is followed
+  ---
+  duration_ms: 0.573049
+  type: 'test'
+  ...
+# Subtest: every idle string is translated for every locale the portal ships
+ok 8 - every idle string is translated for every locale the portal ships
+  ---
+  duration_ms: 1.471568
+  type: 'test'
+  ...
+# Subtest: the site renderer refreshes on activity, warns in its own dialog and follows the broker sign-out
+ok 9 - the site renderer refreshes on activity, warns in its own dialog and follows the broker sign-out
+  ---
+  duration_ms: 2.455453
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 177.030176

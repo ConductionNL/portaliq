@@ -1,0 +1,22 @@
+portalSiteUrl
+  ok   keeps the index.php prefix the URL generator produces
+  ok   drops it where the instance rewrites URLs
+  ok   encodes a slug that would otherwise split the query
+  ok   encodes a non-ASCII slug
+createOpenPortalSite
+  ok   opens the row slug in a new tab, shielded from the opener
+  ok   returns the URL it opened
+  ok   says nothing when the row resolves
+  ok   opens nothing for a row without a usable slug
+  ok   reports the missing slug once per attempt
+  ok   addresses a padded slug exactly as stored, encoded
+  ok   reports the address it opened even though open() answered null
+  ok   shows no failure message for a tab that did open
+  ok   still shields the tab it could not hand back
+  ok   createOpenPortalSite() does not throw on a bare call
+
+all assertions passed
+(node:2614065) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/lib/openPortalSite.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)

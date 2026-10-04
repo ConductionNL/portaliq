@@ -1,0 +1,156 @@
+
+> portaliq@0.1.0 check:page-editor
+> node --test tests/page-editor.spec.mjs
+
+TAP version 13
+# (node:2608392) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/index.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: publishing a markdown page keeps its markdown
+ok 1 - publishing a markdown page keeps its markdown
+  ---
+  duration_ms: 14.012211
+  type: 'test'
+  ...
+# Subtest: a markdown draft is published as markdown and a draft save keeps the type
+ok 2 - a markdown draft is published as markdown and a draft save keeps the type
+  ---
+  duration_ms: 9.488007
+  type: 'test'
+  ...
+# Subtest: a markdown page opens as markdown and refuses grid edits
+ok 3 - a markdown page opens as markdown and refuses grid edits
+  ---
+  duration_ms: 0.930829
+  type: 'test'
+  ...
+# Subtest: discarding a draft of a markdown page leaves its body as it was
+ok 4 - discarding a draft of a markdown page leaves its body as it was
+  ---
+  duration_ms: 1.004735
+  type: 'test'
+  ...
+# Subtest: readBody takes the draft first and reads a missing body as an empty grid
+ok 5 - readBody takes the draft first and reads a missing body as an empty grid
+  ---
+  duration_ms: 0.567935
+  type: 'test'
+  ...
+# Subtest: an added widget lands below everything and is selected
+ok 6 - an added widget lands below everything and is selected
+  ---
+  duration_ms: 4.850678
+  type: 'test'
+  ...
+# Subtest: a grid publish writes the widgets as a grid body the schema accepts
+ok 7 - a grid publish writes the widgets as a grid body the schema accepts
+  ---
+  duration_ms: 1.519732
+  type: 'test'
+  ...
+# Subtest: a layout change that moves nothing is not a change
+ok 8 - a layout change that moves nothing is not a change
+  ---
+  duration_ms: 0.70473
+  type: 'test'
+  ...
+# Subtest: the designer delegates to the editor core
+ok 9 - the designer delegates to the editor core
+  ---
+  duration_ms: 0.861354
+  type: 'test'
+  ...
+# Subtest: nothing outside src/editor imports an editor file other than its index
+ok 10 - nothing outside src/editor imports an editor file other than its index
+  ---
+  duration_ms: 0.948362
+  type: 'test'
+  ...
+# Subtest: a key with a shared form is configured through it
+ok 11 - a key with a shared form is configured through it
+  ---
+  duration_ms: 0.914788
+  type: 'test'
+  ...
+# Subtest: a key without a form falls back to fields, and without fields to JSON
+ok 12 - a key without a form falls back to fields, and without fields to JSON
+  ---
+  duration_ms: 0.298716
+  type: 'test'
+  ...
+# Subtest: undo and redo a removal
+ok 13 - undo and redo a removal
+  ---
+  duration_ms: 0.74328
+  type: 'test'
+  ...
+# Subtest: typing in one field is one step, and a new change drops the redo branch
+ok 14 - typing in one field is one step, and a new change drops the redo branch
+  ---
+  duration_ms: 0.615085
+  type: 'test'
+  ...
+# Subtest: the history holds 50 steps
+ok 15 - the history holds 50 steps
+  ---
+  duration_ms: 13.069831
+  type: 'test'
+  ...
+# Subtest: the keyboard intent: Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y, and not inside a text field
+ok 16 - the keyboard intent: Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y, and not inside a text field
+  ---
+  duration_ms: 0.55565
+  type: 'test'
+  ...
+# Subtest: a load starts a new history
+ok 17 - a load starts a new history
+  ---
+  duration_ms: 0.690314
+  type: 'test'
+  ...
+# Subtest: the save sends the loaded version as If-Match
+ok 18 - the save sends the loaded version as If-Match
+  ---
+  duration_ms: 0.97527
+  type: 'test'
+  ...
+# Subtest: a save after someone else saved is refused before the write
+ok 19 - a save after someone else saved is refused before the write
+  ---
+  duration_ms: 4.888598
+  type: 'test'
+  ...
+# Subtest: a 409 from the store is a conflict
+ok 20 - a 409 from the store is a conflict
+  ---
+  duration_ms: 1.466282
+  type: 'test'
+  ...
+# Subtest: a refusal is named as one
+ok 21 - a refusal is named as one
+  ---
+  duration_ms: 0.891968
+  type: 'test'
+  ...
+# Subtest: a widget reads by its name: the public label, the registry name, else the key in words
+ok 22 - a widget reads by its name: the public label, the registry name, else the key in words
+  ---
+  duration_ms: 3.192843
+  type: 'test'
+  ...
+# Subtest: the editor shows the widget name, never the raw key, in the cell bar, the item name and the inspector
+ok 23 - the editor shows the widget name, never the raw key, in the cell bar, the item name and the inspector
+  ---
+  duration_ms: 0.745576
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 492.96989

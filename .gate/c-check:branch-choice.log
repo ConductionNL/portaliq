@@ -1,0 +1,69 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2616381) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/branch.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the options are the whole company first, then each branch by name and address
+ok 1 - the options are the whole company first, then each branch by name and address
+  ---
+  duration_ms: 5.2792
+  type: 'test'
+  ...
+# Subtest: the branches are read with the bearer, and a failure reads as none
+ok 2 - the branches are read with the bearer, and a failure reads as none
+  ---
+  duration_ms: 2.382764
+  type: 'test'
+  ...
+# Subtest: choosing a branch stores the new bearer, and a refusal stores nothing
+ok 3 - choosing a branch stores the new bearer, and a refusal stores nothing
+  ---
+  duration_ms: 2.070244
+  type: 'test'
+  ...
+# Subtest: the switcher lists the branches with a label, and is absent without two branches
+ok 4 - the switcher lists the branches with a label, and is absent without two branches
+  ---
+  duration_ms: 264.41622
+  type: 'test'
+  ...
+# Subtest: a session the login restricted to a branch never gets the choice, and shows its branch
+ok 5 - a session the login restricted to a branch never gets the choice, and shows its branch
+  ---
+  duration_ms: 43.029849
+  type: 'test'
+  ...
+# Subtest: a whole-company session reads the branches, and a restricted answer reads as none
+ok 6 - a whole-company session reads the branches, and a restricted answer reads as none
+  ---
+  duration_ms: 11.017948
+  type: 'test'
+  ...
+# Subtest: a chosen branch reloads with the new bearer, and a refusal says so and keeps the page
+ok 7 - a chosen branch reloads with the new bearer, and a refusal says so and keeps the page
+  ---
+  duration_ms: 24.121501
+  type: 'test'
+  ...
+# Subtest: the site header mounts the switcher for a signed-in session
+ok 8 - the site header mounts the switcher for a signed-in session
+  ---
+  duration_ms: 1.219273
+  type: 'test'
+  ...
+# Subtest: the new strings are translated for every locale the portal ships
+ok 9 - the new strings are translated for every locale the portal ships
+  ---
+  duration_ms: 1.884295
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 903.824116

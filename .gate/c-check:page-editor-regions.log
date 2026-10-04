@@ -1,0 +1,50 @@
+TAP version 13
+# (node:2618354) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/index.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the designer grid shows only the main widgets
+ok 1 - the designer grid shows only the main widgets
+  ---
+  duration_ms: 5.942788
+  type: 'test'
+  ...
+# Subtest: moving a main widget, saving a draft and publishing keeps the hero and clearedRegions
+ok 2 - moving a main widget, saving a draft and publishing keeps the hero and clearedRegions
+  ---
+  duration_ms: 5.120277
+  type: 'test'
+  ...
+# Subtest: discarding a draft keeps the published regions as they were
+ok 3 - discarding a draft keeps the published regions as they were
+  ---
+  duration_ms: 0.972548
+  type: 'test'
+  ...
+# Subtest: a draft with its own regions is the source the save keeps them from
+ok 4 - a draft with its own regions is the source the save keeps them from
+  ---
+  duration_ms: 1.499814
+  type: 'test'
+  ...
+# Subtest: an added widget lands in main, below the main widgets only
+ok 5 - an added widget lands in main, below the main widgets only
+  ---
+  duration_ms: 1.719798
+  type: 'test'
+  ...
+# Subtest: bodyFor keeps a widget whose slot names no region, and never drops body keys
+ok 6 - bodyFor keeps a widget whose slot names no region, and never drops body keys
+  ---
+  duration_ms: 0.461951
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 332.81156

@@ -1,0 +1,147 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2614591) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/rowAction.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: an endpoint row action is told apart from an update transition
+ok 1 - an endpoint row action is told apart from an update transition
+  ---
+  duration_ms: 1.589737
+  type: 'test'
+  ...
+# Subtest: offersRowAction follows rowWhen and nothing else
+ok 2 - offersRowAction follows rowWhen and nothing else
+  ---
+  duration_ms: 0.314083
+  type: 'test'
+  ...
+# Subtest: the table shows the pay button only on the rows that can still be paid
+ok 3 - the table shows the pay button only on the rows that can still be paid
+  ---
+  duration_ms: 400.070289
+  type: 'test'
+  ...
+# Subtest: the table without offers keeps showing every action on every row
+ok 4 - the table without offers keeps showing every action on every row
+  ---
+  duration_ms: 20.884961
+  type: 'test'
+  ...
+# Subtest: an update row action follows its rowWhen too
+ok 5 - an update row action follows its rowWhen too
+  ---
+  duration_ms: 2.977627
+  type: 'test'
+  ...
+# Subtest: the table shows the cancel button only on a booked or acknowledged time
+ok 6 - the table shows the cancel button only on a booked or acknowledged time
+  ---
+  duration_ms: 54.997284
+  type: 'test'
+  ...
+# Subtest: the confirm step shows the notice on a voluntary contribution, and none otherwise
+ok 7 - the confirm step shows the notice on a voluntary contribution, and none otherwise
+  ---
+  duration_ms: 76.17277
+  type: 'test'
+  ...
+# Subtest: redirectTarget follows only an https URL from a 2xx answer
+ok 8 - redirectTarget follows only an https URL from a 2xx answer
+  ---
+  duration_ms: 0.729962
+  type: 'test'
+  ...
+# Subtest: redirectTarget refuses anything but https
+ok 9 - redirectTarget refuses anything but https
+  ---
+  duration_ms: 1.35216
+  type: 'test'
+  ...
+# Subtest: outcome maps each status to one message
+ok 10 - outcome maps each status to one message
+  ---
+  duration_ms: 1.324406
+  type: 'test'
+  ...
+# Subtest: running the action sends only the row and the action, then goes to the checkout
+ok 11 - running the action sends only the row and the action, then goes to the checkout
+  ---
+  duration_ms: 1.07796
+  type: 'test'
+  ...
+# Subtest: running the action when online payment is off stays on the portal with a message
+ok 12 - running the action when online payment is off stays on the portal with a message
+  ---
+  duration_ms: 0.571306
+  type: 'test'
+  ...
+# Subtest: rowNotice reads the declared field only
+ok 13 - rowNotice reads the declared field only
+  ---
+  duration_ms: 0.305197
+  type: 'test'
+  ...
+# Subtest: a page-level action shows the leaf app answer instead of discarding it (\#804)
+ok 14 - a page-level action shows the leaf app answer instead of discarding it (\#804)
+  ---
+  duration_ms: 0.827923
+  type: 'test'
+  ...
+# Subtest: the site confirm step shows the notice and sends nothing until Continue
+ok 15 - the site confirm step shows the notice and sends nothing until Continue
+  ---
+  duration_ms: 78.163538
+  type: 'test'
+  ...
+# Subtest: the site confirm step follows a checked redirect and never an unsafe one
+ok 16 - the site confirm step follows a checked redirect and never an unsafe one
+  ---
+  duration_ms: 68.566492
+  type: 'test'
+  ...
+# Subtest: an endpoint or cta action on a site page shows the leaf answer in a status region
+ok 17 - an endpoint or cta action on a site page shows the leaf answer in a status region
+  ---
+  duration_ms: 44.788748
+  type: 'test'
+  ...
+# Subtest: an action block renders a create action as a form and a cta as a labelled button
+ok 18 - an action block renders a create action as a form and a cta as a labelled button
+  ---
+  duration_ms: 801.125869
+  type: 'test'
+  ...
+# Subtest: the row action step picks the confirm step for a plain endpoint action
+ok 19 - the row action step picks the confirm step for a plain endpoint action
+  ---
+  duration_ms: 98.851626
+  type: 'test'
+  ...
+# Subtest: slice c fills slice b's four places on a contribution page
+ok 20 - slice c fills slice b's four places on a contribution page
+  ---
+  duration_ms: 7.529482
+  type: 'test'
+  ...
+# Subtest: the row action step takes the step and the view action the page chose
+ok 21 - the row action step takes the step and the view action the page chose
+  ---
+  duration_ms: 51.804566
+  type: 'test'
+  ...
+# Subtest: an action block takes the action the page resolved and reports the write as created
+ok 22 - an action block takes the action the page resolved and reports the write as created
+  ---
+  duration_ms: 138.330619
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2315.569926

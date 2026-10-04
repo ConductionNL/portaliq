@@ -1,0 +1,51 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2616306) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the section is read with the bearer and names no identifier, and a failure reads as unavailable
+ok 1 - the section is read with the bearer and names no identifier, and a failure reads as unavailable
+  ---
+  duration_ms: 125.907972
+  type: 'test'
+  ...
+# Subtest: site: the shell offers "My details" once signed in
+ok 2 - site: the shell offers "My details" once signed in
+  ---
+  duration_ms: 6.517687
+  type: 'test'
+  ...
+# Subtest: site: a resident sees name, date of birth and address, and the count says it is not available
+ok 3 - site: a resident sees name, date of birth and address, and the count says it is not available
+  ---
+  duration_ms: 321.885874
+  type: 'test'
+  ...
+# Subtest: site: a bound correction form is a link, and an unbound one is not there
+ok 4 - site: a bound correction form is a link, and an unbound one is not there
+  ---
+  duration_ms: 74.344839
+  type: 'test'
+  ...
+# Subtest: site: a business user sees the company with every branch
+ok 5 - site: a business user sees the company with every branch
+  ---
+  duration_ms: 50.097122
+  type: 'test'
+  ...
+# Subtest: site: each empty state says why, and the screen reads the details when it opens
+ok 6 - site: each empty state says why, and the screen reads the details when it opens
+  ---
+  duration_ms: 48.31834
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1067.004525

@@ -1,0 +1,51 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2624870) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/pages/inbox/inbox.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: only a row the server marks deletable can be deleted
+ok 1 - only a row the server marks deletable can be deleted
+  ---
+  duration_ms: 3.300006
+  type: 'test'
+  ...
+# Subtest: a deletable row has a delete button and a checkbox with a label; another row has neither
+ok 2 - a deletable row has a delete button and a checkbox with a label; another row has neither
+  ---
+  duration_ms: 36.101839
+  type: 'test'
+  ...
+# Subtest: deleting one message asks first on the page, and Cancel deletes nothing
+ok 3 - deleting one message asks first on the page, and Cancel deletes nothing
+  ---
+  duration_ms: 3.23102
+  type: 'test'
+  ...
+# Subtest: deleting the selected messages removes them, updates the count and says so
+ok 4 - deleting the selected messages removes them, updates the count and says so
+  ---
+  duration_ms: 4.297569
+  type: 'test'
+  ...
+# Subtest: select all picks every deletable row, and a refused delete keeps that message
+ok 5 - select all picks every deletable row, and a refused delete keeps that message
+  ---
+  duration_ms: 1.872249
+  type: 'test'
+  ...
+# Subtest: one deleted message reads singular
+ok 6 - one deleted message reads singular
+  ---
+  duration_ms: 0.328304
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 736.143236

@@ -1,0 +1,68 @@
+TAP version 13
+# (node:2622366) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/waysIn.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the site translator goes first, the ways-in strings fill its gaps
+ok 1 - the site translator goes first, the ways-in strings fill its gaps
+  ---
+  duration_ms: 2.064474
+  type: 'test'
+  ...
+# Subtest: the doors stay closed unless the site config opens them (REQ-IWI-005)
+ok 2 - the doors stay closed unless the site config opens them (REQ-IWI-005)
+  ---
+  duration_ms: 2.558572
+  type: 'test'
+  ...
+# Subtest: a mailed link is read once from the fragment and stripped from the address bar
+ok 3 - a mailed link is read once from the fragment and stripped from the address bar
+  ---
+  duration_ms: 0.812977
+  type: 'test'
+  ...
+# Subtest: the browser solves the challenge the way PortalChallengeService::solves() checks it
+ok 4 - the browser solves the challenge the way PortalChallengeService::solves() checks it
+  ---
+  duration_ms: 266.933514
+  type: 'test'
+  ...
+# Subtest: registration sends the portal, the challenge, the solution and the honeypot
+ok 5 - registration sends the portal, the challenge, the solution and the honeypot
+  ---
+  duration_ms: 1.842356
+  type: 'test'
+  ...
+# Subtest: the other ways in call their own routes and keep the refusal
+ok 6 - the other ways in call their own routes and keep the refusal
+  ---
+  duration_ms: 1.08924
+  type: 'test'
+  ...
+# Subtest: the screens: a labelled form, a trap out of sight, a read-only case, an accept button
+ok 7 - the screens: a labelled form, a trap out of sight, a read-only case, an accept button
+  ---
+  duration_ms: 0.706965
+  type: 'test'
+  ...
+# Subtest: every string of the ways in is in both locales, without em-dashes
+ok 8 - every string of the ways in is in both locales, without em-dashes
+  ---
+  duration_ms: 1.002284
+  type: 'test'
+  ...
+# Subtest: the site consumes the link and the sign-in screen opens only the doors waysIn opens
+ok 9 - the site consumes the link and the sign-in screen opens only the doors waysIn opens
+  ---
+  duration_ms: 1.554387
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 458.857405

@@ -1,0 +1,87 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2626561) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalNav.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a menu: false page leaves the menu and keeps its route
+ok 1 - a menu: false page leaves the menu and keeps its route
+  ---
+  duration_ms: 2.15492
+  type: 'test'
+  ...
+# Subtest: a perRecord page is listed under each record, linking to that record
+ok 2 - a perRecord page is listed under each record, linking to that record
+  ---
+  duration_ms: 2.845249
+  type: 'test'
+  ...
+# Subtest: the rows of every perRecord collection are read once, a failed read leaves them out
+ok 3 - the rows of every perRecord collection are read once, a failed read leaves them out
+  ---
+  duration_ms: 0.895483
+  type: 'test'
+  ...
+# Subtest: a route chooses the record of a record page, and only of a record page
+ok 4 - a route chooses the record of a record page, and only of a record page
+  ---
+  duration_ms: 0.301596
+  type: 'test'
+  ...
+# Subtest: the menu draws a page icon before its label, decorative, in the Den Haag side navigation
+ok 5 - the menu draws a page icon before its label, decorative, in the Den Haag side navigation
+  ---
+  duration_ms: 7.762576
+  type: 'test'
+  ...
+# Subtest: /mijn is the home: a greeting, then what is still to do
+ok 6 - /mijn is the home: a greeting, then what is still to do
+  ---
+  duration_ms: 20.985881
+  type: 'test'
+  ...
+# Subtest: a portal with nothing to do shows the greeting and says so
+ok 7 - a portal with nothing to do shows the greeting and says so
+  ---
+  duration_ms: 1.869499
+  type: 'test'
+  ...
+# Subtest: the home reads the tasks, says so when it cannot, and leaves the list out when home pages exist and nothing is open
+ok 8 - the home reads the tasks, says so when it cannot, and leaves the list out when home pages exist and nothing is open
+  ---
+  duration_ms: 1.020096
+  type: 'test'
+  ...
+# Subtest: home pages are the pages marked home, in contribution order
+ok 9 - home pages are the pages marked home, in contribution order
+  ---
+  duration_ms: 0.490134
+  type: 'test'
+  ...
+# Subtest: without a home page the home shows each app's running cases
+ok 10 - without a home page the home shows each app's running cases
+  ---
+  duration_ms: 0.695808
+  type: 'test'
+  ...
+# Subtest: a records page shows a switcher as a radio group; the first record opens, a choice goes to its route
+ok 11 - a records page shows a switcher as a radio group; the first record opens, a choice goes to its route
+  ---
+  duration_ms: 1.739879
+  type: 'test'
+  ...
+# Subtest: both headings that can own /mijn carry the same id and testid
+ok 12 - both headings that can own /mijn carry the same id and testid
+  ---
+  duration_ms: 9.638499
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 869.22195

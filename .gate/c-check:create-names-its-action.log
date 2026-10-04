@@ -1,0 +1,45 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2621977) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/lib/campaignTracking.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a create names the action whose form was filled in
+ok 1 - a create names the action whose form was filled in
+  ---
+  duration_ms: 120.409695
+  type: 'test'
+  ...
+# Subtest: the action id is encoded, and an action without an id sends none
+ok 2 - the action id is encoded, and an action without an id sends none
+  ---
+  duration_ms: 278.465628
+  type: 'test'
+  ...
+# Subtest: site: a landing-page form names its own create action
+ok 3 - site: a landing-page form names its own create action
+  ---
+  duration_ms: 2.394367
+  type: 'test'
+  ...
+# Subtest: site: a form without an id sends no action id
+ok 4 - site: a form without an id sends no action id
+  ---
+  duration_ms: 0.607718
+  type: 'test'
+  ...
+# Subtest: site: no create in src/shared or src/site bypasses the action id
+ok 5 - site: no create in src/shared or src/site bypasses the action id
+  ---
+  duration_ms: 42.522203
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 830.16639

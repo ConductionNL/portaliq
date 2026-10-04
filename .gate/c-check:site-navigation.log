@@ -1,0 +1,51 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2625571) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalNav.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the groups: the resident menu's groups first, then the site pages
+ok 1 - the groups: the resident menu's groups first, then the site pages
+  ---
+  duration_ms: 4.312891
+  type: 'test'
+  ...
+# Subtest: signed out, only the site pages are there, and an empty group is left out
+ok 2 - signed out, only the site pages are there, and an empty group is left out
+  ---
+  duration_ms: 0.354068
+  type: 'test'
+  ...
+# Subtest: a menu block in the side region or the grid leaves the header menu out
+ok 3 - a menu block in the side region or the grid leaves the header menu out
+  ---
+  duration_ms: 0.431893
+  type: 'test'
+  ...
+# Subtest: the block is a named landmark with headed groups, the current page marked, and a button for phones
+ok 4 - the block is a named landmark with headed groups, the current page marked, and a button for phones
+  ---
+  duration_ms: 166.427285
+  type: 'test'
+  ...
+# Subtest: the header shows no menu when the page carries the block, and keeps the account controls
+ok 5 - the header shows no menu when the page carries the block, and keeps the account controls
+  ---
+  duration_ms: 117.485735
+  type: 'test'
+  ...
+# Subtest: the block is public, and the shell hands it its data
+ok 6 - the block is public, and the shell hands it its data
+  ---
+  duration_ms: 1.818968
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 722.758701

@@ -1,0 +1,87 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2617050) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: withdrawCitizenCase posts only the reason, with the bearer, to the withdraw route
+ok 1 - withdrawCitizenCase posts only the reason, with the bearer, to the withdraw route
+  ---
+  duration_ms: 6.919556
+  type: 'test'
+  ...
+# Subtest: a refusal comes back with the server sentence
+ok 2 - a refusal comes back with the server sentence
+  ---
+  duration_ms: 245.164153
+  type: 'test'
+  ...
+# Subtest: the screen shows exactly what the server declares
+ok 3 - the screen shows exactly what the server declares
+  ---
+  duration_ms: 1.170825
+  type: 'test'
+  ...
+# Subtest: the withdrawal fields are not listed as ordinary answers
+ok 4 - the withdrawal fields are not listed as ordinary answers
+  ---
+  duration_ms: 1.708804
+  type: 'test'
+  ...
+# Subtest: the case screen lists only the answers the writable set names
+ok 5 - the case screen lists only the answers the writable set names
+  ---
+  duration_ms: 0.609601
+  type: 'test'
+  ...
+# Subtest: site: the case screen uses them, and both locales carry the strings
+ok 6 - site: the case screen uses them, and both locales carry the strings
+  ---
+  duration_ms: 3.538294
+  type: 'test'
+  ...
+# Subtest: site: the confirmation is a modal that says what withdrawing means, asks an optional reason, and offers both ways out
+ok 7 - site: the confirmation is a modal that says what withdrawing means, asks an optional reason, and offers both ways out
+  ---
+  duration_ms: 467.581923
+  type: 'test'
+  ...
+# Subtest: site: the modal opens with focus on its heading and sends the trimmed reason only on confirm
+ok 8 - site: the modal opens with focus on its heading and sends the trimmed reason only on confirm
+  ---
+  duration_ms: 132.374157
+  type: 'test'
+  ...
+# Subtest: site: the case offers withdrawal exactly as the server declares, and shows the withdrawn state
+ok 9 - site: the case offers withdrawal exactly as the server declares, and shows the withdrawn state
+  ---
+  duration_ms: 1217.429757
+  type: 'test'
+  ...
+# Subtest: a withdrawn or closed case has ended; a running one has not
+ok 10 - a withdrawn or closed case has ended; a running one has not
+  ---
+  duration_ms: 1.010985
+  type: 'test'
+  ...
+# Subtest: site: an ended case shows its state, never an invitation to add to it
+ok 11 - site: an ended case shows its state, never an invitation to add to it
+  ---
+  duration_ms: 349.235114
+  type: 'test'
+  ...
+# Subtest: site: cancelling sends nothing and puts focus back on the withdraw button; confirming withdraws and reads the case again
+ok 12 - site: cancelling sends nothing and puts focus back on the withdraw button; confirming withdraws and reads the case again
+  ---
+  duration_ms: 44.408158
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2969.361279

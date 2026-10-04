@@ -1,0 +1,7 @@
+
+> portaliq@0.1.0 check:l10n-js
+> node scripts/build-l10n-js.js --check
+
+  ✓ l10n/en.js up to date (2065 keys)
+  ✓ l10n/en_US.js up to date (361 keys)
+  ✓ l10n/nl.js up to date (2130 keys)

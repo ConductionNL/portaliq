@@ -1,0 +1,160 @@
+TAP version 13
+# (node:2627353) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/forms/fields.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a date group value: yyyy-mm-dd for a real date, the typed parts otherwise
+ok 1 - a date group value: yyyy-mm-dd for a real date, the typed parts otherwise
+  ---
+  duration_ms: 4.913999
+  type: 'test'
+  ...
+# Subtest: the optional sentence shows only on a form that mixes required and optional
+ok 2 - the optional sentence shows only on a form that mixes required and optional
+  ---
+  duration_ms: 0.484626
+  type: 'test'
+  ...
+# Subtest: summary entries follow the form order; an unknown field is kept, unlinked
+ok 3 - summary entries follow the form order; an unknown field is kept, unlinked
+  ---
+  duration_ms: 0.783892
+  type: 'test'
+  ...
+# Subtest: plain field errors: a required field left empty and an impossible date
+ok 4 - plain field errors: a required field left empty and an impossible date
+  ---
+  duration_ms: 0.78603
+  type: 'test'
+  ...
+# Subtest: the suffix sits inside the label of an optional field, never on a required one
+ok 5 - the suffix sits inside the label of an optional field, never on a required one
+  ---
+  duration_ms: 265.931399
+  type: 'test'
+  ...
+# Subtest: the summary heading takes focus, each link focuses its field, the title says Fout
+ok 6 - the summary heading takes focus, each link focuses its field, the title says Fout
+  ---
+  duration_ms: 99.273208
+  type: 'test'
+  ...
+# Subtest: the date group sends yyyy-mm-dd, keeps a bad date as typed, and shows a cleared value
+ok 7 - the date group sends yyyy-mm-dd, keeps a bad date as typed, and shows a cleared value
+  ---
+  duration_ms: 130.123126
+  type: 'test'
+  ...
+# Subtest: a published form marks optional fields, summarises a missed date and refuses 31-2-2026
+ok 8 - a published form marks optional fields, summarises a missed date and refuses 31-2-2026
+  ---
+  duration_ms: 392.297759
+  type: 'test'
+  ...
+# Subtest: the landing page form marks optional fields and summarises a missed required one
+ok 9 - the landing page form marks optional fields and summarises a missed required one
+  ---
+  duration_ms: 120.077155
+  type: 'test'
+  ...
+# (node:2627357) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/forms/steps.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the step helpers: a review last, skipping hidden steps, the heading, a confirmation without a missing value
+ok 10 - the step helpers: a review last, skipping hidden steps, the heading, a confirmation without a missing value
+  ---
+  duration_ms: 5.838084
+  type: 'test'
+  ...
+# Subtest: a Woo request in steps: progress, per-step checks, the review round trip and the confirmation
+ok 11 - a Woo request in steps: progress, per-step checks, the review round trip and the confirmation
+  ---
+  duration_ms: 865.667409
+  type: 'test'
+  ...
+# Subtest: a step whose fields are all hidden is skipped, and a refusal on send opens the step that holds it
+ok 12 - a step whose fields are all hidden is skipped, and a refusal on send opens the step that holds it
+  ---
+  duration_ms: 270.418774
+  type: 'test'
+  ...
+# Subtest: an attached Woo action runs the same steps and forwards through the row action
+ok 13 - an attached Woo action runs the same steps and forwards through the row action
+  ---
+  duration_ms: 184.646516
+  type: 'test'
+  ...
+# Subtest: a published form in steps: the review, then the confirmation heading takes focus
+ok 14 - a published form in steps: the review, then the confirmation heading takes focus
+  ---
+  duration_ms: 171.366719
+  type: 'test'
+  ...
+# (node:2627375) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/site/components/forms/fields.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: named days: today and the next working days, named as in the mockup
+ok 15 - named days: today and the next working days, named as in the mockup
+  ---
+  duration_ms: 28.59186
+  type: 'test'
+  ...
+# Subtest: choice split: a subset in its own order, the rest behind the other card
+ok 16 - choice split: a subset in its own order, the rest behind the other card
+  ---
+  duration_ms: 0.718911
+  type: 'test'
+  ...
+# Subtest: three cards out of six kinds; the other card reveals a select with the rest
+ok 17 - three cards out of six kinds; the other card reveals a select with the rest
+  ---
+  duration_ms: 283.203743
+  type: 'test'
+  ...
+# Subtest: named days: a day sends its date, "Een andere dag" opens the date group
+ok 18 - named days: a day sends its date, "Een andere dag" opens the date group
+  ---
+  duration_ms: 207.04215
+  type: 'test'
+  ...
+# Subtest: a file field: a button-like label, the chosen file by name, a remove control
+ok 19 - a file field: a button-like label, the chosen file by name, a remove control
+  ---
+  duration_ms: 65.483572
+  type: 'test'
+  ...
+# Subtest: through the action form: cards and the other select send the same value a select would
+ok 20 - through the action form: cards and the other select send the same value a select would
+  ---
+  duration_ms: 299.06817
+  type: 'test'
+  ...
+# Subtest: an action field may word its own error; the summary line is the same on every form
+ok 21 - an action field may word its own error; the summary line is the same on every form
+  ---
+  duration_ms: 203.270323
+  type: 'test'
+  ...
+# Subtest: the server refusal of an empty required field lands in the summary of an action form
+ok 22 - the server refusal of an empty required field lands in the summary of an action form
+  ---
+  duration_ms: 121.626315
+  type: 'test'
+  ...
+# Subtest: an attached action shows the server refusal in its summary too
+ok 23 - an attached action shows the server refusal in its summary too
+  ---
+  duration_ms: 128.136788
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1942.113263

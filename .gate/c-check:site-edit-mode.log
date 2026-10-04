@@ -1,0 +1,92 @@
+TAP version 13
+# (node:2618592) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/editor/index.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: renderer and editor agree on geometry
+ok 1 - renderer and editor agree on geometry
+  ---
+  duration_ms: 6.152222
+  type: 'test'
+  ...
+# Subtest: the public renderer places cells with the shared function
+ok 2 - the public renderer places cells with the shared function
+  ---
+  duration_ms: 0.913666
+  type: 'test'
+  ...
+# Subtest: the renderer's own cell style equals the shared one on an absolute row
+ok 3 - the renderer's own cell style equals the shared one on an absolute row
+  ---
+  duration_ms: 2.295727
+  type: 'test'
+  ...
+# Subtest: the site loads the editor as its own bundle, never in its entry
+ok 4 - the site loads the editor as its own bundle, never in its entry
+  ---
+  duration_ms: 2.533788
+  type: 'test'
+  ...
+# Subtest: the edit control offers editing in place for a page, and the designer as a second way
+ok 5 - the edit control offers editing in place for a page, and the designer as a second way
+  ---
+  duration_ms: 0.565632
+  type: 'test'
+  ...
+# Subtest: the portal edit mode is the shared editor with a public palette
+ok 6 - the portal edit mode is the shared editor with a public palette
+  ---
+  duration_ms: 1.095102
+  type: 'test'
+  ...
+# Subtest: the editor reaches openregister under the instance root, not a guessed webroot
+ok 7 - the editor reaches openregister under the instance root, not a guessed webroot
+  ---
+  duration_ms: 2.277159
+  type: 'test'
+  ...
+# Subtest: the palette limited to public widgets offers only what the renderer mounts
+ok 8 - the palette limited to public widgets offers only what the renderer mounts
+  ---
+  duration_ms: 1.238199
+  type: 'test'
+  ...
+# Subtest: the site entry stays under its budget and the editor is its own bundle
+ok 9 - the site entry stays under its budget and the editor is its own bundle # SKIP no site build in js/
+  ---
+  duration_ms: 0.594659
+  type: 'test'
+  ...
+# Subtest: the editor bundle defines appName and appVersion for @nextcloud/vue
+ok 10 - the editor bundle defines appName and appVersion for @nextcloud/vue
+  ---
+  duration_ms: 489.197651
+  type: 'test'
+  ...
+# Subtest: a fresh page read goes past the browser cache, an ordinary one does not
+ok 11 - a fresh page read goes past the browser cache, an ordinary one does not
+  ---
+  duration_ms: 7.13719
+  type: 'test'
+  ...
+# Subtest: the editor tells the site it published, and the site re-reads the page fresh
+ok 12 - the editor tells the site it published, and the site re-reads the page fresh
+  ---
+  duration_ms: 1.566585
+  type: 'test'
+  ...
+# Subtest: the editor notices and the delete button read at AA contrast, from tokens only
+ok 13 - the editor notices and the delete button read at AA contrast, from tokens only
+  ---
+  duration_ms: 2.322814
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 769.250221

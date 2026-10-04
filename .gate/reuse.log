@@ -1,0 +1,5 @@
+
+> portaliq@0.1.0 check:reuse
+> node scripts/check-reuse.js
+
+2828 file(s) checked via docker fsfe/reuse:5; 0 without licensing info (baseline 0), 0 stderr ERROR line(s)

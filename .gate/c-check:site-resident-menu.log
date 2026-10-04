@@ -1,0 +1,93 @@
+TAP version 13
+# [1m[33m[@vue/compiler-sfc][0m[33m compileTemplate is called with `ssr: true` but no corresponding `cssVars` option.[0m
+# (node:2621927) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalNav.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the blue bar holds the website menus only, never the resident items
+ok 1 - the blue bar holds the website menus only, never the resident items
+  ---
+  duration_ms: 4.275986
+  type: 'test'
+  ...
+# Subtest: the resident items go into groups: cases, one per app, messages, then details
+ok 2 - the resident items go into groups: cases, one per app, messages, then details
+  ---
+  duration_ms: 2.021213
+  type: 'test'
+  ...
+# Subtest: no two items read the same, in either language
+ok 3 - no two items read the same, in either language
+  ---
+  duration_ms: 1.119276
+  type: 'test'
+  ...
+# Subtest: an app named only by its id groups under that id, and an empty group is left out
+ok 4 - an app named only by its id groups under that id, and an empty group is left out
+  ---
+  duration_ms: 0.628806
+  type: 'test'
+  ...
+# Subtest: pages with the same group share one heading across apps, in the order they first appear
+ok 5 - pages with the same group share one heading across apps, in the order they first appear
+  ---
+  duration_ms: 0.419282
+  type: 'test'
+  ...
+# Subtest: two items of one name in a shared group are told apart by their app
+ok 6 - two items of one name in a shared group are told apart by their app
+  ---
+  duration_ms: 0.306611
+  type: 'test'
+  ...
+# Subtest: the inbox item carries the unread count, read out in words
+ok 7 - the inbox item carries the unread count, read out in words
+  ---
+  duration_ms: 0.597728
+  type: 'test'
+  ...
+# Subtest: the menu shows signed in on a /mijn page only; a public page and a signed-out visitor get none
+ok 8 - the menu shows signed in on a /mijn page only; a public page and a signed-out visitor get none
+  ---
+  duration_ms: 0.876464
+  type: 'test'
+  ...
+# Subtest: the header links to the own area when signed in, and keeps the sign-in links when signed out
+ok 9 - the header links to the own area when signed in, and keeps the sign-in links when signed out
+  ---
+  duration_ms: 287.155652
+  type: 'test'
+  ...
+# Subtest: the menu is a named landmark with labelled groups and marks the current item
+ok 10 - the menu is a named landmark with labelled groups and marks the current item
+  ---
+  duration_ms: 34.482238
+  type: 'test'
+  ...
+# Subtest: on a phone the menu folds behind one button that says whether it is open
+ok 11 - on a phone the menu folds behind one button that says whether it is open
+  ---
+  duration_ms: 25.161949
+  type: 'test'
+  ...
+# Subtest: the signed-in area shows the menu only with a session and groups
+ok 12 - the signed-in area shows the menu only with a session and groups
+  ---
+  duration_ms: 97.962573
+  type: 'test'
+  ...
+# Subtest: every string the menu and header show has a Dutch and an English value
+ok 13 - every string the menu and header show has a Dutch and an English value
+  ---
+  duration_ms: 1.327085
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 912.998227

@@ -1,0 +1,74 @@
+TAP version 13
+# (node:2621893) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/src/shared/portalApi.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/woo-journey/round6/portaliq-editor/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the navigation leads with my cases, keeps the inbox and account last, and opens on a content page
+ok 1 - the navigation leads with my cases, keeps the inbox and account last, and opens on a content page
+  ---
+  duration_ms: 3.502426
+  type: 'test'
+  ...
+# Subtest: the shell sections follow what the answers announce
+ok 2 - the shell sections follow what the answers announce
+  ---
+  duration_ms: 0.429414
+  type: 'test'
+  ...
+# Subtest: every entry has its own in-site route under /mijn, and the route finds it back
+ok 3 - every entry has its own in-site route under /mijn, and the route finds it back
+  ---
+  duration_ms: 0.49071
+  type: 'test'
+  ...
+# Subtest: a page not offered opens the default page; an offered page and the bare /mijn (the home) stay
+ok 4 - a page not offered opens the default page; an offered page and the bare /mijn (the home) stay
+  ---
+  duration_ms: 0.432454
+  type: 'test'
+  ...
+# Subtest: the page registry resolves the entry key, then the section, then any contribution page, else nothing
+ok 5 - the page registry resolves the entry key, then the section, then any contribution page, else nothing
+  ---
+  duration_ms: 0.911206
+  type: 'test'
+  ...
+# Subtest: the breadcrumb of a signed-in page leads home, then to the own area
+ok 6 - the breadcrumb of a signed-in page leads home, then to the own area
+  ---
+  duration_ms: 0.535108
+  type: 'test'
+  ...
+# Subtest: the header says who is signed in, in the site language
+ok 7 - the header says who is signed in, in the site language
+  ---
+  duration_ms: 1.365032
+  type: 'test'
+  ...
+# Subtest: the sign-in routes are labelled in the site language and keep the portal and the page to return to
+ok 8 - the sign-in routes are labelled in the site language and keep the portal and the page to return to
+  ---
+  duration_ms: 3.141388
+  type: 'test'
+  ...
+# Subtest: the portal API reads and writes the bearer through the store the site hands it
+ok 9 - the portal API reads and writes the bearer through the store the site hands it
+  ---
+  duration_ms: 1.460414
+  type: 'test'
+  ...
+# Subtest: every string the signed-in shell shows is in both languages
+ok 10 - every string the signed-in shell shows is in both languages
+  ---
+  duration_ms: 2.883389
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.887404
