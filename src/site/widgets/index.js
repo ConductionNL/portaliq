@@ -37,7 +37,22 @@
  */
 
 import { loaders } from './loaders.js'
+import { metaOf as accordionMeta } from './nlAccordion/meta.js'
+import { metaOf as actionGroupMeta } from './nlActionGroup/meta.js'
+import { metaOf as buttonLinkMeta } from './nlButtonLink/meta.js'
+import { metaOf as codeBlockMeta } from './nlCodeBlock/meta.js'
+import { metaOf as descriptionListMeta } from './nlDescriptionList/meta.js'
+import { metaOf as headingMeta } from './nlHeading/meta.js'
+import { metaOf as imageMeta } from './nlImage/meta.js'
 import { metaOf as linkMeta } from './nlLink/meta.js'
+import { metaOf as linkListMeta } from './nlLinkList/meta.js'
+import { metaOf as listMeta } from './nlList/meta.js'
+import { metaOf as paragraphMeta } from './nlParagraph/meta.js'
+import { metaOf as quoteMeta } from './nlQuote/meta.js'
+import { metaOf as separatorMeta } from './nlSeparator/meta.js'
+import { metaOf as tableMeta } from './nlTable/meta.js'
+import { metaOf as videoMeta } from './nlVideo/meta.js'
+import { metaOf as youTubeMeta } from './nlYouTube/meta.js'
 
 export { loaders } from './loaders.js'
 
@@ -61,7 +76,22 @@ export { loaders } from './loaders.js'
  * @type {Record<string, SiteWidgetMeta>}
  */
 export const metas = {
+	nlHeading: headingMeta,
+	nlParagraph: paragraphMeta,
 	nlLink: linkMeta,
+	nlLinkList: linkListMeta,
+	nlList: listMeta,
+	nlQuote: quoteMeta,
+	nlButtonLink: buttonLinkMeta,
+	nlActionGroup: actionGroupMeta,
+	nlDescriptionList: descriptionListMeta,
+	nlImage: imageMeta,
+	nlTable: tableMeta,
+	nlSeparator: separatorMeta,
+	nlCodeBlock: codeBlockMeta,
+	nlAccordion: accordionMeta,
+	nlVideo: videoMeta,
+	nlYouTube: youTubeMeta,
 }
 
 /**

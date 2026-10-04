@@ -228,6 +228,61 @@ test('the record and design D1 say the same thing', () => {
 	}
 })
 
+test('every widget renders its NL Design System classes and imports its CSS', () => {
+	// REQ-SNW-010: a widget must render the component's class structure and
+	// import that component's CSS package where one exists. Read from the
+	// source, because a widget that imported no stylesheet would render
+	// unstyled on a portal and look like a theming problem instead of a
+	// missing import.
+	const own = ['nlCodeBlock', 'nlVideo', 'nlYouTube']
+	for (const key of Object.keys(loaders)) {
+		const name = 'Nl' + key.slice(2)
+		const source = readFileSync(
+			new URL(`../src/site/widgets/${key}/${name}.vue`, import.meta.url),
+			'utf8',
+		)
+
+		assert.match(
+			source,
+			/^import '(@utrecht|@nl-design-system-candidate)\/[^']+\.css'/m,
+			`${key} imports no design-system stylesheet`,
+		)
+		// Either written on the element, or computed: nlHeading's class is
+		// `utrecht-heading-${level}`, which is the component's job to decide.
+		assert.match(
+			source,
+			/(class="[^"]*(utrecht-|nl-))|(`(utrecht|nl)-[a-z-]*\$\{)/,
+			`${key} renders no design-system class`,
+		)
+
+		// A widget whose component has no upstream CSS may style itself, but
+		// only from tokens (REQ-SNW-010's second scenario). None of these
+		// three sets a colour at all; the check is that no hex or rgb() ever
+		// appears in one.
+		if (own.includes(key)) {
+			assert.ok(
+				/#[0-9a-f]{3,8}\b/i.test(source) === false && /rgba?\(/i.test(source) === false,
+				`${key} names a colour of its own instead of a token`,
+			)
+		}
+	}
+})
+
+test('the markdown class map covers the marks an author writes', () => {
+	// T6: every tag in the map is a tag `cnRenderMarkdown` can produce, and
+	// the new ones carry a design-system class so a portal's tokens reach
+	// them. LI is deliberately absent: the list element styles its items.
+	const source = readFileSync(
+		new URL('../src/site/components/MarkdownBlock.vue', import.meta.url),
+		'utf8',
+	)
+	for (const tag of ['STRONG', 'EM', 'SUB', 'SUP', 'MARK', 'CODE', 'PRE', 'HR', 'IMG']) {
+		assert.match(source, new RegExp(`\\b${tag}: 'utrecht-`), `${tag} has no class`)
+	}
+
+	assert.ok(/\bLI: /.test(source) === false, 'LI must not be in the map')
+})
+
 test('every built widget is in the record as a widget, under its own key', () => {
 	// A widget that exists but is recorded as a part, or under another key,
 	// would make the count read as covered while the palette offered
