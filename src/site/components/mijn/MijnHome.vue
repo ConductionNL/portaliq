@@ -12,7 +12,17 @@
 -->
 <template>
 	<section class="pq-mijn-home" data-testid="mijn-home">
-		<h1 id="site-account-title" class="utrecht-heading-2">{{ greeting }}</h1>
+		<!--
+			The same id AND the same data-testid as AccountArea's own heading:
+			/mijn opens on this component instead, and a test (or another app's
+			suite) that waits for the testid must find the heading either way.
+		-->
+		<h1
+			id="site-account-title"
+			class="utrecht-heading-2"
+			data-testid="site-account-title">
+			{{ greeting }}
+		</h1>
 
 		<section
 			v-if="showTasks"

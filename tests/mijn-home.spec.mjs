@@ -13,6 +13,7 @@
 //   node --test tests/mijn-home.spec.mjs
 
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 import {
 	buildNav,
@@ -242,10 +243,8 @@ test('/mijn is the home: a greeting, then what is still to do', async () => {
 			locale: 'nl',
 		},
 	)
-	assert.match(
-		html,
-		/<h1 id="site-account-title" class="utrecht-heading-2">Welkom, Sanne<\/h1>/,
-	)
+	assert.match(html, /id="site-account-title"/)
+	assert.match(html, /Welkom, Sanne/)
 	assert.ok(html.indexOf('Dit moet u nog doen') > html.indexOf('Welkom, Sanne'))
 	assert.ok(
 		html.indexOf('Dit moet u nog doen') < html.indexOf('Nieuwe berichten'),
@@ -403,4 +402,25 @@ test('a records page shows a switcher as a radio group; the first record opens, 
 	)
 	ctx.choose('nobody')
 	assert.equal(ctx.emitted.length, 1, 'a row that is not there is no choice')
+})
+
+test('both headings that can own /mijn carry the same id and testid', async () => {
+	// A live finding: MijnHome set only the id, so every test (and learniq's
+	// parent-flow suite) that waits for data-testid="site-account-title"
+	// timed out on the new home, while AccountArea's own heading carried
+	// both. The two headings are interchangeable or neither is.
+	const files = [
+		'src/site/components/mijn/MijnHome.vue',
+		'src/site/components/AccountArea.vue',
+	]
+	for (const file of files) {
+		const source = await readFile(new URL('../' + file, import.meta.url), 'utf8')
+		const at = source.indexOf('id="site-account-title"')
+		assert.ok(at > -1, `${file} must still hold the heading`)
+		assert.match(
+			source.slice(at, at + 200),
+			/data-testid="site-account-title"/,
+			`${file} gives the heading its id but not its testid`,
+		)
+	}
 })
