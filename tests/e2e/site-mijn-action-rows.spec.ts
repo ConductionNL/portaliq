@@ -16,7 +16,10 @@ import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from('admin:admin').toString('base64')
-const ORGANISATION = 'e2e-org'
+// A demo instance names its own organisation and audience (see
+// site-mijn-omgeving-live.spec.ts for the variables).
+const ORGANISATION = process.env.PORTALIQ_E2E_ORG || 'e2e-org'
+const AUDIENCE = process.env.PORTALIQ_E2E_AUDIENCE || 'supplier'
 
 /**
  * Create one object through OpenRegister's own object API, as the dev admin.
@@ -59,7 +62,7 @@ async function openOverview(
 	const label = `Overzicht ${stamp}`
 	await seed(request, 'portalPage', {
 		label,
-		audience: 'supplier',
+		audience: AUDIENCE,
 		status: 'active',
 		collections: [],
 		pages: [
@@ -82,7 +85,7 @@ async function openOverview(
 		})
 	}
 	const login = await request.post(`${PORTAL_API}/session/dev-login`, {
-		data: { subjectRef, audience: 'supplier', organisation: ORGANISATION },
+		data: { subjectRef, audience: AUDIENCE, organisation: ORGANISATION },
 	})
 	expect(
 		login.ok(),

@@ -256,11 +256,11 @@ test("site: every app's cases are in one list, each naming its source, with the 
 	// shows the case, plain text otherwise.
 	assert.match(
 		html,
-		/<button class="denhaag-case-card denhaag-case-card--list pq-case-card" type="button"><span class="denhaag-case-card__wrapper"><span class="denhaag-case-card__title pq-case-card__title">Kapvergunning<\/span>/,
+		/<p class="denhaag-case-card__title pq-case-card__title"><button class="pq-case-card__link" type="button">Kapvergunning<\/button><\/p>/,
 	)
 	assert.match(
 		html,
-		/<div class="denhaag-case-card denhaag-case-card--list pq-case-card"><span class="denhaag-case-card__wrapper"><span class="denhaag-case-card__title pq-case-card__title">Parkeervergunning<\/span>/,
+		/<p class="denhaag-case-card__title pq-case-card__title"><span>Parkeervergunning<\/span><\/p>/,
 	)
 	assert.equal((html.match(/data-testid="my-cases-row"/g) || []).length, 2)
 })
@@ -271,8 +271,8 @@ test("site: without the shell's page lookup a case is listed but not a button", 
 		t,
 		initialData: { ok: true, cases: CASES },
 	})
-	assert.match(html, /pq-case-card__title">Kapvergunning<\/span>/)
-	assert.doesNotMatch(html, /<button class="denhaag-case-card/)
+	assert.match(html, /pq-case-card__title"><span>Kapvergunning<\/span>/)
+	assert.doesNotMatch(html, /<button class="pq-case-card__link/)
 })
 
 test('site: the closed tab lists the closed cases, is not there when nothing can be closed, and nothing reads "No cases yet."', async () => {

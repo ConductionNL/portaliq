@@ -520,6 +520,7 @@ import { instanceRootFrom } from './lib/instanceRoot.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
+	loadPerRecordRows,
 	ownAreaLink as ownAreaLinkFor,
 	residentMenuGroups,
 	showsResidentMenu,
@@ -644,6 +645,10 @@ export default {
 				threads: [],
 				news: [],
 			},
+
+			// The rows a page lists itself per row of (`perRecord`), by
+			// `<app>:<collection>` (site-mijn-omgeving-components REQ-SMO-020).
+			recordRows: {},
 
 			// The inbox's unread count after a page changed it, else null.
 			unreadOverride: null,
@@ -892,6 +897,7 @@ export default {
 									this.t,
 									this.unreadCount,
 									this.hrefForRoute,
+									this.recordRows,
 								)
 							: [],
 					menus: headerMenusOf(this.menus),
@@ -981,6 +987,7 @@ export default {
 				this.t,
 				this.unreadCount,
 				this.hrefForRoute,
+				this.recordRows,
 			)
 		},
 
@@ -1451,6 +1458,10 @@ export default {
 				news: news || [],
 			}
 			this.followAccountRoute()
+			this.recordRows = await loadPerRecordRows(
+				contributions?.contributions,
+				this.api,
+			)
 		},
 
 		/**
@@ -1471,6 +1482,7 @@ export default {
 				news: [],
 			}
 			this.unreadOverride = null
+			this.recordRows = {}
 			this.contactPrompt = false
 			forgetActingFor()
 			try {

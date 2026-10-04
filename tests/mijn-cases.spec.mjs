@@ -145,8 +145,16 @@ test('a case card is one link whose name starts with the title, with the status 
 	assert.equal((html.match(/<a /g) || []).length, 1)
 	assert.match(
 		html,
-		/<a class="denhaag-case-card denhaag-case-card--list pq-case-card" href="\/mijn\/dossiq\/zaken"><span class="denhaag-case-card__wrapper"><span class="denhaag-case-card__title pq-case-card__title">Woo-verzoek bomenkap Lindelaan<\/span>/,
+		/<p class="denhaag-case-card__title pq-case-card__title"><a class="pq-case-card__link" href="\/mijn\/dossiq\/zaken">Woo-verzoek bomenkap Lindelaan<\/a><\/p>/,
+		'the link is the title, so its name is the case title',
 	)
+	// Den Haag's default card: its own background element, not the flat
+	// list form (live finding on wave 3).
+	assert.match(
+		html,
+		/<div class="denhaag-case-card pq-case-card"><div class="denhaag-case-card__wrapper"><span class="denhaag-case-card__background" aria-hidden="true">/,
+	)
+	assert.doesNotMatch(html, /denhaag-case-card--list/)
 	assert.match(
 		html,
 		/nl-data-badge[^>]*>(<!--\[-->)?In behandeling(<!--\]-->)?<\/span>/,
