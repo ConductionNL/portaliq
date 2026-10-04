@@ -40,8 +40,26 @@
 // the cache is filled in the background, where a failed fetch is swallowed.
 // A worker whose fetches all fail therefore never caches anything and never
 // answers anything.
+//
+// A PAGE LOAD IS NEVER THE WORKER'S TO ANSWER WHILE ONLINE (fix/sw-navigation-
+// network-first). After a DigiD sign-in the callback sends the resident to
+// /site?portal=…#token=<signed token>. Two faults sat on that path:
+//   - A navigation's request.url keeps its fragment, and this file used it as
+//     the cache key, so the resident's bearer token was written to Cache
+//     Storage on disk (and every lookup missed, because the next load has no
+//     fragment). Keys are now stored without the fragment (`cacheKey`), and
+//     the cache moved to v5 so the v4 keys that hold a token are deleted.
+//   - A navigation the worker held was answered from its cache. A cached page
+//     is yesterday's HTML for an online visitor, and an evicted copy made the
+//     worker fetch the page itself, where a refused fetch rejects respondWith
+//     and the browser shows net::ERR_FAILED. Now the browser loads every page
+//     itself while it is online; the worker answers a page only when the
+//     browser reports it is offline, and only from a copy it holds.
+// A response that followed a redirect, or that is not a plain same-origin
+// answer, is never cached: a navigation answered with a redirected response
+// is a network error by the Fetch spec.
 
-const CACHE_VERSION = 'portaliq-shell-v4'
+const CACHE_VERSION = 'portaliq-shell-v5'
 
 // Bump CACHE_VERSION on any change to this list, or to the caching logic
 // below — the activate handler then deletes the old cache on next launch
@@ -61,7 +79,7 @@ caches
 	.then((cache) => cache.keys())
 	.then((requests) => {
 		for (const request of requests) {
-			cachedUrls.add(request.url)
+			cachedUrls.add(cacheKey(request.url))
 		}
 	})
 	.catch(() => {
@@ -109,15 +127,56 @@ self.addEventListener('fetch', (event) => {
 		return
 	}
 
-	if (cachedUrls.has(event.request.url)) {
-		event.respondWith(fromCache(event.request))
+	const key = cacheKey(event.request.url)
+	const isPage = event.request.mode === 'navigate'
+	if (cachedUrls.has(key) && (!isPage || isOffline())) {
+		event.respondWith(fromCache(event.request, key))
 		return
 	}
 
-	// Not cached: the browser fetches it itself, and the worker stores a copy
-	// for next time without ever standing in the way of this load.
-	event.waitUntil(storeInBackground(event.request))
+	// The browser fetches it itself, and the worker refreshes its copy for
+	// next time without ever standing in the way of this load.
+	event.waitUntil(storeInBackground(event.request, key))
 })
+
+/**
+ * The address a request is cached under: without its fragment. A fragment is
+ * never sent to the server, so it never changes the answer, and on this site
+ * it can carry the resident's sign-in token (`#token=…`).
+ *
+ * @param {string} url The request address.
+ * @return {string} The address without its fragment.
+ */
+function cacheKey(url) {
+	const at = url.indexOf('#')
+	return at === -1 ? url : url.slice(0, at)
+}
+
+/**
+ * Whether the browser reports it has no network. Only a definite "offline"
+ * counts: an unknown state is treated as online, so the browser loads the page.
+ *
+ * @return {boolean} True when the browser says it is offline.
+ */
+function isOffline() {
+	return self.navigator?.onLine === false
+}
+
+/**
+ * Whether a response may be kept: a plain, successful, same-origin answer
+ * that did not follow a redirect.
+ *
+ * @param {Response} response The response.
+ * @return {boolean} True when it may be cached.
+ */
+function isCacheable(response) {
+	return Boolean(
+		response
+			&& response.ok
+			&& response.type === 'basic'
+			&& response.redirected !== true,
+	)
+}
 
 /**
  * Serve a shell asset this worker holds, refreshing it in the background for
@@ -125,23 +184,24 @@ self.addEventListener('fetch', (event) => {
  * forget it and fetch; the next load then goes straight to the network.
  *
  * @param {Request} request The shell asset request.
+ * @param {string} key The address it is cached under.
  * @return {Promise<Response>} The cached or freshly fetched response.
  */
-async function fromCache(request) {
+async function fromCache(request, key) {
 	let cached
 	try {
 		const cache = await caches.open(CACHE_VERSION)
-		cached = await cache.match(request)
+		cached = await cache.match(key)
 	} catch {
 		cached = undefined
 	}
 
 	if (cached) {
-		storeInBackground(request)
+		storeInBackground(request, key)
 		return cached
 	}
 
-	cachedUrls.delete(request.url)
+	cachedUrls.delete(key)
 	return fetch(request)
 }
 
@@ -151,15 +211,16 @@ async function fromCache(request) {
  * and the page that asked was already served by the browser or the cache.
  *
  * @param {Request} request The shell asset request.
+ * @param {string} key The address to cache it under.
  * @return {Promise<void>}
  */
-async function storeInBackground(request) {
+async function storeInBackground(request, key) {
 	try {
 		const response = await fetch(request)
-		if (response && response.ok) {
+		if (isCacheable(response)) {
 			const cache = await caches.open(CACHE_VERSION)
-			await cache.put(request, response.clone())
-			cachedUrls.add(request.url)
+			await cache.put(key, response.clone())
+			cachedUrls.add(key)
 		}
 	} catch {
 		// Best effort only. The worker stays out of the way.
