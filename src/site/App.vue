@@ -122,8 +122,13 @@
 			{{ confirmMessage.text }}
 		</p>
 
-		<!-- The ask for an e-mail address while the account has none. -->
-		<div v-if="session && contactPrompt" class="container">
+		<!--
+			The ask for an e-mail address while the account has none. On a
+			`/mijn` page the signed-in area shows it in its own content column,
+			above the page heading (see AccountArea's `prompt` slot below);
+			here it stands above any other page.
+		-->
+		<div v-if="session && contactPrompt && !accountRoute" class="container">
 			<ContactPrompt
 				:t="t"
 				:navigate="goSection"
@@ -253,7 +258,14 @@
 							@navigate="goSection"
 							@unread="unreadOverride = $event"
 							@refresh="loadAccount"
-							@signout="signOut" />
+							@signout="signOut">
+							<template v-if="session && contactPrompt" #prompt>
+								<ContactPrompt
+									:t="t"
+									:navigate="goSection"
+									@dismiss="contactPrompt = false" />
+							</template>
+						</AccountArea>
 
 						<!-- A shared dossier link is public: anyone who has it reads the
 				     documents in it that are public now (site-shared-dossier). -->

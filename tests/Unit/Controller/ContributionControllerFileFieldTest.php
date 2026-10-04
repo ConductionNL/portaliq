@@ -7,6 +7,8 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\InstanceLoopback;
+use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
@@ -206,7 +208,7 @@ class ContributionControllerFileFieldTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			new PortalActionForwarder($request, $this->createMock(IClientService::class), $this->createMock(IURLGenerator::class), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $this->createMock(IURLGenerator::class), $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),

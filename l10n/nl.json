@@ -2123,7 +2123,14 @@
         "On a collection block: cards instead of a table.": "Bij een verzamelingsblok: kaarten in plaats van een tabel.",
         "Progress": "Voortgang",
         "On cards: the fields with the value and the total, and the unit, shown as a figure.": "Bij kaarten: de velden met de waarde en het totaal, en de eenheid, getoond als cijfer.",
-        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "De verzameling tussen wier records deze pagina wisselt, als object met de verzameling, de velden die de records een naam geven en een ondertitel uit een gerelateerd record. Een app mag ook alleen de verzameling noemen."
+        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "De verzameling tussen wier records deze pagina wisselt, als object met de verzameling, de velden die de records een naam geven en een ondertitel uit een gerelateerd record. Een app mag ook alleen de verzameling noemen.",
+        "Calls to this server": "Aanroepen naar deze server",
+        "Portaliq calls this Nextcloud server itself, for example to load a resident's tasks. Leave the address empty to use the public address. When that does not answer from inside the server, Portaliq tries 127.0.0.1 once.": "Portaliq roept deze Nextcloud-server zelf aan, bijvoorbeeld om de taken van een inwoner te laden. Laat het adres leeg om het openbare adres te gebruiken. Antwoordt dat niet vanuit de server zelf, dan probeert Portaliq één keer 127.0.0.1.",
+        "Internal address": "Intern adres",
+        "Save address": "Adres opslaan",
+        "This address is not valid. Use http or https, without a password, a query or \"..\".": "Dit adres is niet geldig. Gebruik http of https, zonder wachtwoord, zoekvraag of \"..\".",
+        "Saving the address failed.": "Het opslaan van het adres is mislukt.",
+        "Saved.": "Opgeslagen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

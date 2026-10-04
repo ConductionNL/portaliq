@@ -113,6 +113,8 @@ export default {
 		Unread: 'Ongelezen',
 		'View result': 'Resultaat bekijken',
 		'View task': 'Bekijk taak',
+		'View the link': 'Bekijk de link',
+		'View the publication': 'Bekijk de publicatie',
 		'Yes, hand in': 'Ja, inleveren',
 		You: 'U',
 		'You can add at most {count} file(s).':
@@ -234,6 +236,8 @@ export default {
 		Unread: 'Unread',
 		'View result': 'View result',
 		'View task': 'View task',
+		'View the link': 'View the link',
+		'View the publication': 'View the publication',
 		'Yes, hand in': 'Yes, hand in',
 		You: 'You',
 		'You can add at most {count} file(s).':

@@ -27,6 +27,9 @@
 			:hideLabel="t('Close the menu')"
 			@navigate="$emit('navigate', $event)" />
 		<div class="pq-account__content">
+			<!-- The ask for an e-mail address, in the content column and above
+			     the page heading, so it lines up with the page it is about. -->
+			<slot name="prompt" />
 			<!-- Whom the resident acts for, on every signed-in page while it is
 			     not themselves (site-mijn-omgeving-components REQ-SMO-008). -->
 			<ActingForBar
