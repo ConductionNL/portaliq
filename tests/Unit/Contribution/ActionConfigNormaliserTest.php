@@ -209,7 +209,9 @@ class ActionConfigNormaliserTest extends TestCase {
 		$this->assertTrue($configs['dateTo']['required']);
 		$this->assertArrayNotHasKey('requiredMessage', $configs['reasonKind']);
 		$this->assertSame('Vertel ons waarom', $configs['reason']['requiredMessage']);
-		$this->assertArrayNotHasKey('required', $configs['reason'], 'words alone never require a field');
+		// `reason` is schema-required, so a create marks it required (REQ-SMF-023);
+		// the words themselves never do: see testWordsAloneNeverRequireAField.
+		$this->assertTrue($configs['reason']['required']);
 	}//end testARequiredMessageIsKeptAsText()
 
 	/**
