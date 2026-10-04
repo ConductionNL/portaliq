@@ -31,6 +31,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * A resident's own form drafts.
@@ -256,6 +257,174 @@ class PortalDraftStoreTest extends TestCase {
 	}//end testWithoutOpenRegisterThePurgeDoesNothing()
 
 	/**
+	 * The read steps over what is not a draft row, and a save without a
+	 * subject writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testJunkRowsAndAMissingSubjectAreRefused(): void {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn(['not a row', $this->row()]);
+		$this->assertSame(
+			'draft-1',
+			$this->store(reader: $reader)->mine(subject: self::SUBJECT, app: 'dossiq', actionId: 'startWooVerzoek', now: self::NOW)['@self']['uuid']
+		);
+
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+		$this->assertNull(
+			$this->store(writer: $writer)->save(
+				subject: ['subjectRef' => ''],
+				app: 'dossiq',
+				actionId: 'startWooVerzoek',
+				answers: [],
+				step: 0,
+				expiresAt: '2026-11-01T12:00:00+00:00',
+				now: self::NOW
+			)
+		);
+	}//end testJunkRowsAndAMissingSubjectAreRefused()
+
+	/**
+	 * A draft the store cannot identify is not deleted, and a paged answer is
+	 * read like a plain list.
+	 *
+	 * @return void
+	 */
+	public function testAnUnidentifiableDraftIsLeftAloneAndAPagedAnswerIsRead(): void {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([$this->row(['@self' => 'not an envelope', 'id' => null])]);
+		$fake = $this->objectService();
+		$this->assertFalse(
+			$this->store(reader: $reader, objectService: $fake)->discard(subject: self::SUBJECT, app: 'dossiq', actionId: 'startWooVerzoek', now: self::NOW)
+		);
+		$this->assertSame([], $fake->deleted);
+
+		$paged = new class {
+			public array $deleted = [];
+
+			public array $asked = [];
+
+			/**
+			 * Answers with a paged envelope.
+			 *
+			 * @param array<string, mixed> $config The query.
+			 * @param bool $_rbac Unused.
+			 * @param bool $_multitenancy Unused.
+			 *
+			 * @return array<string, mixed> The envelope.
+			 */
+			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->asked = $config;
+				return ['results' => [['@self' => ['uuid' => 'old-1'], 'expiresAt' => '2026-09-01T12:00:00+00:00']], 'total' => 1];
+			}
+
+			/**
+			 * Records a delete.
+			 *
+			 * @param string $uuid The row.
+			 * @param string $register The register.
+			 * @param string $schema The schema.
+			 * @param bool $_rbac Unused.
+			 * @param bool $_multitenancy Unused.
+			 *
+			 * @return bool True.
+			 */
+			public function deleteObject(string $uuid, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): bool {
+				$this->deleted[] = $uuid;
+				return true;
+			}
+		};
+		$this->assertSame(1, $this->store(objectService: $paged)->purgeExpired(now: self::NOW));
+		$this->assertSame(['old-1'], $paged->deleted);
+	}//end testAnUnidentifiableDraftIsLeftAloneAndAPagedAnswerIsRead()
+
+	/**
+	 * A store that throws, or answers with something that is not a list,
+	 * deletes nothing and says so in the log rather than in the request.
+	 *
+	 * @return void
+	 */
+	public function testAFailingStoreDeletesNothing(): void {
+		$throwing = new class {
+			/**
+			 * Throws instead of answering.
+			 *
+			 * @param array<string, mixed> $config The query.
+			 * @param bool $_rbac Unused.
+			 * @param bool $_multitenancy Unused.
+			 *
+			 * @return array<int, mixed> Never.
+			 */
+			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				throw new RuntimeException('OpenRegister is down');
+			}
+
+			/**
+			 * Throws instead of deleting.
+			 *
+			 * @param string $uuid The row.
+			 * @param string $register The register.
+			 * @param string $schema The schema.
+			 * @param bool $_rbac Unused.
+			 * @param bool $_multitenancy Unused.
+			 *
+			 * @return bool Never.
+			 */
+			public function deleteObject(string $uuid, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): bool {
+				throw new RuntimeException('OpenRegister is down');
+			}
+		};
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->atLeastOnce())->method('error');
+		$this->assertSame(0, $this->store(objectService: $throwing, logger: $logger)->purgeExpired(now: self::NOW));
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([$this->row()]);
+		$this->assertFalse(
+			$this->store(reader: $reader, objectService: $throwing)->discard(subject: self::SUBJECT, app: 'dossiq', actionId: 'startWooVerzoek', now: self::NOW)
+		);
+
+		$notAList = new class {
+			/**
+			 * Answers with something that is not a list of rows.
+			 *
+			 * @param array<string, mixed> $config The query.
+			 * @param bool $_rbac Unused.
+			 * @param bool $_multitenancy Unused.
+			 *
+			 * @return string Not a list.
+			 */
+			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): string {
+				return 'nothing to see';
+			}
+		};
+		$this->assertSame(0, $this->store(objectService: $notAList)->purgeExpired(now: self::NOW));
+	}//end testAFailingStoreDeletesNothing()
+
+	/**
+	 * Without OpenRegister a discard deletes nothing, and a container that
+	 * throws is the same as no OpenRegister at all.
+	 *
+	 * @return void
+	 */
+	public function testAContainerThatThrowsIsNoOpenRegister(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('no such service'));
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([$this->row()]);
+		$store = new PortalDraftStore(
+			$reader,
+			$this->createMock(PortalObjectWriter::class),
+			$container,
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$this->assertFalse($store->discard(subject: self::SUBJECT, app: 'dossiq', actionId: 'startWooVerzoek', now: self::NOW));
+		$this->assertSame(0, $store->purgeExpired(now: self::NOW));
+	}//end testAContainerThatThrowsIsNoOpenRegister()
+
+	/**
 	 * A store that answers with every draft it holds, whatever it is asked,
 	 * and records what it was asked and what it deleted.
 	 *
@@ -313,6 +482,7 @@ class PortalDraftStoreTest extends TestCase {
 	 * @param PortalObjectReader|null $reader The reader double.
 	 * @param PortalObjectWriter|null $writer The writer double.
 	 * @param object|null $objectService The OpenRegister fake.
+	 * @param LoggerInterface|null $logger The logger double.
 	 *
 	 * @return PortalDraftStore The store.
 	 */
@@ -320,6 +490,7 @@ class PortalDraftStoreTest extends TestCase {
 		?PortalObjectReader $reader = null,
 		?PortalObjectWriter $writer = null,
 		?object $objectService = null,
+		?LoggerInterface $logger = null,
 	): PortalDraftStore {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn(($objectService ?? $this->objectService()));
@@ -328,7 +499,7 @@ class PortalDraftStoreTest extends TestCase {
 			($reader ?? $this->createMock(PortalObjectReader::class)),
 			($writer ?? $this->createMock(PortalObjectWriter::class)),
 			$container,
-			$this->createMock(LoggerInterface::class)
+			($logger ?? $this->createMock(LoggerInterface::class))
 		);
 	}//end store()
 }//end class

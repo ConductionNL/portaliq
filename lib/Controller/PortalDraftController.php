@@ -38,6 +38,7 @@ use OCA\Portaliq\Service\PortalDraftStore;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -81,6 +82,7 @@ class PortalDraftController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function show(string $appId, string $actionId): JSONResponse {
 		$context = $this->context(appId: $appId, actionId: $actionId);
 		if ($context instanceof JSONResponse) {
@@ -114,6 +116,7 @@ class PortalDraftController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function save(string $appId, string $actionId): JSONResponse {
 		$context = $this->context(appId: $appId, actionId: $actionId);
 		if ($context instanceof JSONResponse) {
@@ -149,6 +152,7 @@ class PortalDraftController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function destroy(string $appId, string $actionId): JSONResponse {
 		$context = $this->context(appId: $appId, actionId: $actionId);
 		if ($context instanceof JSONResponse) {

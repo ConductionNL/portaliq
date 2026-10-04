@@ -446,6 +446,11 @@ export default {
 		},
 	},
 
+	/**
+	 * Load the options, then take back the resident's own saved answers.
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+	 */
 	mounted() {
 		this.loadOptions()
 		this.resumeDraft()
@@ -793,6 +798,8 @@ export default {
 		 * action's own.
 		 *
 		 * @return {string} The app id.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
 		 */
 		appOf() {
 			return this.app !== '' ? this.app : String(this.action.app || '')

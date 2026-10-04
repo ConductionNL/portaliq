@@ -230,6 +230,23 @@ class PortalDraftControllerTest extends TestCase {
 	}//end testDestroyDeletesTheOwnDraft()
 
 	/**
+	 * A save the store could not keep answers 502, and a field the action
+	 * declares as something other than a name is skipped.
+	 *
+	 * @return void
+	 */
+	public function testAStoreThatCannotKeepTheDraftAnswers502(): void {
+		$response = $this->controller(
+			params: ['onderwerp' => 'De nieuwe brug'],
+			action: $this->woo(['fields' => ['onderwerp', 7, 'claims']]),
+			storeFails: true
+		)->save('dossiq', 'startWooVerzoek');
+
+		$this->assertSame(502, $response->getStatus());
+		$this->assertSame(['error' => 'draft_not_saved'], $response->getData());
+	}//end testAStoreThatCannotKeepTheDraftAnswers502()
+
+	/**
 	 * A fake OpenRegister that records the writes and the deletes.
 	 *
 	 * @return object The fake.
@@ -266,6 +283,7 @@ class PortalDraftControllerTest extends TestCase {
 	 * @param array<string, mixed>|null $action The action the manifest holds.
 	 * @param array<string, mixed>|null $subject The session subject, null for signed out.
 	 * @param object|null $objectService The OpenRegister fake.
+	 * @param bool $storeFails Whether the write fails.
 	 *
 	 * @return PortalDraftController The controller.
 	 */
@@ -275,6 +293,7 @@ class PortalDraftControllerTest extends TestCase {
 		?array $action = null,
 		?array $subject = self::SUBJECT,
 		?object $objectService = null,
+		bool $storeFails = false,
 	): PortalDraftController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn($subject === null ? '' : 'Bearer token');
@@ -298,7 +317,11 @@ class PortalDraftControllerTest extends TestCase {
 		$reader->method('readCollection')->willReturn($rows);
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use ($fake): array {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use ($fake, $storeFails): ?array {
+				if ($storeFails === true) {
+					return null;
+				}
+
 				$fake->saved[] = array_merge([$scopeField => $subjectRef], $data);
 				return array_merge(['@self' => ['uuid' => 'draft-1']], $data);
 			}
