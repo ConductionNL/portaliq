@@ -178,6 +178,12 @@ export default {
 			return this.detailRow ? rowNotice(this.collection, this.detailRow) : ''
 		},
 
+		/**
+		 * The fields that have a value, formatted for reading.
+		 *
+		 * @return {Array<object>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 */
 		fields() {
 			const row = this.detailRow || {}
 			// A fact without a value says nothing, declared or not: a case
