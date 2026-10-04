@@ -17,14 +17,27 @@ import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import { pageFixture } from './mijn-fixtures.ts'
-import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
+import { devLogin, PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from(process.env.PORTALIQ_E2E_ADMIN || 'admin:admin').toString(
 	'base64',
 )
 const ORGANISATION = process.env.PORTALIQ_E2E_ORG || 'dev-org'
-const AUDIENCE = process.env.PORTALIQ_E2E_AUDIENCE || 'client'
+const AUDIENCE_BASE = process.env.PORTALIQ_E2E_AUDIENCE || 'client'
+
+/**
+ * This run's own audience: the built-in provider serves one portalPage row
+ * per audience and picks the lowest row id when there are several, so a
+ * leftover row or a sibling spec would otherwise replace this run's pages
+ * (lib/Portal/PortalContributionProvider.php).
+ *
+ * @param stamp this run's stamp
+ * @return the audience to seed and sign in with
+ */
+function audienceFor(stamp: number): string {
+	return `${AUDIENCE_BASE}-switch-${stamp}`
+}
 
 /** What this run created, as `schema/id`, to delete afterwards. */
 const created: string[] = []
@@ -76,16 +89,13 @@ async function signIn(
 }> {
 	const stamp = Date.now()
 	const pageId = `kinderen-${stamp}`
-	await seed(request, 'portalPage', pageFixture('switching', stamp, AUDIENCE))
+	const audience = audienceFor(stamp)
+	await seed(request, 'portalPage', pageFixture('switching', stamp, audience))
 	const subjectRef = `subject-switch-${stamp}`
 	const mine = { subjectRef, organisation: ORGANISATION }
 	await seed(request, 'portalCase', { ...mine, reference: 'Vera' })
 	const sami = await seed(request, 'portalCase', { ...mine, reference: 'Sami' })
-	const login = await request.post(`${PORTAL_API}/session/dev-login`, {
-		data: { subjectRef, audience: AUDIENCE, organisation: ORGANISATION },
-	})
-	expect(login.ok(), 'dev-login must be enabled (debug mode)').toBeTruthy()
-	const { token } = await login.json()
+	const token = await devLogin(request, subjectRef, audience, ORGANISATION)
 	await seedSiteSession(page, token)
 	return { stamp, token, subjectRef, pageId, sami }
 }
@@ -157,7 +167,8 @@ test.describe('site-mijn-switching', () => {
 		request,
 	}) => {
 		const stamp = Date.now()
-		await seed(request, 'portalPage', pageFixture('wave-6', stamp, AUDIENCE))
+		const audience = audienceFor(stamp)
+		await seed(request, 'portalPage', pageFixture('wave-6', stamp, audience))
 		const subjectRef = `subject-wave6-${stamp}`
 		const mine = { subjectRef, organisation: ORGANISATION }
 		const vera = await seed(request, 'portalCase', {
@@ -170,11 +181,7 @@ test.describe('site-mijn-switching', () => {
 			referenceId: vera,
 			read: true,
 		})
-		const login = await request.post(`${PORTAL_API}/session/dev-login`, {
-			data: { subjectRef, audience: AUDIENCE, organisation: ORGANISATION },
-		})
-		expect(login.ok(), 'dev-login must be enabled (debug mode)').toBeTruthy()
-		const { token } = await login.json()
+		const token = await devLogin(request, subjectRef, audience, ORGANISATION)
 		await seedSiteSession(page, token)
 
 		const route = await routeOf(request, token, `gezin-${stamp}`)
