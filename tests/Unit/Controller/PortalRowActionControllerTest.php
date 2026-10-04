@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Contribution\AttachedActionResolver;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Contribution\RequiredFieldsNormaliser;
 use OCA\Portaliq\Controller\PortalRowActionController;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
@@ -206,6 +207,35 @@ class PortalRowActionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $result->getStatus());
 		$this->assertSame(['checkoutUrl' => 'https://pay.example.nl/checkout/REPLACE_ME'], $result->getData());
 	}//end testTheProvenRowIdIsStampedAndTheClientBodyIsIgnored()
+
+	/**
+	 * A row or attached action that names a required field refuses a body
+	 * that leaves it empty: 400 with the field, before the audit and before
+	 * the forward (site-multi-step-forms REQ-SMF-024). The action's flags
+	 * come from the real RequiredFieldsNormaliser.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyRequiredFieldIsRefusedBeforeTheForward(): void {
+		$action = (new RequiredFieldsNormaliser())->apply(
+			action: $this->pay(['fields' => ['reason', 'amount'], 'requiredFields' => ['reason']]),
+			whitelist: ['reason', 'amount'],
+			mandatory: []
+		);
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $action,
+			reader: $this->readerReturning($this->invoice()),
+			auditor: $auditor,
+			params: ['collection' => 'salesInvoices', 'reason' => ' ', 'amount' => 10],
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $result->getStatus());
+		$this->assertSame(['error' => 'required_missing', 'errors' => ['reason' => '']], $result->getData());
+	}//end testAnEmptyRequiredFieldIsRefusedBeforeTheForward()
 
 	/**
 	 * A declared `fields` whitelist forwards only those params, and the stamp

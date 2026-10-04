@@ -71,6 +71,7 @@ use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -1026,22 +1027,17 @@ class ContributionController extends Controller implements PortalProtected {
 		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
 
-		// The cross-reference guard (portal-create-cross-refs). Every field the
-		// action declares as a reference has to resolve inside the subject's
-		// own scope BEFORE anything is written: a uuid in a create body is
-		// otherwise accepted as typed, which is how a citizen could file an
-		// objection against somebody else's case.
-		$refused = $this->crossRefGuard()->refusedField(
-			action: $action,
-			data: $data,
-			subject: $subject,
-			app: $match['app']
-		);
-		if ($refused !== '') {
-			return new JSONResponse(
-				['error' => 'cross_ref_refused', 'field' => $refused],
-				Http::STATUS_FORBIDDEN
-			);
+		// The body's own checks, before the stamp and any write. First the
+		// action's required fields (REQ-SMF-024): an empty one answers 400
+		// before anything reads the store. Then the cross-reference guard
+		// (portal-create-cross-refs): every field the action declares as a
+		// reference has to resolve inside the subject's own scope, else a uuid
+		// in a create body is accepted as typed, which is how a citizen could
+		// file an objection against somebody else's case.
+		$refused = ((new RequiredFieldsGuard())->refusal(action: $action, body: $data)
+			?? $this->crossRefGuard()->refusal(action: $action, data: $data, subject: $subject, app: $match['app']));
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		// The scope field carries the declared `scopeClaim` resolved server
@@ -1167,6 +1163,11 @@ class ContributionController extends Controller implements PortalProtected {
 		// carries no real subjectRef).
 		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+
+		$missing = (new RequiredFieldsGuard())->refusal(action: $action, body: $data);
+		if ($missing !== null) {
+			return $missing;
+		}
 
 		$created = $this->writer->createAnonymousObject(register: $register, schema: $schema, data: $data);
 		if ($created === null) {
@@ -1546,10 +1547,14 @@ class ContributionController extends Controller implements PortalProtected {
 		// a declared `scopeClaim` rides server-resolved inside the signed
 		// assertion (case-actions-sign-a-document D3). Either one that does
 		// not resolve stops the forward before it is audited or made.
+		// The action's required fields (REQ-SMF-024) are checked on that same
+		// body: an unresolved scope is 403, an empty required field 400, and
+		// either stops the forward before it is audited or made.
 		$scoped = (new ActionScopeResolver(reader: $this->reader))
 			->prepare(action: $action, subject: $subject, appId: $appId, body: $whitelisted);
-		if ($scoped === null) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$refused = (new RequiredFieldsGuard())->forwardRefusal(action: $action, scoped: $scoped, declaresFields: $whitelisted !== null);
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		// Recorded once the forward is AUTHORISED — regardless of the domain

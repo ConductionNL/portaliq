@@ -44,6 +44,7 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -132,6 +133,13 @@ class PortalRowActionController extends Controller implements PortalProtected {
 		$body = $this->forwardBody(match: $match, subject: $subject, rowId: $rowId);
 		if ($body === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		// The action's required fields (REQ-SMF-024): refused before the audit
+		// and the forward.
+		$missing = (new RequiredFieldsGuard())->refusal(action: $match['action'], body: $body['body']);
+		if ($missing !== null) {
+			return $missing;
 		}
 
 		// Recorded once the forward is authorised, whatever the leaf app then
