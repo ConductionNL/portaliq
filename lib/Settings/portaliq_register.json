@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.55.0"
+        "version": "0.56.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.55.0",
+                "version": "0.56.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1568,7 +1568,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -1707,9 +1707,11 @@
                                     "title": "Kind",
                                     "type": "string",
                                     "enum": [
-                                        "inbox"
+                                        "inbox",
+                                        "cases",
+                                        "timedTask"
                                     ],
-                                    "description": "Marks this collection as an INBOX collection (portal-inbox-v2). PortalInboxReader merges every `kind: inbox` collection across the subject's contributions into one sorted inbox, and ContributionController::markRead() refuses to write to a collection that is not one. Omit for an ordinary data collection.",
+                                    "description": "What the portal does with this collection: inbox for messages, cases for Mijn zaken, timedTask for a timed task. Leave empty for an ordinary collection.",
                                     "example": "inbox"
                                 },
                                 "rowActions": {
@@ -1752,6 +1754,114 @@
                                     "type": "boolean",
                                     "description": "Opt IN to the scoped file-download block (portal-document-download). Fail-closed on the same terms as filesUpload — a collection that has not declared it 404s with the identical body a missing file returns, so the flag is never an existence oracle. Default false.",
                                     "example": false
+                                },
+                                "fieldConfigs": {
+                                    "title": "Field settings",
+                                    "type": "object",
+                                    "description": "Per field: a label and the words for its values."
+                                },
+                                "closedField": {
+                                    "title": "Closed field",
+                                    "type": "string",
+                                    "description": "The field whose value marks a case as closed."
+                                },
+                                "statusLabelField": {
+                                    "title": "Status words field",
+                                    "type": "string",
+                                    "description": "The field with a case's status in words."
+                                },
+                                "groupByField": {
+                                    "title": "Group by field",
+                                    "type": "string",
+                                    "description": "Show the rows in groups, one per value of this field."
+                                },
+                                "caseTypeField": {
+                                    "title": "Case type field",
+                                    "type": "string",
+                                    "description": "The field with a case's type. Empty means caseType."
+                                },
+                                "caseTypeSource": {
+                                    "title": "Case type source",
+                                    "type": "object",
+                                    "description": "Where the case types live: register, schema and the field with their name."
+                                },
+                                "mandateField": {
+                                    "title": "Mandate field",
+                                    "type": "string",
+                                    "description": "The field a mandate reads this collection by."
+                                },
+                                "parentReachableTypes": {
+                                    "title": "Types reachable from a parent",
+                                    "type": "array",
+                                    "description": "Case types a parent organisation's mandate may reach.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "filter": {
+                                    "title": "Filter",
+                                    "type": "object",
+                                    "description": "A fixed filter applied before anything else."
+                                },
+                                "defaultFilters": {
+                                    "title": "Default filters",
+                                    "type": "object",
+                                    "description": "The filters the list opens with."
+                                },
+                                "rowAction": {
+                                    "title": "Row action",
+                                    "type": "string",
+                                    "description": "One action on a row."
+                                },
+                                "noticeField": {
+                                    "title": "Notice field",
+                                    "type": "string",
+                                    "description": "The field a change notice names the row by."
+                                },
+                                "timeline": {
+                                    "title": "Timeline",
+                                    "type": "object",
+                                    "description": "The label and the provider method that tells what happened to a record."
+                                },
+                                "documents": {
+                                    "title": "Documents",
+                                    "type": "object",
+                                    "description": "The label and the provider method that lists a case's documents."
+                                },
+                                "itemList": {
+                                    "title": "Item list",
+                                    "type": "object",
+                                    "description": "The label and the provider method that lists a record's items."
+                                },
+                                "messageBox": {
+                                    "title": "Message box",
+                                    "type": "object",
+                                    "description": "How an inbox collection is delivered to the message box."
+                                },
+                                "messageFields": {
+                                    "title": "Message fields",
+                                    "type": "object",
+                                    "description": "Which fields hold a message's subject, text and date."
+                                },
+                                "timedTask": {
+                                    "title": "Timed task",
+                                    "type": "object",
+                                    "description": "The actions of a timed task."
+                                },
+                                "steps": {
+                                    "title": "Steps",
+                                    "type": "object",
+                                    "description": "On a cases collection: the label and the provider method that tells where a case stands."
+                                },
+                                "dueField": {
+                                    "title": "Answer date field",
+                                    "type": "string",
+                                    "description": "On a cases collection: the field with the date the organisation answers by."
+                                },
+                                "turnField": {
+                                    "title": "Turn field",
+                                    "type": "string",
+                                    "description": "On a cases collection: the field whose value words say whose turn it is."
                                 }
                             }
                         }
@@ -1927,7 +2037,7 @@
                                 "blocks": {
                                     "title": "Blocks",
                                     "type": "array",
-                                    "description": "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta|citizenCase (PortalBlockResolver::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
+                                    "description": "The blocks of the page, in order. A block of an unknown type is left out.",
                                     "items": {
                                         "type": "object",
                                         "required": [
@@ -1937,20 +2047,29 @@
                                             "type": {
                                                 "title": "Block type",
                                                 "type": "string",
-                                                "description": "The block's kind — which of the below reference fields applies, and how the SPA renders it (PortalManifestNormaliser::BLOCK_TYPES).",
+                                                "description": "What kind of block this is.",
                                                 "enum": [
                                                     "collection",
                                                     "action",
                                                     "detail",
                                                     "richText",
                                                     "cta",
-                                                    "citizenCase"
+                                                    "citizenCase",
+                                                    "kpi",
+                                                    "calendar",
+                                                    "news",
+                                                    "tasks",
+                                                    "inbox",
+                                                    "cases",
+                                                    "steps",
+                                                    "documents",
+                                                    "timeline"
                                                 ]
                                             },
                                             "collection": {
                                                 "title": "Collection reference",
                                                 "type": "string",
-                                                "description": "References collections[].id (for type=collection/detail)."
+                                                "description": "The collection the block reads."
                                             },
                                             "action": {
                                                 "title": "Action reference",
@@ -1961,9 +2080,125 @@
                                                 "title": "Markdown",
                                                 "type": "string",
                                                 "description": "For type=richText."
+                                            },
+                                            "label": {
+                                                "title": "Label",
+                                                "type": "string",
+                                                "description": "The block's heading."
+                                            },
+                                            "limit": {
+                                                "title": "Limit",
+                                                "type": "integer",
+                                                "description": "How many rows the block shows."
+                                            },
+                                            "sort": {
+                                                "title": "Sort",
+                                                "type": "object",
+                                                "description": "The field the rows are sorted by, rising or falling."
+                                            },
+                                            "range": {
+                                                "title": "Range",
+                                                "type": "string",
+                                                "description": "On a calendar: only today, this week or this month.",
+                                                "enum": [
+                                                    "day",
+                                                    "week",
+                                                    "month"
+                                                ]
+                                            },
+                                            "open": {
+                                                "title": "Running only",
+                                                "type": "boolean",
+                                                "description": "On a cases block: show running cases only."
+                                            },
+                                            "dueField": {
+                                                "title": "Deadline field",
+                                                "type": "string",
+                                                "description": "On a tasks block: the field with each row's deadline."
+                                            },
+                                            "titleFields": {
+                                                "title": "Title fields",
+                                                "type": "array",
+                                                "description": "The fields that name a row.",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "cards": {
+                                                "title": "Cards",
+                                                "type": "array",
+                                                "description": "On a figure block: the fields shown as cards."
+                                            },
+                                            "pick": {
+                                                "title": "Pick",
+                                                "type": "object",
+                                                "description": "On a figure block: which row the cards read."
+                                            },
+                                            "caption": {
+                                                "title": "Caption",
+                                                "type": "object",
+                                                "description": "On a figure block: a caption from one field."
+                                            },
+                                            "sources": {
+                                                "title": "Sources",
+                                                "type": "array",
+                                                "description": "On a calendar: the collections and date fields it shows."
+                                            },
+                                            "recordField": {
+                                                "title": "Record field",
+                                                "type": "string",
+                                                "description": "On a record page: the field that narrows the rows to the open record."
+                                            },
+                                            "recordKey": {
+                                                "title": "Record key",
+                                                "type": "string",
+                                                "description": "The open record's field the record field is compared with."
+                                            },
+                                            "recordGroupsField": {
+                                                "title": "Record groups field",
+                                                "type": "string",
+                                                "description": "Narrow the rows to the open record's groups."
+                                            },
+                                            "lookups": {
+                                                "title": "Lookups",
+                                                "type": "array",
+                                                "description": "Values added to each row from another collection."
                                             }
                                         }
                                     }
+                                },
+                                "group": {
+                                    "title": "Menu group",
+                                    "type": "string",
+                                    "description": "The menu heading the page sits under."
+                                },
+                                "menu": {
+                                    "title": "In the menu",
+                                    "type": "boolean",
+                                    "description": "Off: the page keeps its address but leaves the menu."
+                                },
+                                "home": {
+                                    "title": "Home",
+                                    "type": "boolean",
+                                    "description": "On: the page is part of the resident's home."
+                                },
+                                "record": {
+                                    "title": "Record page",
+                                    "type": "object",
+                                    "description": "The collection this page shows one record of."
+                                },
+                                "records": {
+                                    "title": "Record switcher",
+                                    "type": [
+                                        "object",
+                                        "string"
+                                    ],
+                                    "description": "The collection whose records this page switches between."
+                                },
+                                "perRecord": {
+                                    "title": "Per record",
+                                    "type": "string",
+                                    "description": "The menu lists the page once for each record of this collection."
                                 }
                             }
                         }

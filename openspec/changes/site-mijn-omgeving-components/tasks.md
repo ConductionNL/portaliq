@@ -40,15 +40,18 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
 - [x] **T9**: `PortalPageResolver` keeps `group` (after #1097), `menu: false`, `perRecord`, `records`, `home`; `perRecord` dropped off its record collection.
   - [x] server side, built early in `feat/site-design-wave-1`: `PageMenuKeys`, PHPUnit `PageMenuKeysTest::testMenuFalseKeepsTheRoute`, `::testOnlyFalseAndTrueAreKept`, `::testABareRecordsIdIsReadAsACollection`, `::testPerRecordNeedsItsRecordCollection`. `group` stays #1097's. `records.subtitleLookup` (REQ-SMO-026) is not in it yet.
   - [x] the site honouring the keys (menu, switcher, home), built in wave 5: `residentMenuGroups` leaves out `menu: false` and lists `perRecord` pages per row (`loadPerRecordRows`), `navEntryForRoute`/`recordIdOfRoute` read `/mijn/<app>/<page>/<id>`, `MijnHome` at `/mijn`, `RecordSwitcher` on a `records` page; node `check:mijn-home`
-- [ ] **T10**: `limit` and `sort` on `collection`, `range` on `calendar`.
+- [x] **T10**: `limit` and `sort` on `collection`, `range` on `calendar`.
   - PHPUnit on the normalisers; `check:record-page`, `check:collection-table` extended
+  - Built: `CollectionListKeys` (PHPUnit `PortalBlockResolverTest::testACollectionBlockKeepsItsLimitAndSort`, `::testACalendarBlockKeepsItsRange`); on the site `src/shared/listWindow.js` and ContributionPage ("Bekijk alle ..."), node `check:mijn-lists`.
 - [x] **T11**: resident menu icons, groups, `menu: false`, `perRecord` entries; Den Haag side navigation look.
   - `check:site-resident-menu`, `check:site-navigation` extended
 - [ ] **T12**: `RecordSwitcher.vue`, `ActingForBar.vue`, `QuickTiles.vue`, `FigureTiles.vue`; `/mijn` home (design D4) in `accountArea.js`.
   - e2e: the guardian switches child; Linda's bar on a phone width; a portal with nothing to do
-  - Partly built in wave 5: `RecordSwitcher.vue` and the `/mijn` home (`MijnHome.vue`, `home.js`; `accountRedirect` no longer redirects `/mijn`). Still open: `ActingForBar.vue`, `QuickTiles.vue`, `FigureTiles.vue`, and the e2e for the switch and Linda's bar.
+  - Partly built in wave 5: `RecordSwitcher.vue` and the `/mijn` home (`MijnHome.vue`, `home.js`; `accountRedirect` no longer redirects `/mijn`). `ActingForBar.vue` and the e2e for the switch and Linda's bar (`tests/e2e/site-mijn-switching.spec.ts`) built in the next round. Still open: `QuickTiles.vue` (goes with wave 6's `cta` page and route) and `FigureTiles.vue` (open #1125 changes `KpiCards.vue`).
   - T11 built in wave 5: page icons (MDI names, `src/site/lib/menuIcons.js`, loaded on demand) and the Den Haag side navigation classes and CSS (`@gemeente-denhaag/sidenav` 2.0.0, on demand). Groups were #1097's.
   - Wave 5 also: case cards use Den Haag's default card in a grid (live finding on wave 3: the `--list` appearance and a local reset made them flat rows); e2e `tests/e2e/site-mijn-omgeving-live.spec.ts` seeds and removes its own contribution.
+
+- Register: portalPage 0.4.0 (register 0.56.0) declares every key the resolvers accept, so a contribution authored as a record can use them; the e2e seeds live in `tests/e2e/fixtures/mijn-omgeving-pages.json` and `PortalPageSchemaTest` validates them.
 
 ## Wave 6: what the app lanes found after alignment (REQ-SMO-010, REQ-SMO-024 to REQ-SMO-028, `range: day`)
 
