@@ -171,7 +171,12 @@ test('the detail card leaves out a declared field without a value', async () => 
 			receivedOutsideWorkingHours: { label: 'Ontvangen buiten kantoortijd' },
 		},
 		detail: {
-			fields: ['identifier', 'assignedGroupPublicName', 'endDate', 'receivedOutsideWorkingHours'],
+			fields: [
+				'identifier',
+				'assignedGroupPublicName',
+				'endDate',
+				'receivedOutsideWorkingHours',
+			],
 		},
 	}
 	const html = await renderSfc('src/site/components/collections/DetailCard.vue', {

@@ -180,6 +180,10 @@ export default {
 
 		fields() {
 			const row = this.detailRow || {}
+			// A fact without a value says nothing, declared or not: a case
+			// with no public team read "Behandeld door" over an empty line.
+			// `false` reads "No" and 0 reads "0", so only a value that is
+			// really absent is left out.
 			return detailFields(this.collection, row)
 				.map((field) => ({
 					...field,
@@ -189,10 +193,6 @@ export default {
 						valueLabels: field.valueLabels,
 					}),
 				}))
-				// A fact without a value says nothing, declared or not: a
-				// case with no public team read "Behandeld door" over an
-				// empty line. `false` reads "No" and 0 reads "0", so only a
-				// value that is really absent is left out.
 				.filter((field) => field.text !== '')
 		},
 
