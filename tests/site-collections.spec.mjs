@@ -311,7 +311,10 @@ test('a case screen under a detail card on its collection waits quietly for a ca
 		join(ROOT, 'src', 'site', 'components', 'e', 'CitizenCase.vue'),
 		'utf8',
 	)
-	assert.match(screen, /<p v-if="!quietWhenEmpty" class="utrecht-paragraph pq-empty">/)
+	assert.match(
+		screen,
+		/<p v-if="!quietWhenEmpty" class="utrecht-paragraph pq-empty">/,
+	)
 })
 
 test('only update and endpoint row actions reach the row buttons, never propose-change', () => {
@@ -463,8 +466,16 @@ test("the page renders learniq's parent collections with labels, as a guardian r
 		html,
 		/<h2[^>]*class="utrecht-heading-3">My child&#39;s report cards<\/h2>/,
 	)
-	assert.match(html, /<dt class="pq-detail__label">First name<\/dt>/)
-	assert.match(html, /<dd class="pq-detail__value">Vera<\/dd>/)
+	// The detail card's fields are a description list
+	// (site-mijn-omgeving-components REQ-SMO-005).
+	assert.match(
+		html,
+		/<dt class="utrecht-data-list__item-key pq-description-list__key">First name<\/dt>/,
+	)
+	assert.match(
+		html,
+		/<dd class="utrecht-data-list__item-value pq-description-list__value">Vera<\/dd>/,
+	)
 	assert.match(html, /<h3 class="utrecht-heading-3">Your children<\/h3>/)
 	assert.match(
 		html,

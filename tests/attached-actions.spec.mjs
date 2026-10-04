@@ -170,7 +170,9 @@ test('the site shows one button per attached action and forwards with actionApp'
 				(n) => n.tag === 'label' && n.props.for === question.props.id,
 			)[0],
 		),
-		'Uw vraag',
+		// An endpoint action has no schema, so no field is required and each
+		// reads "(niet verplicht)", here the untranslated source (REQ-SMF-023).
+		'Uw vraag (optional)',
 	)
 	await block.fire(question, 'input', { value: ' Wanneer? ' })
 	await block.fire(block.findAll((n) => n.tag === 'form')[0], 'submit')

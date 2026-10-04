@@ -6,7 +6,7 @@
 // JavaScript that writes into a store the page hands it (a Vue `reactive`
 // object on the site, a plain object in tests/site-collections.spec.mjs).
 //
-// Each entry of the store is `{loading, objects}`, keyed by collection id. A
+// Each entry of the store is `{loading, failed, objects}`, keyed by collection id. A
 // load that finishes after a newer one for the same collection is dropped, so
 // a slow first read cannot overwrite the row a create just added.
 //
@@ -16,7 +16,7 @@ import { rowFor } from '../../../shared/openRecord.js'
 
 /**
  * The ids of the collections a page's blocks read: every `collection`,
- * `detail` and `kpi` block, every calendar source, and a record page's
+ * `detail`, `kpi`, `tasks` and `cases` block, every calendar source, and a record page's
  * record collection.
  *
  * @param {object} page The contribution page.
@@ -31,8 +31,14 @@ export function collectionIdsFor(page) {
 	}
 	// A record page reads its record collection first (contribution-record-page).
 	add(page?.record?.collection)
+	// A switching page reads its records and the collection its subtitle
+	// comes from (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-026).
+	add(page?.records?.collection)
+	add(page?.records?.subtitleLookup?.collection)
 	for (const block of page?.blocks || []) {
-		if (['collection', 'detail', 'kpi'].includes(block?.type)) {
+		if (
+			['collection', 'detail', 'kpi', 'tasks', 'cases'].includes(block?.type)
+		) {
 			add(block.collection)
 		}
 		for (const lookup of block?.lookups || []) {
@@ -77,17 +83,25 @@ export function createCollectionLoader({ api, store }) {
 		generation.set(collection.id, turn)
 		store[collection.id] = {
 			loading: true,
+			failed: false,
 			objects: store[collection.id]?.objects || [],
 		}
-		let objects
+		// A read that failed is not an empty list: it is marked `failed`, so
+		// a block can say so and offer to try again
+		// (site-mijn-omgeving-components REQ-SMO-009).
+		let answer
 		try {
-			const answer = await api.fetchCollection(collection)
-			objects = Array.isArray(answer) ? answer : []
+			answer = await api.fetchCollection(collection, { orNull: true })
 		} catch {
-			objects = []
+			answer = null
 		}
+		const failed = !Array.isArray(answer)
 		if (generation.get(collection.id) === turn) {
-			store[collection.id] = { loading: false, objects }
+			store[collection.id] = {
+				loading: false,
+				failed,
+				objects: failed ? [] : answer,
+			}
 		}
 	}
 

@@ -96,22 +96,16 @@
 				<h5 class="utrecht-heading-5">
 					{{ group.heading }}
 				</h5>
-				<ul class="utrecht-unordered-list">
-					<li
+				<!-- Each document a Den Haag file item (site-mijn-omgeving-components
+				     REQ-SMO-005): its name, then who added it, when, type and size. -->
+				<ul class="pq-case-documents__list">
+					<FileItem
 						v-for="entry in group.entries"
 						:key="entry.id"
-						class="utrecht-unordered-list__item"
-						data-testid="case-document">
-						<button
-							type="button"
-							class="utrecht-button utrecht-button--subtle pq-case-document"
-							@click="onOpenDocument(entry)">
-							{{ entry.title }}
-						</button>
-						<span v-if="entry.date" class="pq-case-document-date">{{
-							dateOf(entry.date)
-						}}</span>
-					</li>
+						data-testid="case-document"
+						:name="entry.title || entry.id"
+						:line="fileLineOf(entry)"
+						@open="onOpenDocument(entry)" />
 				</ul>
 			</div>
 			<div v-if="documentsOpen" class="utrecht-form-field">
@@ -188,6 +182,7 @@
 
 <script>
 import WithdrawCaseConfirm from '../../modals/e/WithdrawCaseConfirm.vue'
+import FileItem from '../mijn/FileItem.vue'
 import CaseField from './CaseField.vue'
 import { groupDocuments } from '../../../shared/caseDocuments.js'
 import {
@@ -196,11 +191,13 @@ import {
 	withdrawalView,
 } from '../../../shared/withdrawal.js'
 import { readerLocale, shortDate } from '../../pages/e/format.js'
+import { fileLine } from '../mijn/documents.js'
+import { mijnTranslator } from '../mijn/rows.js'
 
 export default {
 	name: 'CitizenCase',
 
-	components: { CaseField, WithdrawCaseConfirm },
+	components: { CaseField, FileItem, WithdrawCaseConfirm },
 
 	props: {
 		/** The manifest collection the case lives in (`{id, register, schema, ...}`). */
@@ -331,6 +328,22 @@ export default {
 			this.data = data
 			this.loading = false
 			this.draft = {}
+		},
+
+		/**
+		 * The line under a document's name: who added it, when, its type and size.
+		 *
+		 * @param {object} entry The listed document.
+		 * @return {string} The line.
+		 *
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 */
+		fileLineOf(entry) {
+			return fileLine(
+				entry,
+				mijnTranslator(this.t, readerLocale(this.locale)),
+				readerLocale(this.locale),
+			)
 		},
 
 		/**

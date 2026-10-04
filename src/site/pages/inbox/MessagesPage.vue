@@ -12,7 +12,18 @@
 -->
 <template>
 	<section class="pq-messages">
-		<BusyStatus v-if="threads === null" :t="tr" />
+		<Skeleton
+			v-if="threads === null && !failed"
+			:label="mt('Loading')"
+			:rows="2" />
+		<!-- A read that failed says so and offers to try again; it never
+		     reads as "no conversations" (site-mijn-omgeving-components
+		     REQ-SMO-009). -->
+		<LoadError
+			v-else-if="failed"
+			:text="mt('Your conversations could not be loaded.')"
+			:retryLabel="mt('Try again')"
+			@retry="load" />
 		<template v-else>
 			<MessageLanguagePicker
 				id="portaliq-message-language"
@@ -28,35 +39,36 @@
 				:locale="lang"
 				@change="changeLanguage" />
 
-			<p v-if="threads.length === 0" class="utrecht-paragraph pq-empty">
-				<em>{{ tr('No conversations yet.') }}</em>
-			</p>
+			<EmptyState
+				v-if="threads.length === 0"
+				:text="tr('No conversations yet.')" />
 
 			<nav
 				v-else
 				class="pq-messages__threads"
 				:aria-label="tr('Conversations')">
+				<!-- Each conversation a Den Haag action row that opens it on
+				     this page (site-mijn-omgeving-components REQ-SMO-004). -->
 				<ul>
-					<li v-for="thread in threads" :key="idOf(thread)">
-						<button
-							type="button"
-							class="utrecht-button utrecht-button--subtle"
-							:aria-current="
-								idOf(thread) === activeId ? 'true' : undefined
-							"
-							@click="choose(idOf(thread))">
-							{{
-								thread.kind === 'group'
-									? tr('Group conversation')
-									: tr('Conversation with school')
-							}}
-							· {{ dateTime(thread.createdAt) }}
-						</button>
-					</li>
+					<ActionRow
+						v-for="thread in threads"
+						:key="idOf(thread)"
+						:title="
+							thread.kind === 'group'
+								? tr('Group conversation')
+								: tr('Conversation with school')
+						"
+						:meta="dateTime(thread.createdAt)"
+						:button="true"
+						:current="idOf(thread) === activeId"
+						@open="choose(idOf(thread))" />
 				</ul>
 			</nav>
 
-			<BusyStatus v-if="activeId && messages === null" :t="tr" />
+			<Skeleton
+				v-if="activeId && messages === null"
+				:label="mt('Loading')"
+				:rows="2" />
 
 			<ol v-if="messages" class="pq-messages__list">
 				<li
@@ -85,9 +97,13 @@
 </template>
 
 <script>
-import BusyStatus from '../../components/inbox/BusyStatus.vue'
 import MessageLanguagePicker from '../../components/inbox/MessageLanguagePicker.vue'
 import TranslatedText from '../../components/inbox/TranslatedText.vue'
+import ActionRow from '../../components/mijn/ActionRow.vue'
+import EmptyState from '../../components/mijn/EmptyState.vue'
+import LoadError from '../../components/mijn/LoadError.vue'
+import Skeleton from '../../components/mijn/Skeleton.vue'
+import { mijnTranslator } from '../../components/mijn/rows.js'
 import { formatDateTime, rowId } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
@@ -98,7 +114,14 @@ import { pageLocale, withStrings } from './translate.js'
 export default {
 	name: 'MessagesPage',
 
-	components: { BusyStatus, MessageLanguagePicker, TranslatedText },
+	components: {
+		ActionRow,
+		EmptyState,
+		LoadError,
+		MessageLanguagePicker,
+		Skeleton,
+		TranslatedText,
+	},
 
 	props: PAGE_PROPS,
 
@@ -107,6 +130,7 @@ export default {
 	data() {
 		return {
 			threads: null,
+			failed: false,
 			activeId: null,
 			messages: null,
 			language: '',
@@ -130,6 +154,14 @@ export default {
 		tr() {
 			return withStrings(this.t, this.lang)
 		},
+
+		/**
+		 * @return {(key: string, vars?: object) => string} The translator of the mijn omgeving components.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 */
+		mt() {
+			return mijnTranslator(this.t, this.lang)
+		},
 	},
 
 	created() {
@@ -144,11 +176,23 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		async load() {
-			const [list, details] = await Promise.all([
-				this.api.fetchThreads(),
-				this.api.getDetails(),
-			])
-			this.threads = Array.isArray(list) ? list : []
+			this.failed = false
+			this.threads = null
+			let list
+			let details = null
+			try {
+				;[list, details] = await Promise.all([
+					this.api.fetchThreads({ orNull: true }),
+					this.api.getDetails(),
+				])
+			} catch {
+				list = null
+			}
+			if (!Array.isArray(list)) {
+				this.failed = true
+				return
+			}
+			this.threads = list
 			this.language = details?.messageLanguage || ''
 			if (this.threads.length > 0) {
 				await this.choose(rowId(this.threads[0]))
@@ -231,7 +275,7 @@ export default {
 	list-style: none;
 }
 
-.pq-messages__threads [aria-current='true'] {
+.pq-messages__threads :deep([aria-current='true']) .pq-action-row__title {
 	font-weight: bold;
 	text-decoration: underline;
 }

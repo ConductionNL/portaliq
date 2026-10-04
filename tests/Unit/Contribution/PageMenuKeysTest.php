@@ -84,6 +84,29 @@ class PageMenuKeysTest extends TestCase {
 		$this->assertArrayNotHasKey('records', $pages[2]);
 	}
 
+	/**
+	 * A switcher takes its subtitle from one related record: the lookup
+	 * names a collection of the contribution and two fields; anything else
+	 * is dropped and the switcher stays (site-mijn-omgeving-components
+	 * REQ-SMO-026).
+	 *
+	 * @return void
+	 */
+	public function testASubtitleLookupNamesACollectionAndTwoFields(): void {
+		$lookup = ['collection' => 'parentChildren', 'matchField' => 'learnerRef', 'valueField' => 'cohortName'];
+		$pages = $this->pages(
+			[
+				$this->page(['id' => 'kept', 'records' => ['collection' => 'parentChildren', 'subtitleLookup' => $lookup + ['extra' => 1]]]),
+				$this->page(['id' => 'foreign', 'records' => ['collection' => 'parentChildren', 'subtitleLookup' => ['collection' => 'elsewhere'] + $lookup]]),
+				$this->page(['id' => 'half', 'records' => ['collection' => 'parentChildren', 'subtitleLookup' => ['valueField' => ''] + $lookup]]),
+			]
+		);
+
+		$this->assertSame(['collection' => 'parentChildren', 'subtitleLookup' => $lookup], $pages[0]['records']);
+		$this->assertSame(['collection' => 'parentChildren'], $pages[1]['records']);
+		$this->assertSame(['collection' => 'parentChildren'], $pages[2]['records']);
+	}
+
 	public function testPerRecordNeedsItsRecordCollection(): void {
 		$pages = $this->pages(
 			[

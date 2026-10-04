@@ -101,27 +101,60 @@ export function forgetOpenTarget(storage) {
 }
 
 /**
- * The nav key of the page that shows this app's collection, or null.
+ * The nav key of the page that shows this app's collection, or null: a page
+ * with a list or detail block on it first, else its record page.
  *
  * @param {Array<object>} nav The shell's nav entries.
  * @param {{app: string, collection: string}} target The target.
  * @return {string|null}
  */
 export function navKeyFor(nav, target) {
-	for (const entry of nav || []) {
-		if (!entry.page || entry.contribution?.app !== target?.app) {
-			continue
-		}
-		const shows = (entry.page.blocks || []).some(
+	const entries = (nav || []).filter(
+		(entry) => entry.page && entry.contribution?.app === target?.app,
+	)
+	// A page with a list or detail block on the collection keeps precedence.
+	const list = entries.find((entry) =>
+		(entry.page.blocks || []).some(
 			(block) =>
 				block.collection === target.collection
 				&& ['collection', 'citizenCase', 'detail'].includes(block.type),
-		)
-		if (shows) {
-			return entry.key
-		}
+		),
+	)
+	if (list) {
+		return list.key
 	}
-	return null
+	// Else the record page of that collection (site-mijn-omgeving-components
+	// REQ-SMO-010).
+	const record = entries.find(
+		(entry) =>
+			(entry.page.record || entry.page.records)?.collection
+			=== target.collection,
+	)
+	return record ? record.key : null
+}
+
+/**
+ * Whether a nav entry shows a collection only as its record page, so a link
+ * to one record opens on that record's route (`<page route>/<id>`).
+ *
+ * @param {object} entry The nav entry.
+ * @param {string} collection The collection id.
+ * @return {boolean}
+ * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-opening-a-record-must-land-on-its-record-page-with-that-record-chosen-req-smo-010
+ */
+export function opensAsRecordPage(entry, collection) {
+	if (!entry?.page) {
+		return false
+	}
+	const listed = (entry.page.blocks || []).some(
+		(block) =>
+			block.collection === collection
+			&& ['collection', 'citizenCase', 'detail'].includes(block.type),
+	)
+	return (
+		!listed
+		&& (entry.page.record || entry.page.records)?.collection === collection
+	)
 }
 
 /**

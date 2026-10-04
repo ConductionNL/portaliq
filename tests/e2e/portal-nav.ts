@@ -37,7 +37,7 @@
  * already use. It travels with the fixture, so it is identical in CI.
  */
 
-import type { Locator, Page } from '@playwright/test'
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect } from '@playwright/test'
 
@@ -47,8 +47,9 @@ export const SITE_PATH = '/apps/portaliq/site'
 /**
  * The portal the specs serve the site as: `open-tilburg`, seeded by
  * tests/e2e/fixtures/seed-cms.sh (organisation `dev-org`, domain `localhost`).
+ * PORTALIQ_E2E_PORTAL serves another, e.g. `wilgenboom` on a demo instance.
  */
-export const SITE_PORTAL = 'open-tilburg'
+export const SITE_PORTAL = process.env.PORTALIQ_E2E_PORTAL || 'open-tilburg'
 
 /** The portal auth edge; these API routes stay where they were. */
 export const PORTAL_API = '/apps/portaliq/portal/api'
@@ -74,6 +75,59 @@ export function siteAddress(route: string = ACCOUNT_ROUTE): string {
 		params.set('route', route)
 	}
 	return `${SITE_PATH}?${params.toString()}`
+}
+
+/**
+ * Mint a dev session and say what happened when it does not work.
+ *
+ * A bare `expect(login.ok(), 'dev-login must be enabled')` sent the last
+ * reader after the wrong thing: the real answer was HTTP 429, because
+ * Nextcloud's brute-force protection had blocked the address after a run's
+ * repeated logins, and dev-login WAS enabled. So the message carries the
+ * status and the body, and a 429 is waited out twice before it is reported,
+ * since the throttle lifts on its own.
+ *
+ * @param request the request fixture
+ * @param subjectRef the subject to mint for
+ * @param audience the audience to mint for
+ * @param organisation the tenant
+ * @return the bearer
+ */
+export async function devLogin(
+	request: APIRequestContext,
+	subjectRef: string,
+	audience: string,
+	organisation: string,
+): Promise<string> {
+	const waits = [0, 3000, 9000]
+	let last = { status: 0, body: '' }
+	for (const wait of waits) {
+		if (wait > 0) {
+			await new Promise((resolve) => setTimeout(resolve, wait))
+		}
+		const login = await request.post(`${PORTAL_API}/session/dev-login`, {
+			data: { subjectRef, audience, organisation },
+		})
+		if (login.ok()) {
+			const { token } = await login.json()
+			expect(token, 'dev-login answered without a token').toBeTruthy()
+			return token as string
+		}
+		last = { status: login.status(), body: (await login.text()).slice(0, 300) }
+		if (last.status !== 429) {
+			break
+		}
+	}
+
+	const hints: Record<number, string> = {
+		404: 'dev-login is disabled: set debug mode, or `occ config:app:set portaliq dev_login_enabled --value=yes`',
+		429: "Nextcloud's brute-force protection blocked this address: clear `oc_bruteforce_attempts` and run fewer sign-ins",
+		503: 'the auth edge has no jwt_signing_secret configured',
+	}
+	throw new Error(
+		`dev-login answered ${last.status} for ${subjectRef}: ${last.body}`
+			+ ` — ${hints[last.status] || 'see tests/e2e/ci-seed.sh'}`,
+	)
 }
 
 /**

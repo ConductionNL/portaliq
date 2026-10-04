@@ -387,7 +387,22 @@ test('the messages page opens the first thread and reloads it in the picked lang
 		html,
 		/<nav class="pq-messages__threads" aria-label="Conversations">/,
 	)
-	assert.match(html, /aria-current="true">Group conversation/)
+	// Each conversation is a Den Haag action row that opens it on this page
+	// (site-mijn-omgeving-components REQ-SMO-004).
+	assert.match(
+		html,
+		/<button class="denhaag-action denhaag-action--single pq-action-row__control" type="button" aria-current="true"><span class="denhaag-action__row"><span class="denhaag-action__content"><span class="pq-action-row__title">Group conversation<\/span>/,
+	)
+
+	const none = await renderComponent(inState(MessagesPage, { threads: [] }), {
+		api,
+		t,
+		locale: 'nl',
+	})
+	assert.match(
+		none,
+		/data-testid="mijn-empty-state"><p class="utrecht-paragraph pq-empty-state__text">Nog geen gesprekken\.<\/p>/,
+	)
 	assert.match(html, /<strong class="pq-message__sender">You<\/strong>/)
 	assert.match(html, /<strong class="pq-message__sender">School<\/strong>/)
 })

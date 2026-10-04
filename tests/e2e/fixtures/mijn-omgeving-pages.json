@@ -1,0 +1,291 @@
+{
+	"_comment": "The portalPage records the mijn omgeving e2e specs seed. {stamp} and {audience} are filled in by tests/e2e/mijn-fixtures.ts; tests/Unit/Settings/PortalPageSchemaTest.php validates every one against the real portalPage schema and runs it through PortalManifestNormaliser, so a key the schema or the normaliser would drop fails there, not on a demo instance.",
+	"case-cards": {
+		"label": "Overzicht {stamp}",
+		"audience": "{audience}",
+		"status": "active",
+		"collections": [
+			{
+				"id": "zaken-{stamp}",
+				"kind": "cases",
+				"label": "Zaken",
+				"register": "portaliq",
+				"schema": "portalCase",
+				"scopeField": "subjectRef",
+				"closedField": "withdrawnAt"
+			}
+		],
+		"pages": [
+			{
+				"id": "overzicht-{stamp}",
+				"label": "Overzicht {stamp}",
+				"blocks": [
+					{
+						"type": "cases",
+						"collection": "zaken-{stamp}",
+						"open": true,
+						"label": "Lopende zaken"
+					}
+				]
+			}
+		]
+	},
+	"action-rows": {
+		"label": "Overzicht {stamp}",
+		"audience": "{audience}",
+		"status": "active",
+		"collections": [],
+		"pages": [
+			{
+				"id": "overzicht-{stamp}",
+				"label": "Overzicht {stamp}",
+				"blocks": [
+					{
+						"type": "richText",
+						"markdown": "Welkom"
+					},
+					{
+						"type": "inbox",
+						"label": "Nieuwe berichten",
+						"limit": 3
+					}
+				]
+			}
+		]
+	},
+	"description-list": {
+		"label": "Vergunningen {stamp}",
+		"audience": "{audience}",
+		"status": "active",
+		"collections": [
+			{
+				"id": "vergunningen-{stamp}",
+				"kind": "cases",
+				"label": "Vergunningen",
+				"register": "portaliq",
+				"schema": "portalCase",
+				"scopeField": "subjectRef"
+			}
+		],
+		"pages": [
+			{
+				"id": "vergunningen-{stamp}",
+				"label": "Vergunningen {stamp}",
+				"blocks": [
+					{
+						"type": "collection",
+						"collection": "vergunningen-{stamp}"
+					},
+					{
+						"type": "detail",
+						"collection": "vergunningen-{stamp}"
+					}
+				]
+			}
+		]
+	},
+	"omgeving-live": {
+		"label": "Mijn omgeving {stamp}",
+		"audience": "{audience}",
+		"status": "active",
+		"collections": [
+			{
+				"id": "zaken-{stamp}",
+				"kind": "cases",
+				"label": "Zaken",
+				"register": "portaliq",
+				"schema": "portalCase",
+				"scopeField": "subjectRef",
+				"fields": [
+					"reference",
+					"status",
+					"toelichting",
+					"withdrawnAt"
+				],
+				"dueField": "withdrawnAt",
+				"turnField": "toelichting",
+				"fieldConfigs": {
+					"toelichting": {
+						"valueLabels": {
+							"resident": "U bent aan zet",
+							"organisation": "De gemeente is aan zet"
+						}
+					}
+				}
+			},
+			{
+				"id": "vragen-{stamp}",
+				"label": "Vragen aan u",
+				"register": "portaliq",
+				"schema": "portalMessage",
+				"scopeField": "subjectRef",
+				"fields": [
+					"subject",
+					"term"
+				]
+			},
+			{
+				"id": "berichten-{stamp}",
+				"kind": "inbox",
+				"label": "Berichten",
+				"register": "portaliq",
+				"schema": "portalMessage",
+				"scopeField": "subjectRef"
+			}
+		],
+		"pages": [
+			{
+				"id": "overzicht-{stamp}",
+				"label": "Overzicht {stamp}",
+				"icon": "HomeOutline",
+				"home": true,
+				"blocks": [
+					{
+						"type": "tasks",
+						"collection": "vragen-{stamp}",
+						"dueField": "term",
+						"titleFields": [
+							"subject"
+						],
+						"label": "Dit moet u nog doen"
+					},
+					{
+						"type": "cases",
+						"collection": "zaken-{stamp}",
+						"open": true,
+						"label": "Lopende zaken"
+					},
+					{
+						"type": "inbox",
+						"collection": "berichten-{stamp}",
+						"label": "Nieuwe berichten"
+					}
+				]
+			},
+			{
+				"id": "archief-{stamp}",
+				"label": "Archief {stamp}",
+				"menu": false,
+				"blocks": [
+					{
+						"type": "collection",
+						"collection": "zaken-{stamp}"
+					}
+				]
+			}
+		]
+	},
+	"switching": {
+		"label": "Kinderen {stamp}",
+		"audience": "{audience}",
+		"status": "active",
+		"collections": [
+			{
+				"id": "kind-{stamp}",
+				"kind": "cases",
+				"label": "Kinderen",
+				"register": "portaliq",
+				"schema": "portalCase",
+				"scopeField": "subjectRef"
+			}
+		],
+		"pages": [
+			{
+				"id": "kinderen-{stamp}",
+				"label": "Kinderen {stamp}",
+				"records": {
+					"collection": "kind-{stamp}",
+					"titleFields": [
+						"reference"
+					]
+				},
+				"blocks": [
+					{
+						"type": "detail",
+						"collection": "kind-{stamp}"
+					}
+				]
+			}
+		]
+	},
+	"wave-6": {
+		"label": "Gezin {stamp}",
+		"audience": "{audience}",
+		"status": "active",
+		"collections": [
+			{
+				"id": "kind-{stamp}",
+				"kind": "cases",
+				"label": "Kinderen",
+				"register": "portaliq",
+				"schema": "portalCase",
+				"scopeField": "subjectRef"
+			},
+			{
+				"id": "groep-{stamp}",
+				"label": "Groepen",
+				"register": "portaliq",
+				"schema": "portalMessage",
+				"scopeField": "subjectRef"
+			}
+		],
+		"pages": [
+			{
+				"id": "gezin-{stamp}",
+				"label": "Gezin {stamp}",
+				"records": {
+					"collection": "kind-{stamp}",
+					"titleFields": [
+						"reference"
+					],
+					"subtitleLookup": {
+						"collection": "groep-{stamp}",
+						"matchField": "referenceId",
+						"valueField": "subject"
+					}
+				},
+				"blocks": [
+					{
+						"type": "richText",
+						"template": "Dit is het overzicht van {reference}. Einddatum {withdrawnAt}.",
+						"whenEmpty": {
+							"withdrawnAt": "Er is geen einddatum."
+						}
+					},
+					{
+						"type": "cta",
+						"page": "kind-detail-{stamp}",
+						"label": "{title} bekijken",
+						"withRecord": true
+					},
+					{
+						"type": "cta",
+						"route": "/mijn/inbox",
+						"label": "Berichten"
+					},
+					{
+						"type": "detail",
+						"collection": "kind-{stamp}"
+					}
+				]
+			},
+			{
+				"id": "kind-detail-{stamp}",
+				"label": "Kind {stamp}",
+				"menu": false,
+				"record": {
+					"collection": "kind-{stamp}",
+					"titleFields": [
+						"reference"
+					]
+				},
+				"blocks": [
+					{
+						"type": "detail",
+						"collection": "kind-{stamp}"
+					}
+				]
+			}
+		]
+	}
+}

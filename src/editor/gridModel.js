@@ -128,6 +128,53 @@ export function addWidget(widgets, key, size) {
 }
 
 /**
+ * Place a widget AT a cell, which is what a drop onto the grid means
+ * (site-nlds-widget-palette REQ-SNW-002).
+ *
+ * The cell is clamped into the grid rather than refused: a drop near the right
+ * edge is an author aiming at the last column, not an author making a mistake,
+ * and a widget placed half outside would be unreachable. A drop with no usable
+ * cell falls back to `addWidget()`, so the gesture always places something.
+ *
+ * @param {Array<object>} widgets The placements.
+ * @param {string} key The widget key.
+ * @param {{gridWidth: number, gridHeight: number}} size The first size.
+ * @param {{gridX: number, gridY: number}} cell Where it was dropped.
+ * @return {{widgets: Array<object>, id: string}} The new placements and the new id.
+ * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+ */
+export function addWidgetAt(widgets, key, size, cell) {
+	const x = Number(cell?.gridX)
+	const y = Number(cell?.gridY)
+	if (Number.isFinite(x) === false || Number.isFinite(y) === false) {
+		return addWidget(widgets, key, size)
+	}
+
+	const width = Math.min(Math.max(Number(size?.gridWidth) || 6, 1), GRID_COLUMNS)
+	const height = Math.max(Number(size?.gridHeight) || 4, 1)
+	const id = nextWidgetId(widgets, key)
+
+	return {
+		id,
+		widgets: [
+			...cloneWidgets(widgets),
+			{
+				id,
+				widgetKey: key,
+				slot: 'body',
+				// Clamped so the whole widget stays on the grid, and never
+				// above the first row.
+				gridX: Math.min(Math.max(Math.round(x), 0), GRID_COLUMNS - width),
+				gridY: Math.max(Math.round(y), 0),
+				gridWidth: width,
+				gridHeight: height,
+				props: {},
+			},
+		],
+	}
+}
+
+/**
  * Remove a placement.
  *
  * @param {Array<object>} widgets The placements.

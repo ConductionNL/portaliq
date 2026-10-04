@@ -315,14 +315,19 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.54.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
 		// another app writes, so it is also sent by email
 		// (woo-journey-entry-points T07). Additive.
+		// 0.57.0 (portalPage 0.5.0): the wave 6 block keys.
+		// 0.56.1 (portalPage 0.4.1): `records` is one type, as OpenRegister's
+		// importer requires (EveryRegisterPropertyFitsTheImporterTest).
+		// 0.56.0 (portalPage 0.4.0): a page record may declare what the
+		// resolvers accept (site-mijn-omgeving-components, PortalPageSchemaTest).
 		// 0.55.0 (portalAccount 0.14.0): `activationTokenHash` and
 		// `activationExpiresAt`, the activation link of a self-registration
 		// (identity-ways-in-screens T03). Additive.
-		// 0.56.0 (newsItem 0.3.0): `publishedAt`, the moment staff published
+		// 0.58.0 (newsItem 0.3.0): `publishedAt`, the moment staff published
 		// the item, stamped by NewsController::publish and back-filled by the
 		// repair step BackfillNewsPublishedAt (news-publish-date). Additive.
-		$this->assertSame('0.56.0', self::$register['info']['version']);
-		$this->assertSame('0.56.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.58.0', self::$register['info']['version']);
+		$this->assertSame('0.58.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['newsItem']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
 		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
@@ -376,7 +381,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()

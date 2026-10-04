@@ -7,3 +7,6 @@
   - PHPUnit `PortalAccountProvisionTest::testAJoinNeedsAVerifiedAddressOnBothSidesAndTheSameOrganisation`
 - [x] **T3**: A claim the signed-in account already holds is kept
   - PHPUnit `PortalAccountProvisionTest::testAJoinNeverOverwritesAClaimTheAccountAlreadyHolds`
+- [x] **T4**: The join gives the signed-in account the invited address when it has none, so the portal stops asking for an address the person was invited on and notifications have somewhere to go; an address of her own is kept
+  - PHPUnit `PortalAccountProvisionTest::testTheJoinCarriesTheInvitedAddressSoThePortalStopsAskingForOne`, `::testTheJoinKeepsAnAddressTheAccountAlreadyHas`
+  - Live finding on :8090: the prompt stood on every signed-in page for an invited guardian

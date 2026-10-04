@@ -509,12 +509,12 @@ test('a refusal is named as one', async () => {
 
 // THE EDITOR NAMES A BLOCK BY ITS WIDGET'S NAME (resident-sees-words-not-codes).
 // The cell bar, the grid item's name and the inspector showed the raw key
-// ("markdown"); the palette already named it "Tekst (markdown)".
+// ("markdown"); the palette already named it "Tekst".
 // @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
 
 test('a widget reads by its name: the public label, the registry name, else the key in words', async () => {
 	const { widgetLabel } = await import('../src/lib/widgetLabels.js')
-	assert.equal(widgetLabel('markdown', {}), 'Tekst (markdown)')
+	assert.equal(widgetLabel('markdown', {}), 'Tekst')
 	assert.equal(widgetLabel('publicationDetail', {}), 'Publicatiedetail')
 	assert.equal(widgetLabel('kpiCards', { kpiCards: { displayName: 'Kerncijfers' } }), 'Kerncijfers')
 	assert.equal(widgetLabel('myOwnWidget', {}), 'My Own Widget')

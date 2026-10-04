@@ -54,6 +54,15 @@ class ActionConfigNormaliser {
 	private const FIELD_SIZES = ['small', 'medium', 'large', 'full'];
 
 	/**
+	 * The form-shape pass: required fields, field widgets, steps. One
+	 * collaborator rather than three, so this class's dependencies stay
+	 * countable (phpmd CouplingBetweenObjects).
+	 *
+	 * @var ActionFormShape
+	 */
+	private readonly ActionFormShape $form;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ManifestValueNormaliser $values The shared value-level primitives.
@@ -92,6 +101,7 @@ class ActionConfigNormaliser {
 		private readonly ?CitizenWriteConfigNormaliser $citizenWrite = null,
 		private readonly ?CrossRefConfigNormaliser $crossRefs = null,
 	) {
+		$this->form = new ActionFormShape();
 	}//end __construct()
 
 	/**
@@ -102,6 +112,9 @@ class ActionConfigNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-an-action-may-name-its-required-fields-req-smf-023
 	 */
 	public function normaliseActions(array $actions): array {
 		$out = [];
@@ -118,12 +131,22 @@ class ActionConfigNormaliser {
 			$definition = $this->schemaDefinition(action: $action);
 			$mandatory = $this->mandatoryFields(definition: $definition);
 			$action = $this->normaliseFieldConfigs(action: $action, whitelist: $whitelist, mandatory: $mandatory);
+			// Which fields the resident must fill in: the schema's required
+			// fields on a create, plus the action's own `requiredFields`, only
+			// ever among its `fields` (REQ-SMF-023).
+			$action = $this->form->requiredFields(action: $action, whitelist: $whitelist, mandatory: $mandatory);
 			$action = $this->options->normaliseOptionsProviders(action: $action, whitelist: $whitelist);
 			// What the schema says a field holds (a date, a number, one of a
 			// list) shapes its input, after the manifest had its say.
 			$action = (new SchemaInputHintNormaliser())->apply(action: $action, whitelist: $whitelist, definition: $definition);
+			// A widget hint that does not fit its field (choice cards without
+			// options, named days on a field that is no date) is dropped.
+			$action = $this->form->fitWidgets(action: $action);
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
+			// Steps, a draft and a confirmation on a create or endpoint action
+			// (site-multi-step-forms REQ-SMF-020, -021, -022).
+			$action = $this->form->flow(action: $action, whitelist: $whitelist);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
 			// The citizen write declaration (what-the-citizen-may-write-on-their-
 			// own-case). An absent normaliser drops the key, which closes the
@@ -294,10 +317,14 @@ class ActionConfigNormaliser {
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
 	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
 	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
 	 */
 	private function fieldConfigEntry(string $field, array $config, array $mandatory, string $actionType = ''): array {
 		$entry = [];
-		foreach (['label', 'placeholder', 'help'] as $textKey) {
+		// `requiredMessage` words the error of an empty required field
+		// (REQ-SMF-006); like the label, it is text the site shows as is.
+		foreach (['label', 'placeholder', 'help', 'requiredMessage'] as $textKey) {
 			if (isset($config[$textKey]) === true && is_string($config[$textKey]) === true) {
 				$entry[$textKey] = $config[$textKey];
 			}
@@ -306,6 +333,7 @@ class ActionConfigNormaliser {
 		$entry = $this->applyFieldFlags(entry: $entry, field: $field, config: $config, mandatory: $mandatory);
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
 		$entry = (new ValueLabelsNormaliser())->apply(entry: $entry, source: $config);
+		$entry = $this->form->fieldWidget(entry: $entry, config: $config);
 
 		return (new FileFieldConfigNormaliser())->apply(entry: $entry, config: $config, actionType: $actionType);
 	}//end fieldConfigEntry()

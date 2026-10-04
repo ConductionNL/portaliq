@@ -10,7 +10,7 @@ Seen in the parent portal review of 2026-10-03. Publishing a news item only chan
 - The guardian's feed and the record page's news block sort on `publishedAt` first, then `@self.published`, then `@self.created`.
 - A repair step (`BackfillNewsPublishedAt`, post-migration) gives every published item without `publishedAt` its creation moment, so existing news keeps its order. Drafts, stamped items and undated items stay as they are; a second run writes nothing.
 - The staff News list shows a "Published on" column. A parent's news item shows "Gepubliceerd op 3-10-2026" under its title, on the Nieuws page, in the newsletter archive and in the record page's news block.
-- Register 0.56.0, `newsItem` 0.3.0.
+- Register 0.58.0, `newsItem` 0.3.0.
 
 ## Not changed
 

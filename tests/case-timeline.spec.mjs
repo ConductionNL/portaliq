@@ -118,7 +118,7 @@ test('site: the entries render under the declared label, newest first, none drop
 	)
 	assert.match(
 		html,
-		/<time class="pq-timeline__moment" datetime="2026-09-25T15:00:00\+00:00">/,
+		/<time class="denhaag-contact-timeline__step-header__date" datetime="2026-09-25T15:00:00\+00:00">/,
 	)
 })
 
