@@ -59,7 +59,10 @@ async function login(page: Page): Promise<void> {
 }
 
 /**
- * Close the first-run setup wizard IF one is open.
+ * Close whatever modal is over the app, IF one is open: the first-run setup
+ * wizard, or Portaliq's own onboarding tour ("Welkom bij Portaliq", with
+ * Volgende and Close tour). They are two different overlays and both land on
+ * a signed-in admin, so both are handled here.
  *
  * ⚠️ WAITING FOR IT IS WRONG. The wizard opens on a fresh instance and not on
  * one that has been set up, so a wait for its close button costs the default
@@ -77,12 +80,20 @@ async function login(page: Page): Promise<void> {
  * @return nothing
  */
 async function dismissSetupWizard(page: Page): Promise<void> {
-	const modal = page.locator('[data-testid="cn-modal"], .modal-container').first()
+	const modal = page
+		.locator(
+			'[data-testid="cn-modal"], .modal-container, [data-testid="cn-tour"]',
+		)
+		.first()
 	if (!(await modal.isVisible({ timeout: BRIEFLY }).catch(() => false))) {
 		return
 	}
 
 	const closers = [
+		// The tour names its own way out, and it is not called "Close".
+		page.getByRole('button', {
+			name: /close tour|tour sluiten|tour afsluiten/i,
+		}),
 		modal.getByRole('button', {
 			name: /close|sluiten|afsluiten|overslaan|skip/i,
 		}),
@@ -111,9 +122,10 @@ async function dismissSetupWizard(page: Page): Promise<void> {
 		(await modal.textContent().catch(() => ''))?.trim().slice(0, 200) ?? ''
 	await expect(
 		modal,
-		'a modal stayed open over the designer. Looked for a close button named'
-			+ ' close/sluiten/afsluiten/overslaan, an aria-label with sluiten or close,'
-			+ " Nextcloud's own icon-close, then Escape. The modal reads: "
+		"a modal stayed open over the designer. Looked for the tour's own"
+			+ ' "Close tour", a button named close/sluiten/afsluiten/overslaan,'
+			+ " an aria-label with sluiten or close, Nextcloud's own icon-close,"
+			+ ' then Escape. The modal reads: '
 			+ text,
 	).toBeHidden({ timeout: BRIEFLY })
 }
@@ -149,14 +161,19 @@ async function seedGridPage(request: APIRequestContext): Promise<string> {
 }
 
 /**
- * The designer's address for one page: `/pages/:id/layout`, as the manifest
- * declares it.
+ * The designer's address for one page.
+ *
+ * ⚠️ NO HASH. `src/main.js` builds the router with `createWebHistory`, so the
+ * route is a real path and `#/pages/<id>/layout` loads the app at its root,
+ * which renders the Dashboard. That is what the second live run showed, and it
+ * reads exactly like "the designer has no add button" unless something checks
+ * the address, which `openDesigner` now does.
  *
  * @param id The page's id.
- * @return the path, including the hash route
+ * @return the path
  */
 function designerAddress(id: string): string {
-	return `${APP_BASE}/#/pages/${id}/layout`
+	return `${APP_BASE}/pages/${id}/layout`
 }
 
 /**
@@ -171,10 +188,28 @@ async function openDesigner(page: Page, request: APIRequestContext): Promise<voi
 	await login(page)
 	await page.goto(designerAddress(id))
 	await dismissSetupWizard(page)
+
+	// THE ADDRESS FIRST, so the two failures read differently. Portaliq's
+	// router sends a page the role may not use to the Dashboard
+	// (`router.beforeEach` in src/main.js), and a wrong address lands there
+	// too, so "it went to the dashboard" and "the designer opened without its
+	// button" are different faults and should not share one message.
+	await expect(
+		page,
+		`the designer must be the page on screen. A dashboard address here means the route`
+			+ ` did not resolve for page ${id}: either the path is wrong or the role guard`
+			+ ` sent it away.`,
+	).toHaveURL(new RegExp(`/pages/${id}/layout`), { timeout: A_WHILE })
+
+	await expect(
+		page.getByTestId('designer-title'),
+		'the designer must load the seeded page, not sit on an error card',
+	).toBeVisible({ timeout: A_WHILE })
+
 	await expect(
 		page.getByTestId('designer-add-widget'),
-		'the designer must open on the seeded page; a login form here means the session was not set',
-	).toBeVisible({ timeout: A_WHILE })
+		'the designer is open but offers no way to add a widget',
+	).toBeVisible({ timeout: BRIEFLY })
 }
 
 test.describe('site-widget-palette', () => {
