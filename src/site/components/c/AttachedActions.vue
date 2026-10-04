@@ -247,6 +247,8 @@ export default {
 		 * without one the success line shows and the form closes.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 		 */
 		afterSteps() {
 			if (this.open && this.open.confirmation) {

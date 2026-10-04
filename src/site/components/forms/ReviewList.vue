@@ -70,6 +70,8 @@ export default {
 		 *
 		 * @param {object} section The step's section.
 		 * @return {string} The name.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		editAria(section) {
 			return this.editPattern

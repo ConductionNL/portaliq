@@ -288,6 +288,8 @@ export default {
 		 * The steps the server sent with the action.
 		 *
 		 * @return {Array<object>|undefined} The steps.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 		 */
 		rawSteps() {
 			return this.action.steps
@@ -297,6 +299,8 @@ export default {
 		 * The titles of the loose step and of an undeclared review.
 		 *
 		 * @return {{other: string, review: string}} The titles.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		stepTitles() {
 			return {
@@ -470,6 +474,8 @@ export default {
 		 *
 		 * @param {string[]} fields The fields.
 		 * @return {Record<string, string>} The errors.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		checkFields(fields) {
 			const all = fieldErrors(this.action, this.values, this.files, this.t)
@@ -484,6 +490,8 @@ export default {
 		 *
 		 * @param {string} field The field.
 		 * @return {string} The answer.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		answerText(field) {
 			const input = this.inputOf(field)
@@ -517,6 +525,8 @@ export default {
 		 * or on a one-page form.
 		 *
 		 * @return {Promise<void>|void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		onSubmit() {
 			if (this.hasSteps && !this.onReview) {
@@ -651,6 +661,8 @@ export default {
 		 *
 		 * @param {object} body The body.
 		 * @return {Promise<{ok: boolean, object: object|null, id: string, failed: Array, errors: object}>} The result.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 		 */
 		async sendBody(body) {
 			const answer = (await this.send(body)) || {}

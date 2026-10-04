@@ -442,6 +442,8 @@ export default {
 		 * The steps the form render carries.
 		 *
 		 * @return {Array<object>|undefined} The steps.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		rawSteps() {
 			return this.render.steps
@@ -451,6 +453,8 @@ export default {
 		 * The titles of the loose step and of an undeclared review.
 		 *
 		 * @return {{other: string, review: string}} The titles.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		stepTitles() {
 			return {
@@ -679,6 +683,8 @@ export default {
 		 *
 		 * @param {string[]} names The field names.
 		 * @return {Record<string, string>} The errors.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		checkFields(names) {
 			return plainFieldErrors(
@@ -700,6 +706,8 @@ export default {
 		 *
 		 * @param {object} field The field.
 		 * @return {string} The answer.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		answerText(field) {
 			const value = String(this.values[field.name] ?? '')
@@ -725,6 +733,8 @@ export default {
 		 * or on a one-page form.
 		 *
 		 * @return {Promise<void>|void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		onSubmit() {
 			if (this.hasSteps && !this.onReview) {

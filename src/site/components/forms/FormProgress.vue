@@ -83,6 +83,8 @@ export default {
 		 * "Stap 2 van 4".
 		 *
 		 * @return {string} The short progress.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		shortText() {
 			return this.shortPattern
@@ -99,6 +101,8 @@ export default {
 		 *
 		 * @param {number} index The step's index.
 		 * @return {string} done, current or todo.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		stateOf(index) {
 			if (index < this.current) {
@@ -112,6 +116,8 @@ export default {
 		 *
 		 * @param {number} index The step's index.
 		 * @return {string} The words.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		stateText(index) {
 			return {
