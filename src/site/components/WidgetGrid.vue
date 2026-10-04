@@ -74,6 +74,7 @@ import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { withoutStyling } from '../lib/blockProps.js'
 import { cellStyle, runsFor } from '../lib/gridPlacement.js'
+import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
 
 /**
  * LOADED ON DEMAND, and that is a budget decision rather than a style one.
@@ -179,6 +180,25 @@ const SiteNavigationBlock = defineAsyncComponent(
 	() => import('./SiteNavigationBlock.vue'),
 )
 
+/**
+ * THE NL DESIGN SYSTEM WIDGETS, one chunk each
+ * (site-nlds-widget-palette REQ-SNW-011).
+ *
+ * Spread below under their own `nl`-prefixed keys, so the gate stays one
+ * structure: a widget renders publicly if and only if it is in this map. The
+ * loaders come from `src/site/widgets/index.js`, which is the only place a
+ * widget is registered, and each import keeps its component and its CSS
+ * package out of the site entry.
+ *
+ * @type {Record<string, object>}
+ */
+const nldsWidgets = Object.fromEntries(
+	Object.entries(siteWidgetLoaders).map(([key, loader]) => [
+		key,
+		defineAsyncComponent(loader),
+	]),
+)
+
 const PUBLIC_WIDGETS = {
 	markdown: MarkdownBlock,
 	// site-navigation-block: the portal's own navigation, which the shell
@@ -209,6 +229,7 @@ const PUBLIC_WIDGETS = {
 	intakeCatalogue: IntakeCatalogueBlock,
 	intakeForm: IntakeFormBlock,
 	intakeStatus: IntakeStatusBlock,
+	...nldsWidgets,
 	...siteBlockRegistry,
 	// After the spread, under the library's own key: `siteBlockIsBand('hero')`
 	// still answers true, and the band keeps CnSiteHero's props while gaining
