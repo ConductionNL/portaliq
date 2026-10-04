@@ -178,8 +178,18 @@ export default {
 			return this.detailRow ? rowNotice(this.collection, this.detailRow) : ''
 		},
 
+		/**
+		 * The fields that have a value, formatted for reading.
+		 *
+		 * @return {Array<object>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 */
 		fields() {
 			const row = this.detailRow || {}
+			// A fact without a value says nothing, declared or not: a case
+			// with no public team read "Behandeld door" over an empty line.
+			// `false` reads "No" and 0 reads "0", so only a value that is
+			// really absent is left out.
 			return detailFields(this.collection, row)
 				.map((field) => ({
 					...field,
@@ -189,7 +199,7 @@ export default {
 						valueLabels: field.valueLabels,
 					}),
 				}))
-				.filter((field) => field.declared || field.text !== '')
+				.filter((field) => field.text !== '')
 		},
 
 		/**
