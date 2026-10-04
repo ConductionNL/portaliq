@@ -1,0 +1,1298 @@
+
+> portaliq@0.1.0 check:specs
+> npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:federated-search && npm run check:campaign-tracking && npm run check:traffic-client && npm run check:traffic-summary && npm run check:traffic-paths && npm run check:page-traffic && npm run check:open-portal-site && npm run check:shared-instance && npm run check:connection-registry && npm run check:leaf-integrations && npm run check:page-layout-entry && npm run check:collection-table && npm run check:case-timeline
+
+
+> portaliq@0.1.0 check:json-strict
+> node tests/validate-json-strict.js
+
+[validate-json-strict] src/manifest.json: OK
+[validate-json-strict] lib/Settings/portaliq_mock_register.json: OK
+[validate-json-strict] lib/Settings/portaliq_register.json: OK
+[validate-json-strict] PASS
+
+> portaliq@0.1.0 check:manifest-v2
+> node tests/manifest-v2.spec.js
+
+[manifest-v2.spec] manifest: /home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/manifest.json
+[manifest-v2.spec] manifest.version: 0.2.0
+[manifest-v2.spec] manifest.$schema: https://github.com/ConductionNL/nextcloud-vue/raw/main/src/schemas/app-manifest-v2.schema.json
+[manifest-v2.spec] pages: 26
+[manifest-v2.spec] structural lint: PASS
+[manifest-v2.spec] schema: /home/rubenlinde/memcap-work/lq-lanes/pq-guard/node_modules/@conduction/nextcloud-vue/src/schemas/app-manifest-v2.schema.json
+[manifest-v2.spec] Ajv v2 validation: PASS (0 errors)
+
+> portaliq@0.1.0 check:register
+> node tests/validate-register.js
+
+[validate-register] WARN  lib/Settings/portaliq_register.json › groupStaffFixture: only 2 properties and no x-openregister-* declarations — verify this isn't a stub left by a bad merge
+[validate-register] WARN  lib/Settings/portaliq_register.json › notificationQuietHours: only 3 properties and no x-openregister-* declarations — verify this isn't a stub left by a bad merge
+[validate-register] PASS — 2 register file(s), 2 warning(s).
+
+> portaliq@0.1.0 check:registry
+> node tests/registry.spec.js
+
+[registry.spec] registry: /home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/registry.js
+[registry.spec] entries: 23
+[registry.spec] required kinds present: cell-renderer, form-field, modal, page, widget
+[registry.spec] custom kind="widget" entries: 17 (scaffold target: 0 — ADR-049)
+[registry.spec] registry validation: PASS (0 errors)
+
+> portaliq@0.1.0 check:site-auth
+> node tests/site-auth.spec.mjs
+
+authBaseFrom
+  ok   derives the auth edge from the content API base
+  ok   tolerates a trailing slash
+  ok   survives an empty base
+signInRoutes
+  ok   a public-only portal offers NO sign-in route
+  ok   a portal with no authentication block offers none either
+  ok   a malformed modes value offers none
+  ok   an unknown mode is not turned into a route
+  ok   digid becomes a labelled OIDC start
+  ok   nextcloud routes to the nextcloud edge, not to OIDC
+  ok   public is dropped from a MIXED list while the real modes survive
+  ok   the portal slug travels with the sign-in link, so a shared host cannot resolve the wrong portal
+adoptSessionToken
+  ok   a bearer in the fragment is adopted
+  ok   and the fragment is stripped from the address bar
+  ok   a later read returns the stored bearer
+  ok   signing out forgets it
+  ok   a fragment without a token adopts nothing
+
+all site-auth assertions held
+(node:11017) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/site/lib/authApi.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> portaliq@0.1.0 check:federated-search
+> node tests/federated-search.spec.mjs
+
+buildRequestUrl
+  ok   resolves a relative endpoint against the origin
+  ok   keeps the OpenCatalogi path
+  ok   sends the page size
+  ok   sends the page
+  ok   omits an empty term entirely
+  ok   always asks for facet buckets in the same request
+  ok   sends a non-empty term
+  ok   repeats the facet field once per selected value
+  ok   accepts an absolute endpoint on another instance
+toBuckets — both dialects
+  ok   reads the object-field dialect (data.buckets, value/count)
+  ok   reads the virtual dialect (buckets, key/results)
+  ok   survives a missing facet envelope
+  ok   survives a facet field that is absent
+  ok   drops a bucket with no value rather than rendering a nameless filter
+toResult — a row from a federated peer
+  ok   maps a complete row
+  ok   names a row with no directory `local`, rather than leaving it blank
+  ok   falls back through landingUrl → url → @self.uri for the link
+  ok   uses @self.uri when the row carries no link of its own
+  ok   degrades an almost-empty row to a titled entry instead of throwing
+  ok   ignores a non-string description rather than rendering [object Object]
+  ok   truncates a long summary to 280 characters
+pageWindow
+  ok   windows around the current page
+  ok   does not run below page 1
+  ok   does not run past the last page
+  ok   collapses to a single page
+sorting
+  ok   omits _order entirely when no sort is chosen
+  ok   maps field:DIRECTION onto _order[field]
+  ok   ignores a malformed sort rather than sending half of it
+paginationItems
+  ok   matches the reference at page 1 of 36
+  ok   windows around a middle page, with a gap either side
+  ok   reaches the last page
+  ok   collapses to one page
+  ok   never emits a gap for a single skipped page
+formatDutchDate
+  ok   formats the way the reference does
+  ok   formats a February date
+  ok   survives an empty value
+  ok   survives a nonsense value
+toResult — detail id, date and type
+  ok   carries the id the detail route addresses
+  ok   formats publicationDate for the card
+  ok   does not mistake the numeric schema id for a type name
+  ok   uses a schema title when the instance supplies one
+
+all federated-search assertions held
+(node:11040) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/site/lib/federatedSearch.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> portaliq@0.1.0 check:campaign-tracking
+> node tests/campaign-tracking.spec.mjs
+
+captureLanding / firstTouch / lastTouch
+  ok   no portal means nothing is captured
+  ok   no utm_* params means first/last touch stay unset
+  ok   first touch is captured
+  ok   last touch equals first touch on the first landing
+  ok   referrer is captured at first touch
+  ok   first touch is preserved, not overwritten
+  ok   last touch is overwritten by the later landing
+  ok   the referrer captured at FIRST touch is kept, not the later internal one
+  ok   a different portal has no capture of its own yet
+
+all campaign-tracking assertions held
+
+> portaliq@0.1.0 check:traffic-client
+> node --test tests/traffic-client.spec.mjs
+
+TAP version 13
+# (node:11095) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/traffic/helpers.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: readConfig
+    # Subtest: takes the data attributes the Docusaurus plugin stamps
+    ok 1 - takes the data attributes the Docusaurus plugin stamps
+      ---
+      duration_ms: 1.382749
+      type: 'test'
+      ...
+    # Subtest: derives origin and app path from the src when the tag carries no data attributes
+    ok 2 - derives origin and app path from the src when the tag carries no data attributes
+      ---
+      duration_ms: 0.234883
+      type: 'test'
+      ...
+    # Subtest: names no portal when neither the tag nor the site config does, so the host resolves it
+    ok 3 - names no portal when neither the tag nor the site config does, so the host resolves it
+      ---
+      duration_ms: 0.32201
+      type: 'test'
+      ...
+    # Subtest: disables itself rather than guess when there is no origin
+    ok 4 - disables itself rather than guess when there is no origin
+      ---
+      duration_ms: 0.182282
+      type: 'test'
+      ...
+    1..4
+ok 1 - readConfig
+  ---
+  duration_ms: 3.214339
+  type: 'suite'
+  ...
+# Subtest: optedOut
+    # Subtest: honours Do Not Track and Global Privacy Control
+    ok 1 - honours Do Not Track and Global Privacy Control
+      ---
+      duration_ms: 0.224064
+      type: 'test'
+      ...
+    1..1
+ok 2 - optedOut
+  ---
+  duration_ms: 1.243025
+  type: 'suite'
+  ...
+# Subtest: allowedEvent
+    # Subtest: sends only what the portal enabled
+    ok 1 - sends only what the portal enabled
+      ---
+      duration_ms: 0.317753
+      type: 'test'
+      ...
+    # Subtest: sends nothing for a portal that is not measuring
+    ok 2 - sends nothing for a portal that is not measuring
+      ---
+      duration_ms: 0.284465
+      type: 'test'
+      ...
+    # Subtest: sends only the pre-consent events until consent is given
+    ok 3 - sends only the pre-consent events until consent is given
+      ---
+      duration_ms: 0.253076
+      type: 'test'
+      ...
+    1..3
+ok 3 - allowedEvent
+  ---
+  duration_ms: 1.180621
+  type: 'suite'
+  ...
+# Subtest: mayPersist
+    # Subtest: never persists in the default mode, whatever the consent
+    ok 1 - never persists in the default mode, whatever the consent
+      ---
+      duration_ms: 0.225816
+      type: 'test'
+      ...
+    # Subtest: persists only with the switch on and consent given
+    ok 2 - persists only with the switch on and consent given
+      ---
+      duration_ms: 0.231112
+      type: 'test'
+      ...
+    1..2
+ok 4 - mayPersist
+  ---
+  duration_ms: 0.568167
+  type: 'suite'
+  ...
+# Subtest: classifyLink
+    # Subtest: is an outbound click when the host differs
+    ok 1 - is an outbound click when the host differs
+      ---
+      duration_ms: 0.355794
+      type: 'test'
+      ...
+    # Subtest: is a download when the path ends in a document extension, on any host
+    ok 2 - is a download when the path ends in a document extension, on any host
+      ---
+      duration_ms: 0.185607
+      type: 'test'
+      ...
+    # Subtest: is nothing for an internal page link or a non-http link
+    ok 3 - is nothing for an internal page link or a non-http link
+      ---
+      duration_ms: 0.089453
+      type: 'test'
+      ...
+    1..3
+ok 5 - classifyLink
+  ---
+  duration_ms: 0.786659
+  type: 'suite'
+  ...
+# Subtest: searchTermFrom
+    # Subtest: reads q, zoek and search
+    ok 1 - reads q, zoek and search
+      ---
+      duration_ms: 0.254848
+      type: 'test'
+      ...
+    # Subtest: is empty without a term
+    ok 2 - is empty without a term
+      ---
+      duration_ms: 0.101203
+      type: 'test'
+      ...
+    1..2
+ok 6 - searchTermFrom
+  ---
+  duration_ms: 0.445228
+  type: 'suite'
+  ...
+# Subtest: scrollPercent
+    # Subtest: is 100 on a page that does not scroll and proportional otherwise
+    ok 1 - is 100 on a page that does not scroll and proportional otherwise
+      ---
+      duration_ms: 0.116219
+      type: 'test'
+      ...
+    1..1
+ok 7 - scrollPercent
+  ---
+  duration_ms: 0.174443
+  type: 'suite'
+  ...
+# Subtest: batching
+    # Subtest: cuts a queue into batches of at most fifty
+    ok 1 - cuts a queue into batches of at most fifty
+      ---
+      duration_ms: 0.198278
+      type: 'test'
+      ...
+    # Subtest: builds the envelope the collector reads, naming the portal only when known
+    ok 2 - builds the envelope the collector reads, naming the portal only when known
+      ---
+      duration_ms: 0.228627
+      type: 'test'
+      ...
+    1..2
+ok 8 - batching
+  ---
+  duration_ms: 0.505441
+  type: 'suite'
+  ...
+# Subtest: randomId
+    # Subtest: is 32 hex characters with or without crypto
+    ok 1 - is 32 hex characters with or without crypto
+      ---
+      duration_ms: 0.343143
+      type: 'test'
+      ...
+    1..1
+ok 9 - randomId
+  ---
+  duration_ms: 0.413542
+  type: 'suite'
+  ...
+# Subtest: script errors (portal-traffic-reporting)
+    # Subtest: keeps the message, the source without its query, the position and a stack hash, never the stack
+    ok 1 - keeps the message, the source without its query, the position and a stack hash, never the stack
+      ---
+      duration_ms: 0.545321
+      type: 'test'
+      ...
+    1..1
+ok 10 - script errors (portal-traffic-reporting)
+  ---
+  duration_ms: 0.640872
+  type: 'suite'
+  ...
+# Subtest: form analytics (portal-traffic-outcomes)
+    # Subtest: names a form by data-portaliq-form first, then id, name, action
+    ok 1 - names a form by data-portaliq-form first, then id, name, action
+      ---
+      duration_ms: 0.199308
+      type: 'test'
+      ...
+    # Subtest: names a field by id or name and never reads its value
+    ok 2 - names a field by id or name and never reads its value
+      ---
+      duration_ms: 0.164355
+      type: 'test'
+      ...
+    1..2
+ok 11 - form analytics (portal-traffic-outcomes)
+  ---
+  duration_ms: 0.44885
+  type: 'suite'
+  ...
+# Subtest: custom dimensions (portal-traffic-outcomes)
+    # Subtest: attaches cd_<id> for declared ids with a value and nothing for the rest
+    ok 1 - attaches cd_<id> for declared ids with a value and nothing for the rest
+      ---
+      duration_ms: 0.23425
+      type: 'test'
+      ...
+    # Subtest: bounds a value to 256 characters and stringifies it
+    ok 2 - bounds a value to 256 characters and stringifies it
+      ---
+      duration_ms: 0.11221
+      type: 'test'
+      ...
+    1..2
+ok 12 - custom dimensions (portal-traffic-outcomes)
+  ---
+  duration_ms: 0.445841
+  type: 'suite'
+  ...
+# Subtest: page experiments (portal-traffic-experiments)
+    # Subtest: reads the in-site route from the route parameter, else the path, without a trailing slash
+    ok 1 - reads the in-site route from the route parameter, else the path, without a trailing slash
+      ---
+      duration_ms: 0.337422
+      type: 'test'
+      ...
+    # Subtest: finds the running experiment on a route and ignores a draft
+    ok 2 - finds the running experiment on a route and ignores a draft
+      ---
+      duration_ms: 0.315536
+      type: 'test'
+      ...
+    # Subtest: splits by weight: over many seeds the 3:1 variant gets about three quarters
+    ok 3 - splits by weight: over many seeds the 3:1 variant gets about three quarters
+      ---
+      duration_ms: 7.856857
+      type: 'test'
+      ...
+    # Subtest: is sticky: the same seed always lands on the same variant
+    ok 4 - is sticky: the same seed always lands on the same variant
+      ---
+      duration_ms: 0.942957
+      type: 'test'
+      ...
+    # Subtest: builds the variant URL in the shape the location uses
+    ok 5 - builds the variant URL in the shape the location uses
+      ---
+      duration_ms: 0.40102
+      type: 'test'
+      ...
+    1..5
+ok 13 - page experiments (portal-traffic-experiments)
+  ---
+  duration_ms: 11.173395
+  type: 'suite'
+  ...
+# Subtest: heatmaps and recording (portal-traffic-experiments)
+    # Subtest: records a click as fractions, a width bucket, a tag and a safe selector
+    ok 1 - records a click as fractions, a width bucket, a tag and a safe selector
+      ---
+      duration_ms: 0.545608
+      type: 'test'
+      ...
+    # Subtest: never puts an id or an attribute into a selector
+    ok 2 - never puts an id or an attribute into a selector
+      ---
+      duration_ms: 0.193378
+      type: 'test'
+      ...
+    # Subtest: buckets a width and computes a scroll depth
+    ok 3 - buckets a width and computes a scroll depth
+      ---
+      duration_ms: 0.219906
+      type: 'test'
+      ...
+    # Subtest: records only when the switch is on, on a site this app serves, and with consent where required
+    ok 4 - records only when the switch is on, on a site this app serves, and with consent where required
+      ---
+      duration_ms: 0.201435
+      type: 'test'
+      ...
+    1..4
+ok 14 - heatmaps and recording (portal-traffic-experiments)
+  ---
+  duration_ms: 1.322903
+  type: 'suite'
+  ...
+# Subtest: the built files (when built)
+    # Subtest: holds the client under 20 KB and the recorder under 30 KB
+    ok 1 - holds the client under 20 KB and the recorder under 30 KB
+      ---
+      duration_ms: 0.185291
+      type: 'test'
+      ...
+    1..1
+ok 15 - the built files (when built)
+  ---
+  duration_ms: 0.245078
+  type: 'suite'
+  ...
+1..15
+# tests 34
+# suites 15
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 131.746067
+
+> portaliq@0.1.0 check:traffic-summary
+> node --test tests/traffic-summary.spec.mjs
+
+TAP version 13
+# (node:11165) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/lib/trafficSummary.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lastDays
+    # Subtest: ends today in UTC and counts back
+    ok 1 - ends today in UTC and counts back
+      ---
+      duration_ms: 1.534376
+      type: 'test'
+      ...
+    1..1
+ok 1 - lastDays
+  ---
+  duration_ms: 2.297317
+  type: 'suite'
+  ...
+# Subtest: daysBetween
+    # Subtest: is inclusive, in order, and empty when reversed or malformed
+    ok 1 - is inclusive, in order, and empty when reversed or malformed
+      ---
+      duration_ms: 0.530098
+      type: 'test'
+      ...
+    # Subtest: caps a custom range at a year from its start
+    ok 2 - caps a custom range at a year from its start
+      ---
+      duration_ms: 0.522624
+      type: 'test'
+      ...
+    1..2
+ok 2 - daysBetween
+  ---
+  duration_ms: 1.239161
+  type: 'suite'
+  ...
+# Subtest: hasDimension
+    # Subtest: is true only for a listed dimension; a portal that named none has the defaults
+    ok 1 - is true only for a listed dimension; a portal that named none has the defaults
+      ---
+      duration_ms: 0.270696
+      type: 'test'
+      ...
+    1..1
+ok 3 - hasDimension
+  ---
+  duration_ms: 1.339859
+  type: 'suite'
+  ...
+# Subtest: isMeasured and warnedSwitches
+    # Subtest: is measured only when enabled is literally true
+    ok 1 - is measured only when enabled is literally true
+      ---
+      duration_ms: 0.273834
+      type: 'test'
+      ...
+    # Subtest: lists the sensitive switches that are literally true, in contract order
+    ok 2 - lists the sensitive switches that are literally true, in contract order
+      ---
+      duration_ms: 0.326949
+      type: 'test'
+      ...
+    1..2
+ok 4 - isMeasured and warnedSwitches
+  ---
+  duration_ms: 0.813701
+  type: 'suite'
+  ...
+# Subtest: summarise
+    # Subtest: sums the totals over the range only
+    ok 1 - sums the totals over the range only
+      ---
+      duration_ms: 1.250198
+      type: 'test'
+      ...
+    # Subtest: draws a zero for a day without a record, so the axis stays a calendar
+    ok 2 - draws a zero for a day without a record, so the axis stays a calendar
+      ---
+      duration_ms: 0.207187
+      type: 'test'
+      ...
+    # Subtest: merges pages and transitions across days and ranks them
+    ok 3 - merges pages and transitions across days and ranks them
+      ---
+      duration_ms: 0.320585
+      type: 'test'
+      ...
+    # Subtest: groups referrers by channel with the busiest hosts
+    ok 4 - groups referrers by channel with the busiest hosts
+      ---
+      duration_ms: 0.376561
+      type: 'test'
+      ...
+    # Subtest: reports no data for an empty range, with zeros rather than NaN
+    ok 5 - reports no data for an empty range, with zeros rather than NaN
+      ---
+      duration_ms: 0.150142
+      type: 'test'
+      ...
+    1..5
+ok 5 - summarise
+  ---
+  duration_ms: 2.586978
+  type: 'suite'
+  ...
+# Subtest: summarise: visitors and breakdowns
+    # Subtest: reports new versus returning as not available when every day is null, never as zero
+    ok 1 - reports new versus returning as not available when every day is null, never as zero
+      ---
+      duration_ms: 0.199535
+      type: 'test'
+      ...
+    # Subtest: sums new, returning and accounts once any day carries a number
+    ok 2 - sums new, returning and accounts once any day carries a number
+      ---
+      duration_ms: 0.150201
+      type: 'test'
+      ...
+    # Subtest: merges the five breakdown maps across days and ranks them
+    ok 3 - merges the five breakdown maps across days and ranks them
+      ---
+      duration_ms: 0.281406
+      type: 'test'
+      ...
+    1..3
+ok 6 - summarise: visitors and breakdowns
+  ---
+  duration_ms: 0.763129
+  type: 'suite'
+  ...
+# Subtest: summarise: outcomes (portal-traffic-outcomes)
+    # Subtest: merges goals by id, keeps the latest name and re-derives the conversion rate from sessions
+    ok 1 - merges goals by id, keeps the latest name and re-derives the conversion rate from sessions
+      ---
+      duration_ms: 0.730048
+      type: 'test'
+      ...
+    # Subtest: sums funnel steps by position and recomputes the drop-off
+    ok 2 - sums funnel steps by position and recomputes the drop-off
+      ---
+      duration_ms: 0.291859
+      type: 'test'
+      ...
+    # Subtest: sums forms, ranks the fields by where people left and names the worst
+    ok 3 - sums forms, ranks the fields by where people left and names the worst
+      ---
+      duration_ms: 0.223668
+      type: 'test'
+      ...
+    # Subtest: ranks searches, missing pages and dimension values
+    ok 4 - ranks searches, missing pages and dimension values
+      ---
+      duration_ms: 0.252275
+      type: 'test'
+      ...
+    # Subtest: is empty, not absent, for records without outcomes
+    ok 5 - is empty, not absent, for records without outcomes
+      ---
+      duration_ms: 0.136481
+      type: 'test'
+      ...
+    1..5
+ok 7 - summarise: outcomes (portal-traffic-outcomes)
+  ---
+  duration_ms: 1.778088
+  type: 'suite'
+  ...
+# Subtest: segments, roll-ups and errors (portal-traffic-reporting)
+    # Subtest: lists the usable segments once each and the roll-up members without the portal itself
+    ok 1 - lists the usable segments once each and the roll-up members without the portal itself
+      ---
+      duration_ms: 0.360337
+      type: 'test'
+      ...
+    # Subtest: merges script errors by message and source across the days
+    ok 2 - merges script errors by message and source across the days
+      ---
+      duration_ms: 0.222005
+      type: 'test'
+      ...
+    1..2
+ok 8 - segments, roll-ups and errors (portal-traffic-reporting)
+  ---
+  duration_ms: 0.664352
+  type: 'suite'
+  ...
+# Subtest: experiments and heatmaps (portal-traffic-experiments)
+    # Subtest: sums variants across days and re-derives the verdict from the sums
+    ok 1 - sums variants across days and re-derives the verdict from the sums
+      ---
+      duration_ms: 0.770415
+      type: 'test'
+      ...
+    # Subtest: names no winner under thirty sessions per variant, and says so
+    ok 2 - names no winner under thirty sessions per variant, and says so
+      ---
+      duration_ms: 0.183549
+      type: 'test'
+      ...
+    # Subtest: matches the aggregation on a known table
+    ok 3 - matches the aggregation on a known table
+      ---
+      duration_ms: 0.14338
+      type: 'test'
+      ...
+    # Subtest: sums a page heatmap across days
+    ok 4 - sums a page heatmap across days
+      ---
+      duration_ms: 0.346549
+      type: 'test'
+      ...
+    1..4
+ok 9 - experiments and heatmaps (portal-traffic-experiments)
+  ---
+  duration_ms: 2.447805
+  type: 'suite'
+  ...
+1..9
+# tests 25
+# suites 9
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 97.204529
+
+> portaliq@0.1.0 check:traffic-paths
+> node --test tests/traffic-paths.spec.mjs
+
+TAP version 13
+# (node:11198) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/lib/trafficPaths.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: layoutPaths
+    # Subtest: puts step 0 on the left reading forward, one scale for the whole drawing
+    ok 1 - puts step 0 on the left reading forward, one scale for the whole drawing
+      ---
+      duration_ms: 3.007256
+      type: 'test'
+      ...
+    # Subtest: keeps a small node tall enough for its label, and its band at the true scale
+    ok 2 - keeps a small node tall enough for its label, and its band at the true scale
+      ---
+      duration_ms: 0.263668
+      type: 'test'
+      ...
+    # Subtest: stacks the bands leaving one node in target order, from its right edge to the next left edge
+    ok 3 - stacks the bands leaving one node in target order, from its right edge to the next left edge
+      ---
+      duration_ms: 0.359447
+      type: 'test'
+      ...
+    # Subtest: puts the drop-off stub under the bands that left
+    ok 4 - puts the drop-off stub under the bands that left
+      ---
+      duration_ms: 0.265212
+      type: 'test'
+      ...
+    # Subtest: mirrors the drawing reading backward: step 0 on the right, bands from left edges
+    ok 5 - mirrors the drawing reading backward: step 0 on the right, bands from left edges
+      ---
+      duration_ms: 0.276892
+      type: 'test'
+      ...
+    # Subtest: draws nothing for an empty answer and skips a link to a missing node
+    ok 6 - draws nothing for an empty answer and skips a link to a missing node
+      ---
+      duration_ms: 0.271171
+      type: 'test'
+      ...
+    1..6
+ok 1 - layoutPaths
+  ---
+  duration_ms: 5.524212
+  type: 'suite'
+  ...
+# Subtest: band
+    # Subtest: is a closed outline from the leaving edge to the arriving edge
+    ok 1 - is a closed outline from the leaving edge to the arriving edge
+      ---
+      duration_ms: 0.214314
+      type: 'test'
+      ...
+    1..1
+ok 2 - band
+  ---
+  duration_ms: 0.501758
+  type: 'suite'
+  ...
+# Subtest: pathRows
+    # Subtest: lists every node of every step, "+N more" included
+    ok 1 - lists every node of every step, "+N more" included
+      ---
+      duration_ms: 0.378818
+      type: 'test'
+      ...
+    1..1
+ok 3 - pathRows
+  ---
+  duration_ms: 0.522545
+  type: 'suite'
+  ...
+# Subtest: chooseNode
+    # Subtest: chooses a node, keeps earlier choices, drops later ones, and undoes a second choice
+    ok 1 - chooses a node, keeps earlier choices, drops later ones, and undoes a second choice
+      ---
+      duration_ms: 0.258066
+      type: 'test'
+      ...
+    1..1
+ok 4 - chooseNode
+  ---
+  duration_ms: 0.433775
+  type: 'suite'
+  ...
+1..4
+# tests 9
+# suites 4
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 76.025506
+
+> portaliq@0.1.0 check:page-traffic
+> node --test tests/page-traffic.spec.mjs
+
+TAP version 13
+# (node:11332) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/lib/pageTraffic.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: pageRoute
+    # Subtest: keys a page by its route with one leading slash and no trailing one
+    ok 1 - keys a page by its route with one leading slash and no trailing one
+      ---
+      duration_ms: 0.792409
+      type: 'test'
+      ...
+    # Subtest: answers nothing for a page without a route
+    ok 2 - answers nothing for a page without a route
+      ---
+      duration_ms: 0.159397
+      type: 'test'
+      ...
+    1..2
+ok 1 - pageRoute
+  ---
+  duration_ms: 1.883033
+  type: 'suite'
+  ...
+# Subtest: flowOf
+    # Subtest: reads the previous pages, entrances and referrers for incoming
+    ok 1 - reads the previous pages, entrances and referrers for incoming
+      ---
+      duration_ms: 0.932435
+      type: 'test'
+      ...
+    # Subtest: reads the next pages, exits and outbound links for outgoing
+    ok 2 - reads the next pages, exits and outbound links for outgoing
+      ---
+      duration_ms: 0.162396
+      type: 'test'
+      ...
+    # Subtest: keeps an uncounted list null, never empty
+    ok 3 - keeps an uncounted list null, never empty
+      ---
+      duration_ms: 0.255888
+      type: 'test'
+      ...
+    1..3
+ok 2 - flowOf
+  ---
+  duration_ms: 2.725766
+  type: 'suite'
+  ...
+1..2
+# tests 5
+# suites 2
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 77.873943
+
+> portaliq@0.1.0 check:open-portal-site
+> node tests/open-portal-site.spec.mjs
+
+portalSiteUrl
+  ok   keeps the index.php prefix the URL generator produces
+  ok   drops it where the instance rewrites URLs
+  ok   encodes a slug that would otherwise split the query
+  ok   encodes a non-ASCII slug
+createOpenPortalSite
+  ok   opens the row slug in a new tab, shielded from the opener
+  ok   returns the URL it opened
+  ok   says nothing when the row resolves
+  ok   opens nothing for a row without a usable slug
+  ok   reports the missing slug once per attempt
+  ok   addresses a padded slug exactly as stored, encoded
+  ok   reports the address it opened even though open() answered null
+  ok   shows no failure message for a tab that did open
+  ok   still shields the tab it could not hand back
+  ok   createOpenPortalSite() does not throw on a bare call
+
+all assertions passed
+(node:11399) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/lib/openPortalSite.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> portaliq@0.1.0 check:shared-instance
+> node --test tests/shared-instance.spec.mjs
+
+TAP version 13
+# (node:11429) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/tests/e2e/shared-instance.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: portaliq shared-instance guard
+    # Subtest: folds every loopback spelling onto localhost
+    ok 1 - folds every loopback spelling onto localhost
+      ---
+      duration_ms: 1.29725
+      type: 'test'
+      ...
+    # Subtest: makes the implicit port explicit
+    ok 2 - makes the implicit port explicit
+      ---
+      duration_ms: 0.444356
+      type: 'test'
+      ...
+    # Subtest: calls loopback 80 and 8080 shared, and nothing else
+    ok 3 - calls loopback 80 and 8080 shared, and nothing else
+      ---
+      duration_ms: 0.525462
+      type: 'test'
+      ...
+    # Subtest: refuses a shared instance that no flag names
+    ok 4 - refuses a shared instance that no flag names
+      ---
+      duration_ms: 0.855018
+      type: 'test'
+      ...
+    # Subtest: refuses a flag holding a boolean rather than an origin
+    ok 5 - refuses a flag holding a boolean rather than an origin
+      ---
+      duration_ms: 0.488393
+      type: 'test'
+      ...
+    # Subtest: refuses a flag that names a different origin
+    ok 6 - refuses a flag that names a different origin
+      ---
+      duration_ms: 1.378573
+      type: 'test'
+      ...
+    # Subtest: permits the origin the flag names, in any loopback spelling
+    ok 7 - permits the origin the flag names, in any loopback spelling
+      ---
+      duration_ms: 0.246405
+      type: 'test'
+      ...
+    # Subtest: accepts the fleet-wide spelling too
+    ok 8 - accepts the fleet-wide spelling too
+      ---
+      duration_ms: 0.242693
+      type: 'test'
+      ...
+    # Subtest: lets a disposable rig through without a flag
+    ok 9 - lets a disposable rig through without a flag
+      ---
+      duration_ms: 0.29332
+      type: 'test'
+      ...
+    # Subtest: binds occ to a named container, and falls back to the server root
+    ok 10 - binds occ to a named container, and falls back to the server root
+      ---
+      duration_ms: 0.387656
+      type: 'test'
+      ...
+    1..10
+ok 1 - portaliq shared-instance guard
+  ---
+  duration_ms: 7.558759
+  type: 'suite'
+  ...
+1..1
+# tests 10
+# suites 1
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 128.309538
+
+> portaliq@0.1.0 check:connection-registry
+> node --test tests/connection-registry.spec.mjs
+
+TAP version 13
+# (node:11463) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/lib/connectionRegistry.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: connection strings
+    # Subtest: ships an English and a Dutch catalogue entry for every label the page declares
+    ok 1 - ships an English and a Dutch catalogue entry for every label the page declares
+      ---
+      duration_ms: 5.644896
+      type: 'test'
+      ...
+    1..1
+ok 1 - connection strings
+  ---
+  duration_ms: 6.548039
+  type: 'suite'
+  ...
+# Subtest: Add integration handler
+    # Subtest: opens integriq on the link dialog, preset to portaliq
+    ok 1 - opens integriq on the link dialog, preset to portaliq
+      ---
+      duration_ms: 0.854471
+      type: 'test'
+      ...
+    1..1
+ok 2 - Add integration handler
+  ---
+  duration_ms: 0.976487
+  type: 'suite'
+  ...
+# Subtest: the Integrations page declaration
+    # Subtest: lists integriq app_connection rows, admin only, and requires integriq
+    ok 1 - lists integriq app_connection rows, admin only, and requires integriq
+      ---
+      duration_ms: 0.227816
+      type: 'test'
+      ...
+    # Subtest: offers no generic Add button
+    ok 2 - offers no generic Add button
+      ---
+      duration_ms: 0.113164
+      type: 'test'
+      ...
+    # Subtest: scopes the rows to portaliq through the menu preset, in the gear
+    ok 3 - scopes the rows to portaliq through the menu preset, in the gear
+      ---
+      duration_ms: 0.122275
+      type: 'test'
+      ...
+    # Subtest: names only formatters the library ships and handlers that exist, and wires the handler into the app
+    ok 4 - names only formatters the library ships and handlers that exist, and wires the handler into the app
+      ---
+      duration_ms: 0.841599
+      type: 'test'
+      ...
+    # Subtest: lets the library label the statuses, disabled included
+    ok 5 - lets the library label the statuses, disabled included
+      ---
+      duration_ms: 0.436783
+      type: 'test'
+      ...
+    # Subtest: names an icon src/icons.js registers
+    ok 6 - names an icon src/icons.js registers
+      ---
+      duration_ms: 0.288506
+      type: 'test'
+      ...
+    # Subtest: keeps its id and route apart from every other page
+    ok 7 - keeps its id and route apart from every other page
+      ---
+      duration_ms: 0.239179
+      type: 'test'
+      ...
+    1..7
+ok 3 - the Integrations page declaration
+  ---
+  duration_ms: 2.845906
+  type: 'suite'
+  ...
+1..3
+# tests 9
+# suites 3
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 79.574373
+
+> portaliq@0.1.0 check:leaf-integrations
+> node --test tests/leaf-integrations.spec.mjs
+
+TAP version 13
+# Subtest: every integration widget names an integration
+ok 1 - every integration widget names an integration
+  ---
+  duration_ms: 1.004704
+  type: 'test'
+  ...
+# Subtest: every integration widget is placed in its page layout
+ok 2 - every integration widget is placed in its page layout
+  ---
+  duration_ms: 0.201257
+  type: 'test'
+  ...
+# Subtest: the bundle that renders a leaf installs the registry first
+ok 3 - the bundle that renders a leaf installs the registry first
+  ---
+  duration_ms: 0.197455
+  type: 'test'
+  ...
+# Subtest: every integration icon the manifest names is registered
+ok 4 - every integration icon the manifest names is registered
+  ---
+  duration_ms: 0.227826
+  type: 'test'
+  ...
+# Subtest: the schema behind an integration widget declares the same leaf
+ok 5 - the schema behind an integration widget declares the same leaf
+  ---
+  duration_ms: 0.171422
+  type: 'test'
+  ...
+# Subtest: a schema that declares a leaf had its version bumped to carry it
+ok 6 - a schema that declares a leaf had its version bumped to carry it
+  ---
+  duration_ms: 0.161488
+  type: 'test'
+  ...
+# Subtest: no portal-edge page renders an integration widget
+ok 7 - no portal-edge page renders an integration widget
+  ---
+  duration_ms: 0.192196
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 72.814012
+
+> portaliq@0.1.0 check:page-layout-entry
+> node --test tests/page-layout-entry.spec.mjs
+
+TAP version 13
+# (node:11528) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/lib/pageSiteUrl.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/rubenlinde/memcap-work/lq-lanes/pq-guard/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the layout designer
+    # Subtest: is a page with an :id route and a component
+    ok 1 - is a page with an :id route and a component
+      ---
+      duration_ms: 0.761859
+      type: 'test'
+      ...
+    # Subtest: is reached from the page detail by a header action
+    ok 2 - is reached from the page detail by a header action
+      ---
+      duration_ms: 0.194431
+      type: 'test'
+      ...
+    # Subtest: is reached from the pages list by a row action
+    ok 3 - is reached from the pages list by a row action
+      ---
+      duration_ms: 0.287256
+      type: 'test'
+      ...
+    # Subtest: shares its :id param name with PageLayout, so the detail action resolves
+    ok 4 - shares its :id param name with PageLayout, so the detail action resolves
+      ---
+      duration_ms: 0.878995
+      type: 'test'
+      ...
+    1..4
+ok 1 - the layout designer
+  ---
+  duration_ms: 3.098547
+  type: 'suite'
+  ...
+# Subtest: the actions that open it
+    # Subtest: name icons the app has registered
+    ok 1 - name icons the app has registered
+      ---
+      duration_ms: 0.405316
+      type: 'test'
+      ...
+    1..1
+ok 2 - the actions that open it
+  ---
+  duration_ms: 0.537951
+  type: 'suite'
+  ...
+# Subtest: pageSiteUrl
+    # Subtest: carries the page route and the portal slug
+    ok 1 - carries the page route and the portal slug
+      ---
+      duration_ms: 0.348156
+      type: 'test'
+      ...
+    # Subtest: omits the portal when the page names none
+    ok 2 - omits the portal when the page names none
+      ---
+      duration_ms: 0.318193
+      type: 'test'
+      ...
+    # Subtest: defaults a missing route to the portal front door
+    ok 3 - defaults a missing route to the portal front door
+      ---
+      duration_ms: 0.215909
+      type: 'test'
+      ...
+    # Subtest: encodes a slug or route that would otherwise split the query
+    ok 4 - encodes a slug or route that would otherwise split the query
+      ---
+      duration_ms: 0.248638
+      type: 'test'
+      ...
+    1..4
+ok 3 - pageSiteUrl
+  ---
+  duration_ms: 1.638645
+  type: 'suite'
+  ...
+1..3
+# tests 9
+# suites 3
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 80.156496
+
+> portaliq@0.1.0 check:collection-table
+> node --test tests/collection-table-keyboard.spec.mjs
+
+TAP version 13
+# Subtest: every selectable row carries a button that selects that row
+ok 1 - every selectable row carries a button that selects that row
+  ---
+  duration_ms: 2.610495
+  type: 'test'
+  ...
+# Subtest: the button is named by the row it opens
+ok 2 - the button is named by the row it opens
+  ---
+  duration_ms: 7.836786
+  type: 'test'
+  ...
+# Subtest: the open row is announced as the current one
+ok 3 - the open row is announced as the current one
+  ---
+  duration_ms: 0.806356
+  type: 'test'
+  ...
+# Subtest: a table nobody can select from renders no select button
+ok 4 - a table nobody can select from renders no select button
+  ---
+  duration_ms: 0.54031
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 415.400992
+
+> portaliq@0.1.0 check:case-timeline
+> node --test tests/case-timeline.spec.mjs
+
+TAP version 13
+# Subtest: the entries render under the declared label, newest first, none dropped
+ok 1 - the entries render under the declared label, newest first, none dropped
+  ---
+  duration_ms: 25.874198
+  type: 'test'
+  ...
+# Subtest: ordering never changes the list the provider returned
+ok 2 - ordering never changes the list the provider returned
+  ---
+  duration_ms: 0.308929
+  type: 'test'
+  ...
+# Subtest: a case with no history says so
+ok 3 - a case with no history says so
+  ---
+  duration_ms: 0.780148
+  type: 'test'
+  ...
+# Subtest: the SPA asks the scoped timeline route of the selected case
+ok 4 - the SPA asks the scoped timeline route of the selected case
+  ---
+  duration_ms: 0.741073
+  type: 'test'
+  ...
+# Subtest: a refused or failed timeline read is null, not an empty history
+ok 5 - a refused or failed timeline read is null, not an empty history
+  ---
+  duration_ms: 0.304164
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 481.477013

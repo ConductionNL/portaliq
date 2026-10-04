@@ -1,0 +1,9 @@
+
+> portaliq@0.1.0 format
+> prettier --check "**/*.{js,ts,vue,css,scss}"
+
+Checking formatting...
+[warn] .tmp/cov810/html/_css/octicons.css
+[warn] .tmp/cov810/html/_css/style.css
+[warn] .tmp/cov810/html/_js/file.js
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.

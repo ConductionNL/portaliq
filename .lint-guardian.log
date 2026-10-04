@@ -1,0 +1,243 @@
+
+> portaliq@0.1.0 lint
+> eslint src tests scripts
+
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/App.jsx
+   44:1  warning  Missing JSDoc @param "contributions" description  jsdoc/require-param-description
+   44:1  warning  Missing JSDoc @param "contributions" type         jsdoc/require-param-type
+   45:1  warning  Missing JSDoc @param "t" description              jsdoc/require-param-description
+   45:1  warning  Missing JSDoc @param "t" type                     jsdoc/require-param-type
+   46:1  warning  Missing JSDoc @param "tasksEnabled" description   jsdoc/require-param-description
+   46:1  warning  Missing JSDoc @param "tasksEnabled" type          jsdoc/require-param-type
+   80:1  warning  Missing JSDoc @param "root0" description          jsdoc/require-param-description
+   80:1  warning  Missing JSDoc @param "root0" type                 jsdoc/require-param-type
+   81:1  warning  Missing JSDoc @param "root0.config" description   jsdoc/require-param-description
+   81:1  warning  Missing JSDoc @param "root0.config" type          jsdoc/require-param-type
+   82:1  warning  Missing JSDoc @param "root0.t" description        jsdoc/require-param-description
+   82:1  warning  Missing JSDoc @param "root0.t" type               jsdoc/require-param-type
+  268:1  warning  Missing JSDoc @param "provider" description       jsdoc/require-param-description
+  268:1  warning  Missing JSDoc @param "provider" type              jsdoc/require-param-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/ActionFieldsForm.jsx
+  17:1  warning  Missing JSDoc @param "root0" description           jsdoc/require-param-description
+  17:1  warning  Missing JSDoc @param "root0" type                  jsdoc/require-param-type
+  18:1  warning  Missing JSDoc @param "root0.fields" description    jsdoc/require-param-description
+  18:1  warning  Missing JSDoc @param "root0.fields" type           jsdoc/require-param-type
+  19:1  warning  Missing JSDoc @param "root0.t" description         jsdoc/require-param-description
+  19:1  warning  Missing JSDoc @param "root0.t" type                jsdoc/require-param-type
+  20:1  warning  Missing JSDoc @param "root0.onSubmit" description  jsdoc/require-param-description
+  20:1  warning  Missing JSDoc @param "root0.onSubmit" type         jsdoc/require-param-type
+  21:1  warning  Missing JSDoc @param "root0.onCancel" description  jsdoc/require-param-description
+  21:1  warning  Missing JSDoc @param "root0.onCancel" type         jsdoc/require-param-type
+  28:1  warning  Missing JSDoc @param "field" description           jsdoc/require-param-description
+  28:1  warning  Missing JSDoc @param "field" type                  jsdoc/require-param-type
+  29:1  warning  Missing JSDoc @param "value" description           jsdoc/require-param-description
+  29:1  warning  Missing JSDoc @param "value" type                  jsdoc/require-param-type
+  37:1  warning  Missing JSDoc @param "event" description           jsdoc/require-param-description
+  37:1  warning  Missing JSDoc @param "event" type                  jsdoc/require-param-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/CitizenCase.jsx
+  19:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  20:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  21:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  60:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/CollectionTable.jsx
+  14:1  warning  Missing JSDoc @param "value" description              jsdoc/require-param-description
+  14:1  warning  Missing JSDoc @param "value" type                     jsdoc/require-param-type
+  15:1  warning  Missing JSDoc @param "render" description             jsdoc/require-param-description
+  15:1  warning  Missing JSDoc @param "render" type                    jsdoc/require-param-type
+  39:1  warning  Missing JSDoc @param "collection" description         jsdoc/require-param-description
+  39:1  warning  Missing JSDoc @param "collection" type                jsdoc/require-param-type
+  40:1  warning  Missing JSDoc @param "objects" description            jsdoc/require-param-description
+  40:1  warning  Missing JSDoc @param "objects" type                   jsdoc/require-param-type
+  64:1  warning  Missing JSDoc @param "root0" description              jsdoc/require-param-description
+  64:1  warning  Missing JSDoc @param "root0" type                     jsdoc/require-param-type
+  65:1  warning  Missing JSDoc @param "root0.collection" description   jsdoc/require-param-description
+  65:1  warning  Missing JSDoc @param "root0.collection" type          jsdoc/require-param-type
+  66:1  warning  Missing JSDoc @param "root0.objects" description      jsdoc/require-param-description
+  66:1  warning  Missing JSDoc @param "root0.objects" type             jsdoc/require-param-type
+  67:1  warning  Missing JSDoc @param "root0.loading" description      jsdoc/require-param-description
+  67:1  warning  Missing JSDoc @param "root0.loading" type             jsdoc/require-param-type
+  68:1  warning  Missing JSDoc @param "root0.onSelect" description     jsdoc/require-param-description
+  68:1  warning  Missing JSDoc @param "root0.onSelect" type            jsdoc/require-param-type
+  69:1  warning  Missing JSDoc @param "root0.rowActions" description   jsdoc/require-param-description
+  69:1  warning  Missing JSDoc @param "root0.rowActions" type          jsdoc/require-param-type
+  70:1  warning  Missing JSDoc @param "root0.onRowAction" description  jsdoc/require-param-description
+  70:1  warning  Missing JSDoc @param "root0.onRowAction" type         jsdoc/require-param-type
+  71:1  warning  Missing JSDoc @param "root0.busyRow" description      jsdoc/require-param-description
+  71:1  warning  Missing JSDoc @param "root0.busyRow" type             jsdoc/require-param-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/EmbeddedForm.jsx
+  29:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/InboxPage.jsx
+  16:1  warning  Missing JSDoc @param "value" description             jsdoc/require-param-description
+  16:1  warning  Missing JSDoc @param "value" type                    jsdoc/require-param-type
+  17:1  warning  Missing JSDoc @param "locale" description            jsdoc/require-param-description
+  17:1  warning  Missing JSDoc @param "locale" type                   jsdoc/require-param-type
+  32:1  warning  Missing JSDoc @param "root0" description             jsdoc/require-param-description
+  32:1  warning  Missing JSDoc @param "root0" type                    jsdoc/require-param-type
+  33:1  warning  Missing JSDoc @param "root0.api" description         jsdoc/require-param-description
+  33:1  warning  Missing JSDoc @param "root0.api" type                jsdoc/require-param-type
+  34:1  warning  Missing JSDoc @param "root0.t" description           jsdoc/require-param-description
+  34:1  warning  Missing JSDoc @param "root0.t" type                  jsdoc/require-param-type
+  35:1  warning  Missing JSDoc @param "root0.locale" description      jsdoc/require-param-description
+  35:1  warning  Missing JSDoc @param "root0.locale" type             jsdoc/require-param-type
+  36:1  warning  Missing JSDoc @param "root0.onRead" description      jsdoc/require-param-description
+  36:1  warning  Missing JSDoc @param "root0.onRead" type             jsdoc/require-param-type
+  37:1  warning  Missing JSDoc @param "root0.onOpenTask" description  jsdoc/require-param-description
+  37:1  warning  Missing JSDoc @param "root0.onOpenTask" type         jsdoc/require-param-type
+  53:1  warning  Missing JSDoc @param "message" description           jsdoc/require-param-description
+  53:1  warning  Missing JSDoc @param "message" type                  jsdoc/require-param-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/PageView.jsx
+   21:1  warning  Missing JSDoc @param "contribution" description            jsdoc/require-param-description
+   21:1  warning  Missing JSDoc @param "contribution" type                   jsdoc/require-param-type
+   22:1  warning  Missing JSDoc @param "id" description                      jsdoc/require-param-description
+   22:1  warning  Missing JSDoc @param "id" type                             jsdoc/require-param-type
+   30:1  warning  Missing JSDoc @param "contribution" description            jsdoc/require-param-description
+   30:1  warning  Missing JSDoc @param "contribution" type                   jsdoc/require-param-type
+   31:1  warning  Missing JSDoc @param "id" description                      jsdoc/require-param-description
+   31:1  warning  Missing JSDoc @param "id" type                             jsdoc/require-param-type
+   49:1  warning  Missing JSDoc @param "e" description                       jsdoc/require-param-description
+   49:1  warning  Missing JSDoc @param "e" type                              jsdoc/require-param-type
+   93:1  warning  Missing JSDoc @param "root0" description                   jsdoc/require-param-description
+   93:1  warning  Missing JSDoc @param "root0" type                          jsdoc/require-param-type
+   94:1  warning  Missing JSDoc @param "root0.collection" description        jsdoc/require-param-description
+   94:1  warning  Missing JSDoc @param "root0.collection" type               jsdoc/require-param-type
+   95:1  warning  Missing JSDoc @param "root0.row" description               jsdoc/require-param-description
+   95:1  warning  Missing JSDoc @param "root0.row" type                      jsdoc/require-param-type
+   96:1  warning  Missing JSDoc @param "root0.api" description               jsdoc/require-param-description
+   96:1  warning  Missing JSDoc @param "root0.api" type                      jsdoc/require-param-type
+  105:1  warning  Missing JSDoc @param "file" description                    jsdoc/require-param-description
+  105:1  warning  Missing JSDoc @param "file" type                           jsdoc/require-param-type
+  147:1  warning  Missing JSDoc @param "root0" description                   jsdoc/require-param-description
+  147:1  warning  Missing JSDoc @param "root0" type                          jsdoc/require-param-type
+  148:1  warning  Missing JSDoc @param "root0.action" description            jsdoc/require-param-description
+  148:1  warning  Missing JSDoc @param "root0.action" type                   jsdoc/require-param-type
+  149:1  warning  Missing JSDoc @param "root0.row" description               jsdoc/require-param-description
+  149:1  warning  Missing JSDoc @param "root0.row" type                      jsdoc/require-param-type
+  150:1  warning  Missing JSDoc @param "root0.api" description               jsdoc/require-param-description
+  150:1  warning  Missing JSDoc @param "root0.api" type                      jsdoc/require-param-type
+  171:1  warning  Missing JSDoc @param "id" description                      jsdoc/require-param-description
+  171:1  warning  Missing JSDoc @param "id" type                             jsdoc/require-param-type
+  181:1  warning  Missing JSDoc @param "changes" description                 jsdoc/require-param-description
+  181:1  warning  Missing JSDoc @param "changes" type                        jsdoc/require-param-type
+  182:1  warning  Missing JSDoc @param "note" description                    jsdoc/require-param-description
+  182:1  warning  Missing JSDoc @param "note" type                           jsdoc/require-param-type
+  219:1  warning  Missing JSDoc @param "root0" description                   jsdoc/require-param-description
+  219:1  warning  Missing JSDoc @param "root0" type                          jsdoc/require-param-type
+  220:1  warning  Missing JSDoc @param "root0.collection" description        jsdoc/require-param-description
+  220:1  warning  Missing JSDoc @param "root0.collection" type               jsdoc/require-param-type
+  221:1  warning  Missing JSDoc @param "root0.row" description               jsdoc/require-param-description
+  221:1  warning  Missing JSDoc @param "root0.row" type                      jsdoc/require-param-type
+  222:1  warning  Missing JSDoc @param "root0.api" description               jsdoc/require-param-description
+  222:1  warning  Missing JSDoc @param "root0.api" type                      jsdoc/require-param-type
+  223:1  warning  Missing JSDoc @param "root0.proposeAction" description     jsdoc/require-param-description
+  223:1  warning  Missing JSDoc @param "root0.proposeAction" type            jsdoc/require-param-type
+  274:1  warning  Missing JSDoc @param "root0" description                   jsdoc/require-param-description
+  274:1  warning  Missing JSDoc @param "root0" type                          jsdoc/require-param-type
+  275:1  warning  Missing JSDoc @param "root0.page" description              jsdoc/require-param-description
+  275:1  warning  Missing JSDoc @param "root0.page" type                     jsdoc/require-param-type
+  276:1  warning  Missing JSDoc @param "root0.contribution" description      jsdoc/require-param-description
+  276:1  warning  Missing JSDoc @param "root0.contribution" type             jsdoc/require-param-type
+  277:1  warning  Missing JSDoc @param "root0.api" description               jsdoc/require-param-description
+  277:1  warning  Missing JSDoc @param "root0.api" type                      jsdoc/require-param-type
+  278:1  warning  Missing JSDoc @param "root0.dataByCollection" description  jsdoc/require-param-description
+  278:1  warning  Missing JSDoc @param "root0.dataByCollection" type         jsdoc/require-param-type
+  279:1  warning  Missing JSDoc @param "root0.onCreated" description         jsdoc/require-param-description
+  279:1  warning  Missing JSDoc @param "root0.onCreated" type                jsdoc/require-param-type
+  280:1  warning  Missing JSDoc @param "root0.onAction" description          jsdoc/require-param-description
+  280:1  warning  Missing JSDoc @param "root0.onAction" type                 jsdoc/require-param-type
+  281:1  warning  Missing JSDoc @param "root0.onRowAction" description       jsdoc/require-param-description
+  281:1  warning  Missing JSDoc @param "root0.onRowAction" type              jsdoc/require-param-type
+  282:1  warning  Missing JSDoc @param "root0.busyRow" description           jsdoc/require-param-description
+  282:1  warning  Missing JSDoc @param "root0.busyRow" type                  jsdoc/require-param-type
+  283:1  warning  Missing JSDoc @param "root0.t" description                 jsdoc/require-param-description
+  283:1  warning  Missing JSDoc @param "root0.t" type                        jsdoc/require-param-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/ProposeChangeForm.jsx
+  16:1  warning  Missing JSDoc @param "root0" description           jsdoc/require-param-description
+  16:1  warning  Missing JSDoc @param "root0" type                  jsdoc/require-param-type
+  17:1  warning  Missing JSDoc @param "root0.action" description    jsdoc/require-param-description
+  17:1  warning  Missing JSDoc @param "root0.action" type           jsdoc/require-param-type
+  18:1  warning  Missing JSDoc @param "root0.row" description       jsdoc/require-param-description
+  18:1  warning  Missing JSDoc @param "root0.row" type              jsdoc/require-param-type
+  19:1  warning  Missing JSDoc @param "root0.onSubmit" description  jsdoc/require-param-description
+  19:1  warning  Missing JSDoc @param "root0.onSubmit" type         jsdoc/require-param-type
+  20:1  warning  Missing JSDoc @param "root0.onCancel" description  jsdoc/require-param-description
+  20:1  warning  Missing JSDoc @param "root0.onCancel" type         jsdoc/require-param-type
+  36:1  warning  Missing JSDoc @param "field" description           jsdoc/require-param-description
+  36:1  warning  Missing JSDoc @param "field" type                  jsdoc/require-param-type
+  37:1  warning  Missing JSDoc @param "value" description           jsdoc/require-param-description
+  37:1  warning  Missing JSDoc @param "value" type                  jsdoc/require-param-type
+  44:1  warning  Missing JSDoc @param "event" description           jsdoc/require-param-description
+  44:1  warning  Missing JSDoc @param "event" type                  jsdoc/require-param-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/RichText.jsx
+  12:1  warning  Missing JSDoc @param "root0" description           jsdoc/require-param-description
+  12:1  warning  Missing JSDoc @param "root0" type                  jsdoc/require-param-type
+  13:1  warning  Missing JSDoc @param "root0.markdown" description  jsdoc/require-param-description
+  13:1  warning  Missing JSDoc @param "root0.markdown" type         jsdoc/require-param-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/SchemaForm.jsx
+  20:1  warning  Missing JSDoc @param "cfg" description                jsdoc/require-param-description
+  20:1  warning  Missing JSDoc @param "cfg" type                       jsdoc/require-param-type
+  28:1  warning  Missing JSDoc @param "root0" description              jsdoc/require-param-description
+  28:1  warning  Missing JSDoc @param "root0" type                     jsdoc/require-param-type
+  29:1  warning  Missing JSDoc @param "root0.action" description       jsdoc/require-param-description
+  29:1  warning  Missing JSDoc @param "root0.action" type              jsdoc/require-param-type
+  30:1  warning  Missing JSDoc @param "root0.api" description          jsdoc/require-param-description
+  30:1  warning  Missing JSDoc @param "root0.api" type                 jsdoc/require-param-type
+  31:1  warning  Missing JSDoc @param "root0.onSubmitted" description  jsdoc/require-param-description
+  31:1  warning  Missing JSDoc @param "root0.onSubmitted" type         jsdoc/require-param-type
+  65:1  warning  Missing JSDoc @param "field" description              jsdoc/require-param-description
+  65:1  warning  Missing JSDoc @param "field" type                     jsdoc/require-param-type
+  66:1  warning  Missing JSDoc @param "value" description              jsdoc/require-param-description
+  66:1  warning  Missing JSDoc @param "value" type                     jsdoc/require-param-type
+  74:1  warning  Missing JSDoc @param "e" description                  jsdoc/require-param-description
+  74:1  warning  Missing JSDoc @param "e" type                         jsdoc/require-param-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/components/TasksPage.jsx
+   16:1  warning  Missing JSDoc @param "value" type                  jsdoc/require-param-type
+   17:1  warning  Missing JSDoc @param "locale" type                 jsdoc/require-param-type
+   35:1  warning  Missing JSDoc @param "task" type                   jsdoc/require-param-type
+   55:1  warning  Missing JSDoc @param "file" type                   jsdoc/require-param-type
+   56:1  warning  Missing JSDoc @param "accepted" type               jsdoc/require-param-type
+   82:1  warning  Missing JSDoc @param "code" type                   jsdoc/require-param-type
+  100:1  warning  Missing JSDoc @param "root0" type                  jsdoc/require-param-type
+  101:1  warning  Missing JSDoc @param "root0.api" type              jsdoc/require-param-type
+  102:1  warning  Missing JSDoc @param "root0.t" type                jsdoc/require-param-type
+  103:1  warning  Missing JSDoc @param "root0.locale" type           jsdoc/require-param-type
+  104:1  warning  Missing JSDoc @param "root0.initialTaskUuid" type  jsdoc/require-param-type
+  105:1  warning  Missing JSDoc @param "root0.onTaskCompleted" type  jsdoc/require-param-type
+  160:1  warning  Missing JSDoc @param "task" type                   jsdoc/require-param-type
+  161:1  warning  Missing JSDoc @param "chosen" type                 jsdoc/require-param-type
+  191:1  warning  Missing JSDoc @param "task" type                   jsdoc/require-param-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/embedHeight.js
+  84:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  85:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/portal/lib/portalApi.js
+   33:1  warning  Missing JSDoc @param "token" description   jsdoc/require-param-description
+   33:1  warning  Missing JSDoc @param "token" type          jsdoc/require-param-type
+   68:1  warning  Missing JSDoc @param "path" description    jsdoc/require-param-description
+   68:1  warning  Missing JSDoc @param "path" type           jsdoc/require-param-type
+   82:1  warning  Missing JSDoc @param "method" description  jsdoc/require-param-description
+   82:1  warning  Missing JSDoc @param "method" type         jsdoc/require-param-type
+   83:1  warning  Missing JSDoc @param "path" description    jsdoc/require-param-description
+   83:1  warning  Missing JSDoc @param "path" type           jsdoc/require-param-type
+   84:1  warning  Missing JSDoc @param "body" description    jsdoc/require-param-description
+   84:1  warning  Missing JSDoc @param "body" type           jsdoc/require-param-type
+  310:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+
+/home/rubenlinde/memcap-work/lq-lanes/pq-guard/src/site/lib/publicationDetail.js
+  72:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+  86:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+
+✖ 207 problems (0 errors, 207 warnings)
+
+EXIT:0
