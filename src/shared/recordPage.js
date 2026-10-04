@@ -511,15 +511,16 @@ export function allGroups(contribution, store) {
 }
 
 /**
- * When a news item was published, for sorting: OpenRegister's
- * `@self.published`, else `@self.created`; -Infinity when undated.
+ * When a news item was published, for sorting: its own `publishedAt`
+ * (stamped when staff publish it), else OpenRegister's `@self.published`,
+ * else `@self.created`; -Infinity when undated.
  *
  * @param {object} item A news item.
  * @return {number} Milliseconds since the epoch, or -Infinity.
  */
 function publishedMoment(item) {
 	const self = item?.['@self'] || {}
-	for (const value of [self.published, self.created]) {
+	for (const value of [item?.publishedAt, self.published, self.created]) {
 		const time = Date.parse(value || '')
 		if (!Number.isNaN(time)) {
 			return time

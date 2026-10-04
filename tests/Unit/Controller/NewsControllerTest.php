@@ -25,6 +25,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\NewsController;
 use OCA\Portaliq\Service\NewsAudienceOptions;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -152,6 +153,52 @@ class NewsControllerTest extends TestCase {
 		$this->assertSame('published', $objectService->saved['status']);
 		$this->assertSame('X', $objectService->saved['title']);
 	}//end testPublishFlipsStatusAndPreservesOtherFields()
+
+	/**
+	 * Publishing stamps the moment on the item, from the server clock;
+	 * taking it back clears it, so a draft never shows a publish date.
+	 *
+	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 */
+	public function testPublishStampsTheMomentAndTakeBackClearsIt(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $row = ['title' => 'X', 'status' => 'draft', 'publishedAt' => null];
+
+			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ['id' => $id] + $this->row;
+			}//end find()
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				$this->row = $object;
+				return $object;
+			}//end saveObject()
+		};
+
+		$clock = $this->createMock(ITimeFactory::class);
+		$clock->method('getTime')->willReturn(1791018000);
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), null, $clock);
+
+		$controller->publish('n1');
+		$this->assertSame('published', $objectService->saved['status']);
+		$this->assertSame('2026-10-03T09:00:00+00:00', $objectService->saved['publishedAt']);
+
+		$controller->unpublish('n1');
+		$this->assertSame('draft', $objectService->saved['status']);
+		$this->assertNull($objectService->saved['publishedAt']);
+	}//end testPublishStampsTheMomentAndTakeBackClearsIt()
 
 	public function testUnpublishReturns404ForAMissingId(): void {
 		$objectService = new class {

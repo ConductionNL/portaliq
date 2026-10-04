@@ -640,6 +640,26 @@ test('the news block shows the newest three, whatever order the feed came in', a
 	assert.deepEqual([...new Set(titles)], ['e', 'c', 'd'])
 })
 
+test('a draft written long ago and published today is the newest news', () => {
+	const items = [
+		{
+			id: 'recent',
+			publishedAt: '2026-09-26T08:00:00+00:00',
+			'@self': { created: '2026-09-26T07:00:00+00:00' },
+		},
+		{
+			id: 'late',
+			publishedAt: '2026-10-03T09:00:00+00:00',
+			'@self': { created: '2026-08-01T08:00:00+00:00' },
+		},
+		{ id: 'unstamped', '@self': { created: '2026-09-30T08:00:00+00:00' } },
+	]
+	assert.deepEqual(
+		newestNewsFirst(items).map((item) => item.id),
+		['late', 'unstamped', 'recent'],
+	)
+})
+
 test('one child opens at once, without a way back', async () => {
 	const html = await renderPage({
 		initialData: {

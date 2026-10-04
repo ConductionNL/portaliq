@@ -2054,7 +2054,9 @@ OC.L10N.register(
         "On a collection block: cards instead of a table.": "On a collection block: cards instead of a table.",
         "Progress": "Progress",
         "On cards: the fields with the value and the total, and the unit, shown as a figure.": "On cards: the fields with the value and the total, and the unit, shown as a figure.",
-        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection."
+        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.",
+        "Published on": "Published on",
+        "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable.": "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable."
     },
     "nplurals=2; plural=(n != 1);"
 )
