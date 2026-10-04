@@ -2007,7 +2007,6 @@ OC.L10N.register(
         "Record page": "Record page",
         "The collection this page shows one record of.": "The collection this page shows one record of.",
         "Record switcher": "Record switcher",
-        "The collection whose records this page switches between.": "The collection whose records this page switches between.",
         "Per record": "Per record",
         "The menu lists the page once for each record of this collection.": "The menu lists the page once for each record of this collection.",
         "The blocks of the page, in order. A block of an unknown type is left out.": "The blocks of the page, in order. A block of an unknown type is left out.",
@@ -2040,7 +2039,8 @@ OC.L10N.register(
         "Record groups field": "Record groups field",
         "Narrow the rows to the open record's groups.": "Narrow the rows to the open record's groups.",
         "Lookups": "Lookups",
-        "Values added to each row from another collection.": "Values added to each row from another collection."
+        "Values added to each row from another collection.": "Values added to each row from another collection.",
+        "The collection whose records this page switches between, as an object with collection and the fields that name the records. An app may also name only the collection.": "The collection whose records this page switches between, as an object with collection and the fields that name the records. An app may also name only the collection."
     },
     "nplurals=2; plural=(n != 1);"
 )

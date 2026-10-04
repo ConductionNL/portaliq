@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.56.0"
+        "version": "0.56.1"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.56.0",
+                "version": "0.56.1",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1568,7 +1568,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.4.0",
+                "version": "0.4.1",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -2189,11 +2189,8 @@
                                 },
                                 "records": {
                                     "title": "Record switcher",
-                                    "type": [
-                                        "object",
-                                        "string"
-                                    ],
-                                    "description": "The collection whose records this page switches between."
+                                    "type": "object",
+                                    "description": "The collection whose records this page switches between, as an object with collection and the fields that name the records. An app may also name only the collection."
                                 },
                                 "perRecord": {
                                     "title": "Per record",
