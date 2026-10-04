@@ -60,7 +60,22 @@ export default {
 		Next: 'Volgende',
 		'No conversations yet.': 'Nog geen gesprekken.',
 		'No messages.': 'Geen berichten.',
+		Delete: 'Verwijderen',
+		Select: 'Selecteren',
+		'Select all': 'Alles selecteren',
+		'Delete selected ({count})': 'Geselecteerde verwijderen ({count})',
+		'Delete this message? You cannot undo this.':
+			'Dit bericht verwijderen? Dit kunt u niet ongedaan maken.',
+		'Delete {count} messages? You cannot undo this.':
+			'{count} berichten verwijderen? Dit kunt u niet ongedaan maken.',
+		'Yes, delete': 'Ja, verwijderen',
+		Cancel: 'Annuleren',
+		'The message is deleted.': 'Het bericht is verwijderd.',
+		'{count} messages are deleted.': '{count} berichten zijn verwijderd.',
+		'Not every message could be deleted. Please try again.':
+			'Niet elk bericht kon worden verwijderd. Probeer het opnieuw.',
 		'No news yet.': 'Nog geen nieuws.',
+		'Published on {date}': 'Gepubliceerd op {date}',
 		'No open tasks.': 'U heeft geen open taken.',
 		'No tests are open for you right now.':
 			'Er staan nu geen toetsen voor je open.',
@@ -183,7 +198,22 @@ export default {
 		Next: 'Next',
 		'No conversations yet.': 'No conversations yet.',
 		'No messages.': 'No messages.',
+		Delete: 'Delete',
+		Select: 'Select',
+		'Select all': 'Select all',
+		'Delete selected ({count})': 'Delete selected ({count})',
+		'Delete this message? You cannot undo this.':
+			'Delete this message? You cannot undo this.',
+		'Delete {count} messages? You cannot undo this.':
+			'Delete {count} messages? You cannot undo this.',
+		'Yes, delete': 'Yes, delete',
+		Cancel: 'Cancel',
+		'The message is deleted.': 'The message is deleted.',
+		'{count} messages are deleted.': '{count} messages are deleted.',
+		'Not every message could be deleted. Please try again.':
+			'Not every message could be deleted. Please try again.',
 		'No news yet.': 'No news yet.',
+		'Published on {date}': 'Published on {date}',
 		'No open tasks.': 'No open tasks.',
 		'No tests are open for you right now.':
 			'No tests are open for you right now.',

@@ -37,7 +37,34 @@
  */
 
 import { loaders } from './loaders.js'
+import { metaOf as accordionMeta } from './nlAccordion/meta.js'
+import { metaOf as actionGroupMeta } from './nlActionGroup/meta.js'
+import { metaOf as alertMeta } from './nlAlert/meta.js'
+import { metaOf as bannerMeta } from './nlBanner/meta.js'
+import { metaOf as buttonLinkMeta } from './nlButtonLink/meta.js'
+import { metaOf as codeBlockMeta } from './nlCodeBlock/meta.js'
+import { metaOf as descriptionListMeta } from './nlDescriptionList/meta.js'
+import { metaOf as dialogMeta } from './nlDialog/meta.js'
+import { metaOf as drawerMeta } from './nlDrawer/meta.js'
+import { metaOf as headingMeta } from './nlHeading/meta.js'
+import { metaOf as imageMeta } from './nlImage/meta.js'
+import { metaOf as languageNavMeta } from './nlLanguageNav/meta.js'
 import { metaOf as linkMeta } from './nlLink/meta.js'
+import { metaOf as linkListMeta } from './nlLinkList/meta.js'
+import { metaOf as listMeta } from './nlList/meta.js'
+import { metaOf as noteMeta } from './nlNote/meta.js'
+import { metaOf as paragraphMeta } from './nlParagraph/meta.js'
+import { metaOf as progressBarMeta } from './nlProgressBar/meta.js'
+import { metaOf as progressCircleMeta } from './nlProgressCircle/meta.js'
+import { metaOf as quoteMeta } from './nlQuote/meta.js'
+import { metaOf as separatorMeta } from './nlSeparator/meta.js'
+import { metaOf as signInMeta } from './nlSignIn/meta.js'
+import { metaOf as tableMeta } from './nlTable/meta.js'
+import { metaOf as tabsMeta } from './nlTabs/meta.js'
+import { metaOf as taskNavMeta } from './nlTaskNav/meta.js'
+import { metaOf as toggletipMeta } from './nlToggletip/meta.js'
+import { metaOf as videoMeta } from './nlVideo/meta.js'
+import { metaOf as youTubeMeta } from './nlYouTube/meta.js'
 
 export { loaders } from './loaders.js'
 
@@ -61,7 +88,34 @@ export { loaders } from './loaders.js'
  * @type {Record<string, SiteWidgetMeta>}
  */
 export const metas = {
+	nlHeading: headingMeta,
+	nlParagraph: paragraphMeta,
 	nlLink: linkMeta,
+	nlLinkList: linkListMeta,
+	nlList: listMeta,
+	nlQuote: quoteMeta,
+	nlButtonLink: buttonLinkMeta,
+	nlActionGroup: actionGroupMeta,
+	nlDescriptionList: descriptionListMeta,
+	nlImage: imageMeta,
+	nlTable: tableMeta,
+	nlSeparator: separatorMeta,
+	nlCodeBlock: codeBlockMeta,
+	nlAccordion: accordionMeta,
+	nlVideo: videoMeta,
+	nlYouTube: youTubeMeta,
+	nlAlert: alertMeta,
+	nlNote: noteMeta,
+	nlBanner: bannerMeta,
+	nlDialog: dialogMeta,
+	nlDrawer: drawerMeta,
+	nlProgressBar: progressBarMeta,
+	nlProgressCircle: progressCircleMeta,
+	nlToggletip: toggletipMeta,
+	nlLanguageNav: languageNavMeta,
+	nlSignIn: signInMeta,
+	nlTaskNav: taskNavMeta,
+	nlTabs: tabsMeta,
 }
 
 /**
