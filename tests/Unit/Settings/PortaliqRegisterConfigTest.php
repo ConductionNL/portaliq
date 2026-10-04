@@ -315,9 +315,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.54.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
 		// another app writes, so it is also sent by email
 		// (woo-journey-entry-points T07). Additive.
-		// 0.57.0 (portalPage 0.5.0): the wave 6 block keys; `records` is one
-		// type, as OpenRegister's importer requires
-		// (EveryRegisterPropertyFitsTheImporterTest).
+		// 0.57.0 (portalPage 0.5.0): the wave 6 block keys.
+		// 0.56.1 (portalPage 0.4.1): `records` is one type, as OpenRegister's
+		// importer requires (EveryRegisterPropertyFitsTheImporterTest).
 		// 0.56.0 (portalPage 0.4.0): a page record may declare what the
 		// resolvers accept (site-mijn-omgeving-components, PortalPageSchemaTest).
 		// 0.55.0 (portalAccount 0.14.0): `activationTokenHash` and

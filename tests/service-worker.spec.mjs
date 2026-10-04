@@ -40,11 +40,13 @@ const AUTH_BASE = '/index.php/apps/portaliq/portal/api'
  * @param {object} [options] The sandbox.
  * @param {Function} [options.fetch] The worker's fetch; OK by default.
  * @param {Array<string>} [options.cached] URLs already in the cache.
- * @return {Promise<{handler: Function, store: Map, fetches: Array<string>}>}
+ * @param {boolean} [options.onLine] What the browser reports; online by default.
+ * @return {Promise<{handler: Function, store: Map, fetches: Array<string>, self: object}>}
  */
-async function loadWorker({ fetch, cached = [] } = {}) {
+async function loadWorker({ fetch, cached = [], onLine = true } = {}) {
 	const listeners = {}
 	const self = {
+		navigator: { onLine },
 		addEventListener: (type, fn) => {
 			listeners[type] = fn
 		},
@@ -53,9 +55,9 @@ async function loadWorker({ fetch, cached = [] } = {}) {
 	}
 	const store = new Map(cached.map((url) => [url, { cachedCopyOf: url }]))
 	const cache = {
-		match: async (request) => store.get(request.url),
+		match: async (request) => store.get(keyOf(request)),
 		put: async (request, response) => {
-			store.set(request.url, response)
+			store.set(keyOf(request), response)
 		},
 		keys: async () => [...store.keys()].map((url) => ({ url })),
 	}
@@ -69,13 +71,29 @@ async function loadWorker({ fetch, cached = [] } = {}) {
 		fetches.push(request.url)
 		return fetch
 			? fetch(request)
-			: { ok: true, clone: () => ({ freshCopyOf: request.url }) }
+			: {
+					ok: true,
+					type: 'basic',
+					redirected: false,
+					clone: () => ({ freshCopyOf: request.url }),
+				}
 	}
 	vm.runInNewContext(SOURCE, { self, caches, fetch: workerFetch, URL, Promise })
 	assert.equal(typeof listeners.fetch, 'function', 'the worker listens for fetch')
 	// Let the start-up read of the cache finish.
 	await new Promise((resolve) => setImmediate(resolve))
-	return { handler: listeners.fetch, store, fetches }
+	return { handler: listeners.fetch, store, fetches, self }
+}
+
+/**
+ * The cache key of a request or a string address, as the real Cache API
+ * takes both.
+ *
+ * @param {Request|string} request The request or address.
+ * @return {string} The address.
+ */
+function keyOf(request) {
+	return typeof request === 'string' ? request : request.url
 }
 
 /**
@@ -84,12 +102,13 @@ async function loadWorker({ fetch, cached = [] } = {}) {
  * @param {Function} handler The fetch listener.
  * @param {string} path The request path.
  * @param {string} method The request method.
+ * @param {string} mode The request mode: 'navigate' for a page load.
  * @return {{responded: Promise|null, background: Promise|null}} What it did.
  */
-function dispatch(handler, path, method = 'GET') {
+function dispatch(handler, path, method = 'GET', mode = 'no-cors') {
 	const out = { responded: null, background: null }
 	handler({
-		request: { url: `http://localhost${path}`, method },
+		request: { url: `http://localhost${path}`, method, mode },
 		respondWith: (promise) => {
 			out.responded = promise
 		},
@@ -139,7 +158,7 @@ test('the retired portal address is not cached: it redirects to the site', async
 test('the cache name moved on, so the old shell cache is deleted', () => {
 	assert.match(
 		readFileSync(join(ROOT, 'src', 'shared', 'serviceWorker.js'), 'utf8'),
-		/const CACHE_VERSION = 'portaliq-shell-v4'/,
+		/const CACHE_VERSION = 'portaliq-shell-v5'/,
 	)
 })
 
@@ -187,15 +206,125 @@ test('when every fetch of the worker fails, it leaves the page to the browser', 
 	)
 })
 
-test('a page the worker holds is answered from its cache, even when the network fails', async () => {
+// After a DigiD sign-in the callback sends the resident to
+// /site?portal=…#token=<signed token>. With the worker active that load showed
+// net::ERR_FAILED when the worker answered it itself. An online page load is
+// the browser's, always, even when the worker holds a copy of the page.
+test('an online page load is left to the browser, even when the worker holds the page', async () => {
 	const url = 'http://localhost/apps/portaliq/site?portal=wilgenboom'
+	const { handler, fetches } = await loadWorker({
+		cached: [url],
+		fetch: async () => {
+			throw new TypeError('Failed to fetch')
+		},
+	})
+	const out = dispatch(
+		handler,
+		'/apps/portaliq/site?portal=wilgenboom#token=eyJ.signed.token',
+		'GET',
+		'navigate',
+	)
+	assert.equal(out.responded, null, 'no respondWith: the browser loads the page')
+	assert.ok(out.background, 'the worker only refreshes its copy')
+	await assert.doesNotReject(out.background)
+	assert.equal(fetches.length, 1)
+})
+
+test('offline, a page the worker holds is answered from its cache', async () => {
+	const url = 'http://localhost/apps/portaliq/site?portal=wilgenboom'
+	const { handler } = await loadWorker({
+		cached: [url],
+		onLine: false,
+		fetch: async () => {
+			throw new TypeError('Failed to fetch')
+		},
+	})
+	const out = dispatch(
+		handler,
+		'/apps/portaliq/site?portal=wilgenboom#token=eyJ.signed.token',
+		'GET',
+		'navigate',
+	)
+	assert.ok(out.responded, 'answered by the worker')
+	assert.deepEqual(await out.responded, { cachedCopyOf: url })
+})
+
+test('offline, a page the worker does not hold is left to the browser', async () => {
+	const { handler } = await loadWorker({ onLine: false })
+	const out = dispatch(
+		handler,
+		'/apps/portaliq/site?portal=wilgenboom',
+		'GET',
+		'navigate',
+	)
+	assert.equal(out.responded, null)
+})
+
+// 🔴 The sign-in token rides in the fragment. A fragment is never sent to the
+// server, so it never belongs in a cache key, and this one is a credential.
+test('the sign-in token in the address is never written to the cache', async () => {
+	const { handler, store } = await loadWorker()
+	const out = dispatch(
+		handler,
+		'/apps/portaliq/site?portal=wilgenboom#token=eyJ.signed.token',
+		'GET',
+		'navigate',
+	)
+	await out.background
+	assert.deepEqual(
+		[...store.keys()],
+		['http://localhost/apps/portaliq/site?portal=wilgenboom'],
+	)
+	for (const key of store.keys()) {
+		assert.ok(!key.includes('token'), key)
+	}
+})
+
+test('a copy kept without its fragment answers the next offline load', async () => {
+	const { handler, self } = await loadWorker()
+	await dispatch(
+		handler,
+		'/apps/portaliq/site?portal=wilgenboom#token=eyJ.signed.token',
+		'GET',
+		'navigate',
+	).background
+	self.navigator.onLine = false
+	const out = dispatch(
+		handler,
+		'/apps/portaliq/site?portal=wilgenboom',
+		'GET',
+		'navigate',
+	)
+	assert.ok(out.responded, 'the plain address finds the copy')
+})
+
+test('a response that followed a redirect, or is not plain same-origin, is never cached', async () => {
+	for (const response of [
+		{ ok: true, type: 'basic', redirected: true, clone: () => ({}) },
+		{ ok: false, type: 'opaqueredirect', redirected: false, clone: () => ({}) },
+		{ ok: true, type: 'opaque', redirected: false, clone: () => ({}) },
+		{ ok: true, type: 'cors', redirected: false, clone: () => ({}) },
+	]) {
+		const { handler, store } = await loadWorker({ fetch: async () => response })
+		await dispatch(
+			handler,
+			'/apps/portaliq/site?portal=wilgenboom',
+			'GET',
+			'navigate',
+		).background
+		assert.equal(store.size, 0, JSON.stringify(response))
+	}
+})
+
+test('the cached bundle is answered from the cache, even when the network fails', async () => {
+	const url = 'http://localhost/apps/portaliq/js/portaliq-site.js?v=9'
 	const { handler } = await loadWorker({
 		cached: [url],
 		fetch: async () => {
 			throw new TypeError('Failed to fetch')
 		},
 	})
-	const out = dispatch(handler, '/apps/portaliq/site?portal=wilgenboom')
+	const out = dispatch(handler, '/apps/portaliq/js/portaliq-site.js?v=9')
 	assert.ok(out.responded, 'answered by the worker')
 	assert.deepEqual(await out.responded, { cachedCopyOf: url })
 })
@@ -216,14 +345,14 @@ test('a first visit is fetched by the browser, the worker keeps a copy for the n
 })
 
 test('a copy the browser evicted is forgotten, so the next load skips the worker', async () => {
-	const url = 'http://localhost/apps/portaliq/site'
+	const url = 'http://localhost/apps/portaliq/js/portaliq-site.js?v=9'
 	const { handler, store } = await loadWorker({ cached: [url] })
 	store.delete(url)
-	const out = dispatch(handler, '/apps/portaliq/site')
+	const out = dispatch(handler, '/apps/portaliq/js/portaliq-site.js?v=9')
 	assert.ok(out.responded)
 	assert.equal((await out.responded).ok, true, 'fetched from the network')
 	assert.equal(
-		dispatch(handler, '/apps/portaliq/site').responded,
+		dispatch(handler, '/apps/portaliq/js/portaliq-site.js?v=9').responded,
 		null,
 		'the next load goes to the browser',
 	)
