@@ -8,6 +8,8 @@ use OCA\Portaliq\Contribution\GuestActionRegistry;
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Controller\GuestActionController;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\InstanceLoopback;
+use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -286,7 +288,7 @@ class GuestActionControllerTest extends TestCase {
 		return new GuestActionController(
 			$request,
 			$registry,
-			new PortalActionForwarder($request, $clientService, $urls, $session),
+			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
 			$portals,
 			($auditor ?? $this->createMock(AuditTrailService::class))
 		);

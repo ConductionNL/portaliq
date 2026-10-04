@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Availability;
 
-use OCP\Http\Client\IClientService;
+use OCA\Portaliq\Service\InstanceLoopback;
 use OCP\IURLGenerator;
 use Throwable;
 
@@ -50,11 +50,11 @@ class AvailabilityProbe {
 	/**
 	 * Constructor.
 	 *
-	 * @param IClientService $clients The HTTP client factory.
-	 * @param IURLGenerator $urls Builds the instance's own absolute URLs.
+	 * @param InstanceLoopback $loopback Sends the probe to this instance.
+	 * @param IURLGenerator $urls Builds the instance's own paths.
 	 */
 	public function __construct(
-		private readonly IClientService $clients,
+		private readonly InstanceLoopback $loopback,
 		private readonly IURLGenerator $urls,
 	) {
 	}//end __construct()
@@ -69,12 +69,12 @@ class AvailabilityProbe {
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
 	 */
 	public function check(string $slug): array {
-		$site = $this->get(url: $this->urls->linkToRouteAbsolute('portaliq.content.site', ['portal' => $slug]));
+		$site = $this->get(url: $this->urls->linkToRoute('portaliq.content.site', ['portal' => $slug]));
 		if ($site['status'] !== 200) {
 			return ['status' => AvailabilityRollup::DOWN, 'cause' => $site['cause']];
 		}
 
-		$health = $this->get(url: $this->urls->linkToRouteAbsolute('portaliq.health.index'));
+		$health = $this->get(url: $this->urls->linkToRoute('portaliq.health.index'));
 		$said = '';
 		if ($health['body'] !== '') {
 			$decoded = json_decode($health['body'], true);
@@ -91,17 +91,22 @@ class AvailabilityProbe {
 	}//end check()
 
 	/**
-	 * One GET, never throwing.
+	 * One GET, never throwing. Goes through InstanceLoopback, so a public
+	 * address the server cannot reach from inside does not report every
+	 * portal down.
 	 *
-	 * @param string $url The absolute URL.
+	 * @param string $url The path on this instance.
 	 *
 	 * @return array{status: int, body: string, cause: string} Status 0 when nothing answered.
+	 *
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
 	 */
 	private function get(string $url): array {
 		try {
-			$response = $this->clients->newClient()->get(
-				$url,
-				[
+			$response = $this->loopback->request(
+				method: 'GET',
+				path: $url,
+				options: [
 					'timeout' => self::TIMEOUT,
 					'connect_timeout' => self::TIMEOUT,
 					'http_errors' => false,
