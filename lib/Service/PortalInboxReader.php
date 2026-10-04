@@ -154,10 +154,7 @@ class PortalInboxReader {
 						'schema' => (string)($collection['schema'] ?? ''),
 						'collection' => (string)($collection['id'] ?? ''),
 					];
-					// A resident may delete portaliq's own notices, and an app's
-					// message only where the app said so (inbox-delete-own-messages).
-					$ownSchema = (($collection['register'] ?? '') === self::OWN_MESSAGES['register'] && ($collection['schema'] ?? '') === self::OWN_MESSAGES['schema']);
-					if ($ownSchema === true || ($collection['deletable'] ?? false) === true) {
+					if (self::residentMayDelete(collection: $collection) === true) {
 						$row['_source']['deletable'] = true;
 					}
 
@@ -181,6 +178,28 @@ class PortalInboxReader {
 
 		return $rows;
 	}//end aggregateInbox()
+
+	/**
+	 * Whether a resident may delete their own messages from an inbox
+	 * collection: portaliq's own notices always, an app's message only where
+	 * the app declares `deletable: true` (inbox-delete-own-messages). Who owns
+	 * a row is checked separately, on the row itself, before any delete.
+	 *
+	 * @param array<string, mixed> $collection The inbox collection.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public static function residentMayDelete(array $collection): bool {
+		$register = ($collection['register'] ?? '');
+		$schema   = ($collection['schema'] ?? '');
+		if ($register === self::OWN_MESSAGES['register'] && $schema === self::OWN_MESSAGES['schema']) {
+			return true;
+		}
+
+		return ($collection['deletable'] ?? false) === true;
+	}//end residentMayDelete()
 
 	/**
 	 * The subject's own unread count across every inbox collection —

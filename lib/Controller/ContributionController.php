@@ -105,6 +105,8 @@ use Psr\Log\LoggerInterface;
  * endpoint (appinfo/routes.php); the count tracks the API surface, not
  * incidental complexity.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- see ExcessiveParameterList.
+ * @SuppressWarnings(PHPMD.TooManyMethods)           -- see TooManyPublicMethods: each
+ * routed endpoint keeps its own guard beside it.
  */
 class ContributionController extends Controller implements PortalProtected {
 	/**
@@ -488,8 +490,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$collection = $match['collection'];
-		$ownNotices = ($register === PortalInboxReader::OWN_MESSAGES['register'] && $schema === PortalInboxReader::OWN_MESSAGES['schema']);
-		if (($ownNotices === false && ($collection['deletable'] ?? false) !== true)
+		if (PortalInboxReader::residentMayDelete(collection: $collection) === false
 			|| PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
 		) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);

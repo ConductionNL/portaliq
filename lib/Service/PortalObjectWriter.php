@@ -43,6 +43,11 @@ use Throwable;
  * Subject-scoped writer over OpenRegister for portal actions.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T06
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- create, update and
+ * delete share ONE ownership re-read (fetchOwnedObject) and one tenant rule;
+ * moving a write path to another class would copy that boundary
+ * (inbox-delete-own-messages added the delete).
  */
 class PortalObjectWriter {
 	use PortalScopeMatch;
@@ -362,7 +367,9 @@ class PortalObjectWriter {
 
 		$uuid = (string)($existing['@self']['uuid'] ?? $existing['@self']['id'] ?? $existing['uuid'] ?? $existing['id'] ?? $id);
 		try {
-			$deleted = $this->insideWriteContext(write: static fn () => $objectService->deleteObject(uuid: $uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false));
+			$deleted = $this->insideWriteContext(
+				write: static fn () => $objectService->deleteObject(uuid: $uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false)
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR delete failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return false;
