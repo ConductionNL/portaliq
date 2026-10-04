@@ -198,7 +198,11 @@ test('select all picks every deletable row, and a refused delete keeps that mess
 	)
 
 	page.toggleAll()
-	assert.deepEqual(page.selected, [], 'select all when all are chosen clears the choice')
+	assert.deepEqual(
+		page.selected,
+		[],
+		'select all when all are chosen clears the choice',
+	)
 })
 
 test('one deleted message reads singular', async () => {
