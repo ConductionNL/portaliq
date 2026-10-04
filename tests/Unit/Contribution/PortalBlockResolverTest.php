@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Contribution;
 
+use OCA\Portaliq\Contribution\PortalBlockResolver;
 use OCA\Portaliq\Contribution\PortalManifestNormaliser;
 use PHPUnit\Framework\TestCase;
 
@@ -45,7 +46,7 @@ class PortalBlockResolverTest extends TestCase {
 						'timeline'  => ['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline'],
 					],
 				],
-				'actions'     => [],
+				'actions'     => [['id' => 'createExcuseRequest', 'type' => 'create', 'schema' => 'excuse']],
 				'pages'       => [
 					[
 						'id'     => 'overzicht',
@@ -290,6 +291,115 @@ class PortalBlockResolverTest extends TestCase {
 			$this->assertArrayNotHasKey('range', $this->blocks([['type' => 'calendar', 'sources' => [$source], 'range' => $range]])[0]);
 		}
 	}//end testACalendarBlockKeepsItsRange()
+
+	/**
+	 * A tasks block takes the record scope, lookups and an excludeWhen over
+	 * one of its lookups; an inbox block takes recordField (REQ-SMO-025).
+	 *
+	 * @return void
+	 */
+	public function testATasksBlockNarrowsToTheRecordAndLeavesRowsOutByALookup(): void {
+		$lookup = ['collection' => 'open', 'matchField' => 'assignment', 'valueField' => 'state', 'as' => 'submission'];
+		$blocks = $this->blocks(
+			[
+				[
+					'type'        => 'tasks',
+					'collection'  => 'vragenAanU',
+					'recordField' => 'zaak',
+					'lookups'     => [$lookup],
+					'excludeWhen' => ['lookup' => 'submission', 'in' => ['submitted', 'graded', ['nested']]],
+				],
+				['type' => 'tasks', 'collection' => 'vragenAanU', 'excludeWhen' => ['lookup' => 'nowhere', 'in' => ['x']]],
+				['type' => 'tasks', 'collection' => 'vragenAanU', 'lookups' => [$lookup], 'excludeWhen' => ['lookup' => 'submission', 'in' => []]],
+				['type' => 'inbox', 'recordField' => 'learnerRef'],
+				['type' => 'inbox', 'recordField' => 'bad field!'],
+			]
+		);
+
+		$this->assertSame('zaak', $blocks[0]['recordField']);
+		$this->assertSame('submission', $blocks[0]['lookups'][0]['as']);
+		$this->assertSame(['lookup' => 'submission', 'in' => ['submitted', 'graded']], $blocks[0]['excludeWhen']);
+		$this->assertArrayNotHasKey('excludeWhen', $blocks[1], 'a lookup the block does not declare');
+		$this->assertArrayNotHasKey('excludeWhen', $blocks[2], 'no values to leave out');
+		$this->assertSame(['type' => 'inbox', 'recordField' => 'learnerRef'], $blocks[3]);
+		$this->assertSame(['type' => 'inbox'], $blocks[4]);
+	}//end testATasksBlockNarrowsToTheRecordAndLeavesRowsOutByALookup()
+
+	/**
+	 * A cta names exactly one of an action, a page or a route inside the
+	 * portal; withRecord is kept only as true (REQ-SMO-024).
+	 *
+	 * @return void
+	 */
+	public function testACtaNamesExactlyOneTarget(): void {
+		$this->assertSame(
+			[
+				['type' => 'cta', 'action' => 'createExcuseRequest', 'label' => '{title} ziek of afwezig melden', 'withRecord' => true],
+				['type' => 'cta', 'page' => 'overzicht', 'label' => 'Cijfers'],
+				['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht sturen'],
+			],
+			$this->blocks(
+				[
+					['type' => 'cta', 'action' => 'createExcuseRequest', 'label' => '{title} ziek of afwezig melden', 'withRecord' => true],
+					['type' => 'cta', 'page' => 'overzicht', 'label' => 'Cijfers', 'withRecord' => 'yes'],
+					['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht sturen'],
+				]
+			)
+		);
+
+		foreach ([['action' => 'createExcuseRequest', 'page' => 'overzicht'], [], ['page' => 'elders'], ['action' => 'nope'], ['route' => '/x', 'label' => ' ']] as $bad) {
+			$this->assertSame([], $this->blocks([$bad + ['type' => 'cta', 'label' => 'Ga']]), (string)json_encode($bad));
+		}
+	}//end testACtaNamesExactlyOneTarget()
+
+	/**
+	 * A route outside the portal is refused: a scheme, a host or `//`.
+	 *
+	 * @return void
+	 */
+	public function testAnOutsideRouteIsDropped(): void {
+		foreach (['//example.org/x', 'https://example.org', 'mijn/x', '/mijn//x', 'javascript:alert(1)', '/mijn/x?y=1'] as $route) {
+			$this->assertSame([], $this->blocks([['type' => 'cta', 'route' => $route, 'label' => 'Ga']]), $route);
+		}
+	}//end testAnOutsideRouteIsDropped()
+
+	/**
+	 * A text block may be a template filled from the record, with words for
+	 * an empty value (REQ-SMO-027); without markdown or a template it drops.
+	 *
+	 * @return void
+	 */
+	public function testATextBlockMayBeATemplate(): void {
+		// The page helper leaves text blocks out, so this asks the resolver itself.
+		$resolve = static fn (array $block): array => (new PortalBlockResolver())->normaliseBlocks(blocks: [$block], collectionIds: [], actionIds: []);
+
+		$this->assertSame(
+			[['type' => 'richText', 'template' => 'U heeft toegang tot {expiresAt}.', 'whenEmpty' => ['expiresAt' => 'U heeft toegang zonder einddatum.']]],
+			$resolve(['type' => 'richText', 'template' => 'U heeft toegang tot {expiresAt}.', 'whenEmpty' => ['expiresAt' => 'U heeft toegang zonder einddatum.', 'x' => 7, 3 => 'y']])
+		);
+		$this->assertSame([['type' => 'richText', 'template' => 'Hallo']], $resolve(['type' => 'richText', 'template' => 'Hallo', 'whenEmpty' => 'x']));
+		$this->assertSame([], $resolve(['type' => 'richText', 'template' => '  ']));
+		$this->assertSame([['type' => 'richText', 'markdown' => 'Welkom']], $resolve(['type' => 'richText', 'markdown' => 'Welkom', 'template' => 'x']), 'markdown wins');
+	}//end testATextBlockMayBeATemplate()
+
+	/**
+	 * A collection block may show cards with a progress figure, both fields
+	 * projected (REQ-SMO-028).
+	 *
+	 * @return void
+	 */
+	public function testACollectionBlockMayShowCardsWithProgress(): void {
+		$this->assertSame(
+			[['type' => 'collection', 'collection' => 'open', 'display' => 'cards', 'progress' => ['valueField' => 'hoursDone', 'totalField' => 'hoursRequired', 'label' => 'uur']]],
+			$this->blocks([['type' => 'collection', 'collection' => 'open', 'display' => 'cards', 'progress' => ['valueField' => 'hoursDone', 'totalField' => 'hoursRequired', 'label' => ' uur ']]])
+		);
+		$this->assertSame(
+			[['type' => 'collection', 'collection' => 'vragenAanU', 'display' => 'cards']],
+			$this->blocks([['type' => 'collection', 'collection' => 'vragenAanU', 'display' => 'cards', 'progress' => ['valueField' => 'geheim', 'totalField' => 'onderwerp']]]),
+			'a progress on an unprojected field is dropped, the cards stay'
+		);
+		$this->assertSame([['type' => 'collection', 'collection' => 'open']], $this->blocks([['type' => 'collection', 'collection' => 'open', 'display' => 'table']]));
+	}//end testACollectionBlockMayShowCardsWithProgress()
 
 	/**
 	 * The placeholder names the app lanes used before the names were fixed

@@ -85,8 +85,50 @@ class ListBlockNormaliser {
 			$entry['titleFields'] = $titles;
 		}
 
+		// The record scope and lookups a collection block takes, plus
+		// excludeWhen over a declared lookup (REQ-SMO-025).
+		$scopes = new RecordScopeNormaliser();
+		$entry = $scopes->scope(declared: $block, entry: $entry);
+		$entry = $scopes->lookups(declared: $block, entry: $entry, collectionIds: $this->ids(collections: $collections));
+		$entry += $this->excludeWhen(declared: ($block['excludeWhen'] ?? null), lookups: ($entry['lookups'] ?? []));
+
 		return $entry + $this->common(block: $block);
 	}//end tasksBlock()
+
+	/**
+	 * A tasks block's `excludeWhen: {lookup, in}`, kept only when it names a
+	 * lookup the block declares and lists scalar values.
+	 *
+	 * @param mixed                            $declared The declared value.
+	 * @param array<int, array<string, mixed>> $lookups  The block's normalised lookups.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
+	 */
+	private function excludeWhen(mixed $declared, array $lookups): array {
+		if (is_array($declared) === false || in_array(($declared['lookup'] ?? null), array_column($lookups, 'as'), true) === false) {
+			return [];
+		}
+
+		$values = array_values(array_filter((array)($declared['in'] ?? null), static fn ($value): bool => is_scalar($value) === true));
+		if ($values === []) {
+			return [];
+		}
+
+		return ['excludeWhen' => ['lookup' => $declared['lookup'], 'in' => $values]];
+	}//end excludeWhen()
+
+	/**
+	 * The ids of the collections.
+	 *
+	 * @param array<int, array<string, mixed>> $collections The collections.
+	 *
+	 * @return array<int, string>
+	 */
+	private function ids(array $collections): array {
+		return array_values(array_filter(array_column($collections, 'id'), static fn ($id): bool => is_string($id) === true && $id !== ''));
+	}//end ids()
 
 	/**
 	 * An `inbox` block, or null when it names a collection that is not a
@@ -111,6 +153,12 @@ class ListBlockNormaliser {
 			}
 
 			$entry['collection'] = $collection['id'];
+		}
+
+		// Only messages about the open record (REQ-SMO-025).
+		$recordField = ($block['recordField'] ?? null);
+		if (is_string($recordField) === true && preg_match('/^[A-Za-z_][A-Za-z0-9_.]*$/', $recordField) === 1) {
+			$entry['recordField'] = $recordField;
 		}
 
 		return $entry + $this->common(block: $block);
