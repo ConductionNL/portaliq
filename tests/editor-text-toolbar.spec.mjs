@@ -24,7 +24,9 @@ import {
 	applyItalic,
 	applyLink,
 	applyList,
+	rovingTabindexes,
 	shortcutFor,
+	toolbarIndexFor,
 } from '../src/editor/markdownToolbar.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -242,4 +244,41 @@ test('every string the toolbar shows reads Dutch for the editor', () => {
 	for (const [key, value] of Object.entries(expected)) {
 		assert.equal(nl[key], value, key)
 	}
+})
+
+test('Right and Left move between the five buttons and wrap around', () => {
+	assert.equal(toolbarIndexFor(0, 'ArrowRight', 5), 1)
+	assert.equal(toolbarIndexFor(4, 'ArrowRight', 5), 0)
+	assert.equal(toolbarIndexFor(2, 'ArrowLeft', 5), 1)
+	assert.equal(toolbarIndexFor(0, 'ArrowLeft', 5), 4)
+})
+
+test('Home and End go to the first and the last button', () => {
+	assert.equal(toolbarIndexFor(3, 'Home', 5), 0)
+	assert.equal(toolbarIndexFor(1, 'End', 5), 4)
+})
+
+test('other keys leave the focus where it is, so Enter and Space still press the button', () => {
+	for (const key of ['Enter', ' ', 'Tab', 'ArrowUp', 'ArrowDown', 'b']) {
+		assert.equal(toolbarIndexFor(2, key, 5), null, key)
+	}
+	assert.equal(toolbarIndexFor(0, 'ArrowRight', 0), null)
+})
+
+test('the toolbar is one Tab stop: only the current button has tabindex 0', () => {
+	assert.deepEqual(rovingTabindexes(0, 5), [0, -1, -1, -1, -1])
+	assert.deepEqual(rovingTabindexes(3, 5), [-1, -1, -1, 0, -1])
+	assert.deepEqual(rovingTabindexes(9, 5), [-1, -1, -1, -1, 0])
+	assert.deepEqual(rovingTabindexes(0, 0), [])
+})
+
+test('the toolbar buttons are wired to the roving tabindex and the arrow keys', () => {
+	const source = readFileSync(
+		join(ROOT, 'src', 'editor', 'MarkdownField.vue'),
+		'utf8',
+	)
+	assert.match(source, /:tabindex="tabindexes\[index\]"/)
+	assert.match(source, /@keydown="onToolbarKeydown\(\$event, index\)"/)
+	assert.match(source, /@focus="current = index"/)
+	assert.match(source, /rovingTabindexes\(this\.current, this\.actions\.length\)/)
 })

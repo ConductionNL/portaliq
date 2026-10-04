@@ -2,7 +2,7 @@
 
 ### Requirement: An editor MUST be able to shape a text block without knowing markdown
 
-The designer SHALL show the text of a "Tekst" block (`markdown`) in a field labelled "Tekst", with a toolbar (`role="toolbar"`, with an accessible name) above the textarea. The toolbar SHALL offer Kop, Vet, Cursief, Lijst and Link as real buttons, each with an accessible name. Each button SHALL write the markdown for its mark into the textarea at the selection: `## ` at the start of the line for Kop, `**text**` for Vet, `_text_` for Cursief, `- ` before every selected line for Lijst, and `[text](address)` for Link. Ctrl+B and Ctrl+I, or Cmd on a Mac, SHALL do what Vet and Cursief do. Link SHALL ask for the address in the panel, not in a browser prompt. After a button the focus SHALL return to the textarea with the selection on the changed text. The block SHALL keep storing markdown in `props.markdown` (REQ-ETT-001).
+The designer SHALL show the text of a "Tekst" block (`markdown`) in a field labelled "Tekst", with a toolbar (`role="toolbar"`, with an accessible name) above the textarea. The toolbar SHALL offer Kop, Vet, Cursief, Lijst and Link as real buttons, each with an accessible name. Each button SHALL write the markdown for its mark into the textarea at the selection: `## ` at the start of the line for Kop, `**text**` for Vet, `_text_` for Cursief, `- ` before every selected line for Lijst, and `[text](address)` for Link. Ctrl+B and Ctrl+I, or Cmd on a Mac, SHALL do what Vet and Cursief do. The toolbar SHALL be one Tab stop with a roving tabindex: Left and Right SHALL move the focus between the buttons and wrap around, and Home and End SHALL go to the first and the last button. Link SHALL ask for the address in the panel, not in a browser prompt. After a button the focus SHALL return to the textarea with the selection on the changed text. The block SHALL keep storing markdown in `props.markdown` (REQ-ETT-001).
 
 #### Scenario: A heading without typing markdown
 
@@ -17,6 +17,13 @@ The designer SHALL show the text of a "Tekst" block (`markdown`) in a field labe
 - **WHEN** the editor presses Ctrl+B, or Ctrl+I
 - **THEN** the word is wrapped in `**`, or in `_`, and stays selected
 - @e2e exclude covered by `tests/editor-text-toolbar.spec.mjs` (`shortcutFor` and the wrap)
+
+#### Scenario: The toolbar is one Tab stop and the arrows move along it
+
+- **GIVEN** the focus on the Kop button
+- **WHEN** the editor presses Left
+- **THEN** the focus moves to Link, the last button, which becomes the toolbar's only Tab stop
+- @e2e exclude covered by `tests/editor-text-toolbar.spec.mjs` (`toolbarIndexFor`, `rovingTabindexes` and the wiring)
 
 #### Scenario: A list from several lines
 

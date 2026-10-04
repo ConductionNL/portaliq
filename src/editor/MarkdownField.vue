@@ -14,14 +14,16 @@
 		<label :for="id">{{ t('portaliq', 'Text') }}</label>
 
 		<div
+			ref="toolbar"
 			class="markdown-field__toolbar"
 			role="toolbar"
 			:aria-label="t('portaliq', 'Text formatting')"
 			:aria-controls="id"
 			data-testid="designer-text-toolbar">
 			<button
-				v-for="action in actions"
+				v-for="(action, index) in actions"
 				:key="action.name"
+				:tabindex="tabindexes[index]"
 				type="button"
 				class="markdown-field__button"
 				:class="[`markdown-field__button--${action.name}`]"
@@ -29,7 +31,9 @@
 				:title="action.label"
 				:data-testid="`designer-text-${action.name}`"
 				@mousedown.prevent
-				@click="onAction(action.name)">
+				@click="onAction(action.name, index)"
+				@focus="current = index"
+				@keydown="onToolbarKeydown($event, index)">
 				{{ action.text }}
 			</button>
 		</div>
@@ -88,7 +92,9 @@ import {
 	applyItalic,
 	applyLink,
 	applyList,
+	rovingTabindexes,
 	shortcutFor,
+	toolbarIndexFor,
 } from './markdownToolbar.js'
 
 /**
@@ -130,10 +136,22 @@ export default {
 			// The selection the link form was opened on: the textarea loses
 			// focus to the address input, and with it what was selected.
 			linkSelection: null,
+			// The toolbar button that is the toolbar's one Tab stop: the
+			// last one used or focused, the first one to start with.
+			current: 0,
 		}
 	},
 
 	computed: {
+		/**
+		 * The roving tabindex: only the current button is a Tab stop.
+		 *
+		 * @return {Array<number>} One tabindex per button.
+		 */
+		tabindexes() {
+			return rovingTabindexes(this.current, this.actions.length)
+		},
+
 		/**
 		 * The buttons, in the order an editor reads them.
 		 *
@@ -179,6 +197,28 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Arrow keys, Home and End move the focus between the buttons.
+		 *
+		 * @param {KeyboardEvent} event The key.
+		 * @param {number} index The button that has focus.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 */
+		onToolbarKeydown(event, index) {
+			const next = toolbarIndexFor(index, event.key, this.actions.length)
+			if (next === null) {
+				return
+			}
+			event.preventDefault()
+			this.current = next
+			// Read in document order: a ref array inside v-for is not
+			// guaranteed to follow the order of the list in Vue 3.
+			const buttons = this.$refs.toolbar?.querySelectorAll('button') || []
+			buttons[next]?.focus()
+		},
+
 		/**
 		 * Translate.
 		 *
@@ -236,11 +276,15 @@ export default {
 		 * Run one toolbar button.
 		 *
 		 * @param {string} name The button.
+		 * @param {number} [index] Its place in the toolbar, which becomes the Tab stop.
 		 * @return {void}
 		 *
 		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
-		onAction(name) {
+		onAction(name, index) {
+			if (Number.isInteger(index)) {
+				this.current = index
+			}
 			if (name === 'link') {
 				this.openLink()
 				return

@@ -6,3 +6,5 @@
   - `node --test tests/editor-text-toolbar.spec.mjs`: the test id, the toolbar role and label, real buttons, no `window.prompt`
 - [x] **T3**: Every string the toolbar shows has its Dutch translation (`l10n/nl.json`, regenerated `l10n/nl.js`)
   - `npm run check:l10n-js`, and the Dutch strings asserted in `tests/editor-text-toolbar.spec.mjs`
+- [x] **T4**: The toolbar follows the WAI-ARIA toolbar pattern: one Tab stop with a roving tabindex, Left/Right wrap, Home/End
+  - `node --test tests/editor-text-toolbar.spec.mjs`: `toolbarIndexFor`, `rovingTabindexes` and the component wiring

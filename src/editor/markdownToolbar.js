@@ -299,3 +299,53 @@ export function shortcutFor(event) {
 	}
 	return null
 }
+
+/**
+ * The toolbar button a key moves the focus to, or null for any other key.
+ *
+ * The WAI-ARIA toolbar pattern: Left and Right move to the previous and next
+ * button and wrap around, Home and End go to the first and last. Together
+ * with a roving tabindex (only the current button has `tabindex="0"`) this
+ * makes the toolbar one Tab stop.
+ *
+ * @param {number} current The index of the button that has focus.
+ * @param {string} key The `KeyboardEvent.key`.
+ * @param {number} count How many buttons the toolbar has.
+ * @return {number|null} The index to focus, or null.
+ *
+ * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ */
+export function toolbarIndexFor(current, key, count) {
+	if (!Number.isInteger(count) || count < 1) {
+		return null
+	}
+
+	const from = Math.max(0, Math.min(Number(current) || 0, count - 1))
+	switch (key) {
+		case 'ArrowRight':
+			return (from + 1) % count
+		case 'ArrowLeft':
+			return (from - 1 + count) % count
+		case 'Home':
+			return 0
+		case 'End':
+			return count - 1
+		default:
+			return null
+	}
+}
+
+/**
+ * The tabindex of each toolbar button: 0 for the current one, -1 for the rest.
+ *
+ * @param {number} current The index of the current button.
+ * @param {number} count How many buttons the toolbar has.
+ * @return {Array<number>} One tabindex per button.
+ *
+ * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ */
+export function rovingTabindexes(current, count) {
+	const size = Number.isInteger(count) && count > 0 ? count : 0
+	const active = Math.max(0, Math.min(Number(current) || 0, size - 1))
+	return Array.from({ length: size }, (_, index) => (index === active ? 0 : -1))
+}
