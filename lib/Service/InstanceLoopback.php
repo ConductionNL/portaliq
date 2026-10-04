@@ -45,7 +45,6 @@ use OCA\Portaliq\AppInfo\Application;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
-use OCP\IAppConfig;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -57,11 +56,6 @@ use Throwable;
  * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
  */
 class InstanceLoopback {
-	/**
-	 * The app config key an administrator sets the internal base URL under.
-	 */
-	public const CONFIG_KEY = 'internal_base_url';
-
 	/**
 	 * The origin of the loopback retry. Plain http: the request never leaves
 	 * the server, and a webserver inside a container rarely has a certificate
@@ -91,24 +85,17 @@ class InstanceLoopback {
 	private ?string $workingRoute = null;
 
 	/**
-	 * Whether an invalid configured address was already reported in this request.
-	 *
-	 * @var boolean
-	 */
-	private bool $invalidConfigReported = false;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param IClientService $clientService Nextcloud's HTTP client factory.
 	 * @param IURLGenerator $urlGenerator Builds the instance's absolute URL.
-	 * @param IAppConfig $appConfig Holds the optional internal base URL.
-	 * @param LoggerInterface $logger Reports the fallback and an invalid setting.
+	 * @param InternalBaseUrl $internalBaseUrl The optional address an administrator set.
+	 * @param LoggerInterface $logger Reports the fallback and a double failure.
 	 */
 	public function __construct(
 		private readonly IClientService $clientService,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly IAppConfig $appConfig,
+		private readonly InternalBaseUrl $internalBaseUrl,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -137,7 +124,7 @@ class InstanceLoopback {
 		$absolute = $this->urlGenerator->getAbsoluteURL($path);
 		$options['nextcloud'] = array_merge((array)($options['nextcloud'] ?? []), ['allow_local_address' => true]);
 
-		$configured = $this->configuredBaseUrl();
+		$configured = $this->internalBaseUrl->configured();
 		if ($configured !== '') {
 			return $this->send(
 				method: $method,
@@ -165,115 +152,6 @@ class InstanceLoopback {
 	}//end request()
 
 	/**
-	 * The configured internal base URL, normalised, or '' when none is set or
-	 * the value is invalid. An invalid value is reported once per request and
-	 * then ignored, so the absolute URL and its fallback still work.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
-	 */
-	public function configuredBaseUrl(): string {
-		$raw = trim($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, ''));
-		if ($raw === '') {
-			return '';
-		}
-
-		$normalised = $this->normaliseBaseUrl(value: $raw);
-		if ($normalised === null) {
-			if ($this->invalidConfigReported === false) {
-				$this->invalidConfigReported = true;
-				$this->logger->warning(
-					'[InstanceLoopback] Ignoring the invalid internal_base_url setting; calls use the absolute URL. Use an http(s) address without credentials, query or "..".',
-					['app' => Application::APP_ID]
-				);
-			}
-
-			return '';
-		}
-
-		return $normalised;
-	}//end configuredBaseUrl()
-
-	/**
-	 * Validate and normalise an internal base URL. Returns '' for an empty
-	 * value (no setting), the address without a trailing slash when valid,
-	 * and null when invalid.
-	 *
-	 * Valid: an http or https scheme, a host, an optional port and an
-	 * optional plain path (the web root). Refused: credentials, a query, a
-	 * fragment, percent-encoding, backslashes, whitespace and `.` or `..`
-	 * path segments.
-	 *
-	 * @param string $value The candidate address.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
-	 */
-	public function normaliseBaseUrl(string $value): ?string {
-		$value = trim($value);
-		if ($value === '') {
-			return '';
-		}
-
-		if (preg_match('/[\s\\\\%]/', $value) === 1) {
-			return null;
-		}
-
-		$parts = parse_url($value);
-		if ($parts === false) {
-			return null;
-		}
-
-		$scheme = strtolower((string)($parts['scheme'] ?? ''));
-		$host = (string)($parts['host'] ?? '');
-		if (in_array($scheme, ['http', 'https'], true) === false || $host === '') {
-			return null;
-		}
-
-		foreach (['user', 'pass', 'query', 'fragment'] as $forbidden) {
-			if (array_key_exists($forbidden, $parts) === true) {
-				return null;
-			}
-		}
-
-		$path = (string)($parts['path'] ?? '');
-		if ($this->isPlainPath(path: $path) === false) {
-			return null;
-		}
-
-		$port = '';
-		if (isset($parts['port']) === true) {
-			$port = ':' . $parts['port'];
-		}
-
-		return $scheme . '://' . $host . $port . rtrim($path, '/');
-	}//end normaliseBaseUrl()
-
-	/**
-	 * Whether a base URL path is a plain web root: segments of letters,
-	 * digits and `-_.~`, none of them `.` or `..`.
-	 *
-	 * @param string $path The path part of the base URL.
-	 *
-	 * @return bool
-	 */
-	private function isPlainPath(string $path): bool {
-		if (preg_match('#^[A-Za-z0-9._~/-]*$#', $path) !== 1) {
-			return false;
-		}
-
-		foreach (explode('/', $path) as $segment) {
-			if ($segment === '.' || $segment === '..') {
-				return false;
-			}
-		}
-
-		return true;
-	}//end isPlainPath()
-
-	/**
 	 * The retry on the loopback after a transport failure on the absolute URL.
 	 *
 	 * @param string $method The HTTP method.
@@ -290,7 +168,8 @@ class InstanceLoopback {
 			$response = $this->sendLoopback(method: $method, absolute: $absolute, options: $this->rewound(options: $options));
 		} catch (Throwable $second) {
 			$this->logger->warning(
-				'[InstanceLoopback] This instance could not be reached at its absolute URL nor on the loopback. Set internal_base_url to the address the server reaches itself on.',
+				'[InstanceLoopback] This instance could not be reached at its absolute URL nor on the loopback.'
+				. ' Set internal_base_url to the address the server reaches itself on.',
 				[
 					'app' => Application::APP_ID,
 					'absolute' => $failure->getMessage(),
@@ -305,7 +184,8 @@ class InstanceLoopback {
 		// at most once per request.
 		$this->workingRoute = 'loopback';
 		$this->logger->info(
-			'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use the loopback for this request. Set internal_base_url to skip the failed attempt.',
+			'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use the loopback for this request.'
+			. ' Set internal_base_url to skip the failed attempt.',
 			['app' => Application::APP_ID, 'reason' => $failure->getMessage()]
 		);
 
@@ -455,28 +335,49 @@ class InstanceLoopback {
 			$context = (array)$failure->getHandlerContext();
 		}
 
+		$errno = $this->curlErrno(failure: $failure, context: $context);
+		if (in_array($errno, self::CONNECT_PHASE_ERRORS, true) === true) {
+			return true;
+		}
+
+		return $errno === self::CURL_TIMEOUT && $this->timedOutBeforeConnecting(failure: $failure, context: $context) === true;
+	}//end isConnectPhaseFailure()
+
+	/**
+	 * The cURL error number: from the handler context, else from the
+	 * "cURL error N:" message, else 0.
+	 *
+	 * @param Throwable $failure The failure.
+	 * @param array<array-key, mixed> $context The handler context, possibly empty.
+	 *
+	 * @return int
+	 */
+	private function curlErrno(Throwable $failure, array $context): int {
 		$errno = (int)($context['errno'] ?? 0);
 		if ($errno === 0 && preg_match('/cURL error (\d+):/', $failure->getMessage(), $match) === 1) {
 			$errno = (int)$match[1];
 		}
 
-		if (in_array($errno, self::CONNECT_PHASE_ERRORS, true) === true) {
-			return true;
-		}
+		return $errno;
+	}//end curlErrno()
 
-		if ($errno !== self::CURL_TIMEOUT) {
-			return false;
-		}
-
-		// A timeout counts only when no connection was made: cURL reports
-		// connect_time 0, or, without a context, says so in the message.
+	/**
+	 * Whether a cURL timeout happened before a connection was made: cURL
+	 * reports connect_time 0, or, without a context, says so in the message.
+	 *
+	 * @param Throwable $failure The timeout.
+	 * @param array<array-key, mixed> $context The handler context, possibly empty.
+	 *
+	 * @return bool
+	 */
+	private function timedOutBeforeConnecting(Throwable $failure, array $context): bool {
 		if (array_key_exists('connect_time', $context) === true) {
 			return (float)$context['connect_time'] === 0.0;
 		}
 
 		return str_contains($failure->getMessage(), 'Connection timed out') === true
 			|| str_contains($failure->getMessage(), 'Failed to connect') === true;
-	}//end isConnectPhaseFailure()
+	}//end timedOutBeforeConnecting()
 
 	/**
 	 * The options with every stream in the body or a multipart part rewound,
@@ -505,7 +406,7 @@ class InstanceLoopback {
 	 * @return void
 	 */
 	private function rewindStream(mixed $stream): void {
-		if (is_resource($stream) === true && (bool)(stream_get_meta_data($stream)['seekable'] ?? false) === true) {
+		if (is_resource($stream) === true && stream_get_meta_data($stream)['seekable'] === true) {
 			rewind($stream);
 		}
 	}//end rewindStream()

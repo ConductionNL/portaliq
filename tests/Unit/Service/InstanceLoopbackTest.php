@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\InstanceLoopback;
+use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Tests\Unit\Service\Fixtures\FakeConnectException;
 use OCA\Portaliq\Tests\Unit\Service\Fixtures\FakeResponseException;
 use OCP\Http\Client\IClient;
@@ -86,7 +87,7 @@ class InstanceLoopbackTest extends TestCase {
 			static fn (string $app, string $key, string $default = ''): string => ($app === 'portaliq' && $key === 'internal_base_url') ? $configured : $default
 		);
 
-		return new InstanceLoopback($clients, $urls, $config, $this->logger);
+		return new InstanceLoopback($clients, $urls, new InternalBaseUrl($config, $this->logger), $this->logger);
 	}//end loopback()
 
 	/**
@@ -253,6 +254,27 @@ class InstanceLoopbackTest extends TestCase {
 	}//end testTheCurlNumberInTheMessageCountsWithoutAContext()
 
 	/**
+	 * The handler context decides when it carries the cURL number, whatever
+	 * the message says.
+	 *
+	 * @return void
+	 */
+	public function testTheHandlerContextNumberCounts(): void {
+		$this->answer(
+			function (string $method, string $url): IResponse {
+				if (str_starts_with($url, 'http://localhost:8090') === true) {
+					throw new FakeConnectException('Connection refused', ['errno' => 7]);
+				}
+
+				return $this->response(200);
+			}
+		);
+
+		$this->assertSame(200, $this->loopback()->request('GET', '/index.php/apps/x')->getStatusCode());
+		$this->assertCount(2, $this->calls);
+	}//end testTheHandlerContextNumberCounts()
+
+	/**
 	 * A timeout before the connection is a transport failure; a timeout after
 	 * it may have applied the request, so it is never retried.
 	 *
@@ -388,38 +410,6 @@ class InstanceLoopbackTest extends TestCase {
 		$this->assertSame('http://localhost:8090/index.php/apps/y', $this->calls[1][1]);
 		$this->assertArrayNotHasKey('headers', $this->calls[0][2]);
 	}//end testAnInvalidConfiguredUrlIsIgnoredWithAWarning()
-
-	/**
-	 * What the setting accepts and refuses.
-	 *
-	 * @return void
-	 */
-	public function testTheSettingAcceptsOnlyAPlainHttpAddress(): void {
-		$loopback = $this->loopback();
-
-		$this->assertSame('', $loopback->normaliseBaseUrl(value: '  '));
-		$this->assertSame('http://nextcloud', $loopback->normaliseBaseUrl(value: 'http://nextcloud/'));
-		$this->assertSame('https://app.internal:8443/nextcloud', $loopback->normaliseBaseUrl(value: 'HTTPS://app.internal:8443/nextcloud/'));
-		$this->assertSame('http://10.0.0.5', $loopback->normaliseBaseUrl(value: 'http://10.0.0.5'));
-
-		foreach ([
-			'ftp://nextcloud',
-			'file:///etc/passwd',
-			'nextcloud',
-			'//nextcloud',
-			'http://',
-			'http://user:secret@nextcloud',
-			'http://nextcloud/?debug=1',
-			'http://nextcloud/#x',
-			'http://nextcloud/../etc',
-			'http://nextcloud/a/./b',
-			'http://nextcloud/%2e%2e/etc',
-			'http://next cloud',
-			'http://nextcloud\\evil',
-		] as $invalid) {
-			$this->assertNull($loopback->normaliseBaseUrl(value: $invalid), $invalid . ' must be refused.');
-		}
-	}//end testTheSettingAcceptsOnlyAPlainHttpAddress()
 
 	/**
 	 * Each HTTP method reaches the client method of the same name; anything

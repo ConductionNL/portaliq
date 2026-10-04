@@ -15,12 +15,12 @@ use OCA\Portaliq\Service\Availability\AvailabilityProbe;
 use OCA\Portaliq\Service\Availability\AvailabilityRollup;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
 use OCA\Portaliq\Service\InstanceLoopback;
+use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
-use OCP\IAppConfig;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -187,7 +187,7 @@ class AvailabilityProbeJobTest extends TestCase {
 			$time,
 			$portals,
 			new AvailabilityProbe(
-				new InstanceLoopback($clients, $urls, $this->createMock(IAppConfig::class), $this->createMock(LoggerInterface::class)),
+				new InstanceLoopback($clients, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)),
 				$urls
 			),
 			$store,
