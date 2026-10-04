@@ -301,6 +301,36 @@ export function fieldErrors(action, values, files, t) {
 }
 
 /**
+ * The server's refusal per field as the form's own errors: the server sends
+ * the action's `requiredMessage`, or '' for the site to word, and only for
+ * fields the form shows (site-multi-step-forms REQ-SMF-024).
+ *
+ * @param {object} action The action.
+ * @param {Record<string, string>|undefined} errors The answer's `errors`.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {Record<string, string>} The message per field.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-the-server-must-refuse-a-submit-that-leaves-a-required-field-empty-req-smf-024
+ */
+export function serverFieldErrors(action, errors, t) {
+	const translate = translatorOr(t)
+	const out = {}
+	for (const field of formFields(action)) {
+		const message = (errors || {})[field]
+		if (typeof message !== 'string') {
+			continue
+		}
+		out[field] =
+			message.trim() !== ''
+				? message
+				: translate('{field} is required.', {
+						field: fieldLabel(action, field),
+					})
+	}
+	return out
+}
+
+/**
  * A row's value as the text a propose-change field starts from.
  *
  * @param {object|null} row The row.
