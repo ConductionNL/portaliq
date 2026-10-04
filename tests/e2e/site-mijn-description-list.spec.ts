@@ -11,6 +11,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { pageFixture } from './mijn-fixtures.ts'
 import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
@@ -47,31 +48,11 @@ test.describe('site-mijn-description-list', () => {
 	}) => {
 		const stamp = Date.now()
 		const label = `Vergunningen ${stamp}`
-		await seed(request, 'portalPage', {
-			label,
-			audience: 'client',
-			status: 'active',
-			collections: [
-				{
-					id: `vergunningen-${stamp}`,
-					kind: 'cases',
-					label: 'Vergunningen',
-					register: 'portaliq',
-					schema: 'portalCase',
-					scopeField: 'subjectRef',
-				},
-			],
-			pages: [
-				{
-					id: `vergunningen-${stamp}`,
-					label,
-					blocks: [
-						{ type: 'collection', collection: `vergunningen-${stamp}` },
-						{ type: 'detail', collection: `vergunningen-${stamp}` },
-					],
-				},
-			],
-		})
+		await seed(
+			request,
+			'portalPage',
+			pageFixture('description-list', stamp, 'client'),
+		)
 		const subjectRef = `subject-dl-${stamp}`
 		await seed(request, 'portalCase', {
 			subjectRef,

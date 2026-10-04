@@ -22,6 +22,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { pageFixture } from './mijn-fixtures.ts'
 import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
@@ -82,82 +83,7 @@ async function signIn(
 	const stamp = Date.now()
 	const home = `overzicht-${stamp}`
 	const hidden = `archief-${stamp}`
-	await seed(request, 'portalPage', {
-		label: `Mijn omgeving ${stamp}`,
-		audience: AUDIENCE,
-		status: 'active',
-		collections: [
-			{
-				id: `zaken-${stamp}`,
-				kind: 'cases',
-				label: 'Zaken',
-				register: 'portaliq',
-				schema: 'portalCase',
-				scopeField: 'subjectRef',
-				fields: ['reference', 'status', 'toelichting', 'withdrawnAt'],
-				dueField: 'withdrawnAt',
-				turnField: 'toelichting',
-				fieldConfigs: {
-					toelichting: {
-						valueLabels: {
-							resident: 'U bent aan zet',
-							organisation: 'De gemeente is aan zet',
-						},
-					},
-				},
-			},
-			{
-				id: `vragen-${stamp}`,
-				label: 'Vragen aan u',
-				register: 'portaliq',
-				schema: 'portalMessage',
-				scopeField: 'subjectRef',
-				fields: ['subject', 'term'],
-			},
-			{
-				id: `berichten-${stamp}`,
-				kind: 'inbox',
-				label: 'Berichten',
-				register: 'portaliq',
-				schema: 'portalMessage',
-				scopeField: 'subjectRef',
-			},
-		],
-		pages: [
-			{
-				id: home,
-				label: `Overzicht ${stamp}`,
-				icon: 'HomeOutline',
-				home: true,
-				blocks: [
-					{
-						type: 'tasks',
-						collection: `vragen-${stamp}`,
-						dueField: 'term',
-						titleFields: ['subject'],
-						label: 'Dit moet u nog doen',
-					},
-					{
-						type: 'cases',
-						collection: `zaken-${stamp}`,
-						open: true,
-						label: 'Lopende zaken',
-					},
-					{
-						type: 'inbox',
-						collection: `berichten-${stamp}`,
-						label: 'Nieuwe berichten',
-					},
-				],
-			},
-			{
-				id: hidden,
-				label: `Archief ${stamp}`,
-				menu: false,
-				blocks: [{ type: 'collection', collection: `zaken-${stamp}` }],
-			},
-		],
-	})
+	await seed(request, 'portalPage', pageFixture('omgeving-live', stamp, AUDIENCE))
 	const subjectRef = `subject-live-${stamp}`
 	const mine = { subjectRef, organisation: ORGANISATION }
 	await seed(request, 'portalCase', {
