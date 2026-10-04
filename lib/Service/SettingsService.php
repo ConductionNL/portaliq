@@ -73,6 +73,7 @@ class SettingsService {
 	 * @param GeoSettings $geoSettings The visitor geography provider and credentials
 	 * @param GeoRefreshService $geoRefresh Reports whether a geography database is installed
 	 * @param ConnectionReporter|null $connectionReporter Asks integriq to look again after a geography save.
+	 * @param InstanceLoopback|null $loopback Validates the internal address for calls to this instance.
 	 *
 	 * @return void
 	 *
@@ -89,6 +90,7 @@ class SettingsService {
 		private GeoSettings $geoSettings,
 		private GeoRefreshService $geoRefresh,
 		private ?ConnectionReporter $connectionReporter = null,
+		private ?InstanceLoopback $loopback = null,
 	) {
 	}//end __construct()
 
@@ -141,6 +143,10 @@ class SettingsService {
 			// the key), and whether a database is installed. Administrators
 			// only: the provider choice is instance configuration.
 			$extra[self::GEO_KEY] = $this->geoSettings->toArray() + ['status' => $this->geoRefresh->status()];
+			// The internal address for calls to this instance
+			// (instance-loopback-self-calls). Administrators only: it names
+			// where the server reaches itself.
+			$extra[InstanceLoopback::CONFIG_KEY] = $this->appConfig->getValueString(Application::APP_ID, InstanceLoopback::CONFIG_KEY, '');
 		}
 
 		return array_merge($settings, $extra);
@@ -188,8 +194,37 @@ class SettingsService {
 			);
 		}
 
+		$refused = $this->updateInternalBaseUrl(data: $data);
+		if ($refused === true) {
+			return $this->getSettings() + ['internal_base_url_refused' => true];
+		}
+
 		return $this->getSettings();
 	}//end updateSettings()
+
+	/**
+	 * Store the internal address for calls to this instance when the data
+	 * carries one. An invalid address is not stored; an empty one clears it.
+	 *
+	 * @param array<string,mixed> $data The data to update.
+	 *
+	 * @return bool True when an address was sent and refused.
+	 *
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
+	 */
+	private function updateInternalBaseUrl(array $data): bool {
+		if ($this->loopback === null || is_string($data[InstanceLoopback::CONFIG_KEY] ?? null) === false) {
+			return false;
+		}
+
+		$normalised = $this->loopback->normaliseBaseUrl(value: $data[InstanceLoopback::CONFIG_KEY]);
+		if ($normalised === null) {
+			return true;
+		}
+
+		$this->appConfig->setValueString(Application::APP_ID, InstanceLoopback::CONFIG_KEY, $normalised);
+		return false;
+	}//end updateInternalBaseUrl()
 
 	/**
 	 * Load configuration from app_template_register.json via OpenRegister.

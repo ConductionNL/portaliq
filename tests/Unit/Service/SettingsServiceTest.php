@@ -20,14 +20,17 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\PageEditorService;
 use OCA\Portaliq\Service\SettingsService;
 use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
 use OCA\Portaliq\Service\Traffic\Geo\GeoSettings;
 use OCP\App\IAppManager;
+use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
+use OCP\IURLGenerator;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -132,9 +135,45 @@ class SettingsServiceTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			($pageEditor ?? $this->editor()),
 			new GeoSettings($appConfig),
-			$this->geoRefresh()
+			$this->geoRefresh(),
+			null,
+			new InstanceLoopback(
+				$this->createMock(IClientService::class),
+				$this->createMock(IURLGenerator::class),
+				$appConfig,
+				$this->createMock(LoggerInterface::class)
+			)
 		);
 	}//end service()
+
+
+	/**
+	 * The internal address for calls to this instance: an administrator
+	 * stores a valid address normalised, an invalid one is refused and not
+	 * stored, an empty one clears it, and only administrators see it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
+	 */
+	public function testTheInternalAddressIsValidatedBeforeItIsStored(): void {
+		$service = $this->service();
+
+		$saved = $service->updateSettings(['internal_base_url' => 'http://nextcloud-app/']);
+		$this->assertSame('http://nextcloud-app', $this->stored['internal_base_url']);
+		$this->assertSame('http://nextcloud-app', $saved['internal_base_url']);
+		$this->assertArrayNotHasKey('internal_base_url_refused', $saved);
+
+		$refused = $service->updateSettings(['internal_base_url' => 'http://user:pw@evil/../x']);
+		$this->assertTrue($refused['internal_base_url_refused']);
+		$this->assertSame('http://nextcloud-app', $this->stored['internal_base_url']);
+
+		$service->updateSettings(['internal_base_url' => '']);
+		$this->assertSame('', $this->stored['internal_base_url']);
+
+		$this->stored['internal_base_url'] = 'http://nextcloud-app';
+		$this->assertArrayNotHasKey('internal_base_url', $this->service(isAdmin: false)->getSettings());
+	}//end testTheInternalAddressIsValidatedBeforeItIsStored()
 
 
 	/**
