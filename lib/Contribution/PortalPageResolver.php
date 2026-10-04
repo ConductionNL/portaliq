@@ -68,13 +68,16 @@ class PortalPageResolver {
 		$out = [];
 		if (is_array($pages) === true) {
 			$actionIds = $this->ids(entries: $actions);
+			// A cta may name a page of the same contribution (REQ-SMO-024).
+			$pageIds = $this->ids(entries: array_filter($pages, 'is_array'));
 
 			foreach ($pages as $page) {
 				$entry = $this->normalisePage(
 					page: $page,
 					collections: $collections,
 					actionIds: $actionIds,
-					index: count($out)
+					index: count($out),
+					pageIds: $pageIds
 				);
 				if ($entry !== null) {
 					$out[] = $entry;
@@ -98,12 +101,13 @@ class PortalPageResolver {
 	 * @param array<int, string> $actionIds The valid action ids.
 	 * @param int $index How many pages already survived
 	 *                   (drives the synthesised id).
+	 * @param array<int, string> $pageIds The contribution's page ids.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
 	 */
-	private function normalisePage(mixed $page, array $collections, array $actionIds, int $index): ?array {
+	private function normalisePage(mixed $page, array $collections, array $actionIds, int $index, array $pageIds=[]): ?array {
 		if (is_array($page) === false) {
 			return null;
 		}
@@ -113,7 +117,8 @@ class PortalPageResolver {
 			blocks: ($page['blocks'] ?? null),
 			collectionIds: $collectionIds,
 			actionIds: $actionIds,
-			collections: $collections
+			collections: $collections,
+			pageIds: $pageIds
 		);
 		if ($blocks === []) {
 			return null;

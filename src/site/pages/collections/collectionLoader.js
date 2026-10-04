@@ -31,6 +31,10 @@ export function collectionIdsFor(page) {
 	}
 	// A record page reads its record collection first (contribution-record-page).
 	add(page?.record?.collection)
+	// A switching page reads its records and the collection its subtitle
+	// comes from (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-026).
+	add(page?.records?.collection)
+	add(page?.records?.subtitleLookup?.collection)
 	for (const block of page?.blocks || []) {
 		if (
 			['collection', 'detail', 'kpi', 'tasks', 'cases'].includes(block?.type)

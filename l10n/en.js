@@ -2040,7 +2040,21 @@ OC.L10N.register(
         "Narrow the rows to the open record's groups.": "Narrow the rows to the open record's groups.",
         "Lookups": "Lookups",
         "Values added to each row from another collection.": "Values added to each row from another collection.",
-        "The collection whose records this page switches between, as an object with collection and the fields that name the records. An app may also name only the collection.": "The collection whose records this page switches between, as an object with collection and the fields that name the records. An app may also name only the collection."
+        "Leave out when": "Leave out when",
+        "On a tasks block: leave out a row when one of its lookups has one of these values.": "On a tasks block: leave out a row when one of its lookups has one of these values.",
+        "Text with fields": "Text with fields",
+        "On a record page: a text with {field} placeholders, filled from the open record as plain text.": "On a record page: a text with {field} placeholders, filled from the open record as plain text.",
+        "When empty": "When empty",
+        "Per field: the sentence to show when the field has no value.": "Per field: the sentence to show when the field has no value.",
+        "On a call to action: the page of this contribution it opens.": "On a call to action: the page of this contribution it opens.",
+        "On a call to action: an address inside the portal, starting with one slash.": "On a call to action: an address inside the portal, starting with one slash.",
+        "With the open record": "With the open record",
+        "On a call to action: open the page or form for the open record.": "On a call to action: open the page or form for the open record.",
+        "Display": "Display",
+        "On a collection block: cards instead of a table.": "On a collection block: cards instead of a table.",
+        "Progress": "Progress",
+        "On cards: the fields with the value and the total, and the unit, shown as a figure.": "On cards: the fields with the value and the total, and the unit, shown as a figure.",
+        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection."
     },
     "nplurals=2; plural=(n != 1);"
 )

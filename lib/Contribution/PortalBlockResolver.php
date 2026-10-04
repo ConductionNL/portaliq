@@ -38,6 +38,13 @@ namespace OCA\Portaliq\Contribution;
  */
 class PortalBlockResolver {
 	/**
+	 * The page ids of the contribution whose blocks are being resolved.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $pageIds = [];
+
+	/**
 	 * The block-type registry. A block of any other type is dropped.
 	 */
 	private const BLOCK_TYPES = [
@@ -77,13 +84,15 @@ class PortalBlockResolver {
 	 *                                                      (the `tasks` and `inbox`
 	 *                                                      blocks read their kind
 	 *                                                      and projected fields).
+	 * @param array<int, string> $pageIds The contribution's page ids (a `cta` may name one).
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
-	public function normaliseBlocks(mixed $blocks, array $collectionIds, array $actionIds, array $collections=[]): array {
+	public function normaliseBlocks(mixed $blocks, array $collectionIds, array $actionIds, array $collections=[], array $pageIds=[]): array {
+		$this->pageIds = $pageIds;
 		if (is_array($blocks) === false) {
 			return [];
 		}
@@ -153,7 +162,7 @@ class PortalBlockResolver {
 		}
 
 		if ($type === 'cta') {
-			return $this->normaliseCtaBlock(block: $block, actionIds: $actionIds);
+			return (new CtaBlockNormaliser())->normalise(block: $block, actionIds: $actionIds, pageIds: $this->pageIds);
 		}
 
 		return $this->richTextBlock(block: $block);
@@ -279,7 +288,24 @@ class PortalBlockResolver {
 			return ['type' => 'richText', 'markdown' => $markdown];
 		}
 
-		return null;
+		// A text filled from the open record (REQ-SMO-027): `template` with
+		// `{field}` placeholders, and `whenEmpty` per field.
+		$template = ($block['template'] ?? null);
+		if (is_string($template) === false || trim($template) === '') {
+			return null;
+		}
+
+		$entry = ['type' => 'richText', 'template' => $template];
+		$whenEmpty = array_filter(
+			(array)($block['whenEmpty'] ?? []),
+			static fn ($text, $field): bool => is_string($field) === true && is_string($text) === true && $text !== '',
+			ARRAY_FILTER_USE_BOTH
+		);
+		if ($whenEmpty !== []) {
+			$entry['whenEmpty'] = $whenEmpty;
+		}
+
+		return $entry;
 	}//end richTextBlock()
 
 	/**
@@ -300,22 +326,4 @@ class PortalBlockResolver {
 
 		return ['type' => $type, $key => $ref];
 	}//end referenceBlock()
-
-	/**
-	 * A `cta` block: a resolvable action reference AND a non-empty label.
-	 *
-	 * @param array<string, mixed> $block The declared block.
-	 * @param array<int, string> $actionIds The valid action ids.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normaliseCtaBlock(array $block, array $actionIds): ?array {
-		$ref = ($block['action'] ?? null);
-		$label = ($block['label'] ?? null);
-		if (in_array($ref, $actionIds, true) === false || is_string($label) === false || $label === '') {
-			return null;
-		}
-
-		return ['type' => 'cta', 'action' => $ref, 'label' => $label];
-	}//end normaliseCtaBlock()
 }//end class

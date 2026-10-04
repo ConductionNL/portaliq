@@ -83,7 +83,7 @@ class PortalPageSchemaTest extends TestCase {
 	 * @return void
 	 */
 	public function testEveryE2eSeedFitsTheSchema(): void {
-		$this->assertSame(['case-cards', 'action-rows', 'description-list', 'omgeving-live', 'switching'], array_keys(self::$fixtures));
+		$this->assertSame(['case-cards', 'action-rows', 'description-list', 'omgeving-live', 'switching', 'wave-6'], array_keys(self::$fixtures));
 		foreach (self::$fixtures as $name => $record) {
 			$this->assertTrue($this->fits(record: $record), $name . ' fits the portalPage schema');
 		}
@@ -109,7 +109,7 @@ class PortalPageSchemaTest extends TestCase {
 			$this->assertTrue($this->fits(record: $this->record(collection: $extra)), (string)json_encode($extra));
 		}
 
-		$pages = [['home' => true], ['menu' => false], ['group' => 'Zaken'], ['record' => ['collection' => 'zaken']], ['records' => ['collection' => 'zaken', 'titleFields' => ['reference']]], ['record' => ['collection' => 'zaken'], 'perRecord' => 'zaken']];
+		$pages = [['records' => ['collection' => 'zaken', 'subtitleLookup' => ['collection' => 'zaken', 'matchField' => 'a', 'valueField' => 'b']]], ['home' => true], ['menu' => false], ['group' => 'Zaken'], ['record' => ['collection' => 'zaken']], ['records' => ['collection' => 'zaken', 'titleFields' => ['reference']]], ['record' => ['collection' => 'zaken'], 'perRecord' => 'zaken']];
 		foreach ($pages as $extra) {
 			$this->assertTrue($this->fits(record: $this->record(page: $extra)), (string)json_encode($extra));
 		}
@@ -126,6 +126,12 @@ class PortalPageSchemaTest extends TestCase {
 			['type' => 'kpi', 'collection' => 'zaken', 'cards' => [['field' => 'a', 'label' => 'A']]],
 			['type' => 'news', 'limit' => 3],
 			['type' => 'collection', 'collection' => 'zaken', 'recordField' => 'kind', 'lookups' => []],
+			['type' => 'tasks', 'collection' => 'zaken', 'lookups' => [['collection' => 'zaken', 'matchField' => 'a', 'valueField' => 'b', 'as' => 's']], 'excludeWhen' => ['lookup' => 's', 'in' => ['submitted']]],
+			['type' => 'inbox', 'recordField' => 'learnerRef'],
+			['type' => 'cta', 'page' => 'p', 'label' => '{title} ziek melden', 'withRecord' => true],
+			['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht sturen'],
+			['type' => 'richText', 'template' => 'U heeft toegang tot {expiresAt}.', 'whenEmpty' => ['expiresAt' => 'U heeft toegang zonder einddatum.']],
+			['type' => 'collection', 'collection' => 'zaken', 'display' => 'cards', 'progress' => ['valueField' => 'a', 'totalField' => 'b', 'label' => 'uur']],
 		];
 		foreach ($blocks as $block) {
 			$this->assertTrue($this->fits(record: $this->record(block: $block)), (string)json_encode($block));
@@ -137,6 +143,7 @@ class PortalPageSchemaTest extends TestCase {
 		$this->assertFalse($this->fits(record: $this->record(page: ['records' => 'zaken'])), 'a bare id is not a record\'s records');
 		$this->assertFalse($this->fits(record: $this->record(block: ['type' => 'caseCards', 'collection' => 'zaken'])), 'a placeholder block type is refused');
 		$this->assertFalse($this->fits(record: $this->record(block: ['type' => 'calendar', 'sources' => [], 'range' => 'year'])), 'an unknown range is refused');
+		$this->assertFalse($this->fits(record: $this->record(block: ['type' => 'collection', 'collection' => 'zaken', 'display' => 'grid'])), 'an unknown display is refused');
 	}//end testEachNewKeyFitsAndAnUnknownValueIsRefused()
 
 	/**
@@ -195,6 +202,18 @@ class PortalPageSchemaTest extends TestCase {
 
 		$switching = (new PortalManifestNormaliser())->normalise(self::$fixtures['switching']);
 		$this->assertSame(['collection' => 'kind-1700000000000', 'titleFields' => ['reference']], $switching['pages'][0]['records']);
+
+		$wave6 = (new PortalManifestNormaliser())->normalise(self::$fixtures['wave-6']);
+		[$family, $child] = $wave6['pages'];
+		$this->assertSame(
+			['collection' => 'groep-1700000000000', 'matchField' => 'referenceId', 'valueField' => 'subject'],
+			$family['records']['subtitleLookup']
+		);
+		$this->assertSame(['richText', 'cta', 'cta', 'detail'], array_column($family['blocks'], 'type'));
+		$this->assertSame(['withdrawnAt' => 'Er is geen einddatum.'], $family['blocks'][0]['whenEmpty']);
+		$this->assertSame(['type' => 'cta', 'page' => 'kind-detail-1700000000000', 'label' => '{title} bekijken', 'withRecord' => true], $family['blocks'][1]);
+		$this->assertSame(['type' => 'cta', 'route' => '/mijn/inbox', 'label' => 'Berichten'], $family['blocks'][2]);
+		$this->assertFalse($child['menu']);
 
 		$cards = (new PortalManifestNormaliser())->normalise(self::$fixtures['case-cards']);
 		$this->assertSame('withdrawnAt', $cards['collections'][0]['closedField']);

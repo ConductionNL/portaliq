@@ -25,6 +25,7 @@
 			:chosen="recordId"
 			:titleFields="recordPage.titleFields || []"
 			:subtitleFields="recordPage.subtitleFields || []"
+			:subtitles="switcherSubtitles"
 			:legend="switcherLegend"
 			:name="`pq-switch-${currentPage ? currentPage.id : 'page'}`"
 			@choose="choose" />
@@ -63,6 +64,34 @@
 			<RichTextBlock
 				v-if="item.kind === 'richText'"
 				:markdown="item.block.markdown || ''" />
+
+			<!-- A text filled from the open record, as text (REQ-SMO-027). -->
+			<div
+				v-else-if="item.kind === 'template'"
+				class="pq-contribution-page__template"
+				data-testid="contribution-page-template">
+				<p
+					v-for="(sentence, s) in templateOf(item)"
+					:key="s"
+					class="utrecht-paragraph">
+					{{ sentence }}
+				</p>
+			</div>
+
+			<!-- Quick tiles: cta blocks that open a page or a route (REQ-SMO-024). -->
+			<QuickTiles
+				v-else-if="item.kind === 'tiles'"
+				:tiles="tilesOf(item)"
+				@open="openTile" />
+
+			<!-- Rows as cards with a progress figure (REQ-SMO-028). -->
+			<ProgressCards
+				v-else-if="item.kind === 'table' && item.block.display === 'cards'"
+				:rows="tableWindow(item).rows"
+				:block="item.block"
+				:titleFields="item.collection.titleFields || []"
+				:t="tr"
+				:locale="lang" />
 
 			<div
 				v-else-if="item.kind === 'table'"
@@ -276,6 +305,7 @@
 			<InboxBlock
 				v-else-if="item.kind === 'inbox'"
 				:block="item.block"
+				:record="activeRecord"
 				:api="api"
 				:app="currentContribution ? currentContribution.app || '' : ''"
 				:nav="nav"
@@ -311,7 +341,7 @@
 			<SlotHost
 				v-else-if="item.kind === 'action' || item.kind === 'cta'"
 				name="action"
-				:block="item.block"
+				:block="withTitle(item.block)"
 				:action="item.action"
 				:contribution="currentContribution"
 				:api="api"
@@ -358,6 +388,8 @@ import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
 import { blocks as mijnBlocks } from '../../components/mijn/index.js'
 import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
+import { ctaLabel, fillTemplate } from '../../components/mijn/template.js'
+import { keepRecordToOpen, sessionStore as tabStore } from '../inbox/inbox.js'
 import { createCollectionLoader, openRecordState } from './collectionLoader.js'
 import { resolveBlocks } from './pageBlocks.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
@@ -414,6 +446,8 @@ export default {
 		CasesBlock: defineAsyncComponent(mijnBlocks.cases),
 		StepsBlock: defineAsyncComponent(mijnBlocks.steps),
 		RecordSwitcher: defineAsyncComponent(mijnBlocks.recordSwitcher),
+		QuickTiles: defineAsyncComponent(mijnBlocks.quickTiles),
+		ProgressCards: defineAsyncComponent(mijnBlocks.progressCards),
 		DocumentsBlock: defineAsyncComponent(mijnBlocks.documents),
 		TimelineBlock: defineAsyncComponent(mijnBlocks.timeline),
 	},
@@ -515,6 +549,33 @@ export default {
 		 * @return {string} The switcher's name for a screen reader.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 		 */
+		/**
+		 * The switcher's subtitle per record, from one related record
+		 * (`records.subtitleLookup`, REQ-SMO-026): the child's group.
+		 *
+		 * @return {Record<string, string>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-the-record-switcher-may-take-its-subtitle-from-a-related-record-req-smo-026
+		 */
+		switcherSubtitles() {
+			const lookup = this.currentPage?.records?.subtitleLookup
+			if (!lookup) {
+				return {}
+			}
+			const rows = this.store[lookup.collection]?.objects || []
+			const out = {}
+			for (const record of this.recordRows) {
+				const id = rowIdOf(record)
+				const match = rows.find(
+					(row) => String(row?.[lookup.matchField] ?? '') === id,
+				)
+				const value = match?.[lookup.valueField]
+				if (id && typeof value === 'string' && value.trim() !== '') {
+					out[id] = value.trim()
+				}
+			}
+			return out
+		},
+
 		switcherLegend() {
 			return mijnTranslator(this.t, this.lang)('Choose for whom')
 		},
@@ -814,6 +875,114 @@ export default {
 				item.block.range,
 				this.today || new Date(),
 			)
+		},
+
+		/**
+		 * The sentences of a template block, filled from the open record.
+		 *
+		 * @param {object} item The template block.
+		 * @return {Array<string>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-text-block-on-a-record-page-may-be-filled-from-the-record-req-smo-027
+		 */
+		templateOf(item) {
+			const collection = (this.currentContribution?.collections || []).find(
+				(c) => c && c.id === this.recordPage?.collection,
+			)
+			return fillTemplate(item.block.template, this.activeRecord, {
+				whenEmpty: item.block.whenEmpty || {},
+				fields: Array.isArray(collection?.fields) ? collection.fields : null,
+				locale: this.lang,
+			})
+		},
+
+		/**
+		 * A cta block with `{title}` in its label filled with the open
+		 * record's title.
+		 *
+		 * @param {object} block The block.
+		 * @return {object}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		withTitle(block) {
+			if (
+				block?.type !== 'cta'
+				|| !String(block.label || '').includes('{title}')
+			) {
+				return block
+			}
+			return { ...block, label: ctaLabel(block.label, this.recordName) }
+		},
+
+		/**
+		 * The tiles of a run of page and route ctas: label and route.
+		 *
+		 * @param {object} item The tiles item.
+		 * @return {Array<{key: string, label: string, route: string, block: object}>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		tilesOf(item) {
+			return item.tiles
+				.map((block, i) => ({
+					key: `${item.index}:${i}`,
+					label: ctaLabel(block.label, this.recordName),
+					route: this.tileRoute(block),
+					block,
+				}))
+				.filter((tile) => tile.route !== '')
+		},
+
+		/**
+		 * Where a tile goes: the page's route, with the open record chosen
+		 * when the tile says `withRecord` and the page is a record page; else
+		 * the declared route.
+		 *
+		 * @param {object} block The cta block.
+		 * @return {string} The route, or '' when the page is not offered.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		tileRoute(block) {
+			if (block.route) {
+				return block.route
+			}
+			const app = this.currentContribution?.app || ''
+			const entry = (this.nav || []).find(
+				(candidate) =>
+					candidate.contribution?.app === app
+					&& candidate.page?.id === block.page,
+			)
+			if (!entry) {
+				return ''
+			}
+			const route = routeForNav(entry)
+			const recordPage = entry.page.record || entry.page.records
+			if (
+				block.withRecord
+				&& this.recordId
+				&& recordPage
+				&& recordPage.collection === this.recordPage?.collection
+			) {
+				return `${route}/${encodeURIComponent(this.recordId)}`
+			}
+			return route
+		},
+
+		/**
+		 * Open a tile; with `withRecord` the open record is kept for the page
+		 * that shows its collection, as a record link would.
+		 *
+		 * @param {object} tile The tile.
+		 * @return {void}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		openTile(tile) {
+			if (tile.block.withRecord && this.recordId && this.recordPage) {
+				keepRecordToOpen(tabStore(), {
+					app: this.currentContribution?.app || '',
+					collection: this.recordPage.collection,
+					id: this.recordId,
+				})
+			}
+			this.$emit('navigate', tile.route)
 		},
 
 		/**

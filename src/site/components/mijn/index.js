@@ -19,6 +19,8 @@ export const blocks = {
 	cases: () => import('./CasesBlock.vue'),
 	steps: () => import('./StepsBlock.vue'),
 	recordSwitcher: () => import('./RecordSwitcher.vue'),
+	quickTiles: () => import('./QuickTiles.vue'),
+	progressCards: () => import('./ProgressCards.vue'),
 	documents: () => import('./DocumentsBlock.vue'),
 	timeline: () => import('./TimelineBlock.vue'),
 }

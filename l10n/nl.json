@@ -2109,7 +2109,21 @@
         "Narrow the rows to the open record's groups.": "Beperk de rijen tot de groepen van het open record.",
         "Lookups": "Opzoekingen",
         "Values added to each row from another collection.": "Waarden die uit een andere verzameling aan elke rij worden toegevoegd.",
-        "The collection whose records this page switches between, as an object with collection and the fields that name the records. An app may also name only the collection.": "De verzameling tussen wier records deze pagina wisselt, als object met de verzameling en de velden die de records een naam geven. Een app mag ook alleen de verzameling noemen."
+        "Leave out when": "Weglaten als",
+        "On a tasks block: leave out a row when one of its lookups has one of these values.": "Bij een takenblok: laat een rij weg als een van de opzoekingen een van deze waarden heeft.",
+        "Text with fields": "Tekst met velden",
+        "On a record page: a text with {field} placeholders, filled from the open record as plain text.": "Op een recordpagina: een tekst met {veld}-plaatshouders, gevuld met het open record als gewone tekst.",
+        "When empty": "Als leeg",
+        "Per field: the sentence to show when the field has no value.": "Per veld: de zin die verschijnt als het veld geen waarde heeft.",
+        "On a call to action: the page of this contribution it opens.": "Bij een actieknop: de pagina van deze bijdrage die hij opent.",
+        "On a call to action: an address inside the portal, starting with one slash.": "Bij een actieknop: een adres binnen het portaal, beginnend met één schuine streep.",
+        "With the open record": "Met het open record",
+        "On a call to action: open the page or form for the open record.": "Bij een actieknop: open de pagina of het formulier voor het open record.",
+        "Display": "Weergave",
+        "On a collection block: cards instead of a table.": "Bij een verzamelingsblok: kaarten in plaats van een tabel.",
+        "Progress": "Voortgang",
+        "On cards: the fields with the value and the total, and the unit, shown as a figure.": "Bij kaarten: de velden met de waarde en het totaal, en de eenheid, getoond als cijfer.",
+        "The collection whose records this page switches between, as an object with collection, the fields that name the records and an optional subtitle from a related record. An app may also name only the collection.": "De verzameling tussen wier records deze pagina wisselt, als object met de verzameling, de velden die de records een naam geven en een ondertitel uit een gerelateerd record. Een app mag ook alleen de verzameling noemen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

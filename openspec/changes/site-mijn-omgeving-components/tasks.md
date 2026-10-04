@@ -55,12 +55,14 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
 
 ## Wave 6: what the app lanes found after alignment (REQ-SMO-010, REQ-SMO-024 to REQ-SMO-028, `range: day`)
 
-- [ ] **T14**: `cta` with `page`, `route`, `withRecord` and a `{title}` label; `richText` `template` with `whenEmpty`.
+- [x] **T14**: `cta` with `page`, `route`, `withRecord` and a `{title}` label; `richText` `template` with `whenEmpty`.
   - PHPUnit `PortalBlockResolverTest::testACtaNamesExactlyOneTarget`, `::testAnOutsideRouteIsDropped`; node test: a template value is text, not markup
-- [ ] **T15**: record scope, `lookups` and `excludeWhen` on `tasks`; `recordField` on `inbox`; `range: day`; `display: cards` with `progress`; `subtitleLookup`.
+- [x] **T15**: record scope, `lookups` and `excludeWhen` on `tasks`; `recordField` on `inbox`; `range: day`; `display: cards` with `progress`; `subtitleLookup`.
   - PHPUnit on the normalisers; node tests for the excluded row and the progress text
-- [ ] **T16**: `navKeyFor` matches record pages and opens the record route.
+- [x] **T16**: `navKeyFor` matches record pages and opens the record route.
   - `check:open-record` extended
+  - Built in wave 6: `CtaBlockNormaliser` (action, page or route, `withRecord`, `{title}`) and `QuickTiles`; richText `template`/`whenEmpty` (`template.js`); tasks record scope, lookups and `excludeWhen`, inbox `recordField`; `records.subtitleLookup`; `display: cards` with `progress` (`ProgressCards`); `navKeyFor` falls back to a record page and a record link opens on `<page>/<id>`. Node `check:mijn-wave6`; PHPUnit in `PortalBlockResolverTest`, `PageMenuKeysTest`; portalPage 0.5.0 declares the keys; e2e family page in `site-mijn-switching.spec.ts`. Not built: an action cta's `withRecord` preset (actions have no `recordField` key; that is the action normaliser's, lane pq-b).
+  - Also in wave 6: the shell learns the mandates when the session loads (`learnMandates(fetchMyCases())` in App `loadAccount`), so `ActingForBar` names its party before Mijn zaken opened. `FigureTiles` still waits on #1125.
 
 ## Validation
 

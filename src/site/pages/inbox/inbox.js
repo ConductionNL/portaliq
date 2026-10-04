@@ -9,7 +9,11 @@
  * page's own, from its rows (src/shared/inboxUnread.js).
  */
 
-import { navKeyFor, OPEN_STORAGE_KEY } from '../../../shared/openRecord.js'
+import {
+	navKeyFor,
+	OPEN_STORAGE_KEY,
+	opensAsRecordPage,
+} from '../../../shared/openRecord.js'
 import { routeForNav } from '../../../shared/portalNav.js'
 
 /** The site route of "My tasks" in the signed-in area, as the shell builds it. */
@@ -104,7 +108,14 @@ export function markedRead(messages, id) {
 export function recordRoute(nav, link) {
 	const key = navKeyFor(nav, link)
 	const entry = key ? (nav || []).find((n) => n.key === key) : null
-	return entry ? routeForNav(entry) : null
+	if (!entry) {
+		return null
+	}
+	// A record page opens on that record's route (REQ-SMO-010).
+	if (link?.id && opensAsRecordPage(entry, link.collection)) {
+		return `${routeForNav(entry)}/${encodeURIComponent(link.id)}`
+	}
+	return routeForNav(entry)
 }
 
 /**

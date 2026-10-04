@@ -69,8 +69,40 @@ class CollectionListKeys {
 			$out['sort'] = ['field' => $sort['field'], 'direction' => $sort['direction']];
 		}
 
-		return $out;
+		return $out + $this->cards(block: $block, collection: $collection);
 	}//end collectionKeys()
+
+	/**
+	 * `display: cards` and its `progress: {valueField, totalField, label}`,
+	 * both fields projected (REQ-SMO-028). A progress that does not fit is
+	 * dropped and the cards stay.
+	 *
+	 * @param array<string, mixed>      $block      The declared block.
+	 * @param array<string, mixed>|null $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
+	 */
+	private function cards(array $block, ?array $collection): array {
+		if (($block['display'] ?? null) !== 'cards') {
+			return [];
+		}
+
+		$out = ['display' => 'cards'];
+		$progress = ($block['progress'] ?? null);
+		if (is_array($progress) === true
+			&& $this->projects(collection: $collection, field: ($progress['valueField'] ?? null)) === true
+			&& $this->projects(collection: $collection, field: ($progress['totalField'] ?? null)) === true
+		) {
+			$out['progress'] = ['valueField' => $progress['valueField'], 'totalField' => $progress['totalField']];
+			if (is_string($progress['label'] ?? null) === true && trim($progress['label']) !== '') {
+				$out['progress']['label'] = trim($progress['label']);
+			}
+		}
+
+		return $out;
+	}//end cards()
 
 	/**
 	 * The `range` a calendar block keeps: `day`, `week` or `month`.
