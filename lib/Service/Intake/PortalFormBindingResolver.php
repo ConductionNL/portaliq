@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Contribution\FormStepsNormaliser;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalObjectReader;
 
@@ -244,6 +245,7 @@ class PortalFormBindingResolver {
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 	 */
 	public function render(array $binding): array {
 		$settings = [
@@ -316,6 +318,12 @@ class PortalFormBindingResolver {
 			'formId' => (string)($form['uuid'] ?? $form['id'] ?? ''),
 			'formName' => (string)($form['name'] ?? ''),
 			'fields' => $fields,
+			// The form's own steps (site-multi-step-forms REQ-SMF-010), kept
+			// only where they name fields the form has; [] renders one page.
+			'steps' => (new FormStepsNormaliser())->steps(
+				steps: ($form['steps'] ?? null),
+				known: array_map(static fn (array $field): string => (string)$field['name'], $fields)
+			),
 			'settings' => $settings,
 			// The sign-in level the maker chose for this form (buildiq#935).
 			// Carried as declared; requiredTrust() decides what it means.

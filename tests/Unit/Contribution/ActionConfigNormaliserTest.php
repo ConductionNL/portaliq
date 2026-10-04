@@ -215,6 +215,173 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testARequiredMessageIsKeptAsText()
 
 	/**
+	 * A step naming a field the action lacks is dropped, and its other
+	 * fields go to the last step, before the review (REQ-SMF-020).
+	 *
+	 * @return void
+	 */
+	public function testStepsNamingUnknownFieldsAreDropped(): void {
+		$action = $this->wooAction(
+			[
+				'steps' => [
+					['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['onderwerp', 'omschrijving']],
+					['id' => 'betalen', 'title' => 'Betalen', 'fields' => ['periodeVan', 'iban']],
+					['id' => 'controle', 'title' => 'Controleren en versturen', 'review' => true],
+					['id' => 'tweede', 'title' => 'Dubbel', 'fields' => ['onderwerp']],
+					'not a step',
+				],
+			]
+		);
+
+		$this->assertSame(['vraag', 'more', 'controle'], array_column($action['steps'], 'id'));
+		$this->assertSame(['periodeVan'], $action['steps'][1]['fields']);
+		$this->assertSame('', $action['steps'][1]['title']);
+		$this->assertTrue($action['steps'][2]['review']);
+	}//end testStepsNamingUnknownFieldsAreDropped()
+
+	/**
+	 * A step without an id gets one; a review that names fields, a step
+	 * without fields and steps that keep no field leave a one-page form.
+	 *
+	 * @return void
+	 */
+	public function testMalformedStepsFallBackToOnePage(): void {
+		$named = $this->wooAction(['steps' => [['title' => 'Uw vraag', 'fields' => ['onderwerp']], ['id' => 'more', 'fields' => ['omschrijving']]]]);
+		$this->assertSame(['step-1', 'step-2', 'more'], array_column($named['steps'], 'id'));
+
+		$none = $this->wooAction(
+			[
+				'steps' => [
+					['id' => 'controle', 'review' => true, 'fields' => ['onderwerp']],
+					['id' => 'leeg', 'fields' => []],
+					['id' => 'raar', 'fields' => 'onderwerp'],
+					['id' => 'onbekend', 'fields' => ['iban']],
+				],
+			]
+		);
+		$this->assertArrayNotHasKey('steps', $none);
+	}//end testMalformedStepsFallBackToOnePage()
+
+	/**
+	 * `draft.retentionDays` is an integer clamped to 1 to 90; anything else
+	 * drops the draft.
+	 *
+	 * @return void
+	 */
+	public function testDraftRetentionIsClampedTo1To90(): void {
+		foreach ([[30, 30], [0, 1], [400, 90]] as [$declared, $kept]) {
+			$action = $this->wooAction(['draft' => ['retentionDays' => $declared]]);
+			$this->assertSame(['retentionDays' => $kept], $action['draft']);
+		}
+
+		$this->assertArrayNotHasKey('draft', $this->wooAction(['draft' => ['retentionDays' => '30']]));
+		$this->assertArrayNotHasKey('draft', $this->wooAction(['draft' => true]));
+	}//end testDraftRetentionIsClampedTo1To90()
+
+	/**
+	 * A confirmation keeps its title, body and next as text, and nothing else;
+	 * without a title it goes.
+	 *
+	 * @return void
+	 */
+	public function testConfirmationKeepsOnlyText(): void {
+		$action = $this->wooAction(
+			[
+				'confirmation' => [
+					'title' => 'Wij hebben uw verzoek ontvangen',
+					'body'  => 'Uw zaaknummer is {identifier}.',
+					'next'  => ['<script>'],
+					'html'  => '<b>x</b>',
+				],
+			]
+		);
+		$this->assertSame(
+			['title' => 'Wij hebben uw verzoek ontvangen', 'body' => 'Uw zaaknummer is {identifier}.'],
+			$action['confirmation']
+		);
+		$this->assertArrayNotHasKey('confirmation', $this->wooAction(['confirmation' => ['body' => 'Geen titel']]));
+	}//end testConfirmationKeepsOnlyText()
+
+	/**
+	 * Steps, draft and confirmation live on a create action and an endpoint
+	 * action with fields; an update action loses them.
+	 *
+	 * @return void
+	 */
+	public function testOnlyCreateAndEndpointActionsRunInSteps(): void {
+		$flow = [
+			'steps'        => [['id' => 'een', 'title' => 'Een', 'fields' => ['reason']]],
+			'confirmation' => ['title' => 'Ontvangen'],
+		];
+		$create = $this->absenceAction($flow);
+		$this->assertSame(['een', 'more'], array_column($create['steps'], 'id'));
+		$this->assertSame(['title' => 'Ontvangen'], $create['confirmation']);
+
+		$update = $this->absenceAction(array_merge($flow, ['type' => 'update']));
+		$this->assertArrayNotHasKey('steps', $update);
+		$this->assertArrayNotHasKey('confirmation', $update);
+
+		$plain = $this->wooAction(['fields' => [], 'steps' => $flow['steps']]);
+		$this->assertArrayNotHasKey('steps', $plain, 'an endpoint action without fields has nothing to step through');
+	}//end testOnlyCreateAndEndpointActionsRunInSteps()
+
+	/**
+	 * dossiq's Woo endpoint action, normalised.
+	 *
+	 * @param array<string, mixed> $overrides Keys to declare.
+	 *
+	 * @return array<string, mixed> The normalised action.
+	 */
+	private function wooAction(array $overrides): array {
+		$out = (new PortalManifestNormaliser($this->schemaReader()))->normalise(
+			[
+				'collections' => [],
+				'actions'     => [
+					array_merge(
+						[
+							'id'       => 'startWooVerzoek',
+							'endpoint' => '/index.php/apps/dossiq/api/portal/woo-verzoek',
+							'method'   => 'POST',
+							'fields'   => ['onderwerp', 'omschrijving', 'periodeVan'],
+						],
+						$overrides
+					),
+				],
+			]
+		);
+
+		return $out['actions'][0];
+	}//end wooAction()
+
+	/**
+	 * learniq's absence create action, normalised.
+	 *
+	 * @param array<string, mixed> $overrides Keys to declare.
+	 *
+	 * @return array<string, mixed> The normalised action.
+	 */
+	private function absenceAction(array $overrides): array {
+		$out = (new PortalManifestNormaliser($this->schemaReader()))->normalise(
+			[
+				'collections' => [],
+				'actions'     => [
+					array_merge(
+						[
+							'id'     => 'createExcuseRequest',
+							'type'   => 'create',
+							'schema' => 'excuse-request',
+							'fields' => ['dateFrom', 'reason'],
+						],
+						$overrides
+					),
+				],
+			]
+		);
+
+		return $out['actions'][0];
+	}//end absenceAction()
+
+	/**
 	 * The normalised field configs of learniq's absence action.
 	 *
 	 * @param array<string, array<string, mixed>> $fieldConfigs The declared field configs.
