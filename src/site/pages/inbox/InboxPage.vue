@@ -49,9 +49,11 @@
 						:id="idOf(message, i)"
 						:text="shownBody(message)"
 						:translation="shownTranslation(message)"
+						:partsOf="partsOf"
 						:t="tr"
 						:locale="lang"
-						bodyClass="utrecht-paragraph pq-inbox-row__body" />
+						bodyClass="utrecht-paragraph pq-inbox-row__body"
+						@navigate="go" />
 
 					<dl v-if="readiness(message)" class="pq-inbox-row__meta">
 						<div v-if="message.nature">
@@ -150,6 +152,7 @@ import { unreadIn } from '../../../shared/inboxUnread.js'
 import { deliveryLine } from '../../../shared/messageBox.js'
 import {
 	attachmentsOf,
+	bodyParts,
 	bodyWithoutOpenLink,
 	downloadCollection,
 	formatDateTime,
@@ -164,6 +167,19 @@ import {
 } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
+
+/**
+ * The page's origin, or '' where there is no window (a render in node).
+ *
+ * @return {string} The origin.
+ */
+function pageOrigin() {
+	try {
+		return typeof window !== 'undefined' ? window.location.origin : ''
+	} catch {
+		return ''
+	}
+}
 
 /**
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
@@ -184,6 +200,7 @@ export default {
 			busyId: null,
 			downloadingId: null,
 			downloadFailedFor: null,
+			origin: pageOrigin(),
 		}
 	},
 
@@ -288,6 +305,21 @@ export default {
 				message?.recordLink || null,
 				this.openRouteOf(message),
 			)
+		},
+
+		/**
+		 * A shown text as text and named links: an address into this site
+		 * becomes a link with a name, any other address stays text.
+		 *
+		 * @param {string} text The shown body or translation.
+		 * @return {Array<object>} The parts.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
+		 */
+		partsOf(text) {
+			return bodyParts(text, this.origin, {
+				publication: this.tr('View the publication'),
+				link: this.tr('View the link'),
+			})
 		},
 
 		/**

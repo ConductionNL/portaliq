@@ -11,7 +11,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { bodyWithoutOpenLink } from '../src/site/pages/inbox/inbox.js'
+import { bodyParts, bodyWithoutOpenLink } from '../src/site/pages/inbox/inbox.js'
 import { instance, inState, t } from './support/page-instance.mjs'
 import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 
@@ -200,4 +200,130 @@ test('a translated row keeps its translation, without the same address', async (
 	assert.equal(shown.targetLanguage, 'en')
 	assert.equal(shown.label, 'ai')
 	assert.equal(page.shownTranslation({ ...QUESTION }), null)
+})
+
+// THE OTHER ADDRESSES INTO THIS SITE SHOW AS NAMED LINKS (REQ-NAP-013).
+
+const ORIGIN = 'http://localhost:8080'
+const LABELS = {
+	publication: 'Bekijk de publicatie',
+	link: 'Bekijk de link',
+}
+const PUBLICATION_HREF = `${SITE}?route=/publicatie/5d0e9f12-7a4b-4c3e-8f21-9b6a0c3d2e11`
+
+test('the decision notice names its publication link in place of the lead-in', () => {
+	const parts = bodyParts(DECISION_BODY, ORIGIN, LABELS)
+	assert.deepEqual(parts, [
+		{
+			text: 'Wij hebben het besluit op uw Woo-verzoek "Stukken over de brug" gepubliceerd.\n\n',
+		},
+		{
+			text: 'Bekijk de publicatie',
+			href: PUBLICATION_HREF,
+			route: '/publicatie/5d0e9f12-7a4b-4c3e-8f21-9b6a0c3d2e11',
+		},
+	])
+	const flat = bodyParts(DECISION_BODY.replace('\n\n', ' '), ORIGIN, LABELS)
+	assert.equal(
+		flat[0].text,
+		'Wij hebben het besluit op uw Woo-verzoek "Stukken over de brug" gepubliceerd. ',
+	)
+	assert.equal(flat[1].text, 'Bekijk de publicatie')
+	assert.ok(
+		parts.every((part) => !/https?:/.test(part.text)),
+		'no raw address',
+	)
+})
+
+test('a saved-search line makes its title the link and drops ": <url>"', () => {
+	const parts = bodyParts(SAVED_SEARCH_BODY, ORIGIN, LABELS)
+	assert.deepEqual(parts, [
+		{
+			text: 'Er is een nieuwe publicatie die past bij uw zoekopdracht "brug".\n\n- ',
+		},
+		{
+			text: 'Besluit op Woo-verzoek over de brug',
+			href: PUBLICATION_HREF,
+			route: '/publicatie/5d0e9f12-7a4b-4c3e-8f21-9b6a0c3d2e11',
+		},
+	])
+})
+
+test('another address into the site reads "Bekijk de link" and loads the site', () => {
+	const parts = bodyParts(
+		`Zie ook ${SITE}#open=pipelinq/myQuestions/other.`,
+		ORIGIN,
+		LABELS,
+	)
+	assert.deepEqual(parts, [
+		{ text: 'Zie ook ' },
+		{
+			text: 'Bekijk de link',
+			href: `${SITE}#open=pipelinq/myQuestions/other`,
+			route: null,
+		},
+		{ text: '.' },
+	])
+})
+
+test('an address outside this site stays plain text, never a link', () => {
+	for (const body of [
+		'Lees meer: https://example.org/index.php/apps/portaliq/site?route=/publicatie/p-1',
+		'Lees meer: https://example.org/elders',
+		`Lees meer: ${ORIGIN}/index.php/apps/files/?dir=/`,
+		'Lees meer: javascript:alert(1)',
+	]) {
+		assert.deepEqual(bodyParts(body, ORIGIN, LABELS), [{ text: body }])
+	}
+	// Without a known origin nothing becomes a link.
+	assert.deepEqual(bodyParts(DECISION_BODY, '', LABELS), [{ text: DECISION_BODY }])
+})
+
+test('the answered question still reads without any address or link', () => {
+	const shown = bodyWithoutOpenLink(
+		QUESTION.body,
+		QUESTION.recordLink,
+		'/mijn/vragen',
+	)
+	assert.deepEqual(bodyParts(shown, ORIGIN, LABELS), [
+		{
+			text: 'Er is een antwoord op uw vraag "Wanneer wordt de brug gerepareerd?".',
+		},
+	])
+})
+
+test('the inbox renders the decision notice with a named link and no raw address', async () => {
+	const InboxPage = await loadSfc('src/site/pages/inbox/InboxPage.vue')
+	const message = {
+		id: 'd1',
+		subject: 'Het besluit op uw Woo-verzoek is gepubliceerd',
+		read: false,
+		receivedAt: '2026-10-04T10:00:00Z',
+		body: DECISION_BODY,
+		recordLink: { app: 'procest', collection: 'mijnZaken', id: 'c-1' },
+	}
+	const html = await renderComponent(
+		inState(InboxPage, { loading: false, messages: [message], origin: ORIGIN }),
+		{ api: {}, t, locale: 'nl', nav: [] },
+	)
+	assert.match(html, /gepubliceerd\./)
+	assert.doesNotMatch(html, /Lees het besluit/)
+	assert.match(
+		html,
+		/<a class="utrecht-link" href="http:\/\/localhost:8080\/index\.php\/apps\/portaliq\/site\?route=\/publicatie\/5d0e9f12-7a4b-4c3e-8f21-9b6a0c3d2e11" data-testid="inbox-body-link">Bekijk de publicatie<\/a>/,
+	)
+	assert.doesNotMatch(html.replace(/href="[^"]*"/g, ''), /https?:\/\//)
+})
+
+test('a link with a route opens inside the site; with a modifier key the browser follows it', async () => {
+	const { default: LinkedText } =
+		await import('../src/site/components/inbox/LinkedText.js')
+	const page = instance(LinkedText, { parts: [] })
+	let prevented = 0
+	const click = (extra = {}) => ({ preventDefault: () => prevented++, ...extra })
+	page.follow(click(), { route: '/publicatie/p-1' })
+	page.follow(click({ ctrlKey: true }), { route: '/publicatie/p-1' })
+	page.follow(click(), { route: null })
+	assert.deepEqual(page.emitted, [['navigate', '/publicatie/p-1']])
+	assert.equal(prevented, 1)
 })

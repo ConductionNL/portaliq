@@ -60,3 +60,24 @@ it. In a list line it SHALL keep the line's title. Every other address SHALL sta
 - **WHEN** the resident opens the inbox
 - **THEN** the body shows the address as written
 - @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+### Requirement: The inbox shows other site addresses as named links (REQ-NAP-013)
+
+Every other http(s) address in a notice body that leads into this site (the page's own origin, under
+`/apps/portaliq/site`) SHALL show in the Vue site's inbox as a link with a name, never as a raw address. In a list
+line ("- Title: <url>") the title SHALL be the link and ": <url>" SHALL go. After a lead-in ending in a colon, the
+link's name SHALL take the lead-in's place. The name SHALL be "Bekijk de publicatie" for a `?route=/publicatie/<id>`
+address and "Bekijk de link" for any other. An address outside this site SHALL stay plain text. A link with a
+`?route=` SHALL open through the site's own navigation.
+
+#### Scenario: A published decision
+- **GIVEN** the notice "Wij hebben het besluit ... gepubliceerd. Lees het besluit en de openbaar gemaakte documenten hier: <site>?route=/publicatie/<id>"
+- **WHEN** the resident opens the inbox
+- **THEN** the row reads "Wij hebben het besluit ... gepubliceerd." followed by the link "Bekijk de publicatie"
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+#### Scenario: An address outside this site
+- **GIVEN** a notice body with an address on another origin, or outside `/apps/portaliq/site`
+- **WHEN** the resident opens the inbox
+- **THEN** the address shows as plain text and no link is made of it
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs

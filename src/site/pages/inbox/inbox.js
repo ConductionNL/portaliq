@@ -286,6 +286,19 @@ function leadsWhereOpenLeads(url, link, openRoute) {
 }
 
 /**
+ * The text before a lead-in, without the lead-in: what ends a sentence
+ * before it stays, the rest of the sentence ("Lees het antwoord hier") goes.
+ *
+ * @param {string} before The text before the colon that ends the lead-in.
+ * @return {string} The text that stays.
+ */
+function withoutLeadIn(before) {
+	const ends = [...before.matchAll(/[.!?]["'\u201d)]?\s+/g)]
+	const last = ends[ends.length - 1]
+	return last ? before.slice(0, last.index + last[0].length) : ''
+}
+
+/**
  * One line of a body without the addresses that lead where "Open" leads.
  *
  * The words that only introduce such an address go with it: "Lees het
@@ -311,10 +324,7 @@ function lineWithoutOpenLinks(line, isOpenTarget) {
 		if (before.endsWith(':')) {
 			before = before.slice(0, -1)
 			if (!listItem) {
-				// Keep what ends a sentence before the lead-in, drop the rest.
-				const ends = [...before.matchAll(/[.!?]["'\u201d)]?\s+/g)]
-				const last = ends[ends.length - 1]
-				before = last ? before.slice(0, last.index + last[0].length) : ''
+				before = withoutLeadIn(before)
 			}
 		}
 		if (/^[.,;:!?]*\s*$/.test(after) && before.trim() === '') {
@@ -360,4 +370,120 @@ export function bodyWithoutOpenLink(body, link, openRoute) {
 		.join('\n')
 		.replace(/\n{3,}/g, '\n\n')
 		.trim()
+}
+
+/** The start of a list line: "- ", "* " or "\u2022 ". */
+const LIST_MARK = /^(\s*[-*\u2022]\s+)(.*?):\s*$/
+
+/**
+ * The route a link into this site's own pages names, or null: an http(s)
+ * address on the page's own origin, under `/apps/portaliq/site`. An address
+ * anywhere else is not this site's, and is never made a link.
+ *
+ * @param {string} url The address in the text.
+ * @param {string} origin The page's origin, e.g. `https://gemeente.nl`.
+ * @return {{href: string, route: string|null}|null} The link, or null.
+ */
+function siteLink(url, origin) {
+	if (!origin) {
+		return null
+	}
+	let parsed
+	try {
+		parsed = new URL(url)
+	} catch {
+		return null
+	}
+	if (
+		(parsed.protocol !== 'https:' && parsed.protocol !== 'http:')
+		|| parsed.origin !== origin
+		|| !SITE_PATH.test(parsed.pathname)
+	) {
+		return null
+	}
+	const route = parsed.searchParams.get('route')
+	return {
+		href: parsed.href,
+		// Only a plain route goes through the site's own navigation; a
+		// `#open=` link loads the site, which reads the fragment on arrival.
+		route: route && route.startsWith('/') && !parsed.hash ? route : null,
+	}
+}
+
+/**
+ * Add a part, joining it to a text part before it.
+ *
+ * @param {Array<object>} parts The parts so far.
+ * @param {object} part The part to add.
+ * @return {void}
+ */
+function pushPart(parts, part) {
+	if (!part.href) {
+		if (part.text === '') {
+			return
+		}
+		const last = parts[parts.length - 1]
+		if (last && !last.href) {
+			last.text += part.text
+			return
+		}
+	}
+	parts.push(part)
+}
+
+/**
+ * A message body as text and named links, for the inbox row.
+ *
+ * Every address into this site's own pages becomes a link with a name: in a
+ * list line ("- Titel: <url>") the title is the link and ": <url>" goes;
+ * after a lead-in ("Lees het besluit hier: <url>") the link's name takes the
+ * lead-in's place; else the name takes the address's place. The name is
+ * `labels.publication` for a `/publicatie/<id>` page, `labels.link` for any
+ * other. Any other address stays as text: a message body never decides where
+ * a link outside this site goes.
+ *
+ * @param {string} body The body, already without the "Open" address.
+ * @param {string} origin The page's origin.
+ * @param {{publication: string, link: string}} labels The names of a link.
+ * @return {Array<{text: string, href?: string, route?: (string|null)}>} The parts, in order.
+ * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
+ */
+export function bodyParts(body, origin, labels) {
+	const parts = []
+	const lines = typeof body === 'string' ? body.split('\n') : []
+	lines.forEach((line, n) => {
+		if (n > 0) {
+			pushPart(parts, { text: '\n' })
+		}
+		let cursor = 0
+		for (const match of line.matchAll(URL_PATTERN)) {
+			const url = match[0].replace(TRAILING_PUNCTUATION, '')
+			const link = siteLink(url, origin)
+			if (!link) {
+				continue
+			}
+			const before = line.slice(cursor, match.index)
+			cursor = match.index + url.length
+			// Only the first address of a list line can take the title.
+			const listed =
+				line.slice(0, match.index) === before ? LIST_MARK.exec(before) : null
+			if (listed && listed[2].trim() !== '') {
+				pushPart(parts, { text: listed[1] })
+				pushPart(parts, { text: listed[2].trim(), ...link })
+				continue
+			}
+			const label = /^\/publicatie\/[^/]+\/?$/.test(link.route || '')
+				? labels.publication
+				: labels.link
+			let kept = before
+			if (kept.trimEnd().endsWith(':')) {
+				kept = withoutLeadIn(kept.trimEnd().slice(0, -1))
+				kept = kept.trim() === '' ? kept.trim() : `${kept.trimEnd()} `
+			}
+			pushPart(parts, { text: kept })
+			pushPart(parts, { text: label, ...link })
+		}
+		pushPart(parts, { text: line.slice(cursor) })
+	})
+	return parts
 }
