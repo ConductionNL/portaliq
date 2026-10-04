@@ -254,19 +254,29 @@ export function formBody(action, values, options = {}) {
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
  */
 export function fieldErrors(action, values, files, t) {
 	const translate = translatorOr(t)
 	const fileNames = fileFields(action)
 	const errors = {}
 	for (const field of formFields(action)) {
-		const required = fieldConfig(action, field).required === true
+		const config = fieldConfig(action, field)
+		const required = config.required === true
 		const label = fieldLabel(action, field)
+		// The app's own words for an empty required field win (REQ-SMF-006).
+		const own =
+			typeof config.requiredMessage === 'string'
+			&& config.requiredMessage.trim() !== ''
+				? config.requiredMessage
+				: ''
 		if (fileNames.includes(field)) {
 			if (required && ((files || {})[field] || []).length === 0) {
-				errors[field] = translate('Please choose a file for {field}.', {
-					field: label,
-				})
+				errors[field] =
+					own
+					|| translate('Please choose a file for {field}.', {
+						field: label,
+					})
 			}
 			continue
 		}
@@ -275,7 +285,8 @@ export function fieldErrors(action, values, files, t) {
 			value === undefined || value === null || String(value).trim() === ''
 		if (empty) {
 			if (required) {
-				errors[field] = translate('{field} is required.', { field: label })
+				errors[field] =
+					own || translate('{field} is required.', { field: label })
 			}
 			continue
 		}

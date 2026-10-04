@@ -213,7 +213,7 @@ test('a form without a translator renders the English source and the picker opti
 	assert.equal(picker.props.accept, '.pdf')
 	assert.match(
 		form.textOf(form.find('schema-field-attachmentRefs')),
-		/Your work \(optional\) Up to 1 MB per file/,
+		/Your work \(optional\) Choose a file or photo Up to 1 MB per file/,
 	)
 })
 

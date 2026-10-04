@@ -34,8 +34,8 @@ NL Design System: mark the non-required field, not the required one. Use "(niet 
 ## D3. Error summary
 
 - Shown after a failed submit or a failed "Volgende stap", above the fields, below the form heading.
-- Heading "Er ontbreekt nog iets" with a one-line instruction (`LearniqAbsence.dc.html`). It gets `tabindex="-1"` and focus. That replaces `SchemaForm.focusFirstError()`, which moved focus to the field and skipped the overview.
-- One link per error, in field order. The link text is the field's message. Activating it focuses the field, or the first input of a group.
+- Heading "Er ontbreekt nog iets" with one neutral line, "Vul dit aan. Daarna kunt u verder.", that fits a submit and a step alike (the mockup's "de melding versturen" fits the absence form only). It gets `tabindex="-1"` and focus. That replaces `SchemaForm.focusFirstError()`, which moved focus to the field and skipped the overview.
+- One link per error, in field order. The link text is the field's message: the app's own `fieldConfigs.<field>.requiredMessage` when it declares one (REQ-SMF-006), else "<label> is verplicht.". Activating it focuses the field, or the first input of a group.
 - Server errors (`IntakeFormBlock` `outcome.errors`, `SchemaForm` errors map) feed the same list. On a multi-step form a server error on an earlier step moves the resident to that step first.
 - The per-field message stays under its field, linked by `aria-describedby` as today.
 - The document title gets a prefix `Fout: ` while errors stand, so a screen reader user hears it on focus change. Removed on the next successful step.

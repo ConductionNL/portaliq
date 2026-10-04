@@ -59,8 +59,7 @@ export default {
 		'A field without "optional" must be filled in.':
 			'Een veld zonder "niet verplicht" moet u invullen.',
 		'Something is still missing': 'Er ontbreekt nog iets',
-		'Fill this in. Then you can send the form.':
-			'Vul dit aan. Daarna kunt u het formulier versturen.',
+		'Fill this in. Then you can continue.': 'Vul dit aan. Daarna kunt u verder.',
 		'Error: ': 'Fout: ',
 		Day: 'Dag',
 		Month: 'Maand',
@@ -68,6 +67,10 @@ export default {
 		'For example 1 3 2026': 'Bijvoorbeeld 1 3 2026',
 		'{field}: enter a real date, for example 1 3 2026.':
 			'{field}: vul een geldige datum in, bijvoorbeeld 1 3 2026.',
+		'Choose a file or photo': 'Bestand of foto kiezen',
+		'Remove {file}': '{file} verwijderen',
+		Today: 'Vandaag',
+		'Another day': 'Een andere dag',
 		'Propose a change': 'Wijziging voorstellen',
 		Note: 'Toelichting',
 		'Send proposal': 'Voorstel indienen',
@@ -128,8 +131,8 @@ export default {
 		'A field without "optional" must be filled in.':
 			'A field without "optional" must be filled in.',
 		'Something is still missing': 'Something is still missing',
-		'Fill this in. Then you can send the form.':
-			'Fill this in. Then you can send the form.',
+		'Fill this in. Then you can continue.':
+			'Fill this in. Then you can continue.',
 		'Error: ': 'Error: ',
 		Day: 'Day',
 		Month: 'Month',
@@ -137,6 +140,10 @@ export default {
 		'For example 1 3 2026': 'For example 1 3 2026',
 		'{field}: enter a real date, for example 1 3 2026.':
 			'{field}: enter a real date, for example 1 3 2026.',
+		'Choose a file or photo': 'Choose a file or photo',
+		'Remove {file}': 'Remove {file}',
+		Today: 'Today',
+		'Another day': 'Another day',
 		'Propose a change': 'Propose a change',
 		Note: 'Note',
 		'Send proposal': 'Send proposal',
