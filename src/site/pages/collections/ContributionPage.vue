@@ -111,7 +111,7 @@
 				<CollectionTable
 					v-if="groupsOf(item).length === 0"
 					:collection="item.collection"
-					:objects="rowsOf(item)"
+					:objects="tableWindow(item).rows"
 					:loading="loadedOf(item.collection).loading"
 					:selectable="true"
 					:selectedRow="selected[item.collection.id] || null"
@@ -123,6 +123,28 @@
 					:locale="lang"
 					@select="select(item.collection, $event)"
 					@rowAction="(action, row) => onRowAction(item, action, row)" />
+				<!-- A block that shows its first rows (`limit`) leads to all of
+				     them: the collection's own page, else the rest here
+				     (site-mijn-omgeving-components REQ-SMO-021). -->
+				<p
+					v-if="groupsOf(item).length === 0 && tableWindow(item).more"
+					class="utrecht-paragraph pq-contribution-page__more"
+					data-testid="contribution-page-more">
+					<a
+						v-if="allRouteOf(item)"
+						class="utrecht-link"
+						:href="hrefOf(allRouteOf(item))"
+						@click.prevent="$emit('navigate', allRouteOf(item))"
+						>{{ seeAll(item) }}</a
+					>
+					<button
+						v-else
+						type="button"
+						class="utrecht-button utrecht-button--subtle"
+						@click="expanded = { ...expanded, [item.index]: true }">
+						{{ seeAll(item) }}
+					</button>
+				</p>
 				<!-- Sign and decline get their own step, every other endpoint
 				     row action the plain confirm step: slice c fills it. -->
 				<SlotHost
@@ -315,7 +337,12 @@ import {
 	groupLabelCollection,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
-import { consumeOpenTarget, forgetOpenTarget } from '../../../shared/openRecord.js'
+import { itemsInRange, sortRows, windowRows } from '../../../shared/listWindow.js'
+import {
+	consumeOpenTarget,
+	forgetOpenTarget,
+	navKeyFor,
+} from '../../../shared/openRecord.js'
 import { routeForNav } from '../../../shared/portalNav.js'
 import {
 	allGroups,
@@ -330,7 +357,7 @@ import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.
 import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
 import { blocks as mijnBlocks } from '../../components/mijn/index.js'
-import { mijnTranslator } from '../../components/mijn/rows.js'
+import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
 import { createCollectionLoader, openRecordState } from './collectionLoader.js'
 import { resolveBlocks } from './pageBlocks.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
@@ -436,6 +463,8 @@ export default {
 			busyRow: null,
 			recordNotFound: false,
 			target: this.openRecord,
+			// The limited tables a resident asked to see whole, by block index.
+			expanded: {},
 			loader: null,
 		}
 	},
@@ -773,12 +802,77 @@ export default {
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
 		 */
 		calendarOf(item) {
-			return calendarItems(
-				item.block,
-				this.store,
-				this.activeRecord,
-				this.scopeGroups,
+			// Only today, this week or this month when the block says so
+			// (site-mijn-omgeving-components REQ-SMO-021).
+			return itemsInRange(
+				calendarItems(
+					item.block,
+					this.store,
+					this.activeRecord,
+					this.scopeGroups,
+				),
+				item.block.range,
+				this.today || new Date(),
 			)
+		},
+
+		/**
+		 * The rows a table shows: in its declared order, at most its limit
+		 * until the resident asks for the rest.
+		 *
+		 * @param {object} item The table block.
+		 * @return {{rows: Array<object>, more: boolean}}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 */
+		tableWindow(item) {
+			if (this.expanded[item.index]) {
+				return {
+					rows: sortRows(this.rowsOf(item), item.block?.sort),
+					more: false,
+				}
+			}
+			return windowRows(this.rowsOf(item), item.block)
+		},
+
+		/**
+		 * The route of the page that shows a collection whole, when that is
+		 * another page than this one; '' otherwise.
+		 *
+		 * @param {object} item The table block.
+		 * @return {string}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 */
+		allRouteOf(item) {
+			const others = (this.nav || []).filter(
+				(candidate) => candidate.key !== this.entry?.key,
+			)
+			const key = navKeyFor(others, {
+				app: this.currentContribution?.app || '',
+				collection: item.collection.id,
+			})
+			const entry = others.find((candidate) => candidate.key === key)
+			return entry ? routeForNav(entry) : ''
+		},
+
+		/**
+		 * @param {object} item The table block.
+		 * @return {string} "Bekijk alle cijfers".
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 */
+		seeAll(item) {
+			const label = String(item.collection.label || '')
+			return this.tr('See all {label}', {
+				label: label.charAt(0).toLocaleLowerCase() + label.slice(1),
+			})
+		},
+
+		/**
+		 * @param {string} route An in-site route.
+		 * @return {string} Its real address.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 */
+		hrefOf(route) {
+			return siteHref(route)
 		},
 
 		calendarLoading(item) {

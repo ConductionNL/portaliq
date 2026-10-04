@@ -27,6 +27,12 @@
 			:hideLabel="t('Close the menu')"
 			@navigate="$emit('navigate', $event)" />
 		<div class="pq-account__content">
+			<!-- Whom the resident acts for, on every signed-in page while it is
+			     not themselves (site-mijn-omgeving-components REQ-SMO-008). -->
+			<ActingForBar
+				v-if="session && actingForSomeone"
+				:t="t"
+				:locale="locale" />
 			<p v-if="!sessionKnown" class="utrecht-paragraph" role="status">
 				{{ t('Loading…') }}
 			</p>
@@ -130,10 +136,11 @@
 </template>
 
 <script>
-import { markRaw } from 'vue'
+import { defineAsyncComponent, markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
 import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
+import { ACTING_FOR_SELF } from '../../shared/myCases.js'
 import { navKeyFor, OPEN_STORAGE_KEY } from '../../shared/openRecord.js'
 import {
 	ACCOUNT_ROUTE,
@@ -141,6 +148,7 @@ import {
 	routeForNav,
 } from '../../shared/portalNav.js'
 import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
+import { actingFor } from './e/actingFor.js'
 
 /**
  * The names a component declares as props, whether as an array or an object.
@@ -164,7 +172,12 @@ function declaredProps(component) {
 export default {
 	name: 'AccountArea',
 
-	components: { ResidentMenu, WaysIn },
+	components: {
+		// Loaded only while the resident acts for someone else.
+		ActingForBar: defineAsyncComponent(() => import('./mijn/ActingForBar.vue')),
+		ResidentMenu,
+		WaysIn,
+	},
 
 	props: {
 		/** Whether the session has been read; until then nothing is decided. */
@@ -256,6 +269,16 @@ export default {
 		 * @return {boolean}
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
+		/**
+		 * Whether the resident acts for someone else right now.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		actingForSomeone() {
+			return actingFor.id !== ACTING_FOR_SELF
+		},
+
 		isHome() {
 			return (
 				Boolean(this.session)
