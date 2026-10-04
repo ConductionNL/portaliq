@@ -240,6 +240,29 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testStepsNamingUnknownFieldsAreDropped()
 
 	/**
+	 * A step without an id gets one; a review that names fields, a step
+	 * without fields and steps that keep no field leave a one-page form.
+	 *
+	 * @return void
+	 */
+	public function testMalformedStepsFallBackToOnePage(): void {
+		$named = $this->wooAction(['steps' => [['title' => 'Uw vraag', 'fields' => ['onderwerp']], ['id' => 'more', 'fields' => ['omschrijving']]]]);
+		$this->assertSame(['step-1', 'step-2', 'more'], array_column($named['steps'], 'id'));
+
+		$none = $this->wooAction(
+			[
+				'steps' => [
+					['id' => 'controle', 'review' => true, 'fields' => ['onderwerp']],
+					['id' => 'leeg', 'fields' => []],
+					['id' => 'raar', 'fields' => 'onderwerp'],
+					['id' => 'onbekend', 'fields' => ['iban']],
+				],
+			]
+		);
+		$this->assertArrayNotHasKey('steps', $none);
+	}//end testMalformedStepsFallBackToOnePage()
+
+	/**
 	 * `draft.retentionDays` is an integer clamped to 1 to 90; anything else
 	 * drops the draft.
 	 *
