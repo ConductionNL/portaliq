@@ -922,12 +922,16 @@ export default {
 		 */
 		tilesOf(item) {
 			return item.tiles
-				.map((block, i) => ({
-					key: `${item.index}:${i}`,
-					label: ctaLabel(block.label, this.recordName),
-					route: this.tileRoute(block),
-					block,
-				}))
+				.map((block, i) => {
+					const target = this.tileTarget(block)
+					return {
+						key: `${item.index}:${i}`,
+						label: ctaLabel(block.label, this.recordName),
+						route: target.route,
+						carriesRecord: target.carriesRecord,
+						block,
+					}
+				})
 				.filter((tile) => tile.route !== '')
 		},
 
@@ -936,13 +940,22 @@ export default {
 		 * when the tile says `withRecord` and the page is a record page; else
 		 * the declared route.
 		 *
+		 * `carriesRecord` says whether the record is IN the route. It decides
+		 * whether the open record is also kept in storage on the way out: a
+		 * route that already names the record must not be, because the shell
+		 * reads a kept record BACK (`followAccountRoute` → `openRecordEntry`)
+		 * and replaces the route with the page that LISTS the collection,
+		 * which on a family page is the page the tile sits on. Measured on
+		 * :8090: the tile's href was right and the address never moved.
+		 *
 		 * @param {object} block The cta block.
-		 * @return {string} The route, or '' when the page is not offered.
+		 * @return {{route: string, carriesRecord: boolean}} The target, route
+		 *         '' when the page is not offered.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
-		tileRoute(block) {
+		tileTarget(block) {
 			if (block.route) {
-				return block.route
+				return { route: block.route, carriesRecord: false }
 			}
 			const app = this.currentContribution?.app || ''
 			const entry = (this.nav || []).find(
@@ -951,7 +964,7 @@ export default {
 					&& candidate.page?.id === block.page,
 			)
 			if (!entry) {
-				return ''
+				return { route: '', carriesRecord: false }
 			}
 			const route = routeForNav(entry)
 			const recordPage = entry.page.record || entry.page.records
@@ -961,9 +974,24 @@ export default {
 				&& recordPage
 				&& recordPage.collection === this.recordPage?.collection
 			) {
-				return `${route}/${encodeURIComponent(this.recordId)}`
+				return {
+					route: `${route}/${encodeURIComponent(this.recordId)}`,
+					carriesRecord: true,
+				}
 			}
-			return route
+			return { route, carriesRecord: false }
+		},
+
+		/**
+		 * Where a tile goes. Kept for readers (and tests) that want the route
+		 * alone.
+		 *
+		 * @param {object} block The cta block.
+		 * @return {string} The route, or '' when the page is not offered.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		tileRoute(block) {
+			return this.tileTarget(block).route
 		},
 
 		/**
@@ -975,7 +1003,17 @@ export default {
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		openTile(tile) {
-			if (tile.block.withRecord && this.recordId && this.recordPage) {
+			if (
+				tile.block.withRecord
+				&& tile.carriesRecord !== true
+				&& this.recordId
+				&& this.recordPage
+			) {
+				// Only when the route cannot name the record itself: the page
+				// shows the collection as a list, so it has to be told which
+				// record to open. A route that names it must not be kept as
+				// well, or the shell reads the kept record back and sends the
+				// resident to the listing page instead (see tileTarget()).
 				keepRecordToOpen(tabStore(), {
 					app: this.currentContribution?.app || '',
 					collection: this.recordPage.collection,
