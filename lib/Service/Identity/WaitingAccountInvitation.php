@@ -309,7 +309,7 @@ class WaitingAccountInvitation {
 		}
 
 		$join = new WaitingAccountJoin(lookup: $lookup, writer: $this->writer);
-		if (WaitingAccountJoin::claimsConflict(account: $account, waiting: $waiting) === true) {
+		if ($join->claimsConflict(account: $account, waiting: $waiting) === true) {
 			return self::CONFLICT;
 		}
 
