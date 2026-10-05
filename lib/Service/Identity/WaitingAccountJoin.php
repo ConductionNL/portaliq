@@ -118,14 +118,21 @@ class WaitingAccountJoin {
 	 * @param array<string, mixed> $account The account that receives the claims.
 	 * @param array<string, mixed> $waiting The waiting account.
 	 * @param string $reason The reason written on the withdrawn account.
+	 * @param bool $addressProven Whether the way in proved the invited
+	 *                            address (an address or a mailed link did; a
+	 *                            code on paper did not).
 	 *
 	 * @return string|null The identifier of the waiting account that was
 	 *                     joined, or null when nothing was.
 	 *
 	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- one field of the write
+	 * depends on it; two methods would differ in that value only.
 	 */
-	public function joinWaiting(array $account, array $waiting, string $reason = self::VOID_REASON): ?string {
+	public function joinWaiting(array $account, array $waiting, string $reason = self::VOID_REASON, bool $addressProven = true): ?string {
 		if ($this->isJoinable(account: $account, waiting: $waiting) === false) {
 			return null;
 		}
@@ -136,7 +143,7 @@ class WaitingAccountJoin {
 			return null;
 		}
 
-		$data = $this->joinData(account: $account, waiting: $waiting);
+		$data = $this->joinData(account: $account, waiting: $waiting, addressProven: $addressProven);
 		if ($data !== [] && $this->write(id: $accountId, data: $data) === false) {
 			return null;
 		}
@@ -219,15 +226,17 @@ class WaitingAccountJoin {
 	 * none, so the portal asked a guardian who HAD been invited by e-mail to
 	 * add an e-mail address, on every page, and notifications had nowhere to
 	 * go. It is written only when the account holds no address, so a person
-	 * who has since set their own keeps it, and `verifiedEmail` goes with it:
-	 * the address matched because both sides had verified it.
+	 * who has since set their own keeps it. `verifiedEmail` goes with it only
+	 * when the way in proved the address: a matched address or a mailed link
+	 * did, a code from a paper letter did not (security review L2).
 	 *
 	 * @param array<string, mixed> $account The account.
 	 * @param array<string, mixed> $waiting The waiting account.
+	 * @param bool $addressProven Whether the way in proved the invited address.
 	 *
 	 * @return array<string, mixed> The fields to write, or [] when none.
 	 */
-	private function joinData(array $account, array $waiting): array {
+	private function joinData(array $account, array $waiting, bool $addressProven): array {
 		$data   = [];
 		$held   = (array)($account['claims'] ?? []);
 		$joined = self::claimsJoined(held: $held, added: (array)($waiting['claims'] ?? []));
@@ -238,7 +247,7 @@ class WaitingAccountJoin {
 		$invited = trim((string)($waiting['email'] ?? ''));
 		if ($invited !== '' && trim((string)($account['email'] ?? '')) === '') {
 			$data['email'] = $invited;
-			$data['verifiedEmail'] = true;
+			$data['verifiedEmail'] = $addressProven;
 		}
 
 		return $data;

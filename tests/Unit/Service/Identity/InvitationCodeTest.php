@@ -67,4 +67,59 @@ class InvitationCodeTest extends TestCase {
 		}
 
 	}//end testAnythingElseIsNotACode()
+
+	/**
+	 * The generator itself, not a fixed double: a source that draws each
+	 * character uniformly from the characters it is given, as Nextcloud's
+	 * SecureRandom does (its class is not loadable outside a server, so the
+	 * same draw stands in for it). Every code is twelve characters of the
+	 * alphabet, and two hundred draws give two hundred codes.
+	 *
+	 * @return void
+	 */
+	public function testTheGeneratorGivesTwelveCharactersOfTheAlphabet(): void {
+		$random = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturnCallback(
+			static function (int $length, string $characters = ISecureRandom::CHAR_HUMAN_READABLE): string {
+				$out = '';
+				for ($i = 0; $i < $length; $i++) {
+					$out .= $characters[random_int(0, (strlen($characters) - 1))];
+				}
+
+				return $out;
+			}
+		);
+
+		$codes = [];
+		for ($draw = 0; $draw < 200; $draw++) {
+			$code = (new InvitationCode())->mint($random);
+			$this->assertSame(InvitationCode::LENGTH, strlen($code), $code);
+			$this->assertSame(InvitationCode::LENGTH, strspn($code, InvitationCode::ALPHABET), $code);
+			$codes[$code] = true;
+		}
+
+		$this->assertCount(200, $codes);
+
+	}//end testTheGeneratorGivesTwelveCharactersOfTheAlphabet()
+
+	/**
+	 * Security review M4: the stored hash is keyed. It is not the plain
+	 * SHA-256 an offline attacker could compute, it changes with the
+	 * instance secret, and without a secret there is no hash at all.
+	 *
+	 * @return void
+	 */
+	public function testTheStoredHashIsKeyedWithTheInstanceSecret(): void {
+		$codes = new InvitationCode();
+		$hash  = $codes->keyedHash('ABCDEFGH2345', 'instance-secret');
+
+		$this->assertSame(64, strlen($hash));
+		$this->assertNotSame(hash('sha256', 'ABCDEFGH2345'), $hash);
+		$this->assertSame($hash, $codes->keyedHash('ABCDEFGH2345', 'instance-secret'), 'The same code and key give the same hash.');
+		$this->assertNotSame($hash, $codes->keyedHash('ABCDEFGH2345', 'another-secret'));
+		$this->assertNotSame($hash, $codes->keyedHash('ABCDEFGH2346', 'instance-secret'));
+		$this->assertSame('', $codes->keyedHash('ABCDEFGH2345', ''));
+		$this->assertSame('', $codes->keyedHash('', 'instance-secret'));
+
+	}//end testTheStoredHashIsKeyedWithTheInstanceSecret()
 }//end class

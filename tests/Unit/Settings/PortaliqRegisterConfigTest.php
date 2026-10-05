@@ -333,8 +333,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// Additive.
 		// 0.60.0 (portalAccount 0.16.0): `claimCodeHash`, the short code of an
 		// invitation letter (invitation-code-from-a-letter). Additive.
-		$this->assertSame('0.60.0', self::$register['info']['version']);
-		$this->assertSame('0.60.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.61.0 (portalAccount 0.17.0): the five `claim*` fields are readable
+		// and writable by administrators only (security review M4).
+		$this->assertSame('0.61.0', self::$register['info']['version']);
+		$this->assertSame('0.61.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -342,7 +344,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimAttemptsSince']['format']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['newsItem']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
-		$this->assertSame('0.16.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
@@ -392,7 +394,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.16.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
@@ -658,7 +660,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.16.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [
@@ -1050,4 +1052,20 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 	}//end testIdentityAndSessionSchemasCarryNoMcpDialect()
 
+	/**
+	 * Security review M4: the invitation fields are readable only by
+	 * administrators, through OpenRegister's property authorization. An
+	 * ordinary signed-in Nextcloud user (the schema's `authenticated` read)
+	 * gets the account without them.
+	 *
+	 * @return void
+	 */
+	public function testTheInvitationFieldsAreReadableByAdministratorsOnly(): void {
+		$account = self::$register['components']['schemas']['portalAccount'];
+		$this->assertSame(['authenticated'], $account['authorization']['read'], 'The object read the property rule narrows.');
+		foreach (['claimTokenHash', 'claimCodeHash', 'claimExpiresAt', 'claimAttempts', 'claimAttemptsSince'] as $field) {
+			$this->assertSame(['read' => ['admin'], 'update' => ['admin']], $account['properties'][$field]['authorization'] ?? null, $field);
+		}
+
+	}//end testTheInvitationFieldsAreReadableByAdministratorsOnly()
 }//end class

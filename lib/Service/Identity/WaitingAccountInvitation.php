@@ -35,7 +35,6 @@ namespace OCA\Portaliq\Service\Identity;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
@@ -93,6 +92,12 @@ class WaitingAccountInvitation {
 	public const VOID_REASON = 'Joined the account that redeemed its invitation';
 
 	/**
+	 * The audit verb of an account taking over a waiting account's claims,
+	 * the one ConfirmedAddressJoin records as well.
+	 */
+	private const AUDIT_VERB = 'claim';
+
+	/**
 	 * The register the accounts live in.
 	 */
 	private const REGISTER = 'portaliq';
@@ -111,6 +116,7 @@ class WaitingAccountInvitation {
 	 * @param ClaimAttempts $attempts Limits the wrong secrets one person may offer.
 	 * @param AuditTrailService $auditor Records who joined which account.
 	 * @param ClaimLock $lock Makes the read and the write of a redeem one step.
+	 * @param WaitingAccountSecret $secrets Finds the waiting account a secret opens, and hashes a code.
 	 *
 	 * @return void
 	 */
@@ -121,6 +127,7 @@ class WaitingAccountInvitation {
 		private readonly ClaimAttempts $attempts,
 		private readonly AuditTrailService $auditor,
 		private readonly ClaimLock $lock,
+		private readonly WaitingAccountSecret $secrets,
 	) {
 	}//end __construct()
 
@@ -196,13 +203,14 @@ class WaitingAccountInvitation {
 		$codes = new InvitationCode();
 		$uuid  = $lookup->identifierOf(row: $account);
 		$code  = $codes->mint(random: $this->random);
-		if ($uuid === null || $code === '') {
+		$hash  = $this->secrets->codeHash(code: $code);
+		if ($uuid === null || $code === '' || $hash === '') {
 			return null;
 		}
 
 		$expiresAt = ($now ?? new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);
 		// One live secret at a time: a new code ends an earlier link.
-		$written = $this->write(id: $uuid, data: ['claimCodeHash' => hash('sha256', $code), 'claimTokenHash' => '', 'claimExpiresAt' => $expiresAt]);
+		$written = $this->write(id: $uuid, data: ['claimCodeHash' => $hash, 'claimTokenHash' => '', 'claimExpiresAt' => $expiresAt]);
 		if ($written === false) {
 			return null;
 		}
@@ -287,7 +295,7 @@ class WaitingAccountInvitation {
 		}
 
 		$organisation = (string)$account['organisation'];
-		$waitingId    = $lookup->identifierOf(row: ($this->waitingFor(secret: $secret, organisation: $organisation, moment: $moment) ?? []));
+		$waitingId    = $lookup->identifierOf(row: ($this->secrets->find(secret: $secret, organisation: $organisation, moment: $moment) ?? []));
 		if ($waitingId === null) {
 			$this->attempts->fail(account: $account, accountId: $accountId, jti: $jti, now: $moment);
 			return self::NOT_VALID;
@@ -310,7 +318,7 @@ class WaitingAccountInvitation {
 		$this->attempts->clear(account: $account, accountId: $accountId);
 		// Who took over which waiting account, in which session, and when.
 		$this->auditor->record(
-			verb: ConfirmedAddressJoin::AUDIT_VERB,
+			verb: self::AUDIT_VERB,
 			subjectRef: (string)$account['subjectRef'],
 			organisation: $organisation,
 			register: self::REGISTER,
@@ -346,7 +354,7 @@ class WaitingAccountInvitation {
 	): string {
 		// Read again inside the lock: a request that held it a moment ago
 		// may have spent this secret.
-		$waiting = $this->waitingFor(secret: $secret, organisation: (string)$account['organisation'], moment: $moment);
+		$waiting = $this->secrets->find(secret: $secret, organisation: (string)$account['organisation'], moment: $moment);
 		if ($waiting === null || $lookup->identifierOf(row: $waiting) !== $waitingId) {
 			return self::NOT_VALID;
 		}
@@ -366,7 +374,11 @@ class WaitingAccountInvitation {
 			return self::NOT_VALID;
 		}
 
-		if ($join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON) === null) {
+		// A link was mailed to the invited address, so following it proves the
+		// address; a code came on paper and proves only the letter. The
+		// address then arrives unverified (security review L2).
+		$byLink = $this->secrets->isCode(secret: $secret) === false;
+		if ($join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON, addressProven: $byLink) === null) {
 			return self::NOT_VALID;
 		}
 
@@ -390,7 +402,7 @@ class WaitingAccountInvitation {
 		}
 
 		$organisation = (string)($account['organisation'] ?? '');
-		$receives     = ($account['status'] ?? '') === PortalAccountService::STATUS_ACTIVE
+		$receives     = ($account['status'] ?? '') === PortalAccountLookup::STATUS_ACTIVE
 			&& (string)($account['identityRef'] ?? '') !== ''
 			&& $organisation !== ''
 			&& $organisation === (string)($subject['organisation'] ?? '');
@@ -414,7 +426,7 @@ class WaitingAccountInvitation {
 	 * depends on it; two methods would differ in that line only.
 	 */
 	private function isInvitable(array $account, string $appId, bool $byMail = true): bool {
-		$waiting = ($account['status'] ?? '') === PortalAccountService::STATUS_PENDING
+		$waiting = ($account['status'] ?? '') === PortalAccountLookup::STATUS_PENDING
 			&& (string)($account['identityRef'] ?? '') === ''
 			&& (string)($account['provisionedBy'] ?? '') === $appId;
 		if ($byMail === false) {
@@ -423,79 +435,6 @@ class WaitingAccountInvitation {
 
 		return $waiting && trim((string)($account['email'] ?? '')) !== '';
 	}//end isInvitable()
-
-	/**
-	 * The waiting account a secret opens in one organisation, or null.
-	 *
-	 * Unknown, spent, expired, another organisation's and an account that is
-	 * no longer waiting all answer null.
-	 *
-	 * @param string $secret The secret.
-	 * @param string $organisation The session's organisation.
-	 * @param DateTimeImmutable $moment The moment to judge expiry against.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function waitingFor(#[\SensitiveParameter] string $secret, string $organisation, DateTimeImmutable $moment): ?array {
-		if ($secret === '') {
-			return null;
-		}
-
-		// A code is told from a link's secret by its shape: twelve characters
-		// of the code alphabet, however the person typed them.
-		$field = 'claimTokenHash';
-		$code  = (new InvitationCode())->normalise(typed: $secret);
-		if ($code !== '') {
-			$field  = 'claimCodeHash';
-			$secret = $code;
-		}
-
-		$hash = hash('sha256', $secret);
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: $field,
-			subjectRef: $hash,
-			organisation: $organisation,
-			limit: 5
-		);
-
-		foreach ($rows as $row) {
-			// The reader's filter is trusted for the query, not for the
-			// answer: every row is checked again.
-			if (is_array($row) === false || $this->isWaitingRow(row: $row, field: $field, hash: $hash, organisation: $organisation) === false) {
-				continue;
-			}
-
-			$expiry = date_create_immutable((string)($row['claimExpiresAt'] ?? ''));
-			if ($expiry === false || $expiry <= $moment) {
-				return null;
-			}
-
-			return $row;
-		}
-
-		return null;
-	}//end waitingFor()
-
-	/**
-	 * Whether a row is the waiting account a secret's hash opens: the hash
-	 * matches, it sits in the organisation, it is pending and it has no
-	 * identity reference of its own.
-	 *
-	 * @param array<string, mixed> $row One row the reader returned.
-	 * @param string $field The field the hash is stored in.
-	 * @param string $hash The secret's hash.
-	 * @param string $organisation The session's organisation.
-	 *
-	 * @return bool
-	 */
-	private function isWaitingRow(array $row, string $field, string $hash, string $organisation): bool {
-		return hash_equals((string)($row[$field] ?? ''), $hash) === true
-			&& ($row['organisation'] ?? '') === $organisation
-			&& ($row['status'] ?? '') === PortalAccountService::STATUS_PENDING
-			&& (string)($row['identityRef'] ?? '') === '';
-	}//end isWaitingRow()
 
 	/**
 	 * One internal update of an account row this class itself located.

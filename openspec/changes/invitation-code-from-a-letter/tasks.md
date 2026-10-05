@@ -10,6 +10,14 @@
   - PHPUnit `PortalAccountInvitationListenerTest::testALetterGetsACodeAndNoMail`, `::testARefusedOrFailedCodeIsARefusal`, `::testAnUnknownChannelIsRefusedAndNothingIsIssued`
 - [x] **T5**: "Code from a letter" on "My account": a labelled field, one sentence for a dead code, and a right code has the shell read the account again
   - `npm run check:claim-invitation`, `npm run check:account-page`
-- [x] **T6**: `portalAccount` 0.16.0: `claimCodeHash`, with Dutch and English labels
-  - PHPUnit `PortaliqRegisterConfigTest`, `npm run check:schema-l10n`
+- [x] **T6**: `portalAccount` 0.16.0: `claimCodeHash`, with Dutch and English labels; 0.17.0: the five `claim*` fields readable and writable by administrators only
+  - PHPUnit `PortaliqRegisterConfigTest` (incl. `::testTheInvitationFieldsAreReadableByAdministratorsOnly`), `npm run check:schema-l10n`
 - [x] **T7**: Live on a test instance: a code from the invite command, typed on "My account" by a guardian who signed in without an address
+- [x] **T8**: Security review M4: the code is stored as HMAC-SHA256 keyed from the instance secret; no secret, no code
+  - PHPUnit `InvitationCodeTest::testTheStoredHashIsKeyedWithTheInstanceSecret`, `WaitingAccountInvitationTest::testTheCodeHashIsKeyedWithTheInstanceSecret`, `::testACodeForALetterIsStoredAsAHashAndShownInGroups`
+- [x] **T9**: Security review L2: a code brings the invited address unverified
+  - PHPUnit `WaitingAccountInvitationTest::testACodeBringsTheAddressUnverifiedAndALinkVerified`
+- [x] **T10**: The generator: twelve characters of the alphabet from a uniform draw; the secure source is asked for 48 lower-case letters and digits for a link and twelve alphabet characters for a code
+  - PHPUnit `InvitationCodeTest::testTheGeneratorGivesTwelveCharactersOfTheAlphabet`, `WaitingAccountInvitationTest::testTheSecureSourceIsAskedForTheRightLengthAndAlphabet`
+- [x] **T11**: The cross-organisation code test runs over a reader that ignores the organisation filter
+  - PHPUnit `WaitingAccountInvitationTest::testACodeOfAnotherOrganisationOpensNothing`

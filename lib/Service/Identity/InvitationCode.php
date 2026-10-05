@@ -52,6 +52,12 @@ class InvitationCode {
 	private const GROUP = 4;
 
 	/**
+	 * What the instance secret is mixed with to make the key of the code's
+	 * hash, so the key serves this one purpose.
+	 */
+	private const KEY_LABEL = 'portaliq.invitation-code';
+
+	/**
 	 * Mint a code, in its plain form.
 	 *
 	 * @param ISecureRandom $random The secure random source.
@@ -92,7 +98,7 @@ class InvitationCode {
 	 *
 	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
 	 */
-	public function normalise(string $typed): string {
+	public function normalise(#[\SensitiveParameter] string $typed): string {
 		$plain = strtoupper((string)preg_replace('/[\s\-]+/', '', $typed));
 		if ($this->isCode(value: $plain) === false) {
 			return '';
@@ -100,6 +106,29 @@ class InvitationCode {
 
 		return $plain;
 	}//end normalise()
+
+	/**
+	 * The keyed hash of a plain code, as it is stored.
+	 *
+	 * A code has 60 bits. A plain SHA-256 of it could be tested offline
+	 * against every stored hash at once by anybody who can read them
+	 * (security review M4). Keyed with a key derived from the instance's own
+	 * secret, a stolen hash is worth nothing without that secret.
+	 *
+	 * @param string $code The plain code.
+	 * @param string $instanceSecret The instance's `secret` from config.php.
+	 *
+	 * @return string The hash, or '' when the instance has no secret.
+	 *
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 */
+	public function keyedHash(#[\SensitiveParameter] string $code, #[\SensitiveParameter] string $instanceSecret): string {
+		if ($code === '' || $instanceSecret === '') {
+			return '';
+		}
+
+		return hash_hmac('sha256', $code, hash_hmac('sha256', self::KEY_LABEL, $instanceSecret));
+	}//end keyedHash()
 
 	/**
 	 * Whether a value is a plain code: the right length, the alphabet only.

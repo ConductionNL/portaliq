@@ -10,8 +10,10 @@ use OCA\Portaliq\Service\Identity\ClaimAttempts;
 use OCA\Portaliq\Service\Identity\ClaimLock;
 use OCA\Portaliq\Service\Identity\InvitationCode;
 use OCA\Portaliq\Service\Identity\WaitingAccountInvitation;
+use OCA\Portaliq\Service\Identity\WaitingAccountSecret;
 use OCP\ICache;
 use OCP\ICacheFactory;
+use OCP\IConfig;
 use OCP\Lock\ILockingProvider;
 use OCP\Lock\LockedException;
 use OCP\Security\ISecureRandom;
@@ -64,12 +66,20 @@ class WaitingAccountInvitationTest extends TestCase {
 	 */
 	private ?\Closure $beforeLock = null;
 
+	/**
+	 * The instance secret the fake config answers.
+	 *
+	 * @var string
+	 */
+	private string $instanceSecret = 'instance-secret';
+
 	protected function setUp(): void {
 		$this->rows = [];
 		$this->audited = [];
 		$this->cached = [];
 		$this->cacheBroken = false;
 		$this->held = [];
+		$this->instanceSecret = 'instance-secret';
 		$this->beforeLock = null;
 		$this->afterRead = null;
 		$this->readerIgnoresOrganisation = false;
@@ -450,7 +460,10 @@ class WaitingAccountInvitationTest extends TestCase {
 		$issued = $this->service()->issueCode(subjectRef: 'waiting-1', appId: 'learniq', now: $now);
 
 		$this->assertSame(['code' => 'ABCD-EFGH-2345', 'expiresAt' => '2026-10-12T09:00:00+00:00'], $issued);
-		$this->assertSame(hash('sha256', 'ABCDEFGH2345'), $this->rows[$waiting]['claimCodeHash']);
+		// Security review M4: keyed with the instance secret, never the plain
+		// SHA-256 anybody who reads the row could test codes against.
+		$this->assertSame((new InvitationCode())->keyedHash('ABCDEFGH2345', 'instance-secret'), $this->rows[$waiting]['claimCodeHash']);
+		$this->assertNotSame(hash('sha256', 'ABCDEFGH2345'), $this->rows[$waiting]['claimCodeHash']);
 		$this->assertStringNotContainsString('ABCDEFGH2345', (string)json_encode($this->rows));
 		$this->assertStringNotContainsString('ABCD-EFGH-2345', (string)json_encode($this->rows));
 
@@ -536,15 +549,106 @@ class WaitingAccountInvitationTest extends TestCase {
 	}//end testThereIsOneLiveSecretALinkEndsACodeAndACodeEndsALink()
 
 	public function testACodeOfAnotherOrganisationOpensNothing(): void {
+		// The store hands back the other organisation's row as well; only the
+		// service's own check stands between them.
+		$this->readerIgnoresOrganisation = true;
 		$waiting = $this->seedWaiting(['organisation' => 'gemeente-y']);
-		$this->seedSignedIn();
+		$account = $this->seedSignedIn();
 		$service = $this->service();
 		$service->issueCode(subjectRef: 'waiting-1', appId: 'learniq');
 
 		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: 'ABCD-EFGH-2345'));
 		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertSame(1, $this->rows[$account]['claimAttempts']);
 
 	}//end testACodeOfAnotherOrganisationOpensNothing()
+
+	/**
+	 * Security review M4: the key is the instance's own secret. A code
+	 * issued under one secret does not open under another, and an instance
+	 * without a secret issues and accepts no code at all.
+	 *
+	 * @return void
+	 */
+	public function testTheCodeHashIsKeyedWithTheInstanceSecret(): void {
+		$waiting = $this->seedWaiting();
+		$this->seedSignedIn();
+		$service = $this->service();
+		$service->issueCode(subjectRef: 'waiting-1', appId: 'learniq');
+
+		$this->instanceSecret = 'another-secret';
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: 'ABCD-EFGH-2345'));
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+
+		$this->instanceSecret = '';
+		$this->assertNull($service->issueCode(subjectRef: 'waiting-1', appId: 'learniq'));
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(['jti' => 'jti-2']), secret: 'ABCD-EFGH-2345'));
+
+		$this->instanceSecret = 'instance-secret';
+		$this->assertSame(WaitingAccountInvitation::CLAIMED, $service->redeem(subject: $this->subject(['jti' => 'jti-3']), secret: 'ABCD-EFGH-2345'));
+
+	}//end testTheCodeHashIsKeyedWithTheInstanceSecret()
+
+	/**
+	 * Security review L2: a code proves a paper letter, not the address. The
+	 * invited address still arrives on the account, but unverified. A mailed
+	 * link proves the address, so it arrives verified.
+	 *
+	 * @return void
+	 */
+	public function testACodeBringsTheAddressUnverifiedAndALinkVerified(): void {
+		$this->seedWaiting();
+		$account = $this->seedSignedIn();
+		$service = $this->service();
+		$service->issueCode(subjectRef: 'waiting-1', appId: 'learniq');
+		$this->assertSame(WaitingAccountInvitation::CLAIMED, $service->redeem(subject: $this->subject(), secret: 'ABCD-EFGH-2345'));
+
+		$this->assertSame('ouder@example.org', $this->rows[$account]['email']);
+		$this->assertFalse($this->rows[$account]['verifiedEmail']);
+
+		$this->setUp();
+		$this->seedWaiting();
+		$account = $this->seedSignedIn();
+		$service = $this->service();
+		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+		$this->assertSame(WaitingAccountInvitation::CLAIMED, $service->redeem(subject: $this->subject(), secret: $issued['token']));
+
+		$this->assertTrue($this->rows[$account]['verifiedEmail']);
+
+	}//end testACodeBringsTheAddressUnverifiedAndALinkVerified()
+
+	/**
+	 * The secure source is asked for what each secret needs: a link's secret
+	 * of 48 lower-case letters and digits, a code of twelve characters of
+	 * the code alphabet.
+	 *
+	 * @return void
+	 */
+	public function testTheSecureSourceIsAskedForTheRightLengthAndAlphabet(): void {
+		$this->seedWaiting();
+		$asked  = [];
+		$random = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturnCallback(
+			static function (int $length, string $characters = '') use (&$asked): string {
+				$asked[] = [$length, $characters];
+				$out = '';
+				for ($i = 0; $i < $length; $i++) {
+					$out .= $characters[random_int(0, (strlen($characters) - 1))];
+				}
+
+				return $out;
+			}
+		);
+		$service = $this->service(random: $random);
+
+		$link = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+		$code = $service->issueCode(subjectRef: 'waiting-1', appId: 'learniq');
+
+		$this->assertSame([[48, ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS], [InvitationCode::LENGTH, InvitationCode::ALPHABET]], $asked);
+		$this->assertMatchesRegularExpression('/^[a-z0-9]{48}$/', $link['token']);
+		$this->assertMatchesRegularExpression('/^[' . InvitationCode::ALPHABET . ']{4}(-[' . InvitationCode::ALPHABET . ']{4}){2}$/', $code['code']);
+
+	}//end testTheSecureSourceIsAskedForTheRightLengthAndAlphabet()
 
 	/**
 	 * A random double: a predictable code when asked for the code alphabet,
@@ -622,9 +726,11 @@ class WaitingAccountInvitationTest extends TestCase {
 	/**
 	 * The service over the fake store, a recording audit trail and a cache.
 	 *
+	 * @param ISecureRandom|null $random The secure source, when a test watches it.
+	 *
 	 * @return WaitingAccountInvitation
 	 */
-	private function service(): WaitingAccountInvitation {
+	private function service(?ISecureRandom $random = null): WaitingAccountInvitation {
 		$auditor = $this->getMockBuilder(AuditTrailService::class)->disableOriginalConstructor()->onlyMethods(['record'])->getMock();
 		$auditor->method('record')->willReturnCallback(
 			function (string $verb, string $subjectRef, string $organisation, string $register, string $schema, string $id, string $jti = ''): void {
@@ -653,8 +759,22 @@ class WaitingAccountInvitationTest extends TestCase {
 
 		$writer = $this->fakeWriter();
 
-		return new WaitingAccountInvitation($this->fakeReader(), $writer, $this->codeAwareRandom(), new ClaimAttempts($writer, $factory), $auditor, new ClaimLock($this->fakeLocks(), 0));
+		return new WaitingAccountInvitation($this->fakeReader(), $writer, ($random ?? $this->codeAwareRandom()), new ClaimAttempts($writer, $factory), $auditor, new ClaimLock($this->fakeLocks(), 0), new WaitingAccountSecret($this->fakeReader(), $this->fakeConfig()));
 	}//end service()
+
+	/**
+	 * A config that answers the instance secret, and nothing else.
+	 *
+	 * @return IConfig
+	 */
+	private function fakeConfig(): IConfig {
+		$config = $this->createMock(IConfig::class);
+		$config->method('getSystemValueString')->willReturnCallback(
+			fn (string $key, string $default = ''): string => ($key === 'secret' ? $this->instanceSecret : $default)
+		);
+
+		return $config;
+	}//end fakeConfig()
 
 	/**
 	 * A locking provider that holds exclusive locks in memory and refuses a
