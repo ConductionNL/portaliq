@@ -58,6 +58,16 @@ class DisplayKeys {
 	];
 
 	/**
+	 * The tones a status pill may take.
+	 */
+	private const TONES = ['neutral', 'success', 'warning', 'error'];
+
+	/**
+	 * The most status values one block may give a tone.
+	 */
+	private const MAX_TONES = 20;
+
+	/**
 	 * The longest text a display key may carry.
 	 */
 	private const MAX_TEXT = 80;
@@ -92,8 +102,38 @@ class DisplayKeys {
 			}
 		}
 
-		return $out + $this->lists(display: $display, block: $block, collection: $collection) + $this->numbers(display: $display, block: $block);
+		return $out + $this->lists(display: $display, block: $block, collection: $collection)
+			+ $this->numbers(display: $display, block: $block) + $this->tones(display: $display, block: $block);
 	}//end keys()
+
+	/**
+	 * The tone of each status value on rows and cards: `statusTones`, a map
+	 * from a stored value to `neutral`, `success`, `warning` or `error`. The
+	 * pill always says the status in words; the tone only adds weight.
+	 *
+	 * @param string               $display The display.
+	 * @param array<string, mixed> $block   The declared block.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	private function tones(string $display, array $block): array {
+		if (in_array($display, ['rows', 'cards'], true) === false || is_array($block['statusTones'] ?? null) === false) {
+			return [];
+		}
+
+		$tones = [];
+		foreach ($block['statusTones'] as $value => $tone) {
+			if (is_string($value) === true && $value !== '' && in_array($tone, self::TONES, true) === true) {
+				$tones[$value] = $tone;
+			}
+		}
+
+		if ($tones === []) {
+			return [];
+		}
+
+		return ['statusTones' => array_slice($tones, 0, self::MAX_TONES, true)];
+	}//end tones()
 
 	/**
 	 * The field lists a display keeps: `titleFields` on rows, `subtitleFields`

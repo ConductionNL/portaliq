@@ -91,7 +91,7 @@ class SchoolBlockKeysTest extends TestCase {
 		$cards = $this->blocks([[
 			'type' => 'collection', 'collection' => 'meldingen', 'display' => 'cards', 'titleFields' => ['kind'],
 			'subtitleFields' => ['reden'], 'statusField' => 'status', 'noteField' => 'gezien', 'soonField' => 'toelichting',
-			'soonLabel' => 'Binnenkort', 'avatar' => true,
+			'soonLabel' => 'Binnenkort', 'avatar' => true, 'statusTones' => ['present' => 'success', 'sick' => 'warning', 'odd' => 'purple', 3 => 'error'],
 		]])[0];
 
 		$this->assertSame('cards', $cards['display']);
@@ -100,6 +100,7 @@ class SchoolBlockKeysTest extends TestCase {
 		$this->assertSame('status', $cards['statusField']);
 		$this->assertSame('Binnenkort', $cards['soonLabel']);
 		$this->assertTrue($cards['avatar']);
+		$this->assertSame(['present' => 'success', 'sick' => 'warning'], $cards['statusTones'], 'an unknown tone or a numeric value is dropped');
 	}//end testCardsGainAStatusANoteAndAComingUpPart()
 
 	public function testTasksTakeTheHighlightCard(): void {
