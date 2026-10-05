@@ -39,6 +39,9 @@ use OCA\Portaliq\Service\Branch\PortalBranchScope;
  * Validates and sanitises the v3 collection presentation config, fail-closed.
  *
  * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one small normaliser per
+ * collection key, called in a row; the coupling is the list of keys, not logic.
  */
 class CollectionConfigNormaliser {
 	/**

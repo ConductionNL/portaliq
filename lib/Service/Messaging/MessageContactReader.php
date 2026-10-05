@@ -46,6 +46,9 @@ use Throwable;
  * Reads a resident's message contacts per record, and proves one.
  *
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
+ * the one trust ordering every portal gate shares.
  */
 class MessageContactReader {
 	/**
