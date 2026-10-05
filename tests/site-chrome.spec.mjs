@@ -31,6 +31,7 @@ const count = (html, needle) => html.split(needle).length - 1
 test('the header search is off until a portal switches it on, and opens an in-site page', () => {
 	assert.deepEqual(headerSearchOf({}), {
 		enabled: false,
+		label: '',
 		placeholder: '',
 		route: '/zoeken',
 	})
@@ -42,7 +43,12 @@ test('the header search is off until a portal switches it on, and opens an in-si
 				route: '/cursussen',
 			},
 		}),
-		{ enabled: true, placeholder: 'Zoek een cursus', route: '/cursussen' },
+		{
+			enabled: true,
+			label: '',
+			placeholder: 'Zoek een cursus',
+			route: '/cursussen',
+		},
 	)
 	assert.equal(headerSearchOf({ headerSearch: { enabled: 'yes' } }).enabled, false)
 	assert.equal(
@@ -119,7 +125,11 @@ test('a sign-in route carries the card the portal wrote, and its button text', (
 
 test('signed out, the designed header offers search and one button to the own area', async () => {
 	const html = await renderSfc('src/site/components/chrome/HeaderTools.vue', {
-		searchBox: { enabled: true, placeholder: 'Zoek een cursus' },
+		searchBox: {
+			enabled: true,
+			label: 'Zoeken op de website',
+			placeholder: 'Zoek een cursus',
+		},
 		accountLabel: 'Mijn academie',
 		accountHref: '?route=%2Fmijn',
 		hasMenu: true,
@@ -128,7 +138,7 @@ test('signed out, the designed header offers search and one button to the own ar
 	assert.match(html, /role="search"/)
 	assert.match(
 		html,
-		/placeholder="Zoek een cursus"[^>]*aria-label="Zoek een cursus"/,
+		/placeholder="Zoek een cursus"[^>]*aria-label="Zoeken op de website"/,
 	)
 	assert.match(html, /data-testid="site-account-button"[^>]*>[\s\S]*Mijn academie/)
 	assert.match(

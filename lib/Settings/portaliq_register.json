@@ -2781,13 +2781,19 @@
                     "headerSearch": {
                         "title": "Search in the header",
                         "type": "object",
-                        "description": "A search box in the header, on every page. It opens the portal's search page with what the visitor typed. Off unless switched on.",
+                        "description": "A search box in the header, on every page. It opens the portal's search page with what the visitor typed. A portal that declares it shows it, unless it switches it off.",
                         "properties": {
                             "enabled": {
                                 "title": "Show the search box",
                                 "type": "boolean",
-                                "description": "Whether the header shows the search box.",
+                                "description": "False hides a declared search box. Empty shows it.",
                                 "example": true
+                            },
+                            "label": {
+                                "title": "Name for screen readers",
+                                "type": "string",
+                                "description": "What a screen reader calls the box, such as Zoeken op de website. Empty uses the hint.",
+                                "example": "Zoeken op de website"
                             },
                             "placeholder": {
                                 "title": "Hint in the box",

@@ -80,13 +80,14 @@ class PortalShell {
 	}//end project()
 
 	/**
-	 * The search box in the header: whether it shows, its hint and the
+	 * The search box in the header: whether it shows (a declared box shows
+	 * unless `enabled` is false), its accessible name, its hint and the
 	 * portal's search page. A route that is not an in-site path falls back to
 	 * `/zoeken`, the page the hero search has always opened.
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array{enabled: bool, placeholder: string, route: string} The box.
+	 * @return array{enabled: bool, label: string, placeholder: string, route: string} The box.
 	 *
 	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 	 */
@@ -101,8 +102,13 @@ class PortalShell {
 			$route = '/zoeken';
 		}
 
+		// Declared is on: a portal that writes the box wants it, unless it
+		// says `enabled: false` (lane L3 declares `label` and `route` only).
+		$declared = (is_array($portal['headerSearch'] ?? null) === true && $search !== []);
+
 		return [
-			'enabled'     => ($search['enabled'] ?? false) === true,
+			'enabled'     => $declared === true && ($search['enabled'] ?? true) === true,
+			'label'       => $this->text(value: ($search['label'] ?? '')),
 			'placeholder' => $this->text(value: ($search['placeholder'] ?? '')),
 			'route'       => $route,
 		];
