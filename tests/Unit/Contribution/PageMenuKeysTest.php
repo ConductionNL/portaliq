@@ -122,4 +122,22 @@ class PageMenuKeysTest extends TestCase {
 		$this->assertArrayNotHasKey('perRecord', $pages[2]);
 		$this->assertArrayNotHasKey('perRecord', $pages[3]);
 	}
+
+	/**
+	 * A badge counts a collection of the same contribution, with an optional
+	 * label; anything else is dropped (page-badge-key).
+	 *
+	 * @spec openspec/changes/page-badge-key/specs/portal-contribution-contract/spec.md#requirement-a-page-may-show-a-count-in-its-menu-entry
+	 */
+	public function testABadgeNamesACollectionOfTheContribution(): void {
+		$pages = $this->pages([$this->page(['badge' => ['collection' => 'parentGrades', 'label' => ' {count} nieuw ', 'colour' => 'red']])]);
+		$this->assertSame(['collection' => 'parentGrades', 'label' => '{count} nieuw'], $pages[0]['badge']);
+
+		$pages = $this->pages([$this->page(['badge' => ['collection' => 'parentChildren', 'label' => str_repeat('x', 81)]])]);
+		$this->assertSame(['collection' => 'parentChildren'], $pages[0]['badge'], 'a label that is too long is dropped, the count stays');
+
+		foreach ([['collection' => 'otherAppsRows'], 'parentGrades', ['label' => 'x'], true] as $bad) {
+			$this->assertArrayNotHasKey('badge', $this->pages([$this->page(['badge' => $bad])])[0], (string)json_encode($bad));
+		}
+	}//end testABadgeNamesACollectionOfTheContribution()
 }
