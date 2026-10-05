@@ -347,8 +347,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.63.0 (newsItem 0.4.0): `public`, `portal` and `audienceLabel`, so
 		// staff can put an item on one portal's public website
 		// (site-school-blocks). Additive; an item from before is not public.
-		$this->assertSame('0.63.0', self::$register['info']['version']);
-		$this->assertSame('0.63.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.64.0 (portalPage 0.6.0): the school display keys, the greeting
+		// block and `visibleFromField` (site-school-blocks wave 2). Additive.
+		$this->assertSame('0.64.0', self::$register['info']['version']);
+		$this->assertSame('0.64.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -410,7 +412,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()

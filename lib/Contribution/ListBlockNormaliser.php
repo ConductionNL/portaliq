@@ -92,7 +92,8 @@ class ListBlockNormaliser {
 		$entry = $scopes->lookups(declared: $block, entry: $entry, collectionIds: $this->ids(collections: $collections));
 		$entry += $this->excludeWhen(declared: ($block['excludeWhen'] ?? null), lookups: ($entry['lookups'] ?? []));
 
-		return $entry + $this->common(block: $block);
+		// The highlight card (site-school-blocks).
+		return $entry + $this->common(block: $block) + (new SchoolBlockKeys())->tasksKeys(block: $block, collection: $collection);
 	}//end tasksBlock()
 
 	/**

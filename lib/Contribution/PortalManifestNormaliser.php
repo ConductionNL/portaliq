@@ -123,6 +123,9 @@ class PortalManifestNormaliser {
 	 */
 	public function normalise(array $contribution): array {
 		$collections = $this->collections->normaliseCollections(collections: (array)($contribution['collections'] ?? []));
+		// A row may wait for its moment (site-school-blocks, `visibleFromField`).
+		$visibleFrom = new VisibleFromField();
+		$collections = array_map(static fn (array $collection): array => $visibleFrom->normalise(collection: $collection), $collections);
 		$actions = $this->actions->normaliseActions(actions: (array)($contribution['actions'] ?? []));
 
 		// Resolve each collection's `rowActions` against the update actions in

@@ -513,6 +513,34 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testCollectionPassesV2ScopeParametersToReader()
 
+	/**
+	 * A row whose `visibleFromField` lies ahead is not in the list and its
+	 * read by id is the shared 404 (site-school-blocks).
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-keep-a-row-back-until-its-moment-has-passed
+	 */
+	public function testARowBeforeItsVisibleFromMomentIsNotServed(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['register' => 'r1', 'schema' => 'a', 'scopeField' => 'subjectRef', 'visibleFromField' => 'visibleFrom'],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([
+			['id' => 'now', 'visibleFrom' => '2000-01-01T00:00:00Z'],
+			['id' => 'later', 'visibleFrom' => '2999-01-01T00:00:00Z'],
+		]);
+		$reader->method('readObject')->willReturn(['id' => 'later', 'visibleFrom' => '2999-01-01T00:00:00Z']);
+
+		$controller = $this->controller(aggregate: $aggregate, reader: $reader);
+		$rows = $controller->collection('r1', 'a')->getData();
+		$ids  = array_column(($rows['results'] ?? $rows['objects'] ?? $rows), 'id');
+
+		$this->assertContains('now', $ids);
+		$this->assertNotContains('later', $ids);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->object('r1', 'a', 'later')->getStatus());
+	}//end testARowBeforeItsVisibleFromMomentIsNotServed()
+
 	public function testInboxCollectionFieldsReachTheReaderAndAbsentFieldsStayNull(): void {
 		$aggregate = $this->aggregate(
 			collections: [
