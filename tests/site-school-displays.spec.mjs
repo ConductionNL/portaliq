@@ -12,6 +12,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { calendarItems } from '../src/shared/recordPage.js'
 import {
 	barRows,
 	cardParts,
@@ -26,7 +27,6 @@ import {
 import { firstNameOf, greetingFor } from '../src/site/components/mijn/greeting.js'
 import { homeGreets } from '../src/site/components/mijn/home.js'
 import { resolveBlocks } from '../src/site/pages/collections/pageBlocks.js'
-import { calendarItems } from '../src/shared/recordPage.js'
 
 const COLLECTION = {
 	id: 'meldingen',
