@@ -132,6 +132,7 @@
 					@navigate="$emit('navigate', $event)"
 					@unread="$emit('unread', $event)"
 					@refresh="$emit('refresh')"
+					@claimed="$emit('claimed')"
 					@removed="$emit('signout')" />
 			</template>
 		</div>
@@ -240,7 +241,7 @@ export default {
 		currentRoute: { type: String, default: '' },
 	},
 
-	emits: ['devlogin', 'navigate', 'unread', 'refresh', 'signout'],
+	emits: ['devlogin', 'navigate', 'unread', 'refresh', 'claimed', 'signout'],
 
 	data() {
 		return {

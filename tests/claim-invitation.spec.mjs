@@ -361,17 +361,24 @@ test('submitting posts the trimmed code once, reports a right code and keeps a w
 	assert.deepEqual(blank.calls, [])
 })
 
-test('"My account" carries the form, and a right code has the shell read the account again', () => {
+test('"My account" carries the form, and a right code has the shell read the account again with the page left on screen', () => {
 	const page = readFileSync('src/site/pages/e/AccountPage.vue', 'utf8')
 	assert.match(
 		page,
-		/<InvitationCodeForm :api="api" :t="t" @claimed="\$emit\('refresh'\)" \/>/,
+		/<InvitationCodeForm :api="api" :t="t" @claimed="\$emit\('claimed'\)" \/>/,
 	)
-	assert.match(page, /emits: \['removed', 'refresh'\]/)
+	assert.match(page, /emits: \['removed', 'claimed'\]/)
 	const area = readFileSync('src/site/components/AccountArea.vue', 'utf8')
-	assert.match(area, /@refresh="\$emit\('refresh'\)"/)
+	assert.match(area, /@claimed="\$emit\('claimed'\)"/)
+	assert.match(area, /emits: \[[^\]]*'claimed'/)
 	const shell = readFileSync('src/site/App.vue', 'utf8')
-	assert.match(shell, /@refresh="loadAccount"/)
+	assert.match(shell, /@claimed="loadAccount\(true\)"/)
+	// A loud reload swaps the page for "Loading…" and the form's sentence is
+	// lost with it; the quiet one must not raise the loading flag.
+	assert.match(
+		shell,
+		/if \(quiet !== true\) \{\s+this\.account = \{ \.\.\.this\.account, loading: true \}\s+\}/,
+	)
 })
 
 test('the sentences of the code form are in both site bundles, without an em-dash', () => {

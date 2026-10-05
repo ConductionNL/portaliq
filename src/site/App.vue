@@ -268,6 +268,7 @@
 							@navigate="goSection"
 							@unread="unreadOverride = $event"
 							@refresh="loadAccount"
+							@claimed="loadAccount(true)"
 							@signout="signOut">
 							<template v-if="session && contactPrompt" #prompt>
 								<ContactPrompt
@@ -1492,15 +1493,22 @@ export default {
 		 * news feed, each fail-closed. Then follow the route the navigation
 		 * implies (the default page for a bare `/mijn`).
 		 *
+		 * @param {boolean} [quiet] True to keep the page on screen while reading.
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
 		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
 		 */
-		async loadAccount() {
+		async loadAccount(quiet = false) {
 			if (!this.session) {
 				return
 			}
-			this.account = { ...this.account, loading: true }
+			// Quiet after a code from a letter was right
+			// (invitation-code-from-a-letter): the page stays on screen with
+			// its sentence, and the navigation fills in behind it.
+			if (quiet !== true) {
+				this.account = { ...this.account, loading: true }
+			}
 			const [contributions, threads, news] = await Promise.all([
 				this.api.getContributions(),
 				this.api.fetchThreads(),

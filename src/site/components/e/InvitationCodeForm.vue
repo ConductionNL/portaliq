@@ -95,8 +95,8 @@ export default {
 	methods: {
 		/**
 		 * Hand the typed code to the redeem route and show what came of it.
-		 * A code that worked is cleared and reported to the page, which has
-		 * the shell read the account again.
+		 * A code that worked is cleared and reported to the page. The shell
+		 * then reads the account again while this form stays on screen.
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
@@ -119,3 +119,21 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+.pq-account__code > * + * {
+	margin-block-start: var(--utrecht-space-block-sm, 0.5rem);
+}
+
+.pq-e-error {
+	color: var(
+		--utrecht-feedback-danger-color,
+		var(--nldesign-color-error, currentcolor)
+	);
+	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
+}
+
+.pq-e-notice {
+	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
+}
+</style>

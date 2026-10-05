@@ -10,7 +10,8 @@
 	marked, how the organisation contacts them, and removing the account. After
 	a removal the page emits `removed`: the shell listens and signs out. The
 	code from an invitation letter is typed here too; when it is right the page
-	emits `refresh` and the shell reads the account again.
+	emits `claimed` and the shell reads the account again, without taking this
+	page off the screen.
 -->
 <template>
 	<p
@@ -80,7 +81,7 @@
 			</label>
 		</fieldset>
 
-		<InvitationCodeForm :api="api" :t="t" @claimed="$emit('refresh')" />
+		<InvitationCodeForm :api="api" :t="t" @claimed="$emit('claimed')" />
 
 		<section class="pq-account__remove" aria-labelledby="pq-account-remove">
 			<h3 id="pq-account-remove" class="utrecht-heading-3">
@@ -157,7 +158,7 @@ export default {
 		initialConfirmRemove: { type: Boolean, default: false },
 	},
 
-	emits: ['removed', 'refresh'],
+	emits: ['removed', 'claimed'],
 
 	data() {
 		return {
