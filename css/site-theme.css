@@ -785,6 +785,7 @@
  */
 .pq-signin {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	gap: 56px;
 	padding-block: 40px 64px;
 }
@@ -796,6 +797,11 @@
 
 .pq-signin__title.utrecht-heading-1 {
 	margin-block-end: 16px;
+	overflow-wrap: anywhere;
+}
+
+.pq-signin__main {
+	min-inline-size: 0;
 }
 
 .pq-signin__intro.utrecht-paragraph {
