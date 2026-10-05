@@ -164,7 +164,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 		}
 
 		$messages = [];
-		foreach ($this->store->findAll(schema: self::MESSAGE_SCHEMA) as $message) {
+		foreach ($this->store->findAll(schema: self::MESSAGE_SCHEMA, filters: ['threadRef' => $threadId]) as $message) {
 			if ((string)($message['threadRef'] ?? '') === $threadId) {
 				$messages[] = $message;
 			}
@@ -240,9 +240,14 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 			return null;
 		}
 
-		foreach ($this->store->findAll(schema: self::THREAD_SCHEMA) as $thread) {
-			if ($this->store->rowId(row: $thread) === $threadId) {
-				return $thread;
+		// Asked by id first, so one lookup does not read every thread. The
+		// id is still compared here, and a miss falls back to the full read,
+		// so a store that does not narrow by id never hides a thread.
+		foreach ([[$threadId], null] as $ids) {
+			foreach ($this->store->findAll(schema: self::THREAD_SCHEMA, filters: [], ids: $ids) as $thread) {
+				if ($this->store->rowId(row: $thread) === $threadId) {
+					return $thread;
+				}
 			}
 		}
 

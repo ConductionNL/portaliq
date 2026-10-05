@@ -13,9 +13,12 @@
 	contributions answer's `cases.closedMarker`, handed in as `closedMarker`).
 
 	Opening a case needs the shell's page lookup (`navKeyFor` in
-	src/shared/openRecord.js): the shell passes `canOpen(target)` and
-	`openCase(target, row)`. Without them a case title is plain text, exactly as
-	the React page shows a case no page can open.
+	src/shared/openRecord.js): the shell passes `canOpen(target)`,
+	`openCase(target, row)` and `caseRoute(target)`. With a route the case title
+	is a real link (a new tab, a bookmark); a plain click still opens it through
+	`openCase`, so a case read under a mandate keeps its row. Without them a case
+	title is plain text, exactly as the React page shows a case no page can
+	open.
 -->
 <template>
 	<section
@@ -130,7 +133,8 @@
 						:card="item.card"
 						:mandate="item.mandate"
 						:meta="item.meta"
-						:button="item.openable"
+						:route="item.route"
+						:button="item.openable && !item.route"
 						@open="openCase(item.target, item.row)" />
 				</ul>
 			</div>
@@ -178,6 +182,8 @@ export default {
 		canOpen: { type: Function, default: null },
 		/** Open the case on its app's page: `(target, row) => void`. */
 		openCase: { type: Function, default: () => {} },
+		/** The in-site route a case opens on: `(target) => string`, '' for none. */
+		caseRoute: { type: Function, default: null },
 		/** The list to show without fetching (test seam). */
 		initialData: { type: Object, default: null },
 		/** 'open' or 'closed' (test seam). */
@@ -247,6 +253,10 @@ export default {
 					locale,
 				)
 				const source = row._source?.label || row._source?.appId || ''
+				const openable =
+					target !== null
+					&& typeof this.canOpen === 'function'
+					&& this.canOpen(target) === true
 				return {
 					card: caseCard(row, null, {
 						tr: this.mt,
@@ -256,10 +266,11 @@ export default {
 					meta: [source, date].filter(Boolean).join(', '),
 					row,
 					target,
-					openable:
-						target !== null
-						&& typeof this.canOpen === 'function'
-						&& this.canOpen(target) === true,
+					openable,
+					route:
+						openable && typeof this.caseRoute === 'function'
+							? this.caseRoute(target) || ''
+							: '',
 					title: caseTitle(row),
 					source,
 					mandate: row._mandate?.label || '',

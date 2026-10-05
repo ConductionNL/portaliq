@@ -166,6 +166,7 @@ test('a button link ships its stylesheet, so a sign-in link never falls back to 
 	const users = [
 		'src/site/components/AccountArea.vue',
 		'src/site/components/IntakeFormBlock.vue',
+		'src/site/pages/inbox/InboxPage.vue',
 	]
 	for (const file of users) {
 		const source = read(file)

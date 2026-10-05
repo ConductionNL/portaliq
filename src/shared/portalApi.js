@@ -481,7 +481,8 @@ export function createPortalApi(config, store = {}) {
 
 		/**
 		 * The resident's own notice choices per kind and channel, with
-		 * whether a device is registered for push
+		 * whether push is available (a registered device and a transport that
+		 * really delivers)
 		 * (inbox-notifications-and-preferences, REQ-NAP-007).
 		 *
 		 * @return {Promise<{preferences: object, pushAvailable: boolean}|null>} Null when refused.
