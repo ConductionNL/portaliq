@@ -53,4 +53,8 @@ export const loaders = {
 	nlSignIn: () => import('./nlSignIn/NlSignIn.vue'),
 	nlTaskNav: () => import('./nlTaskNav/NlTaskNav.vue'),
 	nlTabs: () => import('./nlTabs/NlTabs.vue'),
+	nlQuickTasks: () => import('./nlQuickTasks/NlQuickTasks.vue'),
+	nlNewsList: () => import('./nlNewsList/NlNewsList.vue'),
+	nlNewsArticle: () => import('./nlNewsArticle/NlNewsArticle.vue'),
+	nlEventList: () => import('./nlEventList/NlEventList.vue'),
 }
