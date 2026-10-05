@@ -53,14 +53,48 @@ class EmergencyPushControllerTest extends TestCase {
 			'Alarm',
 			'Evacuate',
 			true
-		);
+		)->willReturn(true);
 
 		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $this->createMock(LoggerInterface::class));
 		$response = $controller->send(['schoolRef' => 'school-de-regenboog'], 'Alarm', 'Evacuate');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(2, $response->getData()['recipientCount']);
+		$this->assertSame(2, $response->getData()['deliveredCount']);
 	}//end testSendDeliversToEveryMatchingGuardianAndReportsTheCount()
+
+	/**
+	 * A push the transport could not deliver is never reported or logged as
+	 * sent: the interim logging transport delivers nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUndeliveredPushIsNotReportedAsSent(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('staff-directie-1');
+
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
+
+		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
+		$audienceReader->method('guardiansMatching')->willReturn(['guardian-1', 'guardian-2']);
+
+		$delivery = $this->createMock(PushDeliveryService::class);
+		$delivery->method('deliver')->willReturn(false);
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('info');
+		$logger->expects($this->once())->method('warning')->with(
+			'Portaliq: emergency push not delivered to every recipient',
+			['sentBy' => 'staff-directie-1', 'recipientCount' => 2, 'deliveredCount' => 0]
+		);
+
+		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $logger);
+		$response = $controller->send(['schoolRef' => 'school-de-regenboog'], 'Alarm', 'Evacuate');
+
+		$this->assertSame(2, $response->getData()['recipientCount']);
+		$this->assertSame(0, $response->getData()['deliveredCount']);
+	}//end testAnUndeliveredPushIsNotReportedAsSent()
 
 	public function testSendReportsZeroForAnEmptyResolvedAudience(): void {
 		$user = $this->createMock(IUser::class);
