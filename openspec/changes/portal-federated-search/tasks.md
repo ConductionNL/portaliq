@@ -41,3 +41,27 @@
 
 > Task 3's e2e box stays open until the spec runs green against the demo rig.
 > Ticking it before then would be the phantom tick ADR-029 exists to stop.
+
+
+### Task 4: Search reaches inside documents (Woo capability programme, row 6.2, amended 2026-10-05)
+- **spec_ref**: `openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001`
+- **files**: `src/site/lib/federatedSearch.js`, `src/site/components/FederatedSearchBlock.vue`, `lib/Settings/portaliq_register.json`, `tests/federated-search.spec.mjs`, `tests/e2e/site-federated-search.spec.ts`
+- **before starting**: read opencatalogi on `development`. Confirm `add-document-content-search` is
+  merged and amended for D11, and that the endpoint this block calls (`/api/federation/publications`)
+  honours `_content` (a content-only match comes back). If it does not, stop: that is opencatalogi's
+  half. Say which in the PR body. Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+- **acceptance_criteria**:
+  - **fails today**: node test `a term sends the content flag`, `a portal that switched it off sends
+    no content flag`, `a document row links to its own page and names its publication`
+  - e2e: the two scenarios of REQ-PFS-CONTENT-001 against the dev rig, with a seeded document whose
+    text holds a unique marker, and a partly public document whose redacted word is searched
+  - `searchInsideDocuments` declared on `#portal` (default true), register version bumped,
+    `npm run check:register` exits 0
+  - Before push, once: `composer check:strict`, `npm run lint`, `format`, `check:l10n-js`,
+    `check:schema-l10n`, `check:manifest`, `check:specs`, `build:site`, and hydra's
+    `scripts/run-hydra-gates.sh --base origin/development` with the gates counted. One PR,
+    `--base development`, merge never rebase, no `Co-Authored-By`. Done means merged on
+    `development` with CI green; 6.2 then reads `yes` (build), and `production` only with a store
+    release
+- [ ] Implement
+- [ ] Test
