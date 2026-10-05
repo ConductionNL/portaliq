@@ -265,6 +265,9 @@ class PortalPageController extends Controller {
 				// contract withholds; it only decides which stylesheet tag to emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
 				'themeLogoUrl' => $this->siteThemeLogoUrl(),
+				// The set's light logo for the dark footer band, or ''
+				// (site-chrome-follows-the-design).
+				'themeLogoInverseUrl' => $this->siteThemeLogoUrl(inverse: true),
 				'themeAppSheets' => $this->siteThemeAppSheets(),
 				// The NLDS token set this app ships for the serving portal's
 				// theme, when it has one. Separate from the line above because
@@ -576,11 +579,17 @@ class PortalPageController extends Controller {
 	 * So the resolution happens here, where the theme app's real path is
 	 * known, and the template emits the result after the token stylesheets.
 	 *
+	 * With `$inverse` it is the set's light logo, for the dark footer band
+	 * (site-chrome-follows-the-design), or '' when the set ships none.
+	 *
+	 * @param bool $inverse Whether the light logo is asked for.
+	 *
 	 * @return string An absolute URL, or '' when there is no logo to serve.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
-	private function siteThemeLogoUrl(): string {
+	private function siteThemeLogoUrl(bool $inverse=false): string {
 		$stylesheet = $this->siteThemeStylesheet();
 		if ($stylesheet === '') {
 			return '';
@@ -594,6 +603,10 @@ class PortalPageController extends Controller {
 
 		try {
 			$relative = $this->themeResolver->logoFileFor(theme: $theme);
+			if ($inverse === true) {
+				$relative = $this->themeResolver->inverseLogoFileFor(theme: $theme);
+			}
+
 			if ($relative === null) {
 				return '';
 			}

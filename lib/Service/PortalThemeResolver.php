@@ -222,6 +222,38 @@ class PortalThemeResolver {
 
 
 	/**
+	 * The theme app path of a set's light logo, for a dark band, or null.
+	 *
+	 * The footer of a school portal is a dark band, and the set's own logo
+	 * (dark ink) disappears on it. Every school set ships a light variant as
+	 * `img/logos/<theme>-dark.svg` (named after the dark scheme it was made
+	 * for). The bridge shows it on the footer through
+	 * `--nldesign-logo-inverse-url` (thematiq brand-motif-on-portals); a set
+	 * without one keeps its own logo there, as before.
+	 *
+	 * @param string $theme The portal's theme reference.
+	 *
+	 * @return string|null The path relative to the theme app, or null.
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	public function inverseLogoFileFor(string $theme): ?string {
+		$own = $this->logoFileFor(theme: $theme);
+		$root = $this->themeAppPath();
+		if ($own === null || $root === null) {
+			return null;
+		}
+
+		$relative = 'img/logos/' . $theme . '-dark.svg';
+		if (is_file($root . '/' . $relative) === false) {
+			return null;
+		}
+
+		return $relative;
+	}//end inverseLogoFileFor()
+
+
+	/**
 	 * Whether the theme app's catalogue offers this set.
 	 *
 	 * Reads `token-sets.json` from disk rather than calling the app's

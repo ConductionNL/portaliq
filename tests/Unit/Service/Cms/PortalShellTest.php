@@ -16,8 +16,109 @@ use PHPUnit\Framework\TestCase;
  * footer onto named keys, and drops what a visitor cannot follow.
  *
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+ * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md
  */
 class PortalShellTest extends TestCase {
+
+	public function testTheHeaderSearchIsOffUntilEnabledAndOpensAnInSitePage(): void {
+		$shell = new PortalShell();
+
+		$this->assertSame(['enabled' => false, 'placeholder' => '', 'route' => '/zoeken'], $shell->headerSearch(portal: []));
+		$this->assertSame(
+			['enabled' => true, 'placeholder' => 'Zoek een cursus', 'route' => '/cursussen'],
+			$shell->headerSearch(portal: ['headerSearch' => ['enabled' => true, 'placeholder' => ' Zoek een cursus ', 'route' => '/cursussen']])
+		);
+		// A truthy string is not "enabled", and an address elsewhere is not a search page.
+		$this->assertSame(
+			['enabled' => false, 'placeholder' => '', 'route' => '/zoeken'],
+			$shell->headerSearch(portal: ['headerSearch' => ['enabled' => 'yes', 'route' => '//evil.example/zoek']])
+		);
+	}//end testTheHeaderSearchIsOffUntilEnabledAndOpensAnInSitePage()
+
+	public function testTheProjectionServesTheHeaderSearchAndTheAccountLabel(): void {
+		$projected = (new PortalShell())->project(portal: [
+			'headerSearch' => ['enabled' => true],
+			'accountLabel' => ' Mijn Wilgenboom ',
+		]);
+
+		$this->assertTrue($projected['headerSearch']['enabled']);
+		$this->assertSame('Mijn Wilgenboom', $projected['accountLabel']);
+		$this->assertSame('', (new PortalShell())->project(portal: [])['accountLabel']);
+	}//end testTheProjectionServesTheHeaderSearchAndTheAccountLabel()
+
+	public function testTheFooterServesItsButtonAndContactColumnOnNamedKeys(): void {
+		$footer = (new PortalShell())->footer(portal: ['footer' => [
+			'cta'     => ['label' => 'Contact en schooltijden', 'href' => '/contact', 'style' => 'x'],
+			'contact' => [
+				'title' => 'Contact',
+				'lines' => [
+					['text' => 'Wilgenlaan 12, Zuiddrecht'],
+					['text' => 'E-mail: [e-mailadres]', 'href' => 'mailto:info@example.org'],
+					['text' => 'Script', 'href' => 'javascript:alert(1)'],
+					['href' => '/leeg'],
+				],
+			],
+		]]);
+
+		$this->assertSame(['label' => 'Contact en schooltijden', 'href' => '/contact'], $footer['cta']);
+		$this->assertSame(
+			['title' => 'Contact', 'lines' => [
+				['text' => 'Wilgenlaan 12, Zuiddrecht'],
+				['text' => 'E-mail: [e-mailadres]', 'href' => 'mailto:info@example.org'],
+				['text' => 'Script'],
+			]],
+			$footer['contact']
+		);
+	}//end testTheFooterServesItsButtonAndContactColumnOnNamedKeys()
+
+	public function testAFooterButtonThatLeadsNowhereIsDropped(): void {
+		$footer = (new PortalShell())->footer(portal: ['footer' => ['cta' => ['label' => 'Klik', 'href' => 'javascript:x'], 'contact' => ['title' => 'Contact', 'lines' => []]]]);
+
+		$this->assertNull($footer['cta']);
+		$this->assertNull($footer['contact']);
+	}//end testAFooterButtonThatLeadsNowhereIsDropped()
+
+	public function testTheSignInCardsAreServedPerModeTheyCanBeOfferedFor(): void {
+		$auth = (new PortalShell())->authentication(portal: ['authentication' => [
+			'modes'      => ['nextcloud', 'digid'],
+			'modeLabels' => [
+				'nextcloud' => ['title' => 'Ik ben leerling', 'button' => 'Inloggen met je schoolaccount', 'hint' => '', 'secret' => 'x'],
+				'digid'     => ['title' => 'Ik ben ouder of verzorger', 'text' => 'Om uw kind ziek te melden.'],
+				'public'    => ['title' => 'Niet een manier om in te loggen'],
+				'eidas'     => ['title' => ''],
+			],
+			'signInPage' => [
+				'title'     => 'Inloggen op Mijn Vaartveld',
+				'intro'     => 'Kies wie je bent.',
+				'notice'    => ['text' => 'Wachtwoord vergeten? Vraag het bij de receptie.'],
+				'staffLink' => ['text' => 'Werkt u hier?', 'label' => 'Log in op de werkplek', 'href' => 'javascript:x'],
+				'panel'     => ['title' => 'Alles op een plek', 'items' => [['title' => 'Rooster', 'text' => 'Je lessen van vandaag'], ['text' => 'zonder titel']]],
+			],
+		]]);
+
+		$this->assertSame(
+			[
+				'nextcloud' => ['title' => 'Ik ben leerling', 'button' => 'Inloggen met je schoolaccount'],
+				'digid'     => ['title' => 'Ik ben ouder of verzorger', 'text' => 'Om uw kind ziek te melden.'],
+			],
+			$auth['modeLabels']
+		);
+		$this->assertSame(
+			[
+				'title'  => 'Inloggen op Mijn Vaartveld',
+				'intro'  => 'Kies wie je bent.',
+				'notice' => ['text' => 'Wachtwoord vergeten? Vraag het bij de receptie.'],
+				'panel'  => ['title' => 'Alles op een plek', 'items' => [['title' => 'Rooster', 'text' => 'Je lessen van vandaag']]],
+			],
+			$auth['signInPage']
+		);
+	}//end testTheSignInCardsAreServedPerModeTheyCanBeOfferedFor()
+
+	public function testAPortalWithoutSignInTextServesNone(): void {
+		$auth = (new PortalShell())->authentication(portal: ['authentication' => ['modes' => ['digid'], 'modeLabels' => 'x', 'signInPage' => ['notice' => ['title' => 'Zonder tekst']]]]);
+
+		$this->assertSame(['modes' => ['digid']], $auth);
+	}//end testAPortalWithoutSignInTextServesNone()
 
 	public function testAnUnknownOrMissingHeaderVariantIsDouble(): void {
 		$shell = new PortalShell();
@@ -61,6 +162,8 @@ class PortalShellTest extends TestCase {
 				'socials'     => [['label' => 'Mastodon', 'href' => 'https://social.example/@gemeente', 'icon' => 'mastodon']],
 				'legalLinks'  => [['label' => 'Privacy', 'href' => '/privacy']],
 				'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example/27001']],
+				'cta'         => null,
+				'contact'     => null,
 			],
 			$footer
 		);
@@ -68,7 +171,7 @@ class PortalShellTest extends TestCase {
 
 	public function testAPortalWithoutAFooterServesTheEmptyShape(): void {
 		$this->assertSame(
-			['description' => '', 'colophon' => '', 'socials' => [], 'legalLinks' => [], 'badges' => []],
+			['description' => '', 'colophon' => '', 'socials' => [], 'legalLinks' => [], 'badges' => [], 'cta' => null, 'contact' => null],
 			(new PortalShell())->footer(portal: ['footer' => 'broken'])
 		);
 	}//end testAPortalWithoutAFooterServesTheEmptyShape()
