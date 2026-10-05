@@ -55,7 +55,14 @@ class EmergencyPushControllerTest extends TestCase {
 			true
 		)->willReturn(true);
 
-		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $this->createMock(LoggerInterface::class));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
+		$logger->expects($this->once())->method('info')->with(
+			'Portaliq: emergency push sent',
+			['sentBy' => 'staff-directie-1', 'recipientCount' => 2, 'deliveredCount' => 2]
+		);
+
+		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $logger);
 		$response = $controller->send(['schoolRef' => 'school-de-regenboog'], 'Alarm', 'Evacuate');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -80,7 +87,10 @@ class EmergencyPushControllerTest extends TestCase {
 		$audienceReader->method('guardiansMatching')->willReturn(['guardian-1', 'guardian-2']);
 
 		$delivery = $this->createMock(PushDeliveryService::class);
-		$delivery->method('deliver')->willReturn(false);
+		// One delivery throws, the other answers false: the fan-out goes on.
+		$delivery->expects($this->exactly(2))->method('deliver')->willReturnCallback(
+			static fn (string $subjectRef): bool => ($subjectRef === 'guardian-1') ? throw new \RuntimeException('transport down') : false
+		);
 
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->never())->method('info');

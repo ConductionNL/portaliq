@@ -38,6 +38,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
@@ -82,7 +83,14 @@ class EmergencyPushController extends Controller {
 
 		$delivered = 0;
 		foreach ($recipients as $guardianRef) {
-			if ($this->delivery->deliver(subjectRef: $guardianRef, title: $title, body: $body, emergency: true) === true) {
+			// One failing delivery must not stop the noodmelding to the rest.
+			try {
+				$sent = $this->delivery->deliver(subjectRef: $guardianRef, title: $title, body: $body, emergency: true);
+			} catch (Throwable $e) {
+				$sent = false;
+			}
+
+			if ($sent === true) {
 				$delivered++;
 			}
 		}
