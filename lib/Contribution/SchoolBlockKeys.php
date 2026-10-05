@@ -100,22 +100,7 @@ class SchoolBlockKeys {
 			return [];
 		}
 
-		$segments = [];
-		foreach ((array)($block['segments'] ?? []) as $segment) {
-			if (is_array($segment) === false || $this->isName(value: ($segment['field'] ?? null)) === false
-				|| $this->isName(value: ($segment['label'] ?? null)) === false
-			) {
-				continue;
-			}
-
-			$tone = 'positive';
-			if (in_array(($segment['tone'] ?? null), self::TONES, true) === true) {
-				$tone = $segment['tone'];
-			}
-
-			$segments[] = ['field' => $segment['field'], 'label' => trim($segment['label']), 'tone' => $tone];
-		}
-
+		$segments = $this->segments(declared: ($block['segments'] ?? null));
 		if ($segments === []) {
 			return [];
 		}
@@ -132,6 +117,33 @@ class SchoolBlockKeys {
 
 		return $out + $this->texts(block: $block, keys: ['unit']);
 	}//end segmentedKeys()
+
+	/**
+	 * The well-formed segments, each `{field, label, tone}`.
+	 *
+	 * @param mixed $declared The declared segments.
+	 *
+	 * @return array<int, array{field: string, label: string, tone: string}>
+	 */
+	private function segments(mixed $declared): array {
+		$segments = [];
+		foreach ((array)$declared as $segment) {
+			if (is_array($segment) === false || $this->isName(value: ($segment['field'] ?? null)) === false
+				|| $this->isName(value: ($segment['label'] ?? null)) === false
+			) {
+				continue;
+			}
+
+			$tone = 'positive';
+			if (in_array(($segment['tone'] ?? null), self::TONES, true) === true) {
+				$tone = $segment['tone'];
+			}
+
+			$segments[] = ['field' => $segment['field'], 'label' => trim($segment['label']), 'tone' => $tone];
+		}
+
+		return $segments;
+	}//end segments()
 
 	/**
 	 * A calendar block's display.
