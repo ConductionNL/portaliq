@@ -175,10 +175,10 @@ import { register, translate } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { reactive } from 'vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
-import WidgetPaletteDialog from '../dialogs/WidgetPaletteDialog.vue'
 import PageGridEditor from './PageGridEditor.vue'
 import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
+import WidgetPalettePanel from './WidgetPalettePanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
 import { createPageEditor, createPageSaver } from './index.js'
 import { instanceUrl } from './instanceUrl.js'
@@ -219,7 +219,7 @@ export default {
 		PageHistoryDialog,
 		SiteMenuPanel,
 		SitePagesPanel,
-		WidgetPaletteDialog,
+		WidgetPalettePanel,
 	},
 
 	props: {
