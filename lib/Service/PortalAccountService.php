@@ -104,6 +104,14 @@ class PortalAccountService {
 	 * uses `$subjectRefOverride` (a validated-claim value) when supplied, or
 	 * mints a fresh cryptographically random one otherwise.
 	 *
+	 * The same holds for the audience: an existing account's OWN stored
+	 * audience wins over the `$audience` the sign-in route proposes (a
+	 * provider preset or an organisation's claim map). An app that invited
+	 * the person as, say, an `employer` wrote that audience on the account;
+	 * the eHerkenning preset's `supplier` must not replace it, or the
+	 * session would name an audience no account and no provider answers to.
+	 * Only a NEW account takes the proposed audience.
+	 *
 	 * @param string $identityType One of the register's identityType enum.
 	 * @param string $identityRef The IdP's pseudonymous identity reference.
 	 * @param string $organisation The tenant slug.
@@ -114,7 +122,7 @@ class PortalAccountService {
 	 *                              verified, used only to claim a pending
 	 *                              account (empty = no second pass).
 	 *
-	 * @return array{subjectRef: string, isNew: bool}|null Null when OpenRegister
+	 * @return array{subjectRef: string, isNew: bool, audience: string}|null Null when OpenRegister
 	 *                                                     is unavailable or the
 	 *                                                     write failed (fail closed
 	 *                                                     — the caller mints no session).
@@ -122,6 +130,7 @@ class PortalAccountService {
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
 	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
 	 */
 	public function findOrCreate(
 		string $identityType,
@@ -143,7 +152,10 @@ class PortalAccountService {
 		);
 		if ($existing !== null) {
 			$this->activate(existing: $existing, identityType: $identityType, identityRef: $identityRef);
-			return ['subjectRef' => (string)($existing['subjectRef'] ?? ''), 'isNew' => false];
+			// The stored audience first, the proposed one when none is stored.
+			$audiences = array_filter([trim((string)($existing['audience'] ?? '')), $audience], static fn (string $value): bool => $value !== '');
+
+			return ['subjectRef' => (string)($existing['subjectRef'] ?? ''), 'isNew' => false, 'audience' => (string)reset($audiences)];
 		}
 
 		$subjectRef = ($subjectRefOverride ?? $this->mintSubjectRef());
@@ -171,7 +183,7 @@ class PortalAccountService {
 			return null;
 		}
 
-		return ['subjectRef' => $subjectRef, 'isNew' => true];
+		return ['subjectRef' => $subjectRef, 'isNew' => true, 'audience' => $audience];
 	}//end findOrCreate()
 
 	/**
