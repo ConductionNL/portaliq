@@ -39,19 +39,16 @@ class PortalShell {
 	 */
 	public const HEADER_VARIANTS = ['double', 'single'];
 
-	/**
-	 * The ways in a sign-in card may be written for (the portal's modes
-	 * besides `public`).
-	 */
-	public const SIGN_IN_MODES = ['nextcloud', 'local', 'oidc', 'digid', 'eherkenning', 'eidas'];
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalRegionResolver $regions The closed list of regions.
+	 * @param PortalRegionResolver $regions    The closed list of regions.
+	 * @param PortalSignInText     $signInText The sign-in page's text.
 	 */
 	public function __construct(
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
+		private readonly PortalSignInText $signInText=new PortalSignInText(),
 	) {
 	}//end __construct()
 
@@ -153,123 +150,8 @@ class PortalShell {
 			}
 		}
 
-		$labels = $this->modeLabels(labels: ($auth['modeLabels'] ?? []));
-		if ($labels !== []) {
-			$public['modeLabels'] = $labels;
-		}
-
-		$page = $this->signInPage(page: ($auth['signInPage'] ?? []));
-		if ($page !== []) {
-			$public['signInPage'] = $page;
-		}
-
-		return $public;
+		return $public + $this->signInText->project(auth: $auth);
 	}//end authentication()
-
-	/**
-	 * The sign-in card per way in: title, text, button, hint and icon, each
-	 * plain text. A mode the portal could not offer is dropped; so is a card
-	 * that says nothing.
-	 *
-	 * @param mixed $labels The authored map, mode to card.
-	 *
-	 * @return array<string, array<string, string>> Mode to `{title?, text?, button?, hint?, icon?}`.
-	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
-	 */
-	public function modeLabels(mixed $labels): array {
-		if (is_array($labels) === false) {
-			return [];
-		}
-
-		$kept = [];
-		foreach (self::SIGN_IN_MODES as $mode) {
-			$card = $labels[$mode] ?? null;
-			if (is_array($card) === false) {
-				continue;
-			}
-
-			$texts = $this->texts(source: $card, keys: ['title', 'text', 'button', 'hint', 'icon']);
-			if ($texts !== []) {
-				$kept[$mode] = $texts;
-			}
-		}
-
-		return $kept;
-	}//end modeLabels()
-
-	/**
-	 * The text around the sign-in cards: the page's title and intro, a
-	 * notice under the cards, a line for staff with its link, and a side
-	 * panel of points. Plain text; a link only when it can be followed.
-	 *
-	 * @param mixed $page The authored block.
-	 *
-	 * @return array<string, mixed> The parts that say something.
-	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
-	 */
-	public function signInPage(mixed $page): array {
-		if (is_array($page) === false) {
-			return [];
-		}
-
-		$kept = $this->texts(source: $page, keys: ['title', 'intro']);
-
-		$notice = $this->texts(source: ($page['notice'] ?? null), keys: ['title', 'text']);
-		if (($notice['text'] ?? '') !== '') {
-			$kept['notice'] = $notice;
-		}
-
-		$staff = $this->texts(source: ($page['staffLink'] ?? null), keys: ['text', 'label', 'href']);
-		if (($staff['label'] ?? '') !== '' && $this->followable(href: ($staff['href'] ?? '')) === true) {
-			$kept['staffLink'] = $staff;
-		}
-
-		$panel = $page['panel'] ?? null;
-		if (is_array($panel) === true) {
-			$items = [];
-			foreach ((array)($panel['items'] ?? []) as $item) {
-				$texts = $this->texts(source: $item, keys: ['title', 'text', 'icon']);
-				if (($texts['title'] ?? '') !== '') {
-					$items[] = $texts;
-				}
-			}
-
-			$title = $this->text(value: ($panel['title'] ?? ''));
-			if ($title !== '' || $items !== []) {
-				$kept['panel'] = ['title' => $title, 'items' => $items];
-			}
-		}
-
-		return $kept;
-	}//end signInPage()
-
-	/**
-	 * The named keys of an authored block that hold text, trimmed.
-	 *
-	 * @param mixed        $source The block; anything but an array says nothing.
-	 * @param list<string> $keys   The keys to keep.
-	 *
-	 * @return array<string, string> The keys that say something.
-	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
-	 */
-	private function texts(mixed $source, array $keys): array {
-		$kept = [];
-		if (is_array($source) === false) {
-			return [];
-		}
-
-		foreach ($keys as $key) {
-			$value = $this->text(value: ($source[$key] ?? ''));
-			if ($value !== '') {
-				$kept[$key] = $value;
-			}
-		}
-
-		return $kept;
-	}//end texts()
 
 	/**
 	 * The portal's footer content, on named keys only.
@@ -314,7 +196,7 @@ class PortalShell {
 	 *
 	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
-	public function contact(mixed $contact): ?array {
+	private function contact(mixed $contact): ?array {
 		if (is_array($contact) === false) {
 			return null;
 		}
