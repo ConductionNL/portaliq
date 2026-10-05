@@ -153,6 +153,36 @@ test('no register destination, no register control; a declared one renders besid
 	)
 })
 
+test('a failed sign-in is said on a portal with only public pages, as an alert and without sign-in links', async () => {
+	// REQ-BEL-006: the edge sends a failed attempt back with #signin=failed,
+	// also when the portal declares no sign-in mode of its own.
+	const failed = await renderSfc('src/site/components/BrandHeader.vue', {
+		signInRoutes: [],
+		signinFailedMessage: 'Inloggen is niet gelukt.',
+	})
+	assert.match(
+		failed,
+		/<p role="alert" data-testid="site-signin-failed">\s*Inloggen is niet gelukt\.\s*<\/p>/,
+	)
+	assert.equal(count(failed, 'data-testid="site-signin"'), 0)
+	assert.equal(count(failed, '<nav'), 0, 'no empty sign-in navigation')
+
+	// Nothing failed and nothing to sign in with: no sign-in area at all.
+	const quiet = await renderSfc('src/site/components/BrandHeader.vue', {
+		signInRoutes: [],
+	})
+	assert.equal(count(quiet, 'site-auth'), 0)
+	assert.equal(count(quiet, 'site-signin-failed'), 0)
+
+	// With ways in, the sentence stays where it was, once.
+	const withRoutes = await renderSfc('src/site/components/BrandHeader.vue', {
+		signInRoutes: SIGN_IN,
+		signinFailedMessage: 'Inloggen is niet gelukt.',
+	})
+	assert.equal(count(withRoutes, 'site-signin-failed'), 1)
+	assert.equal(count(withRoutes, 'data-testid="site-signin"'), 1)
+})
+
 test('a block mounts without Nextcloud and renders its default strings', async () => {
 	assert.equal(typeof globalThis.OC, 'undefined')
 	assert.equal(typeof globalThis.window, 'undefined')

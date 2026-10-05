@@ -379,7 +379,7 @@ test.describe('portal page editing', () => {
 		).toBeGreaterThan(0)
 		await expect(nonPublic.first()).toContainText('openbare pagina')
 
-		await page.getByTestId('widget-palette-hero').click()
+		await page.getByTestId('widget-palette-tile-hero').click()
 		await expect(palette).toHaveCount(0)
 
 		// Placed, selected, and editable through fields derived from the
@@ -394,7 +394,7 @@ test.describe('portal page editing', () => {
 		// A widget the public renderer will not mount previews as the
 		// placeholder the site would show — never as a working widget.
 		await page.getByTestId('designer-add-widget').click()
-		await page.getByTestId('widget-palette-stat').click()
+		await page.getByTestId('widget-palette-tile-stat').click()
 		await expect(page.getByTestId('designer-placeholder-stat-1')).toBeVisible()
 
 		// Left as an unsaved draft on purpose: nothing here was saved, so the

@@ -34,6 +34,7 @@
 				{{ text }}
 			</p>
 			<p
+				v-if="!quiet"
 				class="utrecht-paragraph pq-case-reason"
 				:data-testid="`case-reason-${field}`">
 				{{
@@ -58,6 +59,8 @@ export default {
 		value: { type: [Boolean, String, Number, Object, Array], default: null },
 		/** The translator `t(key, vars)`. */
 		t: { type: Function, required: true },
+		/** Say nothing about why it cannot change: the case is over. */
+		quiet: { type: Boolean, default: false },
 	},
 
 	emits: ['change'],

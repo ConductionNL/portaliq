@@ -347,7 +347,8 @@ class SessionController extends Controller {
 	 * The name the site greets a signed-in person by, or '' when none is known.
 	 *
 	 * The account's display name, which provisioning or the broker set. A
-	 * value equal to the subject reference is not a name and is never served:
+	 * value equal to the subject reference or the identity number, or made of
+	 * digits only (a BSN, a KvK number), is not a name and is never served:
 	 * the header must not show an internal reference.
 	 *
 	 * @param array<string, mixed>|null $account    The person's portal account, or null.
@@ -356,10 +357,12 @@ class SessionController extends Controller {
 	 * @return string The name, or ''.
 	 *
 	 * @spec openspec/changes/site-header-names-the-person/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
 	 */
 	private function displayNameOf(?array $account, string $subjectRef): string {
 		$name = trim((string)($account['displayName'] ?? ''));
-		if ($name === '' || $name === $subjectRef) {
+		$identity = trim((string)($account['identityRef'] ?? ''));
+		if ($name === '' || $name === $subjectRef || $name === $identity || ctype_digit($name) === true) {
 			return '';
 		}
 

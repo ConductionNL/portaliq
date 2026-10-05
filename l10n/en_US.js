@@ -248,7 +248,7 @@ OC.L10N.register(
         "You have unsaved changes. Save the draft first, or stop editing and lose them.": "You have unsaved changes. Save the draft first, or stop editing and lose them.",
         "Stop editing and lose the changes": "Stop editing and lose the changes",
         "Add a widget": "Add a widget",
-        "Pick a widget to place on this page. You can move and resize it afterwards.": "Pick a widget to place on this page. You can move and resize it afterwards.",
+        "Pick a widget, or drag one onto the page. You can move and resize it afterwards.": "Pick a widget, or drag one onto the page. You can move and resize it afterwards.",
         "Parent page": "Parent page",
         "The page this page sits under in the portal's page tree. Empty for a page at the top. Only the tree changes: the route stays the page's address.": "The page this page sits under in the portal's page tree. Empty for a page at the top. Only the tree changes: the route stays the page's address.",
         "Order": "Order",
@@ -356,7 +356,12 @@ OC.L10N.register(
         "Activate your account at %1$s": "Activate your account at %1$s",
         "Activate your account": "Activate your account",
         "You created an account at %1$s. Follow the link to make it ready for use.": "You created an account at %1$s. Follow the link to make it ready for use.",
-        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer."
+        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer.",
+        "This request has already been withdrawn.": "This request has already been withdrawn.",
+        "This request cannot be withdrawn from the portal.": "This request cannot be withdrawn from the portal.",
+        "The request could not be withdrawn. Please try again.": "The request could not be withdrawn. Please try again.",
+        "Published on": "Published on",
+        "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable.": "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable."
     },
     "nplurals=2; plural=(n != 1);"
 )

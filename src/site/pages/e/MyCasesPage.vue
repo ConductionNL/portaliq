@@ -37,18 +37,25 @@
 		</p>
 
 		<p
-			v-else-if="data.ok === false"
+			v-else-if="data.ok === false && data.error === 'group_too_large'"
 			class="utrecht-paragraph pq-e-error"
 			role="alert"
 			data-testid="my-cases-error">
 			{{
 				t(
-					data.error === 'group_too_large'
-						? 'This organisation has too many cases to list here. Choose a narrower mandate.'
-						: 'Your cases could not be loaded. Try again later.',
+					'This organisation has too many cases to list here. Choose a narrower mandate.',
 				)
 			}}
 		</p>
+
+		<!-- Any other failed read says so and offers to try again; it never
+		     reads as "no cases" (site-mijn-omgeving-components REQ-SMO-009). -->
+		<div v-else-if="data.ok === false" data-testid="my-cases-error">
+			<LoadError
+				:text="mt('Your cases could not be loaded.')"
+				:retryLabel="mt('Try again')"
+				@retry="load" />
+		</div>
 
 		<p
 			v-else-if="split.open.length + split.closed.length === 0"
@@ -109,41 +116,22 @@
 					data-testid="my-cases-none-here">
 					{{ t(tab === 'closed' ? 'No closed cases.' : 'No cases yet.') }}
 				</p>
-				<ul
-					v-else
-					class="utrecht-unordered-list pq-cases__list"
-					data-testid="my-cases-list">
-					<li
+				<!-- Each case a Den Haag case card (site-mijn-omgeving-components
+				     REQ-SMO-002), naming its type (REQ-SMO-030). -->
+				<ul v-else class="pq-cases__list" data-testid="my-cases-list">
+					<CaseCard
 						v-for="(item, index) in rows"
 						:key="
 							item.target
 								? `${item.target.app}:${item.target.collection}:${item.target.id}`
 								: index
 						"
-						class="utrecht-unordered-list__item pq-cases__row"
-						data-testid="my-cases-row">
-						<button
-							v-if="item.openable"
-							type="button"
-							class="utrecht-button utrecht-button--subtle pq-cases__open"
-							@click="openCase(item.target, item.row)">
-							{{ item.title }}
-						</button>
-						<span v-else class="pq-cases__title">{{ item.title }}</span>
-						<span class="pq-cases__source">{{ item.source }}</span>
-						<span
-							v-if="item.mandate"
-							class="pq-cases__mandate"
-							data-testid="my-cases-mandate"
-							>{{ item.mandate }}</span
-						>
-						<span v-if="item.status" class="pq-cases__status">{{
-							item.status
-						}}</span>
-						<span v-if="item.date" class="pq-cases__date">{{
-							item.date
-						}}</span>
-					</li>
+						data-testid="my-cases-row"
+						:card="item.card"
+						:mandate="item.mandate"
+						:meta="item.meta"
+						:button="item.openable"
+						@open="openCase(item.target, item.row)" />
 				</ul>
 			</div>
 		</template>
@@ -151,12 +139,23 @@
 </template>
 
 <script>
-import { caseTarget, caseTitle, splitCases } from '../../../shared/myCases.js'
+import CaseCard from '../../components/mijn/CaseCard.vue'
+import LoadError from '../../components/mijn/LoadError.vue'
+import {
+	caseStatus,
+	caseTarget,
+	caseTitle,
+	splitCases,
+} from '../../../shared/myCases.js'
 import { actingFor, learnMandates } from '../../components/e/actingFor.js'
+import { caseCard } from '../../components/mijn/cases.js'
+import { mijnTranslator } from '../../components/mijn/rows.js'
 import { longDate, readerLocale } from './format.js'
 
 export default {
 	name: 'MyCasesPage',
+
+	components: { CaseCard, LoadError },
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */
@@ -192,25 +191,69 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The mandate the list is read under: the page's own, else the session's choice.
+		 *
+		 * @return {string} The mandate id, or `self`.
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 */
 		actingUnder() {
 			return this.mandateId || actingFor.id
 		},
 
+		/**
+		 * @return {(key: string, vars?: object) => string} The translator of the mijn omgeving components.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 */
+		mt() {
+			return mijnTranslator(this.t, readerLocale(this.locale))
+		},
+
+		/**
+		 * The cases, open and closed apart.
+		 *
+		 * @return {{open: Array<object>, closed: Array<object>}} The two lists.
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 */
 		split() {
 			return splitCases(this.data?.cases)
 		},
 
+		/**
+		 * The cases of the tab on screen.
+		 *
+		 * @return {Array<object>} The rows.
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 */
 		shown() {
 			return this.closedMarker && this.tab === 'closed'
 				? this.split.closed
 				: this.split.open
 		},
 
+		/**
+		 * The rows on screen, each with its status in words.
+		 *
+		 * @return {Array<object>} The rows.
+		 *
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
+		 */
 		rows() {
 			const locale = readerLocale(this.locale)
 			return this.shown.map((row) => {
 				const target = caseTarget(row)
+				const date = longDate(
+					row.created || row.startedAt || row['@self']?.created,
+					locale,
+				)
+				const source = row._source?.label || row._source?.appId || ''
 				return {
+					card: caseCard(row, null, {
+						tr: this.mt,
+						locale,
+						today: new Date(),
+					}),
+					meta: [source, date].filter(Boolean).join(', '),
 					row,
 					target,
 					openable:
@@ -218,24 +261,32 @@ export default {
 						&& typeof this.canOpen === 'function'
 						&& this.canOpen(target) === true,
 					title: caseTitle(row),
-					source: row._source?.label || row._source?.appId || '',
+					source,
 					mandate: row._mandate?.label || '',
-					status: typeof row.status === 'string' ? row.status : '',
-					date: longDate(
-						row.created || row.startedAt || row['@self']?.created,
-						locale,
-					),
+					status: caseStatus(row),
+					date,
 				}
 			})
 		},
 	},
 
 	watch: {
+		/**
+		 * Another mandate chosen: read the list again.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 */
 		actingUnder() {
 			this.load()
 		},
 	},
 
+	/**
+	 * Read the list on arrival, unless a test handed one in.
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+	 */
 	mounted() {
 		if (this.initialData === null) {
 			this.load()
@@ -298,18 +349,12 @@ export default {
 	text-decoration: underline;
 }
 
-.pq-cases__row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: var(--utrecht-space-inline-md, 1rem);
-	margin-block-end: var(--utrecht-space-block-sm, 0.5rem);
-}
-
-.pq-cases__source,
-.pq-cases__mandate,
-.pq-cases__date {
-	color: var(--utrecht-document-color, inherit);
+.pq-cases__list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+	gap: var(--utrecht-space-block-lg, 1.5rem) var(--utrecht-space-inline-md, 1rem);
+	margin: 0;
+	padding: 0;
 }
 
 .pq-e-error {

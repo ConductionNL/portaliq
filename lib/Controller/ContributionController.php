@@ -56,6 +56,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Service\CaseTypeNames;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
@@ -70,6 +71,7 @@ use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -103,6 +105,8 @@ use Psr\Log\LoggerInterface;
  * endpoint (appinfo/routes.php); the count tracks the API surface, not
  * incidental complexity.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- see ExcessiveParameterList.
+ * @SuppressWarnings(PHPMD.TooManyMethods)           -- see TooManyPublicMethods: each
+ * routed endpoint keeps its own guard beside it.
  */
 class ContributionController extends Controller implements PortalProtected {
 	/**
@@ -161,6 +165,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                           Absent hides nothing.
 	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
 	 * @param PortalUserDisplayNames $userNames Reads a `render: "user"` column as the user's name.
+	 * @param CaseTypeNames|null $typeNames Names each case's type on a `cases` collection
+	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -183,6 +189,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
+		private readonly ?CaseTypeNames $typeNames = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -450,6 +457,76 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end markRead()
 
 	/**
+	 * Delete ONE of the resident's own inbox messages. The (register, schema)
+	 * must resolve to an inbox the subject may read (the same guard as
+	 * markRead()). Portaliq's own notices may always be deleted; an app's
+	 * inbox only when its collection declares `deletable: true`, because the
+	 * message is that app's record. The trust level is re-checked, and the
+	 * writer deletes the row only when it is the subject's alone (scope field
+	 * and tenant, never a row shared with someone else), so another
+	 * resident's message answers the same 404 as one that does not exist.
+	 *
+	 * @param string $register The register of the inbox collection.
+	 * @param string $schema The schema of the inbox collection.
+	 * @param string $id The message id (never trusted; ownership re-checked server-side).
+	 *
+	 * @return JSONResponse `{deleted: true}`, or 401 / 403 / 404.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function deleteMessage(string $register, string $schema, string $id): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+		if (PortalInboxReader::residentMayDelete(collection: $collection) === false
+			|| PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
+		) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$scopeValue = $this->reader->resolveScopeValue(
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			subject: $subject
+		);
+		if ($scopeValue === null || $scopeValue === '') {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		try {
+			$deleted = $this->writer->deleteObject(
+				register: $register,
+				schema: $schema,
+				scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+				subjectRef: $scopeValue,
+				organisation: (string)($subject['organisation'] ?? ''),
+				id: $id
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error('deleteMessage failed: ' . $e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		if ($deleted === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse(['deleted' => true]);
+	}//end deleteMessage()
+
+	/**
 	 * Find a `kind: inbox` collection matching (register, schema) in the
 	 * subject's aggregated contributions — the SAME IDOR guard as
 	 * authorisedCollection(), narrowed to inbox collections only, so mark-read
@@ -568,6 +645,10 @@ class ContributionController extends Controller implements PortalProtected {
 		// A `render: "user"` column answers the user's name, never the user id
 		// (contribution-user-display-name).
 		$objects = $this->userNames->rows(rows: $objects, collection: $collection);
+
+		// A case card names its case's type, as Mijn zaken does
+		// (site-mijn-omgeving-components REQ-SMO-030).
+		$objects = ($this->typeNames?->stampRows(rows: $objects, collection: $collection) ?? $objects);
 
 		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
 	}//end collection()
@@ -1018,22 +1099,17 @@ class ContributionController extends Controller implements PortalProtected {
 		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
 
-		// The cross-reference guard (portal-create-cross-refs). Every field the
-		// action declares as a reference has to resolve inside the subject's
-		// own scope BEFORE anything is written: a uuid in a create body is
-		// otherwise accepted as typed, which is how a citizen could file an
-		// objection against somebody else's case.
-		$refused = $this->crossRefGuard()->refusedField(
-			action: $action,
-			data: $data,
-			subject: $subject,
-			app: $match['app']
-		);
-		if ($refused !== '') {
-			return new JSONResponse(
-				['error' => 'cross_ref_refused', 'field' => $refused],
-				Http::STATUS_FORBIDDEN
-			);
+		// The body's own checks, before the stamp and any write. First the
+		// action's required fields (REQ-SMF-024): an empty one answers 400
+		// before anything reads the store. Then the cross-reference guard
+		// (portal-create-cross-refs): every field the action declares as a
+		// reference has to resolve inside the subject's own scope, else a uuid
+		// in a create body is accepted as typed, which is how a citizen could
+		// file an objection against somebody else's case.
+		$refused = ((new RequiredFieldsGuard())->refusal(action: $action, body: $data)
+			?? $this->crossRefGuard()->refusal(action: $action, data: $data, subject: $subject, app: $match['app']));
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		// The scope field carries the declared `scopeClaim` resolved server
@@ -1159,6 +1235,11 @@ class ContributionController extends Controller implements PortalProtected {
 		// carries no real subjectRef).
 		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+
+		$missing = (new RequiredFieldsGuard())->refusal(action: $action, body: $data);
+		if ($missing !== null) {
+			return $missing;
+		}
 
 		$created = $this->writer->createAnonymousObject(register: $register, schema: $schema, data: $data);
 		if ($created === null) {
@@ -1538,10 +1619,14 @@ class ContributionController extends Controller implements PortalProtected {
 		// a declared `scopeClaim` rides server-resolved inside the signed
 		// assertion (case-actions-sign-a-document D3). Either one that does
 		// not resolve stops the forward before it is audited or made.
+		// The action's required fields (REQ-SMF-024) are checked on that same
+		// body: an unresolved scope is 403, an empty required field 400, and
+		// either stops the forward before it is audited or made.
 		$scoped = (new ActionScopeResolver(reader: $this->reader))
 			->prepare(action: $action, subject: $subject, appId: $appId, body: $whitelisted);
-		if ($scoped === null) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$refused = (new RequiredFieldsGuard())->forwardRefusal(action: $action, scoped: $scoped, declaresFields: $whitelisted !== null);
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		// Recorded once the forward is AUTHORISED — regardless of the domain

@@ -43,6 +43,11 @@ use Throwable;
  * Subject-scoped writer over OpenRegister for portal actions.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T06
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- create, update and
+ * delete share ONE ownership re-read (fetchOwnedObject) and one tenant rule;
+ * moving a write path to another class would copy that boundary
+ * (inbox-delete-own-messages added the delete).
  */
 class PortalObjectWriter {
 	use PortalScopeMatch;
@@ -213,17 +218,21 @@ class PortalObjectWriter {
 	 * object by id and confirm `row[scopeField] === subjectRef` plus the tenant
 	 * check — the SAME per-row boundary the reader enforces — returning null
 	 * (→ 404, no write) if it is not the subject's; (2) merge the already-
-	 * whitelisted `$data` onto the existing object; (3) re-stamp the scope
-	 * field (and organisation) so a patch can never move a row out of the
-	 * subject's scope even if the scope field somehow reached the whitelist;
-	 * (4) save with the id preserved via `uuid` so OR updates, not creates.
+	 * whitelisted `$data` onto the existing object; (3) keep the stored
+	 * organisation as it is: the tenant is stamped on create only, so an
+	 * update never overwrites it and never adds one; (4) re-stamp the scope
+	 * field so a patch can never move a row out of the subject's scope even
+	 * if the scope field somehow reached the whitelist; (5) save with the id
+	 * preserved via `uuid` so OR updates, not creates.
 	 * Fails closed to null on OR errors and on any ownership failure.
 	 *
 	 * @param string $register The register slug/id.
 	 * @param string $schema The schema slug.
 	 * @param string $scopeField The field that must own the row.
 	 * @param string $subjectRef The server-derived subject reference.
-	 * @param string $organisation The tenant to stamp (may be empty).
+	 * @param string $organisation The subject's tenant, used only in the
+	 *                             ownership check (may be empty). It is never
+	 *                             written on update.
 	 * @param string $id The client-supplied object id (never trusted).
 	 * @param array<string, mixed> $data The client-supplied fields (already whitelisted).
 	 *
@@ -271,11 +280,20 @@ class PortalObjectWriter {
 		$merged = array_merge($existing, $data);
 		unset($merged['@self']);
 
-		// (3) RE-STAMP the ownership fields AFTER the merge, so a client value
-		// can never win — a patch can never move the row out of scope. A
-		// verified membership list is re-stamped with the stored list itself:
-		// it already contains the subject, and portaliq never edits who else
-		// is on it.
+		// (3) The stored organisation stays exactly as it is. The tenant was
+		// decided when the object was created; `$organisation` only takes part
+		// in the ownership check above. An update never overwrites it and never
+		// adds one, whatever the subject's portal is or the payload says.
+		unset($merged['organisation']);
+		if (array_key_exists('organisation', $existing) === true) {
+			$merged['organisation'] = $existing['organisation'];
+		}
+
+		// (4) RE-STAMP the scope field AFTER the merge, so a client value can
+		// never win: a patch can never move the row out of scope. A verified
+		// membership list is re-stamped with the stored list itself: it
+		// already contains the subject, and portaliq never edits who else is
+		// on it.
 		if ($scopeField !== '') {
 			$merged[$scopeField] = $subjectRef;
 			if ($this->isScopeList(stored: ($existing[$scopeField] ?? null)) === true) {
@@ -283,11 +301,7 @@ class PortalObjectWriter {
 			}
 		}
 
-		if ($organisation !== '') {
-			$merged['organisation'] = $organisation;
-		}
-
-		// (4) Save with the id preserved (`uuid`) so OR UPDATES this row.
+		// (5) Save with the id preserved (`uuid`) so OR UPDATES this row.
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $merged,
@@ -304,6 +318,65 @@ class PortalObjectWriter {
 
 		return $this->normalise(row: $saved);
 	}//end updateObject()
+
+	/**
+	 * Delete ONE row, only when it is the subject's alone: the same ownership
+	 * re-read as updateObject() (scope field and tenant), and a row whose
+	 * scope field is a list naming anyone else is refused too, so a delete
+	 * can never take a row away from another subject. Without a scope field
+	 * nothing is deleted. Every refusal and an unknown id answer the same
+	 * false, so the caller can give one 404 with no existence oracle.
+	 *
+	 * @param string $register The register slug/id.
+	 * @param string $schema The schema slug.
+	 * @param string $scopeField The field that must own the row.
+	 * @param string $subjectRef The server-derived subject reference.
+	 * @param string $organisation The subject's tenant (may be empty).
+	 * @param string $id The client-supplied id (never trusted).
+	 *
+	 * @return bool True when the row was the subject's and is deleted.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function deleteObject(
+		string $register,
+		string $schema,
+		string $scopeField,
+		string $subjectRef,
+		string $organisation,
+		string $id,
+	): bool {
+		$objectService = $this->objectService();
+		if ($id === '' || $scopeField === '' || $subjectRef === '' || $objectService === null) {
+			return false;
+		}
+
+		$existing = $this->fetchOwnedObject(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			scopeField: $scopeField,
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			id: $id
+		);
+		$stored = ($existing[$scopeField] ?? null);
+		if ($existing === null || (is_array($stored) === true && array_values(array_unique($stored)) !== [$subjectRef])) {
+			return false;
+		}
+
+		$uuid = (string)($existing['@self']['uuid'] ?? $existing['@self']['id'] ?? $existing['uuid'] ?? $existing['id'] ?? $id);
+		try {
+			$deleted = $this->insideWriteContext(
+				write: static fn () => $objectService->deleteObject(uuid: $uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false)
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR delete failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return false;
+		}
+
+		return $deleted !== false;
+	}//end deleteObject()
 
 	/**
 	 * Re-read a row by id and return it ONLY when it is the subject's: the row

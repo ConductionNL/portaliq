@@ -84,7 +84,7 @@ test('the portal edit mode is the shared editor with a public palette', () => {
 	const mode = read('src/editor/SiteEditMode.vue')
 	assert.match(mode, /createPageEditor\(/)
 	assert.match(mode, /<PageGridEditor/)
-	assert.match(mode, /<WidgetPaletteDialog[\s\S]*?publicOnly/)
+	assert.match(mode, /<PageGridEditor[\s\S]*?publicOnly/)
 	assert.match(mode, /<PageHistoryDialog/)
 	for (const id of ['site-edit-save', 'site-edit-publish', 'site-edit-discard', 'site-edit-undo', 'site-edit-redo', 'site-edit-leave', 'site-edit-history']) {
 		assert.match(mode, new RegExp(`data-testid="${id}"`), id)
@@ -101,7 +101,7 @@ test('the editor reaches openregister under the instance root, not a guessed web
 })
 
 test('the palette limited to public widgets offers only what the renderer mounts', async () => {
-	const palette = read('src/dialogs/WidgetPaletteDialog.vue')
+	const palette = read('src/editor/WidgetPalettePanel.vue')
 	assert.match(palette, /publicOnly/)
 	assert.match(palette, /entry\.publicSafe/)
 })
@@ -179,4 +179,86 @@ test('the editor tells the site it published, and the site re-reads the page fre
 	assert.match(app, /onSaved: \(\) => this\.refreshShownPage\(\)/)
 	assert.match(app, /await this\.loadRoute\(this\.route, \{ fresh: true \}\)/)
 	assert.match(app, /fetchPage\(route, this\.portalSlug, \{ fresh \}\)/)
+})
+
+// THE EDITOR'S NOTICES READ AT AA (resident-sees-words-not-codes). The editor
+// page loads no Nextcloud CSS, so SiteEditMode.vue defines the tokens the
+// shared components draw with. NcNoteCard and NcButton paint `--color-success`
+// (and error, warning, info) as the BACKGROUND under the main text and under
+// `--color-*-text`. Defined as a dark green, "Gepubliceerd." was dark text on
+// dark green. Resolve the tokens as a browser would and measure.
+// @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editors-notices-must-read-at-aa-contrast
+
+/**
+ * The editor's `body { ... }` token block as a name to value map.
+ *
+ * @return {Map<string, string>} The tokens.
+ */
+function editorTokens() {
+	const source = read('src/editor/SiteEditMode.vue')
+	const block = source.slice(source.indexOf('body {'), source.indexOf('}', source.indexOf('body {')))
+	const tokens = new Map()
+	for (const [, name, value] of block.matchAll(/(--[\w-]+):\s*([^;]+);/g)) {
+		tokens.set(name, value.replace(/\s+/g, ' ').trim())
+	}
+	return tokens
+}
+
+/**
+ * Resolve a token to an [r, g, b] colour: `var(--x, fallback)`, a hex value,
+ * or `color-mix(in srgb, A N%, B)`.
+ *
+ * @param {string} value The value.
+ * @param {Map<string, string>} tokens The tokens.
+ * @return {Array<number>} The colour.
+ */
+function resolveColour(value, tokens) {
+	const text = value.trim()
+	const variable = text.match(/^var\(\s*(--[\w-]+)\s*(?:,\s*(.+))?\)$/)
+	if (variable) {
+		return tokens.has(variable[1])
+			? resolveColour(tokens.get(variable[1]), tokens)
+			: resolveColour(variable[2], tokens)
+	}
+	const mix = text.match(/^color-mix\(\s*in srgb,\s*(.+?)\s+(\d+)%\s*,\s*(.+?)\s*\)$/)
+	if (mix) {
+		const a = resolveColour(mix[1], tokens)
+		const b = resolveColour(mix[3], tokens)
+		const share = Number(mix[2]) / 100
+		return a.map((channel, index) => channel * share + b[index] * (1 - share))
+	}
+	const hex = text.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
+	assert.ok(hex, `unreadable colour: ${text}`)
+	const full = hex[1].length === 3 ? [...hex[1]].map((digit) => digit + digit).join('') : hex[1]
+	return [0, 2, 4].map((at) => Number.parseInt(full.slice(at, at + 2), 16))
+}
+
+/**
+ * The WCAG contrast ratio of two colours.
+ *
+ * @param {Array<number>} one A colour.
+ * @param {Array<number>} two A colour.
+ * @return {number} The ratio.
+ */
+function contrast(one, two) {
+	const luminance = (rgb) => {
+		const [r, g, b] = rgb.map((channel) => {
+			const c = channel / 255
+			return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+		})
+		return 0.2126 * r + 0.7152 * g + 0.0722 * b
+	}
+	const [light, dark] = [luminance(one), luminance(two)].sort((a, b) => b - a)
+	return (light + 0.05) / (dark + 0.05)
+}
+
+test('the editor notices and the delete button read at AA contrast, from tokens only', () => {
+	const tokens = editorTokens()
+	const text = resolveColour('var(--color-main-text)', tokens)
+	for (const kind of ['success', 'error', 'warning', 'info']) {
+		const background = resolveColour(`var(--color-${kind})`, tokens)
+		assert.ok(contrast(text, background) >= 4.5, `${kind}: main text on --color-${kind}`)
+		const own = resolveColour(`var(--color-${kind}-text)`, tokens)
+		assert.ok(contrast(own, background) >= 4.5, `${kind}: --color-${kind}-text on --color-${kind}`)
+	}
 })

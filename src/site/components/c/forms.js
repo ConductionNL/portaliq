@@ -14,6 +14,7 @@
  */
 
 import { fileFields } from '../../../shared/fileFieldSubmit.js'
+import { dateProblem } from '../forms/fields.js'
 
 /**
  * Interpolate `{name}` placeholders.
@@ -242,8 +243,8 @@ export function formBody(action, values, options = {}) {
 }
 
 /**
- * The inline error per field: a required field left empty, or a required
- * file field without a file.
+ * The inline error per field: a required field left empty, a required file
+ * field without a file, or a date whose day, month and year make no real date.
  *
  * @param {object} action The action.
  * @param {Record<string, string>} values The typed values.
@@ -252,30 +253,81 @@ export function formBody(action, values, options = {}) {
  * @return {Record<string, string>} The message per field; empty when all is well.
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
  */
 export function fieldErrors(action, values, files, t) {
 	const translate = translatorOr(t)
 	const fileNames = fileFields(action)
 	const errors = {}
 	for (const field of formFields(action)) {
-		if (fieldConfig(action, field).required !== true) {
-			continue
-		}
+		const config = fieldConfig(action, field)
+		const required = config.required === true
 		const label = fieldLabel(action, field)
+		// The app's own words for an empty required field win (REQ-SMF-006).
+		const own =
+			typeof config.requiredMessage === 'string'
+			&& config.requiredMessage.trim() !== ''
+				? config.requiredMessage
+				: ''
 		if (fileNames.includes(field)) {
-			if (((files || {})[field] || []).length === 0) {
-				errors[field] = translate('Please choose a file for {field}.', {
-					field: label,
-				})
+			if (required && ((files || {})[field] || []).length === 0) {
+				errors[field] =
+					own
+					|| translate('Please choose a file for {field}.', {
+						field: label,
+					})
 			}
 			continue
 		}
 		const value = (values || {})[field]
-		if (value === undefined || value === null || String(value).trim() === '') {
-			errors[field] = translate('{field} is required.', { field: label })
+		const empty =
+			value === undefined || value === null || String(value).trim() === ''
+		if (empty) {
+			if (required) {
+				errors[field] =
+					own || translate('{field} is required.', { field: label })
+			}
+			continue
+		}
+		if (fieldInput(action, field) === 'date' && dateProblem(value)) {
+			errors[field] = translate(
+				'{field}: enter a real date, for example 1 3 2026.',
+				{ field: label },
+			)
 		}
 	}
 	return errors
+}
+
+/**
+ * The server's refusal per field as the form's own errors: the server sends
+ * the action's `requiredMessage`, or '' for the site to word, and only for
+ * fields the form shows (site-multi-step-forms REQ-SMF-024).
+ *
+ * @param {object} action The action.
+ * @param {Record<string, string>|undefined} errors The answer's `errors`.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {Record<string, string>} The message per field.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-the-server-must-refuse-a-submit-that-leaves-a-required-field-empty-req-smf-024
+ */
+export function serverFieldErrors(action, errors, t) {
+	const translate = translatorOr(t)
+	const out = {}
+	for (const field of formFields(action)) {
+		const message = (errors || {})[field]
+		if (typeof message !== 'string') {
+			continue
+		}
+		out[field] =
+			message.trim() !== ''
+				? message
+				: translate('{field} is required.', {
+						field: fieldLabel(action, field),
+					})
+	}
+	return out
 }
 
 /**

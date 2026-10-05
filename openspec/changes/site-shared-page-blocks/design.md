@@ -24,7 +24,7 @@ Read at portaliq `development` `4f460b3`.
   (`appinfo/routes.php:75-86`).
 - `src/views/PageLayoutDesigner.vue`: the grid designer; it saves
   `draftBody: { type: 'grid', widgets }` and publishes by promoting the draft.
-  `src/dialogs/WidgetPaletteDialog.vue` offers the catalogue of
+  `src/editor/WidgetPalettePanel.vue` offers the catalogue of
   `src/lib/pageWidgetCatalogue.js`, whose public half is derived from the
   renderer's allow-list in `src/site/components/WidgetGrid.vue`
   (`publicWidgetKeys()`, :197).

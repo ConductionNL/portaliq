@@ -56,3 +56,49 @@ export function cellStyleOf(widget) {
 		gridRow: `${cell.gridY + 1} / span ${cell.gridHeight}`,
 	}
 }
+
+/**
+ * How tall one grid row is drawn, in CSS pixels.
+ *
+ * The number the fleet's grid lays out with. It is here rather than read off
+ * the DOM because a drop has to answer "which row is this" before anything is
+ * placed, and a measurement taken from an empty canvas has no row to measure.
+ *
+ * @type {number}
+ */
+export const GRID_ROW_HEIGHT = 56
+
+/**
+ * The cell a drop at a point on the canvas means.
+ *
+ * Pure arithmetic over the canvas rectangle, so a drop can be tested without a
+ * browser and reads the same as the placement the editor then stores.
+ *
+ * @param {{x: number, y: number, left: number, top: number, width: number}} drop
+ *        The pointer position and the canvas rectangle, as a DragEvent and
+ *        getBoundingClientRect() give them.
+ * @param {number} [rowHeight] The row height, for a canvas that scales it.
+ * @return {{gridX: number, gridY: number}} The cell, clamped into the grid.
+ * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+ */
+export function cellFromDrop(drop, rowHeight = GRID_ROW_HEIGHT) {
+	const width = Number(drop?.width)
+	if (Number.isFinite(width) === false || width <= 0) {
+		return { gridX: 0, gridY: 0 }
+	}
+
+	const insideX = Number(drop?.x) - Number(drop?.left || 0)
+	const insideY = Number(drop?.y) - Number(drop?.top || 0)
+	const column = Math.floor((insideX / width) * GRID_COLUMNS)
+	const row = Math.floor(
+		insideY / Math.max(Number(rowHeight) || GRID_ROW_HEIGHT, 1),
+	)
+
+	return {
+		gridX: Math.max(
+			0,
+			Math.min(GRID_COLUMNS - 1, Number.isFinite(column) ? column : 0),
+		),
+		gridY: Math.max(0, Number.isFinite(row) ? row : 0),
+	}
+}

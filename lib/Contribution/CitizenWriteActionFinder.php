@@ -55,12 +55,17 @@ class CitizenWriteActionFinder {
 	 * @param string $register The register the case lives in.
 	 * @param string $schema The schema the case lives in.
 	 *
-	 * @return array{action: array<string, mixed>, app: string, filesDownload: bool, documents: array{label: string, provider: string}|null}|null
+	 * @return array{action: array<string, mixed>, app: string, filesDownload: bool,
+	 *     documents: array{label: string, provider: string}|null, fields: mixed}|null
 	 *         Null when no contributed action admits a citizen write here.
 	 *         `filesDownload` says whether the same app opted a collection on
 	 *         this register and schema into downloads (portaliq#798);
 	 *         `documents` is the documents method a collection there declares
-	 *         (cases-documents-on-the-case), or null.
+	 *         (cases-documents-on-the-case), or null. `fields` is the
+	 *         `fields` whitelist a collection there declares, or null when
+	 *         none declares one (citizen-case-shows-only-its-fields).
+	 *         `closedField` is the closed marker a collection there
+	 *         declares, or ''.
 	 *
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
@@ -81,6 +86,8 @@ class CitizenWriteActionFinder {
 					'app' => (string)($contribution['app'] ?? ''),
 					'filesDownload' => $this->filesDownload(contribution: $contribution, register: $register, schema: $schema),
 					'documents' => $this->documents(contribution: $contribution, register: $register, schema: $schema),
+					'fields' => $this->caseFields(contribution: $contribution, register: $register, schema: $schema),
+					'closedField' => $this->closedField(contribution: $contribution, register: $register, schema: $schema),
 				];
 			}
 		}
@@ -144,4 +151,68 @@ class CitizenWriteActionFinder {
 
 		return null;
 	}//end documents()
+
+	/**
+	 * The `fields` whitelist of the contribution's collection on this register
+	 * and schema, exactly as declared, or null when no collection there
+	 * declares one.
+	 *
+	 * The case screen shows a case the resident also reads in that collection,
+	 * so it shows no more of it than the collection does. A malformed
+	 * declaration is passed on as it is: the projector narrows it to the
+	 * identifiers, never widens it to the whole row.
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param string               $register     The case's register.
+	 * @param string               $schema       The case's schema.
+	 *
+	 * @return mixed The raw `fields` declaration, or null.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function caseFields(array $contribution, string $register, string $schema): mixed {
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === true
+				&& ($collection['register'] ?? '') === $register
+				&& ($collection['schema'] ?? '') === $schema
+				&& array_key_exists('fields', $collection) === true
+				&& $collection['fields'] !== null
+			) {
+				return $collection['fields'];
+			}
+		}
+
+		return null;
+	}//end caseFields()
+
+	/**
+	 * The closed marker of the contribution's case collection on this
+	 * register and schema, or '' when none declares one.
+	 *
+	 * "My cases" files a case under Closed by this field; the case screen
+	 * reads the same field, so a case listed as closed also shows as over.
+	 * The contribution is already normalised, so a marker the collection does
+	 * not project is gone by now.
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param string               $register     The case's register.
+	 * @param string               $schema       The case's schema.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	private function closedField(array $contribution, string $register, string $schema): string {
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === true
+				&& ($collection['register'] ?? '') === $register
+				&& ($collection['schema'] ?? '') === $schema
+				&& is_string(($collection['closedField'] ?? null)) === true
+			) {
+				return $collection['closedField'];
+			}
+		}
+
+		return '';
+	}//end closedField()
 }//end class

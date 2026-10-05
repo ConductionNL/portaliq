@@ -102,7 +102,10 @@ class GuestActionRegistry {
 		}
 
 		try {
-			$contribution = $provider->getContribution(['audience' => self::GUEST_AUDIENCE, 'trust' => 'low']);
+			$contribution = $this->locator->contributionOf(
+				provider: $provider,
+				subject: ['audience' => self::GUEST_AUDIENCE, 'trust' => 'low']
+			);
 			if (is_array($contribution) === false) {
 				return [];
 			}

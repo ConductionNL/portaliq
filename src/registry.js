@@ -47,6 +47,7 @@ import AvailabilityReport from './widgets/AvailabilityReport.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
+import PortalHomePage from './widgets/PortalHomePage.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
@@ -259,6 +260,17 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "How residents sign in to the portal's organisation: per provider its own OIDC broker or integriq, and the integriq broker settings (signin-integriq-broker-login T11). Custom because the secret is write-only and the server refuses a broker route whose settings are incomplete.",
+	},
+	// @custom-widget-ratchet exclude the three states are a classification over the portal's pages read through an admin controller, and a built-in widget has no way to say "no page at the root" rather than show an empty list
+	PortalHomePage: {
+		kind: 'widget',
+		component: PortalHomePage,
+		defaultSize: { w: 12, h: 2 },
+		minSize: { w: 6, h: 2 },
+		maxSize: { w: 12, h: 4 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'Whether this portal has a published page at its root, and what to do when it has not (portaliq-cms). Custom because the three states come from PortalHomePageController, because an absent page and a draft at the root are different errors with different remedies, and because an object-list over the pages shows rows rather than a verdict about one route.',
 	},
 	// @custom-widget-ratchet exclude the radio list reads the theme app's catalogue and a contrast verdict per set through an admin controller, and a failing set must show its findings and ask again before it saves, which no built-in widget does
 	PortalTheme: {

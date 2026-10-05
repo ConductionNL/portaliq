@@ -75,9 +75,9 @@ class WaitingAccountJoin {
 	 * The match is the one REQ-PIS-002 already trusts for activating a waiting
 	 * account: an address the broker says it verified, against a pending,
 	 * email-only account whose address was verified out of band, in the same
-	 * organisation. A claim the signed-in account already holds is kept.
-	 * Best-effort: a failed write leaves the waiting account pending and never
-	 * blocks the sign-in.
+	 * organisation. A claim the signed-in account already holds is kept, and
+	 * so is an address it already has. Best-effort: a failed write leaves the
+	 * waiting account pending and never blocks the sign-in.
 	 *
 	 * @param array<string, mixed> $account The account found on its identity reference.
 	 * @param string $verifiedEmail The address the broker says it verified, or ''.
@@ -103,7 +103,8 @@ class WaitingAccountJoin {
 			return;
 		}
 
-		if ($this->addClaims(accountId: $accountId, account: $account, waiting: $waiting) === false) {
+		$data = $this->joinData(account: $account, waiting: $waiting);
+		if ($data !== [] && $this->write(id: $accountId, data: $data) === false) {
 			return;
 		}
 
@@ -111,23 +112,38 @@ class WaitingAccountJoin {
 	}//end join()
 
 	/**
-	 * Write the claims the account lacks onto it.
+	 * What the join writes onto the signed-in account: the claims it lacks,
+	 * and the invited address when it has none of its own.
 	 *
-	 * @param string $accountId The account's identifier.
+	 * 🔑 THE ADDRESS IS WHY THE WAITING ACCOUNT EXISTS. Carrying only the
+	 * claims withdrew the row the address lived on and left the person with
+	 * none, so the portal asked a guardian who HAD been invited by e-mail to
+	 * add an e-mail address, on every page, and notifications had nowhere to
+	 * go. It is written only when the account holds no address, so a person
+	 * who has since set their own keeps it, and `verifiedEmail` goes with it:
+	 * the address matched because both sides had verified it.
+	 *
 	 * @param array<string, mixed> $account The account.
 	 * @param array<string, mixed> $waiting The waiting account.
 	 *
-	 * @return bool True when nothing needed writing or the write landed.
+	 * @return array<string, mixed> The fields to write, or [] when none.
 	 */
-	private function addClaims(string $accountId, array $account, array $waiting): bool {
+	private function joinData(array $account, array $waiting): array {
+		$data   = [];
 		$held   = (array)($account['claims'] ?? []);
 		$joined = self::claimsJoined(held: $held, added: (array)($waiting['claims'] ?? []));
-		if ($joined === $held) {
-			return true;
+		if ($joined !== $held) {
+			$data['claims'] = $joined;
 		}
 
-		return $this->write(id: $accountId, data: ['claims' => $joined]);
-	}//end addClaims()
+		$invited = trim((string)($waiting['email'] ?? ''));
+		if ($invited !== '' && trim((string)($account['email'] ?? '')) === '') {
+			$data['email'] = $invited;
+			$data['verifiedEmail'] = true;
+		}
+
+		return $data;
+	}//end joinData()
 
 	/**
 	 * One internal, privileged update of a row this class itself located: an

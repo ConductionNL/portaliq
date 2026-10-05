@@ -67,6 +67,11 @@ return [
         // contrast verdict per set (nldesign-theme-integration). Admin-only.
         ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
         ['name' => 'portalTheme#update', 'url' => '/api/portals/{slug}/theme', 'verb' => 'PUT'],
+        // Whether the portal has a published page at its root, for the "Home
+        // page" report on the portal's own page (portaliq-cms). Admin-only: it
+        // says whether a DRAFT page sits at a route, which the public content
+        // API withholds.
+        ['name' => 'portalHomePage#index', 'url' => '/api/portals/{slug}/home-page', 'verb' => 'GET'],
         // How residents sign in to a portal's organisation: per provider the
         // route, and the integriq broker settings (signin-integriq-broker-login
         // T11). Admin-only.
@@ -297,6 +302,10 @@ return [
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
+        // Delete ONE of the resident's own inbox messages: portaliq's own notices,
+        // or an app's inbox that declares `deletable: true`; ownership and tenant
+        // re-verified, a shared row refused (inbox-delete-own-messages).
+        ['name' => 'contribution#deleteMessage', 'url' => '/portal/api/inbox/{register}/{schema}/{id}', 'verb' => 'DELETE'],
         // The embedded intake form (embedded-intake-form). The frame is served
         // from the portal's own origin with `frame-ancestors` built from that
         // form's own list, and its submit route is the ordinary anonymous
@@ -363,6 +372,8 @@ return [
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
         // The declared history of one object the subject owns (portaliq#723).
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
+        // Where one case stands, from its app's steps provider (site-mijn-omgeving-components REQ-SMO-022).
+        ['name' => 'portalTimeline#steps', 'url' => '/portal/api/collections/{register}/{schema}/{id}/steps', 'verb' => 'GET'],
         // One object's items, e.g. a dossier's publications (my-dossiers).
         ['name' => 'portalTimeline#items', 'url' => '/portal/api/collections/{register}/{schema}/{id}/items', 'verb' => 'GET'],
         ['name' => 'contribution#update', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'PATCH'],

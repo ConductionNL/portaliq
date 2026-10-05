@@ -33,7 +33,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCP\App\IAppManager;
-use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
@@ -77,14 +76,14 @@ class PortalTaskGateway {
 	/**
 	 * Constructor.
 	 *
-	 * @param IClientService $clientService HTTP client for the server-to-server forward.
-	 * @param IURLGenerator $urlGenerator Resolves the instance-local seam URL.
+	 * @param InstanceLoopback $loopback Sends the server-to-server forward to this instance.
+	 * @param IURLGenerator $urlGenerator Resolves the instance-local seam path.
 	 * @param PortalSessionService $session Mints the signed `X-Portal-Subject` assertion.
 	 * @param IAppManager $appManager Answers whether openregister is installed at all.
 	 * @param LoggerInterface $logger Where transport failures are reported.
 	 */
 	public function __construct(
-		private readonly IClientService $clientService,
+		private readonly InstanceLoopback $loopback,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalSessionService $session,
 		private readonly IAppManager $appManager,
@@ -361,7 +360,8 @@ class PortalTaskGateway {
 	}//end forward()
 
 	/**
-	 * The absolute, instance-local URL of one seam route.
+	 * The instance-local path of one seam route; InstanceLoopback turns it
+	 * into the address that answers.
 	 *
 	 * `linkToRoute()` consults the route table, so the result carries
 	 * `index.php` exactly when this instance needs it (no `htaccess.RewriteBase`)
@@ -390,24 +390,25 @@ class PortalTaskGateway {
 			throw new RuntimeException('The route table does not know ' . $route . ' (is openregister installed and current?)');
 		}
 
-		return $this->urlGenerator->getAbsoluteURL($path);
+		return $path;
 	}//end seamUrl()
 
 	/**
 	 * Perform the HTTP call for one forward.
 	 *
+	 * Goes through InstanceLoopback, so a public address the server cannot
+	 * reach from inside (port mapping, reverse proxy, split DNS) falls back
+	 * to the loopback instead of failing every task call with cURL error 7.
+	 *
 	 * @param string $method GET or POST.
-	 * @param string $url The absolute seam URL (route-resolved, see seamUrl()).
+	 * @param string $url The instance-local seam path (route-resolved, see seamUrl()).
 	 * @param array<string, mixed> $options The prepared client options.
 	 *
 	 * @return IResponse
+	 *
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
 	 */
 	private function send(string $method, string $url, array $options): IResponse {
-		$client = $this->clientService->newClient();
-		if ($method === 'POST') {
-			return $client->post($url, $options);
-		}
-
-		return $client->get($url, $options);
+		return $this->loopback->request(method: $method, path: $url, options: $options);
 	}//end send()
 }//end class

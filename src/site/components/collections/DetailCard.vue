@@ -18,20 +18,9 @@
 		<p v-if="notice" class="utrecht-paragraph pq-detail__notice" role="status">
 			{{ notice }}
 		</p>
-		<dl class="pq-detail__fields">
-			<div
-				v-for="field in fields"
-				:key="field.field"
-				class="pq-detail__field"
-				data-testid="detail-card-field">
-				<dt class="pq-detail__label">
-					{{ field.label }}
-				</dt>
-				<dd class="pq-detail__value">
-					{{ field.text }}
-				</dd>
-			</div>
-		</dl>
+		<!-- The fields as a description list (site-mijn-omgeving-components
+		     REQ-SMO-005, design D2). -->
+		<DescriptionList :items="facts" itemTestid="detail-card-field" />
 
 		<div
 			v-if="collection.filesUpload === true && api"
@@ -116,6 +105,7 @@
 </template>
 
 <script>
+import DescriptionList from '../mijn/DescriptionList.vue'
 import ItemList from './ItemList.vue'
 import SlotHost from './SlotHost.vue'
 import TimelineList from './TimelineList.vue'
@@ -143,7 +133,7 @@ let uploadCounter = 0
 export default {
 	name: 'DetailCard',
 
-	components: { ItemList, SlotHost, TimelineList },
+	components: { DescriptionList, ItemList, SlotHost, TimelineList },
 
 	props: {
 		/** The collection: `detail`, `columns`, `filesUpload`, `filesDownload`, `itemList`, `timeline`. */
@@ -188,8 +178,18 @@ export default {
 			return this.detailRow ? rowNotice(this.collection, this.detailRow) : ''
 		},
 
+		/**
+		 * The fields that have a value, formatted for reading.
+		 *
+		 * @return {Array<object>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 */
 		fields() {
 			const row = this.detailRow || {}
+			// A fact without a value says nothing, declared or not: a case
+			// with no public team read "Behandeld door" over an empty line.
+			// `false` reads "No" and 0 reads "0", so only a value that is
+			// really absent is left out.
 			return detailFields(this.collection, row)
 				.map((field) => ({
 					...field,
@@ -199,7 +199,21 @@ export default {
 						valueLabels: field.valueLabels,
 					}),
 				}))
-				.filter((field) => field.declared || field.text !== '')
+				.filter((field) => field.text !== '')
+		},
+
+		/**
+		 * The fields as facts for the description list.
+		 *
+		 * @return {Array<{key: string, label: string, value: string}>}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 */
+		facts() {
+			return this.fields.map((field) => ({
+				key: field.field,
+				label: field.label,
+				value: field.text,
+			}))
 		},
 
 		files() {

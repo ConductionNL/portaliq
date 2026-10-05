@@ -23,13 +23,15 @@ import {
  *
  * Names the person by the display name the session carries (the portal
  * account's, from provisioning or the broker). The subject reference is an
- * internal key and is never shown: without a name the line is a plain
- * "Logged in" (site-header-names-the-person).
+ * internal key and is never shown, and neither is a number (a BSN is no
+ * name): without a name the line is a plain "Logged in"
+ * (site-header-names-the-person, resident-sees-words-not-codes).
  *
  * @param {object|null} session The session.
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {string} The line, or '' without a session.
  * @spec openspec/changes/site-header-names-the-person/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+ * @spec openspec/changes/resident-sees-words-not-codes/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
  */
 export function loggedInAs(session, t) {
 	if (!session) {
@@ -37,16 +39,16 @@ export function loggedInAs(session, t) {
 	}
 	const name = String(session.displayName || session.name || '').trim()
 	const reference = String(session.subjectRef || '')
-	if (name === '' || name === reference) {
+	if (name === '' || name === reference || /^\d+$/.test(name)) {
 		return t('Logged in')
 	}
 	return t('Logged in as {name}', { name })
 }
 
 /**
- * Where an account route should go instead, or '' to stay: the bare `/mijn`
- * and a page the navigation does not offer open the default entry, once the
- * navigation has loaded.
+ * Where an account route should go instead, or '' to stay: a page the
+ * navigation does not offer opens the default entry, once the navigation has
+ * loaded. The bare `/mijn` stays: it is the home.
  *
  * @param {Array<object>} nav The navigation.
  * @param {string} route The route on screen.
@@ -55,6 +57,11 @@ export function loggedInAs(session, t) {
  */
 export function accountRedirect(nav, route) {
 	if (!isAccountRoute(route) || !Array.isArray(nav) || nav.length === 0) {
+		return ''
+	}
+	// `/mijn` itself opens the resident's home, it no longer redirects
+	// (site-mijn-omgeving-components REQ-SMO-007, design D4).
+	if (route === ACCOUNT_ROUTE) {
 		return ''
 	}
 	if (navEntryForRoute(nav, route)) {

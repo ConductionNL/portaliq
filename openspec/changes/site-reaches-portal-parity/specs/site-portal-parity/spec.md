@@ -565,6 +565,12 @@ boot when registration fails.
 - **THEN** the site renders normally
 - test: new `tests/service-worker.spec.mjs`
 
+#### Scenario: The allowed scope covers the registered scope
+- **GIVEN** portaliq installed in `apps/` or in `custom_apps/`, reached with or without `index.php`, under any web root
+- **WHEN** the site registers the worker with scope `<route root>/`
+- **THEN** the worker's `Service-Worker-Allowed` header SHALL name that same route root, read off the address the worker was requested on, never the app's file path (`/custom_apps/portaliq/`)
+- test: `tests/Unit/Controller/PortalManifestControllerTest.php::testTheAllowedScopeIsTheScopeTheSiteRegisters`, `tests/service-worker.spec.mjs` "the scope the site registers is the scope the server allows"
+
 ### Requirement: The install offer MUST be dismissible (REQ-SRP-046)
 
 When the browser offers installation, the site SHALL show its own control to

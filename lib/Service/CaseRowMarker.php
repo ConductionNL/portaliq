@@ -90,6 +90,27 @@ class CaseRowMarker {
 	}//end isClosed()
 
 	/**
+	 * Whether a case is over: withdrawn from the portal (`withdrawnAt`), or
+	 * closed by the marker its collection declares. The case screen reads
+	 * this; "My cases" files the same cases under Closed.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 * @param string $closedField The collection's `closedField`, or ''.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function hasEnded(array $row, string $closedField): bool {
+		$withdrawnAt = ($row['withdrawnAt'] ?? null);
+		if (is_string($withdrawnAt) === true && $withdrawnAt !== '') {
+			return true;
+		}
+
+		return $this->isClosed(row: $row, collection: ['closedField' => $closedField]);
+	}//end hasEnded()
+
+	/**
 	 * The date a case sorts by: its own `created` or `startedAt`, else the
 	 * record's creation date.
 	 *

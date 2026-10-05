@@ -456,6 +456,35 @@ class PortalManifestNormaliserTest extends TestCase {
 	}//end testAClosedFieldIsKeptOnlyWhenItNamesAProjectedField()
 
 	/**
+	 * `statusLabelField` follows the closed marker's rule: it stays only when
+	 * it names a projected field, so "My cases" never reads words from a field
+	 * the rows lack.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+	 */
+	public function testAStatusLabelFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'kind' => 'cases', 'fields' => ['status', 'statusPublicLabel'], 'statusLabelField' => 'statusPublicLabel'],
+					['id' => 'c2', 'schema' => 's', 'kind' => 'cases', 'fields' => ['status'], 'statusLabelField' => 'statusPublicLabel'],
+					['id' => 'c3', 'schema' => 's', 'kind' => 'cases', 'statusLabelField' => 'statusPublicLabel'],
+					['id' => 'c4', 'schema' => 's', 'kind' => 'cases', 'statusLabelField' => ['statusPublicLabel']],
+					['id' => 'c5', 'schema' => 's', 'kind' => 'cases', 'statusLabelField' => ''],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame('statusPublicLabel', $byId['c1']['statusLabelField']);
+		$this->assertSame('statusPublicLabel', $byId['c3']['statusLabelField']);
+		foreach (['c2', 'c4', 'c5'] as $id) {
+			$this->assertArrayNotHasKey('statusLabelField', $byId[$id], $id);
+		}
+
+	}//end testAStatusLabelFieldIsKeptOnlyWhenItNamesAProjectedField()
+
+	/**
 	 * collection-group-by-field T2: `groupByField` stays only when it names a
 	 * projected field, so the portal never groups on a field the rows lack.
 	 *

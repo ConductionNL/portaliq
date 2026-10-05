@@ -38,6 +38,11 @@ namespace OCA\Portaliq\Contribution;
  */
 class PortalPageResolver {
 	/**
+	 * The longest menu group a page may name.
+	 */
+	private const MAX_GROUP_LENGTH = 80;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalBlockResolver $blocks The block-level registry + reference rules.
@@ -62,15 +67,17 @@ class PortalPageResolver {
 	public function normalisePages(mixed $pages, array $collections, array $actions): array {
 		$out = [];
 		if (is_array($pages) === true) {
-			$collectionIds = $this->ids(entries: $collections);
 			$actionIds = $this->ids(entries: $actions);
+			// A cta may name a page of the same contribution (REQ-SMO-024).
+			$pageIds = $this->ids(entries: array_filter($pages, 'is_array'));
 
 			foreach ($pages as $page) {
 				$entry = $this->normalisePage(
 					page: $page,
-					collectionIds: $collectionIds,
+					collections: $collections,
 					actionIds: $actionIds,
-					index: count($out)
+					index: count($out),
+					pageIds: $pageIds
 				);
 				if ($entry !== null) {
 					$out[] = $entry;
@@ -90,40 +97,36 @@ class PortalPageResolver {
 	 * its blocks dropped.
 	 *
 	 * @param mixed $page The declared page.
-	 * @param array<int, string> $collectionIds The valid collection ids.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
 	 * @param array<int, string> $actionIds The valid action ids.
 	 * @param int $index How many pages already survived
 	 *                   (drives the synthesised id).
+	 * @param array<int, string> $pageIds The contribution's page ids.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
 	 */
-	private function normalisePage(mixed $page, array $collectionIds, array $actionIds, int $index): ?array {
+	private function normalisePage(mixed $page, array $collections, array $actionIds, int $index, array $pageIds=[]): ?array {
 		if (is_array($page) === false) {
 			return null;
 		}
 
+		$collectionIds = $this->ids(entries: $collections);
 		$blocks = $this->blocks->normaliseBlocks(
 			blocks: ($page['blocks'] ?? null),
 			collectionIds: $collectionIds,
-			actionIds: $actionIds
+			actionIds: $actionIds,
+			collections: $collections,
+			pageIds: $pageIds
 		);
 		if ($blocks === []) {
 			return null;
 		}
 
-		$entry = ['blocks' => $blocks];
-		$entry['id'] = 'page-' . ($index + 1);
+		$entry = ['blocks' => $blocks] + $this->identity(page: $page, index: $index);
 
-		$id = ($page['id'] ?? null);
-		if (is_string($id) === true && $id !== '') {
-			$entry['id'] = $id;
-		}
-
-		foreach (['label', 'icon'] as $textKey) {
-			if (isset($page[$textKey]) === true && is_string($page[$textKey]) === true) {
-				$entry[$textKey] = $page[$textKey];
-			}
-		}
+		$entry += $this->menuGroup(group: ($page['group'] ?? null));
 
 		// The record page of a collection (contribution-record-page).
 		$record = (new RecordBlockNormaliser())->pageRecord(record: ($page['record'] ?? null), collectionIds: $collectionIds);
@@ -131,8 +134,86 @@ class PortalPageResolver {
 			$entry['record'] = $record;
 		}
 
-		return $entry;
+		// Menu, record switcher and home (site-mijn-omgeving-components REQ-SMO-020).
+		$entry += (new PageMenuKeys())->keys(page: $page, entry: $entry, collectionIds: $collectionIds);
+
+		return $this->withRecordBlocksOnRecordPagesOnly(entry: $entry);
 	}//end normalisePage()
+
+	/**
+	 * The page's id (declared, else synthesised from its position), label and icon.
+	 *
+	 * @param array<string, mixed> $page  The declared page.
+	 * @param int                  $index How many pages already survived.
+	 *
+	 * @return array<string, string>
+	 */
+	private function identity(array $page, int $index): array {
+		$out = ['id' => 'page-' . ($index + 1)];
+
+		$id = ($page['id'] ?? null);
+		if (is_string($id) === true && $id !== '') {
+			$out['id'] = $id;
+		}
+
+		foreach (['label', 'icon'] as $textKey) {
+			if (isset($page[$textKey]) === true && is_string($page[$textKey]) === true) {
+				$out[$textKey] = $page[$textKey];
+			}
+		}
+
+		return $out;
+	}//end identity()
+
+	/**
+	 * The page without a steps, documents or timeline block that does not
+	 * read its own record collection, or null when no block is left: each
+	 * belongs to one open record (site-mijn-omgeving-components REQ-SMO-021).
+	 *
+	 * @param array<string, mixed> $entry The normalised page.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	private function withRecordBlocksOnRecordPagesOnly(array $entry): ?array {
+		$records = array_filter(
+			[($entry['record']['collection'] ?? null), ($entry['records']['collection'] ?? null)],
+			'is_string'
+		);
+		$entry['blocks'] = (new ListBlockNormaliser())->recordPageOnly(blocks: $entry['blocks'], recordCollections: array_values($records));
+		if ($entry['blocks'] === []) {
+			return null;
+		}
+
+		return $entry;
+	}//end withRecordBlocksOnRecordPagesOnly()
+
+	/**
+	 * The menu group a page names, trimmed, as a key to add to the page.
+	 *
+	 * Pages of several apps that name the same group share one heading in the
+	 * site's resident menu. A blank, non-string or overlong value is dropped,
+	 * and the page then sits under its app's name.
+	 *
+	 * @param mixed $group The declared group.
+	 *
+	 * @return array<string, string> `['group' => <trimmed>]`, or [] when it names none.
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to
+	 */
+	private function menuGroup(mixed $group): array {
+		if (is_string($group) === false) {
+			return [];
+		}
+
+		$group = trim($group);
+		if ($group === '' || mb_strlen($group) > self::MAX_GROUP_LENGTH) {
+			return [];
+		}
+
+		return ['group' => $group];
+	}//end menuGroup()
 
 	/**
 	 * Synthesise one default page per listable collection (v2 rendering): the

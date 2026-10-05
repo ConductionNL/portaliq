@@ -106,9 +106,10 @@ test('every entry has its own in-site route under /mijn, and the route finds it 
 	assert.equal(navEntryForRoute(nav, '/zoeken'), null)
 })
 
-test('a bare /mijn or a page not offered opens the default page; an offered page stays', () => {
+test('a page not offered opens the default page; an offered page and the bare /mijn (the home) stay', () => {
 	const nav = buildNav(CONTRIBUTIONS.contributions, identity, { cases: true })
-	assert.equal(accountRedirect(nav, '/mijn'), '/mijn/cases')
+	// site-mijn-omgeving-components REQ-SMO-007: /mijn is the home now.
+	assert.equal(accountRedirect(nav, '/mijn'), '')
 	assert.equal(accountRedirect(nav, '/mijn/other/page'), '/mijn/cases')
 	assert.equal(accountRedirect(nav, '/mijn/learniq/children'), '')
 	assert.equal(accountRedirect(nav, '/zoeken'), '')
@@ -159,6 +160,10 @@ test('the header says who is signed in, in the site language', () => {
 	assert.equal(loggedInAs({ subjectRef: 's1', sub: 's1', subject: 's1' }, nl), 'Ingelogd')
 	assert.equal(loggedInAs({ subjectRef: 's1', displayName: '  ' }, nl), 'Ingelogd')
 	assert.equal(loggedInAs({ subjectRef: 's1', displayName: 's1' }, nl), 'Ingelogd')
+	// A number is never a name: a BSN shown as the display name reads as
+	// "Ingelogd" (resident-sees-words-not-codes).
+	assert.equal(loggedInAs({ subjectRef: 's1', displayName: '999993653' }, nl), 'Ingelogd')
+	assert.equal(loggedInAs({ subjectRef: 's1', name: ' 123456782 ' }, nl), 'Ingelogd')
 	assert.equal(loggedInAs({}, nl), 'Ingelogd')
 	assert.equal(loggedInAs(null, nl), '')
 })

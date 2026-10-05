@@ -45,6 +45,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CitizenCaseDocuments;
+use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
@@ -87,6 +88,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @var CitizenWriteActionFinder|null
 	 */
 	private ?CitizenWriteActionFinder $writeActions = null;
+
 
 	/**
 	 * Constructor.
@@ -167,12 +169,16 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse([
-			'case' => $context['case'],
+			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $context['case']),
 			'writableSet' => $context['set'],
 			// What the portal may offer about ending this request, resolved
 			// from the case type rather than from any list the portal keeps
 			// (withdrawing-your-own-case REQ-WOC-001).
-			'withdrawal' => $this->writableSet->withdrawal(action: $context['action'], case: $context['case']),
+			'withdrawal' => $this->writableSet->withdrawal(
+				action: $context['action'],
+				case: $context['case'],
+				closedField: (string)($context['closedField'] ?? '')
+			),
 			'documents' => $this->documents->listFor(context: $context, register: $register, schema: $schema, id: $id),
 			'documentsLabel' => (string)($context['documents']['label'] ?? ''),
 		]);
@@ -367,7 +373,11 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			return $refusal;
 		}
 
-		$withdrawal = $this->writableSet->withdrawal(action: $context['action'], case: $context['case']);
+		$withdrawal = $this->writableSet->withdrawal(
+			action: $context['action'],
+			case: $context['case'],
+			closedField: (string)($context['closedField'] ?? '')
+		);
 		if (($withdrawal['open'] ?? false) !== true) {
 			return $this->refuse(
 				message: (string)($withdrawal['reason'] ?? ''),
@@ -475,8 +485,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		// Nothing is deleted and no undo is offered: the answers stay
 		// readable, with the withdrawal beside them.
 		return new JSONResponse([
-			'case' => $updated,
-			'withdrawal' => $this->writableSet->withdrawal(action: $action, case: $updated),
+			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated),
+			'withdrawal' => $this->writableSet->withdrawal(action: $action, case: $updated, closedField: (string)($context['closedField'] ?? '')),
 		]);
 	}//end applyWithdrawal()
 
@@ -550,11 +560,14 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'app' => $match['app'],
 			'filesDownload' => $match['filesDownload'],
 			'documents' => ($match['documents'] ?? null),
+			'fields' => ($match['fields'] ?? null),
+			'closedField' => (string)($match['closedField'] ?? ''),
 			'case' => $case,
 			'set' => $this->writableSet->resolve(
 				action: $action,
 				case: $case,
-				audience: (string)($subject['audience'] ?? '')
+				audience: (string)($subject['audience'] ?? ''),
+				closedField: (string)($match['closedField'] ?? '')
 			),
 		];
 	}//end context()
@@ -696,7 +709,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			occurredAt: $occurredAt
 		);
 
-		return new JSONResponse(['case' => $updated]);
+		return new JSONResponse(['case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated)]);
 	}//end applyAmendment()
 
 	/**

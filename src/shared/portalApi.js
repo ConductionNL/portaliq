@@ -126,7 +126,19 @@ export function createPortalApi(config, store = {}) {
 			body: JSON.stringify(body || {}),
 		})
 		if (!res.ok) {
-			return { ok: false, status: res.status, object: null }
+			// A refusal may name fields, e.g. a required field left empty
+			// (site-multi-step-forms REQ-SMF-024): keep `error` and `errors`.
+			const refusal = await res.json().catch(() => ({}))
+			return {
+				ok: false,
+				status: res.status,
+				object: null,
+				error: typeof refusal?.error === 'string' ? refusal.error : '',
+				errors:
+					refusal?.errors && typeof refusal.errors === 'object'
+						? refusal.errors
+						: {},
+			}
 		}
 		const json = await res.json().catch(() => ({}))
 		return { ok: true, status: res.status, object: json.object || json }
@@ -251,10 +263,16 @@ export function createPortalApi(config, store = {}) {
 		 * collection across the subject's contributions, merged, sorted by
 		 * `receivedAt` descending, each row carrying a `_source` provenance
 		 * tag (`appId`/`label`/`register`/`schema`/`collection`).
+		 *
+		 * @return {Promise<Array<object>|null>} The rows, or null when the
+		 *   server did not answer, so a failed read is not an empty inbox.
 		 */
 		async fetchInbox() {
 			const body = await get('/inbox')
-			return body && Array.isArray(body.messages) ? body.messages : []
+			if (body === null) {
+				return null
+			}
+			return Array.isArray(body?.messages) ? body.messages : []
 		},
 
 		/**
@@ -262,13 +280,22 @@ export function createPortalApi(config, store = {}) {
 		 * portaliq's bearer-guarded proxy, which mints the server-side
 		 * X-Portal-Subject assertion — the browser never calls openregister.
 		 *
-		 * @return {Promise<{results: Array, total: number}>}
+		 * A refused or failed read still answers an empty page, now marked
+		 * `failed: true`, so "My tasks" can tell "nothing to do" from "could
+		 * not ask" (site-mijn-omgeving-components REQ-SMO-009).
+		 *
+		 * @return {Promise<{results: Array, total: number, failed?: boolean}>}
 		 */
 		async fetchTasks() {
-			const body = await get('/tasks')
+			let body
+			try {
+				body = await get('/tasks')
+			} catch {
+				body = null
+			}
 			return body && Array.isArray(body.results)
 				? body
-				: { results: [], total: 0 }
+				: { results: [], total: 0, failed: true }
 		},
 
 		/**
@@ -351,23 +378,47 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Delete one of the resident's own inbox messages
+		 * (inbox-delete-own-messages). The server re-checks that it is theirs.
+		 *
+		 * @param {object} message The message, with its `_source`.
+		 * @return {Promise<{ok: boolean, status: number}>}
+		 */
+		async deleteMessage(message) {
+			const source = message._source || {}
+			const id = message.id || message['@self']?.id
+			if (!id || !source.register || !source.schema) {
+				return { ok: false, status: 0 }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(source.collection || '')}`
+			return send('DELETE', path, {})
+		},
+
+		/**
 		 * The guardian's own message threads (guardian-direct-messages). An
 		 * answer the server refuses reads as no threads, never as an error.
 		 *
-		 * @return {Promise<Array<object>>} The threads, or `[]`.
+		 * With `orNull`, a refused or failed read answers null instead, so a
+		 * page can say it could not ask (site-mijn-omgeving-components
+		 * REQ-SMO-009).
+		 *
+		 * @param {object} [options] The options.
+		 * @param {boolean} [options.orNull] Answer null on a failed read.
+		 * @return {Promise<Array<object>|null>} The threads, or `[]` (null with `orNull`).
 		 */
-		async fetchThreads() {
+		async fetchThreads({ orNull = false } = {}) {
+			const failed = orNull ? null : []
 			try {
 				const res = await fetch(`${appRoot}/api/messages/threads`, {
 					headers: { Accept: 'application/json', ...authHeaders() },
 				})
 				if (!res.ok) {
-					return []
+					return failed
 				}
 				const json = await res.json()
-				return Array.isArray(json) ? json : []
+				return Array.isArray(json) ? json : failed
 			} catch {
-				return []
+				return failed
 			}
 		},
 
@@ -670,14 +721,30 @@ export function createPortalApi(config, store = {}) {
 		 * wire with `?collection=<id>` so two collections sharing a register+
 		 * schema (a direct view and a scopeClaim/via view) never collide.
 		 *
+		 * With `orNull`, a refused or failed read answers null instead of `[]`,
+		 * so a list can say it could not be loaded rather than that it is
+		 * empty (site-mijn-omgeving-components REQ-SMO-009).
+		 *
 		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
-		 * @return {Promise<Array<object>>} The collection's objects, or `[]`.
+		 * @param {object} [options] The options.
+		 * @param {boolean} [options.orNull] Answer null on a failed read.
+		 * @return {Promise<Array<object>|null>} The collection's objects, or `[]` (null with `orNull`).
 		 */
-		async fetchCollection(collection) {
-			const body = await get(
-				`${col(collection.register, collection.schema)}?collection=${encodeURIComponent(collection.id)}`,
-			)
-			return body && Array.isArray(body.objects) ? body.objects : []
+		async fetchCollection(collection, { orNull = false } = {}) {
+			let body
+			try {
+				body = await get(
+					`${col(collection.register, collection.schema)}?collection=${encodeURIComponent(collection.id)}`,
+				)
+			} catch {
+				if (!orNull) {
+					throw new TypeError('The collection could not be read.')
+				}
+			}
+			if (body && Array.isArray(body.objects)) {
+				return body.objects
+			}
+			return orNull ? null : []
 		},
 
 		/**
@@ -694,6 +761,24 @@ export function createPortalApi(config, store = {}) {
 				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(collection.id)}`,
 			)
 			return body ? body.object || body : null
+		},
+
+		/**
+		 * Where one case the subject owns stands (site-mijn-omgeving-components
+		 * REQ-SMO-022): `{ label, steps }` from the app's `steps` provider,
+		 * each step `{ label, description?, state, date? }`. Null when the
+		 * collection declares none, the case is not the subject's, or the
+		 * steps could not be read.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The case id.
+		 * @return {Promise<object|null>} The steps, or null.
+		 */
+		async fetchSteps(collection, id) {
+			const body = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/steps?collection=${encodeURIComponent(collection.id)}`,
+			).catch(() => null)
+			return body && Array.isArray(body.steps) ? body : null
 		},
 
 		/**

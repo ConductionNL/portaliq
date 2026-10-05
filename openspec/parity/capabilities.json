@@ -4784,7 +4784,7 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "src/views/PageLayoutDesigner.vue:1-21 (uses the fleet's shared dashboard drag/resize engine), :261 mounts WidgetPaletteDialog, :410-455 addWidget/applyLayout keep gridX/gridY/gridWidth/gridHeight; src/lib/pageWidgetCatalogue.js:157,318 reads publicWidgetFor() so the designer's palette cannot drift from the renderer's allow-list",
+				"evidence": "src/views/PageLayoutDesigner.vue:1-21 (uses the fleet's shared dashboard drag/resize engine), mounts WidgetPalettePanel in the editor pane row (non-modal, beside the canvas), :410-455 addWidget/applyLayout keep gridX/gridY/gridWidth/gridHeight; src/lib/pageWidgetCatalogue.js:157,318 reads publicWidgetFor() so the designer's palette cannot drift from the renderer's allow-list",
 				"reachedOn": "admin Pages list -> src/manifest.json:1375-1378 route /pages/:id/layout, component PageLayoutDesigner; also reached from the live site via cmp-site-inline-edit's designerUrl",
 				"owner": "ConductionNL/portaliq",
 				"note": "Same layout item shape as every dashboard in the fleet (manifest-v2 widgetEntry).",

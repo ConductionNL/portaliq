@@ -17,9 +17,12 @@
 	listed under a mandate is read under that mandate.
 -->
 <template>
-	<p v-if="!caseId" class="utrecht-paragraph pq-empty">
-		<em>{{ t('Select a case.') }}</em>
-	</p>
+	<template v-if="!caseId">
+		<!-- Under a detail card on the same collection, the card says it. -->
+		<p v-if="!quietWhenEmpty" class="utrecht-paragraph pq-empty">
+			<em>{{ t('Select a case.') }}</em>
+		</p>
+	</template>
 	<p
 		v-else-if="loading"
 		class="utrecht-paragraph"
@@ -48,7 +51,7 @@
 		</div>
 
 		<p
-			v-if="!windowOpen"
+			v-if="!windowOpen && !ended"
 			class="utrecht-paragraph pq-case-closed"
 			data-testid="case-window-closed">
 			{{ (writableSet.window && writableSet.window.reason) || '' }}
@@ -61,6 +64,7 @@
 				:field="field"
 				:state="fieldStates[field] || null"
 				:value="draft[field] !== undefined ? draft[field] : caseRow[field]"
+				:quiet="ended"
 				:t="t"
 				@change="onFieldChange" />
 		</div>
@@ -92,22 +96,16 @@
 				<h5 class="utrecht-heading-5">
 					{{ group.heading }}
 				</h5>
-				<ul class="utrecht-unordered-list">
-					<li
+				<!-- Each document a Den Haag file item (site-mijn-omgeving-components
+				     REQ-SMO-005): its name, then who added it, when, type and size. -->
+				<ul class="pq-case-documents__list">
+					<FileItem
 						v-for="entry in group.entries"
 						:key="entry.id"
-						class="utrecht-unordered-list__item"
-						data-testid="case-document">
-						<button
-							type="button"
-							class="utrecht-button utrecht-button--subtle pq-case-document"
-							@click="onOpenDocument(entry)">
-							{{ entry.title }}
-						</button>
-						<span v-if="entry.date" class="pq-case-document-date">{{
-							dateOf(entry.date)
-						}}</span>
-					</li>
+						data-testid="case-document"
+						:name="entry.title || entry.id"
+						:line="fileLineOf(entry)"
+						@open="onOpenDocument(entry)" />
 				</ul>
 			</div>
 			<div v-if="documentsOpen" class="utrecht-form-field">
@@ -123,7 +121,7 @@
 					@change="onAddDocument" />
 			</div>
 			<p
-				v-else
+				v-else-if="!ended"
 				class="utrecht-paragraph pq-case-reason"
 				data-testid="case-documents-closed">
 				{{ (writableSet.documents && writableSet.documents.reason) || '' }}
@@ -147,7 +145,7 @@
 		</div>
 
 		<p
-			v-if="withdrawal.kind === 'closed'"
+			v-if="withdrawal.kind === 'closed' && !ended"
 			class="utrecht-paragraph pq-case-reason"
 			data-testid="case-withdraw-closed">
 			{{ withdrawal.reason }}
@@ -184,21 +182,30 @@
 
 <script>
 import WithdrawCaseConfirm from '../../modals/e/WithdrawCaseConfirm.vue'
+import FileItem from '../mijn/FileItem.vue'
 import CaseField from './CaseField.vue'
 import { groupDocuments } from '../../../shared/caseDocuments.js'
-import { caseFieldNames, withdrawalView } from '../../../shared/withdrawal.js'
+import {
+	caseFieldNames,
+	caseHasEnded,
+	withdrawalView,
+} from '../../../shared/withdrawal.js'
 import { readerLocale, shortDate } from '../../pages/e/format.js'
+import { fileLine } from '../mijn/documents.js'
+import { mijnTranslator } from '../mijn/rows.js'
 
 export default {
 	name: 'CitizenCase',
 
-	components: { CaseField, WithdrawCaseConfirm },
+	components: { CaseField, FileItem, WithdrawCaseConfirm },
 
 	props: {
 		/** The manifest collection the case lives in (`{id, register, schema, ...}`). */
 		collection: { type: Object, required: true },
 		/** The case row selected in the table; `_mandate.id` reads it under that mandate. */
 		row: { type: Object, default: null },
+		/** Say nothing until a case is chosen: a detail card on the page already asks. */
+		quietWhenEmpty: { type: Boolean, default: false },
 		/** The portal API adapter (`createPortalApi` shape). */
 		api: { type: Object, required: true },
 		/** The translator `t(key, vars)`. */
@@ -252,11 +259,16 @@ export default {
 		},
 
 		fields() {
-			return caseFieldNames(this.caseRow)
+			return caseFieldNames(this.caseRow, this.writableSet)
 		},
 
 		withdrawal() {
 			return withdrawalView(this.data?.withdrawal, this.caseRow)
+		},
+
+		/** Withdrawn or closed: the screen shows the state, not why a window shut. */
+		ended() {
+			return caseHasEnded(this.writableSet, this.withdrawal)
 		},
 
 		groups() {
@@ -316,6 +328,22 @@ export default {
 			this.data = data
 			this.loading = false
 			this.draft = {}
+		},
+
+		/**
+		 * The line under a document's name: who added it, when, its type and size.
+		 *
+		 * @param {object} entry The listed document.
+		 * @return {string} The line.
+		 *
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 */
+		fileLineOf(entry) {
+			return fileLine(
+				entry,
+				mijnTranslator(this.t, readerLocale(this.locale)),
+				readerLocale(this.locale),
+			)
 		},
 
 		/**

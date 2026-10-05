@@ -11,11 +11,28 @@
 	Without one, the text shows as written and no notice appears.
 -->
 <template>
-	<component :is="as" v-if="!labelled" :class="bodyClass">
+	<LinkedText
+		v-if="!labelled && partsOf"
+		:as="as"
+		:class="bodyClass"
+		:parts="partsOf(text)"
+		@navigate="$emit('navigate', $event)" />
+	<component :is="as" v-else-if="!labelled" :class="bodyClass">
 		{{ text }}
 	</component>
 	<div v-else class="pq-translated">
-		<component :is="as" :class="bodyClass" :lang="translation.targetLanguage">
+		<LinkedText
+			v-if="partsOf"
+			:as="as"
+			:class="bodyClass"
+			:lang="translation.targetLanguage"
+			:parts="partsOf(translation.text)"
+			@navigate="$emit('navigate', $event)" />
+		<component
+			:is="as"
+			v-else
+			:class="bodyClass"
+			:lang="translation.targetLanguage">
 			{{ translation.text }}
 		</component>
 		<aside class="pq-ai-notice" :aria-label="t('AI translation')">
@@ -47,7 +64,18 @@
 				<p class="utrecht-paragraph pq-translated__original-title">
 					{{ originalTitle }}
 				</p>
-				<p class="utrecht-paragraph">{{ text }}</p>
+				<LinkedText
+					v-if="partsOf"
+					as="p"
+					class="utrecht-paragraph"
+					:parts="partsOf(text)"
+					@navigate="$emit('navigate', $event)" />
+				<p v-else class="utrecht-paragraph">{{ text }}</p>
+			</template>
+			<template v-else-if="partsOf">
+				<LinkedText
+					:parts="partsOf(text)"
+					@navigate="$emit('navigate', $event)" />
 			</template>
 			<template v-else>{{ text }}</template>
 		</blockquote>
@@ -60,12 +88,15 @@ import {
 	noticeText,
 	originalId,
 } from '../../pages/inbox/translation.js'
+import LinkedText from './LinkedText.js'
 
 /**
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
  */
 export default {
 	name: 'TranslatedText',
+
+	components: { LinkedText },
 
 	props: {
 		/** The text as written. */
@@ -86,7 +117,14 @@ export default {
 		originalTitle: { type: String, default: '' },
 		/** The element the shown text renders in; a heading keeps its level. */
 		as: { type: String, default: 'p' },
+		/**
+		 * Optional: text to parts (`{text}` or a named link), so the addresses
+		 * in a text show as links (REQ-NAP-013). Without it the text is plain.
+		 */
+		partsOf: { type: Function, default: null },
 	},
+
+	emits: ['navigate'],
 
 	data() {
 		return { open: this.defaultOpen }

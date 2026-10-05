@@ -21,7 +21,7 @@ import { createPortalApi } from '../src/shared/portalApi.js'
 import { buildNav, shellSections } from '../src/shared/portalNav.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const { splitCases, caseTarget, caseTitle } = await import(
+const { splitCases, caseTarget, caseTitle, caseStatus } = await import(
 	pathToFileURL(join(ROOT, 'src', 'shared', 'myCases.js')).href
 )
 
@@ -153,6 +153,25 @@ test('a case opens where it came from, and names itself by title or reference', 
 	assert.equal(caseTitle(CASES[2]), 'ZAAK-0')
 })
 
+test('a case shows the words for its status, and keeps the raw status for logic', () => {
+	const row = {
+		status: '3c0f5a00-0000-4000-a000-00000000b001',
+		_statusLabel: 'Ontvangen',
+	}
+	assert.equal(caseStatus(row), 'Ontvangen')
+	assert.equal(row.status, '3c0f5a00-0000-4000-a000-00000000b001')
+	// Without words the status reads as before.
+	assert.equal(caseStatus({ status: 'In behandeling' }), 'In behandeling')
+	assert.equal(caseStatus({ status: 'x', _statusLabel: '  ' }), 'x')
+	assert.equal(caseStatus({ status: 7 }), '')
+	assert.equal(caseStatus(null), '')
+	const page = readFileSync(
+		join(ROOT, 'src', 'site', 'pages', 'e', 'MyCasesPage.vue'),
+		'utf8',
+	)
+	assert.match(page, /status: caseStatus\(row\)/)
+})
+
 test('site: the shell offers "My cases" first when the server announces it, and both locales carry the strings', () => {
 	const registry = readFileSync(
 		join(ROOT, 'src', 'site', 'pages', 'registry.js'),
@@ -232,8 +251,18 @@ test("site: every app's cases are in one list, each naming its source, with the 
 	assert.match(html, /Parkeervergunning[\s\S]*Aanvragen/)
 	assert.match(html, /Kapvergunning[\s\S]*Zaken/)
 	assert.doesNotMatch(html, /ZAAK-0/)
-	assert.match(html, /<button[^>]*>Kapvergunning<\/button>/)
-	assert.doesNotMatch(html, /<button[^>]*>Parkeervergunning<\/button>/)
+	// Each case is a Den Haag case card (site-mijn-omgeving-components
+	// REQ-SMO-002): one button whose name starts with the title when a page
+	// shows the case, plain text otherwise.
+	assert.match(
+		html,
+		/<p class="denhaag-case-card__title pq-case-card__title"><button class="pq-case-card__link" type="button">Kapvergunning<\/button><\/p>/,
+	)
+	assert.match(
+		html,
+		/<p class="denhaag-case-card__title pq-case-card__title"><span>Parkeervergunning<\/span><\/p>/,
+	)
+	assert.equal((html.match(/data-testid="my-cases-row"/g) || []).length, 2)
 })
 
 test("site: without the shell's page lookup a case is listed but not a button", async () => {
@@ -242,8 +271,8 @@ test("site: without the shell's page lookup a case is listed but not a button", 
 		t,
 		initialData: { ok: true, cases: CASES },
 	})
-	assert.match(html, /<span class="pq-cases__title">Kapvergunning<\/span>/)
-	assert.doesNotMatch(html, /pq-cases__open/)
+	assert.match(html, /pq-case-card__title"><span>Kapvergunning<\/span>/)
+	assert.doesNotMatch(html, /<button class="pq-case-card__link/)
 })
 
 test('site: the closed tab lists the closed cases, is not there when nothing can be closed, and nothing reads "No cases yet."', async () => {
@@ -274,11 +303,14 @@ test('site: the closed tab lists the closed cases, is not there when nothing can
 		api: {},
 		t,
 		initialData: { ok: false, error: 'other', cases: [] },
+		locale: 'en',
 	})
-	assert.match(
-		failed,
-		/role="alert"[^>]*>Your cases could not be loaded\. Try again later\.</,
-	)
+	// A failed read is an alert with a way to try again, never "No cases
+	// yet." (site-mijn-omgeving-components REQ-SMO-009).
+	assert.match(failed, /data-testid="mijn-load-error"/)
+	assert.match(failed, /Your cases could not be loaded\./)
+	assert.match(failed, /data-testid="mijn-load-error-retry">Try again</)
+	assert.doesNotMatch(failed, /No cases yet/)
 })
 
 test('site: opening a case hands the shell the target and the row', async () => {
@@ -298,4 +330,53 @@ test('site: opening a case hands the shell the target and the row', async () => 
 	assert.deepEqual(opened, [
 		[{ app: 'dossiq', collection: 'mijnZaken', id: 'z-1' }, 'z-1'],
 	])
+})
+
+// A case's status reads in words, never as the status type's uuid
+// (resident-sees-words-not-codes).
+// @spec openspec/changes/resident-sees-words-not-codes/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
+
+const STATUS_UUID = '3c0f5a00-0000-4000-a000-00000000b001'
+
+test('a case status reads as its public label, never as a uuid', () => {
+	assert.equal(
+		caseStatus({ status: STATUS_UUID, statusPublicLabel: 'Ontvangen' }),
+		'Ontvangen',
+	)
+	assert.equal(
+		caseStatus({ status: STATUS_UUID, statusLabel: 'In behandeling' }),
+		'In behandeling',
+	)
+	assert.equal(caseStatus({ status: STATUS_UUID }), '')
+	assert.equal(caseStatus({ status: 'Afgerond' }), 'Afgerond')
+	assert.equal(caseStatus({ status: { id: STATUS_UUID } }), '')
+	assert.equal(caseStatus(null), '')
+})
+
+test('site: a case row shows the status label and no uuid', async () => {
+	const html = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		initialData: {
+			ok: true,
+			cases: [
+				{
+					id: 'c-1',
+					title: 'Verlichting fietspad Lindelaan',
+					caseType: '3c0f5a00-0000-4000-a000-00000000a001',
+					status: STATUS_UUID,
+					statusPublicLabel: 'Ontvangen',
+					_source: { appId: 'dossiq', label: 'Dossiq' },
+				},
+				{
+					id: 'c-2',
+					title: 'Planning fietspad Lindelaan',
+					status: STATUS_UUID,
+					_source: { appId: 'dossiq', label: 'Dossiq' },
+				},
+			],
+		},
+	})
+	assert.match(html, /Ontvangen/)
+	assert.doesNotMatch(html, /3c0f5a00/)
 })

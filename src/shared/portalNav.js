@@ -210,5 +210,43 @@ export function navEntryForRoute(nav, route) {
 	if (!isAccountRoute(route)) {
 		return null
 	}
-	return (nav || []).find((entry) => routeForNav(entry) === route) || null
+	const exact = (nav || []).find((entry) => routeForNav(entry) === route)
+	if (exact) {
+		return exact
+	}
+	// A record page with one record chosen: `/mijn/<app>/<page>/<id>`
+	// (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-020).
+	const id = recordIdOfRoute(route)
+	if (id === '') {
+		return null
+	}
+	const pageRoute = String(route).slice(0, String(route).lastIndexOf('/'))
+	return (
+		(nav || []).find(
+			(entry) =>
+				!entry.special
+				&& (entry.page?.record || entry.page?.records)
+				&& routeForNav(entry) === pageRoute,
+		) || null
+	)
+}
+
+/**
+ * The record a route chooses on a record page: the fourth segment of
+ * `/mijn/<app>/<page>/<id>`, or ''.
+ *
+ * @param {string} route The route.
+ * @return {string} The record id, decoded.
+ * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+ */
+export function recordIdOfRoute(route) {
+	const parts = String(route || '').split('/')
+	if (parts.length !== 5 || `/${parts[1]}` !== ACCOUNT_ROUTE || parts[4] === '') {
+		return ''
+	}
+	try {
+		return decodeURIComponent(parts[4])
+	} catch {
+		return ''
+	}
 }

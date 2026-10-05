@@ -75,7 +75,8 @@ export function ownAreaLink(session, t, hrefFor) {
  * @param {(key: string, vars?: object) => string} t The translator.
  * @param {number} unread The inbox's unread count.
  * @param {(route: string) => string} hrefFor A real address for a route.
- * @return {object} `{key, name, link, href, badge?, badgeLabel?}`.
+ * @return {object} `{key, name, link, href, icon?, badge?, badgeLabel?}`.
+ * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
 function itemFor(entry, t, unread, hrefFor) {
 	const link = routeForNav(entry)
@@ -85,6 +86,10 @@ function itemFor(entry, t, unread, hrefFor) {
 		link,
 		href: hrefFor(link),
 	}
+	// The page's declared icon, drawn before its label (REQ-SMO-006).
+	if (typeof entry.icon === 'string' && entry.icon !== '') {
+		item.icon = entry.icon
+	}
 	if (entry.special === 'inbox' && Number(unread) > 0) {
 		item.badge = String(unread)
 		item.badgeLabel = t('{count} unread', { count: unread })
@@ -93,24 +98,34 @@ function itemFor(entry, t, unread, hrefFor) {
 }
 
 /**
- * The resident menu in groups: cases and tasks first, then one group per app
- * that contributes pages (named as the app names itself), then messages and
- * news, then the resident's details and account. An empty group is left out.
+ * The resident menu in groups: cases and tasks first, then the groups of the
+ * contributed pages (a page's declared `group`, shared across apps, else one
+ * group per app named as the app names itself), then messages and news, then
+ * the resident's details and account. An empty group is left out.
  *
  * TWO ITEMS NEVER READ THE SAME. The shell's own sections and an app's pages
  * come from two sources, and both may use one name: the shell's "Mijn zaken"
  * lists cases from every app, an app's "Mijn zaken" only its own. Where a
- * name occurs more than once, the app's item carries its group's name too,
- * so a screen reader user hears two different links.
+ * name occurs more than once, the app's item carries its app's name too, so
+ * a screen reader user hears two different links.
+ *
+ * A page that declares `menu: false` keeps its route and stays out of the
+ * menu. A page that declares `perRecord` is listed once per row of that
+ * collection, under a group named after the row, linking to the page with
+ * that row chosen (`/mijn/<app>/<page>/<id>`); until those rows are known
+ * it is listed once, as any page (site-mijn-omgeving-components REQ-SMO-020).
  *
  * @param {Array<object>} nav The signed-in navigation (src/shared/portalNav.js).
  * @param {(key: string, vars?: object) => string} t The translator.
  * @param {number} unread The inbox's unread count.
  * @param {(route: string) => string} hrefFor A real address for a route.
+ * @param {Record<string, Array<object>>} [recordRows] The rows of each
+ *   `perRecord` collection, by `<app>:<collection>`.
  * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
  * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
  */
-export function residentMenuGroups(nav, t, unread, hrefFor) {
+export function residentMenuGroups(nav, t, unread, hrefFor, recordRows = {}) {
 	const entries = Array.isArray(nav) ? nav : []
 	const sectionGroup = (key, title, sections) => ({
 		key,
@@ -122,27 +137,32 @@ export function residentMenuGroups(nav, t, unread, hrefFor) {
 	})
 
 	const appGroups = []
+	const recordGroups = []
 	for (const entry of entries) {
-		if (entry.special) {
+		if (entry.special || entry.page?.menu === false) {
 			continue
 		}
-		const app = entry.contribution?.app || ''
-		let group = appGroups.find((candidate) => candidate.app === app)
+		const rows = perRecordRows(entry, recordRows)
+		if (rows) {
+			addPerRecordItems(recordGroups, entry, rows, t, unread, hrefFor)
+			continue
+		}
+		const { key, title } = pageGroupOf(entry)
+		let group = appGroups.find((candidate) => candidate.key === key)
 		if (!group) {
-			group = {
-				key: `app:${app}`,
-				app,
-				title: entry.contribution?.label || app,
-				items: [],
-			}
+			group = { key, title, items: [] }
 			appGroups.push(group)
 		}
-		group.items.push(itemFor(entry, t, unread, hrefFor))
+		group.items.push({
+			...itemFor(entry, t, unread, hrefFor),
+			source: appNameOf(entry),
+		})
 	}
 
 	const groups = [
 		sectionGroup('cases', t('Cases and tasks'), CASE_SECTIONS),
-		...appGroups.map(({ key, title, items }) => ({ key, title, items })),
+		...appGroups,
+		...recordGroups,
 		sectionGroup('messages', t('Messages and news'), MESSAGE_SECTIONS),
 		sectionGroup('profile', t('Your details and account'), PROFILE_SECTIONS),
 	].filter((group) => group.items.length > 0)
@@ -150,22 +170,185 @@ export function residentMenuGroups(nav, t, unread, hrefFor) {
 	const counts = new Map()
 	for (const group of groups) {
 		for (const item of group.items) {
+			if (item.perRecord) {
+				continue
+			}
 			const name = item.name.toLowerCase()
 			counts.set(name, (counts.get(name) || 0) + 1)
 		}
 	}
 	for (const group of groups) {
-		if (!group.key.startsWith('app:')) {
-			continue
-		}
 		for (const item of group.items) {
-			if (counts.get(item.name.toLowerCase()) > 1) {
-				item.name = t('{label} ({source})', {
-					label: item.name,
-					source: group.title,
-				})
+			const source = item.source
+			delete item.source
+			delete item.perRecord
+			if (source !== undefined && counts.get(item.name.toLowerCase()) > 1) {
+				item.name = t('{label} ({source})', { label: item.name, source })
 			}
 		}
 	}
 	return groups
+}
+
+/**
+ * Read the rows of every collection a page lists itself per row of
+ * (`perRecord`), scoped to the resident, by `<app>:<collection>`. A
+ * collection that cannot be read is left out, and its pages are then listed
+ * once, as any page.
+ *
+ * @param {Array<object>|null} contributions The aggregate's `contributions`.
+ * @param {object} api The portal api (`fetchCollection`).
+ * @return {Promise<Record<string, Array<object>>>} The rows.
+ * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ */
+export async function loadPerRecordRows(contributions, api) {
+	const wanted = new Map()
+	for (const contribution of Array.isArray(contributions) ? contributions : []) {
+		for (const page of contribution?.pages || []) {
+			const collection = (contribution.collections || []).find(
+				(candidate) => candidate && candidate.id === page?.perRecord,
+			)
+			if (collection) {
+				wanted.set(`${contribution.app}:${collection.id}`, collection)
+			}
+		}
+	}
+	const rows = {}
+	if (typeof api?.fetchCollection !== 'function') {
+		return rows
+	}
+	await Promise.all(
+		[...wanted].map(async ([key, collection]) => {
+			try {
+				const answer = await api.fetchCollection(collection, {
+					orNull: true,
+				})
+				if (Array.isArray(answer)) {
+					rows[key] = answer
+				}
+			} catch {
+				// Listed once, as any page.
+			}
+		}),
+	)
+	return rows
+}
+
+/**
+ * The rows a `perRecord` page is listed for, or null when it declares none
+ * or they are not known yet.
+ *
+ * @param {object} entry A navigation entry of a contributed page.
+ * @param {Record<string, Array<object>>} recordRows The known rows.
+ * @return {Array<object>|null} The rows.
+ * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ */
+export function perRecordRows(entry, recordRows) {
+	const collection = entry.page?.perRecord
+	if (typeof collection !== 'string' || collection === '') {
+		return null
+	}
+	const rows = recordRows?.[`${entry.contribution?.app || ''}:${collection}`]
+	return Array.isArray(rows) ? rows : null
+}
+
+/**
+ * The title fields of a page's record collection, as its `record` or
+ * `records` declares them.
+ *
+ * @param {object} page The page.
+ * @return {Array<string>|undefined} The fields.
+ */
+function titleFieldsOf(page) {
+	return page?.record?.titleFields || page?.records?.titleFields
+}
+
+/**
+ * List a `perRecord` page once per row, each under the row's own group.
+ *
+ * @param {Array<object>} groups The record groups so far (changed in place).
+ * @param {object} entry The page's navigation entry.
+ * @param {Array<object>} rows The rows.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @param {number} unread The inbox's unread count.
+ * @param {(route: string) => string} hrefFor A real address for a route.
+ * @return {void}
+ * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ */
+function addPerRecordItems(groups, entry, rows, t, unread, hrefFor) {
+	const app = entry.contribution?.app || ''
+	const fields = titleFieldsOf(entry.page)
+	for (const row of rows) {
+		const id = String(row?.id || row?.uuid || row?.['@self']?.id || '')
+		const title = recordName(row, fields)
+		if (id === '' || title === '') {
+			continue
+		}
+		const key = `record:${app}:${entry.page.perRecord}:${id}`
+		let group = groups.find((candidate) => candidate.key === key)
+		if (!group) {
+			group = { key, title, items: [] }
+			groups.push(group)
+		}
+		const item = itemFor(entry, t, unread, hrefFor)
+		const link = `${item.link}/${encodeURIComponent(id)}`
+		group.items.push({
+			...item,
+			key: `${entry.key}:${id}`,
+			link,
+			href: hrefFor(link),
+			// One page per row reads the same under each row's heading on
+			// purpose; it never makes another item take its app's name.
+			perRecord: true,
+		})
+	}
+}
+
+/**
+ * A row's name: its title fields, else name, title or given name.
+ *
+ * @param {object} row The row.
+ * @param {Array<string>} [fields] The title fields.
+ * @return {string} The name.
+ */
+function recordName(row, fields) {
+	const names =
+		Array.isArray(fields) && fields.length > 0
+			? fields
+			: ['name', 'title', 'givenName']
+	return names
+		.map((field) => row?.[field])
+		.filter((value) => typeof value === 'string' && value.trim() !== '')
+		.join(' ')
+}
+
+/**
+ * The name an app goes by in the menu: its display name, else its id.
+ *
+ * @param {object} entry A navigation entry of a contributed page.
+ * @return {string} The name.
+ */
+function appNameOf(entry) {
+	return entry.contribution?.label || entry.contribution?.app || ''
+}
+
+/**
+ * The group a contributed page sits in. A page that declares `group` shares
+ * one heading with every page of that group, from any app; a page without
+ * one sits under its app's name, as before.
+ *
+ * @param {object} entry A navigation entry of a contributed page.
+ * @return {{key: string, title: string}} The group's key and heading.
+ * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
+ */
+export function pageGroupOf(entry) {
+	const declared = entry.page?.group
+	if (typeof declared === 'string' && declared.trim() !== '') {
+		const title = declared.trim()
+		return { key: `group:${title.toLowerCase()}`, title }
+	}
+	return {
+		key: `app:${entry.contribution?.app || ''}`,
+		title: appNameOf(entry),
+	}
 }

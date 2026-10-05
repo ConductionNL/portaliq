@@ -39,7 +39,39 @@
 		</div>
 
 		<div v-else class="page-grid-editor__panes">
-			<section class="page-grid-editor__canvas" data-testid="designer-canvas">
+			<!--
+				THE PALETTE SITS IN THIS ROW, beside the canvas, which is why
+				the editor mounts it and no host does. A palette that covers the
+				grid cannot be dragged onto it: see WidgetPalettePanel.vue for
+				what the modal version cost. A host that mounts it itself can
+				put it back over the page, and both hosts did.
+
+				The host still owns whether it is open, through
+				`v-model:paletteOpen`, because the host owns the button and has
+				to say so with `aria-expanded`. This component holds no state of
+				its own.
+			-->
+			<WidgetPalettePanel
+				:open="paletteOpen"
+				:publicOnly="publicOnly"
+				@update:open="$emit('update:paletteOpen', $event)"
+				@choose="editor.addWidget" />
+
+			<!--
+				A DROP TARGET AROUND THE GRID, not on each cell: the fleet's
+				grid owns what is inside it, and an empty page has no cell to
+				drop on at all. The cell comes from the pointer against the
+				canvas rectangle (`cellFromDrop`), so a drop near the right
+				edge places in the last columns and a drop on an empty canvas
+				places in the first (site-nlds-widget-palette REQ-SNW-002).
+			-->
+			<section
+				class="page-grid-editor__canvas"
+				:class="{ 'page-grid-editor__canvas--dropping': dropping }"
+				data-testid="designer-canvas"
+				@dragover="onDragOver"
+				@dragleave="onDragLeave"
+				@drop="onDrop">
 				<CnDashboardGrid
 					v-if="state.widgets.length"
 					:layout="state.widgets"
@@ -71,7 +103,7 @@
 							:aria-pressed="item.id === state.selectedId"
 							:aria-label="
 								t('portaliq', 'Select the {key} widget', {
-									key: item.widgetKey,
+									key: labelOf(item.widgetKey),
 								})
 							"
 							:data-testid="`designer-widget-${item.id}`"
@@ -81,7 +113,7 @@
 							@keydown.space.prevent="editor.select(item.id)">
 							<header class="page-grid-editor__cell-bar">
 								<span class="page-grid-editor__cell-key">{{
-									item.widgetKey
+									labelOf(item.widgetKey)
 								}}</span>
 								<NcButton
 									variant="tertiary"
@@ -145,7 +177,7 @@
 
 				<template v-else>
 					<p class="page-grid-editor__hint">
-						<code>{{ selected.widgetKey }}</code>
+						{{ labelOf(selected.widgetKey) }}
 					</p>
 
 					<!-- The shared form, as every dashboard configures this widget. -->
@@ -162,7 +194,13 @@
 							v-for="field in fields"
 							:key="field.name"
 							class="page-grid-editor__field">
-							<label :for="`field-${field.name}`">{{
+							<!-- A text block's markdown gets the toolbar, so an editor needs no markdown. -->
+							<MarkdownField
+								v-if="field.kind === 'markdown'"
+								:id="`field-${field.name}`"
+								:modelValue="fieldValue(field)"
+								@update:modelValue="onFieldInput(field, $event)" />
+							<label v-else :for="`field-${field.name}`">{{
 								field.label
 							}}</label>
 							<textarea
@@ -183,7 +221,7 @@
 									editor.setProp(field.name, $event.target.checked)
 								" />
 							<input
-								v-else
+								v-else-if="field.kind !== 'markdown'"
 								:id="`field-${field.name}`"
 								class="page-grid-editor__input"
 								:type="field.kind === 'number' ? 'number' : 'text'"
@@ -219,12 +257,17 @@
 import { CnDashboardGrid, dashboardWidgetRegistry } from '@conduction/nextcloud-vue'
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
+import MarkdownField from './MarkdownField.vue'
+import WidgetPalettePanel from './WidgetPalettePanel.vue'
 import {
 	fieldsFor,
 	isPublicWidget,
 	previewComponentFor,
 } from '../lib/pageWidgetCatalogue.js'
+import { widgetLabel } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
+import { cellFromDrop } from './geometry.js'
+import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 import {
 	formWidgetFor,
 	inspectorModeFor,
@@ -235,7 +278,13 @@ import {
 export default {
 	name: 'PageGridEditor',
 
-	components: { CnDashboardGrid, NcButton, NcNoteCard },
+	components: {
+		CnDashboardGrid,
+		MarkdownField,
+		NcButton,
+		NcNoteCard,
+		WidgetPalettePanel,
+	},
 
 	props: {
 		/** The controller from createPageEditor(). */
@@ -243,11 +292,44 @@ export default {
 			type: Object,
 			required: true,
 		},
+
+		/**
+		 * Whether the widget palette is open.
+		 *
+		 * The host owns it, because the host owns the button that toggles it
+		 * and has to say so with `aria-expanded`. The editor owns only WHERE
+		 * the palette is drawn, which is the part that went wrong.
+		 */
+		paletteOpen: {
+			type: Boolean,
+			default: false,
+		},
+
+		/**
+		 * Offer only widgets the public renderer mounts. The portal edit mode
+		 * sets it: on the portal a widget that renders as an empty place is
+		 * never what the editor meant to add.
+		 */
+		publicOnly: {
+			type: Boolean,
+			default: false,
+		},
 	},
+
+	emits: ['update:paletteOpen'],
 
 	data() {
 		return {
 			jsonError: '',
+
+			/**
+			 * Whether a palette drag is over the canvas right now, so the drop
+			 * target can say so. A drop target an author cannot see is a drop
+			 * they have to guess at.
+			 *
+			 * @type {boolean}
+			 */
+			dropping: false,
 		}
 	},
 
@@ -345,6 +427,83 @@ export default {
 
 	methods: {
 		/**
+		 * Accept a palette drag over the canvas, and nothing else.
+		 *
+		 * The default has to be prevented for a drop to happen at all; it is
+		 * prevented only for the palette's own media type, so dragging a file
+		 * or a selection onto the canvas keeps the browser's behaviour.
+		 *
+		 * @param {DragEvent} event The drag.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		onDragOver(event) {
+			if (!event?.dataTransfer?.types?.includes(PALETTE_DRAG_TYPE)) {
+				return
+			}
+
+			event.preventDefault()
+			event.dataTransfer.dropEffect = 'copy'
+			this.dropping = true
+		},
+
+		/**
+		 * Stop saying the canvas is a drop target once the drag leaves it.
+		 *
+		 * `dragleave` fires for every child the pointer crosses, so a plain
+		 * handler flickers the highlight off and on while the drag is still
+		 * inside. It is only a leave when the drag went somewhere the canvas
+		 * does not contain.
+		 *
+		 * @param {DragEvent} event The drag.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		onDragLeave(event) {
+			const canvas = event?.currentTarget
+			const to = event?.relatedTarget
+			if (to && canvas?.contains?.(to)) {
+				return
+			}
+			this.dropping = false
+		},
+
+		/**
+		 * Place the dragged widget where it was dropped.
+		 *
+		 * @param {DragEvent} event The drop.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		onDrop(event) {
+			this.dropping = false
+			const key = event?.dataTransfer?.getData?.(PALETTE_DRAG_TYPE) || ''
+			if (key === '') {
+				return
+			}
+
+			event.preventDefault()
+			const rect = event.currentTarget?.getBoundingClientRect?.() || {
+				left: 0,
+				top: 0,
+				width: 0,
+			}
+			this.editor.addWidgetAt(
+				key,
+				cellFromDrop({
+					x: event.clientX,
+					y: event.clientY,
+					left: rect.left,
+					top: rect.top,
+					width: rect.width,
+				}),
+			)
+		},
+
+		/**
 		 * Translate. Imported rather than taken from the page's globals, so the
 		 * editor works the same in the admin app and on the portal.
 		 *
@@ -379,6 +538,18 @@ export default {
 		},
 
 		/**
+		 * The name an author reads for a widget key ("Tekst",
+		 * never "markdown").
+		 *
+		 * @param {string} key The widget key.
+		 * @return {string} The name.
+		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
+		 */
+		labelOf(key) {
+			return widgetLabel(key, dashboardWidgetRegistry)
+		},
+
+		/**
 		 * The grid item's accessible name.
 		 *
 		 * @param {object} item The placement.
@@ -386,7 +557,9 @@ export default {
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		itemLabel(item) {
-			return this.t('portaliq', 'Widget {key}', { key: item.widgetKey })
+			return this.t('portaliq', 'Widget {key}', {
+				key: this.labelOf(item.widgetKey),
+			})
 		},
 
 		/**
@@ -526,9 +699,24 @@ export default {
 	align-items: flex-start;
 }
 
+/*
+ * A HEIGHT AN EMPTY PAGE CAN BE DROPPED ON. Without a minimum the canvas of a
+ * page with no widgets is one line of hint text tall, so there is barely
+ * anything under the pointer to drop onto, and the drop lands on whatever sits
+ * below the editor instead. The grid's own rows take over as soon as there is
+ * one widget.
+ */
 .page-grid-editor__canvas {
 	flex: 1 1 auto;
 	min-width: 0;
+	min-height: 240px;
+	border-radius: var(--border-radius);
+}
+
+/* The drop target says it is one, for the length of the drag only. */
+.page-grid-editor__canvas--dropping {
+	outline: 2px dashed var(--color-primary-element);
+	outline-offset: 4px;
 }
 
 .page-grid-editor__inspector {

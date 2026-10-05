@@ -39,10 +39,17 @@
 				}}</span>
 			</p>
 			<div class="pq-site-editor__actions">
+				<!--
+					A DISCLOSURE, NOT A DIALOG OPENER. The palette is a panel
+					beside the canvas now, so this button shows and hides it and
+					says which through `aria-expanded`.
+				-->
 				<NcButton
 					data-testid="site-edit-add"
 					:disabled="state.loading || state.kind !== 'grid'"
-					@click="paletteOpen = true">
+					:aria-expanded="paletteOpen"
+					aria-controls="widget-palette"
+					@click="paletteOpen = !paletteOpen">
 					{{ t('portaliq', 'Add widget') }}
 				</NcButton>
 				<NcButton
@@ -145,12 +152,12 @@
 		<div v-if="state.loading" class="pq-site-editor__loading">
 			<NcLoadingIcon :size="32" />
 		</div>
-		<PageGridEditor v-else :editor="editor" />
+		<PageGridEditor
+			v-else
+			v-model:paletteOpen="paletteOpen"
+			:editor="editor"
+			publicOnly />
 
-		<WidgetPaletteDialog
-			v-model:open="paletteOpen"
-			publicOnly
-			@choose="editor.addWidget" />
 		<PageHistoryDialog
 			v-model:open="historyOpen"
 			:pageId="pageId"
@@ -165,7 +172,6 @@ import { register, translate } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { reactive } from 'vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
-import WidgetPaletteDialog from '../dialogs/WidgetPaletteDialog.vue'
 import PageGridEditor from './PageGridEditor.vue'
 import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
@@ -209,7 +215,6 @@ export default {
 		PageHistoryDialog,
 		SiteMenuPanel,
 		SitePagesPanel,
-		WidgetPaletteDialog,
 	},
 
 	props: {
@@ -427,14 +432,52 @@ body {
 	--color-primary-element-light: #e3eef8;
 	--color-primary-element-light-hover: #d0e2f3;
 	--color-primary-element-light-text: #0b5ea8;
-	--color-error: #c9302c;
+	/*
+	 * A status colour is a light tint UNDER text, and its `-text` colour is
+	 * the text and the edge drawn on it: NcNoteCard and NcButton paint
+	 * `--color-success` as the background behind the main text. The tint is
+	 * mixed from the text colour and the page background, so both read at AA
+	 * (tests/site-edit-mode.spec.mjs measures it).
+	 */
 	--color-error-text: #a8201a;
-	--color-success: #2d7b41;
+	--color-error: color-mix(
+		in srgb,
+		var(--color-error-text) 12%,
+		var(--color-main-background)
+	);
+	--color-error-hover: color-mix(
+		in srgb,
+		var(--color-error-text) 20%,
+		var(--color-main-background)
+	);
 	--color-success-text: #256a37;
-	--color-warning: #a36b00;
+	--color-success: color-mix(
+		in srgb,
+		var(--color-success-text) 12%,
+		var(--color-main-background)
+	);
+	--color-success-hover: color-mix(
+		in srgb,
+		var(--color-success-text) 20%,
+		var(--color-main-background)
+	);
 	--color-warning-text: #7a5000;
-	--color-info: #0b5ea8;
+	--color-warning: color-mix(
+		in srgb,
+		var(--color-warning-text) 12%,
+		var(--color-main-background)
+	);
+	--color-warning-hover: color-mix(
+		in srgb,
+		var(--color-warning-text) 20%,
+		var(--color-main-background)
+	);
 	--color-info-text: #0b5ea8;
+	--color-info: color-mix(
+		in srgb,
+		var(--color-info-text) 12%,
+		var(--color-main-background)
+	);
 	--border-radius: 3px;
 	--border-radius-element: 8px;
 	--border-radius-large: 10px;

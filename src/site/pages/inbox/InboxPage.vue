@@ -19,13 +19,76 @@
 			<p v-if="messages.length === 0" class="utrecht-paragraph pq-empty">
 				<em>{{ tr('No messages.') }}</em>
 			</p>
-			<ul v-else class="pq-inbox">
+			<div v-if="deletableIds.length > 0" class="pq-inbox__bulk">
+				<label class="pq-inbox__select-all">
+					<input
+						type="checkbox"
+						:checked="allSelected"
+						data-testid="inbox-select-all"
+						@change="toggleAll()" />
+					{{ tr('Select all') }}
+				</label>
+				<button
+					v-if="selected.length > 0"
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action"
+					data-testid="inbox-delete-selected"
+					@click="askDelete(selectedMessages)">
+					{{ tr('Delete selected ({count})', { count: selected.length }) }}
+				</button>
+			</div>
+			<div
+				v-if="confirming.length > 0"
+				ref="confirm"
+				class="pq-inbox__confirm"
+				role="group"
+				aria-labelledby="pq-inbox-confirm-question"
+				tabindex="-1"
+				data-testid="inbox-delete-confirm">
+				<p id="pq-inbox-confirm-question" class="utrecht-paragraph">
+					{{ question }}
+				</p>
+				<div class="pq-inbox__confirm-actions">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--primary-action"
+						:disabled="deleting"
+						data-testid="inbox-delete-yes"
+						@click="confirmDelete()">
+						{{ tr('Yes, delete') }}
+					</button>
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						:disabled="deleting"
+						@click="cancelDelete()">
+						{{ tr('Cancel') }}
+					</button>
+				</div>
+			</div>
+			<p class="utrecht-paragraph pq-inbox__notice" role="status">
+				{{ notice }}
+			</p>
+			<p v-if="failed" class="utrecht-paragraph pq-inbox__failed" role="alert">
+				{{ tr('Not every message could be deleted. Please try again.') }}
+			</p>
+			<ul v-if="messages.length > 0" class="pq-inbox">
 				<li
 					v-for="(message, i) in messages"
 					:key="idOf(message, i)"
 					class="pq-inbox-row"
 					:class="{ 'pq-inbox-row--unread': message.read !== true }">
 					<div class="pq-inbox-row__header">
+						<label
+							v-if="deletable(message)"
+							class="pq-inbox-row__select">
+							<input
+								type="checkbox"
+								:checked="selected.includes(idOf(message, i))"
+								@change="toggleSelected(idOf(message, i))" />
+							{{ tr('Select') }}
+							<span class="sr-only">{{ message.subject || '' }}</span>
+						</label>
 						<strong
 							v-if="message.read !== true"
 							class="pq-inbox-row__unread">
@@ -45,13 +108,15 @@
 					</div>
 
 					<TranslatedText
-						v-if="message.body"
+						v-if="shownBody(message)"
 						:id="idOf(message, i)"
-						:text="message.body"
-						:translation="message.translation || null"
+						:text="shownBody(message)"
+						:translation="shownTranslation(message)"
+						:partsOf="partsOf"
 						:t="tr"
 						:locale="lang"
-						bodyClass="utrecht-paragraph pq-inbox-row__body" />
+						bodyClass="utrecht-paragraph pq-inbox-row__body"
+						@navigate="go" />
 
 					<dl v-if="readiness(message)" class="pq-inbox-row__meta">
 						<div v-if="message.nature">
@@ -135,6 +200,15 @@
 									: tr('Mark as read')
 							}}
 						</button>
+						<button
+							v-if="deletable(message)"
+							type="button"
+							class="utrecht-button utrecht-button--subtle"
+							data-testid="inbox-delete"
+							:disabled="deleting"
+							@click="askDelete([message])">
+							{{ tr('Delete') }}
+						</button>
 					</div>
 				</li>
 			</ul>
@@ -150,6 +224,9 @@ import { unreadIn } from '../../../shared/inboxUnread.js'
 import { deliveryLine } from '../../../shared/messageBox.js'
 import {
 	attachmentsOf,
+	bodyParts,
+	bodyWithoutOpenLink,
+	canDelete,
 	downloadCollection,
 	formatDateTime,
 	hasReadiness,
@@ -160,10 +237,23 @@ import {
 	rowId,
 	sessionStore,
 	TASKS_ROUTE,
-	unreadAfterRead,
+	withoutMessages,
 } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
+
+/**
+ * The page's origin, or '' where there is no window (a render in node).
+ *
+ * @return {string} The origin.
+ */
+function pageOrigin() {
+	try {
+		return typeof window !== 'undefined' ? window.location.origin : ''
+	} catch {
+		return ''
+	}
+}
 
 /**
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
@@ -184,7 +274,12 @@ export default {
 			busyId: null,
 			downloadingId: null,
 			downloadFailedFor: null,
-			unread: this.contributions?.unreadCount ?? null,
+			selected: [],
+			confirming: [],
+			deleting: false,
+			notice: '',
+			failed: false,
+			origin: pageOrigin(),
 		}
 	},
 
@@ -203,6 +298,58 @@ export default {
 		 */
 		tr() {
 			return withStrings(this.t, this.lang)
+		},
+
+		/**
+		 * The unread count, always from the rows on screen. The page used to
+		 * start from the sign-in count (`contributions.unreadCount`) and count
+		 * down from it; a page that mounted again after a read, before the
+		 * shell reloaded the contributions, counted down from that old number.
+		 *
+		 * @return {number} How many of the loaded rows are unread.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-badge-counts-the-unread-messages-the-inbox-shows-req-nap-011
+		 */
+		unread() {
+			return unreadIn(this.messages)
+		},
+
+		/**
+		 * @return {Array<string>} The ids of the rows the resident may delete.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		deletableIds() {
+			return this.messages.filter(canDelete).map((m) => rowId(m))
+		},
+
+		/**
+		 * @return {boolean} Whether every deletable row is chosen.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		allSelected() {
+			return (
+				this.deletableIds.length > 0
+				&& this.deletableIds.every((id) => this.selected.includes(id))
+			)
+		},
+
+		/**
+		 * @return {Array<object>} The chosen messages.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		selectedMessages() {
+			return this.messages.filter((m) => this.selected.includes(rowId(m)))
+		},
+
+		/**
+		 * @return {string} The question before a delete, singular or plural.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		question() {
+			return this.confirming.length === 1
+				? this.tr('Delete this message? You cannot undo this.')
+				: this.tr('Delete {count} messages? You cannot undo this.', {
+						count: this.confirming.length,
+					})
 		},
 	},
 
@@ -226,8 +373,10 @@ export default {
 			const messages = await this.api.fetchInbox()
 			this.messages = Array.isArray(messages) ? messages : []
 			this.loading = false
-			this.unread = unreadIn(this.messages)
-			this.$emit('unread', this.unread)
+			// A failed read says nothing about the count: the shell keeps its own.
+			if (Array.isArray(messages)) {
+				this.$emit('unread', this.unread)
+			}
 		},
 
 		/**
@@ -247,6 +396,70 @@ export default {
 		 */
 		dateTime(value) {
 			return formatDateTime(value, this.lang)
+		},
+
+		/**
+		 * The route the row's "Open" button leads to, or null without one.
+		 *
+		 * @param {object} message A message.
+		 * @return {string|null} The route.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 */
+		openRouteOf(message) {
+			return message?.recordLink?.id ? this.routeOf(message.recordLink) : null
+		},
+
+		/**
+		 * The body as the row shows it: without the web address that leads
+		 * where "Open" leads, which the e-mail needs and the row does not.
+		 *
+		 * @param {object} message A message.
+		 * @return {string} The body to show.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 */
+		shownBody(message) {
+			return bodyWithoutOpenLink(
+				message?.body || '',
+				message?.recordLink || null,
+				this.openRouteOf(message),
+			)
+		},
+
+		/**
+		 * A shown text as text and named links: an address into this site
+		 * becomes a link with a name, any other address stays text.
+		 *
+		 * @param {string} text The shown body or translation.
+		 * @return {Array<object>} The parts.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
+		 */
+		partsOf(text) {
+			return bodyParts(text, this.origin, {
+				publication: this.tr('View the publication'),
+				link: this.tr('View the link'),
+			})
+		},
+
+		/**
+		 * The reader's translation, with the same address taken out.
+		 *
+		 * @param {object} message A message.
+		 * @return {object|null} The translation entry, or null.
+		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 */
+		shownTranslation(message) {
+			const translation = message?.translation || null
+			if (!translation || typeof translation.text !== 'string') {
+				return translation
+			}
+			return {
+				...translation,
+				text: bodyWithoutOpenLink(
+					translation.text,
+					message.recordLink || null,
+					this.openRouteOf(message),
+				),
+			}
 		},
 
 		/**
@@ -327,7 +540,108 @@ export default {
 			this.busyId = null
 			if (result?.ok) {
 				this.messages = markedRead(this.messages, id)
-				this.unread = unreadAfterRead(this.unread)
+				this.$emit('unread', this.unread)
+			}
+		},
+
+		/**
+		 * @param {object} message A message.
+		 * @return {boolean} Whether the resident may delete it.
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		deletable(message) {
+			return canDelete(message)
+		},
+
+		/**
+		 * Choose a row, or leave it out again. A row the resident may not
+		 * delete is never chosen.
+		 *
+		 * @param {string} id The row id.
+		 * @return {void}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		toggleSelected(id) {
+			if (!this.deletableIds.includes(id)) {
+				return
+			}
+			this.selected = this.selected.includes(id)
+				? this.selected.filter((other) => other !== id)
+				: [...this.selected, id]
+		},
+
+		/**
+		 * Choose every deletable row, or none when all are chosen already.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		toggleAll() {
+			this.selected = this.allSelected ? [] : [...this.deletableIds]
+		},
+
+		/**
+		 * Ask on the page before deleting: nothing is deleted until the
+		 * resident answers "Yes, delete".
+		 *
+		 * @param {Array<object>} messages The messages to delete.
+		 * @return {void}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		askDelete(messages) {
+			this.confirming = (messages || []).filter(canDelete).map((m) => rowId(m))
+			this.notice = ''
+			this.failed = false
+			// Outside a mounted page (a render or a test) there is nothing to focus.
+			if (this.confirming.length > 0 && this.$refs) {
+				this.$nextTick(() => this.$refs?.confirm?.focus?.())
+			}
+		},
+
+		/**
+		 * Leave the question without deleting anything.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		cancelDelete() {
+			this.confirming = []
+		},
+
+		/**
+		 * Delete the messages the question named, one call each; the server
+		 * checks each is the resident's own. A message it refuses stays, and
+		 * stays chosen.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 */
+		async confirmDelete() {
+			const ids = [...this.confirming]
+			const deleted = []
+			this.deleting = true
+			for (const message of this.messages.filter((m) =>
+				ids.includes(rowId(m)),
+			)) {
+				const result = await this.api.deleteMessage(message)
+				if (result?.ok) {
+					deleted.push(rowId(message))
+				}
+			}
+			this.deleting = false
+			this.confirming = []
+			this.messages = withoutMessages(this.messages, deleted)
+			this.selected = this.selected.filter((id) => !deleted.includes(id))
+			this.failed = deleted.length < ids.length
+			this.notice =
+				deleted.length === 1
+					? this.tr('The message is deleted.')
+					: deleted.length > 1
+						? this.tr('{count} messages are deleted.', {
+								count: deleted.length,
+							})
+						: ''
+			if (deleted.length > 0) {
 				this.$emit('unread', this.unread)
 			}
 		},
@@ -419,6 +733,31 @@ export default {
 .pq-inbox-row__files-title {
 	margin-block-end: 4px;
 	font-weight: bold;
+}
+
+.pq-inbox__bulk,
+.pq-inbox__confirm-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.pq-inbox__confirm {
+	margin-block: 12px;
+	padding: 12px;
+	border: 2px solid var(--utrecht-color-grey-80, currentcolor);
+	border-radius: 4px;
+}
+
+.pq-inbox__notice:empty {
+	display: none;
+}
+
+.pq-inbox-row__select {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
 }
 
 .pq-inbox-row__file-list {

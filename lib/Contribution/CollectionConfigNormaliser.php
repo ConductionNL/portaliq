@@ -85,12 +85,17 @@ class CollectionConfigNormaliser {
 
 			$collection = $this->normaliseColumns(collection: $collection);
 			$collection = $this->normaliseDetail(collection: $collection);
+			$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
 			$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
 			$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
 			$collection = $this->normaliseDefaults(collection: $collection);
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
+			// Steps, answer date and whose turn, on a cases collection only
+			// (site-mijn-omgeving-components REQ-SMO-022).
+			$collection = (new StepsProviderMethod())->normalise(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
+			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
 			$collection = $this->normaliseGroupByField(collection: $collection);
 			$collection = (new PortalBranchScope())->normalise(collection: $collection);
 			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
@@ -216,8 +221,10 @@ class CollectionConfigNormaliser {
 	 *
 	 * `filesUpload` opts the collection into the scoped file-upload block and
 	 * `filesDownload` into the scoped file-download block
-	 * (portal-document-download). Only an explicit true enables either; a
-	 * malformed or absent value means false (fail-closed).
+	 * (portal-document-download); `deletable` lets a resident delete their
+	 * own messages from a `kind: inbox` collection (inbox-delete-own-messages).
+	 * Only an explicit true enables any of them; a malformed or absent value
+	 * means false (fail-closed).
 	 *
 	 * @param array<string, mixed> $collection The collection.
 	 *
@@ -226,7 +233,7 @@ class CollectionConfigNormaliser {
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
 	 */
 	private function normaliseFileFlags(array $collection): array {
-		foreach (['filesUpload', 'filesDownload'] as $flag) {
+		foreach (['filesUpload', 'filesDownload', 'deletable'] as $flag) {
 			if (array_key_exists($flag, $collection) === true) {
 				$collection[$flag] = ($collection[$flag] === true || $collection[$flag] === 'true');
 			}

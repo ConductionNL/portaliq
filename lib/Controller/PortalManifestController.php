@@ -40,6 +40,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
+use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 
@@ -146,15 +147,61 @@ class PortalManifestController extends Controller {
 			[
 				'Content-Type' => 'application/javascript',
 				// Widens the worker's control beyond its own serving path,
-				// so it can control /portal/... — see design.md D-3. This
-				// widens WHAT it may control, never the fetch handler's own
-				// cache-vs-network decision (design.md D-1).
-				'Service-Worker-Allowed' => $this->urlGenerator->linkTo(Application::APP_ID, ''),
+				// so it can control /site as well as /portal (design.md D-3).
+				// This widens WHAT it may control, never the fetch handler's
+				// own cache-vs-network decision (design.md D-1).
+				'Service-Worker-Allowed' => $this->serviceWorkerScope(),
 			]
 		);
 
+		// A worker's own fetch() follows the policy its script is served
+		// with. Nextcloud's empty default has no connect-src, so it falls
+		// back to default-src 'none' and every fetch of the worker failed:
+		// returning visitors got net::ERR_FAILED on /site. Same origin only,
+		// nothing wider; every other directive stays at the empty default.
+		$policy = new EmptyContentSecurityPolicy();
+		$policy->addAllowedConnectDomain("'self'");
+		$response->setContentSecurityPolicy($policy);
+
 		return $response;
 	}//end serviceWorker()
+
+	/**
+	 * The widest scope the worker may be registered with: the app's route
+	 * root, as the browser asked for the worker.
+	 *
+	 * The site registers the worker with scope `<route root>/`, worked out
+	 * from the worker's own address (src/site/lib/pwa.js). The header must
+	 * name the same path or the browser refuses the registration. It is
+	 * read off the request because only the request knows how the browser
+	 * reached the app: with or without `index.php`, under a web root, and
+	 * at `/apps/<id>/` whether the app is installed in `apps/` or in
+	 * `custom_apps/`. The app's web path (`linkTo`) is where its FILES are
+	 * served, `/custom_apps/<id>/` for an app installed there, and no route
+	 * lives under it, so the header named a path no page is on.
+	 *
+	 * @return string The scope, ending in a slash.
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+	 */
+	private function serviceWorkerScope(): string {
+		$suffix = 'portal/sw.js';
+		$path = parse_url($this->request->getRequestUri(), PHP_URL_PATH);
+		if (is_string($path) === false || str_ends_with($path, '/' . $suffix) === false) {
+			// Not reached through its own route (a test, an internal call):
+			// the route the URL generator builds is the same address.
+			$path = (string)parse_url(
+				$this->urlGenerator->linkToRoute(Application::APP_ID . '.portalManifest.serviceWorker'),
+				PHP_URL_PATH
+			);
+		}
+
+		if (str_ends_with($path, '/' . $suffix) === false) {
+			return '/apps/' . Application::APP_ID . '/';
+		}
+
+		return substr($path, 0, (strlen($path) - strlen($suffix)));
+	}//end serviceWorkerScope()
 
 	/**
 	 * The service worker's path on disk. Not a webpack entry — `/js/` is

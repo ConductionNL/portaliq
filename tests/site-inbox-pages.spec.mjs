@@ -24,7 +24,6 @@ import {
 	markedRead,
 	recordRoute,
 	TASKS_ROUTE,
-	unreadAfterRead,
 } from '../src/site/pages/inbox/inbox.js'
 import { components, pages } from '../src/site/pages/inbox/index.js'
 import strings from '../src/site/pages/inbox/strings.js'
@@ -176,10 +175,6 @@ test('marking a message read flips that row only and drops the unread count by o
 		markedRead(MESSAGES, 'm1').map((m) => m.read),
 		[true, true],
 	)
-	assert.equal(unreadAfterRead(3), 2)
-	assert.equal(unreadAfterRead(0), 0)
-	assert.equal(unreadAfterRead(undefined), 0)
-
 	const calls = []
 	const api = {
 		async fetchInbox() {
@@ -205,9 +200,53 @@ test('marking a message read flips that row only and drops the unread count by o
 	await page.markRead(page.messages[0])
 	assert.deepEqual(calls, ['m1'])
 	assert.equal(page.messages[0].read, true)
-	assert.deepEqual(page.emitted, [['unread', 1], ['unread', 0]])
+	assert.deepEqual(page.emitted, [
+		['unread', 1],
+		['unread', 0],
+	])
 	await page.markRead(page.messages[1])
 	assert.deepEqual(calls, ['m1'], 'a read message is not sent again')
+})
+
+test('a page mounted again after a read counts from its rows, not from the sign-in count', async () => {
+	// The shell has not reloaded the contributions yet, so it still hands
+	// the page the sign-in count of 2, while the server already has m1 read.
+	const rows = [
+		{ ...MESSAGES[0], read: true },
+		{ ...MESSAGES[1], read: false },
+	]
+	const api = {
+		async fetchInbox() {
+			return rows
+		},
+		async markMessageRead() {
+			return { ok: true }
+		},
+	}
+	const page = instance(InboxPage, { api, t, contributions: { unreadCount: 2 } })
+	assert.equal(page.unread, 0, 'nothing loaded, nothing counted')
+	await page.load()
+	assert.deepEqual(page.emitted, [['unread', 1]])
+	await page.markRead(page.messages[1])
+	assert.deepEqual(page.emitted, [
+		['unread', 1],
+		['unread', 0],
+	])
+})
+
+test('an inbox the server did not answer leaves the shell its own count', async () => {
+	const page = instance(InboxPage, {
+		api: {
+			async fetchInbox() {
+				return null
+			},
+		},
+		t,
+		contributions: { unreadCount: 4 },
+	})
+	await page.load()
+	assert.deepEqual(page.messages, [])
+	assert.deepEqual(page.emitted, [], 'a failed read is not "0 unread"')
 })
 
 test('a refused mark-read changes nothing', async () => {
@@ -348,7 +387,22 @@ test('the messages page opens the first thread and reloads it in the picked lang
 		html,
 		/<nav class="pq-messages__threads" aria-label="Conversations">/,
 	)
-	assert.match(html, /aria-current="true">Group conversation/)
+	// Each conversation is a Den Haag action row that opens it on this page
+	// (site-mijn-omgeving-components REQ-SMO-004).
+	assert.match(
+		html,
+		/<button class="denhaag-action denhaag-action--single pq-action-row__control" type="button" aria-current="true"><span class="denhaag-action__row"><span class="denhaag-action__content"><span class="pq-action-row__title">Group conversation<\/span>/,
+	)
+
+	const none = await renderComponent(inState(MessagesPage, { threads: [] }), {
+		api,
+		t,
+		locale: 'nl',
+	})
+	assert.match(
+		none,
+		/data-testid="mijn-empty-state"><p class="utrecht-paragraph pq-empty-state__text">Nog geen gesprekken\.<\/p>/,
+	)
 	assert.match(html, /<strong class="pq-message__sender">You<\/strong>/)
 	assert.match(html, /<strong class="pq-message__sender">School<\/strong>/)
 })
@@ -411,4 +465,35 @@ test('the language picker has a visible label and a hint tied to the select', as
 		/<p id="pick-hint" class="utrecht-paragraph pq-language-picker__hint">Translated by AI\.<\/p>/,
 	)
 	assert.match(html, /role="alert">Oops<\/p>/)
+})
+
+test('a news item says when it was published, and nothing while it has no date', async () => {
+	const NewsItem = await loadSfc('src/site/components/inbox/NewsItem.vue')
+	const item = {
+		id: 'n1',
+		title: 'Studiedag',
+		body: 'Vrijdag dicht.',
+		publishedAt: '2026-10-03T09:00:00+00:00',
+	}
+	const nl = await renderComponent(NewsItem, {
+		item,
+		t: withStrings(null, 'nl'),
+		locale: 'nl',
+	})
+	assert.match(
+		nl,
+		/<p class="utrecht-paragraph pq-news__date"[^>]*>\s*Gepubliceerd op 3-10-2026\s*<\/p>/,
+	)
+	const en = await renderComponent(NewsItem, {
+		item,
+		t: withStrings(null, 'en'),
+		locale: 'en',
+	})
+	assert.match(en, /Published on 03\/10\/2026/)
+	const undated = await renderComponent(NewsItem, {
+		item: { id: 'n2', title: 'Kort', body: 'Tekst' },
+		t: withStrings(null, 'nl'),
+		locale: 'nl',
+	})
+	assert.doesNotMatch(undated, /pq-news__date/)
 })

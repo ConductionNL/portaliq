@@ -15,7 +15,7 @@
  * scope, carrying the task uuid (the deep link) and the ledger row's uuid as
  * `deliveryUuid` (the idempotency key: a crash between write and settle is
  * healed by finding that message and settling, never by writing a second).
- * A `mail` row becomes ONE privacy-minimal bilingual mail to the party's own
+ * A `mail` row becomes ONE privacy-minimal mail, in the portal's language, to the party's own
  * `portalAccount` address — organisation name and portal link only, never task
  * or case content, the NotificationDispatchJob posture. Every row settles as
  * `markDelivered()` or `markFailed(reason)`; each is processed in its own
@@ -44,6 +44,7 @@ namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -51,7 +52,7 @@ use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
-use OCP\L10N\IFactory;
+use OCP\IL10N;
 use OCP\Mail\IMailer;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -174,7 +175,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @param PortalObjectWriter $writer Writes the inbox message (scope stamped server-side).
 	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant display name.
 	 * @param IMailer $mailer Sends the privacy-minimal mail.
-	 * @param IFactory $l10nFactory NL/EN translators independent of any session locale.
+	 * @param PortalNoticeLanguage $language The translations in the language of the resident's portal.
 	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param LoggerInterface $logger The logger.
 	 */
@@ -185,7 +186,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalOrganisationConfigService $orgConfig,
 		private readonly IMailer $mailer,
-		private readonly IFactory $l10nFactory,
+		private readonly PortalNoticeLanguage $language,
 		private readonly PortalDeepLinkBuilder $deepLinks,
 		private readonly LoggerInterface $logger,
 	) {
@@ -318,6 +319,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 			return null;
 		}
 
+		$l10n = $this->language->forOrganisation(organisation: (string)($this->account(subjectRef: $subjectRef)['organisation'] ?? ''));
 		$written = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::MESSAGE_SCHEMA,
@@ -325,8 +327,8 @@ class PortalTaskDeliveryJob extends TimedJob {
 			subjectRef: $subjectRef,
 			organisation: '',
 			data: [
-				'subject' => $this->subjectLine(kind: $kind, title: (string)($message['title'] ?? '')),
-				'body' => $this->bodyText(kind: $kind, message: $message),
+				'subject' => $l10n->t(self::SUBJECT_KEYS[$kind], [(string)($message['title'] ?? '')]),
+				'body' => $this->bodyText(kind: $kind, message: $message, l10n: $l10n),
 				'read' => false,
 				'receivedAt' => $this->time->getDateTime()->format(DateTimeInterface::ATOM),
 				'taskUuid' => (string)($message['taskUuid'] ?? ''),
@@ -352,13 +354,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
 	 */
 	private function deliverMail(string $subjectRef, string $kind): ?string {
-		$account = ($this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::ACCOUNT_SCHEMA,
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			limit: 2
-		)[0] ?? null);
+		$account = $this->account(subjectRef: $subjectRef);
 		if ($account === null) {
 			return 'no portalAccount for the party';
 		}
@@ -373,11 +369,12 @@ class PortalTaskDeliveryJob extends TimedJob {
 		$deepLink = $this->deepLink(organisation: $organisation);
 
 		$keys = self::MAIL_KEYS[$kind];
+		$l10n = $this->language->forOrganisation(organisation: $organisation);
 
 		try {
 			$mail = $this->mailer->createMessage();
-			$mail->setSubject($this->bilingual(key: $keys['subject'], parameters: [$organisationName], glue: ' / '));
-			$mail->setPlainBody($this->bilingual(key: $keys['body'], parameters: [$organisationName, $deepLink], glue: "\n\n"));
+			$mail->setSubject($l10n->t($keys['subject'], [$organisationName]));
+			$mail->setPlainBody($l10n->t($keys['body'], [$organisationName, $deepLink]));
 			$mail->setTo([$email]);
 			$failedRecipients = $this->mailer->send($mail);
 		} catch (Throwable $failure) {
@@ -392,33 +389,21 @@ class PortalTaskDeliveryJob extends TimedJob {
 	}//end deliverMail()
 
 	/**
-	 * The bilingual (NL first, EN second) inbox subject line for a kind.
-	 *
-	 * @param string $kind `ask`, `re-ask`, `reminder` or `overdue`.
-	 * @param string $title The task title (shown INSIDE the authenticated portal only).
-	 *
-	 * @return string
-	 */
-	private function subjectLine(string $kind, string $title): string {
-		$key = self::SUBJECT_KEYS[$kind];
-
-		return $this->bilingual(key: $key, parameters: [$title], glue: ' / ');
-	}//end subjectLine()
-
-	/**
 	 * The B1 inbox body: the engine's description, the due date, the re-ask
-	 * reason when present, and where to act. NL first, EN second. An
+	 * reason when present, and where to act, in the portal's language. An
 	 * `overdue` notice says when the task was due and, when the engine sends
 	 * one, what happens without a response.
 	 *
 	 * @param string $kind The delivery kind.
 	 * @param array<string, mixed> $message The engine's payload.
+	 * @param IL10N $l10n The translations in the portal's language.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
-	private function bodyText(string $kind, array $message): string {
+	private function bodyText(string $kind, array $message, IL10N $l10n): string {
 		$parts = [];
 
 		$description = trim((string)($message['description'] ?? ''));
@@ -428,7 +413,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 
 		$reason = trim((string)($message['reason'] ?? ''));
 		if ($reason !== '') {
-			$parts[] = $this->bilingual(key: self::BODY_REASON_KEY, parameters: [$reason], glue: ' / ');
+			$parts[] = $l10n->t(self::BODY_REASON_KEY, [$reason]);
 		}
 
 		$due = $this->dueDate(raw: (string)($message['dueAt'] ?? ''));
@@ -439,18 +424,35 @@ class PortalTaskDeliveryJob extends TimedJob {
 				$dueKey = self::BODY_WAS_DUE_KEY;
 			}
 
-			$parts[] = $this->bilingual(key: $dueKey, parameters: [$due], glue: ' / ');
+			$parts[] = $l10n->t($dueKey, [$due]);
 		}
 
 		$consequence = trim((string)($message['consequence'] ?? ''));
 		if ($overdue === true && $consequence !== '') {
-			$parts[] = $this->bilingual(key: self::BODY_CONSEQUENCE_KEY, parameters: [$consequence], glue: ' / ');
+			$parts[] = $l10n->t(self::BODY_CONSEQUENCE_KEY, [$consequence]);
 		}
 
-		$parts[] = $this->bilingual(key: self::BODY_OPEN_KEY, parameters: [], glue: ' / ');
+		$parts[] = $l10n->t(self::BODY_OPEN_KEY, []);
 
 		return implode("\n\n", $parts);
 	}//end bodyText()
+
+	/**
+	 * The party's own portal account, or null when they have none.
+	 *
+	 * @param string $subjectRef The party's subject reference.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function account(string $subjectRef): ?array {
+		return ($this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::ACCOUNT_SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			limit: 2
+		)[0] ?? null);
+	}//end account()
 
 	/**
 	 * A readable day for an ISO-8601 due timestamp, or '' when unparseable.
@@ -470,27 +472,6 @@ class PortalTaskDeliveryJob extends TimedJob {
 			return '';
 		}
 	}//end dueDate()
-
-	/**
-	 * One string in both languages: NL first, EN second (the receipt/mail
-	 * convention — portal subjects are not Nextcloud users, so there is no
-	 * session locale to pick from).
-	 *
-	 * @param string $key The English source key.
-	 * @param array<int, string> $parameters The substitutions.
-	 * @param string $glue Between the two renderings.
-	 *
-	 * @return string
-	 */
-	private function bilingual(string $key, array $parameters, string $glue): string {
-		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t($key, $parameters);
-		$enText = $this->l10nFactory->get('portaliq', 'en')->t($key, $parameters);
-		if ($nlText === $enText) {
-			return $nlText;
-		}
-
-		return $nlText . $glue . $enText;
-	}//end bilingual()
 
 	/**
 	 * The portal deep link the mail carries (content stays behind the auth edge).

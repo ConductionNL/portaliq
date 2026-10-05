@@ -9,6 +9,7 @@ use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
@@ -115,6 +116,88 @@ class PortalManifestControllerTest extends TestCase {
 
 	}//end testServiceWorkerAnswersTheAllowedScopeHeader()
 
+	/**
+	 * The worker's own fetch() follows the policy its script is served with.
+	 * Nextcloud's empty default leaves connect-src out, so it fell back to
+	 * default-src 'none' and every fetch of the worker failed: returning
+	 * visitors got net::ERR_FAILED on /site. Same origin is allowed, nothing
+	 * wider, and every other directive stays shut.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-service-worker-caches-the-app-shell-and-never-the-api
+	 */
+	public function testTheWorkerMayFetchItsOwnOriginAndNothingElse(): void {
+		$policy = $this->controller(orgSlug: '')->serviceWorker()->getContentSecurityPolicy()->buildPolicy();
+		$directives = array_values(array_filter(array_map('trim', explode(';', $policy))));
+
+		$this->assertContains(needle: "connect-src 'self'", haystack: $directives);
+		$this->assertContains(needle: "default-src 'none'", haystack: $directives);
+		$this->assertSame(
+			expected: ["connect-src 'self'"],
+			actual: array_values(array_filter($directives, static fn (string $d): bool => str_starts_with($d, 'connect-src'))),
+			message: 'one connect-src, same origin only'
+		);
+		foreach ($directives as $directive) {
+			$this->assertStringNotContainsString(needle: '*', haystack: $directive);
+		}
+	}//end testTheWorkerMayFetchItsOwnOriginAndNothingElse()
+
+	/**
+	 * The allowed scope is the route root the browser reached the worker on,
+	 * which is the scope the site registers it with (src/site/lib/pwa.js
+	 * turns `<root>/portal/api` into `<root>/`). An app installed in
+	 * custom_apps/ is still routed under /apps/, so its file path is never
+	 * the answer.
+	 *
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public static function workerAddresses(): array {
+		return [
+			'apps/ or custom_apps/, pretty URLs' => ['/apps/portaliq/portal/sw.js', '/apps/portaliq/'],
+			'with index.php' => ['/index.php/apps/portaliq/portal/sw.js', '/index.php/apps/portaliq/'],
+			'under a web root' => ['/nextcloud/index.php/apps/portaliq/portal/sw.js', '/nextcloud/index.php/apps/portaliq/'],
+			'with a query' => ['/apps/portaliq/portal/sw.js?v=3', '/apps/portaliq/'],
+		];
+	}//end workerAddresses()
+
+	/**
+	 * The header names the scope the site registers the worker with.
+	 *
+	 * @param string $requestUri The address the browser asked for the worker on.
+	 * @param string $scope The scope the site registers it with.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+	 */
+	#[DataProvider('workerAddresses')]
+	public function testTheAllowedScopeIsTheScopeTheSiteRegisters(string $requestUri, string $scope): void {
+		$controller = $this->controller(orgSlug: '', requestUri: $requestUri);
+
+		$headers = $this->headers(response: $controller->serviceWorker());
+
+		$this->assertSame(expected: $scope, actual: $headers['Service-Worker-Allowed']);
+
+	}//end testTheAllowedScopeIsTheScopeTheSiteRegisters()
+
+	/**
+	 * Reached some other way, the worker's own route gives the root; a route
+	 * that is not the worker's falls back to the routed app path.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+	 */
+	public function testWithoutTheWorkerAddressTheRouteGivesTheScope(): void {
+		$routed = $this->controller(orgSlug: '', requestUri: '', workerRoute: '/apps/portaliq/portal/sw.js');
+		$this->assertSame(expected: '/apps/portaliq/', actual: $this->headers(response: $routed->serviceWorker())['Service-Worker-Allowed']);
+
+		$unknown = $this->controller(orgSlug: '', requestUri: '/somewhere/else', workerRoute: '/somewhere/else');
+		$this->assertSame(expected: '/apps/portaliq/', actual: $this->headers(response: $unknown->serviceWorker())['Service-Worker-Allowed']);
+
+	}//end testWithoutTheWorkerAddressTheRouteGivesTheScope()
+
 	public function testServiceWorkerServesTheSourceFilesContents(): void {
 		$controller = $this->controller(orgSlug: '');
 
@@ -139,8 +222,15 @@ class PortalManifestControllerTest extends TestCase {
 	 *
 	 * @return PortalManifestController
 	 */
-	private function controller(string $orgSlug, array $resolved = [], string $portalSlug = ''): PortalManifestController {
+	private function controller(
+		string $orgSlug,
+		array $resolved = [],
+		string $portalSlug = '',
+		string $requestUri = '/index.php/apps/portaliq/portal/sw.js',
+		string $workerRoute = '/index.php/apps/portaliq/portal/sw.js',
+	): PortalManifestController {
 		$request = $this->createMock(IRequest::class);
+		$request->method('getRequestUri')->willReturn($requestUri);
 		$request->method('getParam')->willReturnCallback(
 			function (string $key, $default = null) use ($orgSlug, $portalSlug) {
 				if ($key === 'org') {
@@ -175,10 +265,14 @@ class PortalManifestControllerTest extends TestCase {
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('linkToRoute')
 			->willReturnCallback(
-				static fn (string $name, array $params = []): string => ('/index.php/apps/portaliq/route/' . $name . '?' . http_build_query($params))
+				static fn (string $name, array $params = []): string => match ($name) {
+					'portaliq.portalManifest.serviceWorker' => $workerRoute,
+					default => ('/index.php/apps/portaliq/route/' . $name . '?' . http_build_query($params)),
+				}
 			);
 		$urlGenerator->method('imagePath')->willReturn('/index.php/apps/portaliq/img/app.svg');
-		$urlGenerator->method('linkTo')->willReturn('/index.php/apps/portaliq/');
+		// Where the app's FILES are served: an app installed in custom_apps/.
+		$urlGenerator->method('linkTo')->willReturn('/custom_apps/portaliq/');
 
 		return new PortalManifestController($request, $configResolver, $urlGenerator);
 	}//end controller()
