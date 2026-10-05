@@ -591,6 +591,32 @@
 		display: none;
 	}
 
+	/* The menu bar folds away, so the motif runs under the masthead. */
+	.pq-site .pq-site__header--designed .ac-header__navigation-main {
+		position: relative;
+	}
+
+	.pq-site
+		.pq-site__header--designed:not(:has(.pq-site__nav--open))
+		.ac-header__navigation-main::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		inset-block-start: 100%;
+		z-index: 1;
+		block-size: var(--cn-brand-stripe-height, 0);
+		pointer-events: none;
+		background-image: var(
+			--cn-brand-stripe-image,
+			linear-gradient(
+				var(--cn-brand-stripe-color-1),
+				var(--cn-brand-stripe-color-1)
+			)
+		);
+		background-repeat: repeat-x;
+		background-size: auto 100%;
+	}
+
 	.pq-site
 		.pq-site__header--designed
 		.ac-header__navigation-secondary.pq-site__nav--open {
