@@ -84,6 +84,8 @@ class PortalIdentityMailerTest extends TestCase {
 			PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION => '#confirm-email=secret-abc',
 			// identity-ways-in-screens T01: the activation link of a self-registration.
 			PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION => '#activate=secret-abc',
+			// invitation-secret-joins-the-signed-in-account: a waiting account's invitation.
+			PortalIdentityMailer::TEMPLATE_ACCOUNT_INVITATION => '#claim=secret-abc',
 		];
 
 		foreach ($expected as $template => $fragment) {
@@ -114,6 +116,7 @@ class PortalIdentityMailerTest extends TestCase {
 			PortalIdentityMailer::TEMPLATE_INVITATION => '/apps/portaliq/site?portal=gemeente-x#',
 			PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION => '/apps/portaliq/site?portal=gemeente-x#',
 			PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION => '/apps/portaliq/site?portal=gemeente-x#',
+			PortalIdentityMailer::TEMPLATE_ACCOUNT_INVITATION => '/apps/portaliq/site?portal=gemeente-x#',
 		];
 
 		foreach ($expected as $template => $address) {

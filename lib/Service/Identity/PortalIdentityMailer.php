@@ -71,6 +71,13 @@ class PortalIdentityMailer {
 	public const TEMPLATE_REGISTRATION_ACTIVATION = 'registration-activation';
 
 	/**
+	 * The invitation of a waiting account an app provisioned: the person
+	 * follows the link, signs in, and the waiting account joins theirs
+	 * (invitation-secret-joins-the-signed-in-account).
+	 */
+	public const TEMPLATE_ACCOUNT_INVITATION = 'account-invitation';
+
+	/**
 	 * Per template: the fragment key the portal consumes, and the English
 	 * source keys of the mail (l10n/nl.json carries the Dutch). `%1$s` is the
 	 * portal's name in every line that takes one. `site` sends the link to
@@ -92,6 +99,14 @@ class PortalIdentityMailer {
 			'heading' => 'You are invited',
 			'intro' => 'Accept the invitation to create your account at %1$s.',
 			'button' => 'Accept the invitation',
+		],
+		self::TEMPLATE_ACCOUNT_INVITATION => [
+			'fragment' => 'claim',
+			'site' => true,
+			'subject' => 'You are invited to the portal of %1$s',
+			'heading' => 'You are invited',
+			'intro' => 'Open the link and sign in. After that you see what %1$s shares with you.',
+			'button' => 'Open the portal',
 		],
 		self::TEMPLATE_EMAIL_CONFIRMATION => [
 			'fragment' => 'confirm-email',
