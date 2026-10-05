@@ -270,6 +270,7 @@ class QuietHoursPolicy {
 		try {
 			return (string)$this->config->getUserValue($subjectRef, 'core', 'timezone', '');
 		} catch (Throwable $e) {
+			$this->logger->debug('Portaliq: quiet hours cannot read a time zone for this subject', ['reason' => $e->getMessage()]);
 			return '';
 		}
 	}//end userTimeZoneName()

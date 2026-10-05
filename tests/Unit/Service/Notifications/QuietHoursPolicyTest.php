@@ -174,7 +174,9 @@ class QuietHoursPolicyTest extends TestCase {
 		$config = $this->createMock(IConfig::class);
 		$config->method('getUserValue')->willThrowException(new \InvalidArgumentException('Value for userId is too long (64)'));
 		$config->method('getSystemValueString')->willReturn('Asia/Tokyo');
-		$policy = new QuietHoursPolicy($this->container([]), $this->createMock(LoggerInterface::class), $config);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('debug');
+		$policy = new QuietHoursPolicy($this->container([]), $logger, $config);
 
 		$this->assertSame('Asia/Tokyo', $policy->timeZoneFor(str_repeat('claim-subject-', 6))->getName());
 	}//end testASubjectNextcloudCannotLookUpFallsBackToTheInstanceZone()
