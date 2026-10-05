@@ -613,12 +613,14 @@ class NotificationDispatchJobTest extends TestCase {
 	 * @param array<string, mixed>             $captured      Captured mail.
 	 * @param array<int, array<string, mixed>> $pushes        Captured pushes.
 	 * @param array<int, array<string, mixed>> $subscriptions The account's push subscriptions.
+	 * @param bool                             $canDeliver    Whether the bound transport reaches a device.
 	 *
 	 * @return NotificationDispatchJob
 	 */
-	private function jobWithPush(array $account, array &$created, array &$captured, array &$pushes, array $subscriptions = []): NotificationDispatchJob {
+	private function jobWithPush(array $account, array &$created, array &$captured, array &$pushes, array $subscriptions = [], bool $canDeliver = true): NotificationDispatchJob {
 		$updated = [];
 		$push = $this->createMock(PushDeliveryService::class);
+		$push->method('canDeliver')->willReturn($canDeliver);
 		$push->method('deliver')->willReturnCallback(
 			function (string $subjectRef, string $title, string $body) use (&$pushes): bool {
 				$pushes[] = compact('subjectRef', 'title', 'body');
@@ -737,4 +739,29 @@ class NotificationDispatchJobTest extends TestCase {
 
 		$this->assertArrayNotHasKey('to', $captured);
 	}//end testGlobalEmailOptOutStillWins()
+
+	/**
+	 * While the bound push transport cannot reach a device (the interim
+	 * logging sender), no push is attempted and none is recorded as sent;
+	 * e-mail still goes out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function testNoPushIsRecordedWhileTheTransportCannotDeliver(): void {
+		$created = [];
+		$captured = [];
+		$pushes = [];
+		$account = ['@self' => ['id' => 'account-1'], 'email' => 'r@example.org', 'notificationPreferences' => ['message.created' => ['push' => true]]];
+		$job = $this->jobWithPush(account: $account, created: $created, captured: $captured, pushes: $pushes, subscriptions: [['endpoint' => 'https://push.example/1']], canDeliver: false);
+
+		$this->invokeRun($job, self::ARGUMENT);
+
+		$this->assertSame([], $pushes);
+		$this->assertSame(['r@example.org'], $captured['to']);
+		foreach ($created as $row) {
+			$this->assertNotSame('push', $row['data']['channel'] ?? null);
+		}
+	}//end testNoPushIsRecordedWhileTheTransportCannotDeliver()
 }//end class

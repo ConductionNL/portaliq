@@ -38,6 +38,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
@@ -69,7 +70,9 @@ class EmergencyPushController extends Controller {
 	 * @param string $title The notification title.
 	 * @param string $body The notification body.
 	 *
-	 * @return JSONResponse `{recipientCount}`.
+	 * @return JSONResponse `{recipientCount, deliveredCount}`: whom the target
+	 *                      reaches, and how many of those a push really reached
+	 *                      (0 while only the interim logging transport is bound).
 	 *
 	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
 	 */
@@ -78,15 +81,35 @@ class EmergencyPushController extends Controller {
 		$staffRef = (string)($this->userSession->getUser()?->getUID() ?? '');
 		$recipients = $this->audienceReader->guardiansMatching(target: $target);
 
+		$delivered = 0;
 		foreach ($recipients as $guardianRef) {
-			$this->delivery->deliver(subjectRef: $guardianRef, title: $title, body: $body, emergency: true);
+			// One failing delivery must not stop the noodmelding to the rest.
+			try {
+				$sent = $this->delivery->deliver(subjectRef: $guardianRef, title: $title, body: $body, emergency: true);
+			} catch (Throwable $e) {
+				$this->logger->warning('Portaliq: emergency push delivery failed', ['reason' => $e->getMessage()]);
+				$sent = false;
+			}
+
+			if ($sent === true) {
+				$delivered++;
+			}
 		}
 
-		$this->logger->info('Portaliq: emergency push sent', [
+		$context = [
 			'sentBy' => $staffRef,
 			'recipientCount' => count($recipients),
-		]);
+			'deliveredCount' => $delivered,
+		];
+		$answer = new JSONResponse(['recipientCount' => count($recipients), 'deliveredCount' => $delivered]);
+		if ($delivered < count($recipients)) {
+			// Never "sent" for a push that did not arrive: with the interim
+			// logging transport nothing does.
+			$this->logger->warning('Portaliq: emergency push not delivered to every recipient', $context);
+			return $answer;
+		}
 
-		return new JSONResponse(['recipientCount' => count($recipients)]);
+		$this->logger->info('Portaliq: emergency push sent', $context);
+		return $answer;
 	}//end send()
 }//end class

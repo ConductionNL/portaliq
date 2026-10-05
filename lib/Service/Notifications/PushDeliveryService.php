@@ -89,4 +89,15 @@ class PushDeliveryService {
 
 		return $this->sender->send(subjectRef: $subjectRef, title: $title, body: $body);
 	}//end deliver()
+
+	/**
+	 * Whether the bound transport really puts a push on a device.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function canDeliver(): bool {
+		return $this->sender->delivers();
+	}//end canDeliver()
 }//end class

@@ -16,6 +16,7 @@ use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
 use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
+use OCA\Portaliq\Service\Notifications\PushDeliveryService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
@@ -246,10 +247,12 @@ class PortalAccountSelfControllerTest extends TestCase {
 	 * @param array<string, mixed>             $account       The caller's account.
 	 * @param array<int, array<string, mixed>> $written       Captured updates.
 	 * @param array<int, array<string, mixed>> $subscriptions Push subscriptions.
+	 * @param array<string, string>|null       $messageBox    The message box offer.
+	 * @param bool                             $canDeliver    Whether the bound push transport reaches a device.
 	 *
 	 * @return PortalAccountSelfController
 	 */
-	private function preferencesController(array $account, array &$written, array $subscriptions = [], ?array $messageBox = null): PortalAccountSelfController {
+	private function preferencesController(array $account, array &$written, array $subscriptions = [], ?array $messageBox = null, bool $canDeliver = true): PortalAccountSelfController {
 		$request = $this->createMock(IRequest::class);
 		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
 		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
@@ -270,11 +273,15 @@ class PortalAccountSelfControllerTest extends TestCase {
 			}
 		);
 
+		$push = $this->createMock(PushDeliveryService::class);
+		$push->method('canDeliver')->willReturn($canDeliver);
+
 		$selfService = new PortalSelfServiceService(
 			accounts: $accounts,
 			reader: $reader,
 			writer: $writer,
-			random: $this->createMock(ISecureRandom::class)
+			random: $this->createMock(ISecureRandom::class),
+			push: $push
 		);
 
 		return new PortalAccountSelfController(
@@ -358,7 +365,8 @@ class PortalAccountSelfControllerTest extends TestCase {
 	}//end testUnknownKindIsIgnored()
 
 	/**
-	 * The push column shows only when the account registered a device.
+	 * The push column shows only when the account registered a device and the
+	 * bound transport really delivers.
 	 *
 	 * @return void
 	 *
@@ -371,6 +379,11 @@ class PortalAccountSelfControllerTest extends TestCase {
 
 		$with = $this->preferencesController(account: ['uuid' => 'account-1', 'subjectRef' => 'subject-1'], written: $written, subscriptions: [['endpoint' => 'https://push.example/1']]);
 		$this->assertTrue($with->notificationPreferences()->getData()['pushAvailable']);
+
+		// A device, but only a transport that delivers nothing: push is not offered.
+		$interim = $this->preferencesController(account: ['uuid' => 'account-1', 'subjectRef' => 'subject-1'], written: $written, subscriptions: [['endpoint' => 'https://push.example/1']], canDeliver: false);
+		$this->assertFalse($interim->notificationPreferences()->getData()['pushAvailable']);
+		$this->assertFalse($interim->updateNotificationPreferences(preferences: [])->getData()['pushAvailable']);
 
 		$anonymous = $this->controller(subject: null);
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->notificationPreferences()->getStatus());
