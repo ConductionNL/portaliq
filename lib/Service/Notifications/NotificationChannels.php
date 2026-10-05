@@ -285,4 +285,20 @@ class NotificationChannels {
 			limit: 1
 		) !== [];
 	}//end hasDevice()
+
+	/**
+	 * Whether push is a choice to offer this resident: a push can reach a
+	 * device at all, and the resident registered one. While only the interim
+	 * logging transport is bound this is false, so the settings screen does
+	 * not offer a channel that delivers nothing.
+	 *
+	 * @param string $subjectRef The resident.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-choices-live-on-the-inbox-page-req-nap-008
+	 */
+	public function offersPush(string $subjectRef): bool {
+		return $this->pushAvailable() === true && $this->hasDevice(subjectRef: $subjectRef) === true;
+	}//end offersPush()
 }//end class
