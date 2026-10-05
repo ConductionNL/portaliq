@@ -50,6 +50,9 @@ class PortalShellTest extends TestCase {
 		$this->assertTrue($projected['headerSearch']['enabled']);
 		$this->assertSame('Mijn Wilgenboom', $projected['accountLabel']);
 		$this->assertSame('', (new PortalShell())->project(portal: [])['accountLabel']);
+		// The card label of the resident menu (resident-menu-badges-and-cards).
+		$this->assertSame(['cardLabel' => 'U regelt het voor'], (new PortalShell())->project(portal: ['residentMenu' => ['cardLabel' => ' U regelt het voor ', 'secret' => 'x']])['residentMenu']);
+		$this->assertSame([], (new PortalShell())->project(portal: ['residentMenu' => 'x'])['residentMenu']);
 	}//end testTheProjectionServesTheHeaderSearchAndTheAccountLabel()
 
 	public function testTheFooterServesItsButtonAndContactColumnOnNamedKeys(): void {
