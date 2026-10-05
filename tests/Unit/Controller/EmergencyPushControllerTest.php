@@ -84,26 +84,40 @@ class EmergencyPushControllerTest extends TestCase {
 		$userSession->method('getUser')->willReturn($user);
 
 		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
-		$audienceReader->method('guardiansMatching')->willReturn(['guardian-1', 'guardian-2']);
+		$audienceReader->method('guardiansMatching')->willReturn(['guardian-1', 'guardian-2', 'guardian-3']);
 
 		$delivery = $this->createMock(PushDeliveryService::class);
-		// One delivery throws, the other answers false: the fan-out goes on.
-		$delivery->expects($this->exactly(2))->method('deliver')->willReturnCallback(
-			static fn (string $subjectRef): bool => ($subjectRef === 'guardian-1') ? throw new \RuntimeException('transport down') : false
+		// One delivery throws, one arrives, one answers false: the fan-out
+		// goes on past the throw and counts only the one that arrived.
+		$delivery->expects($this->exactly(3))->method('deliver')->willReturnCallback(
+			static fn (string $subjectRef): bool => match ($subjectRef) {
+				'guardian-1' => throw new \RuntimeException('transport down'),
+				'guardian-2' => true,
+				default => false,
+			}
 		);
 
+		$warnings = [];
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->never())->method('info');
-		$logger->expects($this->once())->method('warning')->with(
-			'Portaliq: emergency push not delivered to every recipient',
-			['sentBy' => 'staff-directie-1', 'recipientCount' => 2, 'deliveredCount' => 0]
+		$logger->method('warning')->willReturnCallback(
+			function (string $message, array $context) use (&$warnings): void {
+				$warnings[] = [$message, $context];
+			}
 		);
 
 		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $logger);
 		$response = $controller->send(['schoolRef' => 'school-de-regenboog'], 'Alarm', 'Evacuate');
 
-		$this->assertSame(2, $response->getData()['recipientCount']);
-		$this->assertSame(0, $response->getData()['deliveredCount']);
+		$this->assertSame(3, $response->getData()['recipientCount']);
+		$this->assertSame(1, $response->getData()['deliveredCount']);
+		$this->assertSame(
+			[
+				['Portaliq: emergency push delivery failed', ['reason' => 'transport down']],
+				['Portaliq: emergency push not delivered to every recipient', ['sentBy' => 'staff-directie-1', 'recipientCount' => 3, 'deliveredCount' => 1]],
+			],
+			$warnings
+		);
 	}//end testAnUndeliveredPushIsNotReportedAsSent()
 
 	public function testSendReportsZeroForAnEmptyResolvedAudience(): void {

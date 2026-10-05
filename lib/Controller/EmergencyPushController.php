@@ -87,6 +87,7 @@ class EmergencyPushController extends Controller {
 			try {
 				$sent = $this->delivery->deliver(subjectRef: $guardianRef, title: $title, body: $body, emergency: true);
 			} catch (Throwable $e) {
+				$this->logger->warning('Portaliq: emergency push delivery failed', ['reason' => $e->getMessage()]);
 				$sent = false;
 			}
 
