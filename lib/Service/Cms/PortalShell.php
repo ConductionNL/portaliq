@@ -70,11 +70,34 @@ class PortalShell {
 			'headerVariant'  => $this->headerVariant(portal: $portal),
 			'headerSearch'   => $this->headerSearch(portal: $portal),
 			'accountLabel'   => $this->text(value: ($portal['accountLabel'] ?? '')),
-			'residentMenu'   => $this->texts(source: ($portal['residentMenu'] ?? null), keys: ['cardLabel']),
+			'residentMenu'   => $this->residentMenu(portal: $portal),
 			'footer'         => $this->footer(portal: $portal),
 			'regions'        => $this->publicRegions(portal: $portal),
 		];
 	}//end project()
+
+	/**
+	 * The resident menu's card label, when the portal names one.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array<string, string> `{cardLabel?}`.
+	 *
+	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
+	 */
+	private function residentMenu(array $portal): array {
+		$menu  = $portal['residentMenu'] ?? [];
+		$label = '';
+		if (is_array($menu) === true) {
+			$label = $this->text(value: ($menu['cardLabel'] ?? ''));
+		}
+
+		if ($label === '') {
+			return [];
+		}
+
+		return ['cardLabel' => $label];
+	}//end residentMenu()
 
 	/**
 	 * The search box in the header: whether it shows (a declared box shows
