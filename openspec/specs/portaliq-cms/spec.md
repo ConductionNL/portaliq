@@ -452,6 +452,67 @@ itself shows does go through the app's translator.
 - THEN "Open portal" is offered alongside the built-in view, edit, copy and delete entries rather than in place of them
 - @e2e portals-open-site.spec.ts — "the pre-existing row actions still work alongside it"
 
+### Requirement: A portal without a published home page MUST be reported as a configuration error
+
+A portal's root route `/` is a CMS page slot like any other, and an absent page
+there answers not found. That answer is correct and SHALL NOT change: the
+router SHALL NOT redirect a signed-in visitor from the root to the signed-in
+area, because the root is content the editor owns.
+
+What SHALL change is that a portal cannot reach that state unnoticed. The
+Portaliq admin SHALL report, on the page where an administrator configures one
+portal, whether that portal has a home page. A home page is a page of this
+portal whose `route` is exactly `/` and whose `status` is `published`. Any
+other state is a configuration error:
+
+- no page at `/` at all, so the root has no content to serve;
+- a page at `/` that is still a draft, so the root serves nothing until it is
+  published.
+
+The report SHALL name the portal, SHALL say which of the two states applies,
+and SHALL say what a home page is in the terms an editor acts on: the route
+`/` and the status `published`. It SHALL NOT block saving a portal, creating
+one, or publishing it. A portal is routinely configured before its pages
+exist, so a refusal would make the normal order of work impossible.
+
+The read SHALL be admin-only. It answers whether a draft page exists at a
+route, which is exactly the existence oracle the public content API withholds,
+so it SHALL NOT be reachable without an administrator's session.
+
+#### Scenario: A portal with no page at its root reports the error
+
+- **GIVEN** an administrator on a portal's page, and that portal has no page whose route is `/`
+- **WHEN** the page loads
+- **THEN** the portal is reported as having no home page
+- **AND** the report names the portal and says a home page is a published page at the route `/`
+- **AND** nothing about the portal is blocked or changed
+- @e2e exclude asserted in tests/portal-home-page.spec.mjs and PortalHomePageTest; both URLs of a route-less portal serve the byte-identical SPA shell, so a browser assertion on the site adds nothing, and the admin widget's own states are read from the controller this suite pins
+
+#### Scenario: A draft at the root is reported as a draft, not as absent
+
+- **GIVEN** a portal whose only page at `/` has status `draft`
+- **WHEN** the administrator opens that portal's page
+- **THEN** the report says the home page is still a draft
+- **AND** it names the draft page, so the administrator can open and publish it
+- @e2e exclude asserted in PortalHomePageTest::testADraftAtTheRootIsADraftNotAnAbsence; the distinction is a classification over stored rows and a browser cannot see which of the two states produced a 404
+
+#### Scenario: A published page at the root clears the error
+
+- **GIVEN** a portal with a published page whose route is `/`
+- **WHEN** the administrator opens that portal's page
+- **THEN** no configuration error is reported
+- **AND** the report confirms the portal has a home page
+- @e2e exclude asserted in tests/portal-home-page.spec.mjs; the cleared state is the absence of a finding, which the unit assertions pin against all three classifications at once
+
+#### Scenario: The report is reached by the page an administrator already opens
+
+- **GIVEN** the Portal page in the Portaliq admin manifest
+- **WHEN** its widgets and layout are read
+- **THEN** the home-page report is one of them, placed above the portal's own fields
+- **AND** its type resolves in the component registry, and the address it reads matches the route the app declares
+- @e2e exclude asserted in tests/portal-home-page.spec.mjs, which compares the widget's address against appinfo/routes.php; a widget registered but never placed is the defect this scenario exists to catch, and it is visible in the manifest, not in a browser
+
+
 ### Requirement: An activity MUST be able to require a guardian's consent, recorded on the sign-up
 
 `activityOffer` SHALL carry `consentRequired` (boolean) and `consentStatement`

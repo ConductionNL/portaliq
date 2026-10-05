@@ -2130,7 +2130,19 @@ OC.L10N.register(
         "Italic ({shortcut})": "Cursief ({shortcut})",
         "List": "Lijst",
         "Web address": "Webadres",
-        "Insert link": "Link invoegen"
+        "Insert link": "Link invoegen",
+        "Home page": "Startpagina",
+        "{portal} has a published home page.": "{portal} heeft een gepubliceerde startpagina.",
+        "{portal} has a home page, but it is still a draft.": "{portal} heeft een startpagina, maar die is nog een concept.",
+        "{portal} has no home page.": "{portal} heeft geen startpagina.",
+        "A draft is not served, so the portal address says the page does not exist.": "Een concept wordt niet uitgeleverd, dus het portaaladres zegt dat de pagina niet bestaat.",
+        "Anyone who opens the portal address is told the page does not exist.": "Wie het portaaladres opent, krijgt te zien dat de pagina niet bestaat.",
+        "A home page is a page of this portal with route / and status published.": "Een startpagina is een pagina van dit portaal met route / en status published.",
+        "Publish {page} to put it live.": "Publiceer {page} om die live te zetten.",
+        "Add a page with route /, then publish it.": "Voeg een pagina toe met route /, en publiceer die.",
+        "Open this page": "Deze pagina openen",
+        "Open the pages of this portal": "De pagina's van dit portaal openen",
+        "The home page of this portal could not be checked.": "De startpagina van dit portaal kon niet worden gecontroleerd."
     },
     "nplurals=2; plural=(n != 1);"
 )
