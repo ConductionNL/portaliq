@@ -12,6 +12,7 @@ Zuiddrecht is a municipality that does not exist. Its website shows what a porta
 
 - Portaliq and OpenRegister, both enabled.
 - The theme app (thematiq) with the `zuiddrecht` set. Without it the site installs and shows without its house style. The command tells you when the set is missing.
+- From a source checkout only: the built site bundle. `npm run dev` builds the admin screens and nothing else. The public site needs `npx webpack --config webpack.site.js` (and `webpack.traffic.js` for traffic measurement), or `npm run build` for everything. Without it the site is a blank page with one 404 on `portaliq-site.js`. A release from the app store has the bundle.
 
 ## Install
 

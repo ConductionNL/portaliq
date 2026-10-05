@@ -667,3 +667,22 @@ test('the own area carries the name the portal gives it', async () => {
 		/withAreaName\(\s*createTranslator\(this\.locale\),\s*this\.site\?\.accountLabel,?\s*\)/,
 	)
 })
+
+test('a trail keeps its own room under the menu line', () => {
+	const css = read('css/site-theme.css')
+	const start = css.indexOf('A trail keeps the room the breadcrumb bar had')
+	assert.ok(start > 0)
+	const rule = css.slice(start, css.indexOf('}', css.indexOf('{', start)) + 1)
+	// Only a bar that holds a trail: the home page keeps the motif's height.
+	assert.match(
+		rule,
+		/\.ac-header__navigation-breadcrumb:not\(:has\(\.container:empty\)\) \{/,
+	)
+	// The motif's height plus the bar's own padding, each with a length to fall back on.
+	assert.match(
+		rule,
+		/padding-block-start: calc\(\s*var\(--cn-brand-stripe-height, 0px\) \+\s*var\(\s*--utrecht-breadcrumb-nav-padding-block-start,\s*var\(--tilburg-space-block-mouse, 0px\)\s*\)\s*\)/,
+	)
+	// After the rule it adds to, so it wins at the same weight for a bar with a trail.
+	assert.ok(start > css.indexOf('the breadcrumb starts under it. */'))
+})
