@@ -36,7 +36,7 @@
 				<strong>{{ render.destination }}</strong>
 			</p>
 			<a
-				class="utrecht-button-link utrecht-button-link--primary-action"
+				class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
 				:href="render.externalUrl"
 				rel="noopener"
 				data-testid="intake-form-external-start">
@@ -245,6 +245,9 @@ import {
 } from './forms/fields.js'
 import stepFlow from './forms/stepFlow.js'
 import { stepHeading } from './forms/steps.js'
+
+// The start link of an external form is a button link.
+import '@utrecht/button-link-css/dist/index.css'
 
 /**
  * The form a catalogue entry starts, rendered on a portal page

@@ -5,13 +5,13 @@
 
 <template>
 	<p
-		v-if="!row"
+		v-if="!row && !quietWhenEmpty"
 		class="utrecht-paragraph pq-detail__empty"
 		data-testid="detail-card-empty">
 		<em>{{ t('Select an item.') }}</em>
 	</p>
 	<div
-		v-else
+		v-else-if="row"
 		class="pq-detail"
 		:class="`pq-detail--${layout}`"
 		data-testid="detail-card">
@@ -140,6 +140,8 @@ export default {
 		collection: { type: Object, required: true },
 		/** The selected row, or null. */
 		row: { type: Object, default: null },
+		/** Say nothing while no row is selected: the table above already invites a choice. */
+		quietWhenEmpty: { type: Boolean, default: false },
 		/** The portal api. */
 		api: { type: Object, default: null },
 		/** The collection's propose-change action, or null. */

@@ -13,7 +13,7 @@
 
 import assert from 'node:assert/strict'
 import { createHash, webcrypto } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -150,4 +150,34 @@ test('the site consumes the link and the sign-in screen opens only the doors way
 	assert.match(app, /waysInFrom\(this\.signinConfig\)/)
 	const area = read('src/site/components/AccountArea.vue')
 	assert.match(area, /<WaysIn[\s\S]*?v-if="ways\.register \|\| ways\.reference"/)
+})
+
+test('a button link ships its stylesheet, so a sign-in link never falls back to browser blue', () => {
+	// Seen on a themed portal's welcome page (2026-10-05): the second
+	// "Inloggen met DigiD" carried utrecht-button-link classes, no stylesheet
+	// in the site defined them, and the browser drew rgb(0, 0, 238).
+	const sheet = '@utrecht/button-link-css'
+	const declared = JSON.parse(read('package.json')).dependencies
+	assert.ok(declared[sheet], `${sheet} is a dependency of its own`)
+	assert.match(
+		read('node_modules/@utrecht/button-link-css/dist/index.css'),
+		/\.utrecht-button-link--primary-action/,
+	)
+	const users = [
+		'src/site/components/AccountArea.vue',
+		'src/site/components/IntakeFormBlock.vue',
+	]
+	for (const file of users) {
+		const source = read(file)
+		assert.match(source, /class="utrecht-button-link /, file)
+		assert.ok(
+			source.includes(`import '${sheet}/dist/index.css'`),
+			`${file} imports the stylesheet of the classes it uses`,
+		)
+	}
+	const using = readdirSync(join(ROOT, 'src/site'), { recursive: true })
+		.filter((file) => String(file).endsWith('.vue'))
+		.map((file) => join('src/site', String(file)))
+		.filter((file) => /class="[^"]*utrecht-button-link\b/.test(read(file)))
+	assert.deepEqual(using.sort(), users, 'every button link in the site is covered')
 })

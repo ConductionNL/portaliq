@@ -13,7 +13,8 @@
 //     never the item list's remove action, and viewing a document belongs to
 //     the sign dialog rather than to a button of its own;
 //   - a `detail` block is the detail card of the row selected in that
-//     collection's table, with the collection's propose-change action;
+//     collection's table, with the collection's propose-change action; under
+//     that table it says nothing until a row is chosen;
 //   - `citizenCase`, `action` and `cta` blocks belong to other slices and are
 //     handed to their slot;
 //   - `kpi`, `calendar` and `news` blocks are the record page's figure cards,
@@ -82,7 +83,11 @@ export function rowActionsOf(contribution, collection) {
  * @return {Array<object>}
  */
 export function resolveBlocks(page, contribution) {
-	return groupTiles(quietCaseUnderDetail(resolveEachBlock(page, contribution)))
+	return groupTiles(
+		quietDetailUnderTable(
+			quietCaseUnderDetail(resolveEachBlock(page, contribution)),
+		),
+	)
 }
 
 /**
@@ -133,6 +138,37 @@ function quietCaseUnderDetail(items) {
 	)
 	return items.map((item) =>
 		item.kind === 'citizenCase' && detailed.has(item.collection?.id)
+			? { ...item, quietWhenEmpty: true }
+			: item,
+	)
+}
+
+/**
+ * A detail card under the table of its own collection stays quiet until a row
+ * is chosen: the table's first column already opens a row, and "Select an
+ * item." under a list reads as a stray line
+ * (site-tables-read-in-their-declared-order). A card without that table on
+ * the page keeps the line, and so does the card a quiet case screen leans on,
+ * so a page never goes from two prompts to none.
+ *
+ * @param {Array<object>} items The resolved blocks.
+ * @return {Array<object>} The same blocks, a quiet detail card marked `quietWhenEmpty`.
+ *
+ * @spec openspec/changes/site-tables-read-in-their-declared-order/specs/portal-contribution-contract/spec.md#requirement-a-detail-card-under-its-own-table-waits-quietly-for-a-row
+ */
+function quietDetailUnderTable(items) {
+	const ids = (kind) =>
+		new Set(
+			items
+				.filter((item) => item.kind === kind)
+				.map((item) => item.collection?.id),
+		)
+	const tabled = ids('table')
+	const cased = ids('citizenCase')
+	return items.map((item) =>
+		item.kind === 'detail'
+		&& tabled.has(item.collection?.id)
+		&& !cased.has(item.collection?.id)
 			? { ...item, quietWhenEmpty: true }
 			: item,
 	)

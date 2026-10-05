@@ -157,6 +157,10 @@ import {
 import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
 import { actingFor } from './e/actingFor.js'
 
+// The sign-in links are button links. Without this stylesheet their classes
+// name nothing and the browser draws its own blue link.
+import '@utrecht/button-link-css/dist/index.css'
+
 /**
  * The names a component declares as props, whether as an array or an object.
  *
