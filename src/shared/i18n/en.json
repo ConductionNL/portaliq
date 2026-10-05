@@ -377,5 +377,7 @@
 	"Untitled": "Untitled",
 	"Attachments": "Attachments",
 	"The download did not work.": "The download did not work.",
-	"Search": "Search"
+	"Search": "Search",
+	"{count} new": "{count} new",
+	"{count} open": "{count} open"
 }

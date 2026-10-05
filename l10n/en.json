@@ -2141,7 +2141,11 @@
         "Where the link goes.": "Where the link goes.",
         "Where the link goes: a page of this portal such as /contact, or a full web, mail or phone address.": "Where the link goes: a page of this portal such as /contact, or a full web, mail or phone address.",
         "Whether the header shows the search box.": "Whether the header shows the search box.",
-        "Who this way in is for, such as Ik ben leerling.": "Who this way in is for, such as Ik ben leerling."
+        "Who this way in is for, such as Ik ben leerling.": "Who this way in is for, such as Ik ben leerling.",
+        "Menu of the own area": "Menu of the own area",
+        "How the menu beside the visitor's own pages opens.": "How the menu beside the visitor's own pages opens.",
+        "Card label": "Card label",
+        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

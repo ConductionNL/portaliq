@@ -377,5 +377,7 @@
 	"Untitled": "Zonder titel",
 	"Attachments": "Bijlagen",
 	"The download did not work.": "Downloaden is niet gelukt.",
-	"Search": "Zoeken"
+	"Search": "Zoeken",
+	"{count} new": "{count} nieuw",
+	"{count} open": "{count} open"
 }

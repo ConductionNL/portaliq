@@ -60,7 +60,9 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `footer` and `regions`.
+	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `residentMenu`, `footer` and `regions`.
+	 *
+	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
 	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
@@ -71,6 +73,7 @@ class PortalShell {
 			'headerVariant'  => $this->headerVariant(portal: $portal),
 			'headerSearch'   => $this->headerSearch(portal: $portal),
 			'accountLabel'   => $this->text(value: ($portal['accountLabel'] ?? '')),
+			'residentMenu'   => $this->texts(source: (is_array($portal['residentMenu'] ?? null) === true ? $portal['residentMenu'] : []), keys: ['cardLabel']),
 			'footer'         => $this->footer(portal: $portal),
 			'regions'        => $this->publicRegions(portal: $portal),
 		];

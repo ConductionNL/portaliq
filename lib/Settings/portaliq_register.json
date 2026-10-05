@@ -2809,6 +2809,19 @@
                         "description": "The text of one button in the header that opens the visitor's own area, where they choose how to sign in. Empty shows a link for each way to sign in instead.",
                         "example": "Mijn Wilgenboom"
                     },
+                    "residentMenu": {
+                        "title": "Menu of the own area",
+                        "type": "object",
+                        "description": "How the menu beside the visitor's own pages opens.",
+                        "properties": {
+                            "cardLabel": {
+                                "title": "Card label",
+                                "type": "string",
+                                "description": "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.",
+                                "example": "U regelt het voor"
+                            }
+                        }
+                    },
                     "locales": {
                         "title": "Locales",
                         "type": "array",

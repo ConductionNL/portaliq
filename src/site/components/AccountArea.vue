@@ -23,7 +23,9 @@
 			:groups="menuGroups"
 			:currentRoute="currentRoute"
 			:label="t('My area')"
-			:showLabel="t('Menu of my area')"
+			:showLabel="(portal && portal.accountLabel) || t('Menu of my area')"
+			:card="menuCard"
+			:newLabel="t('{count} new')"
 			:hideLabel="t('Close the menu')"
 			@navigate="$emit('navigate', $event)" />
 		<div class="pq-account__content">
@@ -273,6 +275,21 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The card at the top of the resident menu: whom the resident acts for,
+		 * when the session acts for an organisation and the portal names the
+		 * card's label (resident-menu-badges-and-cards, G-06).
+		 *
+		 * @return {object|null} `{label, title}`.
+		 *
+		 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
+		 */
+		menuCard() {
+			const label = this.portal?.residentMenu?.cardLabel
+			const title = this.session?.organisationName
+			return label && title ? { label, title } : null
+		},
+
 		/**
 		 * The portal's sign-in page text, or an empty object.
 		 *
