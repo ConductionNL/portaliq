@@ -69,7 +69,7 @@ class ExampleResidentRecord {
 	 * @param string $id The declaration's id.
 	 *
 	 * @return array{userId: string, userCreated: bool, account: string, signIn: array{mode: string, label: bool},
-	 *               objects: array<string, array{register: string, schema: string, id: string}>}
+	 *               objects: array<string, array{register: string, schema: string, id: string, subject: string}>}
 	 *
 	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-resident
 	 */
@@ -96,6 +96,7 @@ class ExampleResidentRecord {
 				'register' => (string)($object['register'] ?? ''),
 				'schema'   => (string)($object['schema'] ?? ''),
 				'id'       => $object['id'],
+				'subject'  => (string)($object['subject'] ?? ''),
 			];
 		}
 

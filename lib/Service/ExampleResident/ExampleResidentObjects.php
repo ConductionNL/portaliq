@@ -75,7 +75,7 @@ class ExampleResidentObjects {
 			$outcome['types'][$type] ??= ['declared' => 0, 'created' => 0, 'kept' => 0, 'arrived' => 0];
 			$outcome['types'][$type]['declared']++;
 
-			$kept = $this->kept(recorded: ($recorded[$key] ?? null));
+			$kept = $this->kept(recorded: ($recorded[$key] ?? null), subject: $subject);
 			if ($kept !== null) {
 				$outcome['types'][$type]['kept']++;
 				$context['objects'][$key] = $kept;
@@ -91,7 +91,12 @@ class ExampleResidentObjects {
 
 			$outcome['types'][$type]['created']++;
 			$outcome['written'][$key]  = $made['data'];
-			$outcome['recorded'][$key] = ['register' => $object['register'], 'schema' => $object['schema'], 'id' => $made['row']['id']];
+			$outcome['recorded'][$key] = [
+				'register' => $object['register'],
+				'schema'   => $object['schema'],
+				'id'       => $made['row']['id'],
+				'subject'  => $subject,
+			];
 			$context['objects'][$key]  = $made['row'];
 		}//end foreach
 
@@ -99,14 +104,18 @@ class ExampleResidentObjects {
 	}//end write()
 
 	/**
-	 * The row an earlier install created, when it is still there.
+	 * The row an earlier install created for this same resident, when it is still there.
+	 *
+	 * A row written for another account id is not this resident's: a case
+	 * that could not be deleted stays behind under the id it was written for.
 	 *
 	 * @param array<string, string>|null $recorded The record's entry for the object, or null.
+	 * @param string                     $subject  The resident's subject reference.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function kept(?array $recorded): ?array {
-		if ($recorded === null) {
+	private function kept(?array $recorded, string $subject): ?array {
+		if ($recorded === null || ($recorded['subject'] ?? '') !== $subject) {
 			return null;
 		}
 

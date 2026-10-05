@@ -136,6 +136,10 @@ class ExampleResidentRemove extends Command {
 		}
 
 		if ($report['failed'] !== []) {
+			$output->writeln(
+				'<comment>OpenRegister keeps an archive record, such as a case, until its retention rule removes it.'
+				. ' What is left stays in its app and stays recorded here: a new install for the same account id uses it again.</comment>'
+			);
 			return 2;
 		}
 
