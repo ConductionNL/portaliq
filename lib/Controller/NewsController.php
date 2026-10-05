@@ -117,9 +117,20 @@ class NewsController extends Controller {
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `public` is a request parameter the framework
+	 * binds by name; it is data the item stores, not a switch between two behaviours here.
 	 */
 	#[NoAdminRequired]
-	public function create(string $title, string $body, array $target, array $photoRefs=[], bool $public=false, string $portal='', string $audienceLabel=''): JSONResponse {
+	public function create(
+		string $title,
+		string $body,
+		array $target,
+		array $photoRefs=[],
+		bool $public=false,
+		string $portal='',
+		string $audienceLabel=''
+	): JSONResponse {
 		$authorRef = $this->requireAuthenticatedStaff();
 
 		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
@@ -174,7 +185,15 @@ class NewsController extends Controller {
 	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
 	 */
 	#[NoAdminRequired]
-	public function update(string $id, string $title, string $body, array $target, ?bool $public=null, string $portal='', string $audienceLabel=''): JSONResponse {
+	public function update(
+		string $id,
+		string $title,
+		string $body,
+		array $target,
+		?bool $public=null,
+		string $portal='',
+		string $audienceLabel=''
+	): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
 		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {

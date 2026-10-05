@@ -47,6 +47,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Reads the public news of one portal.
  *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- MediaReferences::isReference is the one test of a media
+ * reference the CMS uses; asking it statically keeps the rule in one place.
+ *
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
  */
 class PublicNewsReader {
@@ -178,13 +181,17 @@ class PublicNewsReader {
 	 * @return array<string, mixed>
 	 */
 	private function summary(string $portal, array $row): array {
-		$moment = $this->momentOf(row: $row);
+		$moment    = $this->momentOf(row: $row);
+		$published = '';
+		if ($moment !== PHP_INT_MIN) {
+			$published = gmdate('c', $moment);
+		}
 
 		return [
 			'id'            => $this->rows->rowId(row: $row),
 			'title'         => (string)($row['title'] ?? ''),
 			'intro'         => self::introOf(body: (string)($row['body'] ?? '')),
-			'publishedAt'   => ($moment === PHP_INT_MIN) ? '' : gmdate('c', $moment),
+			'publishedAt'   => $published,
 			'audienceLabel' => trim((string)($row['audienceLabel'] ?? '')),
 			'image'         => $this->imageOf(portal: $portal, row: $row),
 		];
