@@ -34,6 +34,8 @@ namespace OCA\Portaliq\Service\Notifications;
 
 use DateInterval;
 use DateTimeImmutable;
+use DateTimeZone;
+use OCP\IConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -58,14 +60,24 @@ class QuietHoursPolicy {
 	public const DEFAULT_END = '07:00';
 
 	/**
+	 * The zone a window's clock times are read in when neither the subject
+	 * nor the instance names one. Nextcloud runs PHP in UTC, so without this
+	 * a 22:00-07:00 window would hold back pushes from 07:00 to 09:00 Dutch
+	 * summer time and let them through from 22:00 to midnight.
+	 */
+	public const FALLBACK_TIMEZONE = 'Europe/Amsterdam';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
+	 * @param IConfig $config For the subject's and the instance's time zone.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly IConfig $config,
 	) {
 	}//end __construct()
 
@@ -162,7 +174,8 @@ class QuietHoursPolicy {
 	}//end resolveWindow()
 
 	/**
-	 * Whether a subject is currently within their quiet-hours window.
+	 * Whether a subject is currently within their quiet-hours window, read
+	 * on the clock of the subject's time zone ({@see self::timeZoneFor()}).
 	 * Handles a window that wraps midnight (e.g. 22:00-07:00).
 	 *
 	 * @param string $subjectRef The subject's own subjectRef.
@@ -174,7 +187,7 @@ class QuietHoursPolicy {
 	 */
 	public function isQuietNow(string $subjectRef, ?DateTimeImmutable $now = null): bool {
 		$window = $this->resolveWindow(subjectRef: $subjectRef);
-		$current = ($now ?? new DateTimeImmutable())->format('H:i');
+		$current = ($now ?? new DateTimeImmutable())->setTimezone($this->timeZoneFor(subjectRef: $subjectRef))->format('H:i');
 
 		if ($window['start'] <= $window['end']) {
 			// A same-day window, e.g. 08:00-16:30.
@@ -186,8 +199,9 @@ class QuietHoursPolicy {
 	}//end isQuietNow()
 
 	/**
-	 * The next moment a subject's quiet-hours window ends, from `$now`.
-	 * Used to set a deferred push's `deliverAfter`.
+	 * The next moment a subject's quiet-hours window ends, from `$now`, on
+	 * the clock of the subject's time zone. Used to set a deferred push's
+	 * `deliverAfter`, which keeps its offset, so the moment stays exact.
 	 *
 	 * @param string $subjectRef The subject's own subjectRef.
 	 * @param DateTimeImmutable|null $now Testable clock; defaults to now.
@@ -198,7 +212,7 @@ class QuietHoursPolicy {
 	 */
 	public function windowEnd(string $subjectRef, ?DateTimeImmutable $now = null): DateTimeImmutable {
 		$window = $this->resolveWindow(subjectRef: $subjectRef);
-		$now = ($now ?? new DateTimeImmutable());
+		$now = ($now ?? new DateTimeImmutable())->setTimezone($this->timeZoneFor(subjectRef: $subjectRef));
 		[$hour, $minute] = array_map('intval', explode(':', $window['end']));
 
 		$end = $now->setTime(hour: $hour, minute: $minute, second: 0);
@@ -208,6 +222,58 @@ class QuietHoursPolicy {
 
 		return $end;
 	}//end windowEnd()
+
+	/**
+	 * The time zone a subject's window is read in: the subject's own
+	 * Nextcloud time zone when the subject is a user who has one (staff),
+	 * else the instance's `default_timezone`, else {@see self::FALLBACK_TIMEZONE}.
+	 * An unknown zone name is skipped, never fatal.
+	 *
+	 * @param string $subjectRef The subject's own subjectRef.
+	 *
+	 * @return DateTimeZone
+	 *
+	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
+	 */
+	public function timeZoneFor(string $subjectRef): DateTimeZone {
+		$candidates = [
+			$this->userTimeZoneName(subjectRef: $subjectRef),
+			$this->config->getSystemValueString('default_timezone', ''),
+		];
+
+		foreach ($candidates as $name) {
+			if ($name === '') {
+				continue;
+			}
+
+			try {
+				return new DateTimeZone($name);
+			} catch (Throwable $e) {
+				$this->logger->debug('Portaliq: quiet hours skips an unknown time zone', ['zone' => $name]);
+			}
+		}
+
+		return new DateTimeZone(self::FALLBACK_TIMEZONE);
+	}//end timeZoneFor()
+
+	/**
+	 * The subject's own Nextcloud time zone name, or ''. Nextcloud refuses a
+	 * user id it cannot store (longer than 64 bytes, as a subjectRef taken
+	 * from an identity provider's claim can be); such a subject is not a
+	 * Nextcloud user, so it simply has no zone of its own.
+	 *
+	 * @param string $subjectRef The subject's own subjectRef.
+	 *
+	 * @return string
+	 */
+	private function userTimeZoneName(string $subjectRef): string {
+		try {
+			return (string)$this->config->getUserValue($subjectRef, 'core', 'timezone', '');
+		} catch (Throwable $e) {
+			$this->logger->debug('Portaliq: quiet hours cannot read a time zone for this subject', ['reason' => $e->getMessage()]);
+			return '';
+		}
+	}//end userTimeZoneName()
 
 	/**
 	 * Whether a value is a valid `HH:MM` 24h time string.

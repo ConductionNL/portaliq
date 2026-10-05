@@ -78,7 +78,13 @@
 				:userMenuLabel="t('User menu')"
 				:breadcrumbLabel="t('Breadcrumb')"
 				:logoLabel="t('Logo')"
+				:searchBox="headerSearch"
+				:searchLabel="t('Search')"
+				:accountLabel="site.accountLabel || ''"
+				:accountHref="hrefForRoute('/mijn')"
+				:menuLabel="t('Menu')"
 				@navigate="go"
+				@search="goSearch"
 				@signout="signOut">
 				<template #account>
 					<ActingForSwitcher :t="t" />
@@ -120,6 +126,16 @@
 			:role="confirmMessage.role"
 			data-testid="site-confirm-email">
 			{{ confirmMessage.text }}
+		</p>
+
+		<!-- What came of an invitation link (`#claim=`), or the ask to sign
+		     in for it (invitation-secret-joins-the-signed-in-account). -->
+		<p
+			v-if="claimMessage"
+			class="container utrecht-paragraph"
+			:role="claimMessage.role"
+			data-testid="site-claim-invitation">
+			{{ claimMessage.text }}
 		</p>
 
 		<!--
@@ -258,6 +274,7 @@
 							@navigate="goSection"
 							@unread="unreadOverride = $event"
 							@refresh="loadAccount"
+							@claimed="onCodeClaimed"
 							@signout="signOut">
 							<template v-if="session && contactPrompt" #prompt>
 								<ContactPrompt
@@ -488,6 +505,12 @@ import FooterColumns from './components/FooterColumns.vue'
 import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
+import {
+	codeOutcome,
+	forgetClaimSecret,
+	keepClaimSecret,
+	redeemKeptClaim,
+} from '../shared/claimInvitation.js'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
 import { noticesFor } from '../shared/notices.js'
@@ -542,6 +565,7 @@ import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js
 import {
 	footerMenusOf,
 	headerMenusOf,
+	headerSearchOf,
 	headerVariantOf,
 	legalLinksOf,
 	registerRouteOf,
@@ -670,6 +694,8 @@ export default {
 			signInNeeded: false,
 			// The answer to a `#confirm-email=` link, or null.
 			confirmMessage: null,
+			// What came of an invitation link (`#claim=`), or null.
+			claimMessage: null,
 			// Whether to ask for an e-mail address (slice e's ContactPrompt).
 			contactPrompt: false,
 			// A signed link for one guest act (`#guest/...`); the page reads it.
@@ -698,12 +724,6 @@ export default {
 			routeParam: '',
 			// The title of the shared dossier on screen, once it is read.
 			sharedDossierTitle: '',
-			// Where the hero's search box sends a term. A constant rather than
-			// a portal field for now: the seeded portal puts search at
-			// `/zoeken`, matching the reference, and a portal that moves it
-			// wants a `searchRoute` on the portal object rather than a guess
-			// here.
-			searchRoute: '/zoeken',
 			loading: true,
 			error: null,
 			// The editing context for the route on screen, or null for every
@@ -891,6 +911,8 @@ export default {
 				signedIn: this.session !== null,
 				navigation: this.navigation,
 				languages: this.languages,
+				// The portal's sign-in ways, for the nlSignIn block (lane L2, G-13).
+				signInRoutes: this.signInRoutes,
 			}
 		},
 
@@ -913,6 +935,29 @@ export default {
 
 				current: this.site.locale || '',
 			}
+		},
+
+		/**
+		 * The header's search box, and the page every search box opens
+		 * (site-chrome-follows-the-design).
+		 *
+		 * @return {object} `{enabled, placeholder, route}`.
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 */
+		headerSearch() {
+			return headerSearchOf(this.site)
+		},
+
+		/**
+		 * Where a search box sends a term: the portal's search page.
+		 *
+		 * @return {string} The route, `/zoeken` unless the portal names another.
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 */
+		searchRoute() {
+			return this.headerSearch.route
 		},
 
 		/**
@@ -1340,6 +1385,9 @@ export default {
 		// kept in sessionStorage before anything else reads the address, so
 		// it survives the sign-in and opens once the navigation has loaded.
 		this.keepOpenTarget()
+		// An invitation's secret (`#claim=<secret>`) is kept the same way,
+		// and handed back once the visitor is signed in.
+		keepClaimSecret(window.location, window.history, this.claimStorage())
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()
@@ -1444,10 +1492,54 @@ export default {
 				t: this.t,
 			})
 
+			// A kept invitation is handed back before the account loads, so
+			// what it shares is there on the first read.
+			this.claimMessage = await redeemKeptClaim({
+				api: this.api,
+				session: this.session,
+				t: this.t,
+				storage: this.claimStorage(),
+			})
+
 			if (this.session) {
 				await this.loadAccount()
 			} else {
 				this.trySilentSignIn()
+			}
+		},
+
+		/**
+		 * A code from a letter was right (invitation-code-from-a-letter).
+		 * Reading the account again rebuilds the navigation and remounts the
+		 * page the code was typed on, so the sentence is shown by the shell,
+		 * at the top of the page, where it survives that.
+		 *
+		 * @return {Promise<void>} Resolves when the account is read again.
+		 *
+		 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+		 */
+		async onCodeClaimed() {
+			this.claimMessage = {
+				role: 'status',
+				text: this.t(codeOutcome({ ok: true }).text),
+			}
+			window.scrollTo?.({ top: 0 })
+			await this.loadAccount()
+		},
+
+		/**
+		 * sessionStorage for a kept invitation, or null where the browser
+		 * refuses it.
+		 *
+		 * @return {Storage|null}
+		 *
+		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+		 */
+		claimStorage() {
+			try {
+				return window.sessionStorage
+			} catch {
+				return null
 			}
 		},
 
@@ -1536,6 +1628,7 @@ export default {
 			this.recordRows = {}
 			this.contactPrompt = false
 			forgetActingFor()
+			forgetClaimSecret(this.claimStorage())
 			try {
 				window.sessionStorage.removeItem(OPEN_STORAGE_KEY)
 				window.sessionStorage.removeItem(TASK_STORAGE_KEY)

@@ -138,6 +138,10 @@
         <!-- portal-page-traffic: rebuild the retained days now, the same
              back-fill the aggregation job runs once after an upgrade. -->
         <command>OCA\Portaliq\Command\TrafficReaggregate</command>
+        <!-- example-site-zuiddrecht: put a shipped example site on the
+             instance, and take it off again. -->
+        <command>OCA\Portaliq\Command\ExampleSiteInstall</command>
+        <command>OCA\Portaliq\Command\ExampleSiteRemove</command>
     </commands>
 
     <settings>

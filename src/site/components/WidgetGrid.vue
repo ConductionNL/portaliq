@@ -357,6 +357,18 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
+		/**
+		 * The portal's sign-in routes, `{mode, label, href}` as the shell
+		 * derives them from `authentication.modes` (authApi.js
+		 * signInRoutes). Handed to `nlSignIn` AFTER its authored props, so a
+		 * page words the card but cannot add or change a way in
+		 * (site-school-blocks).
+		 */
+		signInRoutes: {
+			type: Array,
+			default: () => [],
+		},
 	},
 
 	// `search` comes from the shared hero block, which renders a search box and
@@ -432,6 +444,7 @@ export default {
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
 		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
 		 */
 		propsFor(widget) {
 			// `style` and `class` never reach a block (REQ-PTB-007).
@@ -541,6 +554,28 @@ export default {
 						: [],
 
 					current: languages.current || '',
+				}
+			}
+
+			// site-school-blocks: the news widgets read this portal's public
+			// news, and the article takes its item from the route; the sign-in
+			// card gets the portal's own ways in. All after the authored props.
+			if (
+				widget.widgetKey === 'nlNewsList'
+				|| widget.widgetKey === 'nlNewsArticle'
+			) {
+				return { ...props, portal: this.portal, routeParam: this.routeParam }
+			}
+
+			if (widget.widgetKey === 'nlSignIn') {
+				return {
+					...props,
+					signedIn: this.signedIn === true,
+					ways: this.signInRoutes.map((r) => ({
+						id: r.mode,
+						label: r.label,
+						href: r.href,
+					})),
 				}
 			}
 

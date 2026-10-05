@@ -392,7 +392,8 @@ task" for a task link.
 ### Requirement: Notification choices MUST be settable per kind (REQ-SRP-031)
 
 The inbox SHALL offer collapsed notification settings: per kind an e-mail and a
-push checkbox, the push column only when a device is registered, and the message
+push checkbox, the push column only when a device is registered and a push
+transport that really delivers is bound, and the message
 box channel when the organisation offers it.
 
 #### Scenario: Turning off e-mail for one kind

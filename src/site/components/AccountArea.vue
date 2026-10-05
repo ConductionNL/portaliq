@@ -23,7 +23,9 @@
 			:groups="menuGroups"
 			:currentRoute="currentRoute"
 			:label="t('My area')"
-			:showLabel="t('Menu of my area')"
+			:showLabel="(portal && portal.accountLabel) || t('Menu of my area')"
+			:card="menuCard"
+			:newLabel="t('{count} new')"
 			:hideLabel="t('Close the menu')"
 			@navigate="$emit('navigate', $event)" />
 		<div class="pq-account__content">
@@ -41,28 +43,43 @@
 			</p>
 
 			<div v-else-if="!session" data-testid="site-account-signin">
-				<h1 class="utrecht-heading-2">
-					{{ t('Welcome') }}
-				</h1>
-				<p class="utrecht-paragraph">
-					{{ t('Log in to view your information.') }}
-				</p>
-				<ul v-if="signInRoutes.length" class="pq-account__ways-in">
-					<li v-for="way in signInRoutes" :key="way.mode">
-						<a
-							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
-							:href="way.href"
-							:data-mode="way.mode"
-							data-testid="site-account-signin-route">
-							{{ way.label }}
-						</a>
-					</li>
-				</ul>
-				<p v-else class="utrecht-paragraph">
-					{{
+				<!-- The sign-in page as role cards, for a portal that writes them
+				     (site-chrome-follows-the-design, G-18); loaded on demand. -->
+				<SignInPage
+					v-if="signInDesigned"
+					:routes="signInRoutes"
+					:page="signInPageText"
+					:welcomeLabel="t('Welcome')"
+					:introLabel="t('Log in to view your information.')"
+					:noWayLabel="
 						t('No login method is configured for this organisation yet.')
-					}}
-				</p>
+					" />
+				<template v-else>
+					<h1 class="utrecht-heading-2">
+						{{ t('Welcome') }}
+					</h1>
+					<p class="utrecht-paragraph">
+						{{ t('Log in to view your information.') }}
+					</p>
+					<ul v-if="signInRoutes.length" class="pq-account__ways-in">
+						<li v-for="way in signInRoutes" :key="way.mode">
+							<a
+								class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
+								:href="way.href"
+								:data-mode="way.mode"
+								data-testid="site-account-signin-route">
+								{{ way.label }}
+							</a>
+						</li>
+					</ul>
+					<p v-else class="utrecht-paragraph">
+						{{
+							t(
+								'No login method is configured for this organisation yet.',
+							)
+						}}
+					</p>
+				</template>
 				<button
 					v-if="devLogin"
 					type="button"
@@ -132,6 +149,7 @@
 					@navigate="$emit('navigate', $event)"
 					@unread="$emit('unread', $event)"
 					@refresh="$emit('refresh')"
+					@claimed="$emit('claimed')"
 					@removed="$emit('signout')" />
 			</template>
 		</div>
@@ -186,6 +204,8 @@ export default {
 	components: {
 		// Loaded only while the resident acts for someone else.
 		ActingForBar: defineAsyncComponent(() => import('./mijn/ActingForBar.vue')),
+		// Loaded only on a portal that writes its sign-in cards.
+		SignInPage: defineAsyncComponent(() => import('./chrome/SignInPage.vue')),
 		ResidentMenu,
 		WaysIn,
 	},
@@ -240,7 +260,7 @@ export default {
 		currentRoute: { type: String, default: '' },
 	},
 
-	emits: ['devlogin', 'navigate', 'unread', 'refresh', 'signout'],
+	emits: ['devlogin', 'navigate', 'unread', 'refresh', 'claimed', 'signout'],
 
 	data() {
 		return {
@@ -256,6 +276,47 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The card at the top of the resident menu: whom the resident acts for,
+		 * when the session acts for an organisation and the portal names the
+		 * card's label (resident-menu-badges-and-cards, G-06).
+		 *
+		 * @return {object|null} `{label, title}`.
+		 *
+		 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
+		 */
+		menuCard() {
+			const label = this.portal?.residentMenu?.cardLabel
+			const title = this.session?.organisationName
+			return label && title ? { label, title } : null
+		},
+
+		/**
+		 * The portal's sign-in page text, or an empty object.
+		 *
+		 * @return {object} `authentication.signInPage`.
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+		 */
+		signInPageText() {
+			return this.portal?.authentication?.signInPage || {}
+		},
+
+		/**
+		 * Whether the portal wrote its sign-in page: page text or a card for
+		 * one of its ways in. Otherwise the plain list of buttons stays.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+		 */
+		signInDesigned() {
+			return (
+				Object.keys(this.signInPageText).length > 0
+				|| this.signInRoutes.some((way) => way.card)
+			)
+		},
+
 		/**
 		 * Whether the resident menu shows: signed in, with groups to show.
 		 * Signed out this area is the way in and keeps its full width.
@@ -326,6 +387,7 @@ export default {
 				closedMarker: this.contributions?.cases?.closedMarker === true,
 				canOpen: (target) => navKeyFor(this.nav, target) !== null,
 				openCase: (target, row) => this.openCase(target, row),
+				caseRoute: (target) => this.caseRoute(target),
 				// The record a route chooses on a record page
 				// (site-mijn-omgeving-components REQ-SMO-008).
 				routeRecordId: recordIdOfRoute(this.currentRoute),
@@ -411,9 +473,8 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
 		 */
 		openCase(target, row) {
-			const key = navKeyFor(this.nav, target)
-			const entry = this.nav.find((candidate) => candidate.key === key)
-			if (!entry) {
+			const route = this.caseRoute(target)
+			if (!route) {
 				return
 			}
 			try {
@@ -429,13 +490,28 @@ export default {
 			} catch {
 				// Without storage the page opens without the case selected.
 			}
+			this.$emit('navigate', route)
+		},
+
+		/**
+		 * The in-site route a case opens on, so my cases can render it as a
+		 * real link (a new tab, a bookmark); '' when no page shows it.
+		 *
+		 * @param {{app: string, collection: string, id: string}} target The case.
+		 * @return {string} The route, or ''.
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 */
+		caseRoute(target) {
+			const key = navKeyFor(this.nav, target)
+			const entry = this.nav.find((candidate) => candidate.key === key)
+			if (!entry) {
+				return ''
+			}
 			// A record page opens on that record's route (REQ-SMO-010).
-			this.$emit(
-				'navigate',
-				opensAsRecordPage(entry, target.collection)
-					? `${routeForNav(entry)}/${encodeURIComponent(target.id)}`
-					: routeForNav(entry),
-			)
+			return opensAsRecordPage(entry, target.collection)
+				? `${routeForNav(entry)}/${encodeURIComponent(target.id)}`
+				: routeForNav(entry)
 		},
 	},
 }

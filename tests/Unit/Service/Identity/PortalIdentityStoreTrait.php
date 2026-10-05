@@ -24,6 +24,24 @@ trait PortalIdentityStoreTrait {
 	private array $rows = [];
 
 	/**
+	 * When set, the fake reader ignores the organisation filter, the way a
+	 * reader whose filter is trusted for the query but not for the answer
+	 * would: a test then proves the service's own organisation check.
+	 *
+	 * @var bool
+	 */
+	private bool $readerIgnoresOrganisation = false;
+
+	/**
+	 * Called once after a read with the scope field it read on, before the
+	 * rows are handed back: a test runs a second request between a read and
+	 * the write that follows it. Return true to stay armed.
+	 *
+	 * @var \Closure|null
+	 */
+	private ?\Closure $afterRead = null;
+
+	/**
 	 * A reader over the fake store.
 	 *
 	 * @return PortalObjectReader
@@ -45,7 +63,7 @@ trait PortalIdentityStoreTrait {
 						continue;
 					}
 
-					if ($organisation !== '' && ($row['organisation'] ?? null) !== $organisation) {
+					if ($organisation !== '' && $this->readerIgnoresOrganisation === false && ($row['organisation'] ?? null) !== $organisation) {
 						continue;
 					}
 
@@ -56,6 +74,14 @@ trait PortalIdentityStoreTrait {
 					}
 
 					$matches[] = $row;
+				}
+
+				$hook = $this->afterRead;
+				if ($hook !== null) {
+					$this->afterRead = null;
+					if ($hook($scopeField) === true) {
+						$this->afterRead = $hook;
+					}
 				}
 
 				return $matches;

@@ -319,6 +319,28 @@ export async function lookUpStatus(base, reference, portal, fetchImpl = null) {
 }
 
 /**
+ * A due date as a Dutch reader writes it, or '' when it is not a date.
+ *
+ * @param {string|undefined} value An ISO 8601 moment.
+ * @return {string} Such as "2 november 2026".
+ *
+ * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+ */
+function readableDate(value) {
+	const moment = new Date(String(value || ''))
+	if (!value || Number.isNaN(moment.getTime())) {
+		return ''
+	}
+
+	return new Intl.DateTimeFormat('nl-NL', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+		timeZone: 'Europe/Amsterdam',
+	}).format(moment)
+}
+
+/**
  * The sentence a status reads as, and its tone.
  *
  * A queued request never claims a case: the case does not exist yet. A failed
@@ -329,6 +351,7 @@ export async function lookUpStatus(base, reference, portal, fetchImpl = null) {
  * @return {{tone: string, sentence: string}} The view.
  *
  * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+ * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
  */
 export function statusView(status) {
 	if (!status) {
@@ -340,6 +363,16 @@ export function statusView(status) {
 	}
 
 	const reference = String(status.reference || '')
+
+	const dueDate = status.state === 'registered' ? readableDate(status.dueAt) : ''
+	if (dueDate && status.externalReference) {
+		// A Woo request whose statutory term runs. The date is the one the
+		// receiving app armed; without one this sentence is never shown.
+		return {
+			tone: 'success',
+			sentence: `Uw verzoek ${reference} is ontvangen onder kenmerk ${status.externalReference}. U krijgt uiterlijk ${dueDate} een besluit.`,
+		}
+	}
 
 	if (status.state === 'registered') {
 		return {

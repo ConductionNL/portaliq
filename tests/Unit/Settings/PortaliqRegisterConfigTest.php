@@ -326,11 +326,47 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.58.0 (newsItem 0.3.0): `publishedAt`, the moment staff published
 		// the item, stamped by NewsController::publish and back-filled by the
 		// repair step BackfillNewsPublishedAt (news-publish-date). Additive.
-		$this->assertSame('0.58.0', self::$register['info']['version']);
-		$this->assertSame('0.58.0', self::$register['components']['registers']['portaliq']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['newsItem']['version']);
+		// 0.59.0 (portalFormBinding 0.2.0, portalIntakeSubmission 0.2.0):
+		// `deliverTo` routes a Woo-request form to opencatalogi's intake, and
+		// a submission keeps the `externalReference` and `dueAt` that intake
+		// armed (woo-request-intake-through-opencatalogi). Additive.
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
+		// 0.60.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
+		// the one-time secret of a waiting account's invitation, and
+		// `claimAttempts` with `claimAttemptsSince`, the wrong secrets an
+		// account offered (invitation-secret-joins-the-signed-in-account).
+		// Additive.
+		// 0.61.0 (portalAccount 0.16.0): `claimCodeHash`, the short code of an
+		// invitation letter (invitation-code-from-a-letter). Additive.
+		// 0.62.0 (portalAccount 0.17.0): the five `claim*` fields are readable
+		// and writable by administrators only (security review M4).
+		// 0.63.0 (newsItem 0.4.0): `public`, `portal` and `audienceLabel`, so
+		// staff can put an item on one portal's public website
+		// (site-school-blocks). Additive; an item from before is not public.
+		// 0.64.0 (portalPage 0.6.0): the school display keys, the greeting
+		// block and `visibleFromField` (site-school-blocks wave 2). Additive.
+		// 0.65.0 (portal 0.10.0): `headerSearch`, `accountLabel`, `footer.cta`,
+		// `footer.contact`, `authentication.modeLabels` and
+		// `authentication.signInPage` (site-chrome-follows-the-design). Additive.
+		// 0.66.0 (portal 0.11.0): `residentMenu.cardLabel`
+		// (resident-menu-badges-and-cards). Additive.
+		$this->assertSame('0.66.0', self::$register['info']['version']);
+		$this->assertSame('0.66.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
+		$this->assertSame('integer', self::$register['components']['schemas']['portalAccount']['properties']['claimAttempts']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimAttemptsSince']['format']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['newsItem']['version']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['newsItem']['properties']['public']['type']);
+		$this->assertFalse(self::$register['components']['schemas']['newsItem']['properties']['public']['default']);
+		$this->assertSame('string', self::$register['components']['schemas']['newsItem']['properties']['portal']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
@@ -379,9 +415,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.11.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()
@@ -646,7 +682,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [
@@ -783,8 +819,39 @@ class PortaliqRegisterConfigTest extends TestCase {
 			'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example']],
 		]]));
 		$this->assertFalse($valid(['title' => 'Docs', 'footer' => ['socials' => 'https://social.example']]), 'socials is a list');
-		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges'], array_keys($schema['properties']['footer']['properties']));
+		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges', 'cta', 'contact'], array_keys($schema['properties']['footer']['properties']));
 	}//end testThePortalDeclaresItsFooter()
+
+	/**
+	 * site-chrome-follows-the-design: the keys the learniq lane writes for a
+	 * school portal validate against the real portal schema, and a wrong
+	 * shape does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 */
+	public function testThePortalDeclaresItsChrome(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid([
+			'title'          => 'Mijn Wilgenboom',
+			'headerSearch'   => ['label' => 'Zoeken op de website', 'route' => '/zoeken'],
+			'accountLabel'   => 'Mijn Wilgenboom',
+			'footer'         => [
+				'cta'     => ['label' => 'Contact en schooltijden', 'href' => '/contact'],
+				'contact' => ['title' => 'Contact', 'lines' => [['text' => 'Wilgenlaan 12, Zuiddrecht'], ['text' => 'E-mail', 'href' => 'mailto:info@example.org']]],
+			],
+			'authentication' => [
+				'modes'      => ['public', 'digid'],
+				'modeLabels' => ['digid' => ['title' => 'Ouder of verzorger', 'text' => 'Met de DigiD-app', 'button' => 'Inloggen met DigiD']],
+				'signInPage' => ['title' => 'Inloggen bij Mijn Wilgenboom', 'notice' => ['text' => 'Logt u voor het eerst in?'], 'panel' => ['title' => 'Alles over school', 'items' => [['title' => 'Afwezig melden']]]],
+			],
+		]));
+		$this->assertFalse($valid(['title' => 'X', 'headerSearch' => 'ja']), 'the search box is an object');
+		$this->assertFalse($valid(['title' => 'X', 'footer' => ['contact' => ['lines' => 'Wilgenlaan 12']]]), 'contact lines are a list');
+	}//end testThePortalDeclaresItsChrome()
 
 	/**
 	 * portal-theme-blocks-and-contributed-pages REQ-PTB-009: a portal fills
@@ -1038,4 +1105,20 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 	}//end testIdentityAndSessionSchemasCarryNoMcpDialect()
 
+	/**
+	 * Security review M4: the invitation fields are readable only by
+	 * administrators, through OpenRegister's property authorization. An
+	 * ordinary signed-in Nextcloud user (the schema's `authenticated` read)
+	 * gets the account without them.
+	 *
+	 * @return void
+	 */
+	public function testTheInvitationFieldsAreReadableByAdministratorsOnly(): void {
+		$account = self::$register['components']['schemas']['portalAccount'];
+		$this->assertSame(['authenticated'], $account['authorization']['read'], 'The object read the property rule narrows.');
+		foreach (['claimTokenHash', 'claimCodeHash', 'claimExpiresAt', 'claimAttempts', 'claimAttemptsSince'] as $field) {
+			$this->assertSame(['read' => ['admin'], 'update' => ['admin']], $account['properties'][$field]['authorization'] ?? null, $field);
+		}
+
+	}//end testTheInvitationFieldsAreReadableByAdministratorsOnly()
 }//end class

@@ -149,6 +149,13 @@ if ($nldsStylesheet !== '') {
 //
 // So the app that knows where the theme app lives resolves it, once, here.
 $themeLogoUrl = (string)($_['themeLogoUrl'] ?? '');
+// The set's light logo for the dark footer band, absolute for the same reason
+// (site-chrome-follows-the-design); '' when the set ships none.
+$themeLogoInverseUrl = (string)(($_['themeAppSheets'] ?? [])['logoInverse'] ?? '');
+$themeEmblemUrl = (string)(($_['themeAppSheets'] ?? [])['emblem'] ?? '');
+// The emblem in grey, for a set whose watermark carries no tint
+// (example-site-zuiddrecht); '' when the set ships none.
+$themeEmblemGreyUrl = (string)(($_['themeAppSheets'] ?? [])['emblemGrey'] ?? '');
 
 // NO DARK LAYER IS LINKED HERE, AND THAT IS A MEASURED DECISION.
 //
@@ -342,6 +349,15 @@ if ($favicon === '') {
         $themeLogoUrl is resolved.
     -->
     <style>:root{--nldesign-logo-url:url("<?php p($themeLogoUrl); ?>")}</style>
+    <?php } ?>
+    <?php if ($themeLogoInverseUrl !== '') { ?>
+    <style>:root{--nldesign-logo-inverse-url:url("<?php p($themeLogoInverseUrl); ?>")}</style>
+    <?php } ?>
+    <?php if ($themeEmblemUrl !== '') { ?>
+    <style>:root{--nldesign-emblem-url:url("<?php p($themeEmblemUrl); ?>")}</style>
+    <?php } ?>
+    <?php if ($themeEmblemGreyUrl !== '') { ?>
+    <style>:root{--nldesign-emblem-grey-url:url("<?php p($themeEmblemGreyUrl); ?>")}</style>
     <?php } ?>
 </head>
 <body>

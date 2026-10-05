@@ -87,6 +87,13 @@ class PortalThemeResolver {
 	 */
 	public const FONT_STYLESHEET = 'fonts';
 
+	/**
+	 * The logo variants a page may ask for, with their file suffix.
+	 *
+	 * @var array<string, string>
+	 */
+	private const LOGO_VARIANTS = ['' => '', 'dark' => '-dark', 'emblem' => '-emblem', 'emblem-grey' => '-emblem-grey'];
+
 
 	/**
 	 * Constructor.
@@ -196,13 +203,21 @@ class PortalThemeResolver {
 	 * null so the page renders with NO logo instead of a broken image or
 	 * another brand's mark — the same posture `stylesheetFor()` takes.
 	 *
-	 * @param string $theme The portal's theme reference, e.g. 'opencatalogi'.
+	 * A variant (site-chrome-follows-the-design) is `dark`, the light logo
+	 * for a dark band such as a school portal's footer (`<theme>-dark.svg`,
+	 * named after the dark scheme it was drawn for), or `emblem`, the mark
+	 * without the name for a faint watermark (`<theme>-emblem.svg`), or
+	 * `emblem-grey`, that mark in grey for a set whose watermark carries no
+	 * tint (`<theme>-emblem-grey.svg`, example-site-zuiddrecht).
+	 *
+	 * @param string $theme   The portal's theme reference, e.g. 'opencatalogi'.
+	 * @param string $variant '' for the logo, else `dark`, `emblem` or `emblem-grey`.
 	 *
 	 * @return string|null The path relative to the theme app, or null.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 	 */
-	public function logoFileFor(string $theme): ?string {
+	public function logoFileFor(string $theme, string $variant=''): ?string {
 		if ($this->stylesheetFor(theme: $theme) === null) {
 			return null;
 		}
@@ -212,7 +227,9 @@ class PortalThemeResolver {
 			return null;
 		}
 
-		$relative = 'img/logos/' . $theme . '.svg';
+		// An unknown variant names a path no theme app ships, so it ends in
+		// the missing-file answer below.
+		$relative = 'img/logos/' . $theme . (self::LOGO_VARIANTS[$variant] ?? '/-') . '.svg';
 		if (is_file($root . '/' . $relative) === false) {
 			return null;
 		}

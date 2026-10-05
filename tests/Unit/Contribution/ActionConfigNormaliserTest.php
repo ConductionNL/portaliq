@@ -303,6 +303,40 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testConfirmationKeepsOnlyText()
 
 	/**
+	 * A summary keeps its template, label and phrases for the action's own
+	 * fields; a placeholder for any other field drops it whole, and so does
+	 * an update action (action-summary-sentence).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	public function testASummaryNamesOnlyTheActionsOwnFields(): void {
+		$create = $this->absenceAction(
+			[
+				'summary' => [
+					'label'    => 'U meldt',
+					'template' => 'Uw kind is {dateFrom} {reason}.',
+					'phrases'  => [
+						'reason' => ['sick' => 'ziek', 'doctor' => ['<b>'], 'long' => str_repeat('x', 121)],
+						'secret' => ['a' => 'b'],
+					],
+					'html'     => '<b>x</b>',
+				],
+			]
+		);
+		$this->assertSame(
+			['template' => 'Uw kind is {dateFrom} {reason}.', 'label' => 'U meldt', 'phrases' => ['reason' => ['sick' => 'ziek']]],
+			$create['summary']
+		);
+
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => ['template' => '{reason} door {bsn}.']]), 'a placeholder for a field the action does not send drops the summary');
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => ['template' => 'Geen antwoord erin.']]), 'a sentence without an answer is no summary');
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['type' => 'update', 'summary' => ['template' => '{reason}.']]));
+		$this->assertSame('Over {onderwerp}.', $this->wooAction(['summary' => ['template' => 'Over {onderwerp}.']])['summary']['template']);
+	}//end testASummaryNamesOnlyTheActionsOwnFields()
+
+	/**
 	 * Steps, draft and confirmation live on a create action and an endpoint
 	 * action with fields; an update action loses them.
 	 *

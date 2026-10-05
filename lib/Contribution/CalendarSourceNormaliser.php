@@ -111,7 +111,8 @@ class CalendarSourceNormaliser {
 		}
 
 		$out = ['startField' => $declared['startField']];
-		foreach (['titleField', 'title', 'endField'] as $key) {
+		// `metaField` is the line under the title in a tiles display (site-school-blocks).
+		foreach (['titleField', 'title', 'endField', 'metaField'] as $key) {
 			if ($this->isName(value: ($declared[$key] ?? null)) === true) {
 				$out[$key] = $declared[$key];
 			}

@@ -310,11 +310,14 @@ function itemOf(data, fields, kind, key) {
 	}
 	const declaredEnd = fields.endField ? toDate(data[fields.endField]) : null
 	const end = declaredEnd && declaredEnd >= start ? declaredEnd : start
+	// The line under the title in a tiles display (site-school-blocks).
+	const meta = fields.metaField ? data[fields.metaField] : ''
 	return {
 		key,
 		start,
 		end,
 		title: title.trim(),
+		meta: typeof meta === 'string' ? meta.trim() : '',
 		kind: kind || '',
 		allDay: DATE_ONLY.test(String(data[fields.startField])),
 	}

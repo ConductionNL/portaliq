@@ -242,17 +242,24 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	/**
 	 * Confirm a new address through its link.
 	 *
+	 * The bearer is optional here: without one the address is confirmed and
+	 * nothing more happens.
+	 *
 	 * @param string $token The secret from the confirmation mail.
 	 *
 	 * @return JSONResponse Whether the address is now in use.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function confirmEmail(string $token): JSONResponse {
-		$confirmed = $this->selfService->confirmEmail(token: $token);
+		// The link itself needs no session. A session, when the page has
+		// one, decides whether a waiting account may join: only the account
+		// holder's own (security review H1).
+		$confirmed = $this->selfService->confirmEmail(token: $token, session: $this->subject());
 		if ($confirmed === null) {
 			return new JSONResponse(['error' => 'link_not_valid'], Http::STATUS_FORBIDDEN);
 		}
