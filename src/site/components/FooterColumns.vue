@@ -20,7 +20,9 @@
 	<footer class="ac-footer pq-site__footer" data-testid="site-footer">
 		<h2 class="sr-only">{{ landmarkLabel }}</h2>
 
-		<section class="pq-footer__band pq-footer__band--content">
+		<section
+			class="pq-footer__band pq-footer__band--content"
+			:class="{ 'pq-footer__band--designed': designed }">
 			<div class="container ac-footer__container">
 				<!-- The brand column first on a designed footer, else last, as
 				     it always was (site-chrome-follows-the-design). -->
@@ -205,6 +207,18 @@ export default {
 	emits: ['navigate'],
 
 	computed: {
+		/**
+		 * Whether the footer is a designed one: it carries a button or a
+		 * contact column (site-chrome-follows-the-design).
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+		 */
+		designed() {
+			return Boolean(this.content.cta || this.content.contact)
+		},
+
 		/**
 		 * The footer content in a fixed shape.
 		 *
