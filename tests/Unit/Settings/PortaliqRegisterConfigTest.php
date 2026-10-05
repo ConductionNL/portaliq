@@ -326,9 +326,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.58.0 (newsItem 0.3.0): `publishedAt`, the moment staff published
 		// the item, stamped by NewsController::publish and back-filled by the
 		// repair step BackfillNewsPublishedAt (news-publish-date). Additive.
-		$this->assertSame('0.58.0', self::$register['info']['version']);
-		$this->assertSame('0.58.0', self::$register['components']['registers']['portaliq']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['newsItem']['version']);
+		// 0.59.0 (newsItem 0.4.0): `public` and `portal`, so staff can put an
+		// item on one portal's public website (site-school-blocks). Additive;
+		// an item from before is not public.
+		$this->assertSame('0.59.0', self::$register['info']['version']);
+		$this->assertSame('0.59.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['newsItem']['version']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['newsItem']['properties']['public']['type']);
+		$this->assertFalse(self::$register['components']['schemas']['newsItem']['properties']['public']['default']);
+		$this->assertSame('string', self::$register['components']['schemas']['newsItem']['properties']['portal']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
 		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);

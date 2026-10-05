@@ -282,6 +282,80 @@ class NewsControllerTest extends TestCase {
 	}//end testUpdateChangesTheTextAndAudienceOnly()
 
 	/**
+	 * Staff may put an item on one portal's public website; without a valid
+	 * portal slug the item stays off it (site-school-blocks).
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
+	 */
+	public function testCreatePutsAnItemOnOnePortalsWebsiteOnlyWithAPortal(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				return $object;
+			}//end saveObject()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], true, 'wilgenboom', ' hele school ');
+		$this->assertTrue($objectService->saved['public']);
+		$this->assertSame('wilgenboom', $objectService->saved['portal']);
+		$this->assertSame('hele school', $objectService->saved['audienceLabel']);
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], true, '../other');
+		$this->assertFalse($objectService->saved['public']);
+		$this->assertSame('', $objectService->saved['portal']);
+
+		$controller->create('T', 'B', ['schoolRef' => 's']);
+		$this->assertFalse($objectService->saved['public'], 'an item is not public unless staff say so');
+	}//end testCreatePutsAnItemOnOnePortalsWebsiteOnlyWithAPortal()
+
+	/**
+	 * A screen that does not send the website choice leaves it as it was, so
+	 * editing the text never takes an item off the website by accident.
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
+	 */
+	public function testUpdateWithoutTheWebsiteChoiceKeepsIt(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'public' => true, 'portal' => 'wilgenboom'];
+			}//end find()
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				return $object;
+			}//end saveObject()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+
+		$controller->update('n1', 'New', 'B', ['schoolRef' => 's']);
+		$this->assertTrue($objectService->saved['public']);
+		$this->assertSame('wilgenboom', $objectService->saved['portal']);
+
+		$controller->update('n1', 'New', 'B', ['schoolRef' => 's'], false);
+		$this->assertFalse($objectService->saved['public']);
+		$this->assertSame('', $objectService->saved['portal']);
+	}//end testUpdateWithoutTheWebsiteChoiceKeepsIt()
+
+	/**
 	 * Editing and the audience choices need a signed-in Nextcloud user, like
 	 * every other authoring endpoint.
 	 *
