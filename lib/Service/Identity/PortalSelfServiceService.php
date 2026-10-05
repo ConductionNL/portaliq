@@ -346,79 +346,13 @@ class PortalSelfServiceService {
 			return null;
 		}
 
-		$this->joinWaitingAccount(account: array_merge($account, $fields), email: $email);
+		(new ConfirmedAddressJoin(reader: $this->reader, writer: $this->writer, auditor: $this->auditor))->join(
+			account: array_merge($account, $fields),
+			email: $email
+		);
 
 		return ['email' => $email];
 	}//end confirmEmail()
-
-	/**
-	 * Join the waiting account for an address its holder just confirmed.
-	 *
-	 * Only an active account that signed in through an identity provider
-	 * receives claims this way: an account that is itself waiting, removed or
-	 * address-only is left alone. The address must be one the confirmation
-	 * marked confirmed on the account. Best-effort: the confirmation stands
-	 * whether or not anything was joined.
-	 *
-	 * @param array<string, mixed> $account The account as it stands after the confirmation.
-	 * @param string $email The address that was confirmed.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
-	 */
-	private function joinWaitingAccount(array $account, string $email): void {
-		$organisation = (string)($account['organisation'] ?? '');
-		if (($account['status'] ?? '') !== PortalAccountService::STATUS_ACTIVE
-			|| (string)($account['identityRef'] ?? '') === ''
-			|| $this->holdsConfirmed(account: $account, email: $email) === false
-		) {
-			return;
-		}
-
-		$join   = new WaitingAccountJoin(lookup: new PortalAccountLookup(reader: $this->reader), writer: $this->writer);
-		$joined = $join->join(account: $account, verifiedEmail: $email, organisation: $organisation);
-		if ($joined === null) {
-			return;
-		}
-
-		// Who took over which waiting account, and when: the row's user is
-		// the account that confirmed, its target the account withdrawn.
-		$this->auditor?->record(
-			verb: 'claim',
-			subjectRef: (string)($account['subjectRef'] ?? ''),
-			organisation: $organisation,
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			id: $joined
-		);
-	}//end joinWaitingAccount()
-
-	/**
-	 * Whether the account lists an e-mail address as confirmed.
-	 *
-	 * @param array<string, mixed> $account The account.
-	 * @param string $email The address.
-	 *
-	 * @return bool
-	 */
-	private function holdsConfirmed(array $account, string $email): bool {
-		if ($email === '') {
-			return false;
-		}
-
-		foreach ((array)($account['contactAddresses'] ?? []) as $entry) {
-			if (is_array($entry) === true
-				&& ($entry['kind'] ?? '') === 'email'
-				&& ($entry['value'] ?? '') === $email
-				&& ($entry['confirmed'] ?? false) === true
-			) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end holdsConfirmed()
 
 	/**
 	 * The account whose pending address this token confirms, or null.
