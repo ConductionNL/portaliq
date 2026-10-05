@@ -22,6 +22,17 @@
 			data-testid="schema-form-confirmation-body">
 			{{ confirmed.body }}
 		</p>
+		<div
+			v-if="confirmed.summary"
+			class="pq-schema-form__summary"
+			data-testid="schema-form-confirmation-summary">
+			<p v-if="action.summary.label" class="pq-schema-form__summary-label">
+				{{ action.summary.label }}
+			</p>
+			<p class="utrecht-paragraph pq-schema-form__summary-text">
+				{{ confirmed.summary }}
+			</p>
+		</div>
 		<p
 			v-if="confirmed.next !== ''"
 			class="utrecht-paragraph"
@@ -112,6 +123,22 @@
 				@pick="(picked) => pick(field, picked)" />
 		</template>
 
+		<!-- The answers in one sentence, as they are given
+		     (action-summary-sentence). Polite: it changes while the resident
+		     answers, and must not interrupt them. -->
+		<div
+			v-if="showsSummary"
+			class="pq-schema-form__summary"
+			aria-live="polite"
+			data-testid="schema-form-summary">
+			<p v-if="action.summary.label" class="pq-schema-form__summary-label">
+				{{ action.summary.label }}
+			</p>
+			<p class="utrecht-paragraph pq-schema-form__summary-text">
+				{{ summaryText }}
+			</p>
+		</div>
+
 		<div class="pq-schema-form__buttons">
 			<button
 				v-if="hasSteps && stepIndex > 0"
@@ -170,6 +197,7 @@ import {
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
 import stepFlow from '../forms/stepFlow.js'
 import { confirmationText, stepHeading } from '../forms/steps.js'
+import { summarySentence } from '../forms/summary.js'
 import {
 	collectionProviders,
 	fieldConfig,
@@ -240,6 +268,40 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The action's summary sentence from the answers so far, '' while an
+		 * answer it names is missing (action-summary-sentence).
+		 *
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+		 */
+		summaryText() {
+			// A date answer reads in the page's language ("vandaag",
+			// "maandag 12 oktober").
+			const locale =
+				(typeof document !== 'undefined' && document.documentElement?.lang)
+				|| 'nl'
+			return summarySentence(
+				this.action?.summary || null,
+				this.values,
+				this.options,
+				{ locale },
+			)
+		},
+
+		/**
+		 * Whether the sentence shows: on a one-page form, or on the review of
+		 * a stepped one, once it is whole.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+		 */
+		showsSummary() {
+			return this.summaryText !== '' && (!this.hasSteps || this.onReview)
+		},
+
 		translate() {
 			return translatorOr(this.t)
 		},
@@ -686,6 +748,8 @@ export default {
 		 */
 		confirm(answer) {
 			this.confirmed = {
+				// The sentence as it stood when the resident sent it.
+				summary: this.summaryText,
 				body: confirmationText(this.action.confirmation.body, answer),
 				next: confirmationText(this.action.confirmation.next, answer),
 			}
@@ -719,6 +783,34 @@ export default {
 .pq-schema-form__error {
 	color: var(--utrecht-form-field-error-message-color, inherit);
 	font-weight: var(--utrecht-typography-weight-scale-bold, bold);
+}
+
+.pq-schema-form__summary {
+	margin-block-start: var(--utrecht-space-block-md, 1rem);
+	padding: 1rem 1.25rem;
+	border: 1px solid
+		var(--nldesign-color-border, var(--utrecht-color-grey-80, currentcolor));
+	border-radius: var(
+		--nldesign-website-border-radius-large,
+		var(--utrecht-border-radius-md, 0.75rem)
+	);
+	background: var(--nldesign-color-primary-light, transparent);
+}
+
+.pq-schema-form__summary-label {
+	margin: 0 0 0.25rem;
+	color: var(
+		--nldesign-color-primary-hover,
+		var(--utrecht-document-color, CanvasText)
+	);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.pq-schema-form__summary-text {
+	margin: 0;
 }
 
 .pq-schema-form__done:empty {
