@@ -255,26 +255,22 @@ export default {
 	stroke-linejoin: round;
 }
 
-.nl-signin-card__button {
+/* Set on the properties themselves, at the button's own specificity plus
+   one: a theme that colours buttons through its own variables would
+   otherwise win over the card, and the button vanished into the card's
+   ground on the first live run (example-basisschool, 5 Oct 2026). */
+.nl-signin-card .utrecht-button.nl-signin-card__button {
 	justify-content: center;
 	inline-size: 100%;
+	max-inline-size: none;
 	margin-block-start: 0.375rem;
 	font-weight: 700;
 }
 
-.nl-signin-card--inverse .nl-signin-card__button {
-	--utrecht-button-secondary-action-background-color: var(
-		--nldesign-color-primary-text,
-		Canvas
-	);
-	--utrecht-button-secondary-action-color: var(
-		--nldesign-color-primary-hover,
-		CanvasText
-	);
-	--utrecht-button-secondary-action-border-color: var(
-		--nldesign-color-primary-text,
-		Canvas
-	);
+.nl-signin-card--inverse .utrecht-button.nl-signin-card__button {
+	border-color: var(--nldesign-color-primary-text, Canvas);
+	background-color: var(--nldesign-color-primary-text, Canvas);
+	color: var(--nldesign-color-primary-hover, CanvasText);
 }
 
 .nl-signin-card__note {
