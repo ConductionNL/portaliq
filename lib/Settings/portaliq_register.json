@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.58.0"
+        "version": "0.59.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.58.0",
+                "version": "0.59.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -737,7 +737,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.14.0",
+                "version": "0.15.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -974,6 +974,32 @@
                         "format": "date-time",
                         "description": "When the activation link stops working.",
                         "example": "2026-10-03T09:00:00+00:00"
+                    },
+                    "claimTokenHash": {
+                        "title": "Invitation token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret in the invitation mail of a waiting account. Emptied when the secret is redeemed.",
+                        "example": "9f86d0…"
+                    },
+                    "claimExpiresAt": {
+                        "title": "Invitation expiry",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the invitation of a waiting account stops working.",
+                        "example": "2026-10-12T09:00:00+00:00"
+                    },
+                    "claimAttempts": {
+                        "title": "Wrong invitation secrets",
+                        "type": "integer",
+                        "description": "How many wrong invitation secrets this account offered inside the running hour. Five lock the redeem route for the account.",
+                        "example": 0
+                    },
+                    "claimAttemptsSince": {
+                        "title": "Wrong invitation secrets since",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the first wrong invitation secret of the running hour was offered.",
+                        "example": "2026-10-05T09:00:00+00:00"
                     },
                     "pendingEmailMode": {
                         "title": "Pending email mode",

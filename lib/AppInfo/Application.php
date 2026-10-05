@@ -46,6 +46,7 @@ use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
+use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Listener\MediaWriteGuardListener;
@@ -53,6 +54,7 @@ use OCA\Portaliq\Listener\NoticeWriteGuardListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
+use OCA\Portaliq\Listener\PortalAccountInvitationListener;
 use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Listener\PortalDigitalPostDeliveredListener;
 use OCA\Portaliq\Listener\PortalRecordChangeListener;
@@ -160,6 +162,7 @@ class Application extends App implements IBootstrap {
 		// because another app never calls into portaliq's controllers.
 		$context->registerEventListener(PortalAccountProvisionRequestedEvent::class, PortalAccountProvisionListener::class);
 		$context->registerEventListener(PortalAccountClaimRequestedEvent::class, PortalAccountClaimListener::class);
+		$context->registerEventListener(PortalAccountInvitationRequestedEvent::class, PortalAccountInvitationListener::class);
 
 		// Traffic analytics (portal-traffic-visitors-and-geo): where a
 		// visitor's address turns into a region. The offline MMDB lookup is

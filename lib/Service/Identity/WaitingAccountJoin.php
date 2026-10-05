@@ -115,13 +115,15 @@ class WaitingAccountJoin {
 	 *
 	 * @param array<string, mixed> $account The account that receives the claims.
 	 * @param array<string, mixed> $waiting The waiting account.
+	 * @param string $reason The reason written on the withdrawn account.
 	 *
 	 * @return string|null The identifier of the waiting account that was
 	 *                     joined, or null when nothing was.
 	 *
 	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
-	public function joinWaiting(array $account, array $waiting): ?string {
+	public function joinWaiting(array $account, array $waiting, string $reason = self::VOID_REASON): ?string {
 		if ($this->isJoinable(account: $account, waiting: $waiting) === false) {
 			return null;
 		}
@@ -137,7 +139,7 @@ class WaitingAccountJoin {
 			return null;
 		}
 
-		if ($this->write(id: $waitingId, data: ['status' => PortalAccountLookup::STATUS_VOID, 'voidReason' => self::VOID_REASON]) === false) {
+		if ($this->write(id: $waitingId, data: ['status' => PortalAccountLookup::STATUS_VOID, 'voidReason' => $reason]) === false) {
 			return null;
 		}
 
