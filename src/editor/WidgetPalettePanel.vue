@@ -286,8 +286,8 @@ export default {
 		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
 		 */
 		takeFocus() {
-			const active
-				= typeof document === 'undefined' ? null : document.activeElement
+			const active =
+				typeof document === 'undefined' ? null : document.activeElement
 			this.opener = active && active !== document.body ? active : null
 			this.$nextTick(() => this.$refs.search?.focus?.())
 		},
