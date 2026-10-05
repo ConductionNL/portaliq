@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.58.0"
+        "version": "0.59.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.58.0",
+                "version": "0.59.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -6621,7 +6621,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -6698,6 +6698,17 @@
                         "type": "string",
                         "description": "The schema the case created from this form lives in. The background job creates the case here, through the ordinary anonymous contribution create.",
                         "example": "zaak"
+                    },
+                    "deliverTo": {
+                        "title": "Deliver to",
+                        "type": "string",
+                        "enum": [
+                            "case",
+                            "wooRequest"
+                        ],
+                        "default": "case",
+                        "description": "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed.",
+                        "example": "wooRequest"
                     },
                     "intakeKind": {
                         "title": "Intake kind",
@@ -6781,7 +6792,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Intake Submission",
                 "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
                 "type": "object",
@@ -6851,6 +6862,19 @@
                         "type": "string",
                         "description": "The case created from this submission, once one exists.",
                         "example": ""
+                    },
+                    "externalReference": {
+                        "title": "External reference",
+                        "type": "string",
+                        "description": "The reference the receiving app minted, such as a Woo request's `WOO-2026-1A2B3C`. Set only once the submission is registered.",
+                        "example": "WOO-2026-1A2B3C"
+                    },
+                    "dueAt": {
+                        "title": "Due at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The statutory due date the receiving app armed, such as a Woo request's decision term. Set only when a term runs, so the reference page never quotes a deadline nobody started.",
+                        "example": "2026-11-02T09:00:00+00:00"
                     },
                     "submittedAt": {
                         "title": "Submitted at",

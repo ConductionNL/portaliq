@@ -326,8 +326,17 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.58.0 (newsItem 0.3.0): `publishedAt`, the moment staff published
 		// the item, stamped by NewsController::publish and back-filled by the
 		// repair step BackfillNewsPublishedAt (news-publish-date). Additive.
-		$this->assertSame('0.58.0', self::$register['info']['version']);
-		$this->assertSame('0.58.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.59.0 (portalFormBinding 0.2.0, portalIntakeSubmission 0.2.0):
+		// `deliverTo` routes a Woo-request form to opencatalogi's intake, and
+		// a submission keeps the `externalReference` and `dueAt` that intake
+		// armed (woo-request-intake-through-opencatalogi). Additive.
+		$this->assertSame('0.59.0', self::$register['info']['version']);
+		$this->assertSame('0.59.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['newsItem']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
 		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
