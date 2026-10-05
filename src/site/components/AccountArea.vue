@@ -40,62 +40,44 @@
 				{{ t('Loading…') }}
 			</p>
 
-			<!-- The sign-in page as role cards, for a portal that writes them
-			     (site-chrome-follows-the-design, G-18). -->
-			<div
-				v-else-if="!session && signInDesigned"
-				data-testid="site-account-signin">
+			<div v-else-if="!session" data-testid="site-account-signin">
+				<!-- The sign-in page as role cards, for a portal that writes them
+				     (site-chrome-follows-the-design, G-18); loaded on demand. -->
 				<SignInPage
+					v-if="signInDesigned"
 					:routes="signInRoutes"
 					:page="signInPageText"
 					:welcomeLabel="t('Welcome')"
 					:introLabel="t('Log in to view your information.')"
 					:noWayLabel="
 						t('No login method is configured for this organisation yet.')
-					">
-					<button
-						v-if="devLogin"
-						type="button"
-						class="utrecht-button utrecht-button--secondary-action"
-						data-testid="site-devlogin"
-						@click="$emit('devlogin')">
-						{{ t('Dev-login (test)') }}
-					</button>
-					<p v-if="devError" class="utrecht-paragraph" role="alert">
-						{{ devError }}
+					" />
+				<template v-else>
+					<h1 class="utrecht-heading-2">
+						{{ t('Welcome') }}
+					</h1>
+					<p class="utrecht-paragraph">
+						{{ t('Log in to view your information.') }}
 					</p>
-					<WaysIn
-						v-if="ways.register || ways.reference"
-						:ways="ways"
-						:authBase="authBase"
-						:portal="portalSlug"
-						:t="waysT || t" />
-				</SignInPage>
-			</div>
-
-			<div v-else-if="!session" data-testid="site-account-signin">
-				<h1 class="utrecht-heading-2">
-					{{ t('Welcome') }}
-				</h1>
-				<p class="utrecht-paragraph">
-					{{ t('Log in to view your information.') }}
-				</p>
-				<ul v-if="signInRoutes.length" class="pq-account__ways-in">
-					<li v-for="way in signInRoutes" :key="way.mode">
-						<a
-							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
-							:href="way.href"
-							:data-mode="way.mode"
-							data-testid="site-account-signin-route">
-							{{ way.label }}
-						</a>
-					</li>
-				</ul>
-				<p v-else class="utrecht-paragraph">
-					{{
-						t('No login method is configured for this organisation yet.')
-					}}
-				</p>
+					<ul v-if="signInRoutes.length" class="pq-account__ways-in">
+						<li v-for="way in signInRoutes" :key="way.mode">
+							<a
+								class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
+								:href="way.href"
+								:data-mode="way.mode"
+								data-testid="site-account-signin-route">
+								{{ way.label }}
+							</a>
+						</li>
+					</ul>
+					<p v-else class="utrecht-paragraph">
+						{{
+							t(
+								'No login method is configured for this organisation yet.',
+							)
+						}}
+					</p>
+				</template>
 				<button
 					v-if="devLogin"
 					type="button"

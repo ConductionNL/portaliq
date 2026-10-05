@@ -16,11 +16,8 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { signInRoutes } from '../src/site/lib/authApi.js'
-import {
-	footerContentOf,
-	headerSearchOf,
-	personOf,
-} from '../src/site/lib/shellData.js'
+import { personOf } from '../src/site/components/chrome/person.js'
+import { footerContentOf, headerSearchOf } from '../src/site/lib/shellData.js'
 import { renderSfc } from './support/render-sfc.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -292,7 +289,8 @@ test('the sign-in page lists one card per way in, the first button primary, with
 
 test('a portal that wrote no card or page text keeps the plain list of buttons', () => {
 	const area = read('src/site/components/AccountArea.vue')
-	assert.match(area, /v-else-if="!session && signInDesigned"/)
+	assert.match(area, /<SignInPage\s+v-if="signInDesigned"/)
+	assert.match(area, /<template v-else>\s*<h1 class="utrecht-heading-2">/)
 	assert.match(
 		area,
 		/Object\.keys\(this\.signInPageText\)\.length > 0\s*\|\| this\.signInRoutes\.some\(\(way\) => way\.card\)/,

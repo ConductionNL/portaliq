@@ -97,7 +97,7 @@
 </template>
 
 <script>
-import { personOf } from '../../lib/shellData.js'
+import { personOf } from './person.js'
 
 /**
  * The search box, the way to the own area and the phone menu button of a

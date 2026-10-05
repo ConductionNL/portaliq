@@ -105,9 +105,6 @@
 					page.staffLink.label
 				}}</a>
 			</p>
-
-			<!-- The dev login and the other ways in, from AccountArea. -->
-			<slot />
 		</div>
 
 		<aside
