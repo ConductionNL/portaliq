@@ -165,40 +165,24 @@ class WaitingAccountInvitation {
 	public function redeem(array $subject, string $secret, ?DateTimeImmutable $now = null): string {
 		$moment  = ($now ?? new DateTimeImmutable());
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
-		$account = $lookup->bySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));
-		if ($account === null || $this->mayReceive(account: $account, subject: $subject) === false) {
+		$account = $this->receiver(subject: $subject, lookup: $lookup);
+		if ($account === null) {
 			return self::NOT_VALID;
 		}
 
-		$accountId = $lookup->identifierOf(row: $account);
+		$accountId = (string)$lookup->identifierOf(row: $account);
 		$jti       = (string)($subject['jti'] ?? '');
-		if ($accountId === null) {
-			return self::NOT_VALID;
-		}
-
 		if ($this->attempts->locked(account: $account, jti: $jti, now: $moment) === true) {
 			return self::LOCKED;
 		}
 
-		$waiting   = $this->waitingFor(secret: trim($secret), organisation: (string)$account['organisation'], moment: $moment);
-		$waitingId = null;
-		if ($waiting !== null) {
-			$waitingId = $lookup->identifierOf(row: $waiting);
-		}
-
-		if ($waiting === null || $waitingId === null) {
+		$waiting = $this->waitingFor(secret: trim($secret), organisation: (string)$account['organisation'], moment: $moment);
+		if ($waiting === null) {
 			$this->attempts->fail(account: $account, accountId: $accountId, jti: $jti, now: $moment);
 			return self::NOT_VALID;
 		}
 
-		// Spent first. If the join then fails the invitation is dead and the
-		// app invites again: a secret that worked twice would be worse.
-		if ($this->write(id: $waitingId, data: ['claimTokenHash' => '']) === false) {
-			return self::NOT_VALID;
-		}
-
-		$join   = new WaitingAccountJoin(lookup: $lookup, writer: $this->writer);
-		$joined = $join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON);
+		$joined = $this->spendAndJoin(account: $account, waiting: $waiting, lookup: $lookup);
 		if ($joined === null) {
 			return self::NOT_VALID;
 		}
@@ -219,6 +203,57 @@ class WaitingAccountInvitation {
 	}//end redeem()
 
 	/**
+	 * The session's own account, when it may take over a waiting account:
+	 * active, in the session's organisation, signed in through an identity
+	 * provider, and a row that can be written to.
+	 *
+	 * @param array<string, mixed> $subject The session.
+	 * @param PortalAccountLookup $lookup The account finder.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function receiver(array $subject, PortalAccountLookup $lookup): ?array {
+		$account = $lookup->bySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));
+		if ($account === null || $lookup->identifierOf(row: $account) === null) {
+			return null;
+		}
+
+		$organisation = (string)($account['organisation'] ?? '');
+		$receives     = ($account['status'] ?? '') === PortalAccountService::STATUS_ACTIVE
+			&& (string)($account['identityRef'] ?? '') !== ''
+			&& $organisation !== ''
+			&& $organisation === (string)($subject['organisation'] ?? '');
+		if ($receives === false) {
+			return null;
+		}
+
+		return $account;
+	}//end receiver()
+
+	/**
+	 * Spend the secret, then join the waiting account into the caller's.
+	 *
+	 * Spent first. If the join then fails the invitation is dead and the app
+	 * invites again: a secret that worked twice would be worse.
+	 *
+	 * @param array<string, mixed> $account The caller's account.
+	 * @param array<string, mixed> $waiting The waiting account the secret opened.
+	 * @param PortalAccountLookup $lookup The account finder.
+	 *
+	 * @return string|null The identifier of the waiting account that joined, or null.
+	 */
+	private function spendAndJoin(array $account, array $waiting, PortalAccountLookup $lookup): ?string {
+		$waitingId = $lookup->identifierOf(row: $waiting);
+		if ($waitingId === null || $this->write(id: $waitingId, data: ['claimTokenHash' => '']) === false) {
+			return null;
+		}
+
+		$join = new WaitingAccountJoin(lookup: $lookup, writer: $this->writer);
+
+		return $join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON);
+	}//end spendAndJoin()
+
+	/**
 	 * Whether an account is one this app may send an invitation for.
 	 *
 	 * @param array<string, mixed> $account The account row.
@@ -232,25 +267,6 @@ class WaitingAccountInvitation {
 			&& (string)($account['provisionedBy'] ?? '') === $appId
 			&& trim((string)($account['email'] ?? '')) !== '';
 	}//end isInvitable()
-
-	/**
-	 * Whether the caller's account may take over a waiting account: it is
-	 * the session's own, active, in the session's organisation, and it
-	 * signed in through an identity provider.
-	 *
-	 * @param array<string, mixed> $account The caller's account row.
-	 * @param array<string, mixed> $subject The session.
-	 *
-	 * @return bool
-	 */
-	private function mayReceive(array $account, array $subject): bool {
-		$organisation = (string)($account['organisation'] ?? '');
-
-		return ($account['status'] ?? '') === PortalAccountService::STATUS_ACTIVE
-			&& (string)($account['identityRef'] ?? '') !== ''
-			&& $organisation !== ''
-			&& $organisation === (string)($subject['organisation'] ?? '');
-	}//end mayReceive()
 
 	/**
 	 * The waiting account a secret opens in one organisation, or null.
@@ -282,12 +298,7 @@ class WaitingAccountInvitation {
 		foreach ($rows as $row) {
 			// The reader's filter is trusted for the query, not for the
 			// answer: every row is checked again.
-			if (is_array($row) === false
-				|| hash_equals((string)($row['claimTokenHash'] ?? ''), $hash) === false
-				|| ($row['organisation'] ?? '') !== $organisation
-				|| ($row['status'] ?? '') !== PortalAccountService::STATUS_PENDING
-				|| (string)($row['identityRef'] ?? '') !== ''
-			) {
+			if (is_array($row) === false || $this->isWaitingRow(row: $row, hash: $hash, organisation: $organisation) === false) {
 				continue;
 			}
 
@@ -301,6 +312,24 @@ class WaitingAccountInvitation {
 
 		return null;
 	}//end waitingFor()
+
+	/**
+	 * Whether a row is the waiting account a secret's hash opens: the hash
+	 * matches, it sits in the organisation, it is pending and it has no
+	 * identity reference of its own.
+	 *
+	 * @param array<string, mixed> $row One row the reader returned.
+	 * @param string $hash The secret's hash.
+	 * @param string $organisation The session's organisation.
+	 *
+	 * @return bool
+	 */
+	private function isWaitingRow(array $row, string $hash, string $organisation): bool {
+		return hash_equals((string)($row['claimTokenHash'] ?? ''), $hash) === true
+			&& ($row['organisation'] ?? '') === $organisation
+			&& ($row['status'] ?? '') === PortalAccountService::STATUS_PENDING
+			&& (string)($row['identityRef'] ?? '') === '';
+	}//end isWaitingRow()
 
 	/**
 	 * One internal update of an account row this class itself located.

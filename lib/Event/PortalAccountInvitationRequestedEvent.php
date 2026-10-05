@@ -82,6 +82,8 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 * The dispatching app.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
 	public function getAppId(): string {
 		return $this->appId;
@@ -91,6 +93,8 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 * The waiting account to invite.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
 	public function getSubjectRef(): string {
 		return $this->subjectRef;
@@ -103,6 +107,8 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 * @param string $expiresAt When the invitation stops working, or ''.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
 	public function answer(string $result, string $expiresAt = ''): void {
 		$this->result    = $result;
@@ -113,6 +119,8 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 * The result slot, '' while nothing has answered.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
 	public function getResult(): string {
 		return $this->result;
@@ -122,6 +130,8 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 * When the invitation stops working, or ''.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
 	public function getExpiresAt(): string {
 		return $this->expiresAt;
