@@ -38,6 +38,6 @@ The secret parameter is marked `#[\SensitiveParameter]` on the controller and ev
 
 ## D7. Schema
 
-This change: `portalAccount` 0.14.0 to 0.15.0, register 0.58.0 to 0.59.0. Additive: four optional properties (`claimTokenHash`, `claimExpiresAt`, `claimAttempts`, `claimAttemptsSince`).
+This change: `portalAccount` 0.14.0 to 0.15.0, register 0.59.0 to 0.60.0 (development took 0.59.0 for the Woo intake). Additive: four optional properties (`claimTokenHash`, `claimExpiresAt`, `claimAttempts`, `claimAttemptsSince`).
 
-The stacked change invitation-code-from-a-letter takes it on: 0.16.0 (register 0.60.0) adds a fifth, `claimCodeHash`; 0.17.0 (register 0.61.0) makes all five `claim*` fields readable and writable by administrators only, through OpenRegister's property authorization (security review M4).
+The stacked change invitation-code-from-a-letter takes it on: 0.16.0 (register 0.61.0) adds a fifth, `claimCodeHash`; 0.17.0 (register 0.62.0) makes all five `claim*` fields readable and writable by administrators only, through OpenRegister's property authorization (security review M4).

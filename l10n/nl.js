@@ -2154,7 +2154,12 @@ OC.L10N.register(
         "Add a page with route /, then publish it.": "Voeg een pagina toe met route /, en publiceer die.",
         "Open this page": "Deze pagina openen",
         "Open the pages of this portal": "De pagina's van dit portaal openen",
-        "The home page of this portal could not be checked.": "De startpagina van dit portaal kon niet worden gecontroleerd."
+        "The home page of this portal could not be checked.": "De startpagina van dit portaal kon niet worden gecontroleerd.",
+        "Deliver to": "Bezorgen bij",
+        "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed.": "Waar een inzending heen gaat. `case` maakt een object in caseRegister en caseSchema. `wooRequest` geeft haar aan de Woo-intake van opencatalogi, die het kenmerk van het verzoek uitgeeft en de wettelijke termijn start; de velden van het formulier heten dan zoals de velden van het verzoek (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Zonder opencatalogi wordt een `wooRequest`-inzending als mislukt gemarkeerd.",
+        "The reference the receiving app minted, such as a Woo request's `WOO-2026-1A2B3C`. Set only once the submission is registered.": "Het kenmerk dat de ontvangende app uitgaf, zoals `WOO-2026-1A2B3C` van een Woo-verzoek. Alleen gezet zodra de inzending is geregistreerd.",
+        "Due at": "Uiterste datum",
+        "The statutory due date the receiving app armed, such as a Woo request's decision term. Set only when a term runs, so the reference page never quotes a deadline nobody started.": "De wettelijke uiterste datum die de ontvangende app startte, zoals de beslistermijn van een Woo-verzoek. Alleen gezet als er een termijn loopt, zodat de statuspagina nooit een termijn noemt die niemand startte."
     },
     "nplurals=2; plural=(n != 1);"
 )

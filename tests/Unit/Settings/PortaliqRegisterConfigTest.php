@@ -326,17 +326,26 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.58.0 (newsItem 0.3.0): `publishedAt`, the moment staff published
 		// the item, stamped by NewsController::publish and back-filled by the
 		// repair step BackfillNewsPublishedAt (news-publish-date). Additive.
-		// 0.59.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
+		// 0.59.0 (portalFormBinding 0.2.0, portalIntakeSubmission 0.2.0):
+		// `deliverTo` routes a Woo-request form to opencatalogi's intake, and
+		// a submission keeps the `externalReference` and `dueAt` that intake
+		// armed (woo-request-intake-through-opencatalogi). Additive.
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
+		// 0.60.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
 		// the one-time secret of a waiting account's invitation, and
 		// `claimAttempts` with `claimAttemptsSince`, the wrong secrets an
 		// account offered (invitation-secret-joins-the-signed-in-account).
 		// Additive.
-		// 0.60.0 (portalAccount 0.16.0): `claimCodeHash`, the short code of an
+		// 0.61.0 (portalAccount 0.16.0): `claimCodeHash`, the short code of an
 		// invitation letter (invitation-code-from-a-letter). Additive.
-		// 0.61.0 (portalAccount 0.17.0): the five `claim*` fields are readable
+		// 0.62.0 (portalAccount 0.17.0): the five `claim*` fields are readable
 		// and writable by administrators only (security review M4).
-		$this->assertSame('0.61.0', self::$register['info']['version']);
-		$this->assertSame('0.61.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.62.0', self::$register['info']['version']);
+		$this->assertSame('0.62.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);

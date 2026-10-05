@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 use OCA\Portaliq\BackgroundJob\PortalIntakeDeliveryJob;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
+use OCA\Portaliq\Service\Intake\PortalWooRequestDelivery;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -94,6 +95,117 @@ class PortalIntakeDeliveryJobTest extends TestCase {
 	}//end testABindingWithNoCaseSchemaFailsRatherThanGuessing()
 
 	/**
+	 * A Woo-request form goes to opencatalogi's intake, not into a case
+	 * register, and is registered with the reference and due date it armed.
+	 *
+	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 */
+	public function testAWooRequestFormIsDeliveredToOpencatalogiAndArmsItsTerm(): void {
+		$queue = $this->queue();
+		$queue->expects($this->once())->method('markRegistered')->with(
+			$this->anything(),
+			$this->equalTo('req-1'),
+			$this->equalTo('WOO-2026-1A2B3C'),
+			$this->equalTo('2026-11-02T09:00:00+00:00')
+		);
+		$queue->expects($this->never())->method('markFailed');
+
+		$writer = $this->writer();
+		$writer->expects($this->never())->method('createAnonymousObject');
+
+		$woo = $this->woo();
+		$woo->expects($this->once())
+			->method('deliver')
+			->with($this->equalTo(['requestedInformation' => 'Alle stukken.']), $this->equalTo('2026-10-05T09:00:00+00:00'))
+			->willReturn($this->wooOutcome(outcome: 'armed', dueAt: '2026-11-02T09:00:00+00:00'));
+
+		$this->job(queue: $queue, writer: $writer, binding: ['deliverTo' => 'wooRequest'], woo: $woo)->deliver(submission: $this->wooSubmission());
+
+	}//end testAWooRequestFormIsDeliveredToOpencatalogiAndArmsItsTerm()
+
+	/**
+	 * A Woo request whose term did not start is never registered, so the
+	 * reference page never quotes a deadline.
+	 *
+	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 */
+	public function testAWooRequestWhoseTermDidNotStartIsFailedNotRegistered(): void {
+		$queue = $this->queue();
+		$queue->expects($this->never())->method('markRegistered');
+		$queue->expects($this->once())->method('markFailed')->with(
+			$this->anything(),
+			$this->equalTo('Woo request WOO-2026-1A2B3C was stored, but its statutory term did not start: no timer engine')
+		);
+
+		$woo = $this->woo();
+		$woo->method('deliver')->willReturn($this->wooOutcome(outcome: 'not-armed', message: 'no timer engine'));
+
+		$this->job(queue: $queue, writer: $this->writer(), binding: ['deliverTo' => 'wooRequest'], woo: $woo)->deliver(submission: $this->wooSubmission());
+
+	}//end testAWooRequestWhoseTermDidNotStartIsFailedNotRegistered()
+
+	/**
+	 * Without opencatalogi a Woo request fails visibly, with the reason.
+	 *
+	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 */
+	public function testAWooRequestWithoutOpencatalogiFailsWithTheReason(): void {
+		$queue = $this->queue();
+		$queue->expects($this->never())->method('markRegistered');
+		$queue->expects($this->once())->method('markFailed')->with(
+			$this->anything(),
+			$this->equalTo('The Woo request could not be received: opencatalogi is not installed.')
+		);
+
+		$woo = $this->woo();
+		$woo->method('deliver')->willReturn($this->wooOutcome(outcome: 'unavailable', message: 'opencatalogi is not installed.'));
+
+		$this->job(queue: $queue, writer: $this->writer(), binding: ['deliverTo' => 'wooRequest'], woo: $woo)->deliver(submission: $this->wooSubmission());
+
+	}//end testAWooRequestWithoutOpencatalogiFailsWithTheReason()
+
+	/**
+	 * A queued Woo request.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function wooSubmission(): array {
+		return [
+			'uuid' => 'submission-2',
+			'portal' => 'gemeente-x',
+			'route' => 'woo-verzoek',
+			'answers' => ['requestedInformation' => 'Alle stukken.'],
+			'state' => 'queued',
+			'submittedAt' => '2026-10-05T09:00:00+00:00',
+		];
+	}//end wooSubmission()
+
+	/**
+	 * A Woo delivery double.
+	 *
+	 * @return PortalWooRequestDelivery&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private function woo(): PortalWooRequestDelivery {
+		return $this->getMockBuilder(PortalWooRequestDelivery::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['deliver'])
+			->getMock();
+	}//end woo()
+
+	/**
+	 * One delivery outcome.
+	 *
+	 * @param string $outcome The outcome.
+	 * @param string $dueAt The due date.
+	 * @param string $message The reason.
+	 *
+	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string}
+	 */
+	private function wooOutcome(string $outcome, string $dueAt = '', string $message = ''): array {
+		return ['outcome' => $outcome, 'requestId' => 'req-1', 'reference' => 'WOO-2026-1A2B3C', 'dueAt' => $dueAt, 'message' => $message];
+	}//end wooOutcome()
+
+	/**
 	 * One queued submission.
 	 *
 	 * @return array<string, mixed>
@@ -147,10 +259,11 @@ class PortalIntakeDeliveryJobTest extends TestCase {
 	 * @param PortalIntakeQueue $queue The queue double.
 	 * @param PortalObjectWriter $writer The writer double.
 	 * @param array<string, mixed>|null $binding What the binding resolves to.
+	 * @param PortalWooRequestDelivery|null $woo The Woo delivery double.
 	 *
 	 * @return PortalIntakeDeliveryJob
 	 */
-	private function job(PortalIntakeQueue $queue, PortalObjectWriter $writer, ?array $binding): PortalIntakeDeliveryJob {
+	private function job(PortalIntakeQueue $queue, PortalObjectWriter $writer, ?array $binding, ?PortalWooRequestDelivery $woo = null): PortalIntakeDeliveryJob {
 		$bindings = $this->getMockBuilder(PortalFormBindingResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['bindingFor'])
@@ -162,7 +275,8 @@ class PortalIntakeDeliveryJobTest extends TestCase {
 			$queue,
 			$bindings,
 			$writer,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$woo ?? $this->woo()
 		);
 	}//end job()
 
