@@ -77,13 +77,18 @@ class PortalFileFieldPolicy {
 		'jpeg' => ['image/jpeg'],
 		'gif' => ['image/gif'],
 		'webp' => ['image/webp'],
-		'txt' => ['text/plain', 'text/csv'],
-		'csv' => ['text/csv', 'text/plain'],
 		'svg' => ['image/svg+xml'],
 		'html' => ['text/html'],
 		'htm' => ['text/html'],
 		'xml' => ['text/xml', 'application/xml'],
 	];
+
+	/**
+	 * Extensions of plain text. Their bytes may sniff as any text type, or
+	 * JSON (a note that starts with `#include` is `text/x-c`), as long as it
+	 * is not one of {@see self::ACTIVE_TYPES}.
+	 */
+	private const TEXT_EXTENSIONS = ['txt', 'csv'];
 
 	/**
 	 * Types a browser runs or renders as a page. A file of an extension not
@@ -366,7 +371,9 @@ class PortalFileFieldPolicy {
 		}
 
 		if (str_ends_with($entry, '/*') === true) {
-			return str_starts_with($mime, substr($entry, 0, -1));
+			// A wildcard never lets active content in (`image/*` would admit an
+			// SVG with a script in it); a field that wants it names the type.
+			return str_starts_with($mime, substr($entry, 0, -1)) && in_array($mime, self::ACTIVE_TYPES, true) === false;
 		}
 
 		return $entry === $mime;
@@ -383,6 +390,11 @@ class PortalFileFieldPolicy {
 	 * @return bool
 	 */
 	private function contentFitsExtension(string $extension, string $mime): bool {
+		if (in_array($extension, self::TEXT_EXTENSIONS, true) === true) {
+			return (str_starts_with($mime, 'text/') === true || $mime === 'application/json')
+				&& in_array($mime, self::ACTIVE_TYPES, true) === false;
+		}
+
 		if (isset(self::EXTENSION_TYPES[$extension]) === true) {
 			return in_array($mime, self::EXTENSION_TYPES[$extension], true);
 		}

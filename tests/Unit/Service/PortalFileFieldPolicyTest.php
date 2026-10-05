@@ -127,6 +127,30 @@ class PortalFileFieldPolicyTest extends TestCase {
 	}//end testAnExtensionEntryNeedsBytesThatFitTheName()
 
 	/**
+	 * Plain text may sniff as any text type or JSON, never as active content;
+	 * a wildcard MIME entry never admits active content either.
+	 *
+	 * @return void
+	 */
+	public function testTextAndWildcardEntriesNeverAdmitActiveContent(): void {
+		$policy = $this->policy();
+		$code = "#include <stdio.h>\nint main(void) { return 0; }\n";
+		$json = "{\"naam\": \"Noor\", \"klas\": \"5a\"}";
+		$svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>\n";
+		$html = "<!DOCTYPE html><html><body>x</body></html>\n";
+		$png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', true);
+
+		$this->assertNull($policy->refusal(['accept' => ['.txt']], 'notes.txt', $code));
+		$this->assertNull($policy->refusal(['accept' => ['.txt']], 'notes.txt', $json));
+		$this->assertSame(PortalFileFieldPolicy::ERROR_TYPE_REFUSED, $policy->refusal(['accept' => ['.txt', '.csv']], 'klas.csv', $html));
+
+		$this->assertNull($policy->refusal(['accept' => ['image/*']], 'pixel.png', (string)$png));
+		$this->assertSame(PortalFileFieldPolicy::ERROR_TYPE_REFUSED, $policy->refusal(['accept' => ['image/*']], 'logo.svg', $svg));
+		$this->assertSame(PortalFileFieldPolicy::ERROR_TYPE_REFUSED, $policy->refusal(['accept' => ['text/*']], 'page.txt', $html));
+		$this->assertNull($policy->refusal(['accept' => ['image/svg+xml']], 'logo.svg', $svg), 'a field that names the type still takes it');
+	}//end testTextAndWildcardEntriesNeverAdmitActiveContent()
+
+	/**
 	 * A file above `maxSizeMb` is refused; the default is twenty megabytes.
 	 *
 	 * @return void
