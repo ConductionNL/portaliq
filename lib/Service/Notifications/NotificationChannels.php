@@ -9,8 +9,9 @@
  * A missing choice means on. The inbox message itself is not a choice; the
  * account-wide e-mail opt-out is checked by the dispatch job, before this.
  *
- * A push goes out only when the resident registered a device, through
- * PushDeliveryService, which honours their quiet hours.
+ * A push goes out only when the resident registered a device and the bound
+ * transport really delivers, through PushDeliveryService, which honours
+ * their quiet hours.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
