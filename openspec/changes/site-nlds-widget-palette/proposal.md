@@ -81,3 +81,19 @@ Count from the table in `design.md` D1: 48 components become standalone widgets 
 - portaliq: `src/site/components/WidgetGrid.vue`, `src/lib/pageWidgetCatalogue.js`, `src/editor/widgetForms.js`, `src/editor/WidgetPalettePanel.vue`, `src/editor/PageGridEditor.vue`, new `src/site/widgets/<key>/` folders, `lib/Contribution/ActionConfigNormaliser.php` and `AttachedActionResolver.php` (`summary`, `audiences`), `package.json` (Utrecht and candidate CSS packages per wave).
 - `@conduction/nextcloud-vue`: none required. Library blocks stay as they are.
 - dossiq: declares `summary` and `audiences` on its start actions (its own change).
+
+## Amendment, 2026-10-05: Woo capability programme, wave 1
+
+Row 6.13 of the Woo capability register, "The portal reads in Dutch and in at least one other
+language", rated partial (production), is added to this change. No Ruben decision governs it.
+Re-checked on `development` at ca591037: this change is open (T8b to T12 open), so the amendment
+reopens T8a, adds REQ-SNW-013 and tasks T8c and T8d, and changes nothing else.
+
+**Why.** T8a is ticked and not true in code: `nlLanguageNav` renders only when it receives more than
+one locale, and nothing hands it any. `WidgetGrid.vue` never passes `locales` and `propsFor()` has no
+branch for the widget. `contentApi.js` sends no locale, so even a working switch would change nothing
+on the page. PR #1196 fixes both and was open, conflicting and red on 2026-10-05.
+
+**What it adds.** The shell hands the portal's locales to the switch, every content read carries the
+chosen locale, links keep it, and a page without a translation says it is shown in the default
+language.

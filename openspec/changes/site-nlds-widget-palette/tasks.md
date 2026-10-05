@@ -56,7 +56,8 @@ The entry after this wave: **364,872 bytes** of the 412 KiB budget, up 1,607 byt
 
 ## Wave 4: navigation
 
-- [x] **T8a**: `nlLanguageNav`, `nlSignIn`, `nlTaskNav`, `nlTabs`.
+- [ ] **T8a**: `nlLanguageNav`, `nlSignIn`, `nlTaskNav`, `nlTabs`. **Reopened 2026-10-05** (Woo capability
+  programme, row 6.13): the box was ticked and `nlLanguageNav` cannot render. See T8c.
   - **Neither nav widget lets a placement invent its own targets.** The language nav renders the locales the shell hands down from the portal, so a page cannot advertise a language the portal does not serve, and it has no author field at all. The sign-in widget renders the ways in the portal declares and **refuses an absolute address**: a sign-in link to another origin is the one link on a government page that must never be authorable.
   - `nlTabs` follows the WAI-ARIA tabs pattern, as `MyCasesPage.vue` already does: a tablist of buttons, arrow keys between them, Home and End to the ends, roving tabindex so Tab leaves the tablist, and one panel at a time wired with `aria-controls` and `aria-labelledby`. The id prefix comes from the first tab's title, so two tab widgets on a page do not point both panels at the same tab.
   - `nlTaskNav` carries each step's state **in words** as well as in weight: a tick and a tint say nothing to a screen reader and nothing to somebody who cannot tell the tints apart, which is WCAG 1.4.1. `aria-current="step"` marks the current one.
@@ -84,3 +85,32 @@ After `site-multi-step-forms` wave 1.
 ## Validation
 
 - [ ] **T12**: `openspec validate site-nlds-widget-palette --strict`
+
+## Amendment, 2026-10-05: Woo capability programme (row 6.13)
+
+Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`. A test marked **fails today** must be run
+on `origin/development` first and seen red; put the failing line in the PR body.
+
+- [ ] **T8c**: the language switch renders and the chosen language reaches the content (REQ-SNW-013).
+  **Start from PR #1196** (`fix/language-switch-renders`): it implements exactly this, with
+  `src/site/lib/languageNav.js` and `tests/language-nav.spec.mjs` (7 tests, 5 red on `development`).
+  On 2026-10-05 it was CONFLICTING and red on `validate` and `check:specs`. Merge `development` into
+  that branch (never rebase it), fix both, and fold its own change `language-switch-reaches-the-content`
+  into this one so one spec owns the requirement. If #1196 was closed or merged by the time you start,
+  read `git log origin/development -- src/site/lib/languageNav.js` first and build only what is
+  missing. Verification:
+  - **fails today**: node test `tests/language-nav.spec.mjs` `the grid hands the portal's locales to
+    the switch`, `an author cannot add a locale the portal does not serve`, and
+    `every content read carries the chosen locale`, wired into `check:specs`.
+  - e2e `tests/e2e/site-language.spec.ts`: on a portal with locales `nl` and `en`, choose English and
+    see a page with an English translation render in English, then follow a link and stay in English.
+    Cite REQ-SNW-013.
+  - Live check after merge on the dev instance: one portal with two locales; record the switch and
+    one translated page.
+- [ ] **T8d**: Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
+  `npm run lint`, `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`,
+  `npm run check:manifest`, `npm run check:specs` and `npm run build:site`, plus any other leg
+  `code-quality.yml` requires. Hydra's `scripts/run-hydra-gates.sh --base origin/development`, gates
+  counted. `TMPDIR` a sibling of the clone. One PR, `--base development`, merge never rebase, no
+  `Co-Authored-By`. Done means merged on `development` with CI green; 6.13 then reads `yes` (build),
+  and `production` only with a store release.
