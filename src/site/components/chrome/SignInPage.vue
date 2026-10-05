@@ -142,6 +142,9 @@
 <script>
 import icons from '../../lib/menuIcons.js'
 
+// The button links' classes need their stylesheet, or the browser draws its own blue link.
+import '@utrecht/button-link-css/dist/index.css'
+
 /**
  * The sign-in page of a portal that writes its cards (`authentication.modeLabels`)
  * or its page text (`authentication.signInPage`). Strings come in as props.

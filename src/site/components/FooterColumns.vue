@@ -174,6 +174,9 @@
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import { footerContentOf } from '../lib/shellData.js'
 
+// The button links' classes need their stylesheet, or the browser draws its own blue link.
+import '@utrecht/button-link-css/dist/index.css'
+
 /**
  * The portal's footer block (`footerColumns`).
  *
