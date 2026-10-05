@@ -2076,7 +2076,19 @@
         "Italic ({shortcut})": "Italic ({shortcut})",
         "List": "List",
         "Web address": "Web address",
-        "Insert link": "Insert link"
+        "Insert link": "Insert link",
+        "Home page": "Home page",
+        "{portal} has a published home page.": "{portal} has a published home page.",
+        "{portal} has a home page, but it is still a draft.": "{portal} has a home page, but it is still a draft.",
+        "{portal} has no home page.": "{portal} has no home page.",
+        "A draft is not served, so the portal address says the page does not exist.": "A draft is not served, so the portal address says the page does not exist.",
+        "Anyone who opens the portal address is told the page does not exist.": "Anyone who opens the portal address is told the page does not exist.",
+        "A home page is a page of this portal with route / and status published.": "A home page is a page of this portal with route / and status published.",
+        "Publish {page} to put it live.": "Publish {page} to put it live.",
+        "Add a page with route /, then publish it.": "Add a page with route /, then publish it.",
+        "Open this page": "Open this page",
+        "Open the pages of this portal": "Open the pages of this portal",
+        "The home page of this portal could not be checked.": "The home page of this portal could not be checked."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
