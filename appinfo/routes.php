@@ -67,6 +67,11 @@ return [
         // contrast verdict per set (nldesign-theme-integration). Admin-only.
         ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
         ['name' => 'portalTheme#update', 'url' => '/api/portals/{slug}/theme', 'verb' => 'PUT'],
+        // Whether the portal has a published page at its root, for the "Home
+        // page" report on the portal's own page (portaliq-cms). Admin-only: it
+        // says whether a DRAFT page sits at a route, which the public content
+        // API withholds.
+        ['name' => 'portalHomePage#index', 'url' => '/api/portals/{slug}/home-page', 'verb' => 'GET'],
         // How residents sign in to a portal's organisation: per provider the
         // route, and the integriq broker settings (signin-integriq-broker-login
         // T11). Admin-only.

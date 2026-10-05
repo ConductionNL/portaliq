@@ -1403,7 +1403,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portal",
-        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the picker opens on its `default`, 30 days, and the card sends the picked preset as `days` through the `@range.preset` token. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing.",
+        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the picker opens on its `default`, 30 days, and the card sends the picked preset as `days` through the `@range.preset` token. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing. portal-home-page sits DIRECTLY under the KPI row and above the portal's own fields, because it reports a configuration error and an error nobody scrolls to is not reported. It is the only widget on this page whose subject is a route rather than a record: a portal with no published page at `/` serves not-found at its own address, which no other widget here can show. Its placement, not its registration, is what puts it in front of an administrator, and tests/portal-home-page.spec.mjs asserts both.",
         "widgets": [
           {
             "id": "portal-kpi-page-views",
@@ -1526,6 +1526,13 @@
               },
               "variant": "success"
             }
+          },
+          {
+            "id": "portal-home-page",
+            "type": "PortalHomePage",
+            "title": "Home page",
+            "icon": "Home",
+            "content": {}
           },
           {
             "id": "portal-data",
@@ -1695,10 +1702,18 @@
             "gridHeight": 2
           },
           {
+            "id": "portal-home-page",
+            "widgetId": "portal-home-page",
+            "gridX": 0,
+            "gridY": 2,
+            "gridWidth": 12,
+            "gridHeight": 2
+          },
+          {
             "id": "1",
             "widgetId": "portal-data",
             "gridX": 0,
-            "gridY": 2,
+            "gridY": 4,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -1706,7 +1721,7 @@
             "id": "2",
             "widgetId": "portal-pages",
             "gridX": 0,
-            "gridY": 7,
+            "gridY": 9,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -1714,7 +1729,7 @@
             "id": "3",
             "widgetId": "portal-menus",
             "gridX": 0,
-            "gridY": 12,
+            "gridY": 14,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -1722,7 +1737,7 @@
             "id": "4",
             "widgetId": "portal-glossary",
             "gridX": 6,
-            "gridY": 12,
+            "gridY": 14,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -1730,7 +1745,7 @@
             "id": "5",
             "widgetId": "portal-case-types",
             "gridX": 0,
-            "gridY": 16,
+            "gridY": 18,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -1738,7 +1753,7 @@
             "id": "portal-theme",
             "widgetId": "portal-theme",
             "gridX": 0,
-            "gridY": 21,
+            "gridY": 23,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -1746,7 +1761,7 @@
             "id": "portal-signin",
             "widgetId": "portal-signin",
             "gridX": 0,
-            "gridY": 26,
+            "gridY": 28,
             "gridWidth": 12,
             "gridHeight": 6
           },
@@ -1754,7 +1769,7 @@
             "id": "portal-registration",
             "widgetId": "portal-registration",
             "gridX": 0,
-            "gridY": 32,
+            "gridY": 34,
             "gridWidth": 12,
             "gridHeight": 7
           }
