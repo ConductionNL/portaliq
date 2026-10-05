@@ -413,7 +413,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.10.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);

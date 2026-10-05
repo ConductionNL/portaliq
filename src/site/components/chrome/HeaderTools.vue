@@ -99,6 +99,9 @@
 <script>
 import { personOf } from './person.js'
 
+// The button links' classes need their stylesheet, or the browser draws its own blue link.
+import '@utrecht/button-link-css/dist/index.css'
+
 /**
  * The search box, the way to the own area and the phone menu button of a
  * designed header. Every string is a prop, so it mounts at a public origin.
