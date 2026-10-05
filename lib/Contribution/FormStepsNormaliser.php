@@ -67,8 +67,9 @@ class FormStepsNormaliser {
 			'steps'        => ($action['steps'] ?? null),
 			'draft'        => ($action['draft'] ?? null),
 			'confirmation' => ($action['confirmation'] ?? null),
+			'summary'      => ($action['summary'] ?? null),
 		];
-		unset($action['steps'], $action['draft'], $action['confirmation']);
+		unset($action['steps'], $action['draft'], $action['confirmation'], $action['summary']);
 		if ($flows === false) {
 			return $action;
 		}
@@ -77,6 +78,8 @@ class FormStepsNormaliser {
 			'steps'        => $this->steps(steps: $declared['steps'], known: $whitelist),
 			'draft'        => $this->draft(draft: $declared['draft']),
 			'confirmation' => $this->confirmation(confirmation: $declared['confirmation']),
+			// One sentence from the answers (action-summary-sentence).
+			'summary'      => (new ActionSummaryNormaliser())->summary(summary: $declared['summary'], whitelist: $whitelist),
 		];
 		foreach ($clean as $key => $value) {
 			if ($value !== null && $value !== []) {
