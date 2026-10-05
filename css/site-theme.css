@@ -272,8 +272,9 @@
 	background-size: auto 100%;
 }
 
-.pq-site .pq-site__header {
-	margin-block-end: var(--cn-brand-stripe-height, 0);
+/* The motif hangs below the menu bar; the breadcrumb starts under it. */
+.pq-site .pq-site__header .ac-header__navigation-breadcrumb {
+	padding-block-start: var(--cn-brand-stripe-height, 0);
 }
 
 .pq-site .ac-footer .pq-footer__band--content::before {
