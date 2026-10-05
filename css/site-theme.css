@@ -140,3 +140,52 @@
 	margin-inline-end: var(--tilburg-space-column-snail);
 	vertical-align: middle;
 }
+
+/*
+ * THE PRIMARY BUTTON IS A BUTTON WITHOUT A THEME, TOO.
+ *
+ * The Utrecht button reads every visual property from a token and declares
+ * no fallback of its own: no background, no colour, no padding, no border.
+ * A portal is allowed to render without the theme app (site.php links the
+ * token layer only when one is installed), and on such a portal the primary
+ * action computed to rgba(0, 0, 0, 0) on rgb(0, 0, 0) with 0px padding.
+ * Measured on the recording instance: "Afwezigheid melden", the submit of the
+ * absence form, read as a line of body text under the form.
+ *
+ * Each declaration below reads the theme's own token FIRST, so a portal whose
+ * set defines it renders exactly as before. Only where a token is missing does
+ * the chain end, and it ends in the browser's system colours rather than a
+ * literal: CanvasText on Canvas is the page's own text on the page's own
+ * background inverted, the highest contrast the page has, and it follows
+ * forced-colours and high-contrast modes instead of fighting them.
+ *
+ * The private `--_utrecht-button-appearance-*` names are what the component
+ * itself derives its background and colour from, including its hover and
+ * focus states, so setting them here keeps those states consistent.
+ */
+.pq-site .utrecht-button--primary-action {
+	--_utrecht-button-appearance-background-color: var(
+		--utrecht-button-primary-action-background-color,
+		var(--utrecht-button-background-color, CanvasText)
+	);
+	--_utrecht-button-appearance-color: var(
+		--utrecht-button-primary-action-color,
+		var(--utrecht-button-color, Canvas)
+	);
+	--_utrecht-button-appearance-font-weight: var(
+		--utrecht-button-primary-action-font-weight,
+		var(--utrecht-button-font-weight, bold)
+	);
+	border-radius: var(--utrecht-button-border-radius, 0.25em);
+	padding-block: var(--utrecht-button-padding-block-start, 0.5em)
+		var(--utrecht-button-padding-block-end, 0.5em);
+	padding-inline: var(--utrecht-button-padding-inline-start, 1.25em)
+		var(--utrecht-button-padding-inline-end, 1.25em);
+}
+
+.pq-site .utrecht-button--primary-action:focus-visible {
+	outline-color: var(--utrecht-focus-outline-color, CanvasText);
+	outline-offset: var(--utrecht-focus-outline-offset, 2px);
+	outline-style: var(--utrecht-focus-outline-style, solid);
+	outline-width: var(--utrecht-focus-outline-width, 3px);
+}
