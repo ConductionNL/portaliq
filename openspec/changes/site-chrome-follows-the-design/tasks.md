@@ -9,4 +9,4 @@
 - [x] 7. Light hero with watermark.
 - [x] 8. `gridContext().signInRoutes` for lane L2.
 - [x] 9. Tests: `tests/site-chrome.spec.mjs`, `PortalShellTest`, `PortalThemeResolverTest`; existing shell tests updated for the new footer keys.
-- [ ] 10. Live check on :8091 with the four school sets and zuiddrecht (lane folder screenshots).
+- [x] 10. Live check on :8091 with the four school sets and zuiddrecht (lane folder screenshots).
