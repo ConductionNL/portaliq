@@ -72,6 +72,45 @@ class PortalIntakeQueueTest extends TestCase {
 
 	}//end testAFailedCreateIsVisibleNotSilent()
 
+	/**
+	 * A Woo request registered with its term answers the minted reference and
+	 * the due date; one that failed answers neither.
+	 *
+	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 */
+	public function testARegisteredWooRequestNamesItsReferenceAndDueDate(): void {
+		$queue = $this->queue();
+		$accepted = $queue->accept(portal: 'gemeente-x', route: 'woo-verzoek', answers: []);
+		$queue->markRegistered(
+			submission: $this->storedRows('portalIntakeSubmission')[0],
+			caseId: 'req-1',
+			externalReference: 'WOO-2026-1A2B3C',
+			dueAt: '2026-11-02T09:00:00+00:00'
+		);
+
+		$status = $queue->status(reference: $accepted['reference'], portal: 'gemeente-x');
+
+		$this->assertSame('registered', $status['state']);
+		$this->assertSame('WOO-2026-1A2B3C', $status['externalReference']);
+		$this->assertSame('2026-11-02T09:00:00+00:00', $status['dueAt']);
+
+	}//end testARegisteredWooRequestNamesItsReferenceAndDueDate()
+
+	/**
+	 * A case without a term never writes an empty date-time.
+	 *
+	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 */
+	public function testACaseWithoutATermWritesNoDueDate(): void {
+		$queue = $this->queue();
+		$accepted = $queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: []);
+		$queue->markRegistered(submission: $this->storedRows('portalIntakeSubmission')[0], caseId: 'zaak-1');
+
+		$this->assertArrayNotHasKey('dueAt', $this->storedRows('portalIntakeSubmission')[0]);
+		$this->assertSame('', $queue->status(reference: $accepted['reference'], portal: 'gemeente-x')['dueAt']);
+
+	}//end testACaseWithoutATermWritesNoDueDate()
+
 	public function testAReferenceIsNeverReadableFromAnotherPortal(): void {
 		$queue = $this->queue();
 		$accepted = $queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: []);

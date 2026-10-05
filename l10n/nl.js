@@ -1978,6 +1978,18 @@ OC.L10N.register(
         "SHA-256 of the one-time secret in the activation mail of a self-registration under the activation policy. Emptied when the link is followed.": "SHA-256 van het eenmalige geheim in de activatiemail van een eigen aanmelding onder het activatiebeleid. Wordt leeggemaakt zodra de link is gevolgd.",
         "Activation expiry": "Verloopmoment van de activatielink",
         "When the activation link stops working.": "Wanneer de activatielink niet meer werkt.",
+        "Open the link and sign in. After that you see what %1$s shares with you.": "Open de link en log in. Daarna ziet u wat %1$s met u deelt.",
+        "Open the portal": "Open het portaal",
+        "Invitation code hash": "Codehash van de uitnodiging",
+        "HMAC-SHA256 of the one-time code in the invitation letter of a waiting account, keyed with a key derived from the instance secret. Emptied when the code is redeemed. Readable by administrators only.": "HMAC-SHA256 van de eenmalige code in de uitnodigingsbrief van een wachtend account, met een sleutel die is afgeleid van het geheim van de installatie. Wordt leeggemaakt zodra de code is gebruikt. Alleen leesbaar voor beheerders.",
+        "Invitation token hash": "Tokenhash van de uitnodiging",
+        "SHA-256 of the one-time secret in the invitation mail of a waiting account. Emptied when the secret is redeemed. Readable by administrators only.": "SHA-256 van het eenmalige geheim in de uitnodigingsmail van een wachtend account. Wordt leeggemaakt zodra het geheim is gebruikt. Alleen leesbaar voor beheerders.",
+        "Invitation expiry": "Verloopmoment van de uitnodiging",
+        "When the invitation of a waiting account stops working.": "Wanneer de uitnodiging van een wachtend account niet meer werkt.",
+        "Wrong invitation secrets": "Verkeerde uitnodigingsgeheimen",
+        "How many wrong invitation secrets this account offered inside the running hour. Five lock the redeem route for the account.": "Hoeveel verkeerde uitnodigingsgeheimen dit account in het lopende uur heeft aangeboden. Bij vijf wordt inwisselen voor het account geblokkeerd.",
+        "Wrong invitation secrets since": "Verkeerde uitnodigingsgeheimen sinds",
+        "When the first wrong invitation secret of the running hour was offered.": "Wanneer het eerste verkeerde uitnodigingsgeheim van het lopende uur is aangeboden.",
         "Activate your account at %1$s": "Activeer uw account bij %1$s",
         "Activate your account": "Activeer uw account",
         "You created an account at %1$s. Follow the link to make it ready for use.": "U hebt een account aangemaakt bij %1$s. Volg de link om het klaar te maken voor gebruik.",
@@ -2142,7 +2154,12 @@ OC.L10N.register(
         "Add a page with route /, then publish it.": "Voeg een pagina toe met route /, en publiceer die.",
         "Open this page": "Deze pagina openen",
         "Open the pages of this portal": "De pagina's van dit portaal openen",
-        "The home page of this portal could not be checked.": "De startpagina van dit portaal kon niet worden gecontroleerd."
+        "The home page of this portal could not be checked.": "De startpagina van dit portaal kon niet worden gecontroleerd.",
+        "Deliver to": "Bezorgen bij",
+        "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed.": "Waar een inzending heen gaat. `case` maakt een object in caseRegister en caseSchema. `wooRequest` geeft haar aan de Woo-intake van opencatalogi, die het kenmerk van het verzoek uitgeeft en de wettelijke termijn start; de velden van het formulier heten dan zoals de velden van het verzoek (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Zonder opencatalogi wordt een `wooRequest`-inzending als mislukt gemarkeerd.",
+        "The reference the receiving app minted, such as a Woo request's `WOO-2026-1A2B3C`. Set only once the submission is registered.": "Het kenmerk dat de ontvangende app uitgaf, zoals `WOO-2026-1A2B3C` van een Woo-verzoek. Alleen gezet zodra de inzending is geregistreerd.",
+        "Due at": "Uiterste datum",
+        "The statutory due date the receiving app armed, such as a Woo request's decision term. Set only when a term runs, so the reference page never quotes a deadline nobody started.": "De wettelijke uiterste datum die de ontvangende app startte, zoals de beslistermijn van een Woo-verzoek. Alleen gezet als er een termijn loopt, zodat de statuspagina nooit een termijn noemt die niemand startte."
     },
     "nplurals=2; plural=(n != 1);"
 )
