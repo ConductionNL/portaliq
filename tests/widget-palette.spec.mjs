@@ -15,7 +15,10 @@
 //   node --test tests/widget-palette.spec.mjs
 
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { cellFromDrop, GRID_COLUMNS } from '../src/editor/geometry.js'
 import { addWidget, addWidgetAt } from '../src/editor/gridModel.js'
 import {
@@ -215,4 +218,142 @@ test('placing without a pointer puts the widget where an author will find it', (
 			w: second.widgets[1].gridWidth,
 		},
 	)
+})
+
+// ---------------------------------------------------------------------------
+// THE PALETTE MUST NOT COVER ITS OWN DROP TARGET (REQ-SNW-002).
+//
+// Found live on 4 Oct 2026 and not by any test: the palette was an `aria-modal`
+// NcDialog with a full-screen backdrop, so while it was open the canvas behind
+// it took no pointer at ANY coordinate. Playwright's drop over
+// `designer-canvas` was intercepted by the dialog's own header after 164
+// retries. Every unit test above still passed, because grouping, matching and
+// `cellFromDrop` were all correct: the gesture was wired and walled off.
+//
+// So these read the wiring the arithmetic cannot see. They are source
+// assertions rather than mounts because this repo has no browser in its unit
+// run, and a mount without layout cannot tell a backdrop from no backdrop
+// either. Each one names the fault it would catch.
+// ---------------------------------------------------------------------------
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const source = (path) => readFileSync(join(ROOT, path), 'utf8')
+
+/**
+ * A file's code with its comments taken out.
+ *
+ * ⚠️ THE COMMENTS ARE WHY THIS EXISTS. The checks below forbid `NcDialog` and
+ * `aria-modal`, and the panel's own header explains at length that it used to be
+ * both. Matching the raw file failed on that explanation, which is a test
+ * failing on its own documentation: the first run of this test caught the
+ * sentence, not the code.
+ *
+ * @param {string} path The file, relative to the repository root.
+ * @return {string} The file without HTML, block or line comments.
+ */
+function code(path) {
+	return source(path)
+		.replace(/<!--[\s\S]*?-->/g, '')
+		.replace(/\/\*[\s\S]*?\*\//g, '')
+		.replace(/^\s*\/\/.*$/gm, '')
+}
+
+test('the palette is a non-modal panel, so nothing of it is over the canvas', () => {
+	const panel = code('src/editor/WidgetPalettePanel.vue')
+
+	// The backdrop came from NcDialog. A dialog is how this regresses.
+	assert.doesNotMatch(panel, /NcDialog|NcModal/, 'the palette is a dialog again')
+	assert.doesNotMatch(panel, /aria-modal/, 'a modal palette walls off the grid')
+
+	// What it is instead: a labelled region, in the DOM only while it is open.
+	assert.match(panel, /<aside[\s\S]*?v-if="open"/)
+	assert.match(panel, /role="region"/)
+	assert.match(panel, /id="widget-palette"/)
+	assert.match(panel, /data-testid="widget-palette"/)
+})
+
+test('the panel sits in the editor pane row, beside the canvas', () => {
+	const editor = code('src/editor/PageGridEditor.vue')
+
+	// It is INSIDE the pane row and BEFORE the canvas. A palette rendered after
+	// the editor is under the grid, not beside it.
+	const panes = editor.indexOf('page-grid-editor__panes')
+	const panel = editor.indexOf('<WidgetPalettePanel')
+	const canvas = editor.indexOf('data-testid="designer-canvas"')
+	assert.ok(panes > -1 && panel > panes, 'the palette is in the editor pane row')
+	assert.ok(panel < canvas, 'the palette column comes before the canvas')
+
+	// NO HOST MOUNTS IT. Both hosts used to, and both put it over the page; a
+	// host can only say whether it is open. That is what keeps the panel's
+	// position a property of the editor rather than of whoever embeds it.
+	for (const host of [
+		'src/views/PageLayoutDesigner.vue',
+		'src/editor/SiteEditMode.vue',
+	]) {
+		const text = code(host)
+		assert.doesNotMatch(text, /WidgetPalette/, `${host} mounts the palette itself`)
+		assert.match(text, /v-model:paletteOpen="paletteOpen"/, host)
+	}
+
+	// And the portal edit mode still asks for the public widgets only.
+	assert.match(code('src/editor/SiteEditMode.vue'), /<PageGridEditor[\s\S]*?publicOnly/)
+})
+
+test('an empty canvas is big enough to drop on', () => {
+	// A page with no widgets renders one line of hint text. Without a minimum
+	// height there is nothing under the pointer to drop onto, and the drop lands
+	// on whatever follows the editor.
+	const editor = source('src/editor/PageGridEditor.vue')
+	const block = editor.slice(editor.indexOf('.page-grid-editor__canvas {'))
+	const height = block.match(/min-height:\s*(\d+)px/)
+	assert.ok(height, 'the canvas declares a minimum height')
+	assert.ok(Number(height[1]) >= 120, `the canvas is ${height[1]}px tall when empty`)
+})
+
+test('the drag type is one module both sides read', () => {
+	// The canvas used to import PALETTE_DRAG_TYPE from the palette's .vue file,
+	// so the editor depended on the palette for a string and a rename of the
+	// palette broke the drop silently: `getData()` for a type nobody set answers
+	// an empty string, and the handler returns without placing anything.
+	const drag = source('src/editor/paletteDrag.js')
+	assert.match(drag, /export const PALETTE_DRAG_TYPE = '[^']+'/)
+
+	for (const file of [
+		'src/editor/PageGridEditor.vue',
+		'src/editor/WidgetPalettePanel.vue',
+	]) {
+		const text = code(file)
+		assert.match(text, /from '\.\/paletteDrag\.js'/, file)
+		assert.doesNotMatch(
+			text,
+			/PALETTE_DRAG_TYPE\s*=/,
+			`${file} declares its own copy of the type`,
+		)
+	}
+})
+
+test('a panel that traps nothing still answers the keyboard', () => {
+	const panel = code('src/editor/WidgetPalettePanel.vue')
+
+	// Escape closes it, and closing gives focus back. Without the second half an
+	// author who presses Escape is left with focus on nothing at all.
+	assert.match(panel, /@keydown\.esc[\s\S]{0,20}="close"/)
+	assert.match(panel, /this\.\$refs\.search\?\.focus\?\.\(\)/)
+	assert.match(panel, /opener\?\.isConnected/)
+
+	// The tile is still a button, so a click and Enter are the same act, and it
+	// still carries the drag.
+	assert.match(panel, /<button[\s\S]*?draggable="true"[\s\S]*?@dragstart="startDrag/)
+	assert.match(panel, /@click="choose\(entry\)"/)
+
+	// And the control that opens it says so, which is what a region needs
+	// instead of the announcement a dialog gets for free.
+	for (const host of [
+		'src/views/PageLayoutDesigner.vue',
+		'src/editor/SiteEditMode.vue',
+	]) {
+		const text = code(host)
+		assert.match(text, /:aria-expanded="paletteOpen"/, host)
+		assert.match(text, /aria-controls="widget-palette"/, host)
+	}
 })

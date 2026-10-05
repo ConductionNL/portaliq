@@ -39,10 +39,17 @@
 				}}</span>
 			</p>
 			<div class="pq-site-editor__actions">
+				<!--
+					A DISCLOSURE, NOT A DIALOG OPENER. The palette is a panel
+					beside the canvas now, so this button shows and hides it and
+					says which through `aria-expanded`.
+				-->
 				<NcButton
 					data-testid="site-edit-add"
 					:disabled="state.loading || state.kind !== 'grid'"
-					@click="paletteOpen = true">
+					:aria-expanded="paletteOpen"
+					aria-controls="widget-palette"
+					@click="paletteOpen = !paletteOpen">
 					{{ t('portaliq', 'Add widget') }}
 				</NcButton>
 				<NcButton
@@ -145,12 +152,12 @@
 		<div v-if="state.loading" class="pq-site-editor__loading">
 			<NcLoadingIcon :size="32" />
 		</div>
-		<PageGridEditor v-else :editor="editor" />
+		<PageGridEditor
+			v-else
+			v-model:paletteOpen="paletteOpen"
+			:editor="editor"
+			publicOnly />
 
-		<WidgetPaletteDialog
-			v-model:open="paletteOpen"
-			publicOnly
-			@choose="editor.addWidget" />
 		<PageHistoryDialog
 			v-model:open="historyOpen"
 			:pageId="pageId"
@@ -165,7 +172,6 @@ import { register, translate } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { reactive } from 'vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
-import WidgetPaletteDialog from '../dialogs/WidgetPaletteDialog.vue'
 import PageGridEditor from './PageGridEditor.vue'
 import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
@@ -209,7 +215,6 @@ export default {
 		PageHistoryDialog,
 		SiteMenuPanel,
 		SitePagesPanel,
-		WidgetPaletteDialog,
 	},
 
 	props: {

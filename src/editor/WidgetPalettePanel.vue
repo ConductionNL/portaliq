@@ -2,31 +2,57 @@
 <!-- Copyright (C) 2026 Conduction B.V. -->
 
 <!--
-  WidgetPaletteDialog — the page designer's widget palette.
+  WidgetPalettePanel — the page designer's widget palette, beside the canvas.
 
-  Its own file per ADR-004's modal-isolation rule (NcDialog-based dialogs live
-  under src/dialogs/), which is also what keeps the designer readable: the
-  palette is a list with its own selection state and has no business sharing a
-  component with the grid.
+  🔴 IT WAS A MODAL DIALOG AND THAT MADE ITS OWN DROP TARGET UNREACHABLE. As an
+  `aria-modal` NcDialog it painted a full-screen backdrop, so while it was open
+  the canvas behind it took no pointer at ANY coordinate: a live run on 4 Oct
+  2026 caught the dialog's own header intercepting the drop over
+  `designer-canvas`, after 164 retries. The tiles already carried
+  `draggable="true"` and the canvas already carried `@drop`; the gesture was
+  wired and walled off. REQ-SNW-002 says "drag and key are the same act", and
+  only the key half held.
+
+  So this is a NON-MODAL PANEL: no backdrop, no focus trap, and the grid stays
+  visible and reachable while it is open. It is a labelled region rather than a
+  dialog, because `role="dialog"` without `aria-modal` buys an author nothing
+  and invites the trap back. The button that opens it carries `aria-expanded`
+  and `aria-controls`, which is the disclosure pattern a screen reader already
+  knows.
+
+  WHAT IT STILL OWES THE KEYBOARD, since a non-modal panel traps nothing:
+  opening it moves focus to the search field, Escape closes it, and closing it
+  returns focus to the control that opened it. Without that last step an author
+  who presses Escape is left with focus nowhere.
 
   THE WHOLE CATALOGUE IS OFFERED, and the entries a published page will not
   mount are marked rather than removed. See src/lib/pageWidgetCatalogue.js for
   why marking beats hiding.
 
+  @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
   @spec openspec/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
 -->
 <template>
-	<NcDialog
-		:name="t('portaliq', 'Add a widget')"
-		:open="open"
-		size="normal"
+	<aside
+		v-if="open"
+		id="widget-palette"
+		class="palette"
 		data-testid="widget-palette"
-		@update:open="$emit('update:open', $event)">
+		role="region"
+		:aria-label="t('portaliq', 'Add a widget')"
+		@keydown.esc.stop="close">
+		<header class="palette__bar">
+			<h3 class="palette__title">{{ t('portaliq', 'Add a widget') }}</h3>
+			<NcButton data-testid="widget-palette-close" @click="close">
+				{{ t('portaliq', 'Close') }}
+			</NcButton>
+		</header>
+
 		<p class="palette__intro">
 			{{
 				t(
 					'portaliq',
-					'Pick a widget to place on this page. You can move and resize it afterwards.',
+					'Pick a widget, or drag one onto the page. You can move and resize it afterwards.',
 				)
 			}}
 		</p>
@@ -43,6 +69,7 @@
 			</label>
 			<input
 				id="widget-palette-search"
+				ref="search"
 				v-model="query"
 				type="search"
 				class="palette__search-input"
@@ -69,7 +96,7 @@
 			:key="group.group"
 			class="palette__group"
 			:data-testid="`widget-palette-group-${group.group}`">
-			<h3 class="palette__group-heading">{{ group.label }}</h3>
+			<h4 class="palette__group-heading">{{ group.label }}</h4>
 			<ul class="palette__list">
 				<li
 					v-for="entry in group.entries"
@@ -85,7 +112,7 @@
 						⚠️ THE TILE TESTID CARRIES ITS OWN `tile-` SEGMENT. A
 						widget key comes from the registry, so that part of the
 						name is unbounded, and it used to sit in the same
-						namespace as this dialog's fixed ids: a widget keyed
+						namespace as this panel's fixed ids: a widget keyed
 						`search`, `hits`, `empty` or `close` collided with the
 						search box, the hit count, the empty state or the close
 						button. The `search` widget really does exist, and the
@@ -115,39 +142,21 @@
 				</li>
 			</ul>
 		</section>
-
-		<template #actions>
-			<NcButton
-				data-testid="widget-palette-close"
-				@click="$emit('update:open', false)">
-				{{ t('portaliq', 'Cancel') }}
-			</NcButton>
-		</template>
-	</NcDialog>
+	</aside>
 </template>
 
 <script>
 import { translate, translatePlural } from '@nextcloud/l10n'
-import { NcButton, NcDialog } from '@nextcloud/vue'
+import { NcButton } from '@nextcloud/vue'
 import { widgetCatalogue } from '../lib/pageWidgetCatalogue.js'
 import { paletteGroups, paletteHitCount } from '../lib/widgetPalette.js'
-
-/**
- * The media type a dragged palette entry carries.
- *
- * Its own type rather than `text/plain`, so a drop that did not come from the
- * palette is not mistaken for one that did.
- *
- * @type {string}
- */
-export const PALETTE_DRAG_TYPE = 'application/x-portaliq-widget'
+import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 
 export default {
-	name: 'WidgetPaletteDialog',
+	name: 'WidgetPalettePanel',
 
 	components: {
 		NcButton,
-		NcDialog,
 	},
 
 	props: {
@@ -174,6 +183,13 @@ export default {
 		return {
 			/** What the author typed in the search field. */
 			query: '',
+
+			/**
+			 * What had focus when the panel opened, to give it back on close.
+			 *
+			 * @type {HTMLElement|null}
+			 */
+			opener: null,
 		}
 	},
 
@@ -227,10 +243,36 @@ export default {
 		},
 	},
 
+	watch: {
+		open: {
+			immediate: true,
+			/**
+			 * Move focus with the panel: into it on open, back to the opener on
+			 * close. `was` is checked so the immediate first run, which arrives
+			 * with no previous value on a closed panel, does not pull focus out
+			 * of whatever the author was already using.
+			 *
+			 * @param {boolean} open Whether the panel is now open.
+			 * @param {boolean} was Whether it was open before.
+			 * @return {void}
+			 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-the-palette-must-not-cover-the-grid-it-drops-onto-req-snw-004
+			 */
+			handler(open, was) {
+				if (open) {
+					this.takeFocus()
+					return
+				}
+				if (was) {
+					this.giveFocusBack()
+				}
+			},
+		},
+	},
+
 	methods: {
 		/**
 		 * Translate. Local rather than the admin app's global mixin, because
-		 * the portal edit mode mounts this dialog on the public site too.
+		 * the portal edit mode mounts this panel on the public site too.
 		 *
 		 * @param {string} app The app id.
 		 * @param {string} text The source text.
@@ -244,6 +286,54 @@ export default {
 		},
 
 		/**
+		 * Remember the control that opened the panel and focus the search.
+		 *
+		 * A non-modal panel traps nothing, so this is the whole of its focus
+		 * handling: an author who opens it lands in the field they are going to
+		 * type in, and tabbing on walks out of the panel into the page.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		takeFocus() {
+			const active =
+				typeof document === 'undefined' ? null : document.activeElement
+			this.opener = active && active !== document.body ? active : null
+			this.$nextTick(() => this.$refs.search?.focus?.())
+		},
+
+		/**
+		 * Put focus back where it was before the panel opened.
+		 *
+		 * Only if that element is still on the page: the control that opened the
+		 * panel can have been re-rendered since, and focusing a detached node
+		 * sends focus to the document instead, which is worse than leaving it.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		giveFocusBack() {
+			const opener = this.opener
+			this.opener = null
+			if (opener?.isConnected && typeof opener.focus === 'function') {
+				opener.focus()
+			}
+		},
+
+		/**
+		 * Close the panel.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		close() {
+			this.$emit('update:open', false)
+		},
+
+		/**
 		 * Hand the chosen key to the designer and close.
 		 *
 		 * @param {object} entry The catalogue entry.
@@ -253,12 +343,15 @@ export default {
 		 */
 		choose(entry) {
 			this.$emit('choose', entry.key)
-			this.$emit('update:open', false)
+			this.close()
 		},
 
 		/**
 		 * Carry the key on the drag, so a drop on a grid cell knows what to
 		 * place there.
+		 *
+		 * THE PANEL STAYS OPEN. An author who drags one widget usually drags
+		 * the next one too, and there is no backdrop left to get in the way.
 		 *
 		 * @param {DragEvent} event The drag.
 		 * @param {object} entry The catalogue entry.
@@ -282,8 +375,40 @@ export default {
 </script>
 
 <style scoped>
+/*
+ * A COLUMN BESIDE THE CANVAS, not over it. It is a flex item of the editor's
+ * pane row (PageGridEditor.vue), and it sticks so an author scrolling a long
+ * page keeps the palette in view while the drop target scrolls past.
+ *
+ * The width is the inspector's width on the other side, so the canvas sits
+ * between two equal columns rather than off-centre.
+ */
+.palette {
+	flex: 0 0 320px;
+	max-width: 100%;
+	align-self: flex-start;
+	position: sticky;
+	top: 8px;
+	max-height: calc(100vh - 120px);
+	overflow-y: auto;
+	padding-inline-end: 16px;
+	border-inline-end: 1px solid var(--color-border);
+}
+
+.palette__bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+}
+
+.palette__title {
+	margin: 0;
+	font-size: 1em;
+}
+
 .palette__intro {
-	margin-bottom: 12px;
+	margin: 8px 0 12px;
 	color: var(--color-text-maxcontrast);
 }
 
@@ -317,15 +442,18 @@ export default {
 	font-size: 1em;
 }
 
+/*
+ * ONE TILE PER ROW. In a 320px column a two-column grid gives tiles too narrow
+ * to read a Dutch label in, and the panel scrolls rather than the list, so the
+ * group headings scroll with the tiles they head.
+ */
 .palette__list {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	grid-template-columns: 1fr;
 	gap: 8px;
 	list-style: none;
 	margin: 0;
 	padding: 0;
-	max-height: 60vh;
-	overflow-y: auto;
 }
 
 .palette__button {
@@ -339,12 +467,26 @@ export default {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius);
 	background: var(--color-main-background);
-	cursor: pointer;
+	color: var(--color-main-text);
+	cursor: grab;
+	/* A drag that starts by selecting the label's text is a drag that does
+	   not start. */
+	user-select: none;
 }
 
-.palette__button:hover,
-.palette__button:focus-visible {
+.palette__button:hover {
 	background: var(--color-background-hover);
+}
+
+/*
+ * ITS OWN RING, not the hover tint. A background change alone is not a focus
+ * indicator: it fails against the tile beside it and disappears where the
+ * portal's theme paints its own surfaces (WCAG 2.2 AA, 2.4.11).
+ */
+.palette__button:focus-visible,
+.palette__search-input:focus-visible {
+	outline: 2px solid var(--color-primary-element);
+	outline-offset: 2px;
 }
 
 .palette__button--warned {
@@ -367,5 +509,23 @@ export default {
 .palette__reason {
 	color: var(--color-warning-text, var(--color-text-maxcontrast));
 	font-size: 0.85em;
+}
+
+/*
+ * NARROW: the editor's panes stack, so the palette becomes a band above the
+ * canvas. It stops sticking there, because a sticky band would cover the grid
+ * it is dropping onto.
+ */
+@media (max-width: 1024px) {
+	.palette {
+		flex-basis: auto;
+		width: 100%;
+		position: static;
+		max-height: 50vh;
+		padding-inline-end: 0;
+		border-inline-end: none;
+		border-bottom: 1px solid var(--color-border);
+		padding-bottom: 16px;
+	}
 }
 </style>

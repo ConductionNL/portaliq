@@ -37,6 +37,24 @@ A SURPRISING PLACEMENT IS WORSE THAN A PREDICTABLE ONE. This requirement said "a
 - WHEN the editor drops a heading on the second row, and on another page places one with Enter
 - THEN both placements have the same geometry, their own identifiers and no properties set
 
+### Requirement: The palette MUST NOT cover the grid it drops onto (REQ-SNW-004)
+
+The palette MUST be a non-modal panel beside the canvas. It MUST paint no backdrop, and the grid MUST stay visible and take the pointer while the palette is open. The panel MUST stay open after a drop, so an editor can place a second widget without reopening it.
+
+It MUST NOT trap focus. Opening it MUST move focus to its search field. Escape MUST close it, and closing it MUST return focus to the control that opened it. That control MUST say whether the palette is open, through `aria-expanded`.
+
+A PALETTE THAT COVERS THE GRID CANNOT BE DRAGGED ONTO IT. REQ-SNW-002 was written and built as a modal dialog with a full-screen backdrop, and the backdrop took every pointer: the canvas was unreachable at any coordinate, so the drag half of "drag and key are the same act" could not be performed by anyone. The keyboard half passed its test and hid it. This requirement exists so that the panel's shape is a requirement rather than a styling choice someone can undo.
+
+#### Scenario: The grid stays reachable while the palette is open
+- GIVEN the palette is open over a page in the designer
+- WHEN the editor points at a cell on the canvas
+- THEN the canvas takes the pointer and no part of the palette is over it
+
+#### Scenario: Escape closes the palette and gives focus back
+- GIVEN the palette is open and focus is in its search field
+- WHEN the editor presses Escape
+- THEN the palette closes and focus is on the control that opened it
+
 ### Requirement: Form fields MUST be added inside a form widget (REQ-SNW-003)
 
 The Formulieren group MUST add a field to the selected `form` widget, not a widget to the grid. With no form widget selected, the group MUST say that a form must be chosen first. Each field type MUST offer its own editable fields, and always its name, label and whether it is required. The field list MUST be stored on the form widget.

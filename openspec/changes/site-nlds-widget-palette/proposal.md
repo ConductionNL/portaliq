@@ -6,7 +6,7 @@ Ruben decided on 2026-10-02 that basically every NL Design System component must
 
 ### The matrix, verified against `development` (b150def5)
 
-Read: `src/site/components/WidgetGrid.vue` (`PUBLIC_WIDGETS`), `src/lib/pageWidgetCatalogue.js`, `src/editor/widgetForms.js`, `src/dialogs/WidgetPaletteDialog.vue`, the three form renderers, `MarkdownBlock.vue`, and `@conduction/nextcloud-vue/public` 2.57.3 as installed.
+Read: `src/site/components/WidgetGrid.vue` (`PUBLIC_WIDGETS`), `src/lib/pageWidgetCatalogue.js`, `src/editor/widgetForms.js`, `src/editor/WidgetPalettePanel.vue`, the three form renderers, `MarkdownBlock.vue`, and `@conduction/nextcloud-vue/public` 2.57.3 as installed.
 
 Confirmed:
 
@@ -78,6 +78,6 @@ Count from the table in `design.md` D1: 48 components become standalone widgets 
 
 ## Affected projects
 
-- portaliq: `src/site/components/WidgetGrid.vue`, `src/lib/pageWidgetCatalogue.js`, `src/editor/widgetForms.js`, `src/dialogs/WidgetPaletteDialog.vue`, `src/editor/PageGridEditor.vue`, new `src/site/widgets/<key>/` folders, `lib/Contribution/ActionConfigNormaliser.php` and `AttachedActionResolver.php` (`summary`, `audiences`), `package.json` (Utrecht and candidate CSS packages per wave).
+- portaliq: `src/site/components/WidgetGrid.vue`, `src/lib/pageWidgetCatalogue.js`, `src/editor/widgetForms.js`, `src/editor/WidgetPalettePanel.vue`, `src/editor/PageGridEditor.vue`, new `src/site/widgets/<key>/` folders, `lib/Contribution/ActionConfigNormaliser.php` and `AttachedActionResolver.php` (`summary`, `audiences`), `package.json` (Utrecht and candidate CSS packages per wave).
 - `@conduction/nextcloud-vue`: none required. Library blocks stay as they are.
 - dossiq: declares `summary` and `audiences` on its start actions (its own change).

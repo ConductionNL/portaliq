@@ -112,7 +112,7 @@ Further Mijn omgeving widgets with no NL Design System row of their own, drawn f
 
 ## D2. Palette: groups, search, drag
 
-- `WidgetPaletteDialog` renders one section per group, each with a heading and a list. Order: Inhoud, Navigatie, Formulieren, Terugkoppeling, Mijn omgeving, Opmaak. App widgets that do not render publicly come last under "Alleen in de beheeromgeving", only in the admin designer, as today.
+- `WidgetPalettePanel` renders one section per group, each with a heading and a list. Order: Inhoud, Navigatie, Formulieren, Terugkoppeling, Mijn omgeving, Opmaak. App widgets that do not render publicly come last under "Alleen in de beheeromgeving", only in the admin designer, as today.
 - A search field filters on the Dutch label, the key, the NL Design System name and a few synonyms from the metadata ("kop" finds Heading). The number of hits is announced in a polite live region. An empty result says so.
 - Entries are draggable onto the grid (gridstack's external drag-in). Dropping places the widget at that cell with its default size. Click or Enter keeps adding at the first free cell, so the palette works without a pointer (existing requirement "The grid may be edited without a pointer").
 - The Formulieren group is enabled only while a `form` widget is selected; its entries add a field to that form (D4).

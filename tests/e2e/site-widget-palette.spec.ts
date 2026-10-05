@@ -262,35 +262,103 @@ test.describe('site-widget-palette', () => {
 	})
 
 	// @e2e site-nlds-widget-palette::a-heading-dropped-at-the-top
+	// @e2e portal-page-designer::the-grid-stays-reachable-while-the-palette-is-open
+	// @e2e openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#the-grid-stays-reachable-while-the-palette-is-open
 	//
-	// 🔴 FAILING ON A REAL DEFECT, NOT ON THE TEST. The palette is an
-	// `aria-modal` dialog with a full-screen backdrop, so while it is open the
-	// canvas behind it takes no pointer at any coordinate: the live run showed
-	// the dialog's own header intercepting the drop over `designer-canvas`.
-	// The tiles carry `draggable="true"` and the canvas carries `@drop`, but
-	// there is no reachable drop target, so no author can complete this drag
-	// either. REQ-SNW-002 ("drag and key are the same act") holds only on the
-	// key half today.
+	// THIS TEST WAS `fixme` FOR A DAY, ON A REAL DEFECT. The palette was an
+	// `aria-modal` dialog with a full-screen backdrop, so while it was open the
+	// canvas behind it took no pointer at ANY coordinate: the live run on 4 Oct
+	// 2026 showed the dialog's own header intercepting the drop over
+	// `designer-canvas`, after 164 retries. The tiles carried `draggable="true"`
+	// and the canvas carried `@drop`, so the gesture was wired and unreachable,
+	// and REQ-SNW-002 ("drag and key are the same act") held on the key half
+	// alone. The palette is a non-modal panel beside the canvas now.
 	//
-	// It is `fixme` rather than deleted or quietly passing, because the
-	// requirement is right and the product is what has to move: the palette
-	// has to stop covering its own drop target (a non-modal side panel, or
-	// closing on `dragstart`). Remove this line with that change.
-	test.fixme('a widget can be dragged onto the grid', async ({
-		page,
-		request,
-	}) => {
+	// ⚠️ IT ASKS WHETHER THE DROP POINT IS REACHABLE BEFORE IT DRAGS. 164
+	// retries and a timeout is how the old failure read, and that reads exactly
+	// like a slow page or a missing test id. `elementFromPoint` names the
+	// element that would take the drop, so "something is over the canvas" and
+	// "the drop did not place a widget" fail as two different sentences.
+	test('a widget can be dragged onto the grid', async ({ page, request }) => {
 		await openDesigner(page, request)
 		await page.getByTestId('designer-add-widget').click()
+		await expect(page.getByTestId('widget-palette')).toBeVisible({
+			timeout: BRIEFLY,
+		})
 		await page.getByTestId('widget-palette-search').fill('kop')
 
 		const entry = page.getByTestId('widget-palette-tile-nlHeading')
 		const canvas = page.getByTestId('designer-canvas')
+
+		// IN VIEW FIRST. `elementFromPoint` reads the viewport, so a canvas
+		// scrolled off it answers null, and null would be reported below as
+		// "something is covering the canvas" when nothing is.
+		await canvas.scrollIntoViewIfNeeded()
+
+		const covering = await canvas.evaluate((node: Element) => {
+			const box = node.getBoundingClientRect()
+			const at = document.elementFromPoint(box.left + 40, box.top + 40)
+			if (at && node.contains(at)) {
+				return ''
+			}
+			if (!at) {
+				return 'nothing, so the drop point is outside the viewport'
+			}
+			const id = at.getAttribute('data-testid') || ''
+			return `${at.tagName.toLowerCase()}${id ? `[data-testid=${id}]` : ''}`
+		})
+		expect(
+			covering,
+			'the canvas must take the pointer where this test drops. Something'
+				+ ' else is on top of it, so no author can finish this drag either:'
+				+ ' a modal palette with a backdrop is how that happened before.',
+		).toBe('')
+
 		await entry.dragTo(canvas, { targetPosition: { x: 40, y: 40 } })
 
 		await expect(canvas.locator('[data-widget-key="nlHeading"]')).toBeVisible({
 			timeout: BRIEFLY,
 		})
+
+		// THE PANEL STAYS OPEN AFTER A DROP, which is the other half of being
+		// non-modal: an author drags a second widget without reopening it.
+		await expect(
+			page.getByTestId('widget-palette'),
+			'the palette closed itself on the drop, so the next widget costs a reopen',
+		).toBeVisible()
+	})
+
+	// @e2e portal-page-designer::escape-closes-the-palette-and-gives-focus-back
+	// @e2e openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#escape-closes-the-palette-and-gives-focus-back
+	//
+	// A NON-MODAL PANEL TRAPS NOTHING, so Escape and the focus return are the
+	// whole of what it owes the keyboard, and neither comes for free the way a
+	// dialog's do. An author who presses Escape and is left with focus on the
+	// document has lost their place on the page.
+	test('the palette closes with Escape and gives focus back', async ({
+		page,
+		request,
+	}) => {
+		await openDesigner(page, request)
+		await page.getByTestId('designer-add-widget').click()
+		await expect(page.getByTestId('widget-palette')).toBeVisible({
+			timeout: BRIEFLY,
+		})
+
+		// Opening the panel puts the caret where an author is going to type.
+		await expect(
+			page.getByTestId('widget-palette-search'),
+			'opening the palette must move focus to its search field',
+		).toBeFocused({ timeout: BRIEFLY })
+
+		await page.keyboard.press('Escape')
+		await expect(page.getByTestId('widget-palette')).toBeHidden({
+			timeout: BRIEFLY,
+		})
+		await expect(
+			page.getByTestId('designer-add-widget'),
+			'closing the palette must put focus back on the button that opened it',
+		).toBeFocused({ timeout: BRIEFLY })
 	})
 
 	// @e2e site-nlds-widget-palette::keyboard-only
