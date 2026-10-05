@@ -103,19 +103,20 @@ class MessageStore {
 	 *
 	 * @param string $schema The schema slug.
 	 * @param array<string, mixed> $filters Plain equality filters, e.g. a thread.
+	 * @param array<int, string>|null $ids Only these object ids, or null for any.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
 	 */
-	public function findAll(string $schema, array $filters = []): array {
+	public function findAll(string $schema, array $filters = [], ?array $ids = null): array {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
 		}
 
 		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters);
+			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters, ids: $ids);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: messaging read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];

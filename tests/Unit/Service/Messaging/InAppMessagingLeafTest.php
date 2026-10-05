@@ -83,14 +83,43 @@ class InAppMessagingLeafTest extends TestCase {
 		$this->assertTrue($leaf->postMessage('thread-1', 'guardian-1', false, 'hi'));
 	}//end testPostMessageSucceedsForAParticipant()
 
+	/**
+	 * A thread is asked for by id first; a store that does not narrow by id
+	 * still finds it through the full read.
+	 */
+	public function testAThreadIsFoundByIdOrByTheFullRead(): void {
+		$access = $this->createMock(MessageThreadAccessGuard::class);
+		$access->method('isParticipant')->willReturn(true);
+		$thread = ['id' => 'thread-1', 'kind' => 'direct', 'participantRefs' => ['guardian-1', 'staff-1']];
+
+		$byId = $this->createMock(MessageStore::class);
+		$byId->method('rowId')->willReturnCallback(fn (array $row) => $row['id'] ?? null);
+		$byId->expects($this->exactly(2))->method('findAll')->willReturnMap([
+			['messageThread', [], ['thread-1'], [$thread]],
+			['guardianMessage', ['threadRef' => 'thread-1'], null, [['id' => 'msg-1', 'threadRef' => 'thread-1']]],
+		]);
+		$this->assertCount(1, (new InAppMessagingLeaf($byId, $access))->listMessages('thread-1', 'guardian-1', false));
+
+		$fullRead = $this->createMock(MessageStore::class);
+		$fullRead->method('rowId')->willReturnCallback(fn (array $row) => $row['id'] ?? null);
+		$fullRead->method('findAll')->willReturnMap([
+			['messageThread', [], ['thread-1'], []],
+			['messageThread', [], ['thread-9'], []],
+			['messageThread', [], null, [['id' => 'thread-0'], $thread]],
+			['guardianMessage', ['threadRef' => 'thread-1'], null, []],
+		]);
+		$this->assertSame([], (new InAppMessagingLeaf($fullRead, $access))->listMessages('thread-1', 'guardian-1', false));
+		$this->assertNull((new InAppMessagingLeaf($fullRead, $access))->listMessages('thread-9', 'guardian-1', false));
+	}//end testAThreadIsFoundByIdOrByTheFullRead()
+
 	public function testMarkThreadReadIsIdempotent(): void {
 		$access = $this->createMock(MessageThreadAccessGuard::class);
 		$access->method('isParticipant')->willReturn(true);
 
 		$store = $this->createMock(MessageStore::class);
 		$store->method('findAll')->willReturnMap([
-			['messageThread', [], [['id' => 'thread-1', 'kind' => 'direct', 'participantRefs' => ['guardian-1', 'staff-1']]]],
-			['guardianMessage', ['threadRef' => 'thread-1'], [['id' => 'msg-1', 'threadRef' => 'thread-1', 'readBy' => ['guardian-1']]]],
+			['messageThread', [], ['thread-1'], [['id' => 'thread-1', 'kind' => 'direct', 'participantRefs' => ['guardian-1', 'staff-1']]]],
+			['guardianMessage', ['threadRef' => 'thread-1'], null, [['id' => 'msg-1', 'threadRef' => 'thread-1', 'readBy' => ['guardian-1']]]],
 		]);
 		$store->method('rowId')->willReturnCallback(fn (array $row) => $row['id'] ?? null);
 		// Already read by guardian-1 — save must NEVER be called again.
@@ -107,8 +136,8 @@ class InAppMessagingLeafTest extends TestCase {
 
 		$store = $this->createMock(MessageStore::class);
 		$store->method('findAll')->willReturnMap([
-			['messageThread', [], [['id' => 'thread-1', 'kind' => 'direct', 'participantRefs' => ['guardian-1', 'staff-1']]]],
-			['guardianMessage', ['threadRef' => 'thread-1'], [['id' => 'msg-1', 'threadRef' => 'thread-1', 'readBy' => []]]],
+			['messageThread', [], ['thread-1'], [['id' => 'thread-1', 'kind' => 'direct', 'participantRefs' => ['guardian-1', 'staff-1']]]],
+			['guardianMessage', ['threadRef' => 'thread-1'], null, [['id' => 'msg-1', 'threadRef' => 'thread-1', 'readBy' => []]]],
 		]);
 		$store->method('rowId')->willReturnCallback(fn (array $row) => $row['id'] ?? null);
 		$store->expects($this->once())->method('save')->with('guardianMessage', $this->callback(fn (array $o): bool => $o['readBy'] === ['guardian-1']), 'msg-1');

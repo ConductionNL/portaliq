@@ -42,8 +42,8 @@ class PagedObjectReadsTest extends TestCase {
 			 *
 			 * @return array<int, mixed>|null
 			 */
-			public function read(object $objectService, array $filters = []): ?array {
-				return $this->readEveryPage(objectService: $objectService, register: 'portaliq', schema: 'newsItem', filters: $filters);
+			public function read(object $objectService, array $filters = [], ?array $ids = null): ?array {
+				return $this->readEveryPage(objectService: $objectService, register: 'portaliq', schema: 'newsItem', filters: $filters, ids: $ids);
 			}
 		};
 	}//end reader()
@@ -119,6 +119,19 @@ class PagedObjectReadsTest extends TestCase {
 		$this->assertSame(['schema' => 'newsItem'], $store->calls[1]);
 		$this->assertSame(['register' => 'portaliq'], $store->calls[3]);
 	}//end testEveryPageIsReadWithTheFiltersInAStableOrder()
+
+	/**
+	 * Ids are handed to the store only when asked for.
+	 */
+	public function testIdsReachTheStoreOnlyWhenGiven(): void {
+		$store = $this->store(3);
+		$this->reader()->read($store, [], ['thread-1']);
+		$this->reader()->read($store);
+
+		$configs = array_values(array_filter($store->calls, static fn (array $call): bool => isset($call['config'])));
+		$this->assertSame(['thread-1'], $configs[0]['config']['ids']);
+		$this->assertArrayNotHasKey('ids', $configs[1]['config']);
+	}//end testIdsReachTheStoreOnlyWhenGiven()
 
 	/**
 	 * A full last page costs one more, empty, read; an empty store one read.

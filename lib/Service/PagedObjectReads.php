@@ -66,6 +66,7 @@ trait PagedObjectReads {
 	 * @param string $register The register slug.
 	 * @param string $schema The schema slug.
 	 * @param array<string, mixed> $filters The filters, as OpenRegister takes them.
+	 * @param array<int, string>|null $ids Only these object ids, or null for any.
 	 *
 	 * @return array<int, mixed>|null The raw rows, or null when a page is not a list.
 	 *
@@ -73,21 +74,22 @@ trait PagedObjectReads {
 	 *
 	 * @spec exclude Shared read helper; the @spec of each calling method covers the behaviour it reads for.
 	 */
-	private function readEveryPage(object $objectService, string $register, string $schema, array $filters = []): ?array {
+	private function readEveryPage(object $objectService, string $register, string $schema, array $filters = [], ?array $ids = null): ?array {
 		$rows = [];
 		for ($page = 0; $page < self::PAGED_READ_MAX_PAGES; $page++) {
+			$config = [
+				'filters' => $filters,
+				'limit' => self::PAGED_READ_SIZE,
+				'offset' => ($page * self::PAGED_READ_SIZE),
+				'sort' => self::PAGED_READ_ORDER,
+			];
+			if ($ids !== null) {
+				$config['ids'] = $ids;
+			}
+
 			$objectService->setRegister(register: $register);
 			$objectService->setSchema(schema: $schema);
-			$batch = $objectService->findAll(
-				config: [
-					'filters' => $filters,
-					'limit' => self::PAGED_READ_SIZE,
-					'offset' => ($page * self::PAGED_READ_SIZE),
-					'sort' => self::PAGED_READ_ORDER,
-				],
-				_rbac: false,
-				_multitenancy: false
-			);
+			$batch = $objectService->findAll(config: $config, _rbac: false, _multitenancy: false);
 
 			if (is_array($batch) === false) {
 				return null;

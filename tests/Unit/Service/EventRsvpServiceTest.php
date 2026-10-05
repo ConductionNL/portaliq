@@ -106,7 +106,24 @@ class EventRsvpServiceTest extends TestCase {
 			}//end setSchema()
 
 			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
-				return [['id' => 'rsvp-1', 'eventRef' => 'e1', 'guardianRef' => 'g1', 'childRef' => 'child-1', 'response' => 'maybe']];
+				$rows = [
+					['id' => 'rsvp-1', 'eventRef' => 'e1', 'guardianRef' => 'g1', 'childRef' => 'child-1', 'response' => 'maybe'],
+					['id' => 'rsvp-other', 'eventRef' => 'e1', 'guardianRef' => 'g1', 'childRef' => 'child-2', 'response' => 'no'],
+				];
+
+				// The store answers the filters as OpenRegister does: a row
+				// matches only when every filtered property equals the value.
+				$rows = array_values(array_filter($rows, static function (array $row) use ($config): bool {
+					foreach (($config['filters'] ?? []) as $key => $value) {
+						if (($row[$key] ?? null) !== $value) {
+							return false;
+						}
+					}
+
+					return true;
+				}));
+
+				return $rows;
 			}//end findAll()
 
 			/**

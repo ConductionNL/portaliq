@@ -116,7 +116,7 @@ class EventFeedReader {
 		}
 
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAll(schema: 'schoolEvent');
+		$rows = $this->findAll(schema: 'schoolEvent', filters: ['status' => 'published']);
 
 		foreach ($rows as $row) {
 			if ($this->rowId(row: $row) !== $id) {
