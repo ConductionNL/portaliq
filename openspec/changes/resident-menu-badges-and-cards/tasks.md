@@ -6,4 +6,4 @@
 - [x] 4. Styling in `css/site-theme.css`.
 - [x] 5. Tests: `tests/resident-menu-badges.spec.mjs`; `mijn-home.spec.mjs` allows the subline anchor.
 - [ ] 6. Lane L2 keeps `badge` in `lib/Contribution/PageMenuKeys.php`; lane L3 declares group, subtitle fields and badges in learniq.
-- [ ] 7. Live check with the four school sets.
+- [x] 7. Live check with the school sets (menu styling, phone button total, chip); group, subtitles and badges wait on lanes L2 and L3.
