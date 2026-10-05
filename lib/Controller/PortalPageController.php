@@ -265,6 +265,12 @@ class PortalPageController extends Controller {
 				// contract withholds; it only decides which stylesheet tag to emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
 				'themeLogoUrl' => $this->siteThemeLogoUrl(),
+				// The set's light logo for the dark footer band, or ''
+				// (site-chrome-follows-the-design).
+				'themeLogoInverseUrl' => $this->siteThemeLogoUrl(variant: 'dark'),
+				// The set's emblem, for the hero's and the sign-in panel's
+				// watermark, or ''.
+				'themeEmblemUrl' => $this->siteThemeLogoUrl(variant: 'emblem'),
 				'themeAppSheets' => $this->siteThemeAppSheets(),
 				// The NLDS token set this app ships for the serving portal's
 				// theme, when it has one. Separate from the line above because
@@ -576,11 +582,19 @@ class PortalPageController extends Controller {
 	 * So the resolution happens here, where the theme app's real path is
 	 * known, and the template emits the result after the token stylesheets.
 	 *
+	 * With a `$variant` it is that variant of the set's logo
+	 * (site-chrome-follows-the-design): `dark`, the light logo for the dark
+	 * footer band, or `emblem`, the mark for a watermark; '' when the set
+	 * ships none.
+	 *
+	 * @param string $variant '' for the logo, else `dark` or `emblem`.
+	 *
 	 * @return string An absolute URL, or '' when there is no logo to serve.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
-	private function siteThemeLogoUrl(): string {
+	private function siteThemeLogoUrl(string $variant=''): string {
 		$stylesheet = $this->siteThemeStylesheet();
 		if ($stylesheet === '') {
 			return '';
@@ -594,6 +608,10 @@ class PortalPageController extends Controller {
 
 		try {
 			$relative = $this->themeResolver->logoFileFor(theme: $theme);
+			if ($variant !== '') {
+				$relative = $this->themeResolver->logoVariantFileFor(theme: $theme, variant: $variant);
+			}
+
 			if ($relative === null) {
 				return '';
 			}

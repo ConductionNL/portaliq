@@ -690,4 +690,49 @@ class PortalThemeResolverTest extends TestCase {
 	}//end testATraversalAttemptIsRefusedForTheLogo()
 
 
+	/**
+	 * site-chrome-follows-the-design: the light logo for the dark footer and
+	 * the emblem for a watermark resolve when the set ships them, and only
+	 * the two variants the site asks for.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	public function testALogoVariantResolvesWhenTheSetShipsIt(): void {
+		mkdir($this->themeRoot . '/img/logos', 0o777, true);
+		file_put_contents($this->themeRoot . '/img/logos/vng.svg', '<svg/>');
+		file_put_contents($this->themeRoot . '/img/logos/vng-dark.svg', '<svg/>');
+		file_put_contents($this->themeRoot . '/img/logos/vng-emblem.svg', '<svg/>');
+		file_put_contents($this->themeRoot . '/img/logos/vng-secret.svg', '<svg/>');
+
+		$resolver = $this->resolver();
+		$this->assertSame('img/logos/vng-dark.svg', $resolver->logoVariantFileFor(theme: 'vng', variant: 'dark'));
+		$this->assertSame('img/logos/vng-emblem.svg', $resolver->logoVariantFileFor(theme: 'vng', variant: 'emblem'));
+		$this->assertNull($resolver->logoVariantFileFor(theme: 'vng', variant: 'secret'));
+		$this->assertNull($resolver->logoVariantFileFor(theme: 'vng', variant: '../vng'));
+
+	}//end testALogoVariantResolvesWhenTheSetShipsIt()
+
+
+	/**
+	 * A set without the variant file, or without a logo at all, has none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	public function testALogoVariantNeedsTheFileAndTheLogo(): void {
+		mkdir($this->themeRoot . '/img/logos', 0o777, true);
+		file_put_contents($this->themeRoot . '/img/logos/vng.svg', '<svg/>');
+		// venray ships a dark logo but no logo of its own: no variant either.
+		file_put_contents($this->themeRoot . '/img/logos/venray-dark.svg', '<svg/>');
+
+		$resolver = $this->resolver();
+		$this->assertNull($resolver->logoVariantFileFor(theme: 'vng', variant: 'dark'));
+		$this->assertNull($resolver->logoVariantFileFor(theme: 'venray', variant: 'dark'));
+
+	}//end testALogoVariantNeedsTheFileAndTheLogo()
+
+
 }//end class
