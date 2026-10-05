@@ -85,3 +85,37 @@ The lane recorded the pair as `build` on two or more competitors rated
   keep `@self.relevance` on each row, and say how a federated row without a
   comparable score sorts (after the scored rows, in its source's order).
   Not written here.
+
+## Amendment, 2026-10-05: Woo capability programme, wave 1
+
+Rows 6.14 and 6.17 of the Woo capability register are added to this change. No Ruben decision
+governs them. Re-checked on `development` at ca591037: this change is open at 0 of 6 tasks, so the
+amendment adds requirements REQ-SSR-004 to REQ-SSR-006 and tasks T07 to T12 and changes nothing
+already written.
+
+| row | text | our rating today |
+| --- | --- | --- |
+| 6.14 | Search tolerates a misspelling and suggests a better query | no |
+| 6.17 | Results rank by relevance, and the publisher can explain the ranking | partial (production) |
+
+**Why.** Relevance ordering (REQ-SSR-001) ranks what matched; it does not help a visitor whose term
+matched nothing because it was misspelt. OpenRegister's fuzzy match is narrower than it looks:
+`MagicSearchHandler` adds `similarity()` for `_name` only (openregister `development`,
+`lib/Db/MagicMapper/MagicSearchHandler.php` around line 1388), so a misspelling in a summary or a
+document finds nothing. And no publisher can say why one result came before another, because the
+ranking is described nowhere they can read.
+
+**What it adds.**
+
+- Every search with a term sends `_fuzzy=true`, not only a relevance-ordered one, so a misspelt title
+  is still found.
+- A did-you-mean suggestion when a term returns fewer than three results. portaliq builds a word list
+  per portal from the titles and summaries of its public publications only, proposes the closest
+  correction per word, and offers it only after checking that the corrected search returns results.
+- A "How search ranks" explanation in the portal's admin, generated from the same declaration the
+  search block sends, so the explanation and the request cannot drift apart.
+
+**What it cannot add here.** Matching misspellings in summaries and document text needs OpenRegister
+to widen `similarity()` beyond `_name`. That is an OpenRegister change no plan entry carries. Until
+it exists, 6.14 reads `yes` for titles and the suggestion, and the explanation says that summaries
+and document text are matched exactly, not fuzzily.
