@@ -63,6 +63,7 @@ class PortalBlockResolver {
 		'steps',
 		'documents',
 		'timeline',
+		'greeting',
 	];
 
 	/**
@@ -163,6 +164,10 @@ class PortalBlockResolver {
 
 		if ($type === 'cta') {
 			return (new CtaBlockNormaliser())->normalise(block: $block, actionIds: $actionIds, pageIds: $this->pageIds);
+		}
+
+		if ($type === 'greeting') {
+			return (new SchoolBlockKeys())->greetingBlock(block: $block, actionIds: $actionIds, pageIds: $this->pageIds);
 		}
 
 		return $this->richTextBlock(block: $block);
@@ -266,7 +271,7 @@ class PortalBlockResolver {
 				return null;
 			}
 
-			return $calendar + (new CollectionListKeys())->calendarKeys(block: $block);
+			return $calendar + (new CollectionListKeys())->calendarKeys(block: $block) + (new SchoolBlockKeys())->calendarKeys(block: $block);
 		}
 
 		return $blocks->newsBlock(block: $block);

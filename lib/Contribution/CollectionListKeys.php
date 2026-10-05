@@ -70,7 +70,8 @@ class CollectionListKeys {
 			$out['sort'] = ['field' => $sort['field'], 'direction' => $sort['direction']];
 		}
 
-		return $out + $this->cards(block: $block, collection: $collection);
+		// The school displays (rows, bars, chips, richer cards), site-school-blocks.
+		return $out + $this->cards(block: $block, collection: $collection) + (new DisplayKeys())->keys(block: $block, collection: $collection);
 	}//end collectionKeys()
 
 	/**

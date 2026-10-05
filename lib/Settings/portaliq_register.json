@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.63.0"
+        "version": "0.64.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.63.0",
+                "version": "0.64.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1620,7 +1620,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -1914,6 +1914,11 @@
                                     "title": "Turn field",
                                     "type": "string",
                                     "description": "On a cases collection: the field whose value words say whose turn it is."
+                                },
+                                "visibleFromField": {
+                                    "title": "Visible from field",
+                                    "type": "string",
+                                    "description": "The field with the date or moment before which a row is not shown, in a list, an inbox or a read by id, on the server clock (site-school-blocks)."
                                 }
                             }
                         }
@@ -2115,7 +2120,8 @@
                                                     "cases",
                                                     "steps",
                                                     "documents",
-                                                    "timeline"
+                                                    "timeline",
+                                                    "greeting"
                                                 ]
                                             },
                                             "collection": {
@@ -2249,10 +2255,146 @@
                                             "display": {
                                                 "title": "Display",
                                                 "type": "string",
-                                                "description": "On a collection block: cards instead of a table.",
+                                                "description": "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks).",
                                                 "enum": [
-                                                    "cards"
+                                                    "cards",
+                                                    "rows",
+                                                    "bars",
+                                                    "chips",
+                                                    "highlight",
+                                                    "segmented",
+                                                    "tiles"
                                                 ]
+                                            },
+                                            "dateField": {
+                                                "title": "dateField",
+                                                "type": "string",
+                                                "description": "On rows: the field drawn as a date tile."
+                                            },
+                                            "subtitleField": {
+                                                "title": "subtitleField",
+                                                "type": "string",
+                                                "description": "On rows: the second line."
+                                            },
+                                            "subtitleFields": {
+                                                "title": "subtitleFields",
+                                                "type": "array",
+                                                "description": "On cards and highlight tasks: the fields of the second line."
+                                            },
+                                            "quoteField": {
+                                                "title": "quoteField",
+                                                "type": "string",
+                                                "description": "On rows: the line shown in quotes."
+                                            },
+                                            "statusField": {
+                                                "title": "statusField",
+                                                "type": "string",
+                                                "description": "On rows and cards: the field shown as a status pill."
+                                            },
+                                            "statusTones": {
+                                                "title": "statusTones",
+                                                "type": "object",
+                                                "description": "On rows and cards: the tone of each status value (neutral, success, warning, error)."
+                                            },
+                                            "statusNoteField": {
+                                                "title": "statusNoteField",
+                                                "type": "string",
+                                                "description": "On rows: the line under the status pill."
+                                            },
+                                            "noteField": {
+                                                "title": "noteField",
+                                                "type": "string",
+                                                "description": "On cards: the text beside the status; on bars: the note under the bars, from the first row."
+                                            },
+                                            "noteLabel": {
+                                                "title": "noteLabel",
+                                                "type": "string",
+                                                "description": "On bars: the small heading above the note."
+                                            },
+                                            "soonField": {
+                                                "title": "soonField",
+                                                "type": "string",
+                                                "description": "On cards: the coming-up part."
+                                            },
+                                            "soonLabel": {
+                                                "title": "soonLabel",
+                                                "type": "string",
+                                                "description": "On cards: the small heading above the coming-up part."
+                                            },
+                                            "avatar": {
+                                                "title": "avatar",
+                                                "type": "boolean",
+                                                "description": "On cards: the first letter of the title in a circle."
+                                            },
+                                            "labelField": {
+                                                "title": "labelField",
+                                                "type": "string",
+                                                "description": "On bars and chips: the label of each row."
+                                            },
+                                            "valueField": {
+                                                "title": "valueField",
+                                                "type": "string",
+                                                "description": "On bars: the figure of each row."
+                                            },
+                                            "valuesField": {
+                                                "title": "valuesField",
+                                                "type": "string",
+                                                "description": "On chips: the list of marks of each row."
+                                            },
+                                            "averageField": {
+                                                "title": "averageField",
+                                                "type": "string",
+                                                "description": "On chips: the average of each row."
+                                            },
+                                            "captionField": {
+                                                "title": "captionField",
+                                                "type": "string",
+                                                "description": "On bars: the grey head line, from the first row."
+                                            },
+                                            "max": {
+                                                "title": "max",
+                                                "type": "number",
+                                                "description": "On bars: the figure a full bar stands for."
+                                            },
+                                            "lowBelow": {
+                                                "title": "lowBelow",
+                                                "type": "number",
+                                                "description": "On chips: a mark below this is marked as below the pass mark."
+                                            },
+                                            "eyebrow": {
+                                                "title": "eyebrow",
+                                                "type": "string",
+                                                "description": "On highlight tasks: the small uppercase label."
+                                            },
+                                            "buttonLabel": {
+                                                "title": "buttonLabel",
+                                                "type": "string",
+                                                "description": "On highlight tasks: the words on the button."
+                                            },
+                                            "segments": {
+                                                "title": "segments",
+                                                "type": "array",
+                                                "description": "On a segmented kpi: up to five parts, each field, label and tone."
+                                            },
+                                            "totalField": {
+                                                "title": "totalField",
+                                                "type": "string",
+                                                "description": "On a segmented kpi: the field with the whole."
+                                            },
+                                            "target": {
+                                                "title": "target",
+                                                "type": "number",
+                                                "description": "On a segmented kpi: a fixed whole."
+                                            },
+                                            "unit": {
+                                                "title": "unit",
+                                                "type": "string",
+                                                "description": "On a segmented kpi: the unit after the figure."
+                                            },
+                                            "showDate": {
+                                                "title": "showDate",
+                                                "type": "boolean",
+                                                "description": "On a greeting: whether today's date shows; on unless false."
                                             },
                                             "progress": {
                                                 "title": "Progress",
