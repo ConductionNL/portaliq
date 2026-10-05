@@ -1,0 +1,15 @@
+# Tasks: invitation-code-from-a-letter
+
+- [x] **T1**: `InvitationCode`: twelve characters from 32 that are hard to mix up, shown in three groups; what is typed is normalised (case, spaces, dashes) and nothing else is forgiven
+  - PHPUnit `InvitationCodeTest`
+- [x] **T2**: `WaitingAccountInvitation::issueCode()`: only the hash is stored, seven days, only for the app that provisioned the account; one live secret per waiting account
+  - PHPUnit `WaitingAccountInvitationTest::testACodeForALetterIsStoredAsAHashAndShownInGroups`, `::testOnlyTheAppThatProvisionedAWaitingAccountGetsACode`, `::testThereIsOneLiveSecretALinkEndsACodeAndACodeEndsALink`
+- [x] **T3**: The redeem route takes a code: however it is typed, once, until it expires, in its own organisation, under the same attempt limits
+  - PHPUnit `WaitingAccountInvitationTest::testTheCodeIsRedeemedHoweverItIsTyped`, `::testACodeWorksOnceAndExpiresLikeALink`, `::testAWrongCodeCountsAndFiveLockTheAccount`, `::testACodeOfAnotherOrganisationOpensNothing`
+- [x] **T4**: The event's `letter` channel answers the code and mails nothing; an unknown channel is refused
+  - PHPUnit `PortalAccountInvitationListenerTest::testALetterGetsACodeAndNoMail`, `::testARefusedOrFailedCodeIsARefusal`, `::testAnUnknownChannelIsRefusedAndNothingIsIssued`
+- [x] **T5**: "Code from a letter" on "My account": a labelled field, one sentence for a dead code, and a right code has the shell read the account again
+  - `npm run check:claim-invitation`, `npm run check:account-page`
+- [x] **T6**: `portalAccount` 0.16.0: `claimCodeHash`, with Dutch and English labels
+  - PHPUnit `PortaliqRegisterConfigTest`, `npm run check:schema-l10n`
+- [x] **T7**: Live on a test instance: a code from the invite command, typed on "My account" by a guardian who signed in without an address

@@ -138,6 +138,31 @@ export function claimOutcome(answer) {
 }
 
 /**
+ * The sentence for what the redeem route answered to a typed code, as an
+ * English source key. A wrong, an expired and a used code are one sentence.
+ *
+ * @param {{ok: boolean, status: number, error: string}} answer The answer.
+ * @return {{role: string, text: string}}
+ *
+ * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+ */
+export function codeOutcome(answer) {
+	if (answer && answer.ok) {
+		return {
+			role: 'status',
+			text: 'The code is right. You now see what is shared with you.',
+		}
+	}
+	if (answer && answer.error === 'invitation_not_valid') {
+		return {
+			role: 'alert',
+			text: 'This code is not right or no longer valid. Check the code, or ask for a new one.',
+		}
+	}
+	return claimOutcome(answer)
+}
+
+/**
  * Hand a kept invitation back once the visitor is signed in.
  *
  * Without a kept secret this answers null. Without a session the secret

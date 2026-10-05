@@ -17,6 +17,7 @@ import { test } from 'node:test'
 import {
 	CLAIM_STORAGE_KEY,
 	claimOutcome,
+	codeOutcome,
 	forgetClaimSecret,
 	keepClaimSecret,
 	keptClaimSecret,
@@ -261,4 +262,131 @@ test('the API adapter posts the secret to the redeem route', () => {
 		adapter,
 		/claimInvitation\(secret\) \{\s+return answer\('POST', '\/identity\/invitation\/redeem', \{ secret \}\)/,
 	)
+})
+
+// invitation-code-from-a-letter: the code a person types on "My account".
+
+test('a typed code has its own sentences, and shares the lock and trust sentences', () => {
+	assert.deepEqual(codeOutcome({ ok: true, status: 200, error: '' }), {
+		role: 'status',
+		text: 'The code is right. You now see what is shared with you.',
+	})
+	assert.deepEqual(
+		codeOutcome({ ok: false, status: 403, error: 'invitation_not_valid' }),
+		{
+			role: 'alert',
+			text: 'This code is not right or no longer valid. Check the code, or ask for a new one.',
+		},
+	)
+	assert.equal(
+		codeOutcome({ ok: false, status: 429, error: 'too_many_attempts' }).text,
+		'Too many attempts. Try again in an hour.',
+	)
+	assert.equal(
+		codeOutcome({ ok: false, status: 403, error: 'trust_too_low' }).text,
+		'You need a more secure way to sign in for this invitation.',
+	)
+	assert.equal(
+		codeOutcome({ ok: false, status: 0, error: '' }).text,
+		'That did not work. Try again later.',
+	)
+})
+
+test('the form asks for the code with a label, and shows an outcome with its role', async () => {
+	const { renderSfc } = await import('./support/render-sfc.mjs')
+	const empty = await renderSfc(
+		'src/site/components/e/InvitationCodeForm.vue',
+		{ api: {}, t },
+	)
+	assert.match(empty, /data-testid="invitation-code"/)
+	assert.match(empty, /<h3[^>]*>\s*Code from a letter\s*<\/h3>/)
+	assert.match(empty, /<label for="pq-account-code-input"[^>]*>\s*Code\s*<\/label>/)
+	assert.match(empty, /id="pq-account-code-input"[^>]*autocomplete="off"/)
+	assert.match(empty, /Use the code/)
+	assert.doesNotMatch(empty, /invitation-code-outcome/)
+
+	const refused = await renderSfc(
+		'src/site/components/e/InvitationCodeForm.vue',
+		{
+			api: {},
+			t,
+			initialOutcome: codeOutcome({
+				ok: false,
+				status: 403,
+				error: 'invitation_not_valid',
+			}),
+		},
+	)
+	assert.match(refused, /role="alert"[^>]*data-testid="invitation-code-outcome"/)
+	assert.match(refused, /This code is not right or no longer valid\./)
+})
+
+test('submitting posts the trimmed code once, reports a right code and keeps a wrong one in the field', async () => {
+	const { loadSfc } = await import('./support/render-sfc.mjs')
+	const form = await loadSfc('src/site/components/e/InvitationCodeForm.vue')
+	const run = async (answer, code) => {
+		const calls = []
+		const emitted = []
+		const vm = {
+			code,
+			busy: false,
+			outcome: null,
+			api: {
+				claimInvitation: async (secret) => {
+					calls.push(secret)
+					return answer
+				},
+			},
+			$emit: (name) => emitted.push(name),
+		}
+		await form.methods.submit.call(vm)
+		return { vm, calls, emitted }
+	}
+
+	const right = await run({ ok: true, status: 200, error: '' }, ' abcd-efgh-2345 ')
+	assert.deepEqual(right.calls, ['abcd-efgh-2345'])
+	assert.deepEqual(right.emitted, ['claimed'])
+	assert.equal(right.vm.code, '')
+	assert.equal(right.vm.outcome.role, 'status')
+
+	const wrong = await run(
+		{ ok: false, status: 403, error: 'invitation_not_valid' },
+		'ABCD-EFGH-2346',
+	)
+	assert.deepEqual(wrong.emitted, [])
+	assert.equal(wrong.vm.code, 'ABCD-EFGH-2346')
+	assert.equal(wrong.vm.outcome.role, 'alert')
+
+	const blank = await run({ ok: true, status: 200, error: '' }, '   ')
+	assert.deepEqual(blank.calls, [])
+})
+
+test('"My account" carries the form, and a right code has the shell read the account again', () => {
+	const page = readFileSync('src/site/pages/e/AccountPage.vue', 'utf8')
+	assert.match(
+		page,
+		/<InvitationCodeForm :api="api" :t="t" @claimed="\$emit\('refresh'\)" \/>/,
+	)
+	assert.match(page, /emits: \['removed', 'refresh'\]/)
+	const area = readFileSync('src/site/components/AccountArea.vue', 'utf8')
+	assert.match(area, /@refresh="\$emit\('refresh'\)"/)
+	const shell = readFileSync('src/site/App.vue', 'utf8')
+	assert.match(shell, /@refresh="loadAccount"/)
+})
+
+test('the sentences of the code form are in both site bundles, without an em-dash', () => {
+	const en = JSON.parse(readFileSync('src/shared/i18n/en.json', 'utf8'))
+	const nl = JSON.parse(readFileSync('src/shared/i18n/nl.json', 'utf8'))
+	for (const key of [
+		'Code from a letter',
+		'Did you get a letter with a code? Fill it in here. After that you see what is shared with you.',
+		'Use the code',
+		'The code is right. You now see what is shared with you.',
+		'This code is not right or no longer valid. Check the code, or ask for a new one.',
+	]) {
+		assert.equal(en[key], key, key)
+		assert.ok(nl[key] && nl[key] !== key, key)
+		assert.ok(!nl[key].includes('\u2014'), key)
+	}
+	assert.equal(nl.Code, 'Code')
 })

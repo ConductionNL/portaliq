@@ -8,7 +8,9 @@
 	the React portal's AccountPage.jsx. The signed-in person's own name,
 	e-mail addresses and phone numbers with the preferred one of each kind
 	marked, how the organisation contacts them, and removing the account. After
-	a removal the page emits `removed`: the shell listens and signs out.
+	a removal the page emits `removed`: the shell listens and signs out. The
+	code from an invitation letter is typed here too; when it is right the page
+	emits `refresh` and the shell reads the account again.
 -->
 <template>
 	<p
@@ -78,6 +80,8 @@
 			</label>
 		</fieldset>
 
+		<InvitationCodeForm :api="api" :t="t" @claimed="$emit('refresh')" />
+
 		<section class="pq-account__remove" aria-labelledby="pq-account-remove">
 			<h3 id="pq-account-remove" class="utrecht-heading-3">
 				{{ t('Remove my account') }}
@@ -120,6 +124,7 @@
 
 <script>
 import AddressList from '../../components/e/AddressList.vue'
+import InvitationCodeForm from '../../components/e/InvitationCodeForm.vue'
 import { refusalText } from '../../../shared/account.js'
 
 /** The contact channels, as English source keys. */
@@ -133,7 +138,7 @@ const CHANNELS = [
 export default {
 	name: 'AccountPage',
 
-	components: { AddressList },
+	components: { AddressList, InvitationCodeForm },
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */
@@ -152,7 +157,7 @@ export default {
 		initialConfirmRemove: { type: Boolean, default: false },
 	},
 
-	emits: ['removed'],
+	emits: ['removed', 'refresh'],
 
 	data() {
 		return {
