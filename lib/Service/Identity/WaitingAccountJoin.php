@@ -73,43 +73,96 @@ class WaitingAccountJoin {
 	 * verified address, and withdraw the waiting one.
 	 *
 	 * The match is the one REQ-PIS-002 already trusts for activating a waiting
-	 * account: an address the broker says it verified, against a pending,
-	 * email-only account whose address was verified out of band, in the same
-	 * organisation. A claim the signed-in account already holds is kept, and
-	 * so is an address it already has. Best-effort: a failed write leaves the
-	 * waiting account pending and never blocks the sign-in.
+	 * account: an address the person is known to hold (the broker says it
+	 * verified it, or the person followed the confirmation mail sent to it),
+	 * against a pending, email-only account whose address was verified out of
+	 * band, in the same organisation. A claim the signed-in account already
+	 * holds is kept, and so is an address it already has. Best-effort: a
+	 * failed write leaves the waiting account pending and never blocks the
+	 * caller.
 	 *
 	 * @param array<string, mixed> $account The account found on its identity reference.
-	 * @param string $verifiedEmail The address the broker says it verified, or ''.
+	 * @param string $verifiedEmail The verified address, or ''.
 	 * @param string $organisation The tenant slug.
 	 *
-	 * @return void
+	 * @return string|null The identifier of the waiting account that was
+	 *                     joined, or null when nothing was.
 	 *
 	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
 	 */
-	public function join(array $account, string $verifiedEmail, string $organisation): void {
+	public function join(array $account, string $verifiedEmail, string $organisation): ?string {
 		if ($verifiedEmail === '') {
-			return;
+			return null;
 		}
 
 		$waiting = $this->lookup->pendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
-		if ($waiting === null || ($waiting['subjectRef'] ?? '') === ($account['subjectRef'] ?? '')) {
-			return;
+		if ($waiting === null) {
+			return null;
+		}
+
+		return $this->joinWaiting(account: $account, waiting: $waiting);
+	}//end join()
+
+	/**
+	 * Give an account the claims of a waiting account the caller has already
+	 * located, and withdraw the waiting one.
+	 *
+	 * The caller answers for how the waiting account was found. This method
+	 * still refuses everything that is not a waiting account: one that is not
+	 * pending, one with an identity reference of its own, one in another
+	 * organisation, and the account itself.
+	 *
+	 * @param array<string, mixed> $account The account that receives the claims.
+	 * @param array<string, mixed> $waiting The waiting account.
+	 *
+	 * @return string|null The identifier of the waiting account that was
+	 *                     joined, or null when nothing was.
+	 *
+	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 */
+	public function joinWaiting(array $account, array $waiting): ?string {
+		if ($this->isJoinable(account: $account, waiting: $waiting) === false) {
+			return null;
 		}
 
 		$accountId = $this->lookup->identifierOf(row: $account);
 		$waitingId = $this->lookup->identifierOf(row: $waiting);
 		if ($accountId === null || $waitingId === null) {
-			return;
+			return null;
 		}
 
 		$data = $this->joinData(account: $account, waiting: $waiting);
 		if ($data !== [] && $this->write(id: $accountId, data: $data) === false) {
-			return;
+			return null;
 		}
 
-		$this->write(id: $waitingId, data: ['status' => PortalAccountLookup::STATUS_VOID, 'voidReason' => self::VOID_REASON]);
-	}//end join()
+		if ($this->write(id: $waitingId, data: ['status' => PortalAccountLookup::STATUS_VOID, 'voidReason' => self::VOID_REASON]) === false) {
+			return null;
+		}
+
+		return $waitingId;
+	}//end joinWaiting()
+
+	/**
+	 * Whether one account may take over the claims of another: the other is
+	 * pending, has no identity reference of its own, is a different account
+	 * and belongs to the same organisation.
+	 *
+	 * @param array<string, mixed> $account The account that would receive the claims.
+	 * @param array<string, mixed> $waiting The account that would be withdrawn.
+	 *
+	 * @return bool
+	 */
+	private function isJoinable(array $account, array $waiting): bool {
+		$organisation = (string)($waiting['organisation'] ?? '');
+
+		return ($waiting['status'] ?? '') === PortalAccountLookup::STATUS_PENDING
+			&& (string)($waiting['identityRef'] ?? '') === ''
+			&& (string)($waiting['subjectRef'] ?? '') !== (string)($account['subjectRef'] ?? '')
+			&& $organisation !== ''
+			&& $organisation === (string)($account['organisation'] ?? '');
+	}//end isJoinable()
 
 	/**
 	 * What the join writes onto the signed-in account: the claims it lacks,

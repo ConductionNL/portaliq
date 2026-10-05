@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -71,6 +72,7 @@ class PortalSelfServiceService {
 	 * @param PortalObjectWriter $writer Writes the account row.
 	 * @param ISecureRandom $random Mints the confirmation secret.
 	 * @param ContactAddressChange $addressChange The address fields (identity-profile-page).
+	 * @param AuditTrailService|null $auditor Records a waiting account that was joined.
 	 */
 	public function __construct(
 		private readonly PortalAccountService $accounts,
@@ -78,6 +80,7 @@ class PortalSelfServiceService {
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly ContactAddressChange $addressChange = new ContactAddressChange(),
+		private readonly ?AuditTrailService $auditor = null,
 	) {
 	}//end __construct()
 
@@ -309,6 +312,11 @@ class PortalSelfServiceService {
 	/**
 	 * Confirm a new address through the link.
 	 *
+	 * A person who followed the mail holds the address. When an app
+	 * provisioned a waiting account for that same address (a school inviting
+	 * a guardian), its claims join the account that confirmed it
+	 * (confirmed-address-joins-the-waiting-account).
+	 *
 	 * @param string $token The secret from the confirmation mail.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
 	 *
@@ -316,6 +324,7 @@ class PortalSelfServiceService {
 	 *         unknown, already used or expired.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
 	 */
 	public function confirmEmail(string $token, ?DateTimeImmutable $now = null): ?array {
 		if ($token === '') {
@@ -331,13 +340,85 @@ class PortalSelfServiceService {
 		}
 
 		$email   = (string)($account['pendingEmail'] ?? '');
-		$written = $this->write(account: $account, data: $this->addressChange->confirmedFields(account: $account));
+		$fields  = $this->addressChange->confirmedFields(account: $account);
+		$written = $this->write(account: $account, data: $fields);
 		if ($written === false) {
 			return null;
 		}
 
+		$this->joinWaitingAccount(account: array_merge($account, $fields), email: $email);
+
 		return ['email' => $email];
 	}//end confirmEmail()
+
+	/**
+	 * Join the waiting account for an address its holder just confirmed.
+	 *
+	 * Only an active account that signed in through an identity provider
+	 * receives claims this way: an account that is itself waiting, removed or
+	 * address-only is left alone. The address must be one the confirmation
+	 * marked confirmed on the account. Best-effort: the confirmation stands
+	 * whether or not anything was joined.
+	 *
+	 * @param array<string, mixed> $account The account as it stands after the confirmation.
+	 * @param string $email The address that was confirmed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 */
+	private function joinWaitingAccount(array $account, string $email): void {
+		$organisation = (string)($account['organisation'] ?? '');
+		if (($account['status'] ?? '') !== PortalAccountService::STATUS_ACTIVE
+			|| (string)($account['identityRef'] ?? '') === ''
+			|| $this->holdsConfirmed(account: $account, email: $email) === false
+		) {
+			return;
+		}
+
+		$join   = new WaitingAccountJoin(lookup: new PortalAccountLookup(reader: $this->reader), writer: $this->writer);
+		$joined = $join->join(account: $account, verifiedEmail: $email, organisation: $organisation);
+		if ($joined === null) {
+			return;
+		}
+
+		// Who took over which waiting account, and when: the row's user is
+		// the account that confirmed, its target the account withdrawn.
+		$this->auditor?->record(
+			verb: 'claim',
+			subjectRef: (string)($account['subjectRef'] ?? ''),
+			organisation: $organisation,
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			id: $joined
+		);
+	}//end joinWaitingAccount()
+
+	/**
+	 * Whether the account lists an e-mail address as confirmed.
+	 *
+	 * @param array<string, mixed> $account The account.
+	 * @param string $email The address.
+	 *
+	 * @return bool
+	 */
+	private function holdsConfirmed(array $account, string $email): bool {
+		if ($email === '') {
+			return false;
+		}
+
+		foreach ((array)($account['contactAddresses'] ?? []) as $entry) {
+			if (is_array($entry) === true
+				&& ($entry['kind'] ?? '') === 'email'
+				&& ($entry['value'] ?? '') === $email
+				&& ($entry['confirmed'] ?? false) === true
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end holdsConfirmed()
 
 	/**
 	 * The account whose pending address this token confirms, or null.
