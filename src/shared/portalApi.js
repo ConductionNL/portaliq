@@ -448,6 +448,35 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * One call to the resident's messaging endpoints under
+		 * `/api/messages` (site-messages-per-record): the contacts, a new
+		 * conversation, a reply, a read mark. The page's own lazy module
+		 * names the paths, so the site's entry carries only this one door.
+		 *
+		 * @param {string} method `GET` or `POST`.
+		 * @param {string} path The path under `/api/messages`, starting with a slash.
+		 * @param {object|null} [body] The JSON body of a POST.
+		 * @return {Promise<{ok: boolean, status: number, data: any}>} The outcome; never throws.
+		 */
+		async messaging(method, path, body = null) {
+			try {
+				const res = await fetch(`${appRoot}/api/messages${path}`, {
+					method,
+					headers: {
+						Accept: 'application/json',
+						...(body ? { 'Content-Type': 'application/json' } : {}),
+						...authHeaders(),
+					},
+					...(body ? { body: JSON.stringify(body) } : {}),
+				})
+				const data = await res.json().catch(() => null)
+				return { ok: res.ok, status: res.status, data }
+			} catch {
+				return { ok: false, status: 0, data: null }
+			}
+		},
+
+		/**
 		 * Ask for access to a party's cases (identity-access-requests,
 		 * REQ-IAR-001). The server refuses a request without a reason, and
 		 * that refusal comes back as its error code rather than as a throw.
