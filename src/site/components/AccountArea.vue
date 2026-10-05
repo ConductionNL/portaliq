@@ -40,6 +40,39 @@
 				{{ t('Loading…') }}
 			</p>
 
+			<!-- The sign-in page as role cards, for a portal that writes them
+			     (site-chrome-follows-the-design, G-18). -->
+			<div
+				v-else-if="!session && signInDesigned"
+				data-testid="site-account-signin">
+				<SignInPage
+					:routes="signInRoutes"
+					:page="signInPageText"
+					:welcomeLabel="t('Welcome')"
+					:introLabel="t('Log in to view your information.')"
+					:noWayLabel="
+						t('No login method is configured for this organisation yet.')
+					">
+					<button
+						v-if="devLogin"
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						data-testid="site-devlogin"
+						@click="$emit('devlogin')">
+						{{ t('Dev-login (test)') }}
+					</button>
+					<p v-if="devError" class="utrecht-paragraph" role="alert">
+						{{ devError }}
+					</p>
+					<WaysIn
+						v-if="ways.register || ways.reference"
+						:ways="ways"
+						:authBase="authBase"
+						:portal="portalSlug"
+						:t="waysT || t" />
+				</SignInPage>
+			</div>
+
 			<div v-else-if="!session" data-testid="site-account-signin">
 				<h1 class="utrecht-heading-2">
 					{{ t('Welcome') }}
@@ -186,6 +219,8 @@ export default {
 	components: {
 		// Loaded only while the resident acts for someone else.
 		ActingForBar: defineAsyncComponent(() => import('./mijn/ActingForBar.vue')),
+		// Loaded only on a portal that writes its sign-in cards.
+		SignInPage: defineAsyncComponent(() => import('./chrome/SignInPage.vue')),
 		ResidentMenu,
 		WaysIn,
 	},
@@ -256,6 +291,32 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The portal's sign-in page text, or an empty object.
+		 *
+		 * @return {object} `authentication.signInPage`.
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+		 */
+		signInPageText() {
+			return this.portal?.authentication?.signInPage || {}
+		},
+
+		/**
+		 * Whether the portal wrote its sign-in page: page text or a card for
+		 * one of its ways in. Otherwise the plain list of buttons stays.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+		 */
+		signInDesigned() {
+			return (
+				Object.keys(this.signInPageText).length > 0
+				|| this.signInRoutes.some((way) => way.card)
+			)
+		},
+
 		/**
 		 * Whether the resident menu shows: signed in, with groups to show.
 		 * Signed out this area is the way in and keeps its full width.

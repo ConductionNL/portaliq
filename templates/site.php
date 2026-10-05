@@ -152,6 +152,7 @@ $themeLogoUrl = (string)($_['themeLogoUrl'] ?? '');
 // The set's light logo for the dark footer band, absolute for the same reason
 // (site-chrome-follows-the-design); '' when the set ships none.
 $themeLogoInverseUrl = (string)($_['themeLogoInverseUrl'] ?? '');
+$themeEmblemUrl = (string)($_['themeEmblemUrl'] ?? '');
 
 // NO DARK LAYER IS LINKED HERE, AND THAT IS A MEASURED DECISION.
 //
@@ -348,6 +349,9 @@ if ($favicon === '') {
     <?php } ?>
     <?php if ($themeLogoInverseUrl !== '') { ?>
     <style>:root{--nldesign-logo-inverse-url:url("<?php p($themeLogoInverseUrl); ?>")}</style>
+    <?php } ?>
+    <?php if ($themeEmblemUrl !== '') { ?>
+    <style>:root{--nldesign-emblem-url:url("<?php p($themeEmblemUrl); ?>")}</style>
     <?php } ?>
 </head>
 <body>

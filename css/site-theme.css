@@ -209,3 +209,726 @@
 	padding-inline: var(--utrecht-button-padding-inline-start, 1.25em)
 		var(--utrecht-button-padding-inline-end, 1.25em);
 }
+
+/*
+ * ============================================================================
+ * THE CHROME THE SCHOOL DESIGNS DRAW (site-chrome-follows-the-design).
+ *
+ * Everything below reads tokens only. The theme app's public bridge hands the
+ * site these, from whatever set the portal uses (thematiq
+ * brand-motif-on-portals):
+ *
+ *   --cn-brand-stripe-*            the motif: three bands or an image, and its
+ *                                  inverse for a dark band. Unset for a set
+ *                                  without a stripe: then nothing is drawn.
+ *   --thematiq-accent-*            the accent (current menu item, badges)
+ *   --thematiq-badge-*             a count badge
+ *   --thematiq-logo-text-font-size 0 when the logo carries the name
+ *   --thematiq-footer-legal-background-color  the footer's bottom band
+ *   --thematiq-hero-*              a light hero, when the set draws one
+ *
+ * and site.php names the set's light logo (--nldesign-logo-inverse-url) and
+ * its emblem (--nldesign-emblem-url) as absolute addresses.
+ * ============================================================================
+ */
+
+/*
+ * THE MOTIF UNDER THE HEADER AND OVER THE FOOTER (G-01).
+ *
+ * Drawn as a pseudo-element, so the header and footer markup of every portal
+ * stays as it was and the motif costs the site's entry nothing. The height is
+ * the set's stripe height, and 0 for a set that declares no stripe: such a
+ * portal draws nothing here.
+ *
+ * Under the header the motif is the image when the set names one, else one
+ * line in the stripe's first colour: Zuiddrecht's header carries a solid red
+ * line (canvas v13), its three bands sit on the footer.
+ */
+.pq-site .pq-site__header .ac-header__navigation-secondary,
+.pq-site .pq-site__header .ac-header__navigation-main:only-child,
+.pq-site .ac-footer .pq-footer__band--content {
+	position: relative;
+}
+
+.pq-site .pq-site__header .ac-header__navigation-secondary::after,
+.pq-site
+	.pq-site__header:not(:has(.ac-header__navigation-secondary))
+	.ac-header__navigation-main::after {
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	inset-block-start: 100%;
+	z-index: 1;
+	block-size: var(--cn-brand-stripe-height, 0);
+	pointer-events: none;
+	background-image: var(
+		--cn-brand-stripe-image,
+		linear-gradient(
+			var(--cn-brand-stripe-color-1),
+			var(--cn-brand-stripe-color-1)
+		)
+	);
+	background-repeat: repeat-x;
+	background-size: auto 100%;
+}
+
+.pq-site .pq-site__header {
+	margin-block-end: var(--cn-brand-stripe-height, 0);
+}
+
+.pq-site .ac-footer .pq-footer__band--content::before {
+	--pq-stripe-first: var(--cn-brand-stripe-ratio-1, 1);
+	--pq-stripe-second: var(--cn-brand-stripe-ratio-2, 1);
+	--pq-stripe-total: calc(
+		var(--pq-stripe-first) + var(--pq-stripe-second) +
+			var(--cn-brand-stripe-ratio-3, 1)
+	);
+	--pq-stripe-stop-1: calc(var(--pq-stripe-first) / var(--pq-stripe-total) * 100%);
+	--pq-stripe-stop-2: calc(
+		(var(--pq-stripe-first) + var(--pq-stripe-second)) / var(--pq-stripe-total) *
+			100%
+	);
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	inset-block-start: 0;
+	block-size: var(--cn-brand-stripe-height, 0);
+	pointer-events: none;
+	background-image: var(
+		--cn-brand-stripe-image-inverse,
+		linear-gradient(
+			to right,
+			var(--cn-brand-stripe-color-1) 0 var(--pq-stripe-stop-1),
+			var(--cn-brand-stripe-color-2) var(--pq-stripe-stop-1)
+				var(--pq-stripe-stop-2),
+			var(--cn-brand-stripe-color-3) var(--pq-stripe-stop-2) 100%
+		)
+	);
+	background-repeat: repeat-x;
+	background-size: auto 100%;
+}
+
+/*
+ * THE LOGO. A wordmark set (the logo carries the name) keeps the portal's
+ * title for screen readers only; the logo sits at the start of its box, so a
+ * wide wordmark lines up with the content column under it.
+ */
+.pq-site .ac-header__logo .logo-text {
+	font-size: var(
+		--thematiq-logo-text-font-size,
+		var(--tilburg-typography-font-size-3xl)
+	);
+}
+
+.pq-site .ac-footer__logo > span:first-of-type {
+	font-size: var(--thematiq-logo-text-font-size, inherit);
+}
+
+.pq-site .con-logo-container.header,
+.pq-site .con-logo-container.footer {
+	background-position: 0 50%;
+}
+
+/*
+ * THE DESIGNED HEADER (G-02, G-03, G-07): logo, search, one way to the own
+ * area on a white bar, the menu on a bar under it, both on the content
+ * column. Only a portal that declares `headerSearch` or `accountLabel`.
+ */
+.pq-site .pq-site__header--designed .ac-header__navigation-main {
+	--navigation-bar-height: 96px;
+	border-block-end: 1px solid
+		var(--nldesign-color-border, var(--tilburg-line-border-color));
+	padding-inline: max(16px, calc((100% - 1232px) / 2));
+}
+
+.pq-site .pq-site__header--designed .ac-header__right-section {
+	margin-inline-end: 0;
+}
+
+.pq-site .pq-site__header--designed .ac-header__navigation-secondary .container {
+	max-inline-size: 1232px;
+	margin-inline: auto;
+	padding-inline: 16px;
+}
+
+.pq-site .pq-site__header--designed .ac-c-navigation__link-container {
+	position: relative;
+	padding-block: 14px;
+	padding-inline: 14px;
+}
+
+.pq-site .pq-site__header--designed .ac-c-navigation__label {
+	color: var(--nldesign-color-text, var(--tilburg-document-color));
+	font-size: 1.0625rem;
+	font-weight: 500;
+}
+
+/* The page on screen: bold, with a bar in the accent under it (in the
+ * primary for a set without an accent). */
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='page'] {
+	background-color: transparent;
+}
+
+.pq-site
+	.ac-header
+	.ac-c-navigation__link-container[aria-current='page']
+	.ac-c-navigation__label {
+	font-weight: 700;
+}
+
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='page']::after {
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	inset-block-end: 0;
+	block-size: 4px;
+	background-color: var(--thematiq-accent-color, var(--nldesign-color-primary));
+}
+
+.pq-site .ac-header .ac-c-navigation__li {
+	position: relative;
+}
+
+.pq-header-tools {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.pq-header-tools__search {
+	position: relative;
+	display: flex;
+}
+
+.pq-header-tools__input.utrecht-textbox {
+	inline-size: 240px;
+	block-size: 46px;
+	padding-inline: 16px 46px;
+	border: 1px solid
+		var(--nldesign-color-border-dark, var(--utrecht-textbox-border-color));
+	border-radius: var(
+		--nldesign-website-border-radius,
+		var(--utrecht-textbox-border-radius, 4px)
+	);
+	background-color: var(
+		--nldesign-color-background,
+		var(--utrecht-textbox-background-color)
+	);
+	color: var(--nldesign-color-text, var(--utrecht-textbox-color));
+	font: inherit;
+}
+
+.pq-header-tools__submit {
+	position: absolute;
+	inset-block: 0;
+	inset-inline-end: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 46px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--nldesign-color-primary, currentcolor);
+}
+
+.pq-header-tools svg {
+	inline-size: 20px;
+	block-size: 20px;
+	flex: none;
+}
+
+.pq-header-tools__account.utrecht-button-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-block-size: 46px;
+	padding-inline: 20px;
+	border-radius: var(
+		--nldesign-website-border-radius,
+		var(--utrecht-button-border-radius, 4px)
+	);
+	text-decoration: none;
+}
+
+.pq-header-tools__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	min-block-size: 46px;
+	padding-block: 4px;
+	padding-inline: 4px 16px;
+	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border-radius: var(--nldesign-website-border-radius-large, 999px);
+	color: var(--nldesign-color-text, var(--tilburg-document-color));
+	text-decoration: none;
+}
+
+.pq-header-tools__chip:hover {
+	background-color: var(
+		--nldesign-color-background-hover,
+		var(--tilburg-color-gray-100)
+	);
+}
+
+.pq-header-tools__initials {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 36px;
+	block-size: 36px;
+	border-radius: var(--nldesign-website-border-radius, 50%);
+	background-color: var(
+		--nldesign-color-primary-light,
+		var(--tilburg-color-blue-100)
+	);
+	color: var(--nldesign-color-primary-hover, var(--nldesign-color-primary));
+	font-size: 0.8125rem;
+	font-weight: 700;
+}
+
+.pq-header-tools__who {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.25;
+}
+
+.pq-header-tools__name {
+	font-weight: 700;
+}
+
+.pq-header-tools__subline {
+	color: var(--nldesign-color-text-muted, var(--tilburg-document-subtle-color));
+	font-size: 0.8125rem;
+}
+
+.pq-header-tools__signout {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--nldesign-color-link, var(--utrecht-link-color));
+	font: inherit;
+	font-weight: 700;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.pq-header-tools__menu {
+	display: none;
+	align-items: center;
+	gap: 8px;
+	min-block-size: 44px;
+	padding-inline: 12px;
+	border: 1px solid var(--nldesign-color-border-dark, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	background: transparent;
+	color: var(--nldesign-color-text, currentcolor);
+	font: inherit;
+	font-weight: 600;
+}
+
+/*
+ * ON A PHONE (G-07): logo and one menu button. The button opens the menu bar
+ * and the search box; the person chip shrinks to its initials.
+ */
+@media (max-width: 767px) {
+	.pq-site .pq-site__header--designed .ac-header__navigation-main {
+		--navigation-bar-height: 72px;
+		flex-wrap: wrap;
+		row-gap: 8px;
+		padding-block: 12px;
+	}
+
+	.pq-site .pq-site__header--designed .ac-header__right-section {
+		margin-inline: 0;
+	}
+
+	.pq-header-tools {
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+
+	.pq-header-tools__menu {
+		display: inline-flex;
+	}
+
+	.pq-header-tools__search {
+		display: none;
+		order: 3;
+		inline-size: 100%;
+	}
+
+	.pq-header-tools__search--open {
+		display: flex;
+	}
+
+	.pq-header-tools__search .pq-header-tools__input.utrecht-textbox {
+		inline-size: 100%;
+	}
+
+	.pq-header-tools__who {
+		position: absolute;
+		inline-size: 1px;
+		block-size: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.pq-header-tools__chip {
+		padding-inline-end: 4px;
+	}
+
+	.pq-site .pq-site__header--designed .ac-header__navigation-secondary {
+		display: none;
+	}
+
+	.pq-site
+		.pq-site__header--designed
+		.ac-header__navigation-secondary.pq-site__nav--open {
+		display: block;
+	}
+
+	.pq-site .pq-site__header--designed .pq-site__nav--open .ac-c-navigation__ul {
+		flex-direction: column;
+		align-items: stretch;
+	}
+}
+
+/*
+ * THE DESIGNED FOOTER (G-04): brand column first with its button, the
+ * contact column, the menus; the bottom band one step darker than the footer.
+ */
+.pq-site .ac-footer .ac-footer__logo .con-logo-container.footer {
+	margin-block-end: var(--tilburg-space-block-mouse, 16px);
+}
+
+.pq-site .ac-footer .pq-footer__description {
+	max-inline-size: 26em;
+	margin-block-end: var(--tilburg-space-block-rabbit, 24px);
+	line-height: 1.6;
+}
+
+.pq-site .ac-footer .pq-footer__cta.utrecht-button-link {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 48px;
+	padding-inline: 20px;
+	border: 2px solid currentcolor;
+	border-radius: var(
+		--nldesign-website-border-radius,
+		var(--utrecht-button-border-radius, 4px)
+	);
+	background-color: transparent;
+	color: var(--tilburg-footer-color, inherit);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.pq-site .ac-footer .pq-footer__cta.utrecht-button-link:hover {
+	background-color: var(--tilburg-footer-color, currentcolor);
+	color: var(--tilburg-footer-background-color, inherit);
+}
+
+.pq-site .ac-footer .pq-footer__contact p {
+	margin-block-end: var(--tilburg-space-block-snail, 12px);
+}
+
+.pq-site .ac-footer .pq-footer__contact a,
+.pq-site .ac-footer .ac-footer__link {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.ac-footer section.pq-footer__band.pq-footer__band--legal {
+	background-color: var(
+		--thematiq-footer-legal-background-color,
+		var(--tilburg-color-blue-500)
+	);
+}
+
+/*
+ * THE HERO (G-08): a light ground and dark type when the set draws its hero
+ * that way, and the set's emblem large and faint at the end of the band.
+ */
+.pq-site .ac-hero {
+	position: relative;
+	overflow: hidden;
+	background-color: var(
+		--thematiq-hero-background-color,
+		var(--tilburg-color-blue-500)
+	);
+}
+
+.pq-site .ac-hero::after {
+	content: '';
+	position: absolute;
+	inset-block: 8%;
+	inset-inline-end: max(16px, calc((100% - 1232px) / 2));
+	inline-size: min(36%, 420px);
+	pointer-events: none;
+	background-image: var(--thematiq-hero-decoration-image, none);
+	background-position: 100% 50%;
+	background-repeat: no-repeat;
+	background-size: contain;
+	opacity: 0.16;
+}
+
+.pq-site .ac-hero > * {
+	position: relative;
+	z-index: 1;
+}
+
+.pq-site .ac-hero .ac-hero__title,
+.pq-site .ac-hero .ac-hero__subtitle {
+	color: var(--nldesign-hero-title-color, var(--utrecht-document-inverse-color));
+}
+
+.pq-site .ac-hero .ac-hero__subtitle {
+	color: var(--nldesign-hero-body-color, var(--utrecht-document-inverse-color));
+}
+
+.pq-site .ac-hero .pq-hero__action {
+	border-radius: var(--nldesign-website-border-radius, 0);
+}
+
+.pq-site .ac-hero .pq-hero__action:first-child {
+	border-color: var(--thematiq-hero-action-background-color, currentcolor);
+	background-color: var(--thematiq-hero-action-background-color, transparent);
+	color: var(
+		--thematiq-hero-action-color,
+		var(--nldesign-hero-title-color, var(--utrecht-document-inverse-color))
+	);
+}
+
+/*
+ * THE SIGN-IN PAGE AS ROLE CARDS (G-18).
+ */
+.pq-signin {
+	display: grid;
+	gap: 56px;
+	padding-block: 40px 64px;
+}
+
+.pq-signin--with-panel {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+	align-items: start;
+}
+
+.pq-signin__title.utrecht-heading-1 {
+	margin-block-end: 16px;
+}
+
+.pq-signin__intro.utrecht-paragraph {
+	max-inline-size: 46em;
+	margin-block-end: 32px;
+	font-size: 1.25rem;
+	line-height: 1.6;
+}
+
+.pq-signin__cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+	gap: 24px;
+	max-inline-size: 1000px;
+	margin: 0 0 32px;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-signin__card {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 28px;
+	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border-radius: var(--nldesign-website-border-radius-large, 8px);
+	background-color: var(--nldesign-color-background, var(--tilburg-color-white));
+}
+
+.pq-signin__card-head {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+}
+
+.pq-signin__card-title.utrecht-heading-3 {
+	margin: 0;
+	line-height: 1.25;
+}
+
+.pq-signin__card-text.utrecht-paragraph {
+	margin-block-start: 6px;
+}
+
+.pq-signin__mark {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	inline-size: 56px;
+	block-size: 56px;
+	border-radius: var(--nldesign-website-border-radius, 8px);
+	background-color: var(
+		--nldesign-color-primary-light,
+		var(--tilburg-color-blue-100)
+	);
+	color: var(--nldesign-color-primary, currentcolor);
+	font-size: 0.9375rem;
+	font-weight: 700;
+}
+
+.pq-signin__mark svg {
+	inline-size: 28px;
+	block-size: 28px;
+}
+
+.pq-signin__mark--digid,
+.pq-signin__mark--eherkenning,
+.pq-signin__mark--eidas {
+	background-color: var(--nldesign-color-text, CanvasText);
+	color: var(--nldesign-color-background, Canvas);
+}
+
+.pq-signin__button.utrecht-button-link {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-block-size: 52px;
+	border-radius: var(
+		--nldesign-website-border-radius,
+		var(--utrecht-button-border-radius, 4px)
+	);
+	font-size: 1.0625rem;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.pq-signin__button.utrecht-button-link--secondary-action {
+	border: 2px solid var(--nldesign-color-primary, currentcolor);
+}
+
+.pq-signin__hint {
+	margin: 0;
+	color: var(--nldesign-color-text-muted, var(--tilburg-document-subtle-color));
+	font-size: 0.9375rem;
+}
+
+.pq-signin__notice {
+	display: flex;
+	gap: 12px;
+	max-inline-size: 1000px;
+	margin-block-end: 32px;
+	padding: 20px 24px;
+	border: 1px solid
+		var(--nldesign-color-primary-light-hover, var(--nldesign-color-border));
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	background-color: var(
+		--nldesign-color-primary-light,
+		var(--tilburg-color-blue-100)
+	);
+	line-height: 1.6;
+}
+
+.pq-signin__notice svg {
+	flex: none;
+	inline-size: 22px;
+	block-size: 22px;
+	margin-block-start: 2px;
+}
+
+.pq-signin__notice-title {
+	font-weight: 700;
+}
+
+.pq-signin__panel {
+	position: relative;
+	overflow: hidden;
+	padding: 48px 36px 72px;
+	border-radius: var(--nldesign-website-border-radius-large, 8px);
+	background-color: var(
+		--nldesign-color-footer-background,
+		var(--nldesign-color-primary-hover)
+	);
+	color: var(--nldesign-color-footer-text, var(--nldesign-color-primary-text));
+}
+
+/* The motif along the panel's top, its emblem large and faint at the foot. */
+.pq-signin__panel::before {
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	inset-block-start: 0;
+	block-size: var(--cn-brand-stripe-height, 0);
+	background-image: var(--cn-brand-stripe-image-inverse, none);
+	background-repeat: repeat-x;
+	background-size: auto 100%;
+}
+
+.pq-signin__panel::after {
+	content: '';
+	position: absolute;
+	inset-inline-end: -20px;
+	inset-block-end: -20px;
+	inline-size: 240px;
+	block-size: 240px;
+	pointer-events: none;
+	background-image: var(--nldesign-emblem-url, none);
+	background-repeat: no-repeat;
+	background-size: contain;
+	opacity: 0.12;
+}
+
+.pq-signin__panel-title.utrecht-heading-3 {
+	margin-block-end: 24px;
+	color: inherit;
+}
+
+.pq-signin__points {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	gap: 20px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-signin__point {
+	display: flex;
+	gap: 16px;
+}
+
+.pq-signin__point-mark {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	inline-size: 36px;
+	block-size: 36px;
+	border-radius: 50%;
+	background-color: var(--thematiq-accent-light-color, transparent);
+	color: var(--thematiq-accent-text-color, currentcolor);
+}
+
+.pq-signin__point-mark svg {
+	inline-size: 18px;
+	block-size: 18px;
+}
+
+.pq-signin__point-title {
+	display: block;
+	font-weight: 700;
+	font-size: 1.125rem;
+}
+
+.pq-signin__point-text {
+	display: block;
+	opacity: 0.9;
+}
+
+@media (max-width: 1023px) {
+	.pq-signin--with-panel {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

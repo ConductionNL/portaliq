@@ -78,7 +78,13 @@
 				:userMenuLabel="t('User menu')"
 				:breadcrumbLabel="t('Breadcrumb')"
 				:logoLabel="t('Logo')"
+				:searchBox="headerSearch"
+				:searchLabel="t('Search')"
+				:accountLabel="site.accountLabel || ''"
+				:accountHref="hrefForRoute('/mijn')"
+				:menuLabel="t('Menu')"
 				@navigate="go"
+				@search="goSearch"
 				@signout="signOut">
 				<template #account>
 					<ActingForSwitcher :t="t" />
@@ -541,6 +547,7 @@ import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js
 import {
 	footerMenusOf,
 	headerMenusOf,
+	headerSearchOf,
 	headerVariantOf,
 	legalLinksOf,
 	registerRouteOf,
@@ -693,12 +700,6 @@ export default {
 			routeParam: '',
 			// The title of the shared dossier on screen, once it is read.
 			sharedDossierTitle: '',
-			// Where the hero's search box sends a term. A constant rather than
-			// a portal field for now: the seeded portal puts search at
-			// `/zoeken`, matching the reference, and a portal that moves it
-			// wants a `searchRoute` on the portal object rather than a guess
-			// here.
-			searchRoute: '/zoeken',
 			loading: true,
 			error: null,
 			// The editing context for the route on screen, or null for every
@@ -885,7 +886,32 @@ export default {
 				portal: this.site.slug || '',
 				signedIn: this.session !== null,
 				navigation: this.navigation,
+				// The portal's sign-in ways, for the nlSignIn block (lane L2, G-13).
+				signInRoutes: this.signInRoutes,
 			}
+		},
+
+		/**
+		 * The header's search box, and the page every search box opens
+		 * (site-chrome-follows-the-design).
+		 *
+		 * @return {object} `{enabled, placeholder, route}`.
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 */
+		headerSearch() {
+			return headerSearchOf(this.site)
+		},
+
+		/**
+		 * Where a search box sends a term: the portal's search page.
+		 *
+		 * @return {string} The route, `/zoeken` unless the portal names another.
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 */
+		searchRoute() {
+			return this.headerSearch.route
 		},
 
 		/**

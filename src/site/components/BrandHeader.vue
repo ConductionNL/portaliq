@@ -13,7 +13,10 @@
 		masthead. `single` puts it on the masthead's row and renders no second
 		bar, so each link is in the accessibility tree once.
 	-->
-	<header class="ac-header pq-site__header" data-testid="site-header">
+	<header
+		class="ac-header pq-site__header"
+		:class="{ 'pq-site__header--designed': designed }"
+		data-testid="site-header">
 		<div class="ac-header__navigation-main">
 			<div class="ac-header__logo">
 				<div>
@@ -43,8 +46,33 @@
 			     said even without them: it is about the attempt that came
 			     back, not about the ways in. -->
 			<div class="ac-header__right-section">
+				<!-- A designed header (site-chrome-follows-the-design): search,
+				     one way to the own area, the person chip, loaded on demand. -->
+				<template v-if="designed">
+					<p
+						v-if="signinFailedMessage && !session"
+						role="alert"
+						data-testid="site-signin-failed">
+						{{ signinFailedMessage }}
+					</p>
+					<HeaderTools
+						:searchBox="searchBox"
+						:searchLabel="searchLabel"
+						:accountLabel="accountLabel"
+						:accountHref="accountHref"
+						:session="session"
+						:accountLink="accountLink"
+						:signOutLabel="signOutLabel"
+						:hasMenu="showNavigation && menus.length > 0"
+						:menuOpen="menuOpen"
+						:menuLabel="menuLabel"
+						@search="$emit('search', $event)"
+						@navigate="$emit('navigate', $event)"
+						@signout="$emit('signout')"
+						@toggleMenu="menuOpen = !menuOpen" />
+				</template>
 				<div
-					v-if="session || signInRoutes.length || signinFailedMessage"
+					v-else-if="session || signInRoutes.length || signinFailedMessage"
 					class="ac-navigation pq-site__auth"
 					data-testid="site-auth">
 					<template v-if="session">
@@ -109,7 +137,9 @@
 		     link is on the page once (site-navigation-block). -->
 		<div
 			v-if="!single && showNavigation"
-			class="ac-header__navigation-secondary">
+			:id="designed ? 'pq-site-navigation' : undefined"
+			class="ac-header__navigation-secondary"
+			:class="{ 'pq-site__nav--open': designed && menuOpen }">
 			<div class="container">
 				<div class="ac-c-navigation__container">
 					<SiteMenu
@@ -159,6 +189,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import SiteMenu from './SiteMenu.vue'
 
 /**
@@ -174,7 +205,11 @@ import SiteMenu from './SiteMenu.vue'
 export default {
 	name: 'BrandHeader',
 
-	components: { SiteMenu },
+	components: {
+		SiteMenu,
+		// Only a designed header loads it (site-chrome-follows-the-design).
+		HeaderTools: defineAsyncComponent(() => import('./chrome/HeaderTools.vue')),
+	},
 
 	props: {
 		/** The portal's name, beside the mark. */
@@ -211,9 +246,23 @@ export default {
 		breadcrumbLabel: { type: String, default: 'Kruimelpad' },
 		/** The screen-reader text beside the logo mark. */
 		logoLabel: { type: String, default: 'Logo' },
+		/** `{enabled, placeholder}`: the search box (site-chrome-follows-the-design). */
+		searchBox: { type: Object, default: () => ({ enabled: false }) },
+		/** The search button's accessible name. */
+		searchLabel: { type: String, default: 'Zoeken' },
+		/** The one button to the own area while signed out; empty keeps the sign-in links. */
+		accountLabel: { type: String, default: '' },
+		/** The own area's real address. */
+		accountHref: { type: String, default: '' },
+		/** The phone menu button's text. */
+		menuLabel: { type: String, default: 'Menu' },
 	},
 
-	emits: ['navigate', 'signout'],
+	emits: ['navigate', 'signout', 'search'],
+
+	data() {
+		return { menuOpen: false }
+	},
 
 	computed: {
 		/**
@@ -225,6 +274,19 @@ export default {
 		 */
 		single() {
 			return this.variant === 'single'
+		},
+
+		/**
+		 * Whether the portal asked for the designed header: a search box or one
+		 * button to its own area. A portal that asks for neither keeps the
+		 * header it has, markup and all.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 */
+		designed() {
+			return Boolean(this.accountLabel) || this.searchBox.enabled === true
 		},
 	},
 }
