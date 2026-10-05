@@ -153,6 +153,9 @@ $themeLogoUrl = (string)($_['themeLogoUrl'] ?? '');
 // (site-chrome-follows-the-design); '' when the set ships none.
 $themeLogoInverseUrl = (string)($_['themeLogoInverseUrl'] ?? '');
 $themeEmblemUrl = (string)($_['themeEmblemUrl'] ?? '');
+// The emblem in grey, for a set whose watermark carries no tint
+// (example-site-zuiddrecht); '' when the set ships none.
+$themeEmblemGreyUrl = (string)($_['themeEmblemGreyUrl'] ?? '');
 
 // NO DARK LAYER IS LINKED HERE, AND THAT IS A MEASURED DECISION.
 //
@@ -352,6 +355,9 @@ if ($favicon === '') {
     <?php } ?>
     <?php if ($themeEmblemUrl !== '') { ?>
     <style>:root{--nldesign-emblem-url:url("<?php p($themeEmblemUrl); ?>")}</style>
+    <?php } ?>
+    <?php if ($themeEmblemGreyUrl !== '') { ?>
+    <style>:root{--nldesign-emblem-grey-url:url("<?php p($themeEmblemGreyUrl); ?>")}</style>
     <?php } ?>
 </head>
 <body>

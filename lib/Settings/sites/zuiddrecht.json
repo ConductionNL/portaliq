@@ -180,7 +180,8 @@
                             "title": "Wat wilt u regelen?",
                             "search": true,
                             "searchLabel": "Zoek op onderwerp, bijvoorbeeld paspoort of afval",
-                            "searchSubmitLabel": "Zoeken"
+                            "searchSubmitLabel": "Zoeken",
+                            "headingVisible": true
                         }
                     },
                     {

@@ -271,6 +271,9 @@ class PortalPageController extends Controller {
 				// The set's emblem, for the hero's and the sign-in panel's
 				// watermark, or ''.
 				'themeEmblemUrl' => $this->siteThemeLogoUrl(variant: 'emblem'),
+				// The same mark in grey, for a set that draws its watermark
+				// without a tint (example-site-zuiddrecht).
+				'themeEmblemGreyUrl' => $this->siteThemeLogoUrl(variant: 'emblem-grey'),
 				'themeAppSheets' => $this->siteThemeAppSheets(),
 				// The NLDS token set this app ships for the serving portal's
 				// theme, when it has one. Separate from the line above because
@@ -587,7 +590,7 @@ class PortalPageController extends Controller {
 	 * footer band, or `emblem`, the mark for a watermark; '' when the set
 	 * ships none.
 	 *
-	 * @param string $variant '' for the logo, else `dark` or `emblem`.
+	 * @param string $variant '' for the logo, else `dark`, `emblem` or `emblem-grey`.
 	 *
 	 * @return string An absolute URL, or '' when there is no logo to serve.
 	 *

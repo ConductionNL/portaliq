@@ -709,6 +709,10 @@ class PortalThemeResolverTest extends TestCase {
 		$resolver = $this->resolver();
 		$this->assertSame('img/logos/vng-dark.svg', $resolver->logoVariantFileFor(theme: 'vng', variant: 'dark'));
 		$this->assertSame('img/logos/vng-emblem.svg', $resolver->logoVariantFileFor(theme: 'vng', variant: 'emblem'));
+		// The grey emblem only when the set ships that file too.
+		$this->assertNull($resolver->logoVariantFileFor(theme: 'vng', variant: 'emblem-grey'));
+		file_put_contents($this->themeRoot . '/img/logos/vng-emblem-grey.svg', '<svg/>');
+		$this->assertSame('img/logos/vng-emblem-grey.svg', $resolver->logoVariantFileFor(theme: 'vng', variant: 'emblem-grey'));
 		$this->assertNull($resolver->logoVariantFileFor(theme: 'vng', variant: 'secret'));
 		$this->assertNull($resolver->logoVariantFileFor(theme: 'vng', variant: '../vng'));
 

@@ -234,10 +234,15 @@ class PortalThemeResolver {
 	 *           drawn large and faint as a watermark in the hero and on the
 	 *           sign-in panel.
 	 *
+	 * And one more for a set that draws its watermark in grey
+	 * (example-site-zuiddrecht): `emblem-grey`
+	 * (`img/logos/<theme>-emblem-grey.svg`). The coloured emblem tints a light
+	 * hero; the grey one does not.
+	 *
 	 * A set without the file gets null and the page draws without it.
 	 *
 	 * @param string $theme   The portal's theme reference.
-	 * @param string $variant `dark` or `emblem`.
+	 * @param string $variant `dark`, `emblem` or `emblem-grey`.
 	 *
 	 * @return string|null The path relative to the theme app, or null.
 	 *
@@ -246,7 +251,7 @@ class PortalThemeResolver {
 	public function logoVariantFileFor(string $theme, string $variant): ?string {
 		$own = $this->logoFileFor(theme: $theme);
 		$root = $this->themeAppPath();
-		if ($own === null || $root === null || in_array($variant, ['dark', 'emblem'], true) === false) {
+		if ($own === null || $root === null || in_array($variant, ['dark', 'emblem', 'emblem-grey'], true) === false) {
 			return null;
 		}
 
