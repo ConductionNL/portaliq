@@ -56,6 +56,11 @@ class ExampleResidentStore {
 	private const PAGE_SIZE = 500;
 
 	/**
+	 * The most pages one read asks for, so a read always ends.
+	 */
+	private const MAX_PAGES = 20;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Hands out OpenRegister's ObjectService.
@@ -125,26 +130,32 @@ class ExampleResidentStore {
 			return [];
 		}
 
-		try {
-			$objectService->setRegister(register: $register);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(
-				config: ['filters' => $filters, 'limit' => self::PAGE_SIZE, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: example resident read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
 		$plain = [];
-		foreach ((array)$rows as $row) {
-			$row = $this->plain(row: $row);
-			if ($row !== null) {
-				$plain[] = $row;
+		for ($page = 0; $page < self::MAX_PAGES; $page++) {
+			try {
+				$objectService->setRegister(register: $register);
+				$objectService->setSchema(schema: $schema);
+				$rows = (array)$objectService->findAll(
+					config: ['filters' => $filters, 'limit' => self::PAGE_SIZE, 'offset' => ($page * self::PAGE_SIZE)],
+					_rbac: false,
+					_multitenancy: false
+				);
+			} catch (Throwable $e) {
+				$this->logger->warning('Portaliq: example resident read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+				return $plain;
 			}
-		}
+
+			foreach ($rows as $row) {
+				$row = $this->plain(row: $row);
+				if ($row !== null) {
+					$plain[] = $row;
+				}
+			}
+
+			if (count($rows) < self::PAGE_SIZE) {
+				break;
+			}
+		}//end for
 
 		return $plain;
 	}//end find()

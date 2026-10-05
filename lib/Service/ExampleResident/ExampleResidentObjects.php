@@ -190,9 +190,15 @@ class ExampleResidentObjects {
 			return ['id' => '', 'reason' => $reason];
 		}
 
-		foreach ($this->store->find(register: (string)($lookup['register'] ?? $register), schema: $schema, filters: $where) as $row) {
-			if ($this->matches(row: $row, where: $where) === true) {
-				return ['id' => $this->store->idOf(row: $row), 'reason' => $reason];
+		// Asked with the filter first, then without: OpenRegister does not
+		// filter on every kind of property (a reference to another object is
+		// one it answers with nothing), and the match is checked here anyway.
+		$from = (string)($lookup['register'] ?? $register);
+		foreach ([$where, []] as $filters) {
+			foreach ($this->store->find(register: $from, schema: $schema, filters: $filters) as $row) {
+				if ($this->matches(row: $row, where: $where) === true) {
+					return ['id' => $this->store->idOf(row: $row), 'reason' => $reason];
+				}
 			}
 		}
 
