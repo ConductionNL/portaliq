@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Command;
 
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteCatalogue;
-use OCA\Portaliq\Service\ExampleSite\ExampleSiteInstaller;
+use OCA\Portaliq\Service\ExampleSite\ExampleSiteRemover;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -62,13 +62,13 @@ class ExampleSiteRemove extends Command {
 	 * Constructor.
 	 *
 	 * @param ExampleSiteCatalogue $catalogue The shipped sites.
-	 * @param ExampleSiteInstaller $installer Deletes from its own record.
+	 * @param ExampleSiteRemover   $remover   Deletes from the install's own record.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly ExampleSiteCatalogue $catalogue,
-		private readonly ExampleSiteInstaller $installer,
+		private readonly ExampleSiteRemover $remover,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -105,14 +105,14 @@ class ExampleSiteRemove extends Command {
 			return 1;
 		}
 
-		$report = $this->installer->remove(site: $id, slug: (string)$site['portal']['slug']);
+		$report = $this->remover->remove(site: $id, slug: (string)$site['portal']['slug']);
 		if ($report['recorded'] === false) {
 			$output->writeln('<error>Nothing is recorded for "' . $id . '": it was not installed with this command, or it is already removed.</error>');
 
 			return 1;
 		}
 
-		if ($report['deleted'] === []) {
+		if ($report['available'] === false) {
 			$output->writeln('<error>OpenRegister is not available, so nothing was deleted.</error>');
 
 			return 1;

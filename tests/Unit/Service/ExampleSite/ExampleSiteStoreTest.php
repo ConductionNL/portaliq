@@ -119,11 +119,12 @@ class ExampleSiteStoreTest extends TestCase {
 	 * @return void
 	 */
 	public function testIdOf(): void {
-		$this->assertSame('a', ExampleSiteStore::idOf(row: ['@self' => ['id' => 'a', 'uuid' => 'b'], 'id' => 'c']));
-		$this->assertSame('b', ExampleSiteStore::idOf(row: ['@self' => ['uuid' => 'b']]));
-		$this->assertSame('c', ExampleSiteStore::idOf(row: ['id' => 'c']));
-		$this->assertSame('d', ExampleSiteStore::idOf(row: ['uuid' => 'd']));
-		$this->assertSame('', ExampleSiteStore::idOf(row: ['title' => 'x']));
+		$store = $this->store(service: null);
+		$this->assertSame('a', $store->idOf(row: ['@self' => ['id' => 'a', 'uuid' => 'b'], 'id' => 'c']));
+		$this->assertSame('b', $store->idOf(row: ['@self' => ['uuid' => 'b']]));
+		$this->assertSame('c', $store->idOf(row: ['id' => 'c']));
+		$this->assertSame('d', $store->idOf(row: ['uuid' => 'd']));
+		$this->assertSame('', $store->idOf(row: ['title' => 'x']));
 	}//end testIdOf()
 
 	/**

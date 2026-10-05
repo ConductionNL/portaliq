@@ -86,25 +86,8 @@ class ExampleSiteCatalogue {
 	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-site-with-one-command
 	 */
 	public function find(string $id): ?array {
-		if (preg_match('/^[a-z0-9][a-z0-9-]{0,39}$/', $id) !== 1) {
-			return null;
-		}
-
-		$file = $this->folder() . '/' . $id . '.json';
-		if (is_file($file) === false) {
-			return null;
-		}
-
-		$site = json_decode((string)file_get_contents($file), true);
-		if (is_array($site) === false || ($site['id'] ?? null) !== $id) {
-			return null;
-		}
-
-		$portal = ($site['portal'] ?? null);
-		if (is_array($portal) === false
-			|| is_string($portal['slug'] ?? null) === false || $portal['slug'] === ''
-			|| is_string($portal['title'] ?? null) === false || $portal['title'] === ''
-		) {
+		$site = $this->decoded(id: $id);
+		if ($site === null || $this->namesAPortal(site: $site) === false) {
 			return null;
 		}
 
@@ -117,6 +100,49 @@ class ExampleSiteCatalogue {
 
 		return $site;
 	}//end find()
+
+	/**
+	 * The file with this id, parsed, when it names itself by that id.
+	 *
+	 * @param string $id The site's id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function decoded(string $id): ?array {
+		$file = $this->folder() . '/' . $id . '.json';
+		if (preg_match('/^[a-z0-9][a-z0-9-]{0,39}$/', $id) !== 1 || is_file($file) === false) {
+			return null;
+		}
+
+		$site = json_decode((string)file_get_contents($file), true);
+		if (is_array($site) === false || ($site['id'] ?? null) !== $id) {
+			return null;
+		}
+
+		return $site;
+	}//end decoded()
+
+	/**
+	 * Whether the declaration holds a portal with a slug and a title.
+	 *
+	 * @param array<string, mixed> $site The parsed declaration.
+	 *
+	 * @return bool
+	 */
+	private function namesAPortal(array $site): bool {
+		$portal = ($site['portal'] ?? null);
+		if (is_array($portal) === false) {
+			return false;
+		}
+
+		foreach (['slug', 'title'] as $key) {
+			if (is_string($portal[$key] ?? null) === false || $portal[$key] === '') {
+				return false;
+			}
+		}
+
+		return true;
+	}//end namesAPortal()
 
 	/**
 	 * The folder the declarations are read from.

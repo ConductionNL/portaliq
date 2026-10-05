@@ -22,6 +22,7 @@ use OCA\Portaliq\Command\ExampleSiteInstall;
 use OCA\Portaliq\Command\ExampleSiteRemove;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteCatalogue;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteInstaller;
+use OCA\Portaliq\Service\ExampleSite\ExampleSiteRemover;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -105,10 +106,11 @@ class ExampleSiteCommandsTest extends TestCase {
 	 * @return void
 	 */
 	public function testRemoveReportsWhatWasDeleted(): void {
-		$installer = $this->createMock(ExampleSiteInstaller::class);
-		$installer->method('remove')->with('zuiddrecht', 'zuiddrecht')->willReturnOnConsecutiveCalls(
+		$remover = $this->createMock(ExampleSiteRemover::class);
+		$remover->method('remove')->with('zuiddrecht', 'zuiddrecht')->willReturnOnConsecutiveCalls(
 			[
 				'recorded' => true,
+				'available' => true,
 				'deleted' => ['newsItem' => 4, 'page' => 33, 'menu' => 3],
 				'gone' => ['newsItem' => 0, 'page' => 0, 'menu' => 0],
 				'failed' => [],
@@ -116,14 +118,16 @@ class ExampleSiteCommandsTest extends TestCase {
 			],
 			[
 				'recorded' => true,
+				'available' => true,
 				'deleted' => ['newsItem' => 4, 'page' => 32, 'menu' => 3],
 				'gone' => ['newsItem' => 0, 'page' => 1, 'menu' => 0],
 				'failed' => [],
 				'portal' => 'kept-content',
 			],
-			['recorded' => false, 'deleted' => [], 'gone' => [], 'failed' => [], 'portal' => 'kept-not-ours'],
+			['recorded' => false, 'available' => true, 'deleted' => [], 'gone' => [], 'failed' => [], 'portal' => 'kept-not-ours'],
+			['recorded' => true, 'available' => false, 'deleted' => [], 'gone' => [], 'failed' => [], 'portal' => 'kept-not-ours'],
 		);
-		$command = new ExampleSiteRemove(new ExampleSiteCatalogue(), $installer);
+		$command = new ExampleSiteRemove(new ExampleSiteCatalogue(), $remover);
 
 		$output = new BufferedOutput();
 		$this->assertSame(0, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
@@ -138,6 +142,9 @@ class ExampleSiteCommandsTest extends TestCase {
 
 		$this->assertSame(1, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
 		$this->assertStringContainsString('Nothing is recorded for "zuiddrecht"', $output->fetch());
+
+		$this->assertSame(1, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
+		$this->assertStringContainsString('OpenRegister is not available, so nothing was deleted', $output->fetch());
 
 		$this->assertSame(1, $command->run(new ArrayInput(['site' => 'nergens']), $output));
 		$this->assertStringContainsString('Sites this app ships: zuiddrecht', $output->fetch());

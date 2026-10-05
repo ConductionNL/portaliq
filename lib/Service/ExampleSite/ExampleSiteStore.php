@@ -148,7 +148,7 @@ class ExampleSiteStore {
 			return null;
 		}
 
-		$id = self::idOf(row: $saved);
+		$id = $this->idOf(row: $saved);
 		if ($id === '') {
 			return null;
 		}
@@ -197,7 +197,7 @@ class ExampleSiteStore {
 	 *
 	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-site
 	 */
-	public static function idOf(array $row): string {
+	public function idOf(array $row): string {
 		$self = [];
 		if (is_array($row['@self'] ?? null) === true) {
 			$self = $row['@self'];

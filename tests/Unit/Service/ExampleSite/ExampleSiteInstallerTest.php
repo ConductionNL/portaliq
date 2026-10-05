@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for ExampleSiteInstaller and ExampleSiteCatalogue.
+ * Unit tests for ExampleSiteInstaller, ExampleSiteRemover and ExampleSiteCatalogue.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
@@ -20,6 +20,10 @@ namespace OCA\Portaliq\Tests\Unit\Service\ExampleSite;
 
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteCatalogue;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteInstaller;
+use OCA\Portaliq\Service\ExampleSite\ExampleSiteProof;
+use OCA\Portaliq\Service\ExampleSite\ExampleSiteRecord;
+use OCA\Portaliq\Service\ExampleSite\ExampleSiteRemover;
+use OCA\Portaliq\Service\ExampleSite\ExampleSiteRows;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteStore;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\IAppConfig;
@@ -59,6 +63,13 @@ class ExampleSiteInstallerTest extends TestCase {
 	 * @var bool
 	 */
 	private bool $ignoreFilters = false;
+
+	/**
+	 * The remover over the same fake store and record as the last installer.
+	 *
+	 * @var ExampleSiteRemover
+	 */
+	private ExampleSiteRemover $remover;
 
 	/**
 	 * The fake app config.
@@ -225,10 +236,10 @@ class ExampleSiteInstallerTest extends TestCase {
 		$installer = $this->installer();
 		$installer->install(site: $this->zuiddrecht());
 
-		$report = $installer->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 
 		$this->assertTrue($report['recorded']);
-		$this->assertSame(['newsItem' => 4, 'page' => 33, 'menu' => 3], $report['deleted']);
+		$this->assertSame(['menu' => 3, 'page' => 33, 'newsItem' => 4], $report['deleted']);
 		$this->assertSame('deleted', $report['portal']);
 		$this->assertSame([], $report['failed']);
 		$this->assertSame(['portal' => [], 'menu' => [], 'page' => [], 'newsItem' => []], $this->rows);
@@ -247,7 +258,7 @@ class ExampleSiteInstallerTest extends TestCase {
 		// Another portal's page must never be touched or counted.
 		$this->rows['page']['other'] = ['id' => 'other', 'portal' => 'open-tilburg', 'route' => '/afval', 'title' => 'Afval'];
 
-		$report = $installer->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 
 		$this->assertSame(33, $report['deleted']['page']);
 		$this->assertSame('kept-content', $report['portal']);
@@ -256,7 +267,7 @@ class ExampleSiteInstallerTest extends TestCase {
 
 		// The record still names the portal, so a later run can finish.
 		unset($this->rows['page']['own-page']);
-		$again = $installer->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+		$again = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 		$this->assertSame('deleted', $again['portal']);
 		$this->assertSame(['other'], array_keys($this->rows['page']));
 		$this->assertArrayNotHasKey('example_site_zuiddrecht', $this->config);
@@ -278,11 +289,48 @@ class ExampleSiteInstallerTest extends TestCase {
 		$this->assertSame(32, $report['types']['page']['created']);
 		$this->assertSame('Onze home', $this->rows['page']['mine-home']['title']);
 
-		$removed = $installer->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+		$removed = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 		$this->assertSame('kept-not-ours', $removed['portal']);
 		$this->assertSame(['mine'], array_keys($this->rows['portal']));
 		$this->assertSame(['mine-home'], array_keys($this->rows['page']));
 	}//end testAPortalThatWasThereBeforeIsKept()
+
+	/**
+	 * A recorded object somebody already deleted is counted as gone, and no
+	 * delete is tried for it.
+	 *
+	 * @return void
+	 */
+	public function testAnObjectThatIsAlreadyGoneIsCounted(): void {
+		$installer = $this->installer();
+		$installer->install(site: $this->zuiddrecht());
+		unset($this->rows['page'][$this->idOfPage(route: '/afval')]);
+
+		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+
+		$this->assertSame(32, $report['deleted']['page']);
+		$this->assertSame(1, $report['gone']['page']);
+		$this->assertSame([], $report['failed']);
+		$this->assertSame('deleted', $report['portal']);
+	}//end testAnObjectThatIsAlreadyGoneIsCounted()
+
+	/**
+	 * A portal that took the slug after the installed one was deleted is not
+	 * the install's, and stays.
+	 *
+	 * @return void
+	 */
+	public function testAnotherPortalUnderTheSameSlugIsKept(): void {
+		$installer = $this->installer();
+		$installer->install(site: $this->zuiddrecht());
+		$this->rows['portal'] = ['new' => ['id' => 'new', 'slug' => 'zuiddrecht', 'title' => 'Een nieuw portaal', 'status' => 'published']];
+
+		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+
+		$this->assertSame('kept-not-ours', $report['portal']);
+		$this->assertSame(['new'], array_keys($this->rows['portal']));
+		$this->assertArrayNotHasKey('example_site_zuiddrecht', $this->config);
+	}//end testAnotherPortalUnderTheSameSlugIsKept()
 
 	/**
 	 * Remove without a record does nothing.
@@ -292,7 +340,8 @@ class ExampleSiteInstallerTest extends TestCase {
 	public function testRemoveWithoutARecordDoesNothing(): void {
 		$this->rows['page']['p'] = ['id' => 'p', 'portal' => 'zuiddrecht', 'route' => '/afval'];
 
-		$report = $this->installer()->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+		$this->installer();
+		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 
 		$this->assertFalse($report['recorded']);
 		$this->assertCount(1, $this->rows['page']);
@@ -322,9 +371,9 @@ class ExampleSiteInstallerTest extends TestCase {
 
 		$this->assertSame(
 			['footer.cta.href', 'footer.contact.lines.1'],
-			ExampleSiteInstaller::lostPaths(declared: $declared, stored: $stored)
+			(new ExampleSiteProof())->lostPaths(declared: $declared, stored: $stored)
 		);
-		$this->assertSame(['title'], ExampleSiteInstaller::lostPaths(declared: ['title' => 'Home'], stored: ['title' => 'Thuis']));
+		$this->assertSame(['title'], (new ExampleSiteProof())->lostPaths(declared: ['title' => 'Home'], stored: ['title' => 'Thuis']));
 	}//end testLostPaths()
 
 	/**
@@ -391,7 +440,10 @@ class ExampleSiteInstallerTest extends TestCase {
 	 * @return ExampleSiteInstaller
 	 */
 	private function installer(bool $available = true): ExampleSiteInstaller {
-		$store = $this->createMock(ExampleSiteStore::class);
+		$store = $this->getMockBuilder(ExampleSiteStore::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['available', 'find', 'create', 'delete'])
+			->getMock();
 		$store->method('available')->willReturn($available);
 		$store->method('find')->willReturnCallback(
 			function (string $schema, array $filters): array {
@@ -463,6 +515,10 @@ class ExampleSiteInstallerTest extends TestCase {
 		$themes = $this->createMock(PortalThemeResolver::class);
 		$themes->method('stylesheetFor')->willReturn('tokens/zuiddrecht');
 
-		return new ExampleSiteInstaller($store, $appConfig, $themes);
+		$rows = new ExampleSiteRows($store);
+		$record = new ExampleSiteRecord($appConfig);
+		$this->remover = new ExampleSiteRemover($store, $rows, $record);
+
+		return new ExampleSiteInstaller($store, $rows, $record, new ExampleSiteProof(), $themes);
 	}//end installer()
 }//end class
