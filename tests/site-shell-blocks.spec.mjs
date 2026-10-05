@@ -235,6 +235,8 @@ test('menus split by position: 0 header, 1 footer column, 2 or higher the legal 
 		socials: [],
 		legalLinks: [],
 		badges: [],
+		cta: null,
+		contact: null,
 	})
 })
 

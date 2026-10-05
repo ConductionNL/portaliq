@@ -320,7 +320,7 @@
 	);
 }
 
-.pq-site .ac-footer__logo > span:first-of-type {
+.pq-site .ac-footer__logo > .con-logo-container + span {
 	font-size: var(--thematiq-logo-text-font-size, inherit);
 }
 
@@ -640,7 +640,7 @@
 	text-underline-offset: 3px;
 }
 
-.ac-footer section.pq-footer__band.pq-footer__band--legal {
+.pq-site .ac-footer section.pq-footer__band--legal.pq-footer__band {
 	background-color: var(
 		--thematiq-footer-legal-background-color,
 		var(--tilburg-color-blue-500)

@@ -312,7 +312,7 @@ function dutchLabel(key, vars = {}) {
  * @param {string} authBase The auth edge base.
  * @param {(key: string, vars?: object) => string} [t] The site translator;
  *        without one the labels are the Dutch the site always showed.
- * @return {Array<{mode: string, label: string, card: object|null, href: string}>} The routes.
+ * @return {Array<{mode: string, label: string, card?: object, href: string}>} The routes.
  * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  */
 export function signInRoutes(site, authBase, t = dutchLabel) {
@@ -361,7 +361,7 @@ export function signInRoutes(site, authBase, t = dutchLabel) {
 		.map((mode) => ({
 			mode,
 			label: cards[mode]?.button || labels[mode],
-			card: cards[mode] || null,
+			...(cards[mode] ? { card: cards[mode] } : {}),
 			href:
 				mode === 'nextcloud'
 					? `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
