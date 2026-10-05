@@ -20,6 +20,8 @@
   - PHPUnit `SchoolBlockKeysTest` (7, through the real `PortalManifestNormaliser`).
 - [x] **T11**: `DateRows`, `GradeBars`, `MarkChips`, `SegmentedFigure`, `CalendarTiles`, `GreetingBlock`, each on demand; `ProgressCards` gains the status, note, coming-up part and initial; `TasksBlock` the highlight card; `KpiCards` the figure-tile look; `ContributionPage` routes them; `MijnHome` hands its heading to a greeting.
   - node `tests/site-school-displays.spec.mjs` (`check:site-school-displays`, in `check:specs`).
+- [x] **T13**: `visibleFromField` on a collection (request of the learniq lane): `VisibleFromGate` in the collection list, the read by id and the inbox; the normaliser projects the field.
+  - PHPUnit `VisibleFromGateTest` (3), `PortalInboxReaderTest::testAMessageWaitsForItsVisibleFromMoment`, `ContributionControllerTest::testARowBeforeItsVisibleFromMomentIsNotServed`.
 - [ ] **T12**: live check on a portal with the primary-school example set, next to the MijnOverzicht, MijnLijst and Detail boards (the learniq lane declares the pages).
 
 ## Validation

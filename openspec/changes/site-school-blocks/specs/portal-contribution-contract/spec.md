@@ -46,3 +46,13 @@ A contributed page MAY hold a `greeting` block. It MUST show today's date (unles
 - GIVEN Fatima signed in at 8.30 on Monday 5 October 2026 and a home page that opens with a greeting naming the absence action
 - WHEN `/mijn` opens
 - THEN it reads "Maandag 5 oktober 2026", "Goedemorgen, Fatima" and offers "Afwezig melden", with one heading at the top
+
+### Requirement: A collection may keep a row back until its moment has passed
+
+A collection MAY declare `visibleFromField`, naming the field that holds a date or date-time. A row whose moment lies ahead MUST NOT be served: not in the collection's list, not in the inbox, and its read by id MUST answer the same 404 as a row that is not the subject's. The moment MUST be compared with the server's clock. A row whose field is empty or not a date MUST be served. The field MUST be projected, so the server adds it to the collection's `fields` when it is missing rather than ignoring the declaration.
+
+#### Scenario: A grade notice for Monday
+- GIVEN an inbox collection with `visibleFromField: visibleFrom` and a notice with `visibleFrom` Monday 08.00
+- WHEN the pupil opens the inbox on Sunday
+- THEN the notice is not there, and its own address answers 404
+- AND on Monday after 08.00 it is there

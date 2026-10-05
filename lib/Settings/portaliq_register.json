@@ -1862,6 +1862,11 @@
                                     "title": "Turn field",
                                     "type": "string",
                                     "description": "On a cases collection: the field whose value words say whose turn it is."
+                                },
+                                "visibleFromField": {
+                                    "title": "Visible from field",
+                                    "type": "string",
+                                    "description": "The field with the date or moment before which a row is not shown, in a list, an inbox or a read by id, on the server clock (site-school-blocks)."
                                 }
                             }
                         }
