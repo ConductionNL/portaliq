@@ -32,9 +32,13 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalSessionService;
 
 /**
  * Joins the waiting account for an address its holder just confirmed.
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies
+ * is the one trust comparison every portal surface uses.
  *
  * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
  */
@@ -55,11 +59,18 @@ class ConfirmedAddressJoin {
 	public const AUDIT_VERB = 'claim';
 
 	/**
+	 * The trust the confirming session needs before anything is joined: the
+	 * floor an invitation's redeem route asks as well.
+	 */
+	public const MIN_TRUST = 'substantial';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Finds the waiting account.
 	 * @param PortalObjectWriter $writer Writes both accounts.
 	 * @param AuditTrailService|null $auditor Records the join.
+	 * @param ClaimLock|null $lock Keeps a redeem of the same waiting account out while it joins.
 	 *
 	 * @return void
 	 */
@@ -67,6 +78,7 @@ class ConfirmedAddressJoin {
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ?AuditTrailService $auditor = null,
+		private readonly ?ClaimLock $lock = null,
 	) {
 	}//end __construct()
 
@@ -79,24 +91,34 @@ class ConfirmedAddressJoin {
 	 * as confirmed. Best-effort: the confirmation stands whether or not
 	 * anything was joined.
 	 *
+	 * THE LINK PROVES THE MAILBOX, NOT WHO ASKED FOR IT. The confirmation
+	 * token belongs to the account that added the address; anybody can add
+	 * anybody's address. Joining on the link alone gave an attacker the
+	 * victim's children the moment the victim opened the mail (security
+	 * review H1). So the join runs only when the confirmation arrives in the
+	 * confirming account's own session, at trust substantial or higher, in
+	 * its own organisation. In every other case the address is confirmed and
+	 * nothing is joined.
+	 *
 	 * @param array<string, mixed> $account The account as it stands after the confirmation.
 	 * @param string $email The address that was confirmed.
+	 * @param array<string, mixed>|null $session The session the confirmation arrived in, or null.
 	 *
 	 * @return bool True when a waiting account was joined.
 	 *
 	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
 	 */
-	public function join(array $account, string $email): bool {
+	public function join(array $account, string $email, ?array $session = null): bool {
 		$organisation = (string)($account['organisation'] ?? '');
-		if (($account['status'] ?? '') !== PortalAccountService::STATUS_ACTIVE
+		if ($this->isHoldersOwnSession(account: $account, session: $session) === false
+			|| ($account['status'] ?? '') !== PortalAccountService::STATUS_ACTIVE
 			|| (string)($account['identityRef'] ?? '') === ''
 			|| $this->holdsConfirmed(account: $account, email: $email) === false
 		) {
 			return false;
 		}
 
-		$join   = new WaitingAccountJoin(lookup: new PortalAccountLookup(reader: $this->reader), writer: $this->writer);
-		$joined = $join->join(account: $account, verifiedEmail: $email, organisation: $organisation);
+		$joined = $this->joinLocked(account: $account, email: $email, organisation: $organisation);
 		if ($joined === null) {
 			return false;
 		}
@@ -116,7 +138,63 @@ class ConfirmedAddressJoin {
 	}//end join()
 
 	/**
-	 * Whether the account lists an e-mail address as confirmed.
+	 * Find the waiting account for the address, lock it, read it again and
+	 * join it, so an invitation redeemed at the same moment cannot join it a
+	 * second time (security review M2).
+	 *
+	 * @param array<string, mixed> $account The confirming account.
+	 * @param string $email The confirmed address.
+	 * @param string $organisation The tenant slug.
+	 *
+	 * @return string|null The identifier of the waiting account joined, or null.
+	 */
+	private function joinLocked(array $account, string $email, string $organisation): ?string {
+		$lookup    = new PortalAccountLookup(reader: $this->reader);
+		$waitingId = $lookup->identifierOf(row: ($lookup->pendingByVerifiedEmail(email: $email, organisation: $organisation) ?? []));
+		if ($waitingId === null || $this->lock?->acquire(accountId: $waitingId) === false) {
+			return null;
+		}
+
+		try {
+			$waiting = $lookup->pendingByVerifiedEmail(email: $email, organisation: $organisation);
+			if ($waiting === null || $lookup->identifierOf(row: $waiting) !== $waitingId) {
+				return null;
+			}
+
+			return (new WaitingAccountJoin(lookup: $lookup, writer: $this->writer))->joinWaiting(account: $account, waiting: $waiting);
+		} finally {
+			$this->lock?->release(accountId: $waitingId);
+		}
+	}//end joinLocked()
+
+	/**
+	 * Whether the confirmation arrived in the account holder's own session:
+	 * the session's subject is the account's, in the account's organisation,
+	 * at trust substantial or higher.
+	 *
+	 * @param array<string, mixed> $account The confirming account.
+	 * @param array<string, mixed>|null $session The session, or null.
+	 *
+	 * @return bool
+	 */
+	private function isHoldersOwnSession(array $account, ?array $session): bool {
+		if ($session === null) {
+			return false;
+		}
+
+		$subjectRef   = (string)($account['subjectRef'] ?? '');
+		$organisation = (string)($account['organisation'] ?? '');
+
+		return $subjectRef !== ''
+			&& (string)($session['subjectRef'] ?? '') === $subjectRef
+			&& $organisation !== ''
+			&& (string)($session['organisation'] ?? '') === $organisation
+			&& PortalSessionService::trustSatisfies(subjectTrust: ($session['trust'] ?? ''), minTrust: self::MIN_TRUST) === true;
+	}//end isHoldersOwnSession()
+
+	/**
+	 * Whether the account lists an e-mail address as confirmed, whatever the
+	 * case it was typed in (security review L4).
 	 *
 	 * @param array<string, mixed> $account The account.
 	 * @param string $email The address.
@@ -131,7 +209,7 @@ class ConfirmedAddressJoin {
 		foreach ((array)($account['contactAddresses'] ?? []) as $entry) {
 			if (is_array($entry) === true
 				&& ($entry['kind'] ?? '') === 'email'
-				&& ($entry['value'] ?? '') === $email
+				&& strtolower((string)($entry['value'] ?? '')) === strtolower($email)
 				&& ($entry['confirmed'] ?? false) === true
 			) {
 				return true;

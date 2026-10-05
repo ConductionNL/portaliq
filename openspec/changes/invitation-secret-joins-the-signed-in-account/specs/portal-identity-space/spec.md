@@ -24,7 +24,7 @@ Portaliq SHALL handle `PortalAccountInvitationRequestedEvent` by minting a one-t
 
 ### Requirement: A signed-in person redeems an invitation and the waiting account joins theirs (REQ-PIS-008)
 
-Portaliq SHALL offer `POST /portal/api/identity/invitation/redeem` to a portal session at trust level `substantial` or higher. When the secret's hash matches a `pending` account with no identity reference, in the session's organisation, whose expiry has not passed, Portaliq SHALL empty the hash, add that account's claims to the session's own account while keeping every claim it already holds, and withdraw the pending account with a reason. The session's own account SHALL be `active` and carry an identity reference. A secret that is unknown, expired, already used or of another organisation SHALL get one and the same refusal. Portaliq SHALL count wrong secrets on the caller's account, SHALL refuse every secret from an account that offered five wrong ones inside an hour, and SHALL do the same for a session that offered five. Portaliq SHALL record each join in the audit trail with the account, the withdrawn account, the session and the moment.
+Portaliq SHALL offer `POST /portal/api/identity/invitation/redeem` to a portal session at trust level `substantial` or higher. The session's own account SHALL be `active`, carry an identity reference and sit in the session's organisation; otherwise Portaliq SHALL answer `403 account_cannot_receive` before it looks at the secret, and SHALL spend and count nothing. When the secret's hash matches a `pending` account with no identity reference, in the session's organisation, for the same audience, whose expiry has not passed, Portaliq SHALL lock that account, read it again, and only then empty the hash, add its claims to the session's own account and withdraw it with a reason. When the pending account carries a claim the session's account holds with another value, Portaliq SHALL answer `409 invitation_conflict` and SHALL NOT spend the secret. A secret that is unknown, expired, already used, of another organisation or of another audience SHALL get one and the same refusal. Two redeems of one secret at the same moment SHALL join once. Portaliq SHALL count wrong secrets on the caller's account under a lock, SHALL refuse every secret from an account that offered five wrong ones inside an hour, and SHALL do the same for a session that offered five. A redeem that cannot finish SHALL answer `503 try_again` without logging the secret. Portaliq SHALL record each join in the audit trail with the account, the withdrawn account, the session and the moment.
 
 #### Scenario: A guardian who signed in through the broker follows her invitation
 - **GIVEN** a guardian whose sign-in carried no e-mail address, so she holds an account without claims
@@ -51,11 +51,43 @@ Portaliq SHALL offer `POST /portal/api/identity/invitation/redeem` to a portal s
 - **THEN** the answer is `403` with `trust_too_low` and the invitation is untouched
 - @e2e exclude covered by PHPUnit `PortalAccountClaimControllerTest::testASessionBelowSubstantialIsRefusedBeforeTheSecretIsLookedAt`
 
+#### Scenario: Two redeems of one secret join once
+- **GIVEN** an invitation forwarded to two people who are both signed in
+- **WHEN** both hand in the secret at the same moment, the second request running between the first one's read and its write
+- **THEN** exactly one account receives the claims, the waiting account is withdrawn once, one join is recorded, and the other request gets the dead-secret refusal
+- @e2e exclude a race on the server; covered by PHPUnit `WaitingAccountInvitationTest::testTwoRedeemsOfOneSecretJoinExactlyOnce` and `::testARedeemWhileTheWaitingAccountIsLockedChangesNothing`, and checked live on a test instance
+
+#### Scenario: A conflicting claim is refused before the secret is spent
+- **GIVEN** a signed-in account holding `claims.learniq.guardianRef = guardian-1`
+- **AND** an invitation whose waiting account carries `guardianRef = guardian-2`
+- **WHEN** she hands in that invitation's secret
+- **THEN** the answer is `409 invitation_conflict`, her claims are unchanged, the waiting account stays `pending` with its hash, and nothing is counted or recorded
+- @e2e exclude covered by PHPUnit `WaitingAccountInvitationTest::testAConflictingClaimIsRefusedBeforeTheSecretIsSpent` and checked live on a test instance
+
+#### Scenario: Another audience cannot take over the invitation
+- **GIVEN** a supplier account in the same organisation and a parent's invitation
+- **WHEN** the supplier hands in the parent's secret
+- **THEN** the answer is the dead-secret refusal and the invitation is not spent
+- @e2e exclude covered by PHPUnit `WaitingAccountInvitationTest::testAnAccountOfAnotherAudienceCannotTakeOverTheInvitation`
+
+#### Scenario: An account that cannot receive is told so
+- **GIVEN** a session whose own account is not active, has no identity reference, or sits in another organisation
+- **WHEN** it hands in any secret, right or wrong
+- **THEN** the answer is `403 account_cannot_receive`, nothing is spent or counted, and the site keeps the secret in the tab
+- @e2e exclude covered by PHPUnit `WaitingAccountInvitationTest::testOnlyAnActiveAccountThatSignedInThroughAnIdentityProviderReceives`, `PortalAccountClaimControllerTest::testEachRefusalAboutTheCallerHasItsOwnAnswer` and `tests/claim-invitation.spec.mjs`
+
 #### Scenario: Guessing locks the account
 - **GIVEN** an account that offered five wrong secrets inside an hour
 - **WHEN** it offers the right one, from any session
 - **THEN** the answer is `429` and the invitation is untouched, and an hour after the first wrong secret the right one works
-- @e2e exclude covered by PHPUnit `WaitingAccountInvitationTest::testFiveWrongSecretsLockTheAccountEvenForTheRightOne` and `::testTheAccountLockHoldsWithoutACache`
+- **AND** wrong secrets sent in parallel each count
+- @e2e exclude covered by PHPUnit `WaitingAccountInvitationTest::testFiveWrongSecretsLockTheAccountEvenForTheRightOne`, `::testTheAccountLockHoldsWithoutACache` and `::testTwoWrongSecretsAtOnceCountAsTwo`
+
+#### Scenario: A failure does not log the secret
+- **GIVEN** a redeem that fails below the controller
+- **WHEN** the failure is handled
+- **THEN** the answer is `503 try_again`, the log names the exception class only, and the secret parameter is marked sensitive
+- @e2e exclude covered by PHPUnit `PortalAccountClaimControllerTest::testAFailureIsLoggedWithoutTheSecret`
 
 #### Scenario: The site keeps the invitation through the sign-in
 - **GIVEN** a visitor who opens the invitation link without a session

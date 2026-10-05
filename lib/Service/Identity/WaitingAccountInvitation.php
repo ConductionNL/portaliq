@@ -67,6 +67,27 @@ class WaitingAccountInvitation {
 	public const LOCKED = 'locked';
 
 	/**
+	 * The caller's own account cannot take over a waiting account: it is not
+	 * active, did not sign in through an identity provider, or sits in
+	 * another organisation. About the caller, never about the invitation,
+	 * and nothing is spent or counted (security review L6).
+	 */
+	public const CANNOT_RECEIVE = 'cannot_receive';
+
+	/**
+	 * The secret is right, but the waiting account carries a claim the
+	 * caller's account holds with another value. Nothing is spent, so the
+	 * invitation stays with its real holder (security review M1).
+	 */
+	public const CONFLICT = 'conflict';
+
+	/**
+	 * Another request holds the lock of the caller's or the waiting account
+	 * past a short wait. Nothing changed; trying again is safe.
+	 */
+	public const BUSY = 'busy';
+
+	/**
 	 * The reason written on the waiting account once it is joined.
 	 */
 	public const VOID_REASON = 'Joined the account that redeemed its invitation';
@@ -89,6 +110,7 @@ class WaitingAccountInvitation {
 	 * @param ISecureRandom $random Mints the secret.
 	 * @param ClaimAttempts $attempts Limits the wrong secrets one person may offer.
 	 * @param AuditTrailService $auditor Records who joined which account.
+	 * @param ClaimLock $lock Makes the read and the write of a redeem one step.
 	 *
 	 * @return void
 	 */
@@ -98,6 +120,7 @@ class WaitingAccountInvitation {
 		private readonly ISecureRandom $random,
 		private readonly ClaimAttempts $attempts,
 		private readonly AuditTrailService $auditor,
+		private readonly ClaimLock $lock,
 	) {
 	}//end __construct()
 
@@ -196,38 +219,92 @@ class WaitingAccountInvitation {
 	 * and has not expired. The secret is spent before the join, so it can
 	 * never work twice, and a wrong one counts against the caller.
 	 *
+	 * Two exclusive locks make this one step (security review M2, L1): the
+	 * caller's account while the attempts are read and counted, and the
+	 * waiting account while it is read again, spent and joined. A second
+	 * request with the same secret waits, reads the spent hash and joins
+	 * nothing.
+	 *
 	 * @param array<string, mixed> $subject The session, as PortalSessionService resolves it.
 	 * @param string $secret The secret the person hands back.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry and the lock against.
 	 *
-	 * @return string One of CLAIMED, NOT_VALID and LOCKED.
+	 * @return string One of CLAIMED, NOT_VALID, LOCKED, CANNOT_RECEIVE, CONFLICT and BUSY.
 	 *
 	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
 	 */
-	public function redeem(array $subject, string $secret, ?DateTimeImmutable $now = null): string {
+	public function redeem(array $subject, #[\SensitiveParameter] string $secret, ?DateTimeImmutable $now = null): string {
 		$moment  = ($now ?? new DateTimeImmutable());
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
 		$account = $this->receiver(subject: $subject, lookup: $lookup);
 		if ($account === null) {
-			return self::NOT_VALID;
+			return self::CANNOT_RECEIVE;
 		}
 
 		$accountId = (string)$lookup->identifierOf(row: $account);
-		$jti       = (string)($subject['jti'] ?? '');
+		if ($this->lock->acquire(accountId: $accountId) === false) {
+			return self::BUSY;
+		}
+
+		try {
+			// Read again inside the lock: the attempt count of a request
+			// that ran a moment ago is part of this one's decision.
+			$account = $this->receiver(subject: $subject, lookup: $lookup);
+			if ($account === null) {
+				return self::CANNOT_RECEIVE;
+			}
+
+			return $this->redeemLocked(account: $account, accountId: $accountId, subject: $subject, secret: trim($secret), moment: $moment, lookup: $lookup);
+		} finally {
+			$this->lock->release(accountId: $accountId);
+		}
+	}//end redeem()
+
+	/**
+	 * The part of a redeem that runs while the caller's account is locked.
+	 *
+	 * @param array<string, mixed> $account The caller's account, read inside the lock.
+	 * @param string $accountId The caller's account row identifier.
+	 * @param array<string, mixed> $subject The session.
+	 * @param string $secret The secret, trimmed.
+	 * @param DateTimeImmutable $moment The moment.
+	 * @param PortalAccountLookup $lookup The account finder.
+	 *
+	 * @return string One of the redeem answers.
+	 */
+	private function redeemLocked(
+		array $account,
+		string $accountId,
+		array $subject,
+		#[\SensitiveParameter] string $secret,
+		DateTimeImmutable $moment,
+		PortalAccountLookup $lookup,
+	): string {
+		$jti = (string)($subject['jti'] ?? '');
 		if ($this->attempts->locked(account: $account, jti: $jti, now: $moment) === true) {
 			return self::LOCKED;
 		}
 
-		$waiting = $this->waitingFor(secret: trim($secret), organisation: (string)$account['organisation'], moment: $moment);
-		if ($waiting === null) {
+		$organisation = (string)$account['organisation'];
+		$waitingId    = $lookup->identifierOf(row: ($this->waitingFor(secret: $secret, organisation: $organisation, moment: $moment) ?? []));
+		if ($waitingId === null) {
 			$this->attempts->fail(account: $account, accountId: $accountId, jti: $jti, now: $moment);
 			return self::NOT_VALID;
 		}
 
-		$joined = $this->spendAndJoin(account: $account, waiting: $waiting, lookup: $lookup);
-		if ($joined === null) {
-			return self::NOT_VALID;
+		if ($this->lock->acquire(accountId: $waitingId) === false) {
+			return self::BUSY;
+		}
+
+		try {
+			$result = $this->claimWaiting(account: $account, waitingId: $waitingId, secret: $secret, moment: $moment, lookup: $lookup);
+		} finally {
+			$this->lock->release(accountId: $waitingId);
+		}
+
+		if ($result !== self::CLAIMED) {
+			return $result;
 		}
 
 		$this->attempts->clear(account: $account, accountId: $accountId);
@@ -235,15 +312,66 @@ class WaitingAccountInvitation {
 		$this->auditor->record(
 			verb: ConfirmedAddressJoin::AUDIT_VERB,
 			subjectRef: (string)$account['subjectRef'],
-			organisation: (string)$account['organisation'],
+			organisation: $organisation,
 			register: self::REGISTER,
 			schema: self::SCHEMA,
-			id: $joined,
+			id: $waitingId,
 			jti: $jti
 		);
 
 		return self::CLAIMED;
-	}//end redeem()
+	}//end redeemLocked()
+
+	/**
+	 * Read the waiting account again under its lock, refuse what may not
+	 * join before anything is spent, then spend the secret and join.
+	 *
+	 * Spent first. If the join then fails the invitation is dead and the app
+	 * invites again: a secret that worked twice would be worse.
+	 *
+	 * @param array<string, mixed> $account The caller's account.
+	 * @param string $waitingId The waiting account the secret opened a moment ago.
+	 * @param string $secret The secret.
+	 * @param DateTimeImmutable $moment The moment.
+	 * @param PortalAccountLookup $lookup The account finder.
+	 *
+	 * @return string CLAIMED, NOT_VALID or CONFLICT.
+	 */
+	private function claimWaiting(
+		array $account,
+		string $waitingId,
+		#[\SensitiveParameter] string $secret,
+		DateTimeImmutable $moment,
+		PortalAccountLookup $lookup,
+	): string {
+		// Read again inside the lock: a request that held it a moment ago
+		// may have spent this secret.
+		$waiting = $this->waitingFor(secret: $secret, organisation: (string)$account['organisation'], moment: $moment);
+		if ($waiting === null || $lookup->identifierOf(row: $waiting) !== $waitingId) {
+			return self::NOT_VALID;
+		}
+
+		$join = new WaitingAccountJoin(lookup: $lookup, writer: $this->writer);
+		if ($join->claimsConflict(account: $account, waiting: $waiting) === true) {
+			return self::CONFLICT;
+		}
+
+		// Another audience (a supplier account redeeming a parent's
+		// invitation) and everything else the join refuses: nothing spent.
+		if ($join->isJoinable(account: $account, waiting: $waiting) === false) {
+			return self::NOT_VALID;
+		}
+
+		if ($this->write(id: $waitingId, data: ['claimTokenHash' => '', 'claimCodeHash' => '']) === false) {
+			return self::NOT_VALID;
+		}
+
+		if ($join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON) === null) {
+			return self::NOT_VALID;
+		}
+
+		return self::CLAIMED;
+	}//end claimWaiting()
 
 	/**
 	 * The session's own account, when it may take over a waiting account:
@@ -272,29 +400,6 @@ class WaitingAccountInvitation {
 
 		return $account;
 	}//end receiver()
-
-	/**
-	 * Spend the secret, then join the waiting account into the caller's.
-	 *
-	 * Spent first. If the join then fails the invitation is dead and the app
-	 * invites again: a secret that worked twice would be worse.
-	 *
-	 * @param array<string, mixed> $account The caller's account.
-	 * @param array<string, mixed> $waiting The waiting account the secret opened.
-	 * @param PortalAccountLookup $lookup The account finder.
-	 *
-	 * @return string|null The identifier of the waiting account that joined, or null.
-	 */
-	private function spendAndJoin(array $account, array $waiting, PortalAccountLookup $lookup): ?string {
-		$waitingId = $lookup->identifierOf(row: $waiting);
-		if ($waitingId === null || $this->write(id: $waitingId, data: ['claimTokenHash' => '', 'claimCodeHash' => '']) === false) {
-			return null;
-		}
-
-		$join = new WaitingAccountJoin(lookup: $lookup, writer: $this->writer);
-
-		return $join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON);
-	}//end spendAndJoin()
 
 	/**
 	 * Whether an account is one this app may send an invitation for.
@@ -331,7 +436,7 @@ class WaitingAccountInvitation {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function waitingFor(string $secret, string $organisation, DateTimeImmutable $moment): ?array {
+	private function waitingFor(#[\SensitiveParameter] string $secret, string $organisation, DateTimeImmutable $moment): ?array {
 		if ($secret === '') {
 			return null;
 		}

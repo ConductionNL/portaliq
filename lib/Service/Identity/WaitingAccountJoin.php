@@ -76,8 +76,9 @@ class WaitingAccountJoin {
 	 * account: an address the person is known to hold (the broker says it
 	 * verified it, or the person followed the confirmation mail sent to it),
 	 * against a pending, email-only account whose address was verified out of
-	 * band, in the same organisation. A claim the signed-in account already
-	 * holds is kept, and so is an address it already has. Best-effort: a
+	 * band, in the same organisation and audience. A waiting account that
+	 * carries a claim the signed-in account holds with another value is left
+	 * alone; an address the account already has is kept. Best-effort: a
 	 * failed write leaves the waiting account pending and never blocks the
 	 * caller.
 	 *
@@ -111,7 +112,8 @@ class WaitingAccountJoin {
 	 * The caller answers for how the waiting account was found. This method
 	 * still refuses everything that is not a waiting account: one that is not
 	 * pending, one with an identity reference of its own, one in another
-	 * organisation, and the account itself.
+	 * organisation or audience, one whose claims conflict with the
+	 * receiver's, and the account itself.
 	 *
 	 * @param array<string, mixed> $account The account that receives the claims.
 	 * @param array<string, mixed> $waiting The waiting account.
@@ -148,27 +150,69 @@ class WaitingAccountJoin {
 
 	/**
 	 * Whether one account may take over the claims of another: the other is
-	 * pending, has no identity reference of its own, is a different account
-	 * and belongs to the same organisation.
+	 * pending, has no identity reference of its own, is a different account,
+	 * belongs to the same organisation and the same audience, and carries no
+	 * claim the receiver holds with a different value.
+	 *
+	 * The audience: a supplier or business account in the same organisation
+	 * never takes over a parent's invitation (security review M3). The
+	 * conflict: an account that already holds `learniq.guardianRef = G1`
+	 * never silently drops an invitation for `G2` while voiding it, so the
+	 * real holder of `G2` can still take it up (security review M1).
 	 *
 	 * @param array<string, mixed> $account The account that would receive the claims.
 	 * @param array<string, mixed> $waiting The account that would be withdrawn.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
 	 */
-	private function isJoinable(array $account, array $waiting): bool {
+	public function isJoinable(array $account, array $waiting): bool {
 		$organisation = (string)($waiting['organisation'] ?? '');
+		$audience     = (string)($waiting['audience'] ?? '');
 
 		return ($waiting['status'] ?? '') === PortalAccountLookup::STATUS_PENDING
 			&& (string)($waiting['identityRef'] ?? '') === ''
 			&& (string)($waiting['subjectRef'] ?? '') !== (string)($account['subjectRef'] ?? '')
 			&& $organisation !== ''
-			&& $organisation === (string)($account['organisation'] ?? '');
+			&& $organisation === (string)($account['organisation'] ?? '')
+			&& $audience !== ''
+			&& $audience === (string)($account['audience'] ?? '')
+			&& $this->claimsConflict(account: $account, waiting: $waiting) === false;
 	}//end isJoinable()
 
 	/**
-	 * What the join writes onto the signed-in account: the claims it lacks,
-	 * and the invited address when it has none of its own.
+	 * Whether the waiting account carries a claim the receiver already holds
+	 * under the same app and name with a different value.
+	 *
+	 * @param array<string, mixed> $account The account that would receive the claims.
+	 * @param array<string, mixed> $waiting The account that would be withdrawn.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 */
+	public function claimsConflict(array $account, array $waiting): bool {
+		$held = (array)($account['claims'] ?? []);
+		foreach ((array)($waiting['claims'] ?? []) as $appId => $appClaims) {
+			if (is_array($appClaims) === false || is_array($held[$appId] ?? null) === false) {
+				continue;
+			}
+
+			foreach ($appClaims as $name => $value) {
+				if (array_key_exists($name, $held[$appId]) === true && $held[$appId][$name] !== $value) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}//end claimsConflict()
+
+	/**
+	 * What the join writes onto the signed-in account: the claims it lacks
+	 * (a conflicting one never gets this far), and the invited address when
+	 * it has none of its own.
 	 *
 	 * 🔑 THE ADDRESS IS WHY THE WAITING ACCOUNT EXISTS. Carrying only the
 	 * claims withdrew the row the address lived on and left the person with

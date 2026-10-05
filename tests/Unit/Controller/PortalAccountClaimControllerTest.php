@@ -12,7 +12,10 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionMethod;
+use ReflectionParameter;
+use RuntimeException;
 
 /**
  * invitation-secret-joins-the-signed-in-account REQ-PIS-008: the redeem
@@ -30,6 +33,13 @@ class PortalAccountClaimControllerTest extends TestCase {
 	 * @var mixed
 	 */
 	private mixed $invitations = null;
+
+	/**
+	 * The logger double.
+	 *
+	 * @var mixed
+	 */
+	private mixed $logger = null;
 
 	public function testWithoutASessionNothingIsRedeemed(): void {
 		$controller = $this->controller(subject: null);
@@ -94,6 +104,55 @@ class PortalAccountClaimControllerTest extends TestCase {
 
 	}//end testALockedCallerIsToldToWait()
 
+	/**
+	 * Security review L6 and M1: an account that cannot receive is told so,
+	 * a conflicting claim has its own answer, and a request that could not
+	 * finish says to try again. None of them is the dead-secret answer.
+	 *
+	 * @return void
+	 */
+	public function testEachRefusalAboutTheCallerHasItsOwnAnswer(): void {
+		$cases = [
+			WaitingAccountInvitation::CANNOT_RECEIVE => [Http::STATUS_FORBIDDEN, 'account_cannot_receive'],
+			WaitingAccountInvitation::CONFLICT => [Http::STATUS_CONFLICT, 'invitation_conflict'],
+			WaitingAccountInvitation::BUSY => [Http::STATUS_SERVICE_UNAVAILABLE, 'try_again'],
+		];
+		foreach ($cases as $result => [$status, $error]) {
+			$controller = $this->controller(subject: $this->subject(trust: 'substantial'));
+			$this->invitations->method('redeem')->willReturn($result);
+
+			$response = $controller->redeem(secret: 'secret-abc');
+
+			$this->assertSame($status, $response->getStatus(), $result);
+			$this->assertSame(['error' => $error], $response->getData(), $result);
+		}
+
+	}//end testEachRefusalAboutTheCallerHasItsOwnAnswer()
+
+	/**
+	 * Security review L3: a failure below the controller is caught, logged by
+	 * its class only, and answered with try_again; the secret never reaches
+	 * the log. The secret is marked sensitive, so a trace redacts it.
+	 *
+	 * @return void
+	 */
+	public function testAFailureIsLoggedWithoutTheSecret(): void {
+		$controller = $this->controller(subject: $this->subject(trust: 'substantial'));
+		$this->invitations->method('redeem')->willThrowException(new RuntimeException('store said no to secret-abc'));
+		$this->logger->expects($this->once())->method('error')->with(
+			'Portal invitation redeem failed',
+			$this->callback(static fn (array $context): bool => $context === ['exception' => RuntimeException::class])
+		);
+
+		$response = $controller->redeem(secret: 'secret-abc');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertStringNotContainsString('secret-abc', (string)json_encode($response->getData()));
+		$parameter = new ReflectionParameter([PortalAccountClaimController::class, 'redeem'], 'secret');
+		$this->assertCount(1, $parameter->getAttributes(\SensitiveParameter::class));
+
+	}//end testAFailureIsLoggedWithoutTheSecret()
+
 	public function testTheRouteIsRateLimitedPerAddress(): void {
 		$limits = (new ReflectionMethod(PortalAccountClaimController::class, 'redeem'))->getAttributes(AnonRateLimit::class);
 
@@ -134,6 +193,8 @@ class PortalAccountClaimControllerTest extends TestCase {
 		$session->method('resolveFromBearer')->willReturn($subject);
 		$this->invitations = $this->getMockBuilder(WaitingAccountInvitation::class)->disableOriginalConstructor()->onlyMethods(['redeem'])->getMock();
 
-		return new PortalAccountClaimController($this->createMock(IRequest::class), $session, $this->invitations);
+		$this->logger = $this->createMock(LoggerInterface::class);
+
+		return new PortalAccountClaimController($this->createMock(IRequest::class), $session, $this->invitations, $this->logger);
 	}//end controller()
 }//end class

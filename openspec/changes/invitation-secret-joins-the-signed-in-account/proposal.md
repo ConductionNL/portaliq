@@ -13,6 +13,8 @@ A sign-in through the integriq broker carries no address. The DigiD answer holds
 - The link opens the portal's site with the secret in the fragment. The site strips it from the address, keeps it in the browser tab through the sign-in, and hands it back once the person is signed in. This works for every sign-in route, the broker included.
 - A new route, `POST /portal/api/identity/invitation/redeem`, takes the secret from a signed-in session at trust level substantial or higher. The waiting account behind the secret joins the session's own account: its claims are added, and it is withdrawn with a reason. This is the join of REQ-PIS-005, with the waiting account found by the secret.
 - Wrong, expired and already used secrets get one and the same answer. Five wrong secrets lock the route for the account for an hour, and for the session for good.
+- A redeem is one step under a lock: two people who hand in the same secret at once cannot both join. An invitation for another audience, or one that carries a claim the account holds with another value, is refused before the secret is spent (security review M1, M2, M3).
+- An account that cannot receive is told so, and the site keeps the secret so the person can sign in another way (security review L6).
 - Each join is written to the audit trail: which account took over which waiting account, in which session, and when.
 
 ## Trust
