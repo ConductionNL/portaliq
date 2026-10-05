@@ -92,8 +92,9 @@ class PortalFileFieldPolicy {
 
 	/**
 	 * Types a browser runs or renders as a page. A file of an extension not
-	 * in {@see self::EXTENSION_TYPES} passes on its name unless its bytes are
-	 * one of these: a name alone never lets active content in.
+	 * in {@see self::EXTENSION_TYPES} or {@see self::TEXT_EXTENSIONS} passes
+	 * on its name unless its bytes are one of these, and a `type/*` entry
+	 * never admits them: only an entry that names the type does.
 	 */
 	private const ACTIVE_TYPES = [
 		'text/html',
@@ -380,9 +381,10 @@ class PortalFileFieldPolicy {
 	}//end accepts()
 
 	/**
-	 * Whether the type detected in the bytes fits the file's extension: one
-	 * of the extension's own types when it is a known one, else any type a
-	 * browser does not run or render as a page.
+	 * Whether the type detected in the bytes fits the file's extension: for
+	 * plain text any text type or JSON that is not active content, for a
+	 * known extension one of its own types, else any type a browser does not
+	 * run or render as a page.
 	 *
 	 * @param string $extension The lowercased file extension, without the dot.
 	 * @param string $mime The detected MIME type.
