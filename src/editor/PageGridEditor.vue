@@ -40,6 +40,19 @@
 
 		<div v-else class="page-grid-editor__panes">
 			<!--
+				THE PALETTE SITS IN THIS ROW, beside the canvas, which is the
+				whole reason it is a slot and not a dialog the host mounts
+				somewhere after the editor. A palette that covers the grid
+				cannot be dragged onto it: see WidgetPalettePanel.vue for what
+				the modal version cost.
+
+				The host fills it, because the host owns the button that opens
+				it and knows whether to offer the public widgets only. This
+				component still holds no state of its own.
+			-->
+			<slot name="palette" />
+
+			<!--
 				A DROP TARGET AROUND THE GRID, not on each cell: the fleet's
 				grid owns what is inside it, and an empty page has no cell to
 				drop on at all. The cell comes from the pointer against the
@@ -49,8 +62,10 @@
 			-->
 			<section
 				class="page-grid-editor__canvas"
+				:class="{ 'page-grid-editor__canvas--dropping': dropping }"
 				data-testid="designer-canvas"
 				@dragover="onDragOver"
+				@dragleave="onDragLeave"
 				@drop="onDrop">
 				<CnDashboardGrid
 					v-if="state.widgets.length"
@@ -237,7 +252,6 @@
 import { CnDashboardGrid, dashboardWidgetRegistry } from '@conduction/nextcloud-vue'
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
-import { PALETTE_DRAG_TYPE } from '../dialogs/WidgetPaletteDialog.vue'
 import MarkdownField from './MarkdownField.vue'
 import {
 	fieldsFor,
@@ -247,6 +261,7 @@ import {
 import { widgetLabel } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
 import { cellFromDrop } from './geometry.js'
+import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 import {
 	formWidgetFor,
 	inspectorModeFor,
@@ -270,6 +285,15 @@ export default {
 	data() {
 		return {
 			jsonError: '',
+
+			/**
+			 * Whether a palette drag is over the canvas right now, so the drop
+			 * target can say so. A drop target an author cannot see is a drop
+			 * they have to guess at.
+			 *
+			 * @type {boolean}
+			 */
+			dropping: false,
 		}
 	},
 
@@ -385,6 +409,29 @@ export default {
 
 			event.preventDefault()
 			event.dataTransfer.dropEffect = 'copy'
+			this.dropping = true
+		},
+
+		/**
+		 * Stop saying the canvas is a drop target once the drag leaves it.
+		 *
+		 * `dragleave` fires for every child the pointer crosses, so a plain
+		 * handler flickers the highlight off and on while the drag is still
+		 * inside. It is only a leave when the drag went somewhere the canvas
+		 * does not contain.
+		 *
+		 * @param {DragEvent} event The drag.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		onDragLeave(event) {
+			const canvas = event?.currentTarget
+			const to = event?.relatedTarget
+			if (to && canvas?.contains?.(to)) {
+				return
+			}
+			this.dropping = false
 		},
 
 		/**
@@ -396,6 +443,7 @@ export default {
 		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
 		 */
 		onDrop(event) {
+			this.dropping = false
 			const key = event?.dataTransfer?.getData?.(PALETTE_DRAG_TYPE) || ''
 			if (key === '') {
 				return
@@ -615,9 +663,24 @@ export default {
 	align-items: flex-start;
 }
 
+/*
+ * A HEIGHT AN EMPTY PAGE CAN BE DROPPED ON. Without a minimum the canvas of a
+ * page with no widgets is one line of hint text tall, so there is barely
+ * anything under the pointer to drop onto, and the drop lands on whatever sits
+ * below the editor instead. The grid's own rows take over as soon as there is
+ * one widget.
+ */
 .page-grid-editor__canvas {
 	flex: 1 1 auto;
 	min-width: 0;
+	min-height: 240px;
+	border-radius: var(--border-radius);
+}
+
+/* The drop target says it is one, for the length of the drag only. */
+.page-grid-editor__canvas--dropping {
+	outline: 2px dashed var(--color-primary-element);
+	outline-offset: 4px;
 }
 
 .page-grid-editor__inspector {

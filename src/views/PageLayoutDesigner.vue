@@ -54,10 +54,18 @@
 			</div>
 
 			<div class="designer__actions">
+				<!--
+					A DISCLOSURE, NOT A DIALOG OPENER. The palette is a panel
+					beside the canvas now, so this button is the control that
+					shows and hides it, and says which it is doing through
+					`aria-expanded`.
+				-->
 				<NcButton
 					data-testid="designer-add-widget"
 					:disabled="state.loading || state.kind !== 'grid'"
-					@click="paletteOpen = true">
+					:aria-expanded="paletteOpen"
+					aria-controls="widget-palette"
+					@click="paletteOpen = !paletteOpen">
 					{{ t('portaliq', 'Add widget') }}
 				</NcButton>
 				<NcButton
@@ -150,9 +158,14 @@
 			<NcLoadingIcon :size="32" />
 		</div>
 
-		<PageGridEditor v-else :editor="editor" />
+		<PageGridEditor v-else :editor="editor">
+			<template #palette>
+				<WidgetPalettePanel
+					v-model:open="paletteOpen"
+					@choose="editor.addWidget" />
+			</template>
+		</PageGridEditor>
 
-		<WidgetPaletteDialog v-model:open="paletteOpen" @choose="editor.addWidget" />
 		<MediaPickerDialog
 			v-model:open="mediaOpen"
 			:portal="page.portal || ''"
@@ -172,8 +185,8 @@ import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { reactive } from 'vue'
 import MediaPickerDialog from '../dialogs/MediaPickerDialog.vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
-import WidgetPaletteDialog from '../dialogs/WidgetPaletteDialog.vue'
 import PageGridEditor from '../editor/PageGridEditor.vue'
+import WidgetPalettePanel from '../editor/WidgetPalettePanel.vue'
 import { createPageEditor, createPageSaver } from '../editor/index.js'
 import { withMedia } from '../lib/mediaLibrary.js'
 import { pageSiteUrl } from '../lib/pageSiteUrl.js'
@@ -189,7 +202,7 @@ export default {
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
-		WidgetPaletteDialog,
+		WidgetPalettePanel,
 	},
 
 	data() {
