@@ -394,6 +394,105 @@
 	background-color: var(--thematiq-accent-color, var(--nldesign-color-primary));
 }
 
+/*
+ * A TABLE AND A LIST OF LINKS ARE READABLE WITHOUT A ROLE FOR THEM, TOO
+ * (example-site-zuiddrecht).
+ *
+ * Like the button above: the Utrecht table and link list read every measure
+ * from a token and declare no fallback. The theme app's bridge names the
+ * table's inline padding and nothing else of the two, so on a set that only
+ * declares the `--nldesign-*` layer a table had no room above or under a
+ * cell and no line between its rows, and the links of a list stood line on
+ * line. Measured on the Zuiddrecht content page: cell padding-top 0px, row
+ * border 0px, list row-gap `normal`.
+ *
+ * Each declaration reads the set's own token first, so a set that names the
+ * role renders as before. The line between rows is the set's border colour,
+ * else the text's own.
+ */
+.pq-site .utrecht-table__cell,
+.pq-site .utrecht-table__header-cell {
+	padding-block: var(--utrecht-table-cell-padding-block-start, 12px)
+		var(--utrecht-table-cell-padding-block-end, 12px);
+	border-block-end: var(--utrecht-table-row-border-block-end-width, 1px) solid
+		var(
+			--utrecht-table-row-border-block-end-color,
+			var(
+				--nldesign-color-border-dark,
+				var(--nldesign-color-border, currentcolor)
+			)
+		);
+	text-align: start;
+}
+
+.pq-site .utrecht-table__caption {
+	margin-block-end: var(--utrecht-table-caption-margin-block-end, 8px);
+	text-align: var(--utrecht-table-caption-text-align, start);
+}
+
+.pq-site .utrecht-link-list {
+	row-gap: var(--utrecht-link-list-row-gap, 10px);
+}
+
+.pq-site .utrecht-link-list__description {
+	display: block;
+}
+
+/*
+ * THE DESIGNED SITE READS IN THE SET'S OWN FAMILY (example-site-zuiddrecht).
+ *
+ * The vendored sheet sets the page's family on `body` as a literal, so every
+ * text that inherits it (the menu, the hero heading, task labels, link lists,
+ * news titles) stayed in that face while paragraphs and buttons, which read a
+ * token, took the set's. Measured on the Zuiddrecht home page: 40 of 78 text
+ * runs in the vendored face under a set that names Fira Sans.
+ *
+ * Only for a portal with the designed header: every other portal keeps the
+ * face it has, which its tests measure on the menu.
+ */
+.pq-site:has(.pq-site__header--designed),
+body:has(.pq-site__header--designed) .pq-site__skip {
+	font-family: var(--utrecht-document-font-family, inherit);
+}
+
+/*
+ * And its last block does not stand against the footer. A band (a hero, a
+ * coloured section) brings its own room; a page that ends in text or links
+ * has none, and the footer's stripe then touched the last line.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-site__main {
+	padding-block-end: 64px;
+}
+
+/*
+ * THE CURRENT ITEM IN THE LINE (example-site-zuiddrecht). A set whose header
+ * carries a plain line under the menu may mark the page on screen as a piece
+ * of that line, in a colour of its own: Zuiddrecht's line is red and the
+ * piece under the current item is blue. The set says so with two tokens:
+ *
+ *   --nldesign-website-nav-current-in-line  1 moves the bar down into the
+ *                                           line and makes it as high as it
+ *   --nldesign-website-nav-current-color    the bar's colour
+ *
+ * Without them nothing changes: no shift, four pixels, the accent. The bar
+ * sits above the line (z-index 2 over the line's 1), so it covers its piece.
+ */
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='page']::after {
+	--pq-nav-current-in-line: var(--nldesign-website-nav-current-in-line, 0);
+	inset-block-end: calc(
+		var(--pq-nav-current-in-line) * -1 * var(--cn-brand-stripe-height, 0px)
+	);
+	z-index: 2;
+	block-size: calc(
+		4px + var(--pq-nav-current-in-line) *
+			(var(--cn-brand-stripe-height, 4px) - 4px)
+	);
+	background-color: var(
+		--nldesign-website-nav-current-color,
+		var(--thematiq-accent-color, var(--nldesign-color-primary))
+	);
+}
+
 .pq-site .ac-header .ac-c-navigation__li {
 	position: relative;
 }
