@@ -284,6 +284,13 @@ class ExampleResidentInstaller {
 			}
 
 			$report['types'][$type]['arrived']++;
+			foreach ((array)($object['jsonFields'] ?? []) as $field) {
+				// Kept as JSON text; a register may hand it back as text or as the list.
+				if (is_string($stored[$field] ?? null) === true) {
+					$stored[$field] = json_decode($stored[$field], true);
+				}
+			}
+
 			foreach ($this->proof->lostPaths(declared: ($written[$key] ?? []), stored: $stored) as $path) {
 				$report['lost'][] = $type . ' ' . $key . ': ' . $path;
 			}

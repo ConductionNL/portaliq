@@ -145,13 +145,16 @@ class ExampleResidentObjects {
 			return ['row' => null, 'data' => [], 'reason' => 'it needs ' . implode(', ', array_unique($gaps)) . ', which was not written'];
 		}
 
+		// A field the schema keeps as JSON text is sent as text. `data` in the
+		// answer keeps the list, which is what a read hands back.
+		$sent = $data;
 		foreach ((array)($object['jsonFields'] ?? []) as $field) {
-			if (is_array($data[$field] ?? null) === true) {
-				$data[$field] = (string)json_encode($data[$field]);
+			if (is_array($sent[$field] ?? null) === true) {
+				$sent[$field] = (string)json_encode($sent[$field]);
 			}
 		}
 
-		$id = $this->store->create(register: $register, schema: $schema, data: $data);
+		$id = $this->store->create(register: $register, schema: $schema, data: $sent);
 		if ($id === null) {
 			return ['row' => null, 'data' => [], 'reason' => 'OpenRegister refused the write; the Nextcloud log says why'];
 		}
