@@ -290,15 +290,22 @@ test.describe('site-widget-palette', () => {
 		const entry = page.getByTestId('widget-palette-tile-nlHeading')
 		const canvas = page.getByTestId('designer-canvas')
 
+		// IN VIEW FIRST. `elementFromPoint` reads the viewport, so a canvas
+		// scrolled off it answers null, and null would be reported below as
+		// "something is covering the canvas" when nothing is.
+		await canvas.scrollIntoViewIfNeeded()
+
 		const covering = await canvas.evaluate((node: Element) => {
 			const box = node.getBoundingClientRect()
 			const at = document.elementFromPoint(box.left + 40, box.top + 40)
 			if (at && node.contains(at)) {
 				return ''
 			}
-			const tag = at ? at.tagName.toLowerCase() : 'nothing'
-			const id = at?.getAttribute('data-testid') || ''
-			return `${tag}${id ? `[data-testid=${id}]` : ''}`
+			if (!at) {
+				return 'nothing, so the drop point is outside the viewport'
+			}
+			const id = at.getAttribute('data-testid') || ''
+			return `${at.tagName.toLowerCase()}${id ? `[data-testid=${id}]` : ''}`
 		})
 		expect(
 			covering,
