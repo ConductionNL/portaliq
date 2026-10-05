@@ -37,11 +37,16 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Contribution;
 
 /**
- * Normalises the menu, record-switcher and home keys of one page.
+ * Normalises the menu, record-switcher, home and badge keys of one page.
  *
  * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
 class PageMenuKeys {
+	/**
+	 * The longest badge label.
+	 */
+	private const MAX_BADGE_LABEL = 80;
+
 	/**
 	 * The keys to add to a normalised page entry.
 	 *
@@ -81,8 +86,36 @@ class PageMenuKeys {
 			$out['perRecord'] = $perRecord;
 		}
 
-		return $out;
+		return $out + $this->badge(declared: ($page['badge'] ?? null), collectionIds: $collectionIds);
 	}//end keys()
+
+	/**
+	 * The `badge` declaration: a count in the menu entry of how many rows a
+	 * collection of the same contribution holds ("Oudergesprekken 1"), with
+	 * an optional `label` for screen readers in which `{count}` is filled in.
+	 * Nothing when it names no collection of the contribution, so a badge can
+	 * never count another app's rows.
+	 *
+	 * @param mixed              $declared      The declared value.
+	 * @param array<int, string> $collectionIds The contribution's collection ids.
+	 *
+	 * @return array<string, array{collection: string, label?: string}> `['badge' => ...]`, or [] to drop it.
+	 *
+	 * @spec openspec/changes/page-badge-key/specs/portal-contribution-contract/spec.md#requirement-a-page-may-show-a-count-in-its-menu-entry
+	 */
+	private function badge(mixed $declared, array $collectionIds): array {
+		if (is_array($declared) === false || in_array(($declared['collection'] ?? null), $collectionIds, true) === false) {
+			return [];
+		}
+
+		$out   = ['collection' => $declared['collection']];
+		$label = ($declared['label'] ?? null);
+		if (is_string($label) === true && trim($label) !== '' && mb_strlen(trim($label)) <= self::MAX_BADGE_LABEL) {
+			$out['label'] = trim($label);
+		}
+
+		return ['badge' => $out];
+	}//end badge()
 
 	/**
 	 * The `records` declaration, or null when it names no collection of the
