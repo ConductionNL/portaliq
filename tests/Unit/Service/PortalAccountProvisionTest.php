@@ -168,7 +168,7 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testAnInvitationAfterASignInJoinsTheAccountThatSignedIn(): void {
 		$service = $this->service();
 
-		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client');
+		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
 		$waiting  = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true);
 		$this->assertTrue($service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7'));
 
@@ -176,7 +176,7 @@ class PortalAccountProvisionTest extends TestCase {
 			identityType: 'digid',
 			identityRef: 'bsn-G',
 			organisation: 'gemeente-x',
-			audience: 'client',
+			audience: 'parent',
 			verifiedEmail: 'g@example.org'
 		);
 
@@ -198,7 +198,7 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testAJoinNeedsAVerifiedAddressOnBothSidesAndTheSameOrganisation(): void {
 		$service = $this->service();
 
-		$signedIn   = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client');
+		$signedIn   = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
 		$unverified = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'u@example.org', verifiedEmail: false);
 		$service->claim(subjectRef: $unverified['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-u');
 		$onIdentity = $service->provision(audience: 'parent', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-OTHER', email: 'i@example.org', verifiedEmail: true);
@@ -208,10 +208,10 @@ class PortalAccountProvisionTest extends TestCase {
 		$noAddress = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'n@example.org', verifiedEmail: true);
 
 		foreach (['u@example.org', 'i@example.org', 'e@example.org'] as $address) {
-			$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client', verifiedEmail: $address);
+			$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: $address);
 		}
 
-		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client');
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
 
 		$this->assertArrayNotHasKey('claims', $this->rowBySubjectRef($signedIn['subjectRef']));
 		foreach ([$unverified, $onIdentity, $elsewhere, $noAddress] as $account) {
@@ -221,29 +221,50 @@ class PortalAccountProvisionTest extends TestCase {
 	}//end testAJoinNeedsAVerifiedAddressOnBothSidesAndTheSameOrganisation()
 
 	/**
-	 * A claim the signed-in account already holds is kept: the join adds
-	 * what is missing and never rewrites what is there.
+	 * Security review M1: a waiting account that carries a claim the
+	 * signed-in account holds with another value is not joined. The account
+	 * keeps what it has and the waiting account stays pending for its real
+	 * holder; nothing is dropped in silence.
 	 *
 	 * @return void
 	 */
 	public function testAJoinNeverOverwritesAClaimTheAccountAlreadyHolds(): void {
 		$service = $this->service();
 
-		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client');
+		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
 		$service->claim(subjectRef: $signedIn['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-1');
 		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true);
 		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-2');
 		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'dossiq', claimName: 'linkedRequesterId', value: 'requester-9');
 
-		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client', verifiedEmail: 'g@example.org');
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: 'g@example.org');
 
-		$this->assertSame(
-			['learniq' => ['guardianRef' => 'guardian-1'], 'dossiq' => ['linkedRequesterId' => 'requester-9']],
-			$this->rowBySubjectRef($signedIn['subjectRef'])['claims']
-		);
-		$this->assertSame('void', $this->rowBySubjectRef($waiting['subjectRef'])['status']);
+		$this->assertSame(['learniq' => ['guardianRef' => 'guardian-1']], $this->rowBySubjectRef($signedIn['subjectRef'])['claims']);
+		$this->assertSame('pending', $this->rowBySubjectRef($waiting['subjectRef'])['status']);
 
 	}//end testAJoinNeverOverwritesAClaimTheAccountAlreadyHolds()
+
+	/**
+	 * Security review M3: a sign-in of another audience in the same
+	 * organisation (a supplier) never takes over a parent's waiting account,
+	 * even with the same verified address.
+	 *
+	 * @return void
+	 */
+	public function testASignInOfAnotherAudienceJoinsNothing(): void {
+		$service = $this->service();
+
+		// The supplier signed in before; the join (not the activation of
+		// REQ-PIS-002, which is not this change's) is what is under test.
+		$supplier = $service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-1', organisation: 'gemeente-x', audience: 'supplier');
+		$waiting  = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true);
+		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7');
+		$service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-1', organisation: 'gemeente-x', audience: 'supplier', verifiedEmail: 'g@example.org');
+
+		$this->assertArrayNotHasKey('learniq', (array)($this->rowBySubjectRef($supplier['subjectRef'])['claims'] ?? []));
+		$this->assertSame('pending', $this->rowBySubjectRef($waiting['subjectRef'])['status']);
+
+	}//end testASignInOfAnotherAudienceJoinsNothing()
 
 	/**
 	 * 🔴 The join carries the invited address, and the portal stops asking
@@ -261,13 +282,13 @@ class PortalAccountProvisionTest extends TestCase {
 		$service = $this->service();
 		$values  = new ContactAddressValues();
 
-		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client');
+		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
 		$this->assertTrue($values->needsContactPrompt(account: $this->rowBySubjectRef($signedIn['subjectRef'])), 'with no address the portal does ask');
 
 		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'guardian@example.org', verifiedEmail: true);
 		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7');
 
-		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'client', verifiedEmail: 'guardian@example.org');
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: 'guardian@example.org');
 
 		$row = $this->rowBySubjectRef($signedIn['subjectRef']);
 		$this->assertSame('guardian@example.org', $row['email'], 'the address the invitation carried is hers now');
@@ -286,7 +307,7 @@ class PortalAccountProvisionTest extends TestCase {
 		$service = $this->service();
 
 		$signedIn = $service->provision(
-			audience: 'client',
+			audience: 'parent',
 			organisation: 'gemeente-x',
 			identityType: 'digid',
 			identityRef: 'bsn-H',
@@ -295,7 +316,7 @@ class PortalAccountProvisionTest extends TestCase {
 		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'invited@example.org', verifiedEmail: true);
 		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-8');
 
-		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-H', organisation: 'gemeente-x', audience: 'client', verifiedEmail: 'invited@example.org');
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-H', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: 'invited@example.org');
 
 		$row = $this->rowBySubjectRef($signedIn['subjectRef']);
 		$this->assertSame('hers@example.org', $row['email']);

@@ -265,6 +265,16 @@ function resolveEachBlock(page, contribution) {
 				? { index, block, kind: type, collection }
 				: { index, block, kind: 'none' }
 		}
+		if (type === 'greeting') {
+			// The overview's opening (site-school-blocks); an action it names
+			// is resolved like a cta's.
+			return {
+				index,
+				block,
+				kind: 'greeting',
+				action: block.action ? findAction(contribution, block.action) : null,
+			}
+		}
 		if (type === 'cta' && (block.page || block.route)) {
 			// A tile to a page or a route (REQ-SMO-024).
 			return { index, block, kind: 'tile' }

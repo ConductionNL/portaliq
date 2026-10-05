@@ -302,6 +302,33 @@ test('a queued request never claims a case, a registered one does', () => {
 	assert.equal(statusView(null).tone, 'error')
 })
 
+test('a Woo request quotes its due date only when its term runs', () => {
+	const armed = statusView({
+		reference: 'AANVRAAG-1',
+		state: 'registered',
+		caseId: 'req-1',
+		externalReference: 'WOO-2026-1A2B3C',
+		dueAt: '2026-11-02T09:00:00+00:00',
+	})
+	assert.equal(armed.tone, 'success')
+	assert.match(armed.sentence, /WOO-2026-1A2B3C/)
+	assert.match(armed.sentence, /uiterlijk 2 november 2026/)
+	assert.doesNotMatch(armed.sentence, /—/)
+
+	// A term that did not start is a failed delivery: no date, and the
+	// citizen is told to get in touch.
+	const notArmed = statusView({ reference: 'AANVRAAG-1', state: 'failed', dueAt: '' })
+	assert.doesNotMatch(notArmed.sentence, /uiterlijk/)
+	assert.match(notArmed.sentence, /Neem contact met ons op/)
+
+	// A registered case without a due date reads as before.
+	const plain = statusView({ reference: 'A-1', state: 'registered', caseId: 'c-9', externalReference: '', dueAt: '' })
+	assert.doesNotMatch(plain.sentence, /uiterlijk/)
+	// A malformed date is never shown.
+	const garbled = statusView({ reference: 'A-1', state: 'registered', externalReference: 'WOO-1', dueAt: 'soon' })
+	assert.doesNotMatch(garbled.sentence, /uiterlijk/)
+})
+
 test('no user-facing sentence carries an em-dash', () => {
 	const sentences = [
 		statusView({ reference: 'A', state: 'queued' }).sentence,

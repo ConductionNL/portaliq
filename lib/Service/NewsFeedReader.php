@@ -262,7 +262,7 @@ class NewsFeedReader {
 	 */
 	private function itemsFor(array $audience): array {
 		$matched = [];
-		foreach ($this->rows->findAll(schema: 'newsItem') as $row) {
+		foreach ($this->rows->findAll(schema: 'newsItem', filters: ['status' => 'published']) as $row) {
 			if (($row['status'] ?? '') !== 'published') {
 				continue;
 			}

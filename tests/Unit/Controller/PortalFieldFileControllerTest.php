@@ -290,7 +290,7 @@ class PortalFieldFileControllerTest extends TestCase {
 			'no file' => [null, $this->submission(), Http::STATUS_BAD_REQUEST, 'no_file'],
 			'wrong type' => [['name' => 'run.exe', 'content' => 'MZ'], $this->submission(), Http::STATUS_UNSUPPORTED_MEDIA_TYPE, 'file_type_refused'],
 			'too large' => [['name' => 'big.txt', 'content' => str_repeat('a', (1024 * 1024) + 1)], $this->submission(), Http::STATUS_REQUEST_ENTITY_TOO_LARGE, 'file_too_large'],
-			'field full' => [['name' => 'one-more.txt', 'content' => 'x'], $this->submission(refs: $full), Http::STATUS_CONFLICT, 'too_many_files'],
+			'field full' => [['name' => 'one-more.txt', 'content' => 'one more note'], $this->submission(refs: $full), Http::STATUS_CONFLICT, 'too_many_files'],
 		];
 
 		foreach ($cases as $label => [$upload, $row, $status, $error]) {

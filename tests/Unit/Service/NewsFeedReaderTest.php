@@ -59,7 +59,21 @@ class NewsFeedReaderTest extends TestCase {
 			 * @return array<int, array<string, mixed>>
 			 */
 			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
-				return ($this->schema === 'newsletter') ? $this->newsletterRows : $this->newsItemRows;
+				$rows = ($this->schema === 'newsletter') ? $this->newsletterRows : $this->newsItemRows;
+
+				// The store answers the filters as OpenRegister does: a row
+				// matches only when every filtered property equals the value.
+				$rows = array_values(array_filter($rows, static function (array $row) use ($config): bool {
+					foreach (($config['filters'] ?? []) as $key => $value) {
+						if (($row[$key] ?? null) !== $value) {
+							return false;
+						}
+					}
+
+					return true;
+				}));
+
+				return $rows;
 			}//end findAll()
 		};
 

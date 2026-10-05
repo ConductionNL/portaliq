@@ -117,6 +117,9 @@ return [
         // A published media library item of the serving portal
         // (site-page-seo-history-and-media T07); pages refer to it as media:<id>.
         ['name' => 'contentMedia#show', 'url' => '/api/content/media/{id}', 'verb' => 'GET'],
+        // The news staff put on this portal's public website (site-school-blocks).
+        ['name' => 'contentNews#index', 'url' => '/api/content/news', 'verb' => 'GET'],
+        ['name' => 'contentNews#show', 'url' => '/api/content/news/{id}', 'verb' => 'GET'],
         [
             'name' => 'content#page',
             'url' => '/api/content/page/{route}',
@@ -349,6 +352,9 @@ return [
         ['name' => 'portalAccountSelf#notificationPreferences', 'url' => '/portal/api/identity/notification-preferences', 'verb' => 'GET'],
         ['name' => 'portalAccountSelf#updateNotificationPreferences', 'url' => '/portal/api/identity/notification-preferences', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#confirmEmail', 'url' => '/portal/api/identity/email/confirm', 'verb' => 'POST'],
+        // The signed-in person hands back an invitation's one-time secret
+        // (invitation-secret-joins-the-signed-in-account).
+        ['name' => 'portalAccountClaim#redeem', 'url' => '/portal/api/identity/invitation/redeem', 'verb' => 'POST'],
         ['name' => 'portalContactAddress#add', 'url' => '/portal/api/identity/addresses', 'verb' => 'POST'],
         ['name' => 'portalContactAddress#prefer', 'url' => '/portal/api/identity/addresses/preferred', 'verb' => 'POST'],
         ['name' => 'portalContactAddress#remove', 'url' => '/portal/api/identity/addresses/remove', 'verb' => 'POST'],

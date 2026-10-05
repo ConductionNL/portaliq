@@ -135,6 +135,7 @@ class PortalIntakeQueue {
 	 *         failed. Null when no submission carries that reference.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
 	 */
 	public function status(string $reference, string $portal): ?array {
 		$row = $this->byReference(reference: $reference, portal: $portal);
@@ -144,9 +145,12 @@ class PortalIntakeQueue {
 
 		$state = (string)($row['state'] ?? self::STATE_QUEUED);
 
-		$caseId = '';
+		// A case id, a minted reference and a due date are answered only when
+		// there IS a case. The page cannot print one it was never given, so a
+		// Woo request whose term did not start never shows a deadline.
+		$registered = [];
 		if ($state === self::STATE_REGISTERED) {
-			$caseId = (string)($row['caseId'] ?? '');
+			$registered = $row;
 		}
 
 		$failureReason = '';
@@ -157,9 +161,9 @@ class PortalIntakeQueue {
 		return [
 			'reference' => (string)($row['reference'] ?? ''),
 			'state' => $state,
-			// A case id is answered only when there IS a case. The page cannot
-			// print one it was never given.
-			'caseId' => $caseId,
+			'caseId' => (string)($registered['caseId'] ?? ''),
+			'externalReference' => (string)($registered['externalReference'] ?? ''),
+			'dueAt' => (string)($registered['dueAt'] ?? ''),
 			'failureReason' => $failureReason,
 			'submittedAt' => (string)($row['submittedAt'] ?? ''),
 		];
@@ -199,20 +203,31 @@ class PortalIntakeQueue {
 	 *
 	 * @param array<string, mixed> $submission The submission row.
 	 * @param string $caseId The case that now exists.
+	 * @param string $externalReference The reference the receiving app minted, or ''.
+	 * @param string $dueAt The statutory due date the receiving app armed, or ''.
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
 	 */
-	public function markRegistered(array $submission, string $caseId): bool {
-		return $this->write(
-			submission: $submission,
-			data: [
-				'state' => self::STATE_REGISTERED,
-				'caseId' => $caseId,
-				'registeredAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-			]
-		);
+	public function markRegistered(array $submission, string $caseId, string $externalReference = '', string $dueAt = ''): bool {
+		$data = [
+			'state' => self::STATE_REGISTERED,
+			'caseId' => $caseId,
+			'registeredAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+		if ($externalReference !== '') {
+			$data['externalReference'] = $externalReference;
+		}
+
+		// Written only when there is one: an empty string is not a date-time,
+		// and the register refuses it.
+		if ($dueAt !== '') {
+			$data['dueAt'] = $dueAt;
+		}
+
+		return $this->write(submission: $submission, data: $data);
 	}//end markRegistered()
 
 	/**

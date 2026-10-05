@@ -139,7 +139,7 @@ test('newsItem declares translations and the register moved', () => {
 	// turned `validate` and `check:specs` red on development itself and so on
 	// every open pull request.
 	assert.ok(
-		['0.2.0', '0.2.1', '0.3.0'].includes(newsItem.version),
+		['0.2.0', '0.2.1', '0.3.0', '0.4.0'].includes(newsItem.version),
 		`newsItem ${newsItem.version} is not a version this test knows; widen the list`
 			+ ' in the same change that moves the schema',
 	)

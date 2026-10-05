@@ -14,6 +14,18 @@
 
 export default {
 	nl: {
+		// site-school-blocks
+		Open: 'Openen',
+		'Nothing here yet.': 'Hier staat nog niets.',
+		'Good morning': 'Goedemorgen',
+		'Good afternoon': 'Goedemiddag',
+		'Good evening': 'Goedenavond',
+		'Good morning, {name}': 'Goedemorgen, {name}',
+		'Good afternoon, {name}': 'Goedemiddag, {name}',
+		'Good evening, {name}': 'Goedenavond, {name}',
+		'of {total} {unit}': 'van {total} {unit}',
+		'below the pass mark': 'onvoldoende',
+		Average: 'Gemiddeld',
 		'Before {date}': 'Voor {date}',
 		'{count} days left': 'Nog {count} dagen',
 		'1 day left': 'Nog 1 dag',
@@ -73,6 +85,18 @@ export default {
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		// site-school-blocks
+		Open: 'Open',
+		'Nothing here yet.': 'Nothing here yet.',
+		'Good morning': 'Good morning',
+		'Good afternoon': 'Good afternoon',
+		'Good evening': 'Good evening',
+		'Good morning, {name}': 'Good morning, {name}',
+		'Good afternoon, {name}': 'Good afternoon, {name}',
+		'Good evening, {name}': 'Good evening, {name}',
+		'of {total} {unit}': 'of {total} {unit}',
+		'below the pass mark': 'below the pass mark',
+		Average: 'Average',
 		'Before {date}': 'Before {date}',
 		'{count} days left': '{count} days left',
 		'1 day left': '1 day left',
