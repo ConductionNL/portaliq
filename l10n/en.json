@@ -2088,7 +2088,12 @@
         "Add a page with route /, then publish it.": "Add a page with route /, then publish it.",
         "Open this page": "Open this page",
         "Open the pages of this portal": "Open the pages of this portal",
-        "The home page of this portal could not be checked.": "The home page of this portal could not be checked."
+        "The home page of this portal could not be checked.": "The home page of this portal could not be checked.",
+        "Deliver to": "Deliver to",
+        "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed.": "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed.",
+        "The reference the receiving app minted, such as a Woo request's `WOO-2026-1A2B3C`. Set only once the submission is registered.": "The reference the receiving app minted, such as a Woo request's `WOO-2026-1A2B3C`. Set only once the submission is registered.",
+        "Due at": "Due at",
+        "The statutory due date the receiving app armed, such as a Woo request's decision term. Set only when a term runs, so the reference page never quotes a deadline nobody started.": "The statutory due date the receiving app armed, such as a Woo request's decision term. Set only when a term runs, so the reference page never quotes a deadline nobody started."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
