@@ -610,3 +610,60 @@ test('the current menu item may sit in the line under the menu', () => {
 		/#[0-9a-f]{3,8}\b|rgb\(/i,
 	)
 })
+
+test('the Zuiddrecht site offers its two ways in as the Inloggen board shows', () => {
+	const site = sites.find((entry) => entry.site.id === 'zuiddrecht').site
+	const auth = site.portal.authentication
+	// A card for every way in the portal names, and for no other.
+	assert.deepEqual(
+		Object.keys(auth.modeLabels).sort(),
+		auth.modes.filter((mode) => mode !== 'public').sort(),
+	)
+	assert.deepEqual(auth.modeLabels.digid, {
+		title: 'Als inwoner',
+		text: 'Voor uw eigen zaken, berichten en dossiers.',
+		button: 'Inloggen met DigiD',
+	})
+	assert.equal(auth.modeLabels.eherkenning.title, 'Namens een bedrijf')
+	assert.equal(auth.modeLabels.eherkenning.button, 'Inloggen met eHerkenning')
+	assert.equal(auth.signInPage.title, 'Inloggen op Mijn Zuiddrecht')
+	assert.match(auth.signInPage.intro, /^Kies hoe u inlogt\./)
+	assert.match(auth.signInPage.notice.text, /^Geen DigiD\?/)
+	// The shell serves a card only with a text; each has its three.
+	for (const card of Object.values(auth.modeLabels)) {
+		assert.ok(card.title && card.text && card.button)
+	}
+})
+
+test('the own area carries the name the portal gives it', async () => {
+	const { ownAreaLink, withAreaName } = await import(
+		new URL('src/site/lib/residentMenu.js', root)
+	)
+	const { accountCrumbs } = await import(
+		new URL('src/site/lib/accountArea.js', root)
+	)
+	const nl = (key) => ({ 'My area': 'Mijn omgeving', Home: 'Home' })[key] ?? key
+	const named = withAreaName(nl, ' Mijn Zuiddrecht ')
+
+	assert.equal(named('My area'), 'Mijn Zuiddrecht')
+	assert.equal(named('Home'), 'Home', "every other string is the translator's")
+	assert.deepEqual(
+		accountCrumbs(null, named, (route) => route).map((crumb) => crumb.label),
+		['Home', 'Mijn Zuiddrecht'],
+	)
+	assert.equal(
+		ownAreaLink({ subjectRef: 'x' }, named, (route) => route).label,
+		'Mijn Zuiddrecht',
+	)
+
+	// No name: the translator itself, so nothing changes for other portals.
+	assert.equal(withAreaName(nl, ''), nl)
+	assert.equal(withAreaName(nl, undefined), nl)
+	assert.equal(withAreaName(nl, '   ')('My area'), 'Mijn omgeving')
+
+	// The site's one translator is the named one.
+	assert.match(
+		read('src/site/App.vue'),
+		/withAreaName\(\s*createTranslator\(this\.locale\),\s*this\.site\?\.accountLabel,?\s*\)/,
+	)
+})
