@@ -206,7 +206,7 @@ test('the menu draws a page icon before its label, decorative, in the Den Haag s
 	assert.match(html, /denhaag-sidenav__link--current/)
 	assert.match(
 		html,
-		/<span class="denhaag-sidenav__link-label pq-resident-menu__label">Afwezigheid<\/span>/,
+		/<span class="denhaag-sidenav__link-label pq-resident-menu__label">Afwezigheid(<!---->)?<\/span>/,
 	)
 	assert.equal(
 		(html.match(/<svg /g) || []).length,
