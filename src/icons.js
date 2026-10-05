@@ -48,6 +48,7 @@ import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
 import History from 'vue-material-design-icons/History.vue'
+import Home from 'vue-material-design-icons/Home.vue'
 import Login from 'vue-material-design-icons/Login.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
@@ -108,6 +109,8 @@ export default {
 	FolderOutline,
 	FormSelect,
 	History,
+	// The Home page entry of a portal's configuration (portal-home-page, #1183).
+	Home,
 	// The Sign-in widget on a portal's page (signin-integriq-broker-login).
 	Login,
 	MapMarkerPath,
