@@ -242,7 +242,7 @@ class QuietHoursPolicy {
 		];
 
 		foreach ($candidates as $name) {
-			if (is_string($name) === false || $name === '') {
+			if ($name === '') {
 				continue;
 			}
 
