@@ -27,7 +27,7 @@ At the top of **Inbox**, **Notification settings** holds one checkbox per kind a
 | Changes on your cases | on | on |
 | New messages | on | on |
 
-Everything is on until the resident switches it off. The push column shows only after they allowed push on a device. The message in the inbox is always written: it is the record of what happened. The older e-mail opt-out on the account still switches off e-mail for every kind.
+Everything is on until the resident switches it off. The push column shows only after they allowed push on a device, and only while the portal has a push transport that really delivers. The message in the inbox is always written: it is the record of what happened. The older e-mail opt-out on the account still switches off e-mail for every kind.
 
 ## What a case app declares
 
