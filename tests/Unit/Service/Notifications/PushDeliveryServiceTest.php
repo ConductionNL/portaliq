@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Notifications;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\Notifications\LoggingPushSender;
 use OCA\Portaliq\Service\Notifications\PendingPushService;
 use OCA\Portaliq\Service\Notifications\PushDeliveryService;
 use OCA\Portaliq\Service\Notifications\PushSenderInterface;
@@ -74,4 +75,24 @@ class PushDeliveryServiceTest extends TestCase {
 
 		$this->assertFalse($service->deliver('', 'Title', 'Body'));
 	}//end testReturnsFalseForAnEmptySubjectRef()
+
+	public function testCanDeliverFollowsTheBoundTransport(): void {
+		$real = $this->createMock(PushSenderInterface::class);
+		$real->method('delivers')->willReturn(true);
+		$service = new PushDeliveryService($this->createMock(QuietHoursPolicy::class), $real, $this->createMock(PendingPushService::class), $this->createMock(LoggerInterface::class));
+		$this->assertTrue($service->canDeliver());
+
+		$interim = new LoggingPushSender($this->createMock(LoggerInterface::class));
+		$service = new PushDeliveryService($this->createMock(QuietHoursPolicy::class), $interim, $this->createMock(PendingPushService::class), $this->createMock(LoggerInterface::class));
+		$this->assertFalse($service->canDeliver());
+	}//end testCanDeliverFollowsTheBoundTransport()
+
+	public function testTheInterimTransportNeverReportsAPushAsDelivered(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('info');
+		$sender = new LoggingPushSender($logger);
+
+		$this->assertFalse($sender->send('guardian-1', 'Title', 'Body'));
+		$this->assertFalse($sender->delivers());
+	}//end testTheInterimTransportNeverReportsAPushAsDelivered()
 }//end class

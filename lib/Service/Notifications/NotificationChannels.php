@@ -123,7 +123,8 @@ class NotificationChannels {
 
 	/**
 	 * Whether the account wants this kind on this channel. A missing choice
-	 * means on.
+	 * means on. Push is never wanted while the bound transport cannot put a
+	 * push on a device: the attempt would be logged as sent for nothing.
 	 *
 	 * @param array<string, mixed> $account The account.
 	 * @param string               $kind    The kind.
@@ -134,7 +135,7 @@ class NotificationChannels {
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
 	 */
 	public function wants(array $account, string $kind, string $channel): bool {
-		if ($channel === self::CHANNEL_PUSH && ($this->push === null || $this->reader === null)) {
+		if ($channel === self::CHANNEL_PUSH && $this->pushAvailable() === false) {
 			return false;
 		}
 
@@ -153,6 +154,16 @@ class NotificationChannels {
 
 		return ($preferences[$kind][$channel] ?? true) !== false;
 	}//end wants()
+
+	/**
+	 * Whether a push can reach a device at all: a push service and a reader
+	 * are wired, and the bound transport really delivers.
+	 *
+	 * @return bool
+	 */
+	private function pushAvailable(): bool {
+		return $this->push !== null && $this->reader !== null && $this->push->canDeliver() === true;
+	}//end pushAvailable()
 
 	/**
 	 * Send a push to the resident's devices.
