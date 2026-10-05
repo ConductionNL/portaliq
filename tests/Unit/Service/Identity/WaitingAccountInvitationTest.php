@@ -7,9 +7,11 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\Identity\ClaimAttempts;
+use OCA\Portaliq\Service\Identity\InvitationCode;
 use OCA\Portaliq\Service\Identity\WaitingAccountInvitation;
 use OCP\ICache;
 use OCP\ICacheFactory;
+use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -274,6 +276,138 @@ class WaitingAccountInvitationTest extends TestCase {
 	}//end testAClaimTheAccountHoldsIsKeptAndSoIsItsOwnAddress()
 
 	/**
+	 * invitation-code-from-a-letter REQ-PIS-009: the short code is the same
+	 * secret in a form a person can type. Only its hash is stored.
+	 *
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 */
+	public function testACodeForALetterIsStoredAsAHashAndShownInGroups(): void {
+		$waiting = $this->seedWaiting();
+		$now = new DateTimeImmutable('2026-10-05T09:00:00+00:00');
+
+		$issued = $this->service()->issueCode(subjectRef: 'waiting-1', appId: 'learniq', now: $now);
+
+		$this->assertSame(['code' => 'ABCD-EFGH-2345', 'expiresAt' => '2026-10-12T09:00:00+00:00'], $issued);
+		$this->assertSame(hash('sha256', 'ABCDEFGH2345'), $this->rows[$waiting]['claimCodeHash']);
+		$this->assertStringNotContainsString('ABCDEFGH2345', (string)json_encode($this->rows));
+		$this->assertStringNotContainsString('ABCD-EFGH-2345', (string)json_encode($this->rows));
+
+	}//end testACodeForALetterIsStoredAsAHashAndShownInGroups()
+
+	public function testOnlyTheAppThatProvisionedAWaitingAccountGetsACode(): void {
+		$this->seedWaiting();
+		$this->seedWaiting(['subjectRef' => 'active-1', 'status' => 'active']);
+		$this->seedWaiting(['subjectRef' => 'identity-1', 'identityType' => 'digid', 'identityRef' => 'bsn-9']);
+		$service = $this->service();
+
+		$this->assertNull($service->issueCode(subjectRef: 'waiting-1', appId: 'dossiq'));
+		$this->assertNull($service->issueCode(subjectRef: 'waiting-1', appId: ''));
+		$this->assertNull($service->issueCode(subjectRef: 'active-1', appId: 'learniq'));
+		$this->assertNull($service->issueCode(subjectRef: 'identity-1', appId: 'learniq'));
+		$this->assertNull($service->issueCode(subjectRef: 'nobody', appId: 'learniq'));
+
+	}//end testOnlyTheAppThatProvisionedAWaitingAccountGetsACode()
+
+	public function testTheCodeIsRedeemedHoweverItIsTyped(): void {
+		foreach (['ABCD-EFGH-2345', 'abcdefgh2345', ' abcd efgh 2345 ', 'AbCd-efGH-2345'] as $typed) {
+			$this->setUp();
+			$waiting = $this->seedWaiting();
+			$account = $this->seedSignedIn();
+			$service = $this->service();
+			$service->issueCode(subjectRef: 'waiting-1', appId: 'learniq');
+
+			$this->assertSame(WaitingAccountInvitation::CLAIMED, $service->redeem(subject: $this->subject(), secret: $typed), $typed);
+			$this->assertSame('guardian-7', $this->rows[$account]['claims']['learniq']['guardianRef'], $typed);
+			$this->assertSame('void', $this->rows[$waiting]['status'], $typed);
+			$this->assertSame('', $this->rows[$waiting]['claimCodeHash'], $typed);
+			$this->assertSame([['claim', 'subject-1', 'gemeente-x', 'portaliq', 'portalAccount', $waiting, 'jti-1']], $this->audited, $typed);
+		}
+
+	}//end testTheCodeIsRedeemedHoweverItIsTyped()
+
+	public function testACodeWorksOnceAndExpiresLikeALink(): void {
+		$waiting = $this->seedWaiting();
+		$this->seedSignedIn();
+		$service = $this->service();
+		$service->issueCode(subjectRef: 'waiting-1', appId: 'learniq', now: new DateTimeImmutable('2026-10-05T09:00:00+00:00'));
+
+		$expired = $service->redeem(subject: $this->subject(), secret: 'ABCD-EFGH-2345', now: new DateTimeImmutable('2026-10-12T09:00:00+00:00'));
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $expired);
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+
+		$this->assertSame(WaitingAccountInvitation::CLAIMED, $service->redeem(subject: $this->subject(), secret: 'ABCD-EFGH-2345', now: new DateTimeImmutable('2026-10-11T09:00:00+00:00')));
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: 'ABCD-EFGH-2345', now: new DateTimeImmutable('2026-10-11T09:01:00+00:00')));
+
+	}//end testACodeWorksOnceAndExpiresLikeALink()
+
+	public function testAWrongCodeCountsAndFiveLockTheAccount(): void {
+		$waiting = $this->seedWaiting();
+		$account = $this->seedSignedIn();
+		$service = $this->service();
+		$service->issueCode(subjectRef: 'waiting-1', appId: 'learniq');
+
+		foreach (['ABCD-EFGH-2346', 'ZZZZ-ZZZZ-ZZZZ', 'ABCD-EFGH-234', 'ABCD-EFGH-2340', 'QQQQ-QQQQ-QQQQ'] as $index => $guess) {
+			$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(['jti' => 'jti-' . $index]), secret: $guess), $guess);
+		}
+
+		$this->assertSame(ClaimAttempts::PER_ACCOUNT, $this->rows[$account]['claimAttempts']);
+		$this->assertSame(WaitingAccountInvitation::LOCKED, $service->redeem(subject: $this->subject(['jti' => 'jti-new']), secret: 'ABCD-EFGH-2345'));
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+
+	}//end testAWrongCodeCountsAndFiveLockTheAccount()
+
+	public function testThereIsOneLiveSecretALinkEndsACodeAndACodeEndsALink(): void {
+		$waiting = $this->seedWaiting();
+		$this->seedSignedIn();
+		$service = $this->service();
+
+		$link = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+		$service->issueCode(subjectRef: 'waiting-1', appId: 'learniq');
+		$this->assertSame('', $this->rows[$waiting]['claimTokenHash']);
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: $link['token']));
+
+		$second = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+		$this->assertSame('', $this->rows[$waiting]['claimCodeHash']);
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: 'ABCD-EFGH-2345'));
+		$this->assertSame(WaitingAccountInvitation::CLAIMED, $service->redeem(subject: $this->subject(), secret: $second['token']));
+
+	}//end testThereIsOneLiveSecretALinkEndsACodeAndACodeEndsALink()
+
+	public function testACodeOfAnotherOrganisationOpensNothing(): void {
+		$waiting = $this->seedWaiting(['organisation' => 'gemeente-y']);
+		$this->seedSignedIn();
+		$service = $this->service();
+		$service->issueCode(subjectRef: 'waiting-1', appId: 'learniq');
+
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: 'ABCD-EFGH-2345'));
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+
+	}//end testACodeOfAnotherOrganisationOpensNothing()
+
+	/**
+	 * A random double: a predictable code when asked for the code alphabet,
+	 * the trait's predictable secrets otherwise.
+	 *
+	 * @return ISecureRandom
+	 */
+	private function codeAwareRandom(): ISecureRandom {
+		$counter = 0;
+		$random  = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturnCallback(
+			function (int $length, string $characters = '') use (&$counter): string {
+				if ($characters === InvitationCode::ALPHABET) {
+					return substr('ABCDEFGH2345', 0, $length);
+				}
+
+				$counter++;
+				return 'secret-' . $counter;
+			}
+		);
+
+		return $random;
+	}//end codeAwareRandom()
+
+	/**
 	 * A waiting account: pending, address-only, provisioned by learniq.
 	 *
 	 * @param array<string, mixed> $overrides Fields that differ.
@@ -357,6 +491,6 @@ class WaitingAccountInvitationTest extends TestCase {
 
 		$writer = $this->fakeWriter();
 
-		return new WaitingAccountInvitation($this->fakeReader(), $writer, $this->fakeRandom(), new ClaimAttempts($writer, $factory), $auditor);
+		return new WaitingAccountInvitation($this->fakeReader(), $writer, $this->codeAwareRandom(), new ClaimAttempts($writer, $factory), $auditor);
 	}//end service()
 }//end class

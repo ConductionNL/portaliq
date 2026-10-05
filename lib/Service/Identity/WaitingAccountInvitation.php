@@ -132,7 +132,8 @@ class WaitingAccountInvitation {
 		}
 
 		$expiresAt = ($now ?? new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);
-		$written   = $this->write(id: $uuid, data: ['claimTokenHash' => hash('sha256', $token), 'claimExpiresAt' => $expiresAt]);
+		// One live secret at a time: a new link ends an earlier code.
+		$written = $this->write(id: $uuid, data: ['claimTokenHash' => hash('sha256', $token), 'claimCodeHash' => '', 'claimExpiresAt' => $expiresAt]);
 		if ($written === false) {
 			return null;
 		}
@@ -144,6 +145,47 @@ class WaitingAccountInvitation {
 			'expiresAt' => $expiresAt,
 		];
 	}//end issue()
+
+	/**
+	 * Mint the short code of a waiting account, for a paper letter.
+	 *
+	 * The same secret in a form a person can type. Only the hash is stored,
+	 * with the same expiry as a link, and it replaces an earlier link or
+	 * code. The code is answered to the app that asked, because somebody has
+	 * to print it: this is the one place the secret is seen by staff.
+	 *
+	 * @param string $subjectRef The waiting account.
+	 * @param string $appId The app asking, from its own dispatching context.
+	 * @param DateTimeImmutable|null $now The moment the code is dated from.
+	 *
+	 * @return array{code: string, expiresAt: string}|null Null when the
+	 *         account is not this app's waiting account or the write failed.
+	 *
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 */
+	public function issueCode(string $subjectRef, string $appId, ?DateTimeImmutable $now = null): ?array {
+		$lookup  = new PortalAccountLookup(reader: $this->reader);
+		$account = $lookup->bySubjectRef(subjectRef: $subjectRef);
+		if ($account === null || $appId === '' || $this->isInvitable(account: $account, appId: $appId, byMail: false) === false) {
+			return null;
+		}
+
+		$codes = new InvitationCode();
+		$uuid  = $lookup->identifierOf(row: $account);
+		$code  = $codes->mint(random: $this->random);
+		if ($uuid === null || $code === '') {
+			return null;
+		}
+
+		$expiresAt = ($now ?? new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);
+		// One live secret at a time: a new code ends an earlier link.
+		$written = $this->write(id: $uuid, data: ['claimCodeHash' => hash('sha256', $code), 'claimTokenHash' => '', 'claimExpiresAt' => $expiresAt]);
+		if ($written === false) {
+			return null;
+		}
+
+		return ['code' => $codes->shown(code: $code), 'expiresAt' => $expiresAt];
+	}//end issueCode()
 
 	/**
 	 * Redeem a secret for the person who is signed in.
@@ -161,6 +203,7 @@ class WaitingAccountInvitation {
 	 * @return string One of CLAIMED, NOT_VALID and LOCKED.
 	 *
 	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
 	 */
 	public function redeem(array $subject, string $secret, ?DateTimeImmutable $now = null): string {
 		$moment  = ($now ?? new DateTimeImmutable());
@@ -244,7 +287,7 @@ class WaitingAccountInvitation {
 	 */
 	private function spendAndJoin(array $account, array $waiting, PortalAccountLookup $lookup): ?string {
 		$waitingId = $lookup->identifierOf(row: $waiting);
-		if ($waitingId === null || $this->write(id: $waitingId, data: ['claimTokenHash' => '']) === false) {
+		if ($waitingId === null || $this->write(id: $waitingId, data: ['claimTokenHash' => '', 'claimCodeHash' => '']) === false) {
 			return null;
 		}
 
@@ -258,14 +301,22 @@ class WaitingAccountInvitation {
 	 *
 	 * @param array<string, mixed> $account The account row.
 	 * @param string $appId The app asking.
+	 * @param bool $byMail Whether the invitation is mailed, which needs an address.
 	 *
 	 * @return bool
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- one condition of four
+	 * depends on it; two methods would differ in that line only.
 	 */
-	private function isInvitable(array $account, string $appId): bool {
-		return ($account['status'] ?? '') === PortalAccountService::STATUS_PENDING
+	private function isInvitable(array $account, string $appId, bool $byMail = true): bool {
+		$waiting = ($account['status'] ?? '') === PortalAccountService::STATUS_PENDING
 			&& (string)($account['identityRef'] ?? '') === ''
-			&& (string)($account['provisionedBy'] ?? '') === $appId
-			&& trim((string)($account['email'] ?? '')) !== '';
+			&& (string)($account['provisionedBy'] ?? '') === $appId;
+		if ($byMail === false) {
+			return $waiting;
+		}
+
+		return $waiting && trim((string)($account['email'] ?? '')) !== '';
 	}//end isInvitable()
 
 	/**
@@ -285,11 +336,20 @@ class WaitingAccountInvitation {
 			return null;
 		}
 
+		// A code is told from a link's secret by its shape: twelve characters
+		// of the code alphabet, however the person typed them.
+		$field = 'claimTokenHash';
+		$code  = (new InvitationCode())->normalise(typed: $secret);
+		if ($code !== '') {
+			$field  = 'claimCodeHash';
+			$secret = $code;
+		}
+
 		$hash = hash('sha256', $secret);
 		$rows = $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
-			scopeField: 'claimTokenHash',
+			scopeField: $field,
 			subjectRef: $hash,
 			organisation: $organisation,
 			limit: 5
@@ -298,7 +358,7 @@ class WaitingAccountInvitation {
 		foreach ($rows as $row) {
 			// The reader's filter is trusted for the query, not for the
 			// answer: every row is checked again.
-			if (is_array($row) === false || $this->isWaitingRow(row: $row, hash: $hash, organisation: $organisation) === false) {
+			if (is_array($row) === false || $this->isWaitingRow(row: $row, field: $field, hash: $hash, organisation: $organisation) === false) {
 				continue;
 			}
 
@@ -319,13 +379,14 @@ class WaitingAccountInvitation {
 	 * identity reference of its own.
 	 *
 	 * @param array<string, mixed> $row One row the reader returned.
+	 * @param string $field The field the hash is stored in.
 	 * @param string $hash The secret's hash.
 	 * @param string $organisation The session's organisation.
 	 *
 	 * @return bool
 	 */
-	private function isWaitingRow(array $row, string $hash, string $organisation): bool {
-		return hash_equals((string)($row['claimTokenHash'] ?? ''), $hash) === true
+	private function isWaitingRow(array $row, string $field, string $hash, string $organisation): bool {
+		return hash_equals((string)($row[$field] ?? ''), $hash) === true
 			&& ($row['organisation'] ?? '') === $organisation
 			&& ($row['status'] ?? '') === PortalAccountService::STATUS_PENDING
 			&& (string)($row['identityRef'] ?? '') === '';

@@ -331,15 +331,18 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `claimAttempts` with `claimAttemptsSince`, the wrong secrets an
 		// account offered (invitation-secret-joins-the-signed-in-account).
 		// Additive.
-		$this->assertSame('0.59.0', self::$register['info']['version']);
-		$this->assertSame('0.59.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.60.0 (portalAccount 0.16.0): `claimCodeHash`, the short code of an
+		// invitation letter (invitation-code-from-a-letter). Additive.
+		$this->assertSame('0.60.0', self::$register['info']['version']);
+		$this->assertSame('0.60.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
 		$this->assertSame('integer', self::$register['components']['schemas']['portalAccount']['properties']['claimAttempts']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimAttemptsSince']['format']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['newsItem']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
-		$this->assertSame('0.15.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.16.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
@@ -389,7 +392,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.15.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.16.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
@@ -655,7 +658,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.15.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.16.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [

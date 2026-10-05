@@ -1933,6 +1933,8 @@
         "When the activation link stops working.": "When the activation link stops working.",
         "Open the link and sign in. After that you see what %1$s shares with you.": "Open the link and sign in. After that you see what %1$s shares with you.",
         "Open the portal": "Open the portal",
+        "Invitation code hash": "Invitation code hash",
+        "SHA-256 of the one-time code in the invitation letter of a waiting account. Emptied when the code is redeemed.": "SHA-256 of the one-time code in the invitation letter of a waiting account. Emptied when the code is redeemed.",
         "Invitation token hash": "Invitation token hash",
         "SHA-256 of the one-time secret in the invitation mail of a waiting account. Emptied when the secret is redeemed.": "SHA-256 of the one-time secret in the invitation mail of a waiting account. Emptied when the secret is redeemed.",
         "Invitation expiry": "Invitation expiry",

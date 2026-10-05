@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.59.0"
+        "version": "0.60.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.59.0",
+                "version": "0.60.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -737,7 +737,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.15.0",
+                "version": "0.16.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -979,6 +979,12 @@
                         "title": "Invitation token hash",
                         "type": "string",
                         "description": "SHA-256 of the one-time secret in the invitation mail of a waiting account. Emptied when the secret is redeemed.",
+                        "example": "9f86d0…"
+                    },
+                    "claimCodeHash": {
+                        "title": "Invitation code hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time code in the invitation letter of a waiting account. Emptied when the code is redeemed.",
                         "example": "9f86d0…"
                     },
                     "claimExpiresAt": {

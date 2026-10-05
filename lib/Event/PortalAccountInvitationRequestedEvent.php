@@ -37,6 +37,22 @@ use OCP\EventDispatcher\Event;
  */
 class PortalAccountInvitationRequestedEvent extends Event {
 	/**
+	 * The invitation goes out by mail, inside a link. The default.
+	 */
+	public const CHANNEL_MAIL = 'mail';
+
+	/**
+	 * The invitation goes out on paper: portaliq answers a short code for
+	 * the app to print in a letter (invitation-code-from-a-letter).
+	 */
+	public const CHANNEL_LETTER = 'letter';
+
+	/**
+	 * A code for a letter was made; `getCode()` holds it.
+	 */
+	public const CODE = 'code';
+
+	/**
 	 * The invitation was mailed.
 	 */
 	public const SENT = 'sent';
@@ -66,14 +82,24 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	private string $expiresAt = '';
 
 	/**
+	 * The code for a letter, as it is printed, or ''. Never set for a mailed
+	 * invitation: that secret leaves by mail only.
+	 *
+	 * @var string
+	 */
+	private string $code = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $appId The dispatching app, taken from its own context.
 	 * @param string $subjectRef The waiting account to invite.
+	 * @param string $channel CHANNEL_MAIL or CHANNEL_LETTER.
 	 */
 	public function __construct(
 		private readonly string $appId,
 		private readonly string $subjectRef,
+		private readonly string $channel = self::CHANNEL_MAIL,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -101,19 +127,44 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	}//end getSubjectRef()
 
 	/**
+	 * How the invitation goes out.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 */
+	public function getChannel(): string {
+		return $this->channel;
+	}//end getChannel()
+
+	/**
 	 * Portaliq's answer.
 	 *
-	 * @param string $result SENT, NOT_SENT or REFUSED.
+	 * @param string $result SENT, NOT_SENT, CODE or REFUSED.
 	 * @param string $expiresAt When the invitation stops working, or ''.
+	 * @param string $code The code for a letter, or ''.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
 	 */
-	public function answer(string $result, string $expiresAt = ''): void {
+	public function answer(string $result, string $expiresAt = '', string $code = ''): void {
 		$this->result    = $result;
 		$this->expiresAt = $expiresAt;
+		$this->code      = $code;
 	}//end answer()
+
+	/**
+	 * The code for a letter, as it is printed, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 */
+	public function getCode(): string {
+		return $this->code;
+	}//end getCode()
 
 	/**
 	 * The result slot, '' while nothing has answered.

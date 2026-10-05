@@ -49,8 +49,11 @@ class PortalAccountInvitationListenerTest extends TestCase {
 		$this->assertSame('2026-10-12T09:00:00+00:00', $event->getExpiresAt());
 		// Nothing on the event carries the secret back to the app.
 		$this->assertStringNotContainsString('secret-abc', serialize([$event->getResult(), $event->getExpiresAt(), $event->getAppId(), $event->getSubjectRef()]));
+		// A mailed invitation leaves the code slot empty: its secret goes by mail only.
+		$this->assertSame('', $event->getCode());
+		$this->assertSame(PortalAccountInvitationRequestedEvent::CHANNEL_MAIL, $event->getChannel());
 		$this->assertSame(
-			['__construct', 'getAppId', 'getSubjectRef', 'answer', 'getResult', 'getExpiresAt'],
+			['__construct', 'getAppId', 'getSubjectRef', 'getChannel', 'answer', 'getCode', 'getResult', 'getExpiresAt'],
 			array_values(array_filter(get_class_methods($event), static fn (string $m): bool => in_array($m, ['isPropagationStopped', 'stopPropagation'], true) === false))
 		);
 
@@ -95,6 +98,58 @@ class PortalAccountInvitationListenerTest extends TestCase {
 
 	}//end testAFailureIsARefusalNotAnExceptionAndItsMessageIsNotLogged()
 
+	/**
+	 * invitation-code-from-a-letter REQ-PIS-009: for a letter the code is
+	 * answered to the app, which prints it, and nothing is mailed.
+	 *
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 */
+	public function testALetterGetsACodeAndNoMail(): void {
+		$invitations = $this->invitations();
+		$invitations->expects($this->never())->method('issue');
+		$invitations->expects($this->once())->method('issueCode')->with('waiting-1', 'learniq')->willReturn(
+			['code' => 'ABCD-EFGH-2345', 'expiresAt' => '2026-10-12T09:00:00+00:00']
+		);
+		$mailer = $this->mailer();
+		$mailer->expects($this->never())->method('send');
+		$event = new PortalAccountInvitationRequestedEvent(appId: 'learniq', subjectRef: 'waiting-1', channel: PortalAccountInvitationRequestedEvent::CHANNEL_LETTER);
+
+		$this->listener($invitations, $mailer)->handle($event);
+
+		$this->assertSame(PortalAccountInvitationRequestedEvent::CODE, $event->getResult());
+		$this->assertSame('ABCD-EFGH-2345', $event->getCode());
+		$this->assertSame('2026-10-12T09:00:00+00:00', $event->getExpiresAt());
+
+	}//end testALetterGetsACodeAndNoMail()
+
+	public function testARefusedOrFailedCodeIsARefusal(): void {
+		$invitations = $this->invitations();
+		$invitations->method('issueCode')->willReturn(null);
+		$event = new PortalAccountInvitationRequestedEvent(appId: 'dossiq', subjectRef: 'waiting-1', channel: 'letter');
+		$this->listener($invitations, $this->mailer())->handle($event);
+		$this->assertSame(PortalAccountInvitationRequestedEvent::REFUSED, $event->getResult());
+		$this->assertSame('', $event->getCode());
+
+		$failing = $this->invitations();
+		$failing->method('issueCode')->willThrowException(new RuntimeException('down'));
+		$second = new PortalAccountInvitationRequestedEvent(appId: 'learniq', subjectRef: 'waiting-1', channel: 'letter');
+		$this->listener($failing, $this->mailer())->handle($second);
+		$this->assertSame(PortalAccountInvitationRequestedEvent::REFUSED, $second->getResult());
+
+	}//end testARefusedOrFailedCodeIsARefusal()
+
+	public function testAnUnknownChannelIsRefusedAndNothingIsIssued(): void {
+		$invitations = $this->invitations();
+		$invitations->expects($this->never())->method('issue');
+		$invitations->expects($this->never())->method('issueCode');
+		$event = new PortalAccountInvitationRequestedEvent(appId: 'learniq', subjectRef: 'waiting-1', channel: 'sms');
+
+		$this->listener($invitations, $this->mailer())->handle($event);
+
+		$this->assertSame(PortalAccountInvitationRequestedEvent::REFUSED, $event->getResult());
+
+	}//end testAnUnknownChannelIsRefusedAndNothingIsIssued()
+
 	public function testAnotherEventIsLeftAlone(): void {
 		$invitations = $this->invitations();
 		$invitations->expects($this->never())->method('issue');
@@ -132,7 +187,7 @@ class PortalAccountInvitationListenerTest extends TestCase {
 	 * @return mixed
 	 */
 	private function invitations(): mixed {
-		return $this->getMockBuilder(WaitingAccountInvitation::class)->disableOriginalConstructor()->onlyMethods(['issue'])->getMock();
+		return $this->getMockBuilder(WaitingAccountInvitation::class)->disableOriginalConstructor()->onlyMethods(['issue', 'issueCode'])->getMock();
 	}//end invitations()
 
 	/**

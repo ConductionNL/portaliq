@@ -65,9 +65,20 @@ class PortalAccountInvitationListener implements IEventListener {
 	 * @return void
 	 *
 	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof PortalAccountInvitationRequestedEvent) === false) {
+			return;
+		}
+
+		if ($event->getChannel() === PortalAccountInvitationRequestedEvent::CHANNEL_LETTER) {
+			$this->answerCode(event: $event);
+			return;
+		}
+
+		if ($event->getChannel() !== PortalAccountInvitationRequestedEvent::CHANNEL_MAIL) {
+			$event->answer(PortalAccountInvitationRequestedEvent::REFUSED);
 			return;
 		}
 
@@ -96,4 +107,29 @@ class PortalAccountInvitationListener implements IEventListener {
 
 		$event->answer(PortalAccountInvitationRequestedEvent::SENT, $issued['expiresAt']);
 	}//end handle()
+
+	/**
+	 * Answer the code for a paper letter. Nothing is mailed.
+	 *
+	 * @param PortalAccountInvitationRequestedEvent $event The event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 */
+	private function answerCode(PortalAccountInvitationRequestedEvent $event): void {
+		try {
+			$issued = $this->invitations->issueCode(subjectRef: $event->getSubjectRef(), appId: $event->getAppId());
+		} catch (Throwable $exception) {
+			$this->logger->error('Portal account invitation code failed', ['exception' => get_class($exception)]);
+			$issued = null;
+		}
+
+		if ($issued === null) {
+			$event->answer(PortalAccountInvitationRequestedEvent::REFUSED);
+			return;
+		}
+
+		$event->answer(PortalAccountInvitationRequestedEvent::CODE, $issued['expiresAt'], $issued['code']);
+	}//end answerCode()
 }//end class

@@ -1991,6 +1991,8 @@
         "When the activation link stops working.": "Wanneer de activatielink niet meer werkt.",
         "Open the link and sign in. After that you see what %1$s shares with you.": "Open de link en log in. Daarna ziet u wat %1$s met u deelt.",
         "Open the portal": "Open het portaal",
+        "Invitation code hash": "Codehash van de uitnodiging",
+        "SHA-256 of the one-time code in the invitation letter of a waiting account. Emptied when the code is redeemed.": "SHA-256 van de eenmalige code in de uitnodigingsbrief van een wachtend account. Wordt leeggemaakt zodra de code is gebruikt.",
         "Invitation token hash": "Tokenhash van de uitnodiging",
         "SHA-256 of the one-time secret in the invitation mail of a waiting account. Emptied when the secret is redeemed.": "SHA-256 van het eenmalige geheim in de uitnodigingsmail van een wachtend account. Wordt leeggemaakt zodra het geheim is gebruikt.",
         "Invitation expiry": "Verloopmoment van de uitnodiging",
