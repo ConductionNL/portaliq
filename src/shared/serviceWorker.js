@@ -59,7 +59,7 @@
 // answer, is never cached: a navigation answered with a redirected response
 // is a network error by the Fetch spec.
 
-const CACHE_VERSION = 'portaliq-shell-v5'
+const CACHE_VERSION = 'portaliq-shell-v6'
 
 // Bump CACHE_VERSION on any change to this list, or to the caching logic
 // below — the activate handler then deletes the old cache on next launch
@@ -67,7 +67,16 @@ const CACHE_VERSION = 'portaliq-shell-v5'
 //
 // The site's lazy page chunks are NOT listed: they are only loaded on the
 // route that needs them, and their file names change with every build.
-const SHELL_ASSET_SUFFIXES = ['/js/portaliq-site.js', '/site']
+const SHELL_ASSET_SUFFIXES = ['/js/portaliq-site.js']
+
+// The site's page is matched on its exact path, never on a path that merely
+// ends in "/site": under the app's scope the authenticated dashboard answers
+// every path (dashboard#catchAll), and a cached copy of that HTML must never
+// be served offline. The worker is served at <route root>/portal/sw.js and
+// the site lives at <route root>/site, so the page's path is worked out from
+// the worker's own address (v6 drops whatever v5 cached under such a path).
+// Without an address of its own the worker caches no page at all.
+const SITE_PAGE_PATH = sitePagePath(self.location?.href)
 
 // The URLs this worker holds in its cache. Empty until the start-up read
 // below finishes; until then every request goes to the network, which is
@@ -120,9 +129,9 @@ self.addEventListener('fetch', (event) => {
 		return
 	}
 
-	const isShellAsset = SHELL_ASSET_SUFFIXES.some((suffix) =>
-		url.pathname.endsWith(suffix),
-	)
+	const isShellAsset =
+		(SITE_PAGE_PATH !== null && url.pathname === SITE_PAGE_PATH)
+		|| SHELL_ASSET_SUFFIXES.some((suffix) => url.pathname.endsWith(suffix))
 	if (!isShellAsset) {
 		return
 	}
@@ -138,6 +147,21 @@ self.addEventListener('fetch', (event) => {
 	// next time without ever standing in the way of this load.
 	event.waitUntil(storeInBackground(event.request, key))
 })
+
+/**
+ * The path of the site's page, from the worker's own address
+ * (`<route root>/portal/sw.js` → `<route root>/site`), or null without one.
+ *
+ * @param {string|undefined} workerUrl The worker's own address.
+ * @return {string|null} The page's path.
+ */
+function sitePagePath(workerUrl) {
+	try {
+		return new URL('../site', workerUrl).pathname
+	} catch {
+		return null
+	}
+}
 
 /**
  * The address a request is cached under: without its fragment. A fragment is
