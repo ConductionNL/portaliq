@@ -25,10 +25,7 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<NcNoteCard
-			v-else
-			:type="type"
-			:data-testid="`portal-home-page-${state}`">
+		<NcNoteCard v-else :type="type" :data-testid="`portal-home-page-${state}`">
 			<p class="portal-home-page__headline">{{ headline }}</p>
 			<p v-if="consequence" class="portal-home-page__consequence">
 				{{ consequence }}

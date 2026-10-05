@@ -162,10 +162,15 @@ class PortalHomePage {
 			$title = (string)$row['title'];
 		}
 
+		$pageId = null;
+		if ($row !== null) {
+			$pageId = self::rowId(row: $row);
+		}
+
 		return [
 			'state'     => $state,
 			'route'     => self::ROOT_ROUTE,
-			'pageId'    => ($row === null) ? null : self::rowId(row: $row),
+			'pageId'    => $pageId,
 			'pageTitle' => $title,
 		];
 	}//end state()
