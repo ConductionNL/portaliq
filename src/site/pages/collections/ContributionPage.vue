@@ -84,12 +84,58 @@
 				:tiles="tilesOf(item)"
 				@open="openTile" />
 
-			<!-- Rows as cards with a progress figure (REQ-SMO-028). -->
+			<!-- The overview's opening (site-school-blocks). -->
+			<GreetingBlock
+				v-else-if="item.kind === 'greeting'"
+				:block="item.block"
+				:session="session"
+				:route="item.block.page ? tileTarget(item.block).route || '' : ''"
+				:pageHeading="homeHeading && item.index === firstGreetingIndex"
+				:t="tr"
+				:locale="lang"
+				@navigate="$emit('navigate', $event)">
+				<template v-if="item.action" #action>
+					<SlotHost
+						name="action"
+						:block="{
+							type: 'cta',
+							action: item.block.action,
+							label: item.block.label,
+						}"
+						:action="item.action"
+						:contribution="currentContribution"
+						:api="api"
+						:t="tr"
+						:locale="lang"
+						@created="
+							(object, written) => afterWrite(written || item.action)
+						" />
+				</template>
+			</GreetingBlock>
+
+			<!-- Rows as cards with a progress figure (REQ-SMO-028), and the
+			     status, note and coming-up parts (site-school-blocks). -->
 			<ProgressCards
 				v-else-if="item.kind === 'table' && item.block.display === 'cards'"
 				:rows="tableWindow(item).rows"
 				:block="item.block"
+				:collection="item.collection"
 				:titleFields="item.collection.titleFields || []"
+				:t="tr"
+				:locale="lang" />
+
+			<!-- Dated rows, bars and mark chips (site-school-blocks). -->
+			<component
+				:is="displayComponent(item.block.display)"
+				v-else-if="
+					item.kind === 'table' && displayComponent(item.block.display)
+				"
+				:rows="tableWindow(item).rows"
+				:block="item.block"
+				:collection="item.collection"
+				:label="item.block.label || item.collection.label || ''"
+				:level="sectionLevel"
+				:loading="loadedOf(item.collection).loading"
 				:t="tr"
 				:locale="lang" />
 
@@ -202,6 +248,17 @@
 				:t="tr"
 				:locale="lang" />
 
+			<!-- One figure as a segmented bar (site-school-blocks). -->
+			<SegmentedFigure
+				v-else-if="item.kind === 'kpi' && item.block.display === 'segmented'"
+				:row="kpiRow(item)"
+				:block="item.block"
+				:label="item.block.label || ''"
+				:level="sectionLevel"
+				:loading="loadedOf(item.collection).loading"
+				:t="tr"
+				:locale="lang" />
+
 			<KpiCards
 				v-else-if="item.kind === 'kpi'"
 				:cards="item.block.cards || []"
@@ -210,6 +267,19 @@
 				:label="item.block.label || ''"
 				:caption="item.block.caption || null"
 				:level="sectionLevel"
+				:t="tr"
+				:locale="lang" />
+
+			<!-- The same items as date tiles (site-school-blocks). -->
+			<CalendarTiles
+				v-else-if="
+					item.kind === 'calendar' && item.block.display === 'tiles'
+				"
+				:items="calendarOf(item)"
+				:loading="calendarLoading(item)"
+				:label="item.block.label || ''"
+				:level="sectionLevel"
+				:today="today || undefined"
 				:t="tr"
 				:locale="lang" />
 
@@ -456,6 +526,13 @@ export default {
 		ProgressCards: defineAsyncComponent(mijnBlocks.progressCards),
 		DocumentsBlock: defineAsyncComponent(mijnBlocks.documents),
 		TimelineBlock: defineAsyncComponent(mijnBlocks.timeline),
+		// site-school-blocks, each on demand as well.
+		DateRows: defineAsyncComponent(mijnBlocks.dateRows),
+		GradeBars: defineAsyncComponent(mijnBlocks.bars),
+		MarkChips: defineAsyncComponent(mijnBlocks.chips),
+		SegmentedFigure: defineAsyncComponent(mijnBlocks.segments),
+		GreetingBlock: defineAsyncComponent(mijnBlocks.greeting),
+		CalendarTiles: defineAsyncComponent(mijnBlocks.calendarTiles),
 	},
 
 	// The shell hands every page the whole contract (session, portal, nav, …);
@@ -463,6 +540,10 @@ export default {
 	inheritAttrs: false,
 
 	props: {
+		/** The session, for a greeting's first name (site-school-blocks). */
+		session: { type: Object, default: null },
+		/** Whether the page's first greeting is the screen's heading (/mijn). */
+		homeHeading: { type: Boolean, default: false },
 		/** The navigation entry: `key`, `label`, `page`, `contribution`. */
 		entry: { type: Object, default: null },
 		/** The page, when no entry carries it. */
@@ -510,6 +591,17 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The index of the page's first greeting block, -1 without one.
+		 *
+		 * @return {number}
+		 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-greeting-block-opens-the-overview
+		 */
+		firstGreetingIndex() {
+			const first = this.blocks.find((item) => item.kind === 'greeting')
+			return first ? first.index : -1
+		},
+
 		currentPage() {
 			return this.entry?.page || this.page || null
 		},
@@ -767,6 +859,21 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The component a collection block's display draws with, or null for
+		 * the table (site-school-blocks).
+		 *
+		 * @param {string} display The block's display.
+		 * @return {string|null} The component name.
+		 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-draw-its-rows-as-dated-rows-bars-chips-or-richer-cards
+		 */
+		displayComponent(display) {
+			return (
+				{ rows: 'DateRows', bars: 'GradeBars', chips: 'MarkChips' }[display]
+				|| null
+			)
+		},
+
 		/**
 		 * Load every collection the page's blocks read, and the children's
 		 * names when a table groups.

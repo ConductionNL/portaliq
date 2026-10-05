@@ -32,6 +32,34 @@
 		<EmptyState
 			v-else-if="entries.length === 0"
 			:text="tr('You have nothing to do right now.')" />
+		<!-- The "do this first" card (site-school-blocks, display: highlight):
+		     an accent-light ground and a small label, never a coloured edge. -->
+		<ul
+			v-else-if="block.display === 'highlight'"
+			class="pq-tasks-block__highlights">
+			<li
+				v-for="entry in entries"
+				:key="entry.id || entry.title"
+				class="pq-tasks-block__highlight"
+				data-testid="mijn-task-highlight">
+				<div class="pq-tasks-block__highlight-text">
+					<p v-if="block.eyebrow" class="pq-tasks-block__eyebrow">
+						{{ block.eyebrow }}
+					</p>
+					<p class="pq-tasks-block__highlight-title">{{ entry.title }}</p>
+					<p v-if="entry.subtitle" class="pq-tasks-block__highlight-line">
+						{{ entry.subtitle }}
+					</p>
+				</div>
+				<a
+					v-if="entry.route"
+					class="utrecht-button utrecht-button--primary-action pq-tasks-block__highlight-button"
+					:href="hrefOf(entry.route)"
+					@click.prevent="open(entry)">
+					{{ block.buttonLabel || tr('Open') }}
+				</a>
+			</li>
+		</ul>
 		<ul v-else class="pq-tasks-block__list">
 			<ActionRow
 				v-for="entry in entries"
@@ -54,7 +82,8 @@ import {
 	recordRoute,
 	sessionStore,
 } from '../../pages/inbox/inbox.js'
-import { deadlineBadge, mijnTranslator, taskRows } from './rows.js'
+import { joined } from './displays.js'
+import { deadlineBadge, mijnTranslator, siteHref, taskRows } from './rows.js'
 
 /**
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
@@ -131,6 +160,12 @@ export default {
 				}
 				return {
 					...entry,
+					subtitle: joined(
+						entry.row,
+						this.block.subtitleFields,
+						' · ',
+						this.collection,
+					),
 					link,
 					route: entry.id ? recordRoute(this.nav, link) || '' : '',
 					badge: deadlineBadge(
@@ -145,6 +180,15 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * @param {string} route An in-site route.
+		 * @return {string} Its real address.
+		 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-the-overview-blocks-may-take-the-school-displays
+		 */
+		hrefOf(route) {
+			return siteHref(route)
+		},
+
 		/**
 		 * Keep the row to open, so the page that shows it selects it, then go.
 		 *
@@ -166,6 +210,54 @@ export default {
 <style scoped>
 .pq-tasks-block {
 	margin-block-end: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-tasks-block__highlights {
+	display: grid;
+	gap: 0.75rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-tasks-block__highlight {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 1.25rem 1.5rem;
+	border: 1px solid
+		var(--nldesign-color-accent, var(--nldesign-color-border, currentcolor));
+	border-radius: var(
+		--nldesign-website-border-radius-large,
+		var(--utrecht-border-radius-md, 0.75rem)
+	);
+	background: var(
+		--nldesign-color-accent-light,
+		var(--nldesign-color-primary-light, transparent)
+	);
+}
+
+.pq-tasks-block__eyebrow {
+	margin: 0 0 0.25rem;
+	color: var(
+		--nldesign-color-accent-text,
+		var(--utrecht-document-color, CanvasText)
+	);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.pq-tasks-block__highlight-title {
+	margin: 0;
+	font-weight: 700;
+}
+
+.pq-tasks-block__highlight-line {
+	margin: 0.25rem 0 0;
 }
 
 .pq-tasks-block__list {

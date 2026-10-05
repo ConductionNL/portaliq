@@ -51,3 +51,23 @@ export function caseOverviewsOf(contributions, label) {
 		})
 		.filter((overview) => overview.page.blocks.length > 0)
 }
+
+/**
+ * Whether /mijn opens on exactly one home page whose blocks hold a greeting:
+ * that greeting is then the screen's heading (site-school-blocks). With
+ * several home pages each is titled by its app, so the shell's own heading
+ * stays.
+ *
+ * @param {Array<object>} entries The home entries.
+ * @return {boolean} True when the greeting takes the heading's place.
+ * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-greeting-block-opens-the-overview
+ */
+export function homeGreets(entries) {
+	return (
+		Array.isArray(entries)
+		&& entries.length === 1
+		&& (entries[0]?.page?.blocks || []).some(
+			(block) => block?.type === 'greeting',
+		)
+	)
+}
