@@ -132,6 +132,15 @@ class PortalPageSchemaTest extends TestCase {
 			['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht sturen'],
 			['type' => 'richText', 'template' => 'U heeft toegang tot {expiresAt}.', 'whenEmpty' => ['expiresAt' => 'U heeft toegang zonder einddatum.']],
 			['type' => 'collection', 'collection' => 'zaken', 'display' => 'cards', 'progress' => ['valueField' => 'a', 'totalField' => 'b', 'label' => 'uur']],
+			// site-school-blocks wave 2.
+			['type' => 'greeting', 'label' => 'Afwezig melden', 'route' => '/mijn/afwezig', 'showDate' => true],
+			['type' => 'collection', 'collection' => 'zaken', 'display' => 'rows', 'dateField' => 'a', 'titleFields' => ['b'], 'subtitleField' => 'c', 'quoteField' => 'd', 'statusField' => 'e', 'statusTones' => ['seen' => 'success'], 'statusNoteField' => 'f'],
+			['type' => 'collection', 'collection' => 'zaken', 'display' => 'bars', 'labelField' => 'a', 'valueField' => 'b', 'max' => 10, 'noteField' => 'c', 'noteLabel' => 'Van de leerkracht', 'captionField' => 'd'],
+			['type' => 'collection', 'collection' => 'zaken', 'display' => 'chips', 'labelField' => 'a', 'valuesField' => 'b', 'averageField' => 'c', 'lowBelow' => 5.5],
+			['type' => 'collection', 'collection' => 'zaken', 'display' => 'cards', 'subtitleFields' => ['a'], 'statusField' => 'b', 'noteField' => 'c', 'soonField' => 'd', 'soonLabel' => 'Binnenkort', 'avatar' => true],
+			['type' => 'tasks', 'collection' => 'zaken', 'display' => 'highlight', 'eyebrow' => 'Eerst dit', 'buttonLabel' => 'Tijd kiezen', 'subtitleFields' => ['a']],
+			['type' => 'kpi', 'collection' => 'zaken', 'display' => 'segmented', 'segments' => [['field' => 'a', 'label' => 'A', 'tone' => 'positive']], 'target' => 480, 'unit' => 'uur'],
+			['type' => 'calendar', 'display' => 'tiles', 'sources' => [['collection' => 'zaken', 'startField' => 'a', 'titleField' => 'b']]],
 		];
 		foreach ($blocks as $block) {
 			$this->assertTrue($this->fits(record: $this->record(block: $block)), (string)json_encode($block));

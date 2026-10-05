@@ -70,6 +70,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
+use OCA\Portaliq\Service\VisibleFromGate;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\SubmissionReceiptService;
@@ -630,6 +631,10 @@ class ContributionController extends Controller implements PortalProtected {
 		// Change signin-eherkenning-branch D2: a branch session sees its branch only.
 		$objects = $this->branches->rows(subject: $subject, collection: $collection, rows: $objects);
 
+		// A row waits until its moment has passed on the server clock
+		// (site-school-blocks, `visibleFromField`).
+		$objects = (new VisibleFromGate())->rows(rows: $objects, collection: $collection);
+
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($hidden !== []) {
 			// A case of a type this portal does not show leaves the list
@@ -762,6 +767,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// (operate-show-per-case-type REQ-OSC-002).
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($object === null
+			|| (new VisibleFromGate())->rows(rows: [$object], collection: $collection) === []
 			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
 			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
 		) {

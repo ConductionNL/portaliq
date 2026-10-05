@@ -371,19 +371,41 @@ class PortalInboxReader {
 			return [];
 		}
 
+		// A message waits until its moment has passed (site-school-blocks).
+		$rows = $this->readScoped(
+			subject: $subject,
+			collection: $collection,
+			contributingApp: $contributingApp,
+			scope: ['field' => $scopeField, 'subjectRef' => $subjectRef, 'claim' => $scopeClaim, 'via' => $via]
+		);
+
+		return (new VisibleFromGate())->rows(rows: $rows, collection: $collection);
+	}//end readInboxCollection()
+
+	/**
+	 * The scoped read of one inbox collection, before the visible-from gate.
+	 *
+	 * @param array<string, mixed> $subject         The subject.
+	 * @param array<string, mixed> $collection      The collection.
+	 * @param string               $contributingApp The contributing app.
+	 * @param array<string, mixed> $scope           The scope: `field`, `subjectRef`, `claim`, `via`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readScoped(array $subject, array $collection, string $contributingApp, array $scope): array {
 		return $this->reader->readCollection(
 			register: (string)($collection['register'] ?? ''),
 			schema: (string)($collection['schema'] ?? ''),
-			scopeField: $scopeField,
-			subjectRef: $subjectRef,
+			scopeField: (string)$scope['field'],
+			subjectRef: (string)$scope['subjectRef'],
 			organisation: (string)($subject['organisation'] ?? ''),
 			limit: self::ROW_LIMIT,
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			scopeClaim: (string)$scope['claim'],
 			contributingApp: $contributingApp,
-			via: ($collection['via'] ?? null),
+			via: $scope['via'],
 			audience: (string)($subject['audience'] ?? ''),
 			fields: ($collection['fields'] ?? null),
 			filter: (array)($collection['filter'] ?? [])
 		);
-	}//end readInboxCollection()
+	}//end readScoped()
 }//end class

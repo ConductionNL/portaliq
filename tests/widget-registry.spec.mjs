@@ -19,6 +19,7 @@ import {
 	coverageByPlacement,
 	NLDS_COVERAGE,
 	NLDS_PLACEMENTS,
+	SITE_COMPOSITIONS,
 } from '../src/site/widgets/coverage.js'
 import {
 	loaders,
@@ -287,7 +288,8 @@ test('every built widget is in the record as a widget, under its own key', () =>
 	// A widget that exists but is recorded as a part, or under another key,
 	// would make the count read as covered while the palette offered
 	// something else.
-	for (const key of Object.keys(loaders)) {
+	const composed = SITE_COMPOSITIONS.map((entry) => entry.key)
+	for (const key of Object.keys(loaders).filter((k) => !composed.includes(k))) {
 		const recorded = NLDS_COVERAGE.filter((entry) => entry.key === key)
 		assert.equal(
 			recorded.length,
@@ -304,5 +306,33 @@ test('every built widget is in the record as a widget, under its own key', () =>
 			metas[key].group,
 			`${key}: the record says ${recorded[0].group}, the meta says ${metas[key].group}`,
 		)
+	}
+})
+
+test('a composed widget is listed once, made of recorded components, and kept out of the record', () => {
+	// site-school-blocks: the school portals' blocks are compositions, not NL
+	// Design System components. They must be accounted for somewhere, and
+	// only in one place, or the 101-row record would drift from design D1.
+	const components = new Set(NLDS_COVERAGE.map((entry) => entry.component))
+	const keys = SITE_COMPOSITIONS.map((entry) => entry.key)
+	assert.equal(new Set(keys).size, keys.length, 'a composition is listed twice')
+	for (const entry of SITE_COMPOSITIONS) {
+		assert.ok(Object.hasOwn(loaders, entry.key), `${entry.key} has no loader`)
+		assert.ok(Object.hasOwn(metas, entry.key), `${entry.key} has no meta`)
+		assert.equal(
+			NLDS_COVERAGE.some((row) => row.key === entry.key),
+			false,
+			`${entry.key} is in the NL Design System record as well`,
+		)
+		assert.ok(entry.composes.length > 0 && entry.why.trim() !== '', `${entry.key} says nothing about what it is`)
+		for (const name of entry.composes) {
+			assert.ok(components.has(name), `${entry.key} names "${name}", which is not in the record`)
+		}
+	}
+
+	// And every built widget is in exactly one of the two lists.
+	for (const key of Object.keys(loaders)) {
+		const inRecord = NLDS_COVERAGE.some((row) => row.key === key)
+		assert.ok(inRecord !== keys.includes(key), `${key} must be in exactly one of the record and the compositions`)
 	}
 })

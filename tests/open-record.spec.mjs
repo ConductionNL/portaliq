@@ -134,7 +134,8 @@ test('site: the shell, the inbox and the contribution page are wired to it', () 
 	)
 	assert.match(inbox, /recordLink/)
 	assert.match(inbox, /NotificationSettings/)
-	assert.match(inbox, /@click="openRecord\(message\.recordLink\)"/)
+	assert.match(inbox, /@click="onOpenClick\(\$event, message\.recordLink\)"/)
+	assert.match(inbox, /this\.openRecord\(link\)/)
 	const page = readFileSync(
 		new URL(
 			'../src/site/pages/collections/ContributionPage.vue',

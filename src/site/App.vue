@@ -128,6 +128,16 @@
 			{{ confirmMessage.text }}
 		</p>
 
+		<!-- What came of an invitation link (`#claim=`), or the ask to sign
+		     in for it (invitation-secret-joins-the-signed-in-account). -->
+		<p
+			v-if="claimMessage"
+			class="container utrecht-paragraph"
+			:role="claimMessage.role"
+			data-testid="site-claim-invitation">
+			{{ claimMessage.text }}
+		</p>
+
 		<!--
 			The ask for an e-mail address while the account has none. On a
 			`/mijn` page the signed-in area shows it in its own content column,
@@ -264,6 +274,7 @@
 							@navigate="goSection"
 							@unread="unreadOverride = $event"
 							@refresh="loadAccount"
+							@claimed="onCodeClaimed"
 							@signout="signOut">
 							<template v-if="session && contactPrompt" #prompt>
 								<ContactPrompt
@@ -494,6 +505,12 @@ import FooterColumns from './components/FooterColumns.vue'
 import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
+import {
+	codeOutcome,
+	forgetClaimSecret,
+	keepClaimSecret,
+	redeemKeptClaim,
+} from '../shared/claimInvitation.js'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
 import { noticesFor } from '../shared/notices.js'
@@ -676,6 +693,8 @@ export default {
 			signInNeeded: false,
 			// The answer to a `#confirm-email=` link, or null.
 			confirmMessage: null,
+			// What came of an invitation link (`#claim=`), or null.
+			claimMessage: null,
 			// Whether to ask for an e-mail address (slice e's ContactPrompt).
 			contactPrompt: false,
 			// A signed link for one guest act (`#guest/...`); the page reads it.
@@ -1339,6 +1358,9 @@ export default {
 		// kept in sessionStorage before anything else reads the address, so
 		// it survives the sign-in and opens once the navigation has loaded.
 		this.keepOpenTarget()
+		// An invitation's secret (`#claim=<secret>`) is kept the same way,
+		// and handed back once the visitor is signed in.
+		keepClaimSecret(window.location, window.history, this.claimStorage())
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()
@@ -1437,10 +1459,54 @@ export default {
 				t: this.t,
 			})
 
+			// A kept invitation is handed back before the account loads, so
+			// what it shares is there on the first read.
+			this.claimMessage = await redeemKeptClaim({
+				api: this.api,
+				session: this.session,
+				t: this.t,
+				storage: this.claimStorage(),
+			})
+
 			if (this.session) {
 				await this.loadAccount()
 			} else {
 				this.trySilentSignIn()
+			}
+		},
+
+		/**
+		 * A code from a letter was right (invitation-code-from-a-letter).
+		 * Reading the account again rebuilds the navigation and remounts the
+		 * page the code was typed on, so the sentence is shown by the shell,
+		 * at the top of the page, where it survives that.
+		 *
+		 * @return {Promise<void>} Resolves when the account is read again.
+		 *
+		 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+		 */
+		async onCodeClaimed() {
+			this.claimMessage = {
+				role: 'status',
+				text: this.t(codeOutcome({ ok: true }).text),
+			}
+			window.scrollTo?.({ top: 0 })
+			await this.loadAccount()
+		},
+
+		/**
+		 * sessionStorage for a kept invitation, or null where the browser
+		 * refuses it.
+		 *
+		 * @return {Storage|null}
+		 *
+		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+		 */
+		claimStorage() {
+			try {
+				return window.sessionStorage
+			} catch {
+				return null
 			}
 		},
 
@@ -1529,6 +1595,7 @@ export default {
 			this.recordRows = {}
 			this.contactPrompt = false
 			forgetActingFor()
+			forgetClaimSecret(this.claimStorage())
 			try {
 				window.sessionStorage.removeItem(OPEN_STORAGE_KEY)
 				window.sessionStorage.removeItem(TASK_STORAGE_KEY)

@@ -285,6 +285,50 @@ test('"Open" goes to the page that shows the record and keeps the record to pres
 	}
 })
 
+test('a plain click on "Open" stays in the site; a click for a new tab is left to the browser', () => {
+	const storage = memoryStorage()
+	globalThis.window = { sessionStorage: storage }
+	try {
+		const page = instance(InboxPage, { api: {}, t, nav: NAV })
+		for (const modifier of [
+			{ ctrlKey: true },
+			{ metaKey: true },
+			{ shiftKey: true },
+			{ button: 1 },
+		]) {
+			let prevented = false
+			page.onOpenClick(
+				{
+					...modifier,
+					preventDefault: () => {
+						prevented = true
+					},
+				},
+				MESSAGES[0].recordLink,
+			)
+			assert.equal(prevented, false, JSON.stringify(modifier))
+		}
+		assert.deepEqual(page.emitted, [])
+		assert.equal(storage.getItem(OPEN_STORAGE_KEY), null)
+
+		let prevented = false
+		page.onOpenClick(
+			{
+				button: 0,
+				preventDefault: () => {
+					prevented = true
+				},
+			},
+			MESSAGES[0].recordLink,
+		)
+		assert.equal(prevented, true)
+		assert.deepEqual(page.emitted, [['navigate', '/mijn/dossiq/cases']])
+		assert.equal(JSON.parse(storage.getItem(OPEN_STORAGE_KEY)).id, 'z-1')
+	} finally {
+		delete globalThis.window
+	}
+})
+
 test('an inbox row shows unread in text, its readiness fields, its delivery and its ways out', async () => {
 	const html = await renderComponent(
 		inState(InboxPage, { loading: false, messages: MESSAGES }),
@@ -300,11 +344,18 @@ test('an inbox row shows unread in text, its readiness fields, its delivery and 
 	assert.match(html, /<dt>Legal effect<\/dt><dd>Bezwaar mogelijk<\/dd>/)
 	assert.match(html, /<dt>Deadline<\/dt>/)
 	assert.match(html, /Also sent to MijnOverheid Berichtenbox\./)
+	// "Open" is a real link with the record's address, so it opens in a new
+	// tab and reads as a link to a screen reader; only where a page shows it.
 	assert.equal(
-		(html.match(/>Open<\/button>/g) || []).length,
+		(html.match(/data-testid="inbox-row-open"[^>]*>Open<\/a>/g) || []).length,
 		1,
 		'Open only where a page shows the record',
 	)
+	assert.match(
+		html,
+		/<a class="utrecht-button-link[^"]*" href="\/mijn\/dossiq\/cases" data-testid="inbox-row-open"/,
+	)
+	assert.doesNotMatch(html, />Open<\/button>/)
 	assert.match(html, />View task<\/button>/)
 	assert.match(
 		html,

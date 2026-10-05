@@ -96,14 +96,16 @@ class RecordBlockNormaliser {
 			}
 		}
 
-		if ($cards === []) {
+		// A segmented bar (site-school-blocks) may stand without cards.
+		$segmented = (new SchoolBlockKeys())->segmentedKeys(block: $block);
+		if ($cards === [] && $segmented === []) {
 			return null;
 		}
 
 		$out = $this->withLabel(declared: $block, entry: ['type' => 'kpi', 'collection' => $collection]);
 		$out = (new RecordScopeNormaliser())->scope(declared: $block, entry: $out);
 		$out['cards'] = $cards;
-		return $this->withPickAndCaption(declared: $block, entry: $out);
+		return $this->withPickAndCaption(declared: $block, entry: $out) + $segmented;
 	}//end kpiBlock()
 
 	/**

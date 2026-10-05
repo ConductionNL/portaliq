@@ -46,16 +46,20 @@ import { metaOf as codeBlockMeta } from './nlCodeBlock/meta.js'
 import { metaOf as descriptionListMeta } from './nlDescriptionList/meta.js'
 import { metaOf as dialogMeta } from './nlDialog/meta.js'
 import { metaOf as drawerMeta } from './nlDrawer/meta.js'
+import { metaOf as eventListMeta } from './nlEventList/meta.js'
 import { metaOf as headingMeta } from './nlHeading/meta.js'
 import { metaOf as imageMeta } from './nlImage/meta.js'
 import { metaOf as languageNavMeta } from './nlLanguageNav/meta.js'
 import { metaOf as linkMeta } from './nlLink/meta.js'
 import { metaOf as linkListMeta } from './nlLinkList/meta.js'
 import { metaOf as listMeta } from './nlList/meta.js'
+import { metaOf as newsArticleMeta } from './nlNewsArticle/meta.js'
+import { metaOf as newsListMeta } from './nlNewsList/meta.js'
 import { metaOf as noteMeta } from './nlNote/meta.js'
 import { metaOf as paragraphMeta } from './nlParagraph/meta.js'
 import { metaOf as progressBarMeta } from './nlProgressBar/meta.js'
 import { metaOf as progressCircleMeta } from './nlProgressCircle/meta.js'
+import { metaOf as quickTasksMeta } from './nlQuickTasks/meta.js'
 import { metaOf as quoteMeta } from './nlQuote/meta.js'
 import { metaOf as separatorMeta } from './nlSeparator/meta.js'
 import { metaOf as signInMeta } from './nlSignIn/meta.js'
@@ -116,6 +120,10 @@ export const metas = {
 	nlSignIn: signInMeta,
 	nlTaskNav: taskNavMeta,
 	nlTabs: tabsMeta,
+	nlQuickTasks: quickTasksMeta,
+	nlNewsList: newsListMeta,
+	nlNewsArticle: newsArticleMeta,
+	nlEventList: eventListMeta,
 }
 
 /**

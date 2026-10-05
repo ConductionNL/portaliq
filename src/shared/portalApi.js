@@ -481,7 +481,8 @@ export function createPortalApi(config, store = {}) {
 
 		/**
 		 * The resident's own notice choices per kind and channel, with
-		 * whether a device is registered for push
+		 * whether push is available (a registered device and a transport that
+		 * really delivers)
 		 * (inbox-notifications-and-preferences, REQ-NAP-007).
 		 *
 		 * @return {Promise<{preferences: object, pushAvailable: boolean}|null>} Null when refused.
@@ -703,6 +704,19 @@ export function createPortalApi(config, store = {}) {
 		 */
 		async confirmEmail(token) {
 			return answer('POST', '/identity/email/confirm', { token })
+		},
+
+		/**
+		 * Hand back the secret of an invitation, so the waiting account
+		 * behind it joins the signed-in person's own account.
+		 *
+		 * @param {string} secret The secret from the invitation.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+		 */
+		async claimInvitation(secret) {
+			return answer('POST', '/identity/invitation/redeem', { secret })
 		},
 
 		/**

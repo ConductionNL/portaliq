@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Service\PagedObjectReads;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -45,6 +46,8 @@ use Throwable;
  * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
  */
 class PushSubscriptionController extends Controller implements PortalProtected {
+	use PagedObjectReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -223,9 +226,12 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 */
 	private function findExistingId(object $objectService, string $subjectRef, string $endpoint): ?string {
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->readEveryPage(
+				objectService: $objectService,
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				filters: ['subjectRef' => $subjectRef, 'endpoint' => $endpoint]
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: push subscription lookup failed', ['reason' => $e->getMessage()]);
 			return null;

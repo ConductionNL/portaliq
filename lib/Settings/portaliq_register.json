@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.58.0"
+        "version": "0.65.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.58.0",
+                "version": "0.65.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -737,7 +737,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.14.0",
+                "version": "0.17.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -974,6 +974,58 @@
                         "format": "date-time",
                         "description": "When the activation link stops working.",
                         "example": "2026-10-03T09:00:00+00:00"
+                    },
+                    "claimTokenHash": {
+                        "title": "Invitation token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret in the invitation mail of a waiting account. Emptied when the secret is redeemed. Readable by administrators only.",
+                        "example": "9f86d0…",
+                        "authorization": {
+                            "read": ["admin"],
+                            "update": ["admin"]
+                        }
+                    },
+                    "claimCodeHash": {
+                        "title": "Invitation code hash",
+                        "type": "string",
+                        "description": "HMAC-SHA256 of the one-time code in the invitation letter of a waiting account, keyed with a key derived from the instance secret. Emptied when the code is redeemed. Readable by administrators only.",
+                        "example": "9f86d0…",
+                        "authorization": {
+                            "read": ["admin"],
+                            "update": ["admin"]
+                        }
+                    },
+                    "claimExpiresAt": {
+                        "title": "Invitation expiry",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the invitation of a waiting account stops working.",
+                        "example": "2026-10-12T09:00:00+00:00",
+                        "authorization": {
+                            "read": ["admin"],
+                            "update": ["admin"]
+                        }
+                    },
+                    "claimAttempts": {
+                        "title": "Wrong invitation secrets",
+                        "type": "integer",
+                        "description": "How many wrong invitation secrets this account offered inside the running hour. Five lock the redeem route for the account.",
+                        "example": 0,
+                        "authorization": {
+                            "read": ["admin"],
+                            "update": ["admin"]
+                        }
+                    },
+                    "claimAttemptsSince": {
+                        "title": "Wrong invitation secrets since",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the first wrong invitation secret of the running hour was offered.",
+                        "example": "2026-10-05T09:00:00+00:00",
+                        "authorization": {
+                            "read": ["admin"],
+                            "update": ["admin"]
+                        }
                     },
                     "pendingEmailMode": {
                         "title": "Pending email mode",
@@ -1568,7 +1620,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -1862,6 +1914,11 @@
                                     "title": "Turn field",
                                     "type": "string",
                                     "description": "On a cases collection: the field whose value words say whose turn it is."
+                                },
+                                "visibleFromField": {
+                                    "title": "Visible from field",
+                                    "type": "string",
+                                    "description": "The field with the date or moment before which a row is not shown, in a list, an inbox or a read by id, on the server clock (site-school-blocks)."
                                 }
                             }
                         }
@@ -2063,7 +2120,8 @@
                                                     "cases",
                                                     "steps",
                                                     "documents",
-                                                    "timeline"
+                                                    "timeline",
+                                                    "greeting"
                                                 ]
                                             },
                                             "collection": {
@@ -2197,10 +2255,146 @@
                                             "display": {
                                                 "title": "Display",
                                                 "type": "string",
-                                                "description": "On a collection block: cards instead of a table.",
+                                                "description": "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks).",
                                                 "enum": [
-                                                    "cards"
+                                                    "cards",
+                                                    "rows",
+                                                    "bars",
+                                                    "chips",
+                                                    "highlight",
+                                                    "segmented",
+                                                    "tiles"
                                                 ]
+                                            },
+                                            "dateField": {
+                                                "title": "dateField",
+                                                "type": "string",
+                                                "description": "On rows: the field drawn as a date tile."
+                                            },
+                                            "subtitleField": {
+                                                "title": "subtitleField",
+                                                "type": "string",
+                                                "description": "On rows: the second line."
+                                            },
+                                            "subtitleFields": {
+                                                "title": "subtitleFields",
+                                                "type": "array",
+                                                "description": "On cards and highlight tasks: the fields of the second line."
+                                            },
+                                            "quoteField": {
+                                                "title": "quoteField",
+                                                "type": "string",
+                                                "description": "On rows: the line shown in quotes."
+                                            },
+                                            "statusField": {
+                                                "title": "statusField",
+                                                "type": "string",
+                                                "description": "On rows and cards: the field shown as a status pill."
+                                            },
+                                            "statusTones": {
+                                                "title": "statusTones",
+                                                "type": "object",
+                                                "description": "On rows and cards: the tone of each status value (neutral, success, warning, error)."
+                                            },
+                                            "statusNoteField": {
+                                                "title": "statusNoteField",
+                                                "type": "string",
+                                                "description": "On rows: the line under the status pill."
+                                            },
+                                            "noteField": {
+                                                "title": "noteField",
+                                                "type": "string",
+                                                "description": "On cards: the text beside the status; on bars: the note under the bars, from the first row."
+                                            },
+                                            "noteLabel": {
+                                                "title": "noteLabel",
+                                                "type": "string",
+                                                "description": "On bars: the small heading above the note."
+                                            },
+                                            "soonField": {
+                                                "title": "soonField",
+                                                "type": "string",
+                                                "description": "On cards: the coming-up part."
+                                            },
+                                            "soonLabel": {
+                                                "title": "soonLabel",
+                                                "type": "string",
+                                                "description": "On cards: the small heading above the coming-up part."
+                                            },
+                                            "avatar": {
+                                                "title": "avatar",
+                                                "type": "boolean",
+                                                "description": "On cards: the first letter of the title in a circle."
+                                            },
+                                            "labelField": {
+                                                "title": "labelField",
+                                                "type": "string",
+                                                "description": "On bars and chips: the label of each row."
+                                            },
+                                            "valueField": {
+                                                "title": "valueField",
+                                                "type": "string",
+                                                "description": "On bars: the figure of each row."
+                                            },
+                                            "valuesField": {
+                                                "title": "valuesField",
+                                                "type": "string",
+                                                "description": "On chips: the list of marks of each row."
+                                            },
+                                            "averageField": {
+                                                "title": "averageField",
+                                                "type": "string",
+                                                "description": "On chips: the average of each row."
+                                            },
+                                            "captionField": {
+                                                "title": "captionField",
+                                                "type": "string",
+                                                "description": "On bars: the grey head line, from the first row."
+                                            },
+                                            "max": {
+                                                "title": "max",
+                                                "type": "number",
+                                                "description": "On bars: the figure a full bar stands for."
+                                            },
+                                            "lowBelow": {
+                                                "title": "lowBelow",
+                                                "type": "number",
+                                                "description": "On chips: a mark below this is marked as below the pass mark."
+                                            },
+                                            "eyebrow": {
+                                                "title": "eyebrow",
+                                                "type": "string",
+                                                "description": "On highlight tasks: the small uppercase label."
+                                            },
+                                            "buttonLabel": {
+                                                "title": "buttonLabel",
+                                                "type": "string",
+                                                "description": "On highlight tasks: the words on the button."
+                                            },
+                                            "segments": {
+                                                "title": "segments",
+                                                "type": "array",
+                                                "description": "On a segmented kpi: up to five parts, each field, label and tone."
+                                            },
+                                            "totalField": {
+                                                "title": "totalField",
+                                                "type": "string",
+                                                "description": "On a segmented kpi: the field with the whole."
+                                            },
+                                            "target": {
+                                                "title": "target",
+                                                "type": "number",
+                                                "description": "On a segmented kpi: a fixed whole."
+                                            },
+                                            "unit": {
+                                                "title": "unit",
+                                                "type": "string",
+                                                "description": "On a segmented kpi: the unit after the figure."
+                                            },
+                                            "showDate": {
+                                                "title": "showDate",
+                                                "type": "boolean",
+                                                "description": "On a greeting: whether today's date shows; on unless false."
                                             },
                                             "progress": {
                                                 "title": "Progress",
@@ -2248,7 +2442,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.9.0",
+                "version": "0.10.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -6836,7 +7030,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -6913,6 +7107,17 @@
                         "type": "string",
                         "description": "The schema the case created from this form lives in. The background job creates the case here, through the ordinary anonymous contribution create.",
                         "example": "zaak"
+                    },
+                    "deliverTo": {
+                        "title": "Deliver to",
+                        "type": "string",
+                        "enum": [
+                            "case",
+                            "wooRequest"
+                        ],
+                        "default": "case",
+                        "description": "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed.",
+                        "example": "wooRequest"
                     },
                     "intakeKind": {
                         "title": "Intake kind",
@@ -6996,7 +7201,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Intake Submission",
                 "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
                 "type": "object",
@@ -7066,6 +7271,19 @@
                         "type": "string",
                         "description": "The case created from this submission, once one exists.",
                         "example": ""
+                    },
+                    "externalReference": {
+                        "title": "External reference",
+                        "type": "string",
+                        "description": "The reference the receiving app minted, such as a Woo request's `WOO-2026-1A2B3C`. Set only once the submission is registered.",
+                        "example": "WOO-2026-1A2B3C"
+                    },
+                    "dueAt": {
+                        "title": "Due at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The statutory due date the receiving app armed, such as a Woo request's decision term. Set only when a term runs, so the reference page never quotes a deadline nobody started.",
+                        "example": "2026-11-02T09:00:00+00:00"
                     },
                     "submittedAt": {
                         "title": "Submitted at",
@@ -7639,7 +7857,7 @@
             "newsItem": {
                 "slug": "newsItem",
                 "icon": "FileDocument",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "News item",
                 "authorization": {
                     "read": [
@@ -7728,6 +7946,26 @@
                         "format": "date-time",
                         "description": "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable.",
                         "example": "2026-10-03T09:00:00+00:00"
+                    },
+                    "public": {
+                        "title": "On the website",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the item also shows on the public website of `portal`, for visitors who are not signed in. Off by default: a news item is for its audience only until staff turn this on. An item that targets single children never shows publicly, whatever this says (PublicNewsReader).",
+                        "example": false
+                    },
+                    "portal": {
+                        "title": "Website",
+                        "type": "string",
+                        "description": "The slug of the portal whose public website shows this item when `public` is on. Empty means no website shows it.",
+                        "example": "wilgenboom"
+                    },
+                    "audienceLabel": {
+                        "title": "Who it is for, on the website",
+                        "type": "string",
+                        "maxLength": 60,
+                        "description": "The words the public website shows beside the date to say who the item is for, such as 'groep 7' or 'hele school'. Written by staff, because the site never reads the school app's groups for a visitor who is not signed in. Empty shows nothing.",
+                        "example": "hele school"
                     },
                     "photoRefs": {
                         "title": "Photos",

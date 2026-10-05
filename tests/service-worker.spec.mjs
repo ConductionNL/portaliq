@@ -41,11 +41,18 @@ const AUTH_BASE = '/index.php/apps/portaliq/portal/api'
  * @param {Function} [options.fetch] The worker's fetch; OK by default.
  * @param {Array<string>} [options.cached] URLs already in the cache.
  * @param {boolean} [options.onLine] What the browser reports; online by default.
+ * @param {string} [options.workerUrl] The worker's own address; `/apps/portaliq/portal/sw.js` by default.
  * @return {Promise<{handler: Function, store: Map, fetches: Array<string>, self: object}>}
  */
-async function loadWorker({ fetch, cached = [], onLine = true } = {}) {
+async function loadWorker({
+	fetch,
+	cached = [],
+	onLine = true,
+	workerUrl = 'http://localhost/apps/portaliq/portal/sw.js',
+} = {}) {
 	const listeners = {}
 	const self = {
+		location: { href: workerUrl },
 		navigator: { onLine },
 		addEventListener: (type, fn) => {
 			listeners[type] = fn
@@ -125,26 +132,95 @@ function dispatch(handler, path, method = 'GET', mode = 'no-cors') {
  *
  * @param {string} path The request path.
  * @param {string} method The request method.
+ * @param {string} [workerUrl] The worker's own address.
  * @return {Promise<boolean>} True when the worker touched it.
  */
-async function workerAnswers(path, method = 'GET') {
-	const { handler } = await loadWorker()
+async function workerAnswers(path, method = 'GET', workerUrl = undefined) {
+	const { handler } = await loadWorker({ workerUrl })
 	const out = dispatch(handler, path, method)
 	return out.responded !== null || out.background !== null
 }
 
 test('the site shell is cached: its bundle and its page', async () => {
-	assert.equal(
-		await workerAnswers('/index.php/apps/portaliq/js/portaliq-site.js?v=123'),
-		true,
-	)
-	assert.equal(await workerAnswers('/index.php/apps/portaliq/site'), true)
+	const worker = 'http://localhost/index.php/apps/portaliq/portal/sw.js'
 	assert.equal(
 		await workerAnswers(
-			'/index.php/apps/portaliq/site?portal=wilgenboom&route=/nieuws',
+			'/index.php/apps/portaliq/js/portaliq-site.js?v=123',
+			'GET',
+			worker,
 		),
 		true,
 	)
+	assert.equal(
+		await workerAnswers('/index.php/apps/portaliq/site', 'GET', worker),
+		true,
+	)
+	assert.equal(
+		await workerAnswers(
+			'/index.php/apps/portaliq/site?portal=wilgenboom&route=/nieuws',
+			'GET',
+			worker,
+		),
+		true,
+	)
+	assert.equal(await workerAnswers('/apps/portaliq/site'), true)
+})
+
+// The authenticated dashboard answers every path under the app's scope
+// (dashboard#catchAll), so a path that only ends in "/site" is its HTML, not
+// the site's page, and must never be kept for an offline load.
+test('only the exact site page is cached, never another path that ends in /site', async () => {
+	assert.equal(await workerAnswers('/apps/portaliq/beheer/site'), false)
+	assert.equal(
+		await workerAnswers('/apps/portaliq/portals/wilgenboom/site'),
+		false,
+	)
+	assert.equal(
+		await workerAnswers('/index.php/apps/portaliq/site'),
+		false,
+		'another route root',
+	)
+	assert.equal(await workerAnswers('/apps/portaliq/website'), false)
+	assert.equal(await workerAnswers('/apps/portaliq/site/'), false)
+
+	const { handler, store } = await loadWorker({ onLine: false })
+	const out = dispatch(handler, '/apps/portaliq/beheer/site', 'GET', 'navigate')
+	assert.equal(out.responded, null)
+	assert.equal(out.background, null)
+	assert.equal(store.size, 0)
+})
+
+test('a worker without an address of its own caches no page, only the bundle', async () => {
+	const listeners = {}
+	const self = {
+		navigator: { onLine: true },
+		addEventListener: (type, fn) => {
+			listeners[type] = fn
+		},
+		skipWaiting: () => {},
+		clients: { claim: () => {} },
+	}
+	const cache = {
+		keys: async () => [],
+		match: async () => undefined,
+		put: async () => {},
+	}
+	const caches = {
+		open: async () => cache,
+		keys: async () => [],
+		delete: async () => true,
+	}
+	vm.runInNewContext(SOURCE, {
+		self,
+		caches,
+		fetch: async () => ({ ok: false }),
+		URL,
+		Promise,
+	})
+	const page = dispatch(listeners.fetch, '/apps/portaliq/site', 'GET', 'navigate')
+	assert.equal(page.background, null)
+	const bundle = dispatch(listeners.fetch, '/apps/portaliq/js/portaliq-site.js')
+	assert.ok(bundle.background)
 })
 
 test('the retired portal address is not cached: it redirects to the site', async () => {
@@ -158,7 +234,7 @@ test('the retired portal address is not cached: it redirects to the site', async
 test('the cache name moved on, so the old shell cache is deleted', () => {
 	assert.match(
 		readFileSync(join(ROOT, 'src', 'shared', 'serviceWorker.js'), 'utf8'),
-		/const CACHE_VERSION = 'portaliq-shell-v5'/,
+		/const CACHE_VERSION = 'portaliq-shell-v6'/,
 	)
 })
 

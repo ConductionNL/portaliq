@@ -107,7 +107,7 @@ A resident SHALL be able to switch e-mail and push on or off separately for "Cha
 
 ### Requirement: The choices live on the inbox page (REQ-NAP-008)
 
-The inbox page SHALL offer a "Notification settings" section with one labelled checkbox per kind and channel. The push column SHALL show only when the account has a registered device. Saving SHALL confirm with "Your choices are saved."
+The inbox page SHALL offer a "Notification settings" section with one labelled checkbox per kind and channel. The push column SHALL show only when the account has a registered device and a push transport that really delivers is bound. Saving SHALL confirm with "Your choices are saved."
 
 #### Scenario: A resident changes a setting
 - **GIVEN** a resident on the inbox page

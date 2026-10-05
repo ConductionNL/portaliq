@@ -38,6 +38,8 @@ use Throwable;
  * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
  */
 class NewsRowSource {
+	use PagedObjectReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -55,26 +57,25 @@ class NewsRowSource {
 	}//end __construct()
 
 	/**
-	 * Fetch every row of a schema in this app's register, unfiltered — the
-	 * matching happens in PHP against the already-fetched rows since the
-	 * OR-of-three-dimensions target shape is not a filterable OR query
-	 * (design.md "Architecture Overview").
+	 * Fetch every row of a schema in this app's register that matches the
+	 * plain filters, every page of it. The audience matching happens in PHP
+	 * against the fetched rows since the OR-of-three-dimensions target shape
+	 * is not a filterable OR query (design.md "Architecture Overview").
 	 *
 	 * @param string $schema The schema slug.
+	 * @param array<string, mixed> $filters Plain equality filters, e.g. a status.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
 	 */
-	public function findAll(string $schema): array {
+	public function findAll(string $schema, array $filters = []): array {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
 		}
 
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: news feed read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];

@@ -204,6 +204,7 @@ test('site: the shell offers "My cases" first when the server announces it, and 
 		/canOpen: \(target\) => navKeyFor\(this\.nav, target\) !== null/,
 	)
 	assert.match(area, /openCase: \(target, row\) => this\.openCase\(target, row\)/)
+	assert.match(area, /caseRoute: \(target\) => this\.caseRoute\(target\)/)
 	const nl = {
 		'My cases': 'Mijn zaken',
 		'Open ({count})': 'Lopend ({count})',
@@ -263,6 +264,27 @@ test("site: every app's cases are in one list, each naming its source, with the 
 		/<p class="denhaag-case-card__title pq-case-card__title"><span>Parkeervergunning<\/span><\/p>/,
 	)
 	assert.equal((html.match(/data-testid="my-cases-row"/g) || []).length, 2)
+})
+
+test("site: with the shell's case route a case title is a real link, not a button", async () => {
+	const html = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		initialData: { ok: true, cases: CASES },
+		closedMarker: true,
+		canOpen: (target) => target.app === 'dossiq',
+		caseRoute: (target) => `/mijn/dossiq/zaken/${target.id}`,
+	})
+	assert.match(
+		html,
+		/<p class="denhaag-case-card__title pq-case-card__title"><a class="pq-case-card__link" href="\/mijn\/dossiq\/zaken\/z-1">Kapvergunning<\/a><\/p>/,
+	)
+	assert.doesNotMatch(html, /<button class="pq-case-card__link/)
+	// A case no page shows stays text, whatever the route function says.
+	assert.match(
+		html,
+		/<p class="denhaag-case-card__title pq-case-card__title"><span>Parkeervergunning<\/span><\/p>/,
+	)
 })
 
 test("site: without the shell's page lookup a case is listed but not a button", async () => {
