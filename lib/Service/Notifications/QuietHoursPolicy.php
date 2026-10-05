@@ -237,7 +237,7 @@ class QuietHoursPolicy {
 	 */
 	public function timeZoneFor(string $subjectRef): DateTimeZone {
 		$candidates = [
-			$this->config->getUserValue($subjectRef, 'core', 'timezone', ''),
+			$this->userTimeZoneName(subjectRef: $subjectRef),
 			$this->config->getSystemValueString('default_timezone', ''),
 		];
 
@@ -255,6 +255,24 @@ class QuietHoursPolicy {
 
 		return new DateTimeZone(self::FALLBACK_TIMEZONE);
 	}//end timeZoneFor()
+
+	/**
+	 * The subject's own Nextcloud time zone name, or ''. Nextcloud refuses a
+	 * user id it cannot store (longer than 64 bytes, as a subjectRef taken
+	 * from an identity provider's claim can be); such a subject is not a
+	 * Nextcloud user, so it simply has no zone of its own.
+	 *
+	 * @param string $subjectRef The subject's own subjectRef.
+	 *
+	 * @return string
+	 */
+	private function userTimeZoneName(string $subjectRef): string {
+		try {
+			return (string)$this->config->getUserValue($subjectRef, 'core', 'timezone', '');
+		} catch (Throwable $e) {
+			return '';
+		}
+	}//end userTimeZoneName()
 
 	/**
 	 * Whether a value is a valid `HH:MM` 24h time string.

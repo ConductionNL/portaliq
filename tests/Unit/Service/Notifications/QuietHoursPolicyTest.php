@@ -164,4 +164,18 @@ class QuietHoursPolicyTest extends TestCase {
 		$this->assertSame('Asia/Tokyo', (new QuietHoursPolicy($this->container([]), $logger, $this->config('Not/AZone', 'Asia/Tokyo')))->timeZoneFor('staff-1')->getName());
 		$this->assertSame(QuietHoursPolicy::FALLBACK_TIMEZONE, (new QuietHoursPolicy($this->container([]), $logger, $this->config('', 'Not/AZone')))->timeZoneFor('guardian-1')->getName());
 	}//end testTheTimeZoneComesFromTheSubjectThenTheInstance()
+
+	/**
+	 * Nextcloud refuses a user id longer than 64 bytes; a subjectRef from an
+	 * identity provider's claim can be one. Such a subject has no zone of its
+	 * own, and the instance's zone is used.
+	 */
+	public function testASubjectNextcloudCannotLookUpFallsBackToTheInstanceZone(): void {
+		$config = $this->createMock(IConfig::class);
+		$config->method('getUserValue')->willThrowException(new \InvalidArgumentException('Value for userId is too long (64)'));
+		$config->method('getSystemValueString')->willReturn('Asia/Tokyo');
+		$policy = new QuietHoursPolicy($this->container([]), $this->createMock(LoggerInterface::class), $config);
+
+		$this->assertSame('Asia/Tokyo', $policy->timeZoneFor(str_repeat('claim-subject-', 6))->getName());
+	}//end testASubjectNextcloudCannotLookUpFallsBackToTheInstanceZone()
 }//end class
