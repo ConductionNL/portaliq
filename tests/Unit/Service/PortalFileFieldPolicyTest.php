@@ -100,6 +100,33 @@ class PortalFileFieldPolicyTest extends TestCase {
 	}//end testAcceptMatchesExtensionOrMime()
 
 	/**
+	 * An extension entry needs bytes that fit the name: an HTML page or an
+	 * SVG renamed to `.pdf` is refused, and for an extension the policy has
+	 * no type list for, only active content is.
+	 *
+	 * @return void
+	 */
+	public function testAnExtensionEntryNeedsBytesThatFitTheName(): void {
+		$policy = $this->policy();
+		$html = "<!DOCTYPE html><html><body><script>alert(1)</script></body></html>\n";
+		$svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>\n";
+		$text = "Mijn werkstuk over de Tachtigjarige Oorlog.\n";
+		$csv = "naam,klas\nNoor,5a\n";
+
+		$this->assertSame(PortalFileFieldPolicy::ERROR_TYPE_REFUSED, $policy->refusal(['accept' => ['.pdf']], 'essay.pdf', $html));
+		$this->assertSame(PortalFileFieldPolicy::ERROR_TYPE_REFUSED, $policy->refusal(['accept' => ['.pdf']], 'essay.pdf', $svg));
+		$this->assertSame(PortalFileFieldPolicy::ERROR_TYPE_REFUSED, $policy->refusal(['accept' => ['.pdf', '.txt']], 'essay.txt', $html));
+		$this->assertNull($policy->refusal(['accept' => ['.txt']], 'notes.txt', $text));
+		$this->assertNull($policy->refusal(['accept' => ['.txt', '.csv']], 'klas.csv', $csv));
+		$this->assertNull($policy->refusal(['accept' => ['.txt']], 'klas.txt', $csv));
+		$this->assertNull($policy->refusal(['accept' => ['.svg']], 'logo.svg', $svg));
+
+		// An extension without a type list passes on its name, unless the bytes are active content.
+		$this->assertNull($policy->refusal(['accept' => ['.odt']], 'werkstuk.odt', $text));
+		$this->assertSame(PortalFileFieldPolicy::ERROR_TYPE_REFUSED, $policy->refusal(['accept' => ['.odt']], 'werkstuk.odt', $html));
+	}//end testAnExtensionEntryNeedsBytesThatFitTheName()
+
+	/**
 	 * A file above `maxSizeMb` is refused; the default is twenty megabytes.
 	 *
 	 * @return void

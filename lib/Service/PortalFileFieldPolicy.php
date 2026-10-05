@@ -66,6 +66,42 @@ class PortalFileFieldPolicy {
 	public const MAX_FILES_PER_FIELD = 20;
 
 	/**
+	 * The detected types a file with one of these extensions may have. An
+	 * extension `accept` entry only passes a file whose bytes fit its name,
+	 * so an HTML page renamed to `.pdf` is refused.
+	 */
+	private const EXTENSION_TYPES = [
+		'pdf' => ['application/pdf'],
+		'png' => ['image/png'],
+		'jpg' => ['image/jpeg'],
+		'jpeg' => ['image/jpeg'],
+		'gif' => ['image/gif'],
+		'webp' => ['image/webp'],
+		'txt' => ['text/plain', 'text/csv'],
+		'csv' => ['text/csv', 'text/plain'],
+		'svg' => ['image/svg+xml'],
+		'html' => ['text/html'],
+		'htm' => ['text/html'],
+		'xml' => ['text/xml', 'application/xml'],
+	];
+
+	/**
+	 * Types a browser runs or renders as a page. A file of an extension not
+	 * in {@see self::EXTENSION_TYPES} passes on its name unless its bytes are
+	 * one of these: a name alone never lets active content in.
+	 */
+	private const ACTIVE_TYPES = [
+		'text/html',
+		'application/xhtml+xml',
+		'image/svg+xml',
+		'text/xml',
+		'application/xml',
+		'text/javascript',
+		'application/javascript',
+		'application/x-javascript',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The clock for the create window.
@@ -148,7 +184,9 @@ class PortalFileFieldPolicy {
 	 * Size first, against `maxSizeMb` (default twenty). Then `accept`, which
 	 * matches like the browser attribute: an extension entry against the
 	 * lowercased file name, a MIME entry (with `type/*`) against the type
-	 * detected in the bytes. Any match passes; no `accept` accepts any file.
+	 * detected in the bytes. An extension entry also needs bytes that fit the
+	 * name ({@see self::contentFitsExtension()}). Any match passes; no
+	 * `accept` accepts any file.
 	 *
 	 * @param array<string, mixed> $config The file field's config.
 	 * @param string $fileName The sanitised file name.
@@ -324,7 +362,7 @@ class PortalFileFieldPolicy {
 	 */
 	private function accepts(string $entry, string $extension, string $mime): bool {
 		if (str_starts_with($entry, '.') === true) {
-			return $extension !== '' && $entry === '.' . $extension;
+			return $extension !== '' && $entry === '.' . $extension && $this->contentFitsExtension(extension: $extension, mime: $mime);
 		}
 
 		if (str_ends_with($entry, '/*') === true) {
@@ -333,4 +371,22 @@ class PortalFileFieldPolicy {
 
 		return $entry === $mime;
 	}//end accepts()
+
+	/**
+	 * Whether the type detected in the bytes fits the file's extension: one
+	 * of the extension's own types when it is a known one, else any type a
+	 * browser does not run or render as a page.
+	 *
+	 * @param string $extension The lowercased file extension, without the dot.
+	 * @param string $mime The detected MIME type.
+	 *
+	 * @return bool
+	 */
+	private function contentFitsExtension(string $extension, string $mime): bool {
+		if (isset(self::EXTENSION_TYPES[$extension]) === true) {
+			return in_array($mime, self::EXTENSION_TYPES[$extension], true);
+		}
+
+		return in_array($mime, self::ACTIVE_TYPES, true) === false;
+	}//end contentFitsExtension()
 }//end class
