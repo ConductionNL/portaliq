@@ -38,6 +38,8 @@ use Throwable;
  * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
  */
 class EventSignupService {
+	use PagedObjectReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -183,9 +185,12 @@ class EventSignupService {
 	 */
 	private function countSignups(object $objectService, string $eventId, string $roleId): int {
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->readEveryPage(
+				objectService: $objectService,
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				filters: ['eventRef' => $eventId, 'roleId' => $roleId]
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: event signup count failed', ['reason' => $e->getMessage()]);
 			// Fail closed to "no room" rather than allowing an unbounded

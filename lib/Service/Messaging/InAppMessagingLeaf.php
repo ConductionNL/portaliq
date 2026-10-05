@@ -164,7 +164,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 		}
 
 		$messages = [];
-		foreach ($this->store->findAll(schema: self::MESSAGE_SCHEMA) as $message) {
+		foreach ($this->store->findAll(schema: self::MESSAGE_SCHEMA, filters: ['threadRef' => $threadId]) as $message) {
 			if ((string)($message['threadRef'] ?? '') === $threadId) {
 				$messages[] = $message;
 			}

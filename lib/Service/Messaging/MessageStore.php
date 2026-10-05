@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Messaging;
 
+use OCA\Portaliq\Service\PagedObjectReads;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -37,6 +38,8 @@ use Throwable;
  * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
  */
 class MessageStore {
+	use PagedObjectReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -95,24 +98,24 @@ class MessageStore {
 	}//end save()
 
 	/**
-	 * Fetch every row of a schema, unfiltered, normalised.
+	 * Fetch every row of a schema that matches the plain filters, every page
+	 * of it, normalised.
 	 *
 	 * @param string $schema The schema slug.
+	 * @param array<string, mixed> $filters Plain equality filters, e.g. a thread.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
 	 */
-	public function findAll(string $schema): array {
+	public function findAll(string $schema, array $filters = []): array {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
 		}
 
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: messaging read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];

@@ -42,6 +42,8 @@ use Throwable;
  * audience rules can never fork.
  */
 class EventFeedReader {
+	use PagedObjectReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -72,8 +74,8 @@ class EventFeedReader {
 	 */
 	public function feedFor(string $subjectRef): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAll(schema: 'schoolEvent');
-		$rsvps = $this->findAll(schema: 'eventRsvp');
+		$rows = $this->findAll(schema: 'schoolEvent', filters: ['status' => 'published']);
+		$rsvps = $this->findAll(schema: 'eventRsvp', filters: ['guardianRef' => $subjectRef]);
 
 		$matched = [];
 		foreach ($rows as $row) {
@@ -180,22 +182,22 @@ class EventFeedReader {
 	}//end myRsvp()
 
 	/**
-	 * Fetch every row of a schema in this app's register, unfiltered.
+	 * Fetch every row of a schema in this app's register that matches the
+	 * plain filters, every page of it.
 	 *
 	 * @param string $schema The schema slug.
+	 * @param array<string, mixed> $filters Plain equality filters, e.g. a status.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function findAll(string $schema): array {
+	private function findAll(string $schema, array $filters = []): array {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
 		}
 
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: event feed read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];

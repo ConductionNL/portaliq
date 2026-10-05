@@ -100,6 +100,39 @@ class NewsRowSourceTest extends TestCase {
 	}//end testAFailedOrImpossibleReadYieldsNoRows()
 
 	/**
+	 * The plain filters reach the store, and every page is read.
+	 */
+	public function testFindAllPassesTheFiltersAndReadsEveryPage(): void {
+		$objectService = new class {
+			/**
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $configs = [];
+
+			public function setRegister(string $register): self {
+				return $this;
+			}
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->configs[] = $config;
+				return array_fill(0, max(0, min(500, 501 - $config['offset'])), ['id' => 'n', 'status' => 'published']);
+			}
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($objectService);
+
+		$rows = (new NewsRowSource($container, $this->createMock(LoggerInterface::class)))->findAll('newsItem', ['status' => 'published']);
+
+		$this->assertCount(501, $rows);
+		$this->assertCount(2, $objectService->configs);
+		$this->assertSame(['status' => 'published'], $objectService->configs[1]['filters']);
+	}//end testFindAllPassesTheFiltersAndReadsEveryPage()
+
+	/**
 	 * The id is read from id, then uuid, then the envelope.
 	 */
 	public function testRowIdReadsIdUuidOrEnvelope(): void {
