@@ -64,6 +64,22 @@ export function sortRows(rows, sort) {
 }
 
 /**
+ * The order a table reads in: the block's own `sort`, else its collection's
+ * `defaultSort`, else none (the order the rows arrived in).
+ *
+ * @param {object|undefined} block The block (`sort`).
+ * @param {object|undefined} collection Its collection (`defaultSort`).
+ * @return {{field: string, direction: string}|undefined} The order.
+ * @spec openspec/changes/site-tables-read-in-their-declared-order/specs/portal-contribution-contract/spec.md#requirement-a-table-reads-in-its-collections-default-order
+ */
+export function listOrder(block, collection) {
+	if (block?.sort?.field) {
+		return block.sort
+	}
+	return collection?.defaultSort?.field ? collection.defaultSort : undefined
+}
+
+/**
  * The rows a collection block shows: sorted, at most its limit, and
  * whether there are more.
  *

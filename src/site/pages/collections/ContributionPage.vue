@@ -196,6 +196,7 @@
 				v-else-if="item.kind === 'detail'"
 				:collection="item.collection"
 				:row="detailRow(item)"
+				:quietWhenEmpty="item.quietWhenEmpty === true"
 				:api="api"
 				:proposeAction="item.proposeAction"
 				:t="tr"
@@ -367,7 +368,12 @@ import {
 	groupLabelCollection,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
-import { itemsInRange, sortRows, windowRows } from '../../../shared/listWindow.js'
+import {
+	itemsInRange,
+	listOrder,
+	sortRows,
+	windowRows,
+} from '../../../shared/listWindow.js'
 import {
 	consumeOpenTarget,
 	forgetOpenTarget,
@@ -1032,13 +1038,14 @@ export default {
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 		 */
 		tableWindow(item) {
+			const sort = listOrder(item.block, item.collection)
 			if (this.expanded[item.index]) {
 				return {
-					rows: sortRows(this.rowsOf(item), item.block?.sort),
+					rows: sortRows(this.rowsOf(item), sort),
 					more: false,
 				}
 			}
-			return windowRows(this.rowsOf(item), item.block)
+			return windowRows(this.rowsOf(item), { ...item.block, sort })
 		},
 
 		/**
@@ -1136,7 +1143,10 @@ export default {
 			}
 			const source = groupLabelCollection(this.currentContribution)
 			return groupRows(
-				this.loadedOf(item.collection).objects,
+				sortRows(
+					this.loadedOf(item.collection).objects,
+					listOrder(item.block, item.collection),
+				),
 				groupFieldOf(item.collection),
 				source ? this.store[source.id]?.objects || [] : [],
 			)

@@ -14,6 +14,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
 	itemsInRange,
+	listOrder,
 	rangeSpan,
 	sortRows,
 	windowRows,
@@ -206,6 +207,92 @@ test('a limited table shows its first rows and leads to all of them', () => {
 		alone.tableWindow(alone.blocks[0]).rows[0].id,
 		'g8',
 		'still in its order',
+	)
+})
+
+test("a table reads in its collection's default order, and a block's own sort wins", () => {
+	// site-tables-read-in-their-declared-order, scenario "The newest absence
+	// first": seen on learniq's parentExcuseRequests, whose rows read 1, 5, 2
+	// October and 25 September.
+	const newestFirst = { field: 'dateFrom', direction: 'desc' }
+	assert.deepEqual(listOrder({}, { defaultSort: newestFirst }), newestFirst)
+	assert.deepEqual(
+		listOrder(
+			{ sort: { field: 'reason', direction: 'asc' } },
+			{ defaultSort: newestFirst },
+		),
+		{ field: 'reason', direction: 'asc' },
+		"the block's own sort wins",
+	)
+	assert.equal(listOrder({}, {}), undefined, 'no order declared')
+	assert.equal(listOrder(undefined, undefined), undefined)
+
+	const ABSENCES = [
+		{ id: 'a1', learnerRef: 'vera', dateFrom: '2026-10-01' },
+		{ id: 'a5', learnerRef: 'vera', dateFrom: '2026-10-05' },
+		{ id: 's2', learnerRef: 'sami', dateFrom: '2026-10-02' },
+		{ id: 'a2', learnerRef: 'vera', dateFrom: '2026-10-02' },
+		{ id: 's6', learnerRef: 'sami', dateFrom: '2026-10-06' },
+		{ id: 'a0', learnerRef: 'vera', dateFrom: '2026-09-25' },
+	]
+	const page = (collection, block = {}) => ({
+		key: 'learniq/parentExcuseRequests',
+		kind: 'page',
+		app: 'learniq',
+		contribution: { app: 'learniq', collections: [collection] },
+		page: {
+			id: 'parentExcuseRequests',
+			blocks: [
+				{ type: 'collection', collection: 'parentExcuseRequests', ...block },
+			],
+		},
+	})
+	const open = (collection, block, objects) => {
+		const entry = page(collection, block)
+		return instance(ContributionPage, {
+			entry,
+			nav: [entry],
+			t,
+			locale: 'nl',
+			initialData: { parentExcuseRequests: { loading: false, objects } },
+		})
+	}
+	const veras = ABSENCES.filter((row) => row.learnerRef === 'vera')
+	const sorted = { id: 'parentExcuseRequests', defaultSort: newestFirst }
+
+	const one = open(sorted, {}, veras)
+	assert.deepEqual(
+		one.tableWindow(one.blocks[0]).rows.map((row) => row.id),
+		['a5', 'a2', 'a1', 'a0'],
+		'newest first',
+	)
+	const plain = open({ id: 'parentExcuseRequests' }, {}, veras)
+	assert.deepEqual(
+		plain.tableWindow(plain.blocks[0]).rows.map((row) => row.id),
+		['a1', 'a5', 'a2', 'a0'],
+		'no order declared: as the rows arrived',
+	)
+	const oldest = open(
+		sorted,
+		{ sort: { field: 'dateFrom', direction: 'asc' } },
+		veras,
+	)
+	assert.deepEqual(
+		oldest.tableWindow(oldest.blocks[0]).rows.map((row) => row.id),
+		['a0', 'a1', 'a2', 'a5'],
+		"the block's own sort wins",
+	)
+
+	// A table per child reads in the same order inside each group.
+	const grouped = open({ ...sorted, groupByField: 'learnerRef' }, {}, ABSENCES)
+	assert.deepEqual(
+		grouped
+			.groupsOf(grouped.blocks[0])
+			.map((group) => [group.value, group.rows.map((row) => row.id)]),
+		[
+			['sami', ['s6', 's2']],
+			['vera', ['a5', 'a2', 'a1', 'a0']],
+		],
 	)
 })
 
