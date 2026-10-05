@@ -10,8 +10,7 @@
 	marked, how the organisation contacts them, and removing the account. After
 	a removal the page emits `removed`: the shell listens and signs out. The
 	code from an invitation letter is typed here too; when it is right the page
-	emits `claimed` and the shell reads the account again, without taking this
-	page off the screen.
+	emits `claimed`; the shell shows the sentence and reads the account again.
 -->
 <template>
 	<p

@@ -268,7 +268,7 @@
 							@navigate="goSection"
 							@unread="unreadOverride = $event"
 							@refresh="loadAccount"
-							@claimed="loadAccount(true)"
+							@claimed="onCodeClaimed"
 							@signout="signOut">
 							<template v-if="session && contactPrompt" #prompt>
 								<ContactPrompt
@@ -500,6 +500,7 @@ import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import {
+	codeOutcome,
 	forgetClaimSecret,
 	keepClaimSecret,
 	redeemKeptClaim,
@@ -1449,6 +1450,25 @@ export default {
 		},
 
 		/**
+		 * A code from a letter was right (invitation-code-from-a-letter).
+		 * Reading the account again rebuilds the navigation and remounts the
+		 * page the code was typed on, so the sentence is shown by the shell,
+		 * at the top of the page, where it survives that.
+		 *
+		 * @return {Promise<void>} Resolves when the account is read again.
+		 *
+		 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+		 */
+		async onCodeClaimed() {
+			this.claimMessage = {
+				role: 'status',
+				text: this.t(codeOutcome({ ok: true }).text),
+			}
+			window.scrollTo?.({ top: 0 })
+			await this.loadAccount()
+		},
+
+		/**
 		 * sessionStorage for a kept invitation, or null where the browser
 		 * refuses it.
 		 *
@@ -1493,22 +1513,15 @@ export default {
 		 * news feed, each fail-closed. Then follow the route the navigation
 		 * implies (the default page for a bare `/mijn`).
 		 *
-		 * @param {boolean} [quiet] True to keep the page on screen while reading.
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
 		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
-		 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
 		 */
-		async loadAccount(quiet = false) {
+		async loadAccount() {
 			if (!this.session) {
 				return
 			}
-			// Quiet after a code from a letter was right
-			// (invitation-code-from-a-letter): the page stays on screen with
-			// its sentence, and the navigation fills in behind it.
-			if (quiet !== true) {
-				this.account = { ...this.account, loading: true }
-			}
+			this.account = { ...this.account, loading: true }
 			const [contributions, threads, news] = await Promise.all([
 				this.api.getContributions(),
 				this.api.fetchThreads(),

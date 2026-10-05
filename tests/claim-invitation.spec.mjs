@@ -361,7 +361,7 @@ test('submitting posts the trimmed code once, reports a right code and keeps a w
 	assert.deepEqual(blank.calls, [])
 })
 
-test('"My account" carries the form, and a right code has the shell read the account again with the page left on screen', () => {
+test('"My account" carries the form, and a right code has the shell show the sentence and read the account again', () => {
 	const page = readFileSync('src/site/pages/e/AccountPage.vue', 'utf8')
 	assert.match(
 		page,
@@ -372,12 +372,16 @@ test('"My account" carries the form, and a right code has the shell read the acc
 	assert.match(area, /@claimed="\$emit\('claimed'\)"/)
 	assert.match(area, /emits: \[[^\]]*'claimed'/)
 	const shell = readFileSync('src/site/App.vue', 'utf8')
-	assert.match(shell, /@claimed="loadAccount\(true\)"/)
-	// A loud reload swaps the page for "Loading…" and the form's sentence is
-	// lost with it; the quiet one must not raise the loading flag.
+	assert.match(shell, /@claimed="onCodeClaimed"/)
+	// Reading the account again remounts the page, and the form's own
+	// sentence goes with it: the shell holds the sentence, then reloads.
+	const handler = shell.slice(shell.indexOf('async onCodeClaimed() {'))
+	const says = handler.indexOf('this.claimMessage = {')
+	const reads = handler.indexOf('await this.loadAccount()')
+	assert.ok(says > 0 && reads > says)
 	assert.match(
-		shell,
-		/if \(quiet !== true\) \{\s+this\.account = \{ \.\.\.this\.account, loading: true \}\s+\}/,
+		handler.slice(0, reads),
+		/text: this\.t\(codeOutcome\(\{ ok: true \}\)\.text\)/,
 	)
 })
 

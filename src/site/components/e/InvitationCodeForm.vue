@@ -96,7 +96,8 @@ export default {
 		/**
 		 * Hand the typed code to the redeem route and show what came of it.
 		 * A code that worked is cleared and reported to the page. The shell
-		 * then reads the account again while this form stays on screen.
+		 * then shows the sentence and reads the account again, which
+		 * remounts this page.
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
