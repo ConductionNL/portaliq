@@ -206,6 +206,15 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		'nlTabs',
 		'nlTaskNav',
 		'nlSignIn',
+		// site-school-blocks. Compositions with no single upstream component
+		// (SITE_COMPOSITIONS in coverage.js), and the numbered steps of
+		// `nlList`, which Utrecht's ordered list does not draw: layout and
+		// theme tokens only, which the two tests above hold them to.
+		'nlList',
+		'nlQuickTasks',
+		'nlNewsList',
+		'nlNewsArticle',
+		'nlEventList',
 	]
 
 	for (const { key, source } of components()) {

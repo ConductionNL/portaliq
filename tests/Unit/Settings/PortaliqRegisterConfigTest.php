@@ -344,14 +344,26 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// invitation letter (invitation-code-from-a-letter). Additive.
 		// 0.62.0 (portalAccount 0.17.0): the five `claim*` fields are readable
 		// and writable by administrators only (security review M4).
-		$this->assertSame('0.62.0', self::$register['info']['version']);
-		$this->assertSame('0.62.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.63.0', self::$register['info']['version']);
+		$this->assertSame('0.63.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
 		$this->assertSame('integer', self::$register['components']['schemas']['portalAccount']['properties']['claimAttempts']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimAttemptsSince']['format']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['newsItem']['version']);
+		// 0.63.0 (newsItem 0.4.0, portal 0.10.0): `public` and `portal`, so staff can put an
+		// item on one portal's public website (site-school-blocks). Additive;
+		// an item from before is not public.
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['newsItem']['version']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['newsItem']['properties']['public']['type']);
+		$this->assertFalse(self::$register['components']['schemas']['newsItem']['properties']['public']['default']);
+		$this->assertSame('string', self::$register['components']['schemas']['newsItem']['properties']['portal']['type']);
+		// The same register version carries the portal's header search,
+		// account button, footer button, contact column and sign-in cards
+		// (site-chrome-follows-the-design): a changed schema reaches an
+		// instance only when the register version moves.
+		$this->assertSame('object', self::$register['components']['schemas']['portal']['properties']['headerSearch']['type']);
+		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['accountLabel']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
@@ -402,7 +414,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.10.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);

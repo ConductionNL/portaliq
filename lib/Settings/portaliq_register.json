@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.62.0"
+        "version": "0.63.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.62.0",
+                "version": "0.63.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2300,7 +2300,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.9.0",
+                "version": "0.10.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -7715,7 +7715,7 @@
             "newsItem": {
                 "slug": "newsItem",
                 "icon": "FileDocument",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "News item",
                 "authorization": {
                     "read": [
@@ -7804,6 +7804,26 @@
                         "format": "date-time",
                         "description": "Server-managed. When staff last published the item, in ISO 8601; empty while it is a draft. The news feed sorts on it, newest first. Set by NewsController::publish, cleared by taking the item back; never client-writable.",
                         "example": "2026-10-03T09:00:00+00:00"
+                    },
+                    "public": {
+                        "title": "On the website",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the item also shows on the public website of `portal`, for visitors who are not signed in. Off by default: a news item is for its audience only until staff turn this on. An item that targets single children never shows publicly, whatever this says (PublicNewsReader).",
+                        "example": false
+                    },
+                    "portal": {
+                        "title": "Website",
+                        "type": "string",
+                        "description": "The slug of the portal whose public website shows this item when `public` is on. Empty means no website shows it.",
+                        "example": "wilgenboom"
+                    },
+                    "audienceLabel": {
+                        "title": "Who it is for, on the website",
+                        "type": "string",
+                        "maxLength": 60,
+                        "description": "The words the public website shows beside the date to say who the item is for, such as 'groep 7' or 'hele school'. Written by staff, because the site never reads the school app's groups for a visitor who is not signed in. Empty shows nothing.",
+                        "example": "hele school"
                     },
                     "photoRefs": {
                         "title": "Photos",

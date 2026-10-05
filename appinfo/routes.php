@@ -117,6 +117,9 @@ return [
         // A published media library item of the serving portal
         // (site-page-seo-history-and-media T07); pages refer to it as media:<id>.
         ['name' => 'contentMedia#show', 'url' => '/api/content/media/{id}', 'verb' => 'GET'],
+        // The news staff put on this portal's public website (site-school-blocks).
+        ['name' => 'contentNews#index', 'url' => '/api/content/news', 'verb' => 'GET'],
+        ['name' => 'contentNews#show', 'url' => '/api/content/news/{id}', 'verb' => 'GET'],
         [
             'name' => 'content#page',
             'url' => '/api/content/page/{route}',

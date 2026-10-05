@@ -975,3 +975,35 @@ export function coverageByPlacement() {
 
 	return counts
 }
+
+/**
+ * Widgets that are not one NL Design System component but a composition of
+ * several, built for the school portals (site-school-blocks). They are kept
+ * OUT of the 101-row record above, which mirrors design D1 row by row, and
+ * listed here with the components they are made of, so a widget can never
+ * exist without being accounted for in one of the two lists.
+ *
+ * @type {Array<{key: string, composes: Array<string>, why: string}>}
+ */
+export const SITE_COMPOSITIONS = [
+	{
+		key: 'nlQuickTasks',
+		composes: ['Link List', 'Card as Link'],
+		why: 'The tasks a portal is visited for, as one card of tiles ("Direct regelen").',
+	},
+	{
+		key: 'nlNewsList',
+		composes: ['Link List', 'Card as Link', 'Image'],
+		why: 'The news staff put on the website, the newest as a card, the rest as rows.',
+	},
+	{
+		key: 'nlNewsArticle',
+		composes: ['Heading', 'Paragraph', 'Image'],
+		why: 'One public news item, chosen by the route.',
+	},
+	{
+		key: 'nlEventList',
+		composes: ['Link List', 'Card as Link'],
+		why: 'A dated list with date tiles or date labels ("Agenda", "Deze maand").',
+	},
+]

@@ -19,6 +19,7 @@ export const metaOf = {
 	fields: [
 		{ name: 'items', kind: 'json', label: 'Regels' },
 		{ name: 'ordered', kind: 'boolean', label: 'Genummerd' },
+		{ name: 'display', kind: 'string', label: 'Weergave: list of steps' },
 	],
 	defaultSize: { gridWidth: 6, gridHeight: 2 },
 	scope: 'public',
