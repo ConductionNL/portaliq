@@ -246,6 +246,17 @@ export default {
 	watch: {
 		open: {
 			immediate: true,
+			/**
+			 * Move focus with the panel: into it on open, back to the opener on
+			 * close. `was` is checked so the immediate first run, which arrives
+			 * with no previous value on a closed panel, does not pull focus out
+			 * of whatever the author was already using.
+			 *
+			 * @param {boolean} open Whether the panel is now open.
+			 * @param {boolean} was Whether it was open before.
+			 * @return {void}
+			 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-the-palette-must-not-cover-the-grid-it-drops-onto-req-snw-004
+			 */
 			handler(open, was) {
 				if (open) {
 					this.takeFocus()
