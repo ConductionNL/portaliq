@@ -417,7 +417,10 @@
 	border-block-end: var(--utrecht-table-row-border-block-end-width, 1px) solid
 		var(
 			--utrecht-table-row-border-block-end-color,
-			var(--nldesign-color-border-dark, var(--nldesign-color-border, currentcolor))
+			var(
+				--nldesign-color-border-dark,
+				var(--nldesign-color-border, currentcolor)
+			)
 		);
 	text-align: start;
 }

@@ -95,9 +95,15 @@ function hold(value, schema, path, problems) {
 		return
 	}
 	if (schema.enum && !schema.enum.includes(value)) {
-		problems.push(`${path}: ${JSON.stringify(value)} is not one of ${schema.enum}`)
+		problems.push(
+			`${path}: ${JSON.stringify(value)} is not one of ${schema.enum}`,
+		)
 	}
-	if (schema.maxLength && typeof value === 'string' && value.length > schema.maxLength) {
+	if (
+		schema.maxLength
+		&& typeof value === 'string'
+		&& value.length > schema.maxLength
+	) {
 		problems.push(`${path}: longer than ${schema.maxLength}`)
 	}
 	if (schema.format === 'date-time' && Number.isNaN(Date.parse(value))) {
@@ -135,13 +141,23 @@ const blockComponents = {
 }
 const widgetProps = {}
 for (const [key, path] of Object.entries(blockComponents)) {
-	assert.match(publicMap, new RegExp(`\\n\\t${key}: `), `${key} is a public widget`)
+	assert.match(
+		publicMap,
+		new RegExp(`\\n\\t${key}: `),
+		`${key} is a public widget`,
+	)
 	widgetProps[key] = propsOfVue(path)
 }
-assert.match(publicMap, /\.\.\.nldsWidgets/, 'the NL Design System widgets are public')
+assert.match(
+	publicMap,
+	/\.\.\.nldsWidgets/,
+	'the NL Design System widgets are public',
+)
 for (const dir of readdirSync(new URL('src/site/widgets/', root))) {
 	if (existsSync(new URL(`src/site/widgets/${dir}/meta.js`, root))) {
-		const { metaOf } = await import(new URL(`src/site/widgets/${dir}/meta.js`, root))
+		const { metaOf } = await import(
+			new URL(`src/site/widgets/${dir}/meta.js`, root)
+		)
 		if (metaOf.scope === 'public') {
 			widgetProps[metaOf.key] = metaOf.fields.map((field) => field.name)
 		}
@@ -161,9 +177,15 @@ function linksOf(site) {
 	const links = []
 	for (const menu of site.menus) {
 		for (const item of menu.items || []) {
-			links.push({ href: item.link, where: `menu "${menu.title}" item "${item.name}"` })
+			links.push({
+				href: item.link,
+				where: `menu "${menu.title}" item "${item.name}"`,
+			})
 			for (const child of item.items || []) {
-				links.push({ href: child.link, where: `menu "${menu.title}" item "${child.name}"` })
+				links.push({
+					href: child.link,
+					where: `menu "${menu.title}" item "${child.name}"`,
+				})
 			}
 		}
 	}
@@ -199,7 +221,10 @@ function linksOf(site) {
 			for (const key of ['items', 'links', 'actions', 'buttons']) {
 				for (const entry of Array.isArray(props[key]) ? props[key] : []) {
 					if (entry && entry.href) {
-						links.push({ href: entry.href, where: `${where} ${key} "${entry.label}"` })
+						links.push({
+							href: entry.href,
+							where: `${where} ${key} "${entry.label}"`,
+						})
 					}
 				}
 			}
@@ -260,10 +285,15 @@ test('the Zuiddrecht site holds what the design shows', () => {
 		site.menus.filter((menu) => menu.position === 1).map((menu) => menu.title),
 		['Snel naar', 'Over deze website'],
 	)
-	assert.match(site.portal.footer.colophon, /^Gemeente Zuiddrecht is een voorbeeldgemeente\./)
+	assert.match(
+		site.portal.footer.colophon,
+		/^Gemeente Zuiddrecht is een voorbeeldgemeente\./,
+	)
 	// The home page of the Home board: the eight tasks under "Direct regelen".
 	const home = site.pages.find((page) => page.route === '/')
-	const tasks = home.body.widgets.find((widget) => widget.widgetKey === 'nlQuickTasks')
+	const tasks = home.body.widgets.find(
+		(widget) => widget.widgetKey === 'nlQuickTasks',
+	)
 	assert.equal(tasks.props.heading, 'Direct regelen')
 	assert.equal(tasks.props.items.length, 8)
 	assert.equal(
@@ -281,10 +311,20 @@ for (const { file, site } of sites) {
 		const problems = []
 		hold(site.portal, schemas.portal, 'portal', problems)
 		site.menus.forEach((menu, index) =>
-			hold({ ...menu, portal: site.portal.slug }, schemas.menu, `menus[${index}]`, problems),
+			hold(
+				{ ...menu, portal: site.portal.slug },
+				schemas.menu,
+				`menus[${index}]`,
+				problems,
+			),
 		)
 		site.pages.forEach((page) =>
-			hold({ ...page, portal: site.portal.slug }, schemas.page, `page ${page.route}`, problems),
+			hold(
+				{ ...page, portal: site.portal.slug },
+				schemas.page,
+				`page ${page.route}`,
+				problems,
+			),
 		)
 		site.news.forEach((item) =>
 			hold(
@@ -306,7 +346,9 @@ for (const { file, site } of sites) {
 		// An install hook has no business claiming a hostname.
 		assert.deepEqual(site.portal.domains, [])
 		assert.ok(
-			site.news.every((item) => item.public === true && item.status === 'published'),
+			site.news.every(
+				(item) => item.public === true && item.status === 'published',
+			),
 			'a news item that is not public and published never shows on the site',
 		)
 	})
@@ -315,13 +357,29 @@ for (const { file, site } of sites) {
 		const routes = site.pages.map((page) => page.route)
 		assert.equal(new Set(routes).size, routes.length, 'two pages share a route')
 		const menus = site.menus.map((menu) => `${menu.position} ${menu.title}`)
-		assert.equal(new Set(menus).size, menus.length, 'two menus share position and title')
+		assert.equal(
+			new Set(menus).size,
+			menus.length,
+			'two menus share position and title',
+		)
 		const titles = site.news.map((item) => item.title)
-		assert.equal(new Set(titles).size, titles.length, 'two news items share a title')
+		assert.equal(
+			new Set(titles).size,
+			titles.length,
+			'two news items share a title',
+		)
 		for (const page of site.pages) {
-			assert.match(page.route, /^\/(?!\/)[a-z0-9/-]*$/, `${page.route} is a plain path`)
+			assert.match(
+				page.route,
+				/^\/(?!\/)[a-z0-9/-]*$/,
+				`${page.route} is a plain path`,
+			)
 			const ids = page.body.widgets.map((widget) => widget.id)
-			assert.equal(new Set(ids).size, ids.length, `${page.route}: two widgets share an id`)
+			assert.equal(
+				new Set(ids).size,
+				ids.length,
+				`${page.route}: two widgets share an id`,
+			)
 		}
 	})
 
@@ -334,7 +392,9 @@ for (const { file, site } of sites) {
 				const where = `page ${page.route} widget ${widget.id}`
 				const known = widgetProps[widget.widgetKey]
 				if (!known) {
-					problems.push(`${where}: ${widget.widgetKey} is not a public widget`)
+					problems.push(
+						`${where}: ${widget.widgetKey} is not a public widget`,
+					)
 					continue
 				}
 				// The schema refuses an empty props object and a null one.
@@ -343,16 +403,28 @@ for (const { file, site } of sites) {
 				}
 				for (const prop of Object.keys(widget.props || {})) {
 					if (!known.includes(prop)) {
-						problems.push(`${where}: ${widget.widgetKey} takes no prop "${prop}"`)
+						problems.push(
+							`${where}: ${widget.widgetKey} takes no prop "${prop}"`,
+						)
 					}
 				}
 				if (widget.gridX + widget.gridWidth > 12) {
 					problems.push(`${where}: runs past the twelfth column`)
 				}
-				for (let x = widget.gridX; x < widget.gridX + widget.gridWidth; x++) {
-					for (let y = widget.gridY; y < widget.gridY + widget.gridHeight; y++) {
+				for (
+					let x = widget.gridX;
+					x < widget.gridX + widget.gridWidth;
+					x++
+				) {
+					for (
+						let y = widget.gridY;
+						y < widget.gridY + widget.gridHeight;
+						y++
+					) {
 						if (cells.has(`${x},${y}`)) {
-							problems.push(`${where}: overlaps another widget at ${x},${y}`)
+							problems.push(
+								`${where}: overlaps another widget at ${x},${y}`,
+							)
 						}
 						cells.add(`${x},${y}`)
 					}
@@ -373,7 +445,12 @@ for (const { file, site } of sites) {
 		const routes = new Set(site.pages.map((page) => page.route))
 		const dead = linksOf(site)
 			.filter(({ href }) => !/^(https?:\/\/|mailto:|tel:)/.test(href))
-			.filter(({ href }) => !routes.has(href) && href !== '/mijn' && !href.startsWith('/mijn/'))
+			.filter(
+				({ href }) =>
+					!routes.has(href)
+					&& href !== '/mijn'
+					&& !href.startsWith('/mijn/'),
+			)
 			.map(({ href, where }) => `${where} -> ${href}`)
 		assert.deepEqual(dead, [])
 
@@ -384,10 +461,13 @@ for (const { file, site } of sites) {
 					continue
 				}
 				const target = site.pages.find(
-					(candidate) => candidate.route === (widget.props.articleRoute || '/nieuws'),
+					(candidate) =>
+						candidate.route === (widget.props.articleRoute || '/nieuws'),
 				)
 				assert.ok(
-					target?.body.widgets.some((w) => w.widgetKey === 'nlNewsArticle'),
+					target?.body.widgets.some(
+						(w) => w.widgetKey === 'nlNewsArticle',
+					),
 					`page ${page.route}: the news list opens items on a page without the article block`,
 				)
 			}
@@ -397,16 +477,33 @@ for (const { file, site } of sites) {
 		const linked = new Set(linksOf(site).map(({ href }) => href))
 		const orphans = site.pages
 			.map((page) => page.route)
-			.filter((route) => route !== '/' && route !== '/publicatie' && !linked.has(route))
+			.filter(
+				(route) =>
+					route !== '/' && route !== '/publicatie' && !linked.has(route),
+			)
 		assert.deepEqual(orphans, [])
 	})
 
 	test(`${file}: the text follows the house style`, () => {
-		const all = stringsOf({ portal: site.portal, menus: site.menus, pages: site.pages, news: site.news })
+		const all = stringsOf({
+			portal: site.portal,
+			menus: site.menus,
+			pages: site.pages,
+			news: site.news,
+		})
 		const dashes = all.filter(({ text }) => /[—–]|--/.test(text))
-		assert.deepEqual(dashes.map(({ path }) => path), [], 'no em-dash, en-dash or double hyphen')
-		const lorem = all.filter(({ text }) => /lorem ipsum|voorbeeld titel|todo/i.test(text))
-		assert.deepEqual(lorem.map(({ path }) => path), [])
+		assert.deepEqual(
+			dashes.map(({ path }) => path),
+			[],
+			'no em-dash, en-dash or double hyphen',
+		)
+		const lorem = all.filter(({ text }) =>
+			/lorem ipsum|voorbeeld titel|todo/i.test(text),
+		)
+		assert.deepEqual(
+			lorem.map(({ path }) => path),
+			[],
+		)
 		// Sentence case: a heading or label has one capital to start with,
 		// and after that only names carry one.
 		const names =
@@ -415,7 +512,11 @@ for (const { file, site } of sites) {
 		for (const page of site.pages) {
 			titled.push(page.title)
 			for (const widget of page.body.widgets) {
-				titled.push(widget.props.heading, widget.props.title, widget.props.label)
+				titled.push(
+					widget.props.heading,
+					widget.props.title,
+					widget.props.label,
+				)
 				if (widget.widgetKey === 'nlHeading') {
 					titled.push(widget.props.text)
 				}
@@ -431,10 +532,12 @@ for (const { file, site } of sites) {
 	})
 }
 
-test('a link in a link list or a button link is the site\'s own address', async () => {
+test("a link in a link list or a button link is the site's own address", async () => {
 	// The address a visitor has when the portal is served through Nextcloud.
 	globalThis.window = {
-		location: { href: 'http://localhost/index.php/apps/portaliq/site?portal=zuiddrecht&route=%2F' },
+		location: {
+			href: 'http://localhost/index.php/apps/portaliq/site?portal=zuiddrecht&route=%2F',
+		},
 	}
 	const { authoredLink, staysInSite } = await import(
 		new URL('src/site/components/mijn/links.js', root)
@@ -457,7 +560,10 @@ test('a link in a link list or a button link is the site\'s own address', async 
 		'src/site/widgets/nlButtonLink/NlButtonLink.vue',
 	]) {
 		const source = read(path)
-		assert.match(source, /import \{ authoredLink, staysInSite \} from '\.\.\/\.\.\/components\/mijn\/links\.js'/)
+		assert.match(
+			source,
+			/import \{ authoredLink, staysInSite \} from '\.\.\/\.\.\/components\/mijn\/links\.js'/,
+		)
 		assert.match(source, /emits: \['navigate'\]/)
 		assert.match(source, /this\.\$emit\('navigate', (this\.)?link\.route\)/)
 		assert.doesNotMatch(source, /:href="(safeHref|link\.href \|\| )/)
@@ -467,7 +573,10 @@ test('a link in a link list or a button link is the site\'s own address', async 
 		/@navigate="\$emit\('navigate', \$event\)"/,
 	)
 	// A list may name one page twice: the row's place is its key, not its address.
-	assert.match(read('src/site/widgets/nlLinkList/NlLinkList.vue'), /v-for="\(link, index\) in safeLinks"\s+:key="index"/)
+	assert.match(
+		read('src/site/widgets/nlLinkList/NlLinkList.vue'),
+		/v-for="\(link, index\) in safeLinks"\s+:key="index"/,
+	)
 })
 
 test('the current menu item may sit in the line under the menu', () => {
@@ -479,7 +588,10 @@ test('the current menu item may sit in the line under the menu', () => {
 	assert.ok(start > css.indexOf("[aria-current='page']::after {"))
 	assert.match(rule, /\[aria-current='page'\]::after \{/)
 	// Without the tokens: no shift, four pixels, the accent.
-	assert.match(rule, /--pq-nav-current-in-line: var\(--nldesign-website-nav-current-in-line, 0\)/)
+	assert.match(
+		rule,
+		/--pq-nav-current-in-line: var\(--nldesign-website-nav-current-in-line, 0\)/,
+	)
 	assert.match(
 		rule,
 		/inset-block-end: calc\(\s*var\(--pq-nav-current-in-line\) \* -1 \* var\(--cn-brand-stripe-height, 0px\)\s*\)/,
@@ -493,5 +605,8 @@ test('the current menu item may sit in the line under the menu', () => {
 		/background-color: var\(\s*--nldesign-website-nav-current-color,\s*var\(--thematiq-accent-color, var\(--nldesign-color-primary\)\)\s*\)/,
 	)
 	// Token references only: this sheet carries no colour of its own.
-	assert.doesNotMatch(rule.replace(/\/\*[\s\S]*?\*\//g, ''), /#[0-9a-f]{3,8}\b|rgb\(/i)
+	assert.doesNotMatch(
+		rule.replace(/\/\*[\s\S]*?\*\//g, ''),
+		/#[0-9a-f]{3,8}\b|rgb\(/i,
+	)
 })
