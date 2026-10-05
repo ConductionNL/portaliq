@@ -210,12 +210,12 @@ class PortalShell {
 
 		$kept = $this->texts(source: $page, keys: ['title', 'intro']);
 
-		$notice = (is_array($page['notice'] ?? null) === true) ? $this->texts(source: $page['notice'], keys: ['title', 'text']) : [];
+		$notice = $this->texts(source: ($page['notice'] ?? null), keys: ['title', 'text']);
 		if (($notice['text'] ?? '') !== '') {
 			$kept['notice'] = $notice;
 		}
 
-		$staff = (is_array($page['staffLink'] ?? null) === true) ? $this->texts(source: $page['staffLink'], keys: ['text', 'label', 'href']) : [];
+		$staff = $this->texts(source: ($page['staffLink'] ?? null), keys: ['text', 'label', 'href']);
 		if (($staff['label'] ?? '') !== '' && $this->followable(href: ($staff['href'] ?? '')) === true) {
 			$kept['staffLink'] = $staff;
 		}
@@ -224,7 +224,7 @@ class PortalShell {
 		if (is_array($panel) === true) {
 			$items = [];
 			foreach ((array)($panel['items'] ?? []) as $item) {
-				$texts = (is_array($item) === true) ? $this->texts(source: $item, keys: ['title', 'text', 'icon']) : [];
+				$texts = $this->texts(source: $item, keys: ['title', 'text', 'icon']);
 				if (($texts['title'] ?? '') !== '') {
 					$items[] = $texts;
 				}
@@ -242,15 +242,19 @@ class PortalShell {
 	/**
 	 * The named keys of an authored block that hold text, trimmed.
 	 *
-	 * @param array<array-key, mixed> $source The block.
-	 * @param list<string>            $keys   The keys to keep.
+	 * @param mixed        $source The block; anything but an array says nothing.
+	 * @param list<string> $keys   The keys to keep.
 	 *
 	 * @return array<string, string> The keys that say something.
 	 *
 	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
-	private function texts(array $source, array $keys): array {
+	private function texts(mixed $source, array $keys): array {
 		$kept = [];
+		if (is_array($source) === false) {
+			return [];
+		}
+
 		foreach ($keys as $key) {
 			$value = $this->text(value: ($source[$key] ?? ''));
 			if ($value !== '') {
@@ -320,8 +324,13 @@ class PortalShell {
 				continue;
 			}
 
+			$kept = ['text' => $text];
 			$href = $this->text(value: ($line['href'] ?? ''));
-			$lines[] = ($this->followable(href: $href) === true) ? ['text' => $text, 'href' => $href] : ['text' => $text];
+			if ($this->followable(href: $href) === true) {
+				$kept['href'] = $href;
+			}
+
+			$lines[] = $kept;
 		}
 
 		if ($lines === []) {
