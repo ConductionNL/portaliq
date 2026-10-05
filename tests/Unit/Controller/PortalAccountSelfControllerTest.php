@@ -168,6 +168,28 @@ class PortalAccountSelfControllerTest extends TestCase {
 	}//end testTheMessageLanguageIsForwardedToTheService()
 
 	/**
+	 * Security review H1: the confirmation hands the service the session the
+	 * link was opened in, and no session at all when there is no bearer, so
+	 * the service can refuse a join that did not happen in the account
+	 * holder's own session. Without a bearer the link still confirms.
+	 *
+	 * @return void
+	 */
+	public function testTheConfirmationCarriesTheSessionItArrivedIn(): void {
+		$subject = ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x', 'trust' => 'substantial'];
+		$withSession = $this->controller(subject: $subject);
+		$this->doubles['selfService']->expects($this->once())->method('confirmEmail')
+			->with('secret-1', null, $subject)->willReturn(['email' => 'ouder@example.org']);
+		$this->assertSame(Http::STATUS_OK, $withSession->confirmEmail(token: 'secret-1')->getStatus());
+
+		$withoutSession = $this->controller(subject: null);
+		$this->doubles['selfService']->expects($this->once())->method('confirmEmail')
+			->with('secret-1', null, null)->willReturn(['email' => 'ouder@example.org']);
+		$this->assertSame(Http::STATUS_OK, $withoutSession->confirmEmail(token: 'secret-1')->getStatus());
+
+	}//end testTheConfirmationCarriesTheSessionItArrivedIn()
+
+	/**
 	 * The details come from the bearer's own subject only; no subject is 401,
 	 * no account is 404.
 	 *

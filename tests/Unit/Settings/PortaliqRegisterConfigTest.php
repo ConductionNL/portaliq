@@ -330,16 +330,30 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `deliverTo` routes a Woo-request form to opencatalogi's intake, and
 		// a submission keeps the `externalReference` and `dueAt` that intake
 		// armed (woo-request-intake-through-opencatalogi). Additive.
-		$this->assertSame('0.59.0', self::$register['info']['version']);
-		$this->assertSame('0.59.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalFormBinding']['version']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
+		// 0.60.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
+		// the one-time secret of a waiting account's invitation, and
+		// `claimAttempts` with `claimAttemptsSince`, the wrong secrets an
+		// account offered (invitation-secret-joins-the-signed-in-account).
+		// Additive.
+		// 0.61.0 (portalAccount 0.16.0): `claimCodeHash`, the short code of an
+		// invitation letter (invitation-code-from-a-letter). Additive.
+		// 0.62.0 (portalAccount 0.17.0): the five `claim*` fields are readable
+		// and writable by administrators only (security review M4).
+		$this->assertSame('0.62.0', self::$register['info']['version']);
+		$this->assertSame('0.62.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
+		$this->assertSame('integer', self::$register['components']['schemas']['portalAccount']['properties']['claimAttempts']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimAttemptsSince']['format']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['newsItem']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
@@ -389,7 +403,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
@@ -655,7 +669,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [
@@ -1047,4 +1061,20 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 	}//end testIdentityAndSessionSchemasCarryNoMcpDialect()
 
+	/**
+	 * Security review M4: the invitation fields are readable only by
+	 * administrators, through OpenRegister's property authorization. An
+	 * ordinary signed-in Nextcloud user (the schema's `authenticated` read)
+	 * gets the account without them.
+	 *
+	 * @return void
+	 */
+	public function testTheInvitationFieldsAreReadableByAdministratorsOnly(): void {
+		$account = self::$register['components']['schemas']['portalAccount'];
+		$this->assertSame(['authenticated'], $account['authorization']['read'], 'The object read the property rule narrows.');
+		foreach (['claimTokenHash', 'claimCodeHash', 'claimExpiresAt', 'claimAttempts', 'claimAttemptsSince'] as $field) {
+			$this->assertSame(['read' => ['admin'], 'update' => ['admin']], $account['properties'][$field]['authorization'] ?? null, $field);
+		}
+
+	}//end testTheInvitationFieldsAreReadableByAdministratorsOnly()
 }//end class

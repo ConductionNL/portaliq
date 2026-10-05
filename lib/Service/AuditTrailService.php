@@ -62,9 +62,10 @@ class AuditTrailService {
 	public const ACTION_PREFIX = Application::APP_ID . '.';
 
 	/**
-	 * The verbs the portal records.
+	 * The verbs the portal records. `claim` is an account taking over the
+	 * claims of a waiting account (confirmed-address-joins-the-waiting-account).
 	 */
-	public const VERBS = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete'];
+	public const VERBS = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete', 'claim'];
 
 	/**
 	 * A uuid, so a target that is an object is linked to that object's history.

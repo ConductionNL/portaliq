@@ -174,19 +174,24 @@ class PortalAccountLookup {
 			return null;
 		}
 
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'email',
-			subjectRef: $email,
-			organisation: $organisation,
-			limit: 5,
-			filter: ['status' => self::STATUS_PENDING]
-		);
+		// An address is one address whatever its case (security review L4):
+		// the store is asked for it as written and in lower case, and every
+		// row is compared without regard to case.
+		foreach (array_unique([$email, strtolower($email)]) as $asked) {
+			$rows = $this->reader->readCollection(
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				scopeField: 'email',
+				subjectRef: $asked,
+				organisation: $organisation,
+				limit: 5,
+				filter: ['status' => self::STATUS_PENDING]
+			);
 
-		foreach ($rows as $row) {
-			if ($this->isClaimablePendingRow(row: $row, email: $email, organisation: $organisation) === true) {
-				return $row;
+			foreach ($rows as $row) {
+				if ($this->isClaimablePendingRow(row: $row, email: $email, organisation: $organisation) === true) {
+					return $row;
+				}
 			}
 		}
 
@@ -241,7 +246,8 @@ class PortalAccountLookup {
 	}//end matchesIdentity()
 
 	/**
-	 * Whether a row is a pending account a verified address may claim.
+	 * Whether a row is a pending account a verified address may claim. The
+	 * address is compared without regard to case.
 	 *
 	 * @param array<string, mixed> $row One row the reader returned.
 	 * @param string $email The address queried for.
@@ -250,7 +256,7 @@ class PortalAccountLookup {
 	 * @return bool
 	 */
 	private function isClaimablePendingRow(array $row, string $email, string $organisation): bool {
-		return (($row['email'] ?? '') === $email
+		return (strtolower((string)($row['email'] ?? '')) === strtolower($email)
 			&& ($row['organisation'] ?? '') === $organisation
 			&& ($row['status'] ?? '') === self::STATUS_PENDING
 			&& ($row['verifiedEmail'] ?? false) === true
