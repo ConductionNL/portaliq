@@ -1021,3 +1021,91 @@
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
+
+/*
+ * THE RESIDENT MENU AS THE SCHOOL DESIGNS DRAW IT
+ * (resident-menu-badges-and-cards, G-05, G-06).
+ *
+ * Group names small and spaced in capitals, entries in the link colour, the
+ * page on screen on the accent's light wash in bold ink, counts in the
+ * accent. Three classes, so these beat the component's scoped rules (two
+ * classes and an attribute), which load after this sheet.
+ */
+.pq-site .pq-account .pq-resident-menu__title {
+	color: var(--nldesign-color-text-muted, var(--utrecht-document-color));
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.pq-site .pq-account .pq-resident-menu__link {
+	padding-block: 12px;
+	border-inline-start: 0;
+	border-radius: var(--nldesign-website-border-radius, 0);
+	color: var(--nldesign-color-link, var(--utrecht-link-color));
+	font-size: 1.0625rem;
+	font-weight: 600;
+}
+
+.pq-site .pq-account .pq-resident-menu__link--current {
+	background-color: var(
+		--thematiq-accent-light-color,
+		var(--nldesign-color-primary-light)
+	);
+	color: var(--nldesign-color-text, var(--utrecht-document-color));
+	font-weight: 700;
+	box-shadow: inset 4px 0 0
+		var(--thematiq-accent-color, var(--nldesign-color-primary));
+}
+
+.pq-site .pq-account .pq-resident-menu__subline {
+	display: block;
+	color: var(--nldesign-color-text, var(--utrecht-document-color));
+	font-size: 0.875rem;
+	font-weight: 400;
+}
+
+.pq-site .pq-account .pq-resident-menu__badge,
+.pq-site .pq-account .pq-resident-menu__toggle-badge {
+	background-color: var(
+		--thematiq-badge-background-color,
+		var(--utrecht-document-color)
+	);
+	color: var(--thematiq-badge-color, var(--utrecht-document-background-color));
+	font-weight: 700;
+}
+
+.pq-site .pq-account .pq-resident-menu__toggle-badge {
+	margin-inline-start: auto;
+	padding-inline: 8px;
+	border-radius: 999px;
+	font-size: 0.8125rem;
+}
+
+.pq-site .pq-account .pq-resident-menu__card {
+	margin-block-end: 24px;
+	padding: 16px;
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	background-color: var(
+		--nldesign-color-background-hover,
+		var(--tilburg-color-gray-100)
+	);
+}
+
+.pq-site .pq-account .pq-resident-menu__card p {
+	margin: 0;
+}
+
+.pq-site .pq-account .pq-resident-menu__card-label {
+	color: var(--nldesign-color-text-muted, var(--utrecht-document-color));
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.pq-site .pq-account .pq-resident-menu__card-title {
+	font-size: 1.0625rem;
+	font-weight: 700;
+}

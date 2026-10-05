@@ -390,5 +390,7 @@
 	"This code is not right or no longer valid. Check the code, or ask for a new one.": "This code is not right or no longer valid. Check the code, or ask for a new one.",
 	"You cannot accept an invitation with this account. Sign in another way and try again.": "You cannot accept an invitation with this account. Sign in another way and try again.",
 	"Your account is already linked in another way. Contact the organisation that invited you.": "Your account is already linked in another way. Contact the organisation that invited you.",
-	"Search": "Search"
+	"Search": "Search",
+	"{count} new": "{count} new",
+	"{count} open": "{count} open"
 }

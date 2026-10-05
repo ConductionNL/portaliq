@@ -352,8 +352,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.65.0 (portal 0.10.0): `headerSearch`, `accountLabel`, `footer.cta`,
 		// `footer.contact`, `authentication.modeLabels` and
 		// `authentication.signInPage` (site-chrome-follows-the-design). Additive.
-		$this->assertSame('0.65.0', self::$register['info']['version']);
-		$this->assertSame('0.65.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.66.0 (portal 0.11.0): `residentMenu.cardLabel`
+		// (resident-menu-badges-and-cards). Additive.
+		$this->assertSame('0.66.0', self::$register['info']['version']);
+		$this->assertSame('0.66.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -413,7 +415,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.10.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.11.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
