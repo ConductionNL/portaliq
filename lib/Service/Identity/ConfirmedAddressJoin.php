@@ -37,6 +37,9 @@ use OCA\Portaliq\Service\PortalSessionService;
 /**
  * Joins the waiting account for an address its holder just confirmed.
  *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies
+ * is the one trust comparison every portal surface uses.
+ *
  * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
  */
 class ConfirmedAddressJoin {

@@ -178,7 +178,7 @@ class WaitingAccountJoin {
 			&& $organisation === (string)($account['organisation'] ?? '')
 			&& $audience !== ''
 			&& $audience === (string)($account['audience'] ?? '')
-			&& self::claimsConflict(account: $account, waiting: $waiting) === false;
+			&& $this->claimsConflict(account: $account, waiting: $waiting) === false;
 	}//end isJoinable()
 
 	/**
@@ -192,7 +192,7 @@ class WaitingAccountJoin {
 	 *
 	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
 	 */
-	public static function claimsConflict(array $account, array $waiting): bool {
+	public function claimsConflict(array $account, array $waiting): bool {
 		$held = (array)($account['claims'] ?? []);
 		foreach ((array)($waiting['claims'] ?? []) as $appId => $appClaims) {
 			if (is_array($appClaims) === false || is_array($held[$appId] ?? null) === false) {
