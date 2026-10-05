@@ -18,7 +18,7 @@
 				:key="index"
 				class="utrecht-link-list__item">
 				<a
-					class="utrecht-link-list__link"
+					class="utrecht-link utrecht-link-list__link"
 					:href="link.href"
 					@click="open($event, link)"
 					>{{ link.label }}</a
@@ -35,6 +35,7 @@
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
 
 import '@utrecht/link-list-css/dist/index.css'
+import '@utrecht/link-css/dist/index.css'
 import '@utrecht/heading-3-css/dist/index.css'
 
 export default {

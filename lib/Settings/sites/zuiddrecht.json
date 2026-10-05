@@ -245,8 +245,8 @@
                         "id": "zd-home-04-nlnewslist",
                         "widgetKey": "nlNewsList",
                         "gridX": 0,
-                        "gridY": 8,
-                        "gridWidth": 8,
+                        "gridY": 9,
+                        "gridWidth": 7,
                         "gridHeight": 6,
                         "props": {
                             "heading": "Nieuws",
@@ -262,7 +262,7 @@
                         "id": "zd-home-05-nlsignin",
                         "widgetKey": "nlSignIn",
                         "gridX": 8,
-                        "gridY": 8,
+                        "gridY": 9,
                         "gridWidth": 4,
                         "gridHeight": 4,
                         "props": {
@@ -281,7 +281,7 @@
                         "id": "zd-home-06-nllinklist",
                         "widgetKey": "nlLinkList",
                         "gridX": 8,
-                        "gridY": 12,
+                        "gridY": 14,
                         "gridWidth": 4,
                         "gridHeight": 2,
                         "props": {
@@ -299,7 +299,7 @@
                         "id": "zd-home-07-nlheading",
                         "widgetKey": "nlHeading",
                         "gridX": 0,
-                        "gridY": 14,
+                        "gridY": 18,
                         "gridWidth": 12,
                         "gridHeight": 1,
                         "props": {
@@ -311,7 +311,7 @@
                         "id": "zd-home-08-nllinklist",
                         "widgetKey": "nlLinkList",
                         "gridX": 0,
-                        "gridY": 15,
+                        "gridY": 19,
                         "gridWidth": 4,
                         "gridHeight": 3,
                         "props": {
@@ -336,7 +336,7 @@
                         "id": "zd-home-09-nllinklist",
                         "widgetKey": "nlLinkList",
                         "gridX": 4,
-                        "gridY": 15,
+                        "gridY": 19,
                         "gridWidth": 4,
                         "gridHeight": 3,
                         "props": {
@@ -361,7 +361,7 @@
                         "id": "zd-home-10-nllinklist",
                         "widgetKey": "nlLinkList",
                         "gridX": 8,
-                        "gridY": 15,
+                        "gridY": 19,
                         "gridWidth": 4,
                         "gridHeight": 3,
                         "props": {
@@ -399,7 +399,7 @@
                         "widgetKey": "nlParagraph",
                         "gridX": 0,
                         "gridY": 0,
-                        "gridWidth": 8,
+                        "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
                             "text": "Wij halen uw afval om de week op. Op de afvalkalender ziet u welke container wanneer aan de straat moet."
@@ -438,8 +438,8 @@
                         "id": "zd-afval-03-nlheading",
                         "widgetKey": "nlHeading",
                         "gridX": 0,
-                        "gridY": 1,
-                        "gridWidth": 8,
+                        "gridY": 2,
+                        "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
                             "text": "Welke container is waarvoor?",
@@ -450,8 +450,8 @@
                         "id": "zd-afval-04-nltable",
                         "widgetKey": "nlTable",
                         "gridX": 0,
-                        "gridY": 2,
-                        "gridWidth": 8,
+                        "gridY": 3,
+                        "gridWidth": 7,
                         "gridHeight": 3,
                         "props": {
                             "caption": "Containers en ophaaldagen",
@@ -488,8 +488,8 @@
                         "id": "zd-afval-05-nlheading",
                         "widgetKey": "nlHeading",
                         "gridX": 0,
-                        "gridY": 5,
-                        "gridWidth": 8,
+                        "gridY": 7,
+                        "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
                             "text": "Grof afval",
@@ -500,8 +500,8 @@
                         "id": "zd-afval-06-nlparagraph",
                         "widgetKey": "nlParagraph",
                         "gridX": 0,
-                        "gridY": 6,
-                        "gridWidth": 8,
+                        "gridY": 8,
+                        "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
                             "text": "Grof afval brengt u zelf naar het afvalbrengstation. Of u maakt een afspraak en wij halen het op. De eerste vier keer per jaar zijn gratis."
@@ -511,7 +511,7 @@
                         "id": "zd-afval-07-nlbuttonlink",
                         "widgetKey": "nlButtonLink",
                         "gridX": 0,
-                        "gridY": 7,
+                        "gridY": 9,
                         "gridWidth": 4,
                         "gridHeight": 1,
                         "props": {
