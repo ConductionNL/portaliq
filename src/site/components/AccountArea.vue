@@ -326,6 +326,7 @@ export default {
 				closedMarker: this.contributions?.cases?.closedMarker === true,
 				canOpen: (target) => navKeyFor(this.nav, target) !== null,
 				openCase: (target, row) => this.openCase(target, row),
+				caseRoute: (target) => this.caseRoute(target),
 				// The record a route chooses on a record page
 				// (site-mijn-omgeving-components REQ-SMO-008).
 				routeRecordId: recordIdOfRoute(this.currentRoute),
@@ -411,9 +412,8 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
 		 */
 		openCase(target, row) {
-			const key = navKeyFor(this.nav, target)
-			const entry = this.nav.find((candidate) => candidate.key === key)
-			if (!entry) {
+			const route = this.caseRoute(target)
+			if (!route) {
 				return
 			}
 			try {
@@ -429,13 +429,28 @@ export default {
 			} catch {
 				// Without storage the page opens without the case selected.
 			}
+			this.$emit('navigate', route)
+		},
+
+		/**
+		 * The in-site route a case opens on, so my cases can render it as a
+		 * real link (a new tab, a bookmark); '' when no page shows it.
+		 *
+		 * @param {{app: string, collection: string, id: string}} target The case.
+		 * @return {string} The route, or ''.
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 */
+		caseRoute(target) {
+			const key = navKeyFor(this.nav, target)
+			const entry = this.nav.find((candidate) => candidate.key === key)
+			if (!entry) {
+				return ''
+			}
 			// A record page opens on that record's route (REQ-SMO-010).
-			this.$emit(
-				'navigate',
-				opensAsRecordPage(entry, target.collection)
-					? `${routeForNav(entry)}/${encodeURIComponent(target.id)}`
-					: routeForNav(entry),
-			)
+			return opensAsRecordPage(entry, target.collection)
+				? `${routeForNav(entry)}/${encodeURIComponent(target.id)}`
+				: routeForNav(entry)
 		},
 	},
 }

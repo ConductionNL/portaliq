@@ -31,8 +31,8 @@
  * (the shared portal API bound to the site's bearer, src/shared/portalApi.js),
  * `session`, `portal` (the portal record), `contributions` (the aggregate),
  * `nav` (every entry), `t` (the site translator), `locale`, `openRecord`,
- * `navigate(keyOrRoute)`, and for my cases `closedMarker`, `canOpen(target)`
- * and `openCase(target, row)`. Events: `navigate` with an in-site route or a
+ * `navigate(keyOrRoute)`, and for my cases `closedMarker`, `canOpen(target)`,
+ * `openCase(target, row)` and `caseRoute(target)`. Events: `navigate` with an in-site route or a
  * section key, `unread` with the inbox's new unread count, `refresh` to read
  * the contributions again, and `removed` after the account is removed (the
  * shell signs out).

@@ -37,6 +37,8 @@ use Throwable;
  * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
  */
 class EventRsvpService {
+	use PagedObjectReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -146,9 +148,12 @@ class EventRsvpService {
 	 */
 	private function findExistingRsvpId(object $objectService, string $eventId, string $subjectRef, string $childRef): ?string {
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->readEveryPage(
+				objectService: $objectService,
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				filters: ['eventRef' => $eventId, 'guardianRef' => $subjectRef, 'childRef' => $childRef]
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: event RSVP lookup failed', ['reason' => $e->getMessage()]);
 			return null;

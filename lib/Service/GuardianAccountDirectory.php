@@ -93,9 +93,11 @@ class GuardianAccountDirectory {
 	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T2
 	 */
 	public function guardiansMatching(array $target, array $exclude = []): array {
+		// A keyed set: an in_array() per guardian made this quadratic.
+		$excluded = array_fill_keys(array_map('strval', $exclude), true);
 		$matched = [];
 		foreach ($this->activeGuardianRefs() as $guardianRef) {
-			if (in_array($guardianRef, $exclude, true) === true) {
+			if (isset($excluded[$guardianRef]) === true) {
 				continue;
 			}
 
@@ -123,13 +125,15 @@ class GuardianAccountDirectory {
 			return [];
 		}
 
+		// Keyed by subjectRef, so deduplicating stays linear: an in_array()
+		// per row made 20,000 accounts 200 million comparisons.
 		$refs = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
 			$rows = $this->page(objectService: $objectService, offset: ($page * self::PAGE));
 			foreach ($rows as $row) {
 				$ref = $this->activeGuardianRef(row: $row);
-				if ($ref !== null && in_array($ref, $refs, true) === false) {
-					$refs[] = $ref;
+				if ($ref !== null) {
+					$refs[$ref] = true;
 				}
 			}
 
@@ -138,7 +142,7 @@ class GuardianAccountDirectory {
 			}
 		}
 
-		return $refs;
+		return array_map('strval', array_keys($refs));
 	}//end activeGuardianRefs()
 
 	/**

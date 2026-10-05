@@ -171,15 +171,16 @@
 					</p>
 
 					<div class="pq-inbox-row__actions">
-						<button
-							v-if="
-								message.recordLink?.id && routeOf(message.recordLink)
-							"
-							type="button"
-							class="utrecht-button utrecht-button--secondary-action"
-							@click="openRecord(message.recordLink)">
+						<!-- A real link (a new tab, a bookmark); a plain click keeps
+						     the record for the page it opens, as an e-mail link does. -->
+						<a
+							v-if="openRouteOf(message)"
+							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--secondary-action"
+							:href="hrefOf(openRouteOf(message))"
+							data-testid="inbox-row-open"
+							@click="onOpenClick($event, message.recordLink)">
 							{{ tr('Open') }}
-						</button>
+						</a>
 						<button
 							v-if="message.taskUuid"
 							type="button"
@@ -222,6 +223,7 @@ import NotificationSettings from '../../components/inbox/NotificationSettings.vu
 import TranslatedText from '../../components/inbox/TranslatedText.vue'
 import { unreadIn } from '../../../shared/inboxUnread.js'
 import { deliveryLine } from '../../../shared/messageBox.js'
+import { siteHref } from '../../components/mijn/rows.js'
 import {
 	attachmentsOf,
 	bodyParts,
@@ -241,6 +243,10 @@ import {
 } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
+
+// "Open" is a button link; without this stylesheet its classes name
+// nothing and the browser draws its own blue link.
+import '@utrecht/button-link-css/dist/index.css'
 
 /**
  * The page's origin, or '' where there is no window (a render in node).
@@ -660,6 +666,39 @@ export default {
 			}
 			keepRecordToOpen(sessionStore(), link)
 			this.go(route)
+		},
+
+		/**
+		 * The link's real address for an in-site route.
+		 *
+		 * @param {string} route The in-site route.
+		 * @return {string} The address.
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 */
+		hrefOf(route) {
+			return siteHref(route)
+		},
+
+		/**
+		 * A plain click on "Open" stays in the site; a click for a new tab or
+		 * window (a modifier key, another button) is the browser's.
+		 *
+		 * @param {MouseEvent} event The click.
+		 * @param {{app: string, collection: string, id: string}} link The record link.
+		 * @return {void}
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 */
+		onOpenClick(event, link) {
+			if (
+				event?.ctrlKey
+				|| event?.metaKey
+				|| event?.shiftKey
+				|| (event?.button ?? 0) !== 0
+			) {
+				return
+			}
+			event?.preventDefault?.()
+			this.openRecord(link)
 		},
 
 		/**

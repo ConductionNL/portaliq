@@ -10,6 +10,10 @@
  * (`lib/AppInfo/Application.php::registerServiceAlias`) for a real
  * transport later with no caller change.
  *
+ * Nothing reaches a device, so it says so: `send()` answers false and
+ * `delivers()` answers false. The notification job then offers no push
+ * channel at all, and the proof log never records a push as sent.
+ *
  * @category Service
  * @package  OCA\Portaliq\Service\Notifications
  *
@@ -52,7 +56,7 @@ class LoggingPushSender implements PushSenderInterface {
 	 * @param string $title The notification title.
 	 * @param string $body The notification body.
 	 *
-	 * @return bool Always true — logging never fails to "send".
+	 * @return bool Always false — nothing is delivered, only logged.
 	 *
 	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
 	 */
@@ -62,6 +66,17 @@ class LoggingPushSender implements PushSenderInterface {
 			'title' => $title,
 		]);
 
-		return true;
+		return false;
 	}//end send()
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return bool Always false — this transport only logs.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function delivers(): bool {
+		return false;
+	}//end delivers()
 }//end class
