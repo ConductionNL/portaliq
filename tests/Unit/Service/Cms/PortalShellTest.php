@@ -23,14 +23,20 @@ class PortalShellTest extends TestCase {
 	public function testTheHeaderSearchIsOffUntilEnabledAndOpensAnInSitePage(): void {
 		$shell = new PortalShell();
 
-		$this->assertSame(['enabled' => false, 'placeholder' => '', 'route' => '/zoeken'], $shell->headerSearch(portal: []));
+		$this->assertSame(['enabled' => false, 'label' => '', 'placeholder' => '', 'route' => '/zoeken'], $shell->headerSearch(portal: []));
 		$this->assertSame(
-			['enabled' => true, 'placeholder' => 'Zoek een cursus', 'route' => '/cursussen'],
+			['enabled' => true, 'label' => '', 'placeholder' => 'Zoek een cursus', 'route' => '/cursussen'],
 			$shell->headerSearch(portal: ['headerSearch' => ['enabled' => true, 'placeholder' => ' Zoek een cursus ', 'route' => '/cursussen']])
 		);
-		// A truthy string is not "enabled", and an address elsewhere is not a search page.
+		// A declared box shows without `enabled`, as lane L3 writes it.
 		$this->assertSame(
-			['enabled' => false, 'placeholder' => '', 'route' => '/zoeken'],
+			['enabled' => true, 'label' => 'Zoeken op de website', 'placeholder' => '', 'route' => '/zoeken'],
+			$shell->headerSearch(portal: ['headerSearch' => ['label' => 'Zoeken op de website', 'route' => '/zoeken']])
+		);
+		// Switched off, or a truthy string, is off; an address elsewhere is not a search page.
+		$this->assertFalse($shell->headerSearch(portal: ['headerSearch' => ['enabled' => false, 'label' => 'Zoeken']])['enabled']);
+		$this->assertSame(
+			['enabled' => false, 'label' => '', 'placeholder' => '', 'route' => '/zoeken'],
 			$shell->headerSearch(portal: ['headerSearch' => ['enabled' => 'yes', 'route' => '//evil.example/zoek']])
 		);
 	}//end testTheHeaderSearchIsOffUntilEnabledAndOpensAnInSitePage()

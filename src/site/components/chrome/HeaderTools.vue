@@ -26,7 +26,7 @@
 				type="search"
 				class="utrecht-textbox pq-header-tools__input"
 				:placeholder="hint"
-				:aria-label="hint"
+				:aria-label="searchBox.label || hint"
 				data-testid="site-header-search-input" />
 			<button type="submit" class="pq-header-tools__submit">
 				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

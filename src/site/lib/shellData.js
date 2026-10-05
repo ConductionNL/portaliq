@@ -172,7 +172,7 @@ export function registerRouteOf(site) {
  * names another page of its own).
  *
  * @param {object} site The public site record.
- * @return {{enabled: boolean, placeholder: string, route: string}} The box.
+ * @return {{enabled: boolean, label: string, placeholder: string, route: string}} The box.
  *
  * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
  */
@@ -181,6 +181,7 @@ export function headerSearchOf(site) {
 	const route = String(search.route || '')
 	return {
 		enabled: search.enabled === true,
+		label: String(search.label || ''),
 		placeholder: String(search.placeholder || ''),
 		route: /^\/(?!\/)/.test(route) ? route : '/zoeken',
 	}
