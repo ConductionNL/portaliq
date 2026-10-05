@@ -13,6 +13,7 @@
 // admin-only rebuild wipes the sibling bundle and the page then serves a bare
 // <div> with a 404 on its script and NO console error.
 
+const fs = require('fs')
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const webpack = require('webpack')
@@ -177,5 +178,55 @@ const embed = {
 		maxEntrypointSize: 160 * 1024,
 	},
 }
+
+/**
+ * THE SERVICE WORKER SHIPS IN js/ AS WELL (parent-pwa-installability).
+ *
+ * src/shared/serviceWorker.js is hand-written, unbundled JavaScript that
+ * PortalManifestController serves as it is. The release package leaves src/
+ * out (the shared release workflow rsyncs with --exclude='/src'), so every
+ * appstore install answered /portal/sw.js with an empty 200: no shell cache
+ * and no install prompt, while dev and CI, which have src/, looked fine.
+ *
+ * This copies the file byte for byte into js/, which the package carries,
+ * under a name the admin build's `clean.keep` keeps. It is an asset, not an
+ * entry: bundling it would wrap it in the webpack runtime. Only the site
+ * build emits it; the editor and the embed builds share js/ and need it once.
+ */
+const SERVICE_WORKER_SOURCE = path.join(
+	__dirname,
+	'src',
+	'shared',
+	'serviceWorker.js',
+)
+const SERVICE_WORKER_ASSET = 'portaliq-site-sw.js'
+
+class ServiceWorkerAsset {
+	apply(compiler) {
+		compiler.hooks.thisCompilation.tap('ServiceWorkerAsset', (compilation) => {
+			compilation.fileDependencies.add(SERVICE_WORKER_SOURCE)
+			compilation.hooks.processAssets.tap(
+				{
+					name: 'ServiceWorkerAsset',
+					stage: webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL,
+				},
+				() => {
+					compilation.emitAsset(
+						SERVICE_WORKER_ASSET,
+						new webpack.sources.RawSource(
+							fs.readFileSync(SERVICE_WORKER_SOURCE),
+						),
+						// Tells Terser to leave it alone: the worker ships as written.
+						{ minimized: true },
+					)
+				},
+			)
+		})
+	}
+}
+
+// A new array, assigned after the editor and the embed copied theirs, so only
+// the site compilation carries the plugin.
+site.plugins = [...site.plugins, new ServiceWorkerAsset()]
 
 module.exports = [site, editor, embed]

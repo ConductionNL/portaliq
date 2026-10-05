@@ -16,7 +16,7 @@
 //     refuses service workers still boots the site.
 
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -461,3 +461,40 @@ test('without an auth edge nothing is registered', async () => {
 	assert.equal(await registerSiteServiceWorker('', { nav }), null)
 	assert.equal(called, false)
 })
+
+// THE RELEASE PACKAGE HAS NO src/. The shared release workflow excludes it,
+// so an installed app could only serve the worker if the build also puts it
+// where the package looks: js/, under a name the admin build's clean keeps.
+const BUILT_NAME = 'portaliq-site-sw.js'
+
+test('the site build copies the worker into js/, and the admin build keeps it', () => {
+	const siteConfig = readFileSync(join(ROOT, 'webpack.site.js'), 'utf8')
+	assert.match(
+		siteConfig,
+		/join\(\s*__dirname,\s*'src',\s*'shared',\s*'serviceWorker\.js',?\s*\)/,
+	)
+	assert.match(siteConfig, new RegExp(`'${BUILT_NAME.replace(/\./g, '\\.')}'`))
+
+	const adminConfig = readFileSync(join(ROOT, 'webpack.config.js'), 'utf8')
+	const keep = /keep: (\/.+\/),/.exec(adminConfig)
+	assert.ok(keep, 'webpack.config.js declares output.clean.keep')
+	// eslint-disable-next-line no-eval -- a regex literal read from the config
+	assert.ok(eval(keep[1]).test(BUILT_NAME), `clean.keep keeps ${BUILT_NAME}`)
+})
+
+test('the controller serves the built copy when src/ is absent', () => {
+	const controller = readFileSync(
+		join(ROOT, 'lib', 'Controller', 'PortalManifestController.php'),
+		'utf8',
+	)
+	assert.match(controller, /'\/src\/shared\/serviceWorker\.js'/)
+	assert.match(controller, new RegExp(`'/js/${BUILT_NAME.replace(/\./g, '\\.')}'`))
+})
+
+test(
+	'a site build carries the worker unchanged',
+	{ skip: !existsSync(join(ROOT, 'js', BUILT_NAME)) && 'no site build in js/' },
+	() => {
+		assert.equal(readFileSync(join(ROOT, 'js', BUILT_NAME), 'utf8'), SOURCE)
+	},
+)

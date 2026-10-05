@@ -11,6 +11,7 @@ use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 use ReflectionProperty;
 
 /**
@@ -21,6 +22,13 @@ use ReflectionProperty;
  * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md
  */
 class PortalManifestControllerTest extends TestCase {
+
+	/**
+	 * Throwaway app directories to remove after the test.
+	 *
+	 * @var list<string>
+	 */
+	private array $cleanUp = [];
 
 	public function testManifestNamesTheResolvedOrganisation(): void {
 		$controller = $this->controller(orgSlug: 'gemeente-x', resolved: ['organisationName' => 'Gemeente X']);
@@ -212,6 +220,76 @@ class PortalManifestControllerTest extends TestCase {
 		);
 
 	}//end testServiceWorkerServesTheSourceFilesContents()
+
+	public function testAReleasePackageWithoutSourcesServesTheBuiltCopy(): void {
+		$appRoot = $this->appRoot(files: ['js/portaliq-site-sw.js']);
+
+		$this->assertSame(
+			expected: $appRoot . '/js/portaliq-site-sw.js',
+			actual: $this->serviceWorkerSourcePath(appRoot: $appRoot)
+		);
+
+	}//end testAReleasePackageWithoutSourcesServesTheBuiltCopy()
+
+	public function testACheckoutWithSourcesServesTheSourceOverTheBuild(): void {
+		$appRoot = $this->appRoot(files: ['js/portaliq-site-sw.js', 'src/shared/serviceWorker.js']);
+
+		$this->assertSame(
+			expected: $appRoot . '/src/shared/serviceWorker.js',
+			actual: $this->serviceWorkerSourcePath(appRoot: $appRoot)
+		);
+
+	}//end testACheckoutWithSourcesServesTheSourceOverTheBuild()
+
+	/**
+	 * A throwaway app directory holding only the given files, removed at
+	 * the end of the test.
+	 *
+	 * @param list<string> $files Paths relative to the app directory.
+	 *
+	 * @return string The app directory.
+	 */
+	private function appRoot(array $files): string {
+		$appRoot = sys_get_temp_dir() . '/portaliq-sw-' . bin2hex(random_bytes(6));
+		foreach ($files as $file) {
+			@mkdir(dirname($appRoot . '/' . $file), 0o700, true);
+			file_put_contents($appRoot . '/' . $file, '// worker');
+		}
+
+		$this->cleanUp[] = $appRoot;
+
+		return $appRoot;
+	}//end appRoot()
+
+	/**
+	 * The controller's service worker path for an app directory.
+	 *
+	 * @param string $appRoot The app directory.
+	 *
+	 * @return string
+	 */
+	private function serviceWorkerSourcePath(string $appRoot): string {
+		$method = new ReflectionMethod(PortalManifestController::class, 'serviceWorkerSourcePath');
+
+		return (string)$method->invoke($this->controller(orgSlug: ''), $appRoot);
+	}//end serviceWorkerSourcePath()
+
+	/**
+	 * @return void
+	 */
+	protected function tearDown(): void {
+		// Only what appRoot() created, and only under the system temp dir.
+		foreach ($this->cleanUp as $appRoot) {
+			@unlink($appRoot . '/js/portaliq-site-sw.js');
+			@unlink($appRoot . '/src/shared/serviceWorker.js');
+			@rmdir($appRoot . '/src/shared');
+			@rmdir($appRoot . '/src');
+			@rmdir($appRoot . '/js');
+			@rmdir($appRoot);
+		}
+
+		parent::tearDown();
+	}//end tearDown()
 
 	/**
 	 * The controller over doubles.

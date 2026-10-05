@@ -135,7 +135,7 @@ class PortalManifestController extends Controller {
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function serviceWorker(): DataDisplayResponse {
-		$path = $this->serviceWorkerSourcePath();
+		$path = $this->serviceWorkerSourcePath(appRoot: dirname(__DIR__, 2));
 		$source = '';
 		if (is_readable($path) === true) {
 			$source = (string)file_get_contents($path);
@@ -204,17 +204,30 @@ class PortalManifestController extends Controller {
 	}//end serviceWorkerScope()
 
 	/**
-	 * The plain-JS source file's path on disk. Not a webpack entry — `/js/`
-	 * is entirely gitignored build output, so a hand-written service worker
+	 * The service worker's path on disk. Not a webpack entry — `/js/` is
+	 * entirely gitignored build output, so a hand-written service worker
 	 * cannot live there (design.md Trade-offs). It lives in `src/shared/`,
 	 * where it moved from the retired React portal's sources (REQ-SRP-045).
+	 *
+	 * A release package carries no `src/` (the shared release workflow
+	 * excludes it), so the site build also copies the file, unchanged, to
+	 * `js/portaliq-site-sw.js` (webpack.site.js), and that copy is served when
+	 * the source is absent. The source wins when both exist, so a checkout
+	 * never serves a stale build.
+	 *
+	 * @param string $appRoot The app's directory on disk.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
 	 */
-	private function serviceWorkerSourcePath(): string {
-		return dirname(__DIR__, 2) . '/src/shared/serviceWorker.js';
+	private function serviceWorkerSourcePath(string $appRoot): string {
+		$source = $appRoot . '/src/shared/serviceWorker.js';
+		if (is_readable($source) === true) {
+			return $source;
+		}
+
+		return $appRoot . '/js/portaliq-site-sw.js';
 	}//end serviceWorkerSourcePath()
 
 	/**
