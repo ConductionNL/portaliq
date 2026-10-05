@@ -690,4 +690,50 @@ class PortalThemeResolverTest extends TestCase {
 	}//end testATraversalAttemptIsRefusedForTheLogo()
 
 
+	/**
+	 * site-chrome-follows-the-design: the light logo for the dark footer and
+	 * the emblem for a watermark resolve when the set ships them, and only
+	 * the two variants the site asks for.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	public function testALogoVariantResolvesWhenTheSetShipsIt(): void {
+		mkdir($this->themeRoot . '/img/logos', 0o777, true);
+		file_put_contents($this->themeRoot . '/img/logos/vng.svg', '<svg/>');
+		file_put_contents($this->themeRoot . '/img/logos/vng-dark.svg', '<svg/>');
+		file_put_contents($this->themeRoot . '/img/logos/vng-emblem.svg', '<svg/>');
+		file_put_contents($this->themeRoot . '/img/logos/vng-secret.svg', '<svg/>');
+
+		$resolver = $this->resolver();
+		$this->assertSame('img/logos/vng-dark.svg', $resolver->logoFileFor(theme: 'vng', variant: 'dark'));
+		$this->assertSame('img/logos/vng-emblem.svg', $resolver->logoFileFor(theme: 'vng', variant: 'emblem'));
+		$this->assertNull($resolver->logoFileFor(theme: 'vng', variant: 'secret'));
+		$this->assertNull($resolver->logoFileFor(theme: 'vng', variant: '../vng'));
+
+	}//end testALogoVariantResolvesWhenTheSetShipsIt()
+
+
+	/**
+	 * A set without the variant file has none; a set that does not resolve
+	 * has none either.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	public function testALogoVariantNeedsItsFileAndAResolvedSet(): void {
+		mkdir($this->themeRoot . '/img/logos', 0o777, true);
+		file_put_contents($this->themeRoot . '/img/logos/vng.svg', '<svg/>');
+		// orphan ships a dark logo but is not in the catalogue.
+		file_put_contents($this->themeRoot . '/img/logos/orphan-dark.svg', '<svg/>');
+
+		$resolver = $this->resolver();
+		$this->assertNull($resolver->logoFileFor(theme: 'vng', variant: 'dark'));
+		$this->assertNull($resolver->logoFileFor(theme: 'orphan', variant: 'dark'));
+
+	}//end testALogoVariantNeedsItsFileAndAResolvedSet()
+
+
 }//end class

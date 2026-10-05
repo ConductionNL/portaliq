@@ -349,8 +349,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// (site-school-blocks). Additive; an item from before is not public.
 		// 0.64.0 (portalPage 0.6.0): the school display keys, the greeting
 		// block and `visibleFromField` (site-school-blocks wave 2). Additive.
-		$this->assertSame('0.64.0', self::$register['info']['version']);
-		$this->assertSame('0.64.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.65.0 (portal 0.10.0): `headerSearch`, `accountLabel`, `footer.cta`,
+		// `footer.contact`, `authentication.modeLabels` and
+		// `authentication.signInPage` (site-chrome-follows-the-design). Additive.
+		$this->assertSame('0.65.0', self::$register['info']['version']);
+		$this->assertSame('0.65.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -410,7 +413,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.10.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
@@ -814,8 +817,39 @@ class PortaliqRegisterConfigTest extends TestCase {
 			'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example']],
 		]]));
 		$this->assertFalse($valid(['title' => 'Docs', 'footer' => ['socials' => 'https://social.example']]), 'socials is a list');
-		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges'], array_keys($schema['properties']['footer']['properties']));
+		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges', 'cta', 'contact'], array_keys($schema['properties']['footer']['properties']));
 	}//end testThePortalDeclaresItsFooter()
+
+	/**
+	 * site-chrome-follows-the-design: the keys the learniq lane writes for a
+	 * school portal validate against the real portal schema, and a wrong
+	 * shape does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 */
+	public function testThePortalDeclaresItsChrome(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid([
+			'title'          => 'Mijn Wilgenboom',
+			'headerSearch'   => ['label' => 'Zoeken op de website', 'route' => '/zoeken'],
+			'accountLabel'   => 'Mijn Wilgenboom',
+			'footer'         => [
+				'cta'     => ['label' => 'Contact en schooltijden', 'href' => '/contact'],
+				'contact' => ['title' => 'Contact', 'lines' => [['text' => 'Wilgenlaan 12, Zuiddrecht'], ['text' => 'E-mail', 'href' => 'mailto:info@example.org']]],
+			],
+			'authentication' => [
+				'modes'      => ['public', 'digid'],
+				'modeLabels' => ['digid' => ['title' => 'Ouder of verzorger', 'text' => 'Met de DigiD-app', 'button' => 'Inloggen met DigiD']],
+				'signInPage' => ['title' => 'Inloggen bij Mijn Wilgenboom', 'notice' => ['text' => 'Logt u voor het eerst in?'], 'panel' => ['title' => 'Alles over school', 'items' => [['title' => 'Afwezig melden']]]],
+			],
+		]));
+		$this->assertFalse($valid(['title' => 'X', 'headerSearch' => 'ja']), 'the search box is an object');
+		$this->assertFalse($valid(['title' => 'X', 'footer' => ['contact' => ['lines' => 'Wilgenlaan 12']]]), 'contact lines are a list');
+	}//end testThePortalDeclaresItsChrome()
 
 	/**
 	 * portal-theme-blocks-and-contributed-pages REQ-PTB-009: a portal fills

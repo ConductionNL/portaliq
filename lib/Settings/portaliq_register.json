@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.64.0"
+        "version": "0.65.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.64.0",
+                "version": "0.65.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2442,7 +2442,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.9.0",
+                "version": "0.10.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -2547,6 +2547,56 @@
                                             "title": "Link",
                                             "type": "string",
                                             "description": "Where the link goes: a page of this portal such as /privacy, or a full web, mail or phone address."
+                                        }
+                                    }
+                                }
+                            },
+                            "cta": {
+                                "title": "Footer button",
+                                "type": "object",
+                                "description": "One button under the footer text, such as a link to the contact page. Left out when it has no label or no destination.",
+                                "properties": {
+                                    "label": {
+                                        "title": "Label",
+                                        "type": "string",
+                                        "description": "The text a visitor reads or a screen reader announces."
+                                    },
+                                    "href": {
+                                        "title": "Link",
+                                        "type": "string",
+                                        "description": "Where the link goes: a page of this portal such as /contact, or a full web, mail or phone address."
+                                    }
+                                }
+                            },
+                            "contact": {
+                                "title": "Contact column",
+                                "type": "object",
+                                "description": "A column of contact details beside the footer text: an address, a phone number, an e-mail address. A line with a link is shown as a link.",
+                                "properties": {
+                                    "title": {
+                                        "title": "Column heading",
+                                        "type": "string",
+                                        "description": "The heading above the lines, such as Contact.",
+                                        "example": "Contact"
+                                    },
+                                    "lines": {
+                                        "title": "Lines",
+                                        "type": "array",
+                                        "description": "The lines of the column, in order.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "text": {
+                                                    "title": "Text",
+                                                    "type": "string",
+                                                    "description": "What the line says."
+                                                },
+                                                "href": {
+                                                    "title": "Link",
+                                                    "type": "string",
+                                                    "description": "Where the line links to: a page of this portal, or a web, mail or phone address. Empty shows plain text."
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -2922,6 +2972,43 @@
                         ],
                         "example": "double"
                     },
+                    "headerSearch": {
+                        "title": "Search in the header",
+                        "type": "object",
+                        "description": "A search box in the header, on every page. It opens the portal's search page with what the visitor typed. A portal that declares it shows it, unless it switches it off.",
+                        "properties": {
+                            "enabled": {
+                                "title": "Show the search box",
+                                "type": "boolean",
+                                "description": "False hides a declared search box. Empty shows it.",
+                                "example": true
+                            },
+                            "label": {
+                                "title": "Name for screen readers",
+                                "type": "string",
+                                "description": "What a screen reader calls the box, such as Zoeken op de website. Empty uses the hint.",
+                                "example": "Zoeken op de website"
+                            },
+                            "placeholder": {
+                                "title": "Hint in the box",
+                                "type": "string",
+                                "description": "The short text in the empty box, which is also its name for screen readers. Empty shows \"Zoeken\".",
+                                "example": "Zoek een cursus"
+                            },
+                            "route": {
+                                "title": "Search page",
+                                "type": "string",
+                                "description": "The page of this portal that shows the results, such as /zoeken. Empty or not a page of this portal means /zoeken.",
+                                "example": "/zoeken"
+                            }
+                        }
+                    },
+                    "accountLabel": {
+                        "title": "Button to the own area",
+                        "type": "string",
+                        "description": "The text of one button in the header that opens the visitor's own area, where they choose how to sign in. Empty shows a link for each way to sign in instead.",
+                        "example": "Mijn Wilgenboom"
+                    },
                     "locales": {
                         "title": "Locales",
                         "type": "array",
@@ -3057,6 +3144,134 @@
                                 "type": "string",
                                 "description": "The text on the register button. Empty shows Registreren.",
                                 "example": "Account aanmaken"
+                            },
+                            "modeLabels": {
+                                "title": "Sign-in cards",
+                                "type": "object",
+                                "description": "The text of the card for each way to sign in on the sign-in page, keyed by mode (digid, nextcloud, eherkenning, oidc, local, eidas). A mode without a card shows one plain button.",
+                                "additionalProperties": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {
+                                            "title": "Card heading",
+                                            "type": "string",
+                                            "description": "Who this way in is for, such as Ik ben leerling."
+                                        },
+                                        "text": {
+                                            "title": "Card text",
+                                            "type": "string",
+                                            "description": "What the visitor can do after signing in this way."
+                                        },
+                                        "button": {
+                                            "title": "Button text",
+                                            "type": "string",
+                                            "description": "The text of the sign-in button. Empty shows the standard text for this way in."
+                                        },
+                                        "hint": {
+                                            "title": "Hint",
+                                            "type": "string",
+                                            "description": "A short line under the button, such as what you need to sign in."
+                                        },
+                                        "icon": {
+                                            "title": "Icon",
+                                            "type": "string",
+                                            "description": "The name of an icon for the card. DigiD and eHerkenning show their own mark."
+                                        }
+                                    }
+                                }
+                            },
+                            "signInPage": {
+                                "title": "Sign-in page",
+                                "type": "object",
+                                "description": "The text around the sign-in cards. Every part is optional.",
+                                "properties": {
+                                    "title": {
+                                        "title": "Heading",
+                                        "type": "string",
+                                        "description": "The page heading, such as Inloggen bij Mijn Wilgenboom. Empty shows Welkom."
+                                    },
+                                    "intro": {
+                                        "title": "Introduction",
+                                        "type": "string",
+                                        "description": "One or two sentences under the heading: who signs in how."
+                                    },
+                                    "notice": {
+                                        "title": "Notice",
+                                        "type": "object",
+                                        "description": "A box under the cards, for example what to do the first time.",
+                                        "properties": {
+                                            "title": {
+                                                "title": "Heading",
+                                                "type": "string",
+                                                "description": "The heading of the box."
+                                            },
+                                            "text": {
+                                                "title": "Text",
+                                                "type": "string",
+                                                "description": "The text of the box."
+                                            }
+                                        }
+                                    },
+                                    "staffLink": {
+                                        "title": "Link for staff",
+                                        "type": "object",
+                                        "description": "A line under the cards for staff, with a link to where they sign in.",
+                                        "properties": {
+                                            "text": {
+                                                "title": "Text",
+                                                "type": "string",
+                                                "description": "The sentence before the link, such as Werkt u bij De Wilgenboom?"
+                                            },
+                                            "label": {
+                                                "title": "Link text",
+                                                "type": "string",
+                                                "description": "The text of the link."
+                                            },
+                                            "href": {
+                                                "title": "Link",
+                                                "type": "string",
+                                                "description": "Where the link goes."
+                                            }
+                                        }
+                                    },
+                                    "panel": {
+                                        "title": "Side panel",
+                                        "type": "object",
+                                        "description": "A panel beside the cards with what the visitor finds after signing in.",
+                                        "properties": {
+                                            "title": {
+                                                "title": "Heading",
+                                                "type": "string",
+                                                "description": "The heading of the panel."
+                                            },
+                                            "items": {
+                                                "title": "Points",
+                                                "type": "array",
+                                                "description": "The points in the panel.",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "title": {
+                                                            "title": "Heading",
+                                                            "type": "string",
+                                                            "description": "The point in a few words."
+                                                        },
+                                                        "text": {
+                                                            "title": "Text",
+                                                            "type": "string",
+                                                            "description": "One line more about it."
+                                                        },
+                                                        "icon": {
+                                                            "title": "Icon",
+                                                            "type": "string",
+                                                            "description": "The name of an icon for the point."
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     },

@@ -535,13 +535,15 @@ class PortalPageController extends Controller {
 	 * an unthemed portal would quietly restyle a page that must render
 	 * unstyled, and an unthemed page names no bundled family.
 	 *
-	 * @return array{bridge: string, fonts: string} Paths relative to the theme app's `css/`.
+	 * @return array{bridge: string, fonts: string, logoInverse: string, emblem: string} The stylesheets
+	 *         (relative to the theme app's `css/`) and the two logo variants (absolute).
 	 *
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	private function siteThemeAppSheets(): array {
-		$none = ['bridge' => '', 'fonts' => ''];
+		$none = ['bridge' => '', 'fonts' => '', 'logoInverse' => '', 'emblem' => ''];
 		if ($this->siteThemeStylesheet() === '') {
 			return $none;
 		}
@@ -551,6 +553,10 @@ class PortalPageController extends Controller {
 			return [
 				'bridge' => (string)($shipped['bridge'] ?? ''),
 				'fonts'  => (string)($shipped['fonts'] ?? ''),
+				// The set's light logo for the dark footer and its emblem for
+				// a watermark, absolute, or '' (site-chrome-follows-the-design).
+				'logoInverse' => $this->siteThemeLogoUrl(variant: 'dark'),
+				'emblem'      => $this->siteThemeLogoUrl(variant: 'emblem'),
 			];
 		} catch (\Throwable) {
 			return $none;
@@ -576,11 +582,19 @@ class PortalPageController extends Controller {
 	 * So the resolution happens here, where the theme app's real path is
 	 * known, and the template emits the result after the token stylesheets.
 	 *
+	 * With a `$variant` it is that variant of the set's logo
+	 * (site-chrome-follows-the-design): `dark`, the light logo for the dark
+	 * footer band, or `emblem`, the mark for a watermark; '' when the set
+	 * ships none.
+	 *
+	 * @param string $variant '' for the logo, else `dark` or `emblem`.
+	 *
 	 * @return string An absolute URL, or '' when there is no logo to serve.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
-	private function siteThemeLogoUrl(): string {
+	private function siteThemeLogoUrl(string $variant=''): string {
 		$stylesheet = $this->siteThemeStylesheet();
 		if ($stylesheet === '') {
 			return '';
@@ -593,7 +607,8 @@ class PortalPageController extends Controller {
 		}
 
 		try {
-			$relative = $this->themeResolver->logoFileFor(theme: $theme);
+			$relative = $this->themeResolver->logoFileFor(theme: $theme, variant: $variant);
+
 			if ($relative === null) {
 				return '';
 			}

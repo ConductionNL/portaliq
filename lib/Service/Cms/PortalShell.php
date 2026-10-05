@@ -39,13 +39,16 @@ class PortalShell {
 	 */
 	public const HEADER_VARIANTS = ['double', 'single'];
 
+
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalRegionResolver $regions The closed list of regions.
+	 * @param PortalRegionResolver $regions    The closed list of regions.
+	 * @param PortalSignInText     $signInText The sign-in page's text.
 	 */
 	public function __construct(
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
+		private readonly PortalSignInText $signInText=new PortalSignInText(),
 	) {
 	}//end __construct()
 
@@ -54,18 +57,56 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, mixed> `authentication`, `headerVariant`, `footer` and `regions`.
+	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `footer` and `regions`.
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 	 */
 	public function project(array $portal): array {
 		return [
 			'authentication' => $this->authentication(portal: $portal),
 			'headerVariant'  => $this->headerVariant(portal: $portal),
+			'headerSearch'   => $this->headerSearch(portal: $portal),
+			'accountLabel'   => $this->text(value: ($portal['accountLabel'] ?? '')),
 			'footer'         => $this->footer(portal: $portal),
 			'regions'        => $this->publicRegions(portal: $portal),
 		];
 	}//end project()
+
+	/**
+	 * The search box in the header: whether it shows (a declared box shows
+	 * unless `enabled` is false), its accessible name, its hint and the
+	 * portal's search page. A route that is not an in-site path falls back to
+	 * `/zoeken`, the page the hero search has always opened.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array{enabled: bool, label: string, placeholder: string, route: string} The box.
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 */
+	public function headerSearch(array $portal): array {
+		$search = $portal['headerSearch'] ?? [];
+		if (is_array($search) === false) {
+			$search = [];
+		}
+
+		$route = $this->text(value: ($search['route'] ?? ''));
+		if (preg_match('#^/(?!/)#', $route) !== 1) {
+			$route = '/zoeken';
+		}
+
+		// Declared is on: a portal that writes the box wants it, unless it
+		// says `enabled: false` (lane L3 declares `label` and `route` only).
+		$declared = (is_array($portal['headerSearch'] ?? null) === true && $search !== []);
+
+		return [
+			'enabled'     => $declared === true && ($search['enabled'] ?? true) === true,
+			'label'       => $this->text(value: ($search['label'] ?? '')),
+			'placeholder' => $this->text(value: ($search['placeholder'] ?? '')),
+			'route'       => $route,
+		];
+	}//end headerSearch()
 
 	/**
 	 * The header variant: the portal's choice when it is known, else `double`.
@@ -96,6 +137,7 @@ class PortalShell {
 	 * @return array<string, mixed> `{modes, register?, registerLabel?}`.
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	public function authentication(array $portal): array {
 		$auth   = (array)($portal['authentication'] ?? []);
@@ -108,7 +150,7 @@ class PortalShell {
 			}
 		}
 
-		return $public;
+		return $public + $this->signInText->project(auth: $auth);
 	}//end authentication()
 
 	/**
@@ -120,9 +162,10 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, mixed> `{description, colophon, socials, legalLinks, badges}`; each list holds `{label, href}` entries.
+	 * @return array<string, mixed> `{description, colophon, socials, legalLinks, badges, cta, contact}`; each list holds `{label, href}` entries.
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	public function footer(array $portal): array {
 		$footer = $portal['footer'] ?? [];
@@ -130,14 +173,60 @@ class PortalShell {
 			$footer = [];
 		}
 
+		$cta = $this->links(entries: [($footer['cta'] ?? null)], extra: null);
+
 		return [
 			'description' => $this->text(value: ($footer['description'] ?? '')),
 			'colophon'    => $this->text(value: ($footer['colophon'] ?? '')),
 			'socials'     => $this->links(entries: ($footer['socials'] ?? []), extra: 'icon'),
 			'legalLinks'  => $this->links(entries: ($footer['legalLinks'] ?? []), extra: null),
 			'badges'      => $this->links(entries: ($footer['badges'] ?? []), extra: null),
+			'cta'         => ($cta[0] ?? null),
+			'contact'     => $this->contact(contact: ($footer['contact'] ?? null)),
 		];
 	}//end footer()
+
+	/**
+	 * The footer's contact column: a title and plain lines, a line with a
+	 * followable `href` rendered as a link. Null when it has no line.
+	 *
+	 * @param mixed $contact The authored column.
+	 *
+	 * @return array{title: string, lines: list<array<string, string>>}|null The column.
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	private function contact(mixed $contact): ?array {
+		if (is_array($contact) === false) {
+			return null;
+		}
+
+		$lines = [];
+		foreach ((array)($contact['lines'] ?? []) as $line) {
+			if (is_array($line) === false) {
+				continue;
+			}
+
+			$text = $this->text(value: ($line['text'] ?? ''));
+			if ($text === '') {
+				continue;
+			}
+
+			$kept = ['text' => $text];
+			$href = $this->text(value: ($line['href'] ?? ''));
+			if ($this->followable(href: $href) === true) {
+				$kept['href'] = $href;
+			}
+
+			$lines[] = $kept;
+		}
+
+		if ($lines === []) {
+			return null;
+		}
+
+		return ['title' => $this->text(value: ($contact['title'] ?? '')), 'lines' => $lines];
+	}//end contact()
 
 	/**
 	 * The portal's own region contents, the middle step of resolution.

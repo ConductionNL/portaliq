@@ -90,9 +90,11 @@ export function footerMenusOf(menus) {
  * renders without a guard per list.
  *
  * @param {object} site The public site record.
- * @return {object} `{description, colophon, socials, legalLinks, badges}`.
+ * @return {object} `{description, colophon, socials, legalLinks, badges, cta, contact}`;
+ *   `cta` is `{label, href}` or null, `contact` is `{title, lines}` or null.
  *
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+ * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
  */
 export function footerContentOf(site) {
 	const footer = (site && site.footer) || {}
@@ -104,6 +106,14 @@ export function footerContentOf(site) {
 		socials: list(footer.socials),
 		legalLinks: list(footer.legalLinks),
 		badges: list(footer.badges),
+		cta: footer.cta && footer.cta.label && footer.cta.href ? footer.cta : null,
+		contact:
+			footer.contact && list(footer.contact.lines).length > 0
+				? {
+						title: String(footer.contact.title || ''),
+						lines: footer.contact.lines,
+					}
+				: null,
 	}
 }
 
@@ -154,4 +164,25 @@ export function registerRouteOf(site) {
 	}
 
 	return { href, label: String(auth.registerLabel || '') }
+}
+
+/**
+ * The header's search box: shown only when the portal switched it on, with
+ * its hint and the page that shows the results (`/zoeken` unless the portal
+ * names another page of its own).
+ *
+ * @param {object} site The public site record.
+ * @return {{enabled: boolean, label: string, placeholder: string, route: string}} The box.
+ *
+ * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+ */
+export function headerSearchOf(site) {
+	const search = (site && site.headerSearch) || {}
+	const route = String(search.route || '')
+	return {
+		enabled: search.enabled === true,
+		label: String(search.label || ''),
+		placeholder: String(search.placeholder || ''),
+		route: /^\/(?!\/)/.test(route) ? route : '/zoeken',
+	}
 }
