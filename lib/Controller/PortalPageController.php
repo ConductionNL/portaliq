@@ -535,7 +535,8 @@ class PortalPageController extends Controller {
 	 * an unthemed portal would quietly restyle a page that must render
 	 * unstyled, and an unthemed page names no bundled family.
 	 *
-	 * @return array{bridge: string, fonts: string, logoInverse: string, emblem: string} Stylesheet paths relative to the theme app's `css/`, and the two logo variants as absolute addresses.
+	 * @return array{bridge: string, fonts: string, logoInverse: string, emblem: string} The stylesheets
+	 *         (relative to the theme app's `css/`) and the two logo variants (absolute).
 	 *
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
