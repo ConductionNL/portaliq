@@ -189,3 +189,26 @@
 	outline-style: var(--utrecht-focus-outline-style, solid);
 	outline-width: var(--utrecht-focus-outline-width, 3px);
 }
+
+/*
+ * THE SAME FORM'S SECONDARY BUTTONS: the file picker ("Bestand of foto
+ * kiezen") and the step buttons. Without a theme they had no border and no
+ * padding either, so the picker read as a sentence. Scoped to the form, so the
+ * header's secondary buttons (sign-out, menu toggle) keep their own styling.
+ * An outline in the text's own colour, which carries the text's contrast.
+ */
+.pq-site .pq-schema-form .utrecht-button--secondary-action {
+	--_utrecht-button-appearance-border-color: var(
+		--utrecht-button-secondary-action-border-color,
+		var(--utrecht-button-border-color, currentcolor)
+	);
+	--_utrecht-button-appearance-border-width: var(
+		--utrecht-button-secondary-action-border-width,
+		var(--utrecht-button-border-width, 2px)
+	);
+	border-radius: var(--utrecht-button-border-radius, 0.25em);
+	padding-block: var(--utrecht-button-padding-block-start, 0.5em)
+		var(--utrecht-button-padding-block-end, 0.5em);
+	padding-inline: var(--utrecht-button-padding-inline-start, 1.25em)
+		var(--utrecht-button-padding-inline-end, 1.25em);
+}

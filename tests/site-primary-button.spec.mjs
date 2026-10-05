@@ -153,6 +153,27 @@ test('the primary button has a visible focus ring without a theme', () => {
 	)
 })
 
+test('without a theme a secondary button in a form keeps an outline and padding', () => {
+	const css = withoutComments(readFileSync(THEME_CSS, 'utf8'))
+	const body = ruleBody(
+		css,
+		'.pq-site .pq-schema-form .utrecht-button--secondary-action',
+	)
+	assert.notEqual(body, '', 'site-theme.css has a baseline for a form secondary')
+	assert.match(
+		valueOf(body, '--_utrecht-button-appearance-border-color'),
+		/^var\( --utrecht-button-secondary-action-border-color, .*\bcurrentcolor\s*\)\s*\)$/,
+	)
+	assert.match(
+		valueOf(body, '--_utrecht-button-appearance-border-width'),
+		/^var\( --utrecht-button-secondary-action-border-width, .*\b\d+px\s*\)\s*\)$/,
+	)
+	assert.match(
+		valueOf(body, 'padding-inline'),
+		/^var\(--utrecht-button-padding-inline-start, /,
+	)
+})
+
 test('the baseline is token references and system colours only', () => {
 	const css = withoutComments(readFileSync(THEME_CSS, 'utf8'))
 	const start = css.indexOf('.pq-site .utrecht-button--primary-action')
