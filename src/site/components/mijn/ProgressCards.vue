@@ -12,8 +12,30 @@
 <template>
 	<ul class="pq-progress-cards" data-testid="mijn-progress-cards">
 		<li v-for="card in cards" :key="card.key" class="pq-progress-cards__card">
-			<p v-if="card.title !== ''" class="pq-progress-cards__title">
-				{{ card.title }}
+			<div
+				v-if="card.title !== '' || card.subtitle"
+				class="pq-progress-cards__head">
+				<span
+					v-if="block.avatar && card.title"
+					class="pq-progress-cards__avatar"
+					aria-hidden="true"
+					>{{ card.title.charAt(0) }}</span
+				>
+				<div>
+					<p v-if="card.title !== ''" class="pq-progress-cards__title">
+						{{ card.title }}
+					</p>
+					<p v-if="card.subtitle" class="pq-progress-cards__subtitle">
+						{{ card.subtitle }}
+					</p>
+				</div>
+			</div>
+			<p v-if="card.status || card.note" class="pq-progress-cards__status">
+				<DataBadge
+					v-if="card.status"
+					:text="card.status"
+					:state="card.tone" />
+				<span v-if="card.note">{{ card.note }}</span>
 			</p>
 			<template v-if="card.figure">
 				<p class="pq-progress-cards__figure">{{ card.figure }}</p>
@@ -21,11 +43,19 @@
 					><span :style="{ inlineSize: card.width }"
 				/></span>
 			</template>
+			<div v-if="card.soon" class="pq-progress-cards__soon">
+				<p v-if="block.soonLabel" class="pq-progress-cards__soon-label">
+					{{ block.soonLabel }}
+				</p>
+				<p class="pq-progress-cards__soon-text">{{ card.soon }}</p>
+			</div>
 		</li>
 	</ul>
 </template>
 
 <script>
+import DataBadge from './DataBadge.vue'
+import { cardParts } from './displays.js'
 import { mijnTranslator } from './rows.js'
 
 /**
@@ -34,6 +64,8 @@ import { mijnTranslator } from './rows.js'
 export default {
 	name: 'ProgressCards',
 
+	components: { DataBadge },
+
 	props: {
 		/** The rows. */
 		rows: { type: Array, required: true },
@@ -41,6 +73,8 @@ export default {
 		block: { type: Object, required: true },
 		/** The collection's own naming fields, used when the block names none. */
 		titleFields: { type: Array, default: () => [] },
+		/** The collection, for its value labels (site-school-blocks). */
+		collection: { type: Object, default: null },
 		/** The site translator. */
 		t: { type: Function, default: null },
 		/** The page language. */
@@ -80,6 +114,9 @@ export default {
 					&& Number.isFinite(total)
 					&& total > 0
 				return {
+					// A sub line, a status with its note, and what is coming up
+					// (site-school-blocks).
+					...cardParts(row, this.block, this.collection),
 					key: String(row?.id || row?.uuid || index),
 					title,
 					figure: figured
@@ -115,6 +152,68 @@ export default {
 	border-radius: 0.5rem;
 	background-color: var(--utrecht-document-background-color, #fff);
 	color: var(--utrecht-document-color, inherit);
+}
+
+.pq-progress-cards__head {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-block-end: 0.5rem;
+}
+
+.pq-progress-cards__avatar {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	inline-size: 3rem;
+	block-size: 3rem;
+	border-radius: 50%;
+	background: var(
+		--nldesign-color-primary-light,
+		var(--utrecht-color-grey-90, transparent)
+	);
+	color: var(
+		--nldesign-color-primary-hover,
+		var(--utrecht-document-color, CanvasText)
+	);
+	font-size: 1.25rem;
+	font-weight: 700;
+}
+
+.pq-progress-cards__subtitle {
+	margin: 0;
+	color: var(
+		--nldesign-color-text-muted,
+		var(--utrecht-document-color, CanvasText)
+	);
+}
+
+.pq-progress-cards__status {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0 0 0.5rem;
+}
+
+.pq-progress-cards__soon {
+	margin-block-start: 0.75rem;
+	padding-block-start: 0.75rem;
+	border-block-start: 1px solid
+		var(--nldesign-color-border, var(--utrecht-color-grey-90, currentcolor));
+}
+
+.pq-progress-cards__soon-label {
+	margin: 0 0 0.25rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.pq-progress-cards__soon-text {
+	margin: 0;
 }
 
 .pq-progress-cards__title,

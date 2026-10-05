@@ -17,7 +17,10 @@
 			/mijn opens on this component instead, and a test (or another app's
 			suite) that waits for the testid must find the heading either way.
 		-->
+		<!-- A home page that opens with a greeting block says this itself,
+		     with the date and one call to action (site-school-blocks). -->
 		<h1
+			v-if="!homeGreets"
 			id="site-account-title"
 			class="utrecht-heading-2"
 			data-testid="site-account-title">
@@ -67,6 +70,8 @@
 				</h2>
 				<ContributionPage
 					:entry="entry"
+					:session="session"
+					:homeHeading="homeGreets && entry === homeEntries[0]"
 					:api="api"
 					:contributions="contributions"
 					:nav="nav"
@@ -111,7 +116,7 @@ import {
 	sessionStore,
 	TASKS_ROUTE,
 } from '../../pages/inbox/inbox.js'
-import { caseOverviewsOf, homeEntriesOf } from './home.js'
+import { caseOverviewsOf, homeEntriesOf, homeGreets } from './home.js'
 import { deadlineBadge, mijnTranslator } from './rows.js'
 
 /**
@@ -192,6 +197,17 @@ export default {
 		 */
 		homeEntries() {
 			return homeEntriesOf(this.nav)
+		},
+
+		/**
+		 * Whether the one home page opens with a greeting block, which then
+		 * takes the heading's place (site-school-blocks).
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-greeting-block-opens-the-overview
+		 */
+		homeGreets() {
+			return homeGreets(this.homeEntries)
 		},
 
 		/**

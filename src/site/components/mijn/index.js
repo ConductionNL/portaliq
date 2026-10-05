@@ -23,4 +23,11 @@ export const blocks = {
 	progressCards: () => import('./ProgressCards.vue'),
 	documents: () => import('./DocumentsBlock.vue'),
 	timeline: () => import('./TimelineBlock.vue'),
+	// site-school-blocks
+	dateRows: () => import('./DateRows.vue'),
+	bars: () => import('./GradeBars.vue'),
+	chips: () => import('./MarkChips.vue'),
+	segments: () => import('./SegmentedFigure.vue'),
+	greeting: () => import('./GreetingBlock.vue'),
+	calendarTiles: () => import('./CalendarTiles.vue'),
 }

@@ -132,6 +132,39 @@ class PortalInboxReaderTest extends TestCase {
 	}//end testRowsWithoutReceivedAtSortLast()
 
 	/**
+	 * A message whose `visibleFromField` lies ahead stays out of the inbox
+	 * until that moment has passed (site-school-blocks).
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-keep-a-row-back-until-its-moment-has-passed
+	 */
+	public function testAMessageWaitsForItsVisibleFromMoment(): void {
+		$aggregate = [
+			'contributions' => [
+				[
+					'app' => 'learniq',
+					'label' => 'Learniq',
+					'collections' => [
+						['id' => 'cijfers', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'grade-notice', 'scopeField' => 'learnerRef', 'visibleFromField' => 'visibleFrom'],
+					],
+				],
+			],
+		];
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			static fn (string $register): array => ($register === 'learniq') ? [
+				['id' => 'past', 'subject' => 'Cijfer Nederlands', 'visibleFrom' => '2000-01-01T08:00:00+00:00', 'receivedAt' => '2000-01-01T08:00:00Z'],
+				['id' => 'future', 'subject' => 'Cijfer wiskunde', 'visibleFrom' => '2999-01-01T08:00:00+00:00', 'receivedAt' => '2026-10-02T08:00:00Z'],
+			] : []
+		);
+
+		$ids = array_column((new PortalInboxReader($reader))->aggregateInbox(self::SUBJECT, $aggregate), 'id');
+
+		$this->assertContains('past', $ids);
+		$this->assertNotContains('future', $ids);
+	}//end testAMessageWaitsForItsVisibleFromMoment()
+
+	/**
 	 * No `kind: inbox` collection anywhere: only portaliq's own notices are
 	 * read, so a resident with none has an empty inbox (not an error), and a
 	 * non-inbox collection is never read.

@@ -45,9 +45,9 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
   - Built: `CollectionListKeys` (PHPUnit `PortalBlockResolverTest::testACollectionBlockKeepsItsLimitAndSort`, `::testACalendarBlockKeepsItsRange`); on the site `src/shared/listWindow.js` and ContributionPage ("Bekijk alle ..."), node `check:mijn-lists`.
 - [x] **T11**: resident menu icons, groups, `menu: false`, `perRecord` entries; Den Haag side navigation look.
   - `check:site-resident-menu`, `check:site-navigation` extended
-- [ ] **T12**: `RecordSwitcher.vue`, `ActingForBar.vue`, `QuickTiles.vue`, `FigureTiles.vue`; `/mijn` home (design D4) in `accountArea.js`.
+- [x] **T12**: `RecordSwitcher.vue`, `ActingForBar.vue`, `QuickTiles.vue`, `FigureTiles.vue`; `/mijn` home (design D4) in `accountArea.js`.
   - e2e: the guardian switches child; Linda's bar on a phone width; a portal with nothing to do
-  - Partly built in wave 5: `RecordSwitcher.vue` and the `/mijn` home (`MijnHome.vue`, `home.js`; `accountRedirect` no longer redirects `/mijn`). `ActingForBar.vue` and the e2e for the switch and Linda's bar (`tests/e2e/site-mijn-switching.spec.ts`) built in the next round. `QuickTiles.vue` built in wave 6, and a live run on :8090 then showed the tile's route being undone by the record it also kept in storage (fixed: a route that names the record keeps nothing). **Still open: `FigureTiles.vue` only, which waits on #1125 (it changes `KpiCards.vue`).**
+  - Partly built in wave 5: `RecordSwitcher.vue` and the `/mijn` home (`MijnHome.vue`, `home.js`; `accountRedirect` no longer redirects `/mijn`). `ActingForBar.vue` and the e2e for the switch and Linda's bar (`tests/e2e/site-mijn-switching.spec.ts`) built in the next round. `QuickTiles.vue` built in wave 6, and a live run on :8090 then showed the tile's route being undone by the record it also kept in storage (fixed: a route that names the record keeps nothing). ~~Still open: `FigureTiles.vue` only, which waits on #1125.~~ Done in `site-school-blocks` wave 2, after #1125 merged: the figure tiles are `KpiCards.vue` restyled (quiet label and details, loud figure, the website's card radius), not a second component over the same data, as design D1's row says ("`KpiCards` data, value and label in one text run").
   - T11 built in wave 5: page icons (MDI names, `src/site/lib/menuIcons.js`, loaded on demand) and the Den Haag side navigation classes and CSS (`@gemeente-denhaag/sidenav` 2.0.0, on demand). Groups were #1097's.
   - Wave 5 also: case cards use Den Haag's default card in a grid (live finding on wave 3: the `--list` appearance and a local reset made them flat rows); e2e `tests/e2e/site-mijn-omgeving-live.spec.ts` seeds and removes its own contribution.
 
@@ -67,4 +67,4 @@ Five waves (design D10). Each wave is one PR to `development`, runs `npm run bui
 
 ## Validation
 
-- [ ] **T13**: `openspec validate site-mijn-omgeving-components --strict`
+- [x] **T13**: `openspec validate site-mijn-omgeving-components --strict`
