@@ -51,6 +51,8 @@ use Throwable;
  * now would only spread the seam.
  */
 class GuardianAudienceFixtureReader {
+	use PagedObjectReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -205,9 +207,7 @@ class GuardianAudienceFixtureReader {
 		}
 
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: guardian audience fixture consent lookup failed', ['reason' => $e->getMessage()]);
 			return false;
@@ -290,9 +290,7 @@ class GuardianAudienceFixtureReader {
 		}
 
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: guardian audience fixture enumeration failed', ['reason' => $e->getMessage()]);
 			return $none;

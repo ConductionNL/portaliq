@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
+use OCA\Portaliq\Service\Notifications\PushDeliveryService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -71,6 +72,7 @@ class PortalSelfServiceService {
 	 * @param PortalObjectWriter $writer Writes the account row.
 	 * @param ISecureRandom $random Mints the confirmation secret.
 	 * @param ContactAddressChange $addressChange The address fields (identity-profile-page).
+	 * @param PushDeliveryService|null $push Tells whether a push can reach a device at all; without it push is not offered.
 	 */
 	public function __construct(
 		private readonly PortalAccountService $accounts,
@@ -78,6 +80,7 @@ class PortalSelfServiceService {
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly ContactAddressChange $addressChange = new ContactAddressChange(),
+		private readonly ?PushDeliveryService $push = null,
 	) {
 	}//end __construct()
 
@@ -206,7 +209,7 @@ class PortalSelfServiceService {
 
 		return [
 			'preferences' => $this->channels()->preferences(stored: ($account['notificationPreferences'] ?? null)),
-			'pushAvailable' => $this->channels()->hasDevice(subjectRef: $subjectRef),
+			'pushAvailable' => $this->channels()->offersPush(subjectRef: $subjectRef),
 		];
 	}//end notificationPreferences()
 
@@ -235,7 +238,7 @@ class PortalSelfServiceService {
 
 		// Answer with what was written, not a re-read: a read straight after
 		// a write can still see the old row.
-		return ['preferences' => $preferences, 'pushAvailable' => $this->channels()->hasDevice(subjectRef: $subjectRef)];
+		return ['preferences' => $preferences, 'pushAvailable' => $this->channels()->offersPush(subjectRef: $subjectRef)];
 	}//end updateNotificationPreferences()
 
 	/**
@@ -244,7 +247,7 @@ class PortalSelfServiceService {
 	 * @return NotificationChannels
 	 */
 	private function channels(): NotificationChannels {
-		return new NotificationChannels(reader: $this->reader);
+		return new NotificationChannels(push: $this->push, reader: $this->reader);
 	}//end channels()
 
 	/**

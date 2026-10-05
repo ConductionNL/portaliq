@@ -134,6 +134,11 @@ export default {
 		routeParam: 'load',
 	},
 
+	/**
+	 * Read the news once the widget is on the page.
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-article-page-shows-one-public-item-chosen-by-the-route
+	 */
 	mounted() {
 		this.load()
 	},

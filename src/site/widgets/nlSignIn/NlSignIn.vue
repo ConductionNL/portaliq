@@ -39,11 +39,7 @@
 		</ul>
 		<a
 			class="utrecht-button nl-signin-card__button"
-			:class="
-				tone === 'light'
-					? 'utrecht-button--primary-action'
-					: 'utrecht-button--secondary-action'
-			"
+			:class="{ 'utrecht-button--primary-action': tone === 'light' }"
 			:href="button.href"
 			:data-testid="`nl-sign-in-${button.id}`"
 			@click="open">
@@ -255,26 +251,23 @@ export default {
 	stroke-linejoin: round;
 }
 
-.nl-signin-card__button {
+/* The inverse button is a plain `utrecht-button` with its colours set on
+   the properties themselves. As a secondary action it vanished into the
+   card's ground on the first live run (5 Oct 2026): the app's own
+   nlds-app.css makes every resting secondary button transparent with
+   !important. */
+.nl-signin-card .utrecht-button.nl-signin-card__button {
 	justify-content: center;
 	inline-size: 100%;
+	max-inline-size: none;
 	margin-block-start: 0.375rem;
 	font-weight: 700;
 }
 
-.nl-signin-card--inverse .nl-signin-card__button {
-	--utrecht-button-secondary-action-background-color: var(
-		--nldesign-color-primary-text,
-		Canvas
-	);
-	--utrecht-button-secondary-action-color: var(
-		--nldesign-color-primary-hover,
-		CanvasText
-	);
-	--utrecht-button-secondary-action-border-color: var(
-		--nldesign-color-primary-text,
-		Canvas
-	);
+.nl-signin-card--inverse .utrecht-button.nl-signin-card__button {
+	border-color: var(--nldesign-color-primary-text, Canvas);
+	background-color: var(--nldesign-color-primary-text, Canvas);
+	color: var(--nldesign-color-primary-hover, CanvasText);
 }
 
 .nl-signin-card__note {

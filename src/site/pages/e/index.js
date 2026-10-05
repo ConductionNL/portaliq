@@ -30,10 +30,11 @@
  * Extra props and events, beyond SitePageProps, that the shell may wire:
  *
  * - `__cases__` (MyCasesPage): `closedMarker` (boolean, contributions
- *   `cases.closedMarker`), `canOpen(target)` and `openCase(target, row)` where
- *   `target` is `{app, collection, id}` (the shell resolves it with `navKeyFor`
- *   from src/shared/openRecord.js and opens the app's page with the row
- *   selected). Without `canOpen` a case is listed but not openable. Emits
+ *   `cases.closedMarker`), `canOpen(target)`, `openCase(target, row)` and
+ *   `caseRoute(target)` where `target` is `{app, collection, id}` (the shell
+ *   resolves it with `navKeyFor` from src/shared/openRecord.js and opens the
+ *   app's page with the row selected; `caseRoute` gives the case title a real
+ *   address). Without `canOpen` a case is listed but not openable. Emits
  *   `loaded(answer)`. The mandate in effect comes from the acting-for store
  *   (src/site/components/e/actingFor.js), which the header switcher writes.
  * - `__account__` (AccountPage): emits `removed` after the account is removed;

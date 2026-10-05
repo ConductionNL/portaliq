@@ -204,6 +204,11 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the news once the widget is on the page.
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-list-shows-the-news-staff-put-on-the-website
+	 */
 	async mounted() {
 		try {
 			// One more than shown, so leaving out the item on screen still fills the list.

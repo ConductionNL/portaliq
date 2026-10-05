@@ -7,7 +7,8 @@
 	The resident's notice choices at the top of the inbox
 	(inbox-notifications-and-preferences, REQ-NAP-008): per kind, e-mail and
 	push, each a checkbox with its own label. Collapsed by default. The push
-	column shows only when the account registered a device. When the
+	column shows only when the account registered a device and the server can
+	really deliver a push (`pushAvailable`). When the
 	organisation offers the government message box, one more choice lets the
 	resident switch letters to it off (inbox-berichtenbox-channel, REQ-MBC-005).
 -->
@@ -139,7 +140,7 @@ export default {
 		},
 
 		/**
-		 * @return {Array<string>} The channels: push only with a registered device.
+		 * @return {Array<string>} The channels: push only when the server says it is available (a device and a delivering transport).
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		channels() {
