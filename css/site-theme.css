@@ -393,6 +393,35 @@
 	background-color: var(--thematiq-accent-color, var(--nldesign-color-primary));
 }
 
+/*
+ * THE CURRENT ITEM IN THE LINE (example-site-zuiddrecht). A set whose header
+ * carries a plain line under the menu may mark the page on screen as a piece
+ * of that line, in a colour of its own: Zuiddrecht's line is red and the
+ * piece under the current item is blue. The set says so with two tokens:
+ *
+ *   --nldesign-website-nav-current-in-line  1 moves the bar down into the
+ *                                           line and makes it as high as it
+ *   --nldesign-website-nav-current-color    the bar's colour
+ *
+ * Without them nothing changes: no shift, four pixels, the accent. The bar
+ * sits above the line (z-index 2 over the line's 1), so it covers its piece.
+ */
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='page']::after {
+	--pq-nav-current-in-line: var(--nldesign-website-nav-current-in-line, 0);
+	inset-block-end: calc(
+		var(--pq-nav-current-in-line) * -1 * var(--cn-brand-stripe-height, 0px)
+	);
+	z-index: 2;
+	block-size: calc(
+		4px + var(--pq-nav-current-in-line) *
+			(var(--cn-brand-stripe-height, 4px) - 4px)
+	);
+	background-color: var(
+		--nldesign-website-nav-current-color,
+		var(--thematiq-accent-color, var(--nldesign-color-primary))
+	);
+}
+
 .pq-site .ac-header .ac-c-navigation__li {
 	position: relative;
 }
