@@ -271,7 +271,7 @@ class PortalBlockResolver {
 				return null;
 			}
 
-			return $calendar + (new CollectionListKeys())->calendarKeys(block: $block) + (new SchoolBlockKeys())->calendarKeys(block: $block);
+			return $calendar + (new CollectionListKeys())->calendarKeys(block: $block) + (new SchoolBlockKeys())->calendarKeys(block: $block) + (new TimetableKeys())->blockKeys(block: $block);
 		}
 
 		return $blocks->newsBlock(block: $block);

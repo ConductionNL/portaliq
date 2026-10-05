@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.66.0"
+        "version": "0.67.0"
     },
     "x-openregister": {
         "type": "application",
@@ -1620,7 +1620,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -2255,7 +2255,7 @@
                                             "display": {
                                                 "title": "Display",
                                                 "type": "string",
-                                                "description": "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks).",
+                                                "description": "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).",
                                                 "enum": [
                                                     "cards",
                                                     "rows",
@@ -2263,8 +2263,14 @@
                                                     "chips",
                                                     "highlight",
                                                     "segmented",
-                                                    "tiles"
+                                                    "tiles",
+                                                    "timetable"
                                                 ]
+                                            },
+                                            "firstLabel": {
+                                                "title": "firstLabel",
+                                                "type": "string",
+                                                "description": "On a timetable: the small label over the first item of the day."
                                             },
                                             "dateField": {
                                                 "title": "dateField",
