@@ -151,8 +151,8 @@ if ($nldsStylesheet !== '') {
 $themeLogoUrl = (string)($_['themeLogoUrl'] ?? '');
 // The set's light logo for the dark footer band, absolute for the same reason
 // (site-chrome-follows-the-design); '' when the set ships none.
-$themeLogoInverseUrl = (string)($_['themeLogoInverseUrl'] ?? '');
-$themeEmblemUrl = (string)($_['themeEmblemUrl'] ?? '');
+$themeLogoInverseUrl = (string)(($_['themeAppSheets'] ?? [])['logoInverse'] ?? '');
+$themeEmblemUrl = (string)(($_['themeAppSheets'] ?? [])['emblem'] ?? '');
 
 // NO DARK LAYER IS LINKED HERE, AND THAT IS A MEASURED DECISION.
 //

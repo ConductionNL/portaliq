@@ -87,6 +87,13 @@ class PortalThemeResolver {
 	 */
 	public const FONT_STYLESHEET = 'fonts';
 
+	/**
+	 * The logo variants a page may ask for, with their file suffix.
+	 *
+	 * @var array<string, string>
+	 */
+	private const LOGO_VARIANTS = ['' => '', 'dark' => '-dark', 'emblem' => '-emblem'];
+
 
 	/**
 	 * Constructor.
@@ -196,13 +203,19 @@ class PortalThemeResolver {
 	 * null so the page renders with NO logo instead of a broken image or
 	 * another brand's mark — the same posture `stylesheetFor()` takes.
 	 *
-	 * @param string $theme The portal's theme reference, e.g. 'opencatalogi'.
+	 * A variant (site-chrome-follows-the-design) is `dark`, the light logo
+	 * for a dark band such as a school portal's footer (`<theme>-dark.svg`,
+	 * named after the dark scheme it was drawn for), or `emblem`, the mark
+	 * without the name for a faint watermark (`<theme>-emblem.svg`).
+	 *
+	 * @param string $theme   The portal's theme reference, e.g. 'opencatalogi'.
+	 * @param string $variant '' for the logo, else `dark` or `emblem`.
 	 *
 	 * @return string|null The path relative to the theme app, or null.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 	 */
-	public function logoFileFor(string $theme): ?string {
+	public function logoFileFor(string $theme, string $variant=''): ?string {
 		if ($this->stylesheetFor(theme: $theme) === null) {
 			return null;
 		}
@@ -212,51 +225,15 @@ class PortalThemeResolver {
 			return null;
 		}
 
-		$relative = 'img/logos/' . $theme . '.svg';
+		// An unknown variant names a path no theme app ships, so it ends in
+		// the missing-file answer below.
+		$relative = 'img/logos/' . $theme . (self::LOGO_VARIANTS[$variant] ?? '/-') . '.svg';
 		if (is_file($root . '/' . $relative) === false) {
 			return null;
 		}
 
 		return $relative;
 	}//end logoFileFor()
-
-
-	/**
-	 * The theme app path of a variant of a set's logo, or null.
-	 *
-	 * Two variants are asked for (site-chrome-follows-the-design):
-	 *
-	 *   dark    the light logo for a dark band: a school portal's footer is
-	 *           dark green, blue, violet or teal, and the set's own logo (dark
-	 *           ink) disappears on it. Named after the dark scheme it was
-	 *           drawn for (`img/logos/<theme>-dark.svg`).
-	 *   emblem  the mark without the name (`img/logos/<theme>-emblem.svg`),
-	 *           drawn large and faint as a watermark in the hero and on the
-	 *           sign-in panel.
-	 *
-	 * A set without the file gets null and the page draws without it.
-	 *
-	 * @param string $theme   The portal's theme reference.
-	 * @param string $variant `dark` or `emblem`.
-	 *
-	 * @return string|null The path relative to the theme app, or null.
-	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
-	 */
-	public function logoVariantFileFor(string $theme, string $variant): ?string {
-		$own = $this->logoFileFor(theme: $theme);
-		$root = $this->themeAppPath();
-		if ($own === null || $root === null || in_array($variant, ['dark', 'emblem'], true) === false) {
-			return null;
-		}
-
-		$relative = 'img/logos/' . $theme . '-' . $variant . '.svg';
-		if (is_file($root . '/' . $relative) === false) {
-			return null;
-		}
-
-		return $relative;
-	}//end logoVariantFileFor()
 
 
 	/**
