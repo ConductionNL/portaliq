@@ -13,7 +13,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { summarySentence } from '../src/site/components/forms/summary.js'
+import { dayWords, summarySentence } from '../src/site/components/forms/summary.js'
 
 const SUMMARY = {
 	label: 'U meldt',
@@ -116,4 +116,46 @@ test('the sentence is text, never markup', () => {
 		'the confirmation keeps the sentence as it was sent',
 	)
 	assert.match(form, /aria-live="polite"[\s\S]*data-testid="schema-form-summary"/)
+})
+
+test('a date answer reads as a day in words, and a phrase still wins', () => {
+	const now = new Date(2026, 9, 5, 9, 0)
+	assert.equal(dayWords('2026-10-05', { now }), 'vandaag')
+	assert.equal(dayWords('2026-10-06', { now }), 'morgen')
+	assert.equal(dayWords('2026-10-04', { now }), 'gisteren')
+	assert.equal(dayWords('2026-10-12', { now }), 'maandag 12 oktober')
+	assert.equal(
+		summarySentence(
+			{ template: '{day}.' },
+			{ day: '2026-10-06' },
+			{},
+			{ now: new Date(2026, 9, 6) },
+		),
+		'Vandaag.',
+		'the context decides what today is',
+	)
+	assert.equal(dayWords('2027-01-04', { now }), 'maandag 4 januari 2027')
+	assert.equal(dayWords('2026-10-06', { now, locale: 'en' }), 'tomorrow')
+	assert.equal(dayWords('not a day', { now }), '')
+	assert.equal(
+		summarySentence(
+			{ template: '{learner} is {day} ziek.' },
+			{ learner: 'sami', day: '2026-10-05' },
+			OPTIONS,
+			{ now },
+		),
+		'Sami is vandaag ziek.',
+	)
+	assert.equal(
+		summarySentence(
+			{
+				template: '{day}.',
+				phrases: { day: { '2026-10-05': 'op de studiedag' } },
+			},
+			{ day: '2026-10-05' },
+			{},
+			{ now },
+		),
+		'Op de studiedag.',
+	)
 })

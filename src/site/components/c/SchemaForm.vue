@@ -277,10 +277,16 @@ export default {
 		 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
 		 */
 		summaryText() {
+			// A date answer reads in the page's language ("vandaag",
+			// "maandag 12 oktober").
+			const locale =
+				(typeof document !== 'undefined' && document.documentElement?.lang)
+				|| 'nl'
 			return summarySentence(
 				this.action?.summary || null,
 				this.values,
 				this.options,
+				{ locale },
 			)
 		},
 
