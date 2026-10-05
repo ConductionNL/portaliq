@@ -39,11 +39,7 @@
 		</ul>
 		<a
 			class="utrecht-button nl-signin-card__button"
-			:class="
-				tone === 'light'
-					? 'utrecht-button--primary-action'
-					: 'utrecht-button--secondary-action'
-			"
+			:class="{ 'utrecht-button--primary-action': tone === 'light' }"
 			:href="button.href"
 			:data-testid="`nl-sign-in-${button.id}`"
 			@click="open">
@@ -255,10 +251,11 @@ export default {
 	stroke-linejoin: round;
 }
 
-/* Set on the properties themselves, at the button's own specificity plus
-   one: a theme that colours buttons through its own variables would
-   otherwise win over the card, and the button vanished into the card's
-   ground on the first live run (example-basisschool, 5 Oct 2026). */
+/* The inverse button is a plain `utrecht-button` with its colours set on
+   the properties themselves. As a secondary action it vanished into the
+   card's ground on the first live run (5 Oct 2026): the app's own
+   nlds-app.css makes every resting secondary button transparent with
+   !important. */
 .nl-signin-card .utrecht-button.nl-signin-card__button {
 	justify-content: center;
 	inline-size: 100%;
