@@ -31,8 +31,8 @@ has to be able to put that website on any instance with one command, and take it
 
 - `site-chrome-follows-the-design` (header search, account button, footer button and contact
   column) and `site-school-blocks` (`nlQuickTasks`, `nlNewsList`, `nlNewsArticle`, the `nlSignIn`
-  card): both are merged into this branch.
-- thematiq `brand-motif-on-portals` for the role layer, and a thematiq follow-up for the two
+  card): both are on development. This change adds no schema key, so the register version stays.
+- thematiq `brand-motif-on-portals` for the role layer, and thematiq #1099 for the two
   current-item tokens and the light hero on the `zuiddrecht` set.
 
 ## Out of scope

@@ -19,6 +19,18 @@
 		class="pq-resident-menu"
 		:aria-label="label"
 		data-testid="site-resident-menu">
+		<!-- Whom the resident acts for, at the top of the menu
+		     (resident-menu-badges-and-cards, G-06). -->
+		<div
+			v-if="card"
+			class="pq-resident-menu__card"
+			data-testid="site-resident-menu-card">
+			<p class="pq-resident-menu__card-label">{{ card.label }}</p>
+			<p class="pq-resident-menu__card-title">{{ card.title }}</p>
+			<p v-if="card.subline" class="pq-resident-menu__card-subline">
+				{{ card.subline }}
+			</p>
+		</div>
 		<button
 			type="button"
 			class="utrecht-button utrecht-button--secondary-action pq-resident-menu__toggle"
@@ -27,6 +39,12 @@
 			data-testid="site-resident-menu-toggle"
 			@click="open = !open">
 			{{ open ? hideLabel : showLabel }}
+			<span
+				v-if="!open && newCount > 0"
+				class="pq-resident-menu__toggle-badge"
+				data-testid="site-resident-menu-toggle-badge">
+				{{ newLabel.replace('{count}', String(newCount)) }}
+			</span>
 		</button>
 		<div
 			:id="listId"
@@ -74,7 +92,13 @@
 							</svg>
 							<span
 								class="denhaag-sidenav__link-label pq-resident-menu__label"
-								>{{ item.name }}</span
+								>{{ item.name
+								}}<span
+									v-if="item.subline"
+									class="pq-resident-menu__subline"
+									data-testid="site-resident-menu-subline"
+									>{{ item.subline }}</span
+								></span
 							>
 							<span
 								v-if="item.badge"
@@ -113,6 +137,10 @@ export default {
 		showLabel: { type: String, default: 'Menu mijn omgeving' },
 		/** The phone button's text while the list is open. */
 		hideLabel: { type: String, default: 'Menu sluiten' },
+		/** `{label, title, subline?}`: whom the resident acts for, or null. */
+		card: { type: Object, default: null },
+		/** The phone button's count text, `{count}` for the number ("2 nieuw"). */
+		newLabel: { type: String, default: '{count} nieuw' },
 	},
 
 	emits: ['navigate'],
@@ -125,6 +153,22 @@ export default {
 			/** The icon paths by name, once loaded; none until then. */
 			icons: {},
 		}
+	},
+
+	computed: {
+		/**
+		 * The sum of the counts in the menu, for the phone button
+		 * (resident-menu-badges-and-cards).
+		 *
+		 * @return {number}
+		 *
+		 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
+		 */
+		newCount() {
+			return this.groups
+				.flatMap((group) => group.items)
+				.reduce((sum, item) => sum + (Number(item.badge) || 0), 0)
+		},
 	},
 
 	/**

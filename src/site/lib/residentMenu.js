@@ -96,10 +96,11 @@ export function ownAreaLink(session, t, hrefFor) {
  * @param {(key: string, vars?: object) => string} t The translator.
  * @param {number} unread The inbox's unread count.
  * @param {(route: string) => string} hrefFor A real address for a route.
+ * @param {Record<string, Array<object>>} [recordRows] Known rows, for a `badge` count.
  * @return {object} `{key, name, link, href, icon?, badge?, badgeLabel?}`.
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
-function itemFor(entry, t, unread, hrefFor) {
+function itemFor(entry, t, unread, hrefFor, recordRows = {}) {
 	const link = routeForNav(entry)
 	const item = {
 		key: entry.key,
@@ -115,7 +116,34 @@ function itemFor(entry, t, unread, hrefFor) {
 		item.badge = String(unread)
 		item.badgeLabel = t('{count} unread', { count: unread })
 	}
+	// A page that counts the rows of one of its collections (`badge`,
+	// resident-menu-badges-and-cards): the count, once those rows are known.
+	const counted = badgeRows(entry, recordRows)
+	if (counted && counted.length > 0) {
+		item.badge = String(counted.length)
+		item.badgeLabel = t(entry.page.badge.label || '{count} open', {
+			count: counted.length,
+		})
+	}
 	return item
+}
+
+/**
+ * The rows a page's `badge` counts, or null when it declares none or they
+ * are not known yet.
+ *
+ * @param {object} entry A navigation entry.
+ * @param {Record<string, Array<object>>} recordRows The known rows.
+ * @return {Array<object>|null} The rows.
+ * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
+ */
+export function badgeRows(entry, recordRows) {
+	const collection = entry?.page?.badge?.collection
+	if (typeof collection !== 'string' || collection === '') {
+		return null
+	}
+	const rows = recordRows?.[`${entry.contribution?.app || ''}:${collection}`]
+	return Array.isArray(rows) ? rows : null
 }
 
 /**
@@ -154,7 +182,7 @@ export function residentMenuGroups(nav, t, unread, hrefFor, recordRows = {}) {
 		items: sections
 			.map((special) => entries.find((entry) => entry.special === special))
 			.filter(Boolean)
-			.map((entry) => itemFor(entry, t, unread, hrefFor)),
+			.map((entry) => itemFor(entry, t, unread, hrefFor, recordRows)),
 	})
 
 	const appGroups = []
@@ -165,7 +193,21 @@ export function residentMenuGroups(nav, t, unread, hrefFor, recordRows = {}) {
 		}
 		const rows = perRecordRows(entry, recordRows)
 		if (rows) {
-			addPerRecordItems(recordGroups, entry, rows, t, unread, hrefFor)
+			// With a declared group the rows are items of that group, each
+			// with its subtitle ("Mijn kinderen": Vera, Sami); without one
+			// each row heads a group of its own, as before.
+			const grouped =
+				typeof entry.page?.group === 'string'
+				&& entry.page.group.trim() !== ''
+			addPerRecordItems(
+				grouped ? appGroups : recordGroups,
+				entry,
+				rows,
+				t,
+				unread,
+				hrefFor,
+				grouped,
+			)
 			continue
 		}
 		const { key, title } = pageGroupOf(entry)
@@ -175,7 +217,7 @@ export function residentMenuGroups(nav, t, unread, hrefFor, recordRows = {}) {
 			appGroups.push(group)
 		}
 		group.items.push({
-			...itemFor(entry, t, unread, hrefFor),
+			...itemFor(entry, t, unread, hrefFor, recordRows),
 			source: appNameOf(entry),
 		})
 	}
@@ -226,11 +268,14 @@ export async function loadPerRecordRows(contributions, api) {
 	const wanted = new Map()
 	for (const contribution of Array.isArray(contributions) ? contributions : []) {
 		for (const page of contribution?.pages || []) {
-			const collection = (contribution.collections || []).find(
-				(candidate) => candidate && candidate.id === page?.perRecord,
-			)
-			if (collection) {
-				wanted.set(`${contribution.app}:${collection.id}`, collection)
+			// The rows of a `perRecord` collection, and of a `badge` one to count.
+			for (const id of [page?.perRecord, page?.badge?.collection]) {
+				const collection = (contribution.collections || []).find(
+					(candidate) => candidate && id && candidate.id === id,
+				)
+				if (collection) {
+					wanted.set(`${contribution.app}:${collection.id}`, collection)
+				}
 			}
 		}
 	}
@@ -293,25 +338,55 @@ function titleFieldsOf(page) {
  * @param {(key: string, vars?: object) => string} t The translator.
  * @param {number} unread The inbox's unread count.
  * @param {(route: string) => string} hrefFor A real address for a route.
+ * @param {boolean} [grouped] Whether the rows are items of the page's declared group.
  * @return {void}
  * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-per-record-page-in-a-group-lists-each-row-with-its-subtitle
  */
-function addPerRecordItems(groups, entry, rows, t, unread, hrefFor) {
+function addPerRecordItems(
+	groups,
+	entry,
+	rows,
+	t,
+	unread,
+	hrefFor,
+	grouped = false,
+) {
 	const app = entry.contribution?.app || ''
 	const fields = titleFieldsOf(entry.page)
+	const subtitleFields =
+		entry.page?.records?.subtitleFields || entry.page?.record?.subtitleFields
 	for (const row of rows) {
 		const id = String(row?.id || row?.uuid || row?.['@self']?.id || '')
 		const title = recordName(row, fields)
 		if (id === '' || title === '') {
 			continue
 		}
-		const key = `record:${app}:${entry.page.perRecord}:${id}`
+		const { key, title: groupTitle } = grouped
+			? pageGroupOf(entry)
+			: { key: `record:${app}:${entry.page.perRecord}:${id}`, title }
 		let group = groups.find((candidate) => candidate.key === key)
 		if (!group) {
-			group = { key, title, items: [] }
+			group = { key, title: groupTitle, items: [] }
 			groups.push(group)
 		}
 		const item = itemFor(entry, t, unread, hrefFor)
+		if (grouped) {
+			// The row is the item: its name, and its subtitle as a second line.
+			item.name = title
+			const subline = Array.isArray(subtitleFields)
+				? subtitleFields
+						.map((field) => row?.[field])
+						.filter(
+							(value) =>
+								typeof value === 'string' && value.trim() !== '',
+						)
+						.join(' · ')
+				: ''
+			if (subline !== '') {
+				item.subline = subline
+			}
+		}
 		const link = `${item.link}/${encodeURIComponent(id)}`
 		group.items.push({
 			...item,
