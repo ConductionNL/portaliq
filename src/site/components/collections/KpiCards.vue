@@ -178,7 +178,7 @@ export default {
 .pq-kpi__card {
 	padding: var(--utrecht-space-block-md, 1rem);
 	border: 1px solid var(--utrecht-color-grey-80, var(--color-border, #8a8a8a));
-	border-radius: var(--utrecht-border-radius-md, 8px);
+	border-radius: var(--nldesign-website-border-radius-large, var(--utrecht-border-radius-md, 8px));
 	background: var(--utrecht-color-white, var(--color-main-background, #fff));
 	color: var(--utrecht-document-color, var(--color-main-text, #222));
 }
@@ -195,6 +195,17 @@ export default {
 .pq-kpi__details,
 .pq-kpi__flag {
 	margin: 0;
+}
+
+/* The figure tiles of the Mijn omgeving design (site-mijn-omgeving-components
+   T12, FigureTiles): the label and the details quiet, the figure loud. */
+.pq-kpi__label,
+.pq-kpi__details {
+	color: var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText));
+}
+
+.pq-kpi__details {
+	font-size: 0.9375rem;
 }
 
 .pq-kpi__value {

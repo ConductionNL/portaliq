@@ -14,6 +14,14 @@
 - [ ] **T7**: chrome lane: pass `signInRoutes: this.signInRoutes` in `App.vue`'s `gridContext()`.
 - [ ] **T8**: live check on a portal with the primary-school example set: each block next to its board.
 
+## Wave 2: the Mijn omgeving displays (plan L2-2)
+
+- [x] **T10**: server keys: `DisplayKeys` (rows, bars, chips, richer cards, `statusTones`), `SchoolBlockKeys` (tasks highlight, segmented kpi, calendar tiles, greeting), `metaField` on a calendar source; `greeting` in the block registry.
+  - PHPUnit `SchoolBlockKeysTest` (7, through the real `PortalManifestNormaliser`).
+- [x] **T11**: `DateRows`, `GradeBars`, `MarkChips`, `SegmentedFigure`, `CalendarTiles`, `GreetingBlock`, each on demand; `ProgressCards` gains the status, note, coming-up part and initial; `TasksBlock` the highlight card; `KpiCards` the figure-tile look; `ContributionPage` routes them; `MijnHome` hands its heading to a greeting.
+  - node `tests/site-school-displays.spec.mjs` (`check:site-school-displays`, in `check:specs`).
+- [ ] **T12**: live check on a portal with the primary-school example set, next to the MijnOverzicht, MijnLijst and Detail boards (the learniq lane declares the pages).
+
 ## Validation
 
 - [x] **T9**: `openspec validate site-school-blocks --strict`
