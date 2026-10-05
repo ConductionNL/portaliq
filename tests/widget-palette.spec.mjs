@@ -275,25 +275,28 @@ test('the palette is a non-modal panel, so nothing of it is over the canvas', ()
 test('the panel sits in the editor pane row, beside the canvas', () => {
 	const editor = code('src/editor/PageGridEditor.vue')
 
-	// The slot is INSIDE the pane row and BEFORE the canvas: a palette the host
-	// renders after the editor is under the grid, not beside it.
+	// It is INSIDE the pane row and BEFORE the canvas. A palette rendered after
+	// the editor is under the grid, not beside it.
 	const panes = editor.indexOf('page-grid-editor__panes')
-	const slot = editor.indexOf('<slot name="palette" />')
+	const panel = editor.indexOf('<WidgetPalettePanel')
 	const canvas = editor.indexOf('data-testid="designer-canvas"')
-	assert.ok(panes > -1 && slot > panes, 'the palette slot is in the pane row')
-	assert.ok(slot < canvas, 'the palette column comes before the canvas')
+	assert.ok(panes > -1 && panel > panes, 'the palette is in the editor pane row')
+	assert.ok(panel < canvas, 'the palette column comes before the canvas')
 
-	// Both hosts fill it. A host that mounts the panel outside the slot puts it
-	// back over the page.
+	// NO HOST MOUNTS IT. Both hosts used to, and both put it over the page; a
+	// host can only say whether it is open. That is what keeps the panel's
+	// position a property of the editor rather than of whoever embeds it.
 	for (const host of [
 		'src/views/PageLayoutDesigner.vue',
 		'src/editor/SiteEditMode.vue',
 	]) {
 		const text = code(host)
-		assert.match(text, /<template #palette>/, host)
-		assert.match(text, /<WidgetPalettePanel/, host)
-		assert.doesNotMatch(text, /WidgetPaletteDialog/, host)
+		assert.doesNotMatch(text, /WidgetPalette/, `${host} mounts the palette itself`)
+		assert.match(text, /v-model:paletteOpen="paletteOpen"/, host)
 	}
+
+	// And the portal edit mode still asks for the public widgets only.
+	assert.match(code('src/editor/SiteEditMode.vue'), /<PageGridEditor[\s\S]*?publicOnly/)
 })
 
 test('an empty canvas is big enough to drop on', () => {

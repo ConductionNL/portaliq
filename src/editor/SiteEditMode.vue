@@ -152,14 +152,11 @@
 		<div v-if="state.loading" class="pq-site-editor__loading">
 			<NcLoadingIcon :size="32" />
 		</div>
-		<PageGridEditor v-else :editor="editor">
-			<template #palette>
-				<WidgetPalettePanel
-					v-model:open="paletteOpen"
-					publicOnly
-					@choose="editor.addWidget" />
-			</template>
-		</PageGridEditor>
+		<PageGridEditor
+			v-else
+			v-model:paletteOpen="paletteOpen"
+			:editor="editor"
+			publicOnly />
 
 		<PageHistoryDialog
 			v-model:open="historyOpen"
@@ -178,7 +175,6 @@ import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
 import PageGridEditor from './PageGridEditor.vue'
 import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
-import WidgetPalettePanel from './WidgetPalettePanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
 import { createPageEditor, createPageSaver } from './index.js'
 import { instanceUrl } from './instanceUrl.js'
@@ -219,7 +215,6 @@ export default {
 		PageHistoryDialog,
 		SiteMenuPanel,
 		SitePagesPanel,
-		WidgetPalettePanel,
 	},
 
 	props: {

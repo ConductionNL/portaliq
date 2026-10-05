@@ -158,13 +158,7 @@
 			<NcLoadingIcon :size="32" />
 		</div>
 
-		<PageGridEditor v-else :editor="editor">
-			<template #palette>
-				<WidgetPalettePanel
-					v-model:open="paletteOpen"
-					@choose="editor.addWidget" />
-			</template>
-		</PageGridEditor>
+		<PageGridEditor v-else v-model:paletteOpen="paletteOpen" :editor="editor" />
 
 		<MediaPickerDialog
 			v-model:open="mediaOpen"
@@ -186,7 +180,6 @@ import { reactive } from 'vue'
 import MediaPickerDialog from '../dialogs/MediaPickerDialog.vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
 import PageGridEditor from '../editor/PageGridEditor.vue'
-import WidgetPalettePanel from '../editor/WidgetPalettePanel.vue'
 import { createPageEditor, createPageSaver } from '../editor/index.js'
 import { withMedia } from '../lib/mediaLibrary.js'
 import { pageSiteUrl } from '../lib/pageSiteUrl.js'
@@ -202,7 +195,6 @@ export default {
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
-		WidgetPalettePanel,
 	},
 
 	data() {

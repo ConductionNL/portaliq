@@ -84,7 +84,7 @@ test('the portal edit mode is the shared editor with a public palette', () => {
 	const mode = read('src/editor/SiteEditMode.vue')
 	assert.match(mode, /createPageEditor\(/)
 	assert.match(mode, /<PageGridEditor/)
-	assert.match(mode, /<WidgetPalettePanel[\s\S]*?publicOnly/)
+	assert.match(mode, /<PageGridEditor[\s\S]*?publicOnly/)
 	assert.match(mode, /<PageHistoryDialog/)
 	for (const id of ['site-edit-save', 'site-edit-publish', 'site-edit-discard', 'site-edit-undo', 'site-edit-redo', 'site-edit-leave', 'site-edit-history']) {
 		assert.match(mode, new RegExp(`data-testid="${id}"`), id)

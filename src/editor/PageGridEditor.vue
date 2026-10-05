@@ -40,17 +40,22 @@
 
 		<div v-else class="page-grid-editor__panes">
 			<!--
-				THE PALETTE SITS IN THIS ROW, beside the canvas, which is the
-				whole reason it is a slot and not a dialog the host mounts
-				somewhere after the editor. A palette that covers the grid
-				cannot be dragged onto it: see WidgetPalettePanel.vue for what
-				the modal version cost.
+				THE PALETTE SITS IN THIS ROW, beside the canvas, which is why
+				the editor mounts it and no host does. A palette that covers the
+				grid cannot be dragged onto it: see WidgetPalettePanel.vue for
+				what the modal version cost. A host that mounts it itself can
+				put it back over the page, and both hosts did.
 
-				The host fills it, because the host owns the button that opens
-				it and knows whether to offer the public widgets only. This
-				component still holds no state of its own.
+				The host still owns whether it is open, through
+				`v-model:paletteOpen`, because the host owns the button and has
+				to say so with `aria-expanded`. This component holds no state of
+				its own.
 			-->
-			<slot name="palette" />
+			<WidgetPalettePanel
+				:open="paletteOpen"
+				:publicOnly="publicOnly"
+				@update:open="$emit('update:paletteOpen', $event)"
+				@choose="editor.addWidget" />
 
 			<!--
 				A DROP TARGET AROUND THE GRID, not on each cell: the fleet's
@@ -253,6 +258,7 @@ import { CnDashboardGrid, dashboardWidgetRegistry } from '@conduction/nextcloud-
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import MarkdownField from './MarkdownField.vue'
+import WidgetPalettePanel from './WidgetPalettePanel.vue'
 import {
 	fieldsFor,
 	isPublicWidget,
@@ -272,7 +278,13 @@ import {
 export default {
 	name: 'PageGridEditor',
 
-	components: { CnDashboardGrid, MarkdownField, NcButton, NcNoteCard },
+	components: {
+		CnDashboardGrid,
+		MarkdownField,
+		NcButton,
+		NcNoteCard,
+		WidgetPalettePanel,
+	},
 
 	props: {
 		/** The controller from createPageEditor(). */
@@ -280,7 +292,31 @@ export default {
 			type: Object,
 			required: true,
 		},
+
+		/**
+		 * Whether the widget palette is open.
+		 *
+		 * The host owns it, because the host owns the button that toggles it
+		 * and has to say so with `aria-expanded`. The editor owns only WHERE
+		 * the palette is drawn, which is the part that went wrong.
+		 */
+		paletteOpen: {
+			type: Boolean,
+			default: false,
+		},
+
+		/**
+		 * Offer only widgets the public renderer mounts. The portal edit mode
+		 * sets it: on the portal a widget that renders as an empty place is
+		 * never what the editor meant to add.
+		 */
+		publicOnly: {
+			type: Boolean,
+			default: false,
+		},
 	},
+
+	emits: ['update:paletteOpen'],
 
 	data() {
 		return {
