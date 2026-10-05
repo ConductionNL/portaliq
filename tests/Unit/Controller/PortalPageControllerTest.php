@@ -217,14 +217,16 @@ class PortalPageControllerTest extends TestCase {
 			portal: ['theme' => 'denhaag'],
 			themeStylesheet: 'tokens/denhaag'
 		);
-		$this->assertSame(['bridge' => 'public-bridge', 'fonts' => 'fonts'], $themed->site()->getParams()['themeAppSheets']);
+		// No logo file in this fixture, so no light logo or emblem either
+		// (site-chrome-follows-the-design).
+		$this->assertSame(['bridge' => 'public-bridge', 'fonts' => 'fonts', 'logoInverse' => '', 'emblem' => '', 'emblemGrey' => ''], $themed->site()->getParams()['themeAppSheets']);
 
 		$unthemed = $this->controller(
 			orgSlug: '',
 			portal: ['theme' => 'nosuchset'],
 			themeStylesheet: null
 		);
-		$this->assertSame(['bridge' => '', 'fonts' => ''], $unthemed->site()->getParams()['themeAppSheets']);
+		$this->assertSame(['bridge' => '', 'fonts' => '', 'logoInverse' => '', 'emblem' => '', 'emblemGrey' => ''], $unthemed->site()->getParams()['themeAppSheets']);
 	}//end testTheBridgeTravelsOnlyWithAResolvedSet()
 
 	/**
