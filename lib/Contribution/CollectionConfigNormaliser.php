@@ -94,6 +94,8 @@ class CollectionConfigNormaliser {
 			// Steps, answer date and whose turn, on a cases collection only
 			// (site-mijn-omgeving-components REQ-SMO-022).
 			$collection = (new StepsProviderMethod())->normalise(collection: $collection);
+			// Who a resident may write to about each row (site-messages-per-record).
+			$collection = (new MessageContactsKeys())->normalise(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
 			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
 			$collection = $this->normaliseGroupByField(collection: $collection);

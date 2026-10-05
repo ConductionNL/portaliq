@@ -173,6 +173,8 @@ return [
         // require a Nextcloud session.
         ['name' => 'messageGuardian#createThread', 'url' => '/api/messages/threads', 'verb' => 'POST'],
         ['name' => 'messageGuardian#threads', 'url' => '/api/messages/threads', 'verb' => 'GET'],
+        // Who a resident may write to, per record (site-messages-per-record).
+        ['name' => 'messageGuardian#contacts', 'url' => '/api/messages/contacts', 'verb' => 'GET'],
         ['name' => 'messageGuardian#messages', 'url' => '/api/messages/threads/{id}/messages', 'verb' => 'GET'],
         ['name' => 'messageGuardian#post', 'url' => '/api/messages/threads/{id}/messages', 'verb' => 'POST'],
         ['name' => 'messageGuardian#markRead', 'url' => '/api/messages/threads/{id}/read', 'verb' => 'POST'],
