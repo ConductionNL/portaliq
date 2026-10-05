@@ -707,6 +707,19 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Hand back the secret of an invitation, so the waiting account
+		 * behind it joins the signed-in person's own account.
+		 *
+		 * @param {string} secret The secret from the invitation.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+		 */
+		async claimInvitation(secret) {
+			return answer('POST', '/identity/invitation/redeem', { secret })
+		},
+
+		/**
 		 * Remove the account holder's own portal account. The cases stay.
 		 *
 		 * @return {Promise<object>} `{ ok, status, error, data }`.

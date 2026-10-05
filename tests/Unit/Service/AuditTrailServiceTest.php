@@ -95,7 +95,7 @@ class AuditTrailServiceTest extends TestCase {
 
 		$counts = $service->countsByVerb();
 
-		$this->assertSame(['create' => 0, 'update' => 0, 'forward' => 0, 'download' => 1, 'login' => 2, 'logout' => 0, 'refresh' => 0, 'complete' => 0], $counts);
+		$this->assertSame(['create' => 0, 'update' => 0, 'forward' => 0, 'download' => 1, 'login' => 2, 'logout' => 0, 'refresh' => 0, 'complete' => 0, 'claim' => 0], $counts);
 	}
 
 	public function testTheCountsAreZeroWithoutOpenRegister(): void {

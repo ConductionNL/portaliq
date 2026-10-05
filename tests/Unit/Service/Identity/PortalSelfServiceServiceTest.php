@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\PortalAccountService;
 use PHPUnit\Framework\TestCase;
@@ -263,6 +264,307 @@ class PortalSelfServiceServiceTest extends TestCase {
 	}//end testRemovalTakesEveryAddress()
 
 	/**
+	 * confirmed-address-joins-the-waiting-account REQ-PIS-006: a guardian who
+	 * signed in without an address (the broker gives none) confirms the
+	 * address the school invited her on, and the invitation's claims arrive
+	 * on the account she signed in with.
+	 *
+	 * @return void
+	 */
+	public function testConfirmingTheInvitedAddressJoinsTheWaitingAccount(): void {
+		$this->seedAccount();
+		$waiting = $this->seedWaiting();
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->once())->method('record')->with('claim', 'subject-1', 'gemeente-x', 'portaliq', 'portalAccount', $waiting);
+		$service = $this->service(auditor: $auditor);
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+
+		$this->assertSame('pending', $this->rows[$waiting]['status'], 'Nothing joins before the link is followed.');
+		$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session()));
+
+		$account = $this->account();
+		$this->assertSame('guardian-7', $account['claims']['learniq']['guardianRef']);
+		$this->assertSame('requester-77', $account['claims']['dossiq']['linkedRequesterId']);
+		$this->assertSame('ouder@example.org', $account['email']);
+		$this->assertSame('void', $this->rows[$waiting]['status']);
+		$this->assertNotSame('', (string)$this->rows[$waiting]['voidReason']);
+
+	}//end testConfirmingTheInvitedAddressJoinsTheWaitingAccount()
+
+	/**
+	 * An address added beside the one in use (mode `add`) is confirmed just
+	 * the same, so it joins too.
+	 *
+	 * @return void
+	 */
+	public function testAnAddressConfirmedBesideTheOneInUseJoinsToo(): void {
+		$this->seedAccount();
+		$waiting = $this->seedWaiting();
+		$this->rows['uuid-1'] = array_merge($this->rows['uuid-1'], [
+			'contactAddresses' => [
+				['kind' => 'email', 'value' => 'oud@example.org', 'confirmed' => true, 'preferred' => true],
+				['kind' => 'email', 'value' => 'ouder@example.org', 'confirmed' => false, 'preferred' => false],
+			],
+			'pendingEmail' => 'ouder@example.org',
+			'pendingEmailMode' => 'add',
+			'pendingEmailTokenHash' => hash('sha256', 'added-secret'),
+			'pendingEmailExpiresAt' => (new DateTimeImmutable('+1 day'))->format(DATE_ATOM),
+		]);
+
+		$this->assertNotNull($this->service()->confirmEmail(token: 'added-secret', session: $this->session()));
+
+		$this->assertSame('oud@example.org', $this->account()['email']);
+		$this->assertSame('guardian-7', $this->account()['claims']['learniq']['guardianRef']);
+		$this->assertSame('void', $this->rows[$waiting]['status']);
+
+	}//end testAnAddressConfirmedBesideTheOneInUseJoinsToo()
+
+	/**
+	 * Only the trust REQ-PIS-002 already gives: a waiting account whose
+	 * address nobody verified, one on an identity reference, one in another
+	 * organisation and one for another address all stay as they were, and
+	 * nothing is recorded.
+	 *
+	 * @return void
+	 */
+	public function testAConfirmationJoinsOnlyAVerifiedEmailOnlyWaitingAccountInTheSameOrganisation(): void {
+		$this->seedAccount();
+		$unverified = $this->seedWaiting(['verifiedEmail' => false]);
+		$onIdentity = $this->seedWaiting(['identityType' => 'digid', 'identityRef' => 'bsn-other']);
+		$elsewhere  = $this->seedWaiting(['organisation' => 'gemeente-y']);
+		$otherMail  = $this->seedWaiting(['email' => 'iemand@example.org']);
+		$auditor    = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+		$service = $this->service(auditor: $auditor);
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+
+		$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session()));
+
+		foreach ([$unverified, $onIdentity, $elsewhere, $otherMail] as $uuid) {
+			$this->assertSame('pending', $this->rows[$uuid]['status']);
+		}
+
+		$this->assertArrayNotHasKey('learniq', $this->account()['claims']);
+
+	}//end testAConfirmationJoinsOnlyAVerifiedEmailOnlyWaitingAccountInTheSameOrganisation()
+
+	/**
+	 * A link that admits nobody joins nothing: expired, unknown and spent.
+	 *
+	 * @return void
+	 */
+	public function testALinkThatAdmitsNobodyJoinsNothing(): void {
+		$this->seedAccount();
+		$waiting = $this->seedWaiting();
+		$service = $this->service();
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+
+		$this->assertNull($service->confirmEmail(token: $changed['confirmationToken'], now: new DateTimeImmutable('+2 days'), session: $this->session()));
+		$this->assertNull($service->confirmEmail(token: 'not-the-secret', session: $this->session()));
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+
+		$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session()));
+		$this->assertNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session()), 'The link works once.');
+
+	}//end testALinkThatAdmitsNobodyJoinsNothing()
+
+	/**
+	 * Security review M1: a waiting account that carries a claim the account
+	 * holds with another value is not joined. The invitation for guardian-2
+	 * stays pending for its real holder, the account keeps guardian-1, and
+	 * the address is still confirmed. A claim with the same value is no
+	 * conflict: the join then adds the claims the account lacks.
+	 *
+	 * @return void
+	 */
+	public function testAConflictingClaimLeavesTheWaitingAccountAlone(): void {
+		$this->seedAccount();
+		$this->rows['uuid-1']['claims']['learniq'] = ['guardianRef' => 'guardian-1'];
+		$waiting = $this->seedWaiting(['claims' => ['learniq' => ['guardianRef' => 'guardian-2', 'schoolRef' => 'school-9']]]);
+		$service = $this->service();
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+
+		$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session()));
+
+		$this->assertSame(['guardianRef' => 'guardian-1'], $this->account()['claims']['learniq']);
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertSame('ouder@example.org', $this->account()['email']);
+
+		$this->setUp();
+		$this->seedAccount();
+		$this->rows['uuid-1']['claims']['learniq'] = ['guardianRef' => 'guardian-7'];
+		$same    = $this->seedWaiting(['claims' => ['learniq' => ['guardianRef' => 'guardian-7', 'schoolRef' => 'school-9']]]);
+		$service = $this->service();
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+		$service->confirmEmail(token: $changed['confirmationToken'], session: $this->session());
+
+		$this->assertSame(['guardianRef' => 'guardian-7', 'schoolRef' => 'school-9'], $this->account()['claims']['learniq']);
+		$this->assertSame('void', $this->rows[$same]['status']);
+
+	}//end testAConflictingClaimLeavesTheWaitingAccountAlone()
+
+	/**
+	 * Security review M3: a waiting account for another audience (a parent's
+	 * invitation, confirmed by a supplier account in the same organisation)
+	 * is not joined.
+	 *
+	 * @return void
+	 */
+	public function testAWaitingAccountOfAnotherAudienceIsNotJoined(): void {
+		$this->seedAccount();
+		$this->rows['uuid-1']['audience'] = 'supplier';
+		$waiting = $this->seedWaiting();
+		$service = $this->service();
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+
+		$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session()));
+
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertArrayNotHasKey('learniq', $this->account()['claims']);
+
+	}//end testAWaitingAccountOfAnotherAudienceIsNotJoined()
+
+	/**
+	 * Security review L4: an address is one address whatever its case. The
+	 * school invited `Ouder@Example.org`, the guardian typed it in lower case.
+	 *
+	 * @return void
+	 */
+	public function testTheAddressIsMatchedWhateverItsCase(): void {
+		$this->seedAccount();
+		$waiting = $this->seedWaiting(['email' => 'ouder@example.org']);
+		$service = $this->service();
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'Ouder@Example.ORG');
+
+		$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session()));
+
+		$this->assertSame('void', $this->rows[$waiting]['status']);
+		$this->assertSame('guardian-7', $this->account()['claims']['learniq']['guardianRef']);
+
+	}//end testTheAddressIsMatchedWhateverItsCase()
+
+	/**
+	 * An account that never signed in through an identity provider receives
+	 * nothing: an address-only account confirming an address stays as it is.
+	 *
+	 * @return void
+	 */
+	public function testAnAccountWithoutAnIdentityReceivesNothing(): void {
+		$this->seedAccount();
+		$this->rows['uuid-1']['identityRef'] = '';
+		$waiting = $this->seedWaiting();
+		$service = $this->service();
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+
+		$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session()));
+
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+
+	}//end testAnAccountWithoutAnIdentityReceivesNothing()
+
+	/**
+	 * Security review H1: the confirmation token belongs to the account that
+	 * ASKED for the address, not to the person who opens the link. An
+	 * attacker adds the victim's address to their own account; the victim,
+	 * who expects mail from the portal, opens the link. Without a session,
+	 * and in the victim's own session, the address is confirmed on the
+	 * attacker's account and nothing is joined.
+	 *
+	 * @return void
+	 */
+	public function testAVictimOpeningAnAttackersConfirmationJoinsNothing(): void {
+		$this->seedAccount();
+		$waiting = $this->seedWaiting();
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+		$service = $this->service(auditor: $auditor);
+
+		// The attacker (subject-1) adds the victim's address.
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+
+		// The victim opens the link without a session.
+		$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken']), 'The address is still confirmed.');
+		$this->assertSame('ouder@example.org', $this->account()['email']);
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertArrayNotHasKey('learniq', $this->account()['claims']);
+
+		// The same again, with the victim's own session open in the browser.
+		$this->setUp();
+		$this->seedAccount();
+		$waiting = $this->seedWaiting();
+		$service = $this->service(auditor: $auditor);
+		$again   = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+		$this->assertNotNull($service->confirmEmail(token: $again['confirmationToken'], session: $this->session(['subjectRef' => 'victim-1', 'trust' => 'high'])));
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertArrayNotHasKey('learniq', $this->account()['claims']);
+
+	}//end testAVictimOpeningAnAttackersConfirmationJoinsNothing()
+
+	/**
+	 * The join needs the account holder's own session at trust substantial
+	 * or higher: a low-trust session of the right account, and a session of
+	 * the right account in another organisation, confirm the address and
+	 * join nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheJoinNeedsTheHoldersOwnSessionAtSubstantialTrust(): void {
+		foreach ([['trust' => 'low'], ['trust' => ''], ['organisation' => 'gemeente-y']] as $overrides) {
+			$this->setUp();
+			$this->seedAccount();
+			$waiting = $this->seedWaiting();
+			$service = $this->service();
+			$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+
+			$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session($overrides)));
+			$this->assertSame('pending', $this->rows[$waiting]['status'], (string)json_encode($overrides));
+		}
+
+		$this->setUp();
+		$this->seedAccount();
+		$waiting = $this->seedWaiting();
+		$service = $this->service();
+		$changed = $service->updateDetails(subjectRef: 'subject-1', email: 'ouder@example.org');
+		$this->assertNotNull($service->confirmEmail(token: $changed['confirmationToken'], session: $this->session(['trust' => 'high'])));
+		$this->assertSame('void', $this->rows[$waiting]['status'], 'high is above substantial');
+
+	}//end testTheJoinNeedsTheHoldersOwnSessionAtSubstantialTrust()
+
+	/**
+	 * The account holder's own session, as PortalSessionService resolves it.
+	 *
+	 * @param array<string, mixed> $overrides Fields that differ.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function session(array $overrides = []): array {
+		return array_merge(['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x', 'trust' => 'substantial', 'jti' => 'jti-1'], $overrides);
+	}//end session()
+
+	/**
+	 * Put a waiting account in the fake store: pending, address-only, its
+	 * address verified by the school, carrying the school's claim.
+	 *
+	 * @param array<string, mixed> $overrides Fields that differ.
+	 *
+	 * @return string The row's uuid.
+	 */
+	private function seedWaiting(array $overrides = []): string {
+		// The audience of the account it joins (seedAccount): a waiting
+		// account of another audience is never joined.
+		return $this->seedRow('portalAccount', array_merge([
+			'subjectRef' => 'waiting-' . count($this->rows),
+			'organisation' => 'gemeente-x',
+			'audience' => 'client',
+			'email' => 'ouder@example.org',
+			'verifiedEmail' => true,
+			'status' => 'pending',
+			'provisionedBy' => 'learniq',
+			'claims' => ['learniq' => ['guardianRef' => 'guardian-7']],
+		], $overrides));
+	}//end seedWaiting()
+
+	/**
 	 * The account row as it now stands.
 	 *
 	 * @return array<string, mixed>
@@ -293,9 +595,11 @@ class PortalSelfServiceServiceTest extends TestCase {
 	/**
 	 * The service over the fake store, with an account service that reads it.
 	 *
+	 * @param AuditTrailService|null $auditor The audit trail, when a test watches it.
+	 *
 	 * @return PortalSelfServiceService
 	 */
-	private function service(): PortalSelfServiceService {
+	private function service(?AuditTrailService $auditor = null): PortalSelfServiceService {
 		$accounts = $this->getMockBuilder(PortalAccountService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['findBySubjectRef'])
@@ -312,7 +616,7 @@ class PortalSelfServiceServiceTest extends TestCase {
 			}
 		);
 
-		return new PortalSelfServiceService($accounts, $this->fakeReader(), $this->fakeWriter(), $this->fakeRandom());
+		return new PortalSelfServiceService($accounts, $this->fakeReader(), $this->fakeWriter(), $this->fakeRandom(), auditor: $auditor);
 	}//end service()
 
 }//end class

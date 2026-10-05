@@ -352,6 +352,9 @@ return [
         ['name' => 'portalAccountSelf#notificationPreferences', 'url' => '/portal/api/identity/notification-preferences', 'verb' => 'GET'],
         ['name' => 'portalAccountSelf#updateNotificationPreferences', 'url' => '/portal/api/identity/notification-preferences', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#confirmEmail', 'url' => '/portal/api/identity/email/confirm', 'verb' => 'POST'],
+        // The signed-in person hands back an invitation's one-time secret
+        // (invitation-secret-joins-the-signed-in-account).
+        ['name' => 'portalAccountClaim#redeem', 'url' => '/portal/api/identity/invitation/redeem', 'verb' => 'POST'],
         ['name' => 'portalContactAddress#add', 'url' => '/portal/api/identity/addresses', 'verb' => 'POST'],
         ['name' => 'portalContactAddress#prefer', 'url' => '/portal/api/identity/addresses/preferred', 'verb' => 'POST'],
         ['name' => 'portalContactAddress#remove', 'url' => '/portal/api/identity/addresses/remove', 'verb' => 'POST'],
