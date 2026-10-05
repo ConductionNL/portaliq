@@ -109,13 +109,28 @@ class NewsController extends Controller {
 	 * @param string $body The body.
 	 * @param array<string, mixed> $target The target (schoolRef/groupRefs/childRefs).
 	 * @param array<int, string> $photoRefs Attached photo references.
+	 * @param bool $public Whether the item also shows on a portal's public website (site-school-blocks).
+	 * @param string $portal The portal whose website shows it.
+	 * @param string $audienceLabel The words that website shows for who it is for.
 	 *
 	 * @return JSONResponse The created object, or a 400/500.
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `public` is a request parameter the framework
+	 * binds by name; it is data the item stores, not a switch between two behaviours here.
 	 */
 	#[NoAdminRequired]
-	public function create(string $title, string $body, array $target, array $photoRefs = []): JSONResponse {
+	public function create(
+		string $title,
+		string $body,
+		array $target,
+		array $photoRefs=[],
+		bool $public=false,
+		string $portal='',
+		string $audienceLabel=''
+	): JSONResponse {
 		$authorRef = $this->requireAuthenticatedStaff();
 
 		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
@@ -137,7 +152,7 @@ class NewsController extends Controller {
 					'status' => 'draft',
 					'photoRefs' => $photoRefs,
 					'readReceipts' => [],
-				],
+				] + $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel),
 				register: self::REGISTER,
 				schema: self::SCHEMA,
 				_rbac: false,
@@ -160,20 +175,38 @@ class NewsController extends Controller {
 	 * @param string $title The title.
 	 * @param string $body The body.
 	 * @param array<string, mixed> $target The target (schoolRef/groupRefs/childRefs).
+	 * @param bool|null $public Whether the item also shows on a portal's public website; null leaves it as it is.
+	 * @param string $portal The portal whose website shows it.
+	 * @param string $audienceLabel The words that website shows for who it is for.
 	 *
 	 * @return JSONResponse The updated object, a 400 or a 404.
 	 *
 	 * @spec openspec/changes/staff-news-screen/tasks.md#T1
+	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
 	 */
 	#[NoAdminRequired]
-	public function update(string $id, string $title, string $body, array $target): JSONResponse {
+	public function update(
+		string $id,
+		string $title,
+		string $body,
+		array $target,
+		?bool $public=null,
+		string $portal='',
+		string $audienceLabel=''
+	): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
 		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return $this->write(id: $id, data: ['title' => $title, 'body' => $body, 'target' => $target]);
+		$data = ['title' => $title, 'body' => $body, 'target' => $target];
+		// A screen that does not send `public` leaves the website choice as it is.
+		if ($public !== null) {
+			$data += $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel);
+		}
+
+		return $this->write(id: $id, data: $data);
 	}//end update()
 
 	/**
@@ -270,6 +303,29 @@ class NewsController extends Controller {
 
 		return new JSONResponse($updated);
 	}//end write()
+
+	/**
+	 * Whether the item also shows on a portal's public website, and with which
+	 * words for its audience (site-school-blocks). Turned on only with a portal
+	 * slug to show it on; turned off, the portal and the words are cleared, so
+	 * a later "on" never revives an old choice by accident.
+	 *
+	 * @param bool   $public        Whether staff put the item on the website.
+	 * @param string $portal        The portal slug.
+	 * @param string $audienceLabel The words the website shows for who it is for.
+	 *
+	 * @return array{public: bool, portal: string, audienceLabel: string}
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
+	 */
+	private function website(bool $public, string $portal, string $audienceLabel): array {
+		$portal = trim($portal);
+		if ($public === false || preg_match('/^[a-z0-9][a-z0-9-]{0,62}$/', $portal) !== 1) {
+			return ['public' => false, 'portal' => '', 'audienceLabel' => ''];
+		}
+
+		return ['public' => true, 'portal' => $portal, 'audienceLabel' => mb_substr(trim($audienceLabel), 0, 60)];
+	}//end website()
 
 	/**
 	 * Whether a target names at least one dimension.
