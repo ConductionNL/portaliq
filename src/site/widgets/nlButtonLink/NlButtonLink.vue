@@ -13,11 +13,12 @@
 -->
 <template>
 	<a
-		v-if="safeHref"
+		v-if="link"
 		class="utrecht-button utrecht-button--html-a"
 		:class="`utrecht-button--${safeKind}-action`"
-		:href="safeHref"
-		data-testid="nl-button-link">
+		:href="link.href"
+		data-testid="nl-button-link"
+		@click="open">
 		{{ label }}
 	</a>
 	<span v-else class="utrecht-paragraph" data-testid="nl-button-link-plain">{{
@@ -26,6 +27,8 @@
 </template>
 
 <script>
+import { authoredLink, staysInSite } from '../../components/mijn/links.js'
+
 import '@utrecht/button-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 
@@ -41,6 +44,8 @@ export default {
 		kind: { type: String, default: 'primary' },
 	},
 
+	emits: ['navigate'],
+
 	computed: {
 		/**
 		 * @return {string} The kind, or `primary` for anything unknown.
@@ -53,27 +58,29 @@ export default {
 		},
 
 		/**
-		 * @return {string} The address, or '' when it is not one to trust.
-		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
+		 * The address as a link: a page of this site by the site's own
+		 * address for that route, a web, mail or phone address as it is, and
+		 * null for anything else.
+		 *
+		 * @return {{href: string, route: string}|null} The link.
+		 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-a-link-in-a-link-list-or-a-button-link-must-open-the-page-wherever-the-site-is-served
 		 */
-		safeHref() {
-			const href = String(this.href || '').trim()
-			if (href === '') {
-				return ''
-			}
+		link() {
+			return authoredLink(this.href)
+		},
+	},
 
-			if (href.startsWith('/') && !href.startsWith('//')) {
-				return href
-			}
-
-			try {
-				return ['http:', 'https:', 'mailto:', 'tel:'].includes(
-					new URL(href).protocol,
-				)
-					? href
-					: ''
-			} catch {
-				return ''
+	methods: {
+		/**
+		 * A plain click on a page of this site stays in the site.
+		 *
+		 * @param {Event} event The click.
+		 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-a-link-in-a-link-list-or-a-button-link-must-open-the-page-wherever-the-site-is-served
+		 */
+		open(event) {
+			if (staysInSite(event, this.link)) {
+				event.preventDefault()
+				this.$emit('navigate', this.link.route)
 			}
 		},
 	},
