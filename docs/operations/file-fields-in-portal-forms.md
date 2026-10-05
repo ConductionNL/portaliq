@@ -42,7 +42,7 @@ Mark a whitelisted field as a file field in `fieldConfigs`:
 | --- | --- |
 | `type` | `file` turns the field into a file picker. Any other value is ignored. Only create and update actions get a picker. |
 | `multiple` | `true` lets people pick several files. The references are appended. |
-| `accept` | Extensions (`.pdf`) or MIME types (`application/pdf`, `image/*`). A file must match one. Leave it out to take any file. The type is read from the file's bytes, not its name: a known extension (pdf, png, jpg/jpeg, gif, webp, svg, html/htm, xml) needs bytes of that type, `.txt` and `.csv` take any text or JSON, and no other extension and no `type/*` entry lets HTML, SVG, XML or JavaScript in. A field that wants one of those names it: `image/svg+xml`, `.svg`. |
+| `accept` | Extensions (`.pdf`) or MIME types (`application/pdf`, `image/*`). A file must match one. Leave it out to take any file. The type is read from the file's bytes, not its name: a known extension (pdf, png, jpg/jpeg, gif, webp, svg, html/htm, xml) needs bytes of that type, `.txt` and `.csv` take any text or JSON, and no extension or `type/*` entry lets HTML, SVG, XML or JavaScript in unless it names that type. A field that wants one of those names it: `image/svg+xml`, `.svg`. |
 | `maxSizeMb` | The limit per file, 1 to 50. Leave it out for 20. |
 
 The schema property holds a string for one file, or an array of strings for

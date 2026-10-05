@@ -365,7 +365,8 @@ class PortalAccountSelfControllerTest extends TestCase {
 	}//end testUnknownKindIsIgnored()
 
 	/**
-	 * The push column shows only when the account registered a device.
+	 * The push column shows only when the account registered a device and the
+	 * bound transport really delivers.
 	 *
 	 * @return void
 	 *
