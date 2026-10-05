@@ -41,6 +41,8 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Redeems an invitation's secret for the bearer.
@@ -59,11 +61,13 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param WaitingAccountInvitation $invitations Redeems the secret.
+	 * @param LoggerInterface $logger Records a failure's cause, never the secret.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly WaitingAccountInvitation $invitations,
+		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -73,17 +77,23 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 *
 	 * @param string $secret The secret from the invitation.
 	 *
-	 * @return JSONResponse 200 when the waiting account joined, 401 without
-	 *                      a session, 403 `trust_too_low` below substantial,
-	 *                      429 after too many wrong secrets, and one 403
-	 *                      `invitation_not_valid` for wrong, expired and used.
+	 * @return JSONResponse 200 when the waiting account joined; 401 without
+	 *                      a session; 403 `trust_too_low` below substantial;
+	 *                      403 `account_cannot_receive` when the bearer's own
+	 *                      account cannot take over an account (about the
+	 *                      caller, never the invitation); 429 after too many
+	 *                      wrong secrets; 409 `invitation_conflict` when the
+	 *                      invitation carries a claim the account holds with
+	 *                      another value; 503 `try_again` when the request
+	 *                      could not finish; and one 403 `invitation_not_valid`
+	 *                      for wrong, expired and used.
 	 *
 	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 10, period: 60)]
-	public function redeem(string $secret = ''): JSONResponse {
+	public function redeem(#[\SensitiveParameter] string $secret = ''): JSONResponse {
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
@@ -95,15 +105,32 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 			return new JSONResponse(['error' => 'trust_too_low'], Http::STATUS_FORBIDDEN);
 		}
 
-		$result = $this->invitations->redeem(subject: $subject, secret: $secret);
-		if ($result === WaitingAccountInvitation::LOCKED) {
-			return new JSONResponse(['error' => 'too_many_attempts'], Http::STATUS_TOO_MANY_REQUESTS);
+		try {
+			$result = $this->invitations->redeem(subject: $subject, secret: $secret);
+		} catch (Throwable $exception) {
+			// The class only: a message or a trace could carry the secret.
+			$this->logger->error('Portal invitation redeem failed', ['exception' => get_class($exception)]);
+			$result = WaitingAccountInvitation::BUSY;
 		}
 
-		if ($result !== WaitingAccountInvitation::CLAIMED) {
-			return new JSONResponse(['error' => 'invitation_not_valid'], Http::STATUS_FORBIDDEN);
-		}
-
-		return new JSONResponse(['claimed' => true]);
+		return $this->answer(result: $result);
 	}//end redeem()
+
+	/**
+	 * The answer for what the redeem came to.
+	 *
+	 * @param string $result One of the WaitingAccountInvitation answers.
+	 *
+	 * @return JSONResponse
+	 */
+	private function answer(string $result): JSONResponse {
+		return match ($result) {
+			WaitingAccountInvitation::CLAIMED => new JSONResponse(['claimed' => true]),
+			WaitingAccountInvitation::LOCKED => new JSONResponse(['error' => 'too_many_attempts'], Http::STATUS_TOO_MANY_REQUESTS),
+			WaitingAccountInvitation::CANNOT_RECEIVE => new JSONResponse(['error' => 'account_cannot_receive'], Http::STATUS_FORBIDDEN),
+			WaitingAccountInvitation::CONFLICT => new JSONResponse(['error' => 'invitation_conflict'], Http::STATUS_CONFLICT),
+			WaitingAccountInvitation::BUSY => new JSONResponse(['error' => 'try_again'], Http::STATUS_SERVICE_UNAVAILABLE),
+			default => new JSONResponse(['error' => 'invitation_not_valid'], Http::STATUS_FORBIDDEN),
+		};
+	}//end answer()
 }//end class

@@ -381,5 +381,7 @@
 	"Your invitation is accepted. You now see what is shared with you.": "Uw uitnodiging is aangenomen. U ziet nu wat met u is gedeeld.",
 	"This invitation is no longer valid. Ask for a new one.": "Deze uitnodiging is niet meer geldig. Vraag een nieuwe aan.",
 	"Too many attempts. Try again in an hour.": "Te veel pogingen. Probeer het over een uur opnieuw.",
-	"You need a more secure way to sign in for this invitation.": "Voor deze uitnodiging moet u op een veiligere manier inloggen."
+	"You need a more secure way to sign in for this invitation.": "Voor deze uitnodiging moet u op een veiligere manier inloggen.",
+	"You cannot accept an invitation with this account. Sign in another way and try again.": "Met dit account kunt u geen uitnodiging aannemen. Log op een andere manier in en probeer het opnieuw.",
+	"Your account is already linked in another way. Contact the organisation that invited you.": "Uw account is al op een andere manier gekoppeld. Neem contact op met de organisatie die u uitnodigde."
 }

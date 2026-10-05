@@ -7,9 +7,12 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\Identity\ClaimAttempts;
+use OCA\Portaliq\Service\Identity\ClaimLock;
 use OCA\Portaliq\Service\Identity\WaitingAccountInvitation;
 use OCP\ICache;
 use OCP\ICacheFactory;
+use OCP\Lock\ILockingProvider;
+use OCP\Lock\LockedException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -45,11 +48,29 @@ class WaitingAccountInvitationTest extends TestCase {
 	 */
 	private bool $cacheBroken = false;
 
+	/**
+	 * The locks the fake locking provider holds, by path.
+	 *
+	 * @var array<string, bool>
+	 */
+	private array $held = [];
+
+	/**
+	 * Called once when a lock is asked for, before it is granted.
+	 *
+	 * @var \Closure|null
+	 */
+	private ?\Closure $beforeLock = null;
+
 	protected function setUp(): void {
 		$this->rows = [];
 		$this->audited = [];
 		$this->cached = [];
 		$this->cacheBroken = false;
+		$this->held = [];
+		$this->beforeLock = null;
+		$this->afterRead = null;
+		$this->readerIgnoresOrganisation = false;
 
 	}//end setUp()
 
@@ -145,14 +166,25 @@ class WaitingAccountInvitationTest extends TestCase {
 
 	}//end testWrongExpiredAndUsedAreOneAnswer()
 
+	/**
+	 * The store hands back the other organisation's row as well (the reader's
+	 * filter is trusted for the query, not for the answer), so only the
+	 * service's own organisation check stands between the two: the secret
+	 * reads as wrong, counts as a wrong try, and nothing is spent.
+	 *
+	 * @return void
+	 */
 	public function testAnInvitationOfAnotherOrganisationOpensNothing(): void {
+		$this->readerIgnoresOrganisation = true;
 		$waiting = $this->seedWaiting(['organisation' => 'gemeente-y']);
-		$this->seedSignedIn();
+		$account = $this->seedSignedIn();
 		$service = $this->service();
 		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
 
 		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: $issued['token']));
 		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertSame(hash('sha256', $issued['token']), $this->rows[$waiting]['claimTokenHash']);
+		$this->assertSame(1, $this->rows[$account]['claimAttempts'], 'Another organisation\'s secret is a wrong secret here.');
 
 	}//end testAnInvitationOfAnotherOrganisationOpensNothing()
 
@@ -178,10 +210,13 @@ class WaitingAccountInvitationTest extends TestCase {
 		$service = $this->service();
 		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
 
-		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: $issued['token']));
-		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(['subjectRef' => 'subject-3']), secret: $issued['token']));
-		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(['subjectRef' => 'nobody']), secret: $issued['token']));
-		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(['organisation' => 'gemeente-y']), secret: $issued['token']));
+		// Security review L6: the answer is about the caller's own account,
+		// and it is the same for a right and a wrong secret.
+		$this->assertSame(WaitingAccountInvitation::CANNOT_RECEIVE, $service->redeem(subject: $this->subject(), secret: $issued['token']));
+		$this->assertSame(WaitingAccountInvitation::CANNOT_RECEIVE, $service->redeem(subject: $this->subject(), secret: 'not-the-secret'));
+		$this->assertSame(WaitingAccountInvitation::CANNOT_RECEIVE, $service->redeem(subject: $this->subject(['subjectRef' => 'subject-3']), secret: $issued['token']));
+		$this->assertSame(WaitingAccountInvitation::CANNOT_RECEIVE, $service->redeem(subject: $this->subject(['subjectRef' => 'nobody']), secret: $issued['token']));
+		$this->assertSame(WaitingAccountInvitation::CANNOT_RECEIVE, $service->redeem(subject: $this->subject(['organisation' => 'gemeente-y']), secret: $issued['token']));
 		$this->assertSame('pending', $this->rows[$waiting]['status']);
 		$this->assertSame(hash('sha256', $issued['token']), $this->rows[$waiting]['claimTokenHash'], 'A refused caller spends nothing.');
 
@@ -260,18 +295,145 @@ class WaitingAccountInvitationTest extends TestCase {
 
 	}//end testInvitingAgainReplacesTheEarlierSecret()
 
-	public function testAClaimTheAccountHoldsIsKeptAndSoIsItsOwnAddress(): void {
-		$this->seedWaiting(['claims' => ['learniq' => ['guardianRef' => 'guardian-2', 'schoolRef' => 'school-9']]]);
+	/**
+	 * Security review M1: an invitation that carries a claim the account
+	 * holds with another value is refused before the secret is spent. The
+	 * invitation stays whole for its real holder, nothing is counted and
+	 * nothing is recorded. A claim with the same value is no conflict, and
+	 * an address the account has is kept.
+	 *
+	 * @return void
+	 */
+	public function testAConflictingClaimIsRefusedBeforeTheSecretIsSpent(): void {
+		$waiting = $this->seedWaiting(['claims' => ['learniq' => ['guardianRef' => 'guardian-2', 'schoolRef' => 'school-9']]]);
 		$account = $this->seedSignedIn(['email' => 'eigen@example.org', 'claims' => ['learniq' => ['guardianRef' => 'guardian-1']]]);
 		$service = $this->service();
 		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
 
-		$service->redeem(subject: $this->subject(), secret: $issued['token']);
+		$this->assertSame(WaitingAccountInvitation::CONFLICT, $service->redeem(subject: $this->subject(), secret: $issued['token']));
 
-		$this->assertSame(['guardianRef' => 'guardian-1', 'schoolRef' => 'school-9'], $this->rows[$account]['claims']['learniq']);
+		$this->assertSame(['guardianRef' => 'guardian-1'], $this->rows[$account]['claims']['learniq']);
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertSame(hash('sha256', $issued['token']), $this->rows[$waiting]['claimTokenHash'], 'The invitation is not spent.');
+		$this->assertArrayNotHasKey('claimAttempts', $this->rows[$account]);
+		$this->assertSame([], $this->audited);
+
+		$this->setUp();
+		$this->seedWaiting(['claims' => ['learniq' => ['guardianRef' => 'guardian-7', 'schoolRef' => 'school-9']]]);
+		$account = $this->seedSignedIn(['email' => 'eigen@example.org', 'claims' => ['learniq' => ['guardianRef' => 'guardian-7']]]);
+		$service = $this->service();
+		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+
+		$this->assertSame(WaitingAccountInvitation::CLAIMED, $service->redeem(subject: $this->subject(), secret: $issued['token']));
+		$this->assertSame(['guardianRef' => 'guardian-7', 'schoolRef' => 'school-9'], $this->rows[$account]['claims']['learniq']);
 		$this->assertSame('eigen@example.org', $this->rows[$account]['email']);
 
-	}//end testAClaimTheAccountHoldsIsKeptAndSoIsItsOwnAddress()
+	}//end testAConflictingClaimIsRefusedBeforeTheSecretIsSpent()
+
+	/**
+	 * Security review M3: an account of another audience in the same
+	 * organisation (a supplier) cannot take over a parent's invitation, and
+	 * the invitation is not spent.
+	 *
+	 * @return void
+	 */
+	public function testAnAccountOfAnotherAudienceCannotTakeOverTheInvitation(): void {
+		$waiting = $this->seedWaiting();
+		$account = $this->seedSignedIn(['audience' => 'supplier', 'identityType' => 'eherkenning', 'identityRef' => 'kvk-1']);
+		$service = $this->service();
+		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: $issued['token']));
+
+		$this->assertArrayNotHasKey('claims', $this->rows[$account]);
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertSame(hash('sha256', $issued['token']), $this->rows[$waiting]['claimTokenHash']);
+
+	}//end testAnAccountOfAnotherAudienceCannotTakeOverTheInvitation()
+
+	/**
+	 * Security review M2: two people post the same secret at the same moment.
+	 * The second request runs entirely between the first one's read and its
+	 * write. Exactly one join happens: the first request reads the waiting
+	 * account again under its lock, finds the secret spent and joins nothing.
+	 *
+	 * @return void
+	 */
+	public function testTwoRedeemsOfOneSecretJoinExactlyOnce(): void {
+		$waiting = $this->seedWaiting();
+		$first   = $this->seedSignedIn();
+		$second  = $this->seedSignedIn(['subjectRef' => 'subject-2', 'identityRef' => 'bsn-2']);
+		$service = $this->service();
+		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+		$results = [];
+
+		$this->afterRead = function (string $scopeField) use ($service, $issued, &$results): bool {
+			if ($scopeField !== 'claimTokenHash') {
+				return true;
+			}
+
+			$results['second'] = $service->redeem(subject: $this->subject(['subjectRef' => 'subject-2', 'jti' => 'jti-2']), secret: $issued['token']);
+			return false;
+		};
+		$results['first'] = $service->redeem(subject: $this->subject(), secret: $issued['token']);
+
+		$this->assertSame(['second' => WaitingAccountInvitation::CLAIMED, 'first' => WaitingAccountInvitation::NOT_VALID], $results);
+		$this->assertCount(1, $this->audited, 'One join recorded.');
+		$this->assertSame('guardian-7', $this->rows[$second]['claims']['learniq']['guardianRef']);
+		$this->assertArrayNotHasKey('claims', $this->rows[$first]);
+		$this->assertSame('void', $this->rows[$waiting]['status']);
+
+	}//end testTwoRedeemsOfOneSecretJoinExactlyOnce()
+
+	/**
+	 * While another request holds the waiting account's lock past the wait,
+	 * a redeem answers busy and changes nothing: no spend, no count.
+	 *
+	 * @return void
+	 */
+	public function testARedeemWhileTheWaitingAccountIsLockedChangesNothing(): void {
+		$waiting = $this->seedWaiting();
+		$account = $this->seedSignedIn();
+		$service = $this->service();
+		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+		$this->held['portaliq/claim/' . $waiting] = true;
+
+		$this->assertSame(WaitingAccountInvitation::BUSY, $service->redeem(subject: $this->subject(), secret: $issued['token']));
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertSame(hash('sha256', $issued['token']), $this->rows[$waiting]['claimTokenHash']);
+		$this->assertArrayNotHasKey('claimAttempts', $this->rows[$account]);
+		$this->assertSame(['portaliq/claim/' . $waiting => true], $this->held, 'The caller\'s own lock was given back.');
+
+	}//end testARedeemWhileTheWaitingAccountIsLockedChangesNothing()
+
+	/**
+	 * Security review L1: two wrong secrets from one account at the same
+	 * moment are counted as two. The second request runs entirely between
+	 * the first one's first read of the account and its count; the first
+	 * reads the account again under its lock and counts on top.
+	 *
+	 * @return void
+	 */
+	public function testTwoWrongSecretsAtOnceCountAsTwo(): void {
+		$this->seedWaiting();
+		$account = $this->seedSignedIn();
+		$service = $this->service();
+		$service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+		$now = new DateTimeImmutable('2026-10-05T10:00:00+00:00');
+
+		$this->afterRead = function (string $scopeField) use ($service, $now): bool {
+			if ($scopeField !== 'subjectRef') {
+				return true;
+			}
+
+			$service->redeem(subject: $this->subject(['jti' => 'jti-2']), secret: 'guess-2', now: $now);
+			return false;
+		};
+		$service->redeem(subject: $this->subject(), secret: 'guess-1', now: $now);
+
+		$this->assertSame(2, $this->rows[$account]['claimAttempts']);
+
+	}//end testTwoWrongSecretsAtOnceCountAsTwo()
 
 	/**
 	 * A waiting account: pending, address-only, provisioned by learniq.
@@ -357,6 +519,38 @@ class WaitingAccountInvitationTest extends TestCase {
 
 		$writer = $this->fakeWriter();
 
-		return new WaitingAccountInvitation($this->fakeReader(), $writer, $this->fakeRandom(), new ClaimAttempts($writer, $factory), $auditor);
+		return new WaitingAccountInvitation($this->fakeReader(), $writer, $this->fakeRandom(), new ClaimAttempts($writer, $factory), $auditor, new ClaimLock($this->fakeLocks(), 0));
 	}//end service()
+
+	/**
+	 * A locking provider that holds exclusive locks in memory and refuses a
+	 * taken one, the way Nextcloud's does.
+	 *
+	 * @return ILockingProvider
+	 */
+	private function fakeLocks(): ILockingProvider {
+		$locks = $this->createMock(ILockingProvider::class);
+		$locks->method('acquireLock')->willReturnCallback(
+			function (string $path): void {
+				$hook = $this->beforeLock;
+				if ($hook !== null) {
+					$this->beforeLock = null;
+					$hook($path);
+				}
+
+				if (isset($this->held[$path]) === true) {
+					throw new LockedException($path);
+				}
+
+				$this->held[$path] = true;
+			}
+		);
+		$locks->method('releaseLock')->willReturnCallback(
+			function (string $path): void {
+				unset($this->held[$path]);
+			}
+		);
+
+		return $locks;
+	}//end fakeLocks()
 }//end class

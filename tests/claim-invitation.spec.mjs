@@ -212,6 +212,33 @@ test('each refusal has its own sentence, and an unknown one a general sentence',
 	assert.equal(claimOutcome(null).role, 'alert')
 })
 
+test('an answer about the caller keeps the invitation; an answer about the invitation forgets it (review L6)', async () => {
+	const kept = [
+		[{ ok: false, status: 403, error: 'trust_too_low' }, 'You need a more secure way to sign in for this invitation.'],
+		[{ ok: false, status: 403, error: 'account_cannot_receive' }, 'You cannot accept an invitation with this account. Sign in another way and try again.'],
+		[{ ok: false, status: 503, error: 'try_again' }, 'That did not work. Try again later.'],
+	]
+	for (const [answer, text] of kept) {
+		const store = storage()
+		store.setItem(CLAIM_STORAGE_KEY, 'abc')
+		const shown = await redeemKeptClaim({ api: api(answer), session: { subjectRef: 's' }, t, storage: store })
+		assert.equal(shown.text, text, answer.error)
+		assert.equal(keptClaimSecret(store), 'abc', answer.error)
+	}
+
+	const forgotten = [
+		[{ ok: false, status: 409, error: 'invitation_conflict' }, 'Your account is already linked in another way. Contact the organisation that invited you.'],
+		[{ ok: false, status: 429, error: 'too_many_attempts' }, 'Too many attempts. Try again in an hour.'],
+	]
+	for (const [answer, text] of forgotten) {
+		const store = storage()
+		store.setItem(CLAIM_STORAGE_KEY, 'abc')
+		const shown = await redeemKeptClaim({ api: api(answer), session: { subjectRef: 's' }, t, storage: store })
+		assert.equal(shown.text, text, answer.error)
+		assert.equal(keptClaimSecret(store), '', answer.error)
+	}
+})
+
 test('a server that could not be reached keeps the invitation for the next page', async () => {
 	const store = storage()
 	store.setItem(CLAIM_STORAGE_KEY, 'abc')
@@ -236,6 +263,8 @@ test('every sentence is in both site bundles, without an em-dash', () => {
 		'This invitation is no longer valid. Ask for a new one.',
 		'Too many attempts. Try again in an hour.',
 		'You need a more secure way to sign in for this invitation.',
+		'You cannot accept an invitation with this account. Sign in another way and try again.',
+		'Your account is already linked in another way. Contact the organisation that invited you.',
 		'That did not work. Try again later.',
 	]
 	for (const key of keys) {

@@ -5,7 +5,7 @@
 - [x] **T2**: `PortalAccountInvitationRequestedEvent` and its listener: the secret is mailed to the waiting account's address and never answered to the app
   - PHPUnit `PortalAccountInvitationListenerTest` (the real event class), `PortalIdentityMailerTest::testEachTemplateHasItsOwnFragment`, `::testTheWaysInOpenOnTheSite`
 - [x] **T3**: Redeeming joins the waiting account into the signed-in account, once, and records it
-  - PHPUnit `WaitingAccountInvitationTest::testTheSignedInPersonTakesOverTheWaitingAccount`, `::testTheSecretWorksOnce`, `::testAClaimTheAccountHoldsIsKeptAndSoIsItsOwnAddress`
+  - PHPUnit `WaitingAccountInvitationTest::testTheSignedInPersonTakesOverTheWaitingAccount`, `::testTheSecretWorksOnce`
 - [x] **T4**: Wrong, expired, used, another organisation's and no-longer-waiting are one answer; only an active account with an identity receives
   - PHPUnit `WaitingAccountInvitationTest::testWrongExpiredAndUsedAreOneAnswer`, `::testAnInvitationOfAnotherOrganisationOpensNothing`, `::testAWaitingAccountThatIsNoLongerWaitingOpensNothing`, `::testOnlyAnActiveAccountThatSignedInThroughAnIdentityProviderReceives`
 - [x] **T5**: Attempt limits: five wrong secrets lock the account for an hour, also without a cache; five lock the session
@@ -17,3 +17,13 @@
 - [x] **T8**: `portalAccount` 0.15.0: `claimTokenHash`, `claimExpiresAt`, `claimAttempts`, `claimAttemptsSince`, with Dutch and English labels
   - PHPUnit `PortaliqRegisterConfigTest`, `npm run check:schema-l10n`
 - [x] **T9**: Live on a test instance: a guardian signs in without an address, follows the invitation link and sees the claim on her own account
+- [x] **T10**: Security review M2 and L1: a redeem locks the caller's account and the waiting account and reads both again under the lock; two redeems of one secret join once; parallel wrong secrets each count; a lock held too long answers busy
+  - PHPUnit `WaitingAccountInvitationTest::testTwoRedeemsOfOneSecretJoinExactlyOnce`, `::testTwoWrongSecretsAtOnceCountAsTwo`, `::testARedeemWhileTheWaitingAccountIsLockedChangesNothing`
+- [x] **T11**: Security review M1 and M3: a conflicting claim answers `409 invitation_conflict` before the secret is spent; another audience is refused unspent
+  - PHPUnit `WaitingAccountInvitationTest::testAConflictingClaimIsRefusedBeforeTheSecretIsSpent`, `::testAnAccountOfAnotherAudienceCannotTakeOverTheInvitation`
+- [x] **T12**: Security review L6: an account that cannot receive answers `403 account_cannot_receive`; the site keeps the secret for that answer, for `trust_too_low` and for `try_again`
+  - PHPUnit `WaitingAccountInvitationTest::testOnlyAnActiveAccountThatSignedInThroughAnIdentityProviderReceives`, `PortalAccountClaimControllerTest::testEachRefusalAboutTheCallerHasItsOwnAnswer`; `tests/claim-invitation.spec.mjs`
+- [x] **T13**: Security review L3: the secret is a sensitive parameter everywhere; a failure is caught, logged by class and answered `503 try_again`
+  - PHPUnit `PortalAccountClaimControllerTest::testAFailureIsLoggedWithoutTheSecret`
+- [x] **T14**: The cross-organisation test runs over a reader that ignores the organisation filter, so it fails when the service's own check is removed
+  - PHPUnit `WaitingAccountInvitationTest::testAnInvitationOfAnotherOrganisationOpensNothing` (mutation-checked)

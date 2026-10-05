@@ -67,6 +67,7 @@ class ConfirmedAddressJoin {
 	 * @param PortalObjectReader $reader Finds the waiting account.
 	 * @param PortalObjectWriter $writer Writes both accounts.
 	 * @param AuditTrailService|null $auditor Records the join.
+	 * @param ClaimLock|null $lock Keeps a redeem of the same waiting account out while it joins.
 	 *
 	 * @return void
 	 */
@@ -74,6 +75,7 @@ class ConfirmedAddressJoin {
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ?AuditTrailService $auditor = null,
+		private readonly ?ClaimLock $lock = null,
 	) {
 	}//end __construct()
 
@@ -113,8 +115,7 @@ class ConfirmedAddressJoin {
 			return false;
 		}
 
-		$join   = new WaitingAccountJoin(lookup: new PortalAccountLookup(reader: $this->reader), writer: $this->writer);
-		$joined = $join->join(account: $account, verifiedEmail: $email, organisation: $organisation);
+		$joined = $this->joinLocked(account: $account, email: $email, organisation: $organisation);
 		if ($joined === null) {
 			return false;
 		}
@@ -132,6 +133,36 @@ class ConfirmedAddressJoin {
 
 		return true;
 	}//end join()
+
+	/**
+	 * Find the waiting account for the address, lock it, read it again and
+	 * join it, so an invitation redeemed at the same moment cannot join it a
+	 * second time (security review M2).
+	 *
+	 * @param array<string, mixed> $account The confirming account.
+	 * @param string $email The confirmed address.
+	 * @param string $organisation The tenant slug.
+	 *
+	 * @return string|null The identifier of the waiting account joined, or null.
+	 */
+	private function joinLocked(array $account, string $email, string $organisation): ?string {
+		$lookup    = new PortalAccountLookup(reader: $this->reader);
+		$waitingId = $lookup->identifierOf(row: ($lookup->pendingByVerifiedEmail(email: $email, organisation: $organisation) ?? []));
+		if ($waitingId === null || $this->lock?->acquire(accountId: $waitingId) === false) {
+			return null;
+		}
+
+		try {
+			$waiting = $lookup->pendingByVerifiedEmail(email: $email, organisation: $organisation);
+			if ($waiting === null || $lookup->identifierOf(row: $waiting) !== $waitingId) {
+				return null;
+			}
+
+			return (new WaitingAccountJoin(lookup: $lookup, writer: $this->writer))->joinWaiting(account: $account, waiting: $waiting);
+		} finally {
+			$this->lock?->release(accountId: $waitingId);
+		}
+	}//end joinLocked()
 
 	/**
 	 * Whether the confirmation arrived in the account holder's own session:

@@ -73,6 +73,7 @@ class PortalSelfServiceService {
 	 * @param ISecureRandom $random Mints the confirmation secret.
 	 * @param ContactAddressChange $addressChange The address fields (identity-profile-page).
 	 * @param AuditTrailService|null $auditor Records a waiting account that was joined.
+	 * @param ClaimLock|null $claimLock Keeps a redeem of the same waiting account out while it joins.
 	 */
 	public function __construct(
 		private readonly PortalAccountService $accounts,
@@ -81,6 +82,7 @@ class PortalSelfServiceService {
 		private readonly ISecureRandom $random,
 		private readonly ContactAddressChange $addressChange = new ContactAddressChange(),
 		private readonly ?AuditTrailService $auditor = null,
+		private readonly ?ClaimLock $claimLock = null,
 	) {
 	}//end __construct()
 
@@ -352,7 +354,7 @@ class PortalSelfServiceService {
 			return null;
 		}
 
-		(new ConfirmedAddressJoin(reader: $this->reader, writer: $this->writer, auditor: $this->auditor))->join(
+		(new ConfirmedAddressJoin(reader: $this->reader, writer: $this->writer, auditor: $this->auditor, lock: $this->claimLock))->join(
 			account: array_merge($account, $fields),
 			email: $email,
 			session: $session
