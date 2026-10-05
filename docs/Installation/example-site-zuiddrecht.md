@@ -12,6 +12,7 @@ Zuiddrecht is a municipality that does not exist. Its website shows what a porta
 
 - Portaliq and OpenRegister, both enabled.
 - The theme app (thematiq) with the `zuiddrecht` set. Without it the site installs and shows without its house style. The command tells you when the set is missing.
+- From a source checkout only: the built site bundle. `npm run dev` builds the admin screens and nothing else. The public site needs `npx webpack --config webpack.site.js` (and `webpack.traffic.js` for traffic measurement), or `npm run build` for everything. Without it the site is a blank page with one 404 on `portaliq-site.js`. A release from the app store has the bundle.
 
 ## Install
 
@@ -51,13 +52,17 @@ The site answers at `/index.php/apps/portaliq/site?portal=zuiddrecht`. To serve 
 
 ## Signing in
 
-The header shows the button "Mijn Zuiddrecht". The portal names DigiD and eHerkenning as its ways in, as the design does. They work once your instance has a sign-in broker for them: see [Signing in through integriq](../operations/signing-in-through-integriq.md). On a test instance you can switch on the test sign-in instead:
+The header shows the button "Mijn Zuiddrecht". It opens the sign-in page with two cards: "Als inwoner" with DigiD and "Namens een bedrijf" with eHerkenning. They work once your instance has a sign-in broker for them: see [Signing in through integriq](../operations/signing-in-through-integriq.md). On a test instance you can switch on the test sign-in instead:
 
 ```bash
 occ config:app:set portaliq dev_login_enabled --value=yes
 ```
 
 Never switch that on for a site real residents use.
+
+After signing in, a resident sees what the installed apps offer. With dossiq that is the overview, "Mijn zaken" and the page of one case with its steps, details and documents. The site calls this area "Mijn Zuiddrecht" everywhere, after the name on the button.
+
+Did you install the site before the sign-in cards were added? The install never changes a portal that exists. Remove the site and install it again.
 
 ## What is and is not in the site
 

@@ -20,7 +20,26 @@
                 "digid",
                 "eherkenning"
             ],
-            "minTrust": "low"
+            "minTrust": "low",
+            "modeLabels": {
+                "digid": {
+                    "title": "Als inwoner",
+                    "text": "Voor uw eigen zaken, berichten en dossiers.",
+                    "button": "Inloggen met DigiD"
+                },
+                "eherkenning": {
+                    "title": "Namens een bedrijf",
+                    "text": "Voor vergunningen, meldingen en zaken van uw organisatie.",
+                    "button": "Inloggen met eHerkenning"
+                }
+            },
+            "signInPage": {
+                "title": "Inloggen op Mijn Zuiddrecht",
+                "intro": "Kies hoe u inlogt. Als inwoner gebruikt u DigiD. Namens een bedrijf gebruikt u eHerkenning.",
+                "notice": {
+                    "text": "Geen DigiD? Bel [telefoonnummer]. Wij helpen u op een andere manier."
+                }
+            }
         },
         "headerSearch": {
             "label": "Zoeken op de website",
