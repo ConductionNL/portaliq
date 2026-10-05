@@ -162,6 +162,10 @@
  * The private `--_utrecht-button-appearance-*` names are what the component
  * itself derives its background and colour from, including its hover and
  * focus states, so setting them here keeps those states consistent.
+ *
+ * No focus rule here: `nlds-app.css` already draws a white halo and a dotted
+ * outline on every `:focus-visible` with !important, themed or not, and it
+ * stays visible around the filled button (checked on the same instance).
  */
 .pq-site .utrecht-button--primary-action {
 	--_utrecht-button-appearance-background-color: var(
@@ -181,13 +185,6 @@
 		var(--utrecht-button-padding-block-end, 0.5em);
 	padding-inline: var(--utrecht-button-padding-inline-start, 1.25em)
 		var(--utrecht-button-padding-inline-end, 1.25em);
-}
-
-.pq-site .utrecht-button--primary-action:focus-visible {
-	outline-color: var(--utrecht-focus-outline-color, CanvasText);
-	outline-offset: var(--utrecht-focus-outline-offset, 2px);
-	outline-style: var(--utrecht-focus-outline-style, solid);
-	outline-width: var(--utrecht-focus-outline-width, 3px);
 }
 
 /*

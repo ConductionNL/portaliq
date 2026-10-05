@@ -133,26 +133,6 @@ test('without a theme the primary button keeps a filled background, a contrastin
 	}
 })
 
-test('the primary button has a visible focus ring without a theme', () => {
-	const css = withoutComments(readFileSync(THEME_CSS, 'utf8'))
-	const body = ruleBody(
-		css,
-		'.pq-site .utrecht-button--primary-action:focus-visible',
-	)
-	assert.match(
-		valueOf(body, 'outline-style'),
-		/^var\(--utrecht-focus-outline-style, solid\)$/,
-	)
-	assert.match(
-		valueOf(body, 'outline-width'),
-		/^var\(--utrecht-focus-outline-width, \d+px\)$/,
-	)
-	assert.match(
-		valueOf(body, 'outline-color'),
-		/^var\(--utrecht-focus-outline-color, CanvasText\)$/,
-	)
-})
-
 test('without a theme a secondary button in a form keeps an outline and padding', () => {
 	const css = withoutComments(readFileSync(THEME_CSS, 'utf8'))
 	const body = ruleBody(
