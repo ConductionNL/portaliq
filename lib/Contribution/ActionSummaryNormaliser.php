@@ -116,7 +116,7 @@ class ActionSummaryNormaliser {
 
 			foreach ($map as $answer => $words) {
 				$text = $this->text(value: $words);
-				if ($text !== '' && (is_string($answer) === true || is_int($answer) === true)) {
+				if ($text !== '') {
 					$out[$field][(string)$answer] = $text;
 				}
 			}
