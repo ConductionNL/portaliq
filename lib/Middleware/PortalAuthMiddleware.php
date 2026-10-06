@@ -209,7 +209,9 @@ class PortalAuthMiddleware extends Middleware {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- Middleware dictates
+	 * the signature; the response depends only on the exception type, never on
+	 * which `$controller` / `$methodName` threw it.
 	 */
 	public function afterException($controller, $methodName, \Throwable $exception): Response {
 		if ($exception instanceof PortalUnauthorizedException) {
