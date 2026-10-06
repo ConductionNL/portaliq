@@ -15,10 +15,20 @@ export const metaOf = {
 	group: 'forms',
 	label: 'Opzoekformulier',
 	nlds: 'Form Field, Button',
-	synonyms: ['postcode', 'huisnummer', 'opzoeken', 'afvalkalender', 'zoekformulier'],
+	synonyms: [
+		'postcode',
+		'huisnummer',
+		'opzoeken',
+		'afvalkalender',
+		'zoekformulier',
+	],
 	fields: [
 		{ name: 'heading', kind: 'string', label: 'Regel boven de velden' },
-		{ name: 'fields', kind: 'json', label: 'Velden (name, label, value, width)' },
+		{
+			name: 'fields',
+			kind: 'json',
+			label: 'Velden (name, label, value, width)',
+		},
 		{ name: 'buttonLabel', kind: 'string', label: 'Tekst op de knop' },
 		{ name: 'href', kind: 'string', label: 'Pagina die antwoord geeft' },
 	],

@@ -30,9 +30,11 @@
 				v-for="field in safeFields"
 				:key="field.name"
 				class="nl-lookup-form__field">
-				<label class="utrecht-form-label nl-lookup-form__label" :for="idOf(field)">{{
-					field.label
-				}}</label>
+				<label
+					class="utrecht-form-label nl-lookup-form__label"
+					:for="idOf(field)"
+					>{{ field.label }}</label
+				>
 				<input
 					:id="idOf(field)"
 					v-model="values[field.name]"
@@ -90,7 +92,10 @@ export default {
 		return {
 			/** What the visitor typed, by field name. */
 			values: Object.fromEntries(
-				this.safeFieldsOf(this.fields).map((field) => [field.name, field.value]),
+				this.safeFieldsOf(this.fields).map((field) => [
+					field.name,
+					field.value,
+				]),
 			),
 		}
 	},
@@ -163,7 +168,10 @@ export default {
 			}
 			event.preventDefault()
 			const query = new URLSearchParams(
-				this.safeFields.map((field) => [field.name, this.values[field.name] ?? '']),
+				this.safeFields.map((field) => [
+					field.name,
+					this.values[field.name] ?? '',
+				]),
 			).toString()
 			this.$emit('navigate', `${this.target.route}?${query}`)
 		},
@@ -179,7 +187,10 @@ export default {
 		--nldesign-website-border-radius-large,
 		var(--utrecht-border-radius-md, 0.75rem)
 	);
-	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-95, transparent));
+	background: var(
+		--nldesign-color-primary-light,
+		var(--utrecht-color-grey-95, transparent)
+	);
 }
 
 .nl-lookup-form__heading {
