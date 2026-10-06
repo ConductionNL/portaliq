@@ -200,6 +200,7 @@
 	"Sent by you": "Sent by you",
 	"There are no documents on this case yet.": "There are no documents on this case yet.",
 	"The document could not be opened. Try again later.": "The document could not be opened. Try again later.",
+	"Only on this demo. No password is asked.": "Only on this demo. No password is asked.",
 	"My cases": "My cases",
 	"Open ({count})": "Open ({count})",
 	"Closed ({count})": "Closed ({count})",
