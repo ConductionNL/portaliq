@@ -1,6 +1,6 @@
 # Tasks: search-filter-by-kind
 
-Wave 2. Row 6.30. Decision D11. Kind: code. Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 2. Row 6.30. Decision D11. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 **Before starting**, read on opencatalogi `development` whether `subjects-as-first-class-records`
 REQ-SUB-004 is merged, and on which endpoint (`/api/search`, `/api/federation/publications`, or both)
@@ -34,6 +34,6 @@ run on `origin/development` first and seen red.
   `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`, `npm run check:specs`
   and `npm run build:site`, plus any other leg `code-quality.yml` requires. Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran. Project coverage of
-  the added statements as LANE-RULES-BUILD says.
+  the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
 - [ ] 3.3 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 6.30 then reads `yes` (build), and `production` only with a store release.

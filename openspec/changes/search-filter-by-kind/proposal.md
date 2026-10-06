@@ -14,6 +14,17 @@ Woo capability programme, round 1, wave 2. Row 6.30.
 Implements Ruben's decision **D11**: documents are search hits of their own, resolving to the
 document's own public page, so the kind filter has three real kinds.
 
+## Summary
+
+Let portal search results filter by kind of record: publication, document or subject.
+
+- Rows: 6.30 "Results filter by kind of record: publication, document or subject" (not statutory).
+- Wave: 2.
+- Depends on: `opencatalogi/subjects-as-first-class-records` (https://github.com/ConductionNL/opencatalogi/issues/1764), `portaliq/publication-detail-page-complete` (https://github.com/ConductionNL/portaliq/issues/1220), `portaliq/home-and-theme-landing-pages` (https://github.com/ConductionNL/portaliq/issues/1219), and outside the plan `opencatalogi/add-document-content-search` (no issue; https://github.com/ConductionNL/opencatalogi/tree/development/openspec/changes/add-document-content-search).
+- Decision: D11 (2026-10-05), documents are search hits of their own, so the filter has three real kinds.
+
+Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 What portaliq does today, read on `development` at ca591037: the search block lists publications
