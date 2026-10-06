@@ -393,7 +393,8 @@ class PortalPageController extends Controller {
 	 * The sign-in settings the site needs at boot, from the same resolver
 	 * `/portal` uses, so the two surfaces offer the same ways in.
 	 *
-	 * @return array{devLogin: bool, silentSignIn: string, signinOrganisation: string, audience: string, waysIn: array<string, mixed>}
+	 * @return array{devLogin: bool, silentSignIn: string, signinOrganisation: string, audience: string,
+	 *               waysIn: array<string, mixed>, exampleResident: string}
 	 *
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
@@ -413,6 +414,8 @@ class PortalPageController extends Controller {
 			'audience'           => (string)($config['audience'] ?? ''),
 			// The doors besides the sign-in buttons (identity-ways-in-screens T07).
 			'waysIn'             => (array)($config['waysIn'] ?? []),
+			// One click on a demo for the example resident (example-resident-demo-login).
+			'exampleResident'    => (string)($config['exampleResident'] ?? ''),
 		];
 	}//end siteSignin()
 

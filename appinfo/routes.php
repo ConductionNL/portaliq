@@ -266,6 +266,10 @@ return [
         // Nextcloud session IS the credential, and an anonymous visitor is
         // handed to Nextcloud's own login form.
         ['name' => 'session#nextcloud', 'url' => '/portal/api/session/nextcloud', 'verb' => 'GET'],
+        // One click on a demo: the example resident's session, closed unless
+        // an administrator sets example_resident_demo_login=yes
+        // (example-resident-demo-login).
+        ['name' => 'session#exampleResident', 'url' => '/portal/api/session/example-resident', 'verb' => 'GET'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
         // Sliding-window session refresh, capped by an absolute maximum
         // session lifetime (portal-session-hardening-v2 T03). Registered

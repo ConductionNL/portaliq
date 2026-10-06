@@ -92,6 +92,16 @@ The command reads the instance back like the site install does, and exits 2 when
 
 Only the example resident. The mode `nextcloud` mints a portal session for a Nextcloud account that has an active portal account under the same id, and the install makes exactly one. Other Nextcloud accounts on the instance get "no_portal_account" and nothing else. The account is a full Nextcloud account, though: it can open Files and the other apps. Keep it to a demo or test instance, and remove it when the demo is over.
 
+### One click on a demo
+
+On a demo the Nextcloud form is one step too many. Switch the one-click sign-in on:
+
+```bash
+occ config:app:set portaliq example_resident_demo_login --value=yes
+```
+
+The card "Voorbeeldinwoner" then signs the visitor in as the example resident with one click, no form, and says "Alleen op deze demo" under its button. It works only for the installed example resident, on its own site, while its portal account is active; the route (`/portal/api/session/example-resident`) answers 404 to everything else, is rate limited like the test sign-in, and `debug` mode does not open it. "Uitloggen" ends the portal session as always. Switch it off again with `occ config:app:set portaliq example_resident_demo_login --value=no`, and the card goes back to the Nextcloud form.
+
 ### Why not the test sign-in
 
 Portaliq also has a test sign-in, `POST /portal/api/session/dev-login`, which the site offers as the button "Dev-login (test)". It is closed unless the instance runs in `debug` mode or an administrator sets `occ config:app:set portaliq dev_login_enabled --value=yes`. While it is open, anyone who can reach the instance can mint a session for any subject reference without a password, so never switch it on for a site real residents use, and know that `debug` mode opens it too. The button in the site always signs in as `dev-supplier`, not as a named resident. The example resident does not need it.

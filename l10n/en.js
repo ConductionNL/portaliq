@@ -2213,7 +2213,8 @@ OC.L10N.register(
         "Menu of the own area": "Menu of the own area",
         "How the menu beside the visitor's own pages opens.": "How the menu beside the visitor's own pages opens.",
         "Card label": "Card label",
-        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card."
+        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.",
+        "Only on this demo. No password is asked.": "Only on this demo. No password is asked."
     },
     "nplurals=2; plural=(n != 1);"
 )
