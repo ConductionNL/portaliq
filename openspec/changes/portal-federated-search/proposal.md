@@ -6,6 +6,17 @@ kind: code
 
 ## Summary
 
+Give the public portal a search block over OpenCatalogi's federated publication endpoint, and, for Woo row 6.2, let it reach the text inside documents with each content hit linking to the document's own page.
+
+- Rows: 6.2 "Search reaches the text inside documents, not only their metadata" (not statutory), through Task 4.
+- Wave: 2.
+- Depends on: `opencatalogi/add-document-content-search` (no issue; https://github.com/ConductionNL/opencatalogi/tree/development/openspec/changes/add-document-content-search), which D11 requires to be amended first, and `portaliq/publication-detail-page-complete` (https://github.com/ConductionNL/portaliq/issues/1220) for the document page a hit links to.
+- Decision: D11 (2026-10-05), documents are search hits of their own and resolve to the document's public page.
+
+Build rules: openspec/woo-build-rules.md
+
+## Overview
+
 Give the public portal a search page that queries **OpenCatalogi's federated
 publication endpoint**, so a visitor searches every catalogue this instance
 federates with, not just the rows this instance owns.

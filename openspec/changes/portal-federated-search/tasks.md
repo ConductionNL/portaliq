@@ -49,7 +49,7 @@
 - **before starting**: read opencatalogi on `development`. Confirm `add-document-content-search` is
   merged and amended for D11, and that the endpoint this block calls (`/api/federation/publications`)
   honours `_content` (a content-only match comes back). If it does not, stop: that is opencatalogi's
-  half. Say which in the PR body. Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+  half. Say which in the PR body. Build rules: `openspec/woo-build-rules.md`.
 - **acceptance_criteria**:
   - **fails today**: node test `a term sends the content flag`, `a portal that switched it off sends
     no content flag`, `a document row links to its own page and names its publication`
