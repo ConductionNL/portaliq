@@ -1,7 +1,7 @@
 # Tasks: woo-intake-delivers-to-dossiq
 
 Wave 3. Supporting: keeps 7.1 and 7.2 yes. Decisions D1 and D12. Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+`openspec/woo-build-rules.md`.
 
 **Do not start before** `dossiq/woo-request-takes-over-from-opencatalogi` is merged on dossiq
 `development`. Read `OCA\Dossiq\Portal\PortalContributionProvider::receiveWooRequest()` there and copy
@@ -63,7 +63,7 @@ run on `origin/development` first and seen red.
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:register` and `npm run check:specs`, plus any other leg `code-quality.yml` requires.
   Then hydra's `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 5.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 5.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
 - [ ] 5.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 7.1 and 7.2 stay yes; through dossiq, `production` only once both
   store releases carry the move. The release notes say: without dossiq, a portal no longer takes Woo

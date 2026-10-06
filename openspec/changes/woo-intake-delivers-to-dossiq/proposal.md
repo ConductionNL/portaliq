@@ -18,6 +18,17 @@ Implements Ruben's decisions **D1** (dossiq owns the Woo request, its intake and
 moves to dossiq". It runs beside `opencatalogi/woo-request-intake-hands-over-to-dossiq` (step 2), after
 `dossiq/woo-request-takes-over-from-opencatalogi` (step 1).
 
+## Summary
+
+Deliver the portal's Woo request form to dossiq, so the request, its reference and its term live in dossiq while rows 7.1 and 7.2 stay yes.
+
+- Rows: supporting change, closes no row by itself; keeps 7.1 "A citizen submits a request through a form" and 7.2 "The request gets a reference the citizen can quote back" at yes (neither statutory).
+- Wave: 3.
+- Depends on: `dossiq/woo-request-takes-over-from-opencatalogi` (https://github.com/ConductionNL/dossiq/issues/3289), merged first. Runs beside `opencatalogi/woo-request-intake-hands-over-to-dossiq` (https://github.com/ConductionNL/opencatalogi/issues/1781).
+- Decision: D1 (dossiq owns the Woo request) and D12 (Woo requests require dossiq, no fallback), both 2026-10-05.
+
+Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 What portaliq does today, read on `development` at ca591037:
