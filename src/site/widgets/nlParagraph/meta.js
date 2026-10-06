@@ -16,7 +16,10 @@ export const metaOf = {
 	label: 'Tekst',
 	nlds: 'Paragraph',
 	synonyms: ['tekst', 'alinea', 'paragraaf', 'uitleg', 'broodtekst'],
-	fields: [{ name: 'text', kind: 'text', label: 'Tekst' }],
+	fields: [
+		{ name: 'text', kind: 'text', label: 'Tekst' },
+		{ name: 'lead', kind: 'boolean', label: 'Groter, als inleiding' },
+	],
 	defaultSize: { gridWidth: 6, gridHeight: 2 },
 	scope: 'public',
 }

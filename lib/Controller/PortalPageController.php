@@ -349,11 +349,33 @@ class PortalPageController extends Controller {
 	private function siteLocale(): string {
 		$locale = $this->resolveLocale();
 		if ($locale === '') {
-			return 'nl';
+			$locale = 'nl';
 		}
 
-		return $locale;
+		return $this->localeThePortalServes(locale: $locale);
 	}//end siteLocale()
+
+
+	/**
+	 * The visitor's language held to the portal's declared locales
+	 * (PortalResolver::localeFor). A portal that cannot be resolved serves
+	 * what the visitor asked for, as before.
+	 *
+	 * @param string $locale The visitor's language, never empty.
+	 *
+	 * @return string The language to serve.
+	 *
+	 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-document-language-follows-the-portal
+	 */
+	private function localeThePortalServes(string $locale): string {
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $this->requestedPortalSlug());
+		} catch (\Throwable) {
+			$portal = null;
+		}
+
+		return $this->portalResolver->localeFor(portal: $portal, locale: $locale);
+	}//end localeThePortalServes()
 
 
 	/**

@@ -568,6 +568,7 @@ import {
 	headerSearchOf,
 	headerVariantOf,
 	legalLinksOf,
+	menuLabelFor,
 	registerRouteOf,
 } from './lib/shellData.js'
 import {
@@ -825,6 +826,12 @@ export default {
 				let label = segment.charAt(0).toUpperCase() + segment.slice(1)
 				if (isLast === true && this.page && this.page.title) {
 					label = this.page.title
+				}
+				// The header menu's own words for a route it names, so the trail
+				// reads like the menu ("Home › Afval"), on every crumb.
+				const fromMenu = menuLabelFor(this.menus, route)
+				if (fromMenu !== '') {
+					label = fromMenu
 				}
 
 				crumbs.push({ route, label, href: this.hrefForRoute(route) })
