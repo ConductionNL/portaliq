@@ -2278,7 +2278,15 @@ OC.L10N.register(
         "Menu of the own area": "Menu van de eigen omgeving",
         "How the menu beside the visitor's own pages opens.": "Hoe het menu naast de eigen pagina's van de bezoeker begint.",
         "Card label": "Regel boven de naam",
-        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "De regel boven de naam van de organisatie bovenaan het menu, getoond als de bezoeker voor een organisatie handelt, bijvoorbeeld U regelt het voor. Leeg toont geen kaart."
+        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "De regel boven de naam van de organisatie bovenaan het menu, getoond als de bezoeker voor een organisatie handelt, bijvoorbeeld U regelt het voor. Leeg toont geen kaart.",
+        "My cases page": "Pagina Mijn zaken",
+        "How the page that lists every case draws them.": "Hoe de pagina die elke zaak opsomt ze tekent.",
+        "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by.": "cards tekent de mapkaarten; rows tekent een regel per zaak met het nummer, de titel, het label en de dag waarop hij uiterlijk klaar is.",
+        "The menu in this portal's own groups, in order: each a title and the items in it by name. An item is a section of the own area (overview, cases, tasks, inbox, messages, news, access, details, account) or a contributed page as app:page, such as dossiq:berichten. An item not named here keeps its place in the groups the site builds itself, so nothing becomes unreachable. Empty keeps the site's own groups.": "Het menu in de eigen groepen van dit portaal, op volgorde: elk een titel en de onderdelen erin, op naam. Een onderdeel is een sectie van de eigen omgeving (overview, cases, tasks, inbox, messages, news, access, details, account) of een bijgedragen pagina als app:page, zoals dossiq:berichten. Een onderdeel dat hier niet staat houdt zijn plek in de groepen die de site zelf maakt, zodat niets onbereikbaar wordt. Leeg houdt de eigen groepen van de site.",
+        "Group title": "Groepstitel",
+        "The heading over this group of the menu, such as Zaken en taken.": "De kop boven deze groep van het menu, zoals Zaken en taken.",
+        "Group items": "Onderdelen van de groep",
+        "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.": "De onderdelen in deze groep, op volgorde, elk op naam: een sectie van de eigen omgeving of een bijgedragen pagina als app:page."
     },
     "nplurals=2; plural=(n != 1);"
 )

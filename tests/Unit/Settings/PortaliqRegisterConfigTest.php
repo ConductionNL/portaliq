@@ -354,8 +354,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `authentication.signInPage` (site-chrome-follows-the-design). Additive.
 		// 0.66.0 (portal 0.11.0): `residentMenu.cardLabel`
 		// (resident-menu-badges-and-cards). Additive.
-		$this->assertSame('0.66.0', self::$register['info']['version']);
-		$this->assertSame('0.66.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.67.0 (portal 0.12.0): `residentMenu.groups` and `myCases.display`
+		// (zuiddrecht-resident-pages-match-the-boards). Additive.
+		$this->assertSame('0.67.0', self::$register['info']['version']);
+		$this->assertSame('0.67.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);

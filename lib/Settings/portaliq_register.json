@@ -3028,10 +3028,14 @@
                                     "type": "object",
                                     "properties": {
                                         "title": {
-                                            "type": "string"
+                                            "title": "Group title",
+                                            "type": "string",
+                                            "description": "The heading over this group of the menu, such as Zaken en taken."
                                         },
                                         "items": {
+                                            "title": "Group items",
                                             "type": "array",
+                                            "description": "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.",
                                             "items": {
                                                 "type": "string"
                                             }
