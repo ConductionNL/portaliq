@@ -110,7 +110,7 @@ test('the hero draws plain with popular links, six at most and followable only',
 	)
 })
 
-test("the task tiles draw the author's own path, held to path data", () => {
+test("the task tiles draw the author's own path, held to path data", async () => {
 	const board =
 		'M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'
 	assert.equal(
@@ -148,8 +148,15 @@ test("the task tiles draw the author's own path, held to path data", () => {
 	assert.match(html, /nl-quick-tasks--plain-icons/)
 	assert.match(html, /nl-quick-tasks--narrow-list/)
 	assert.match(html, /nl-quick-tasks__heading-narrow[^>]*>Veel gezocht</)
-	assert.equal((html.match(/nl-quick-tasks__item--beyond-narrow/g) || []).length, 1, 'the third row is beyond the phone limit')
-	assert.match(html, new RegExp(`<path d="${board.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`))
+	assert.equal(
+		(html.match(/nl-quick-tasks__item--beyond-narrow/g) || []).length,
+		1,
+		'the third row is beyond the phone limit',
+	)
+	assert.match(
+		html,
+		new RegExp(`<path d="${board.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`),
+	)
 })
 
 test('a link list draws as a card or under an accent line, with an intro', async () => {
