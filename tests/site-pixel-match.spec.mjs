@@ -339,8 +339,17 @@ test('a breadcrumb reads like the menu', () => {
 test('the document language follows the portal', () => {
 	const controller = read('lib/Controller/PortalPageController.php')
 	assert.match(controller, /localeThePortalServes\(string \$locale\)/)
-	assert.match(controller, /\$portal\['locales'\]/)
-	assert.match(controller, /return \$declared\[0\];/)
+	assert.match(
+		controller,
+		/portalResolver->localeFor\(portal: \$portal, locale: \$locale\)/,
+	)
+	const resolver = read('lib/Service/PortalResolver.php')
+	assert.match(
+		resolver,
+		/public function localeFor\(\?array \$portal, string \$locale\): string/,
+	)
+	assert.match(resolver, /\$portal\['locales'\]/)
+	assert.match(resolver, /return \$declared\[0\];/)
 })
 
 test('the Zuiddrecht declaration follows the boards and keeps every route', () => {
