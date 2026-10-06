@@ -51,7 +51,7 @@ failure (OR error, missing OpenRegister, malformed row) it MUST fail closed to
 - **GIVEN** a subject, an opted-in collection, a row they own, and a file attached to that row
 - **WHEN** they request that file by `fileId`
 - **THEN** ownership + tenant + trust are re-verified first, then the file streams with `Content-Disposition: attachment` and a sanitised filename
-- @e2e exclude the e2e test for this scenario EXISTS but DOES NOT RUN: `tests/e2e/playwright.config.ts` carries a `grepInvert` on the title "a subject downloads a file on a row they own", because it fails against an OpenRegister product bug (`FileService::addFile()` has no `_rbac` parameter, so a portal subject cannot attach a file on an instance whose register folder has not already been materialised by an authenticated Nextcloud user) — ConductionNL/portaliq#29. A test a Playwright project never executes is not coverage, so anchoring this scenario to it would be a false green. Covered meanwhile by `ContributionControllerTest::testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess`. Delete this exclusion and anchor the spec to the test when #29 closes and the `grepInvert` goes.
+- Covered end to end by `tests/e2e/portal-document-download.spec.ts` ("a subject downloads a file on a row they own", anchored with `@e2e`), which uploads to an owned row and downloads the same bytes back. The SPA saves through a Blob URL, so the `Content-Disposition` / sanitised-filename half is pinned by `ContributionControllerTest::testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess`.
 
 #### Scenario: A file on a foreign-owned row is refused before it is resolved
 
