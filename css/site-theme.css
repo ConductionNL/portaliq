@@ -457,6 +457,133 @@
 }
 
 /*
+ * A TABLE, A MELDING AND A LINK LIST LOOK LIKE THE DESIGN, ON ANY SET
+ * (site-content-blocks-styled).
+ *
+ * The rules above make them readable. The four school designs (and
+ * Zuiddrecht's content page) draw more: a table in a thin frame with rounded
+ * corners, a tinted header row and its caption as a heading; a melding as a
+ * card with room inside and the tint of its kind. The Utrecht components read
+ * all of that from tokens no shipped set declares, so the proof of 06 Oct
+ * showed the caption as small body text and every melding as text flush
+ * against a coloured line.
+ *
+ * Same pattern as above: each value reads the Utrecht token first, so a set
+ * that names the role keeps it, then the set's own `--nldesign-*` token, and
+ * ends in a keyword, never a literal colour.
+ */
+.pq-site .utrecht-table {
+	border: var(--utrecht-table-border-width, 1px) solid
+		var(--utrecht-table-border-color, var(--nldesign-color-border, currentcolor));
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+}
+
+.pq-site .utrecht-table__header-cell {
+	background-color: var(
+		--utrecht-table-header-background-color,
+		var(--nldesign-color-background-hover, transparent)
+	);
+}
+
+/* The header's tint follows the rounded corners of the frame. */
+.pq-site .utrecht-table__header .utrecht-table__header-cell:first-child {
+	border-start-start-radius: calc(
+		var(--nldesign-website-border-radius-large, 0px) - 1px
+	);
+}
+
+.pq-site .utrecht-table__header .utrecht-table__header-cell:last-child {
+	border-start-end-radius: calc(
+		var(--nldesign-website-border-radius-large, 0px) - 1px
+	);
+}
+
+/* The frame closes the table: no second line under the last row. */
+.pq-site .utrecht-table__body .utrecht-table__row:last-child .utrecht-table__cell {
+	border-block-end: 0;
+}
+
+.pq-site .utrecht-table__caption {
+	caption-side: top;
+	padding-block-end: var(--utrecht-table-caption-margin-block-end, 12px);
+	color: var(--utrecht-table-caption-color, var(--utrecht-heading-color, inherit));
+	font-family: var(
+		--utrecht-table-caption-font-family,
+		var(--utrecht-heading-font-family, inherit)
+	);
+	font-size: var(
+		--utrecht-table-caption-font-size,
+		var(--utrecht-heading-3-font-size, 1.375rem)
+	);
+	font-weight: var(
+		--utrecht-table-caption-font-weight,
+		var(--utrecht-heading-3-font-weight, 700)
+	);
+	line-height: var(--utrecht-table-caption-line-height, 1.3);
+}
+
+.pq-site .utrecht-alert {
+	box-sizing: border-box;
+	padding-block: var(--utrecht-alert-padding-block-start, 24px)
+		var(--utrecht-alert-padding-block-end, 24px);
+	padding-inline: var(--utrecht-alert-padding-inline-start, 24px)
+		var(--utrecht-alert-padding-inline-end, 24px);
+}
+
+/* Two meldingen side by side in the grid are one height, as cards are. */
+.pq-site .pq-grid__cell > .utrecht-alert {
+	block-size: 100%;
+}
+
+.pq-site .utrecht-alert--info {
+	background-color: var(
+		--utrecht-alert-info-background-color,
+		var(--nldesign-color-primary-light, transparent)
+	);
+}
+
+.pq-site .utrecht-alert--ok {
+	background-color: var(
+		--utrecht-alert-ok-background-color,
+		var(--nldesign-component-status-badge-success-background-color, transparent)
+	);
+}
+
+.pq-site .utrecht-alert--warning {
+	background-color: var(
+		--utrecht-alert-warning-background-color,
+		var(--nldesign-component-status-badge-warning-background-color, transparent)
+	);
+}
+
+.pq-site .utrecht-alert--error {
+	background-color: var(
+		--utrecht-alert-error-background-color,
+		var(--nldesign-component-status-badge-error-background-color, transparent)
+	);
+}
+
+.pq-site .utrecht-alert__content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--utrecht-alert-message-row-gap, 12px);
+}
+
+.pq-site .utrecht-alert__content > * {
+	margin: 0;
+}
+
+/*
+ * A link in a list is a target of at least 24px high (WCAG 2.2, 2.5.8). The
+ * proof measured 19px lines; the row gap above passes axe through its spacing
+ * rule, this keeps the target itself big enough when a set sets the gap to 0.
+ */
+.pq-site .utrecht-link-list__link {
+	align-items: center;
+	min-block-size: var(--utrecht-link-list-link-min-block-size, 24px);
+}
+
+/*
  * THE DESIGNED SITE READS IN THE SET'S OWN FAMILY (example-site-zuiddrecht).
  *
  * The vendored sheet sets the page's family on `body` as a literal, so every

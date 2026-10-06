@@ -62,6 +62,13 @@ export default {
 
 	emits: ['navigate'],
 
+	/**
+	 * The id of the heading that names this list's landmark, unique on the
+	 * page.
+	 *
+	 * @return {{headingId: string}} The state.
+	 * @spec openspec/changes/site-content-blocks-styled/specs/site-look/spec.md#requirement-a-link-list-must-be-a-named-landmark-with-targets-of-at-least-24px
+	 */
 	data() {
 		instances += 1
 		return {
