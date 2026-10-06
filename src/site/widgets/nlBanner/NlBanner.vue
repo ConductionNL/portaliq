@@ -205,8 +205,11 @@ export default {
 	color: var(--utrecht-alert-error-color, var(--utrecht-document-color));
 }
 
-/* The soft attention strip (Zuiddrecht "Let op"): the site's own notice
-   tokens, else the warning alert's. */
+/* The soft attention strip (Zuiddrecht "Let op"). A set that names an
+   attention strip (thematiq's --nldesign-website-attention-*, read through
+   the public bridge as --thematiq-attention-*) draws it in those colours;
+   every other set keeps the look it had: the site's notice tokens, else the
+   warning alert's. The plain blue notice stays on --nldesign-website-notice-*. */
 .nl-banner--notice {
 	--nl-banner-notice-line: var(
 		--utrecht-alert-warning-border-color,
@@ -215,14 +218,20 @@ export default {
 	--nl-banner-notice-ground: var(--utrecht-alert-warning-background-color, Canvas);
 	--nl-banner-notice-ink: var(--utrecht-alert-warning-color, CanvasText);
 	border-block-end-color: var(
-		--nldesign-website-notice-border-color,
-		var(--nl-banner-notice-line)
+		--thematiq-attention-border-color,
+		var(--nldesign-website-notice-border-color, var(--nl-banner-notice-line))
 	);
 	background-color: var(
-		--nldesign-website-notice-background-color,
-		var(--nl-banner-notice-ground)
+		--thematiq-attention-background-color,
+		var(
+			--nldesign-website-notice-background-color,
+			var(--nl-banner-notice-ground)
+		)
 	);
-	color: var(--nldesign-website-notice-color, var(--nl-banner-notice-ink));
+	color: var(
+		--thematiq-attention-color,
+		var(--nldesign-website-notice-color, var(--nl-banner-notice-ink))
+	);
 }
 
 .nl-banner__text {

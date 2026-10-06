@@ -40,6 +40,48 @@ test('a placement that names none of the new options renders as it did before', 
 	}
 })
 
+test('the "Let op" strip reads the attention roles first and keeps the notice look as its fallback', () => {
+	// thematiq names the soft yellow strip in --nldesign-website-attention-*,
+	// which the public bridge hands on as --thematiq-attention-* with no
+	// fallback; a set without them keeps today's notice colours, then the
+	// warning alert's. The plain blue notice stays on notice-*.
+	const css = read('src/site/widgets/nlBanner/NlBanner.vue').replace(/\s+/g, '')
+	const rule = css.slice(
+		css.indexOf('.nl-banner--notice{'),
+		css.indexOf('.nl-banner__text{'),
+	)
+	for (const [prop, role, notice, fallback] of [
+		[
+			'border-block-end-color',
+			'border-color',
+			'border-color',
+			'--nl-banner-notice-line',
+		],
+		[
+			'background-color',
+			'background-color',
+			'background-color',
+			'--nl-banner-notice-ground',
+		],
+		['color', 'color', 'color', '--nl-banner-notice-ink'],
+	]) {
+		const at = rule.indexOf(`${prop}:var(--thematiq-attention-${role},`)
+		assert.ok(at >= 0, `${prop} reads --thematiq-attention-${role} first`)
+		const value = rule.slice(at, rule.indexOf(';', at))
+		assert.ok(
+			value.includes(
+				`var(--nldesign-website-notice-${notice},var(${fallback}))`,
+			),
+			`${prop} falls back to the notice look: ${value}`,
+		)
+	}
+	assert.doesNotMatch(
+		rule,
+		/--nldesign-website-attention-/,
+		'the strip reads the bridge role, not the set token',
+	)
+})
+
 test('a banner carries a lead and a link, and is a band only when asked', async () => {
 	const html = await renderSfc('src/site/widgets/nlBanner/NlBanner.vue', {
 		kind: 'notice',
