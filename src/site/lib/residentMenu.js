@@ -146,6 +146,9 @@ export function badgeRows(entry, recordRows) {
 	return Array.isArray(rows) ? rows : null
 }
 
+/** The name a portal's layout calls each item by: a section, or `app:page`. */
+const NAMES = new WeakMap()
+
 /**
  * The resident menu in groups: cases and tasks first, then the groups of the
  * contributed pages (a page's declared `group`, shared across apps, else one
@@ -274,9 +277,6 @@ export function residentMenuGroups(
 	return laidOut(groups, layout, t, hrefFor)
 }
 
-/** The name a portal's layout calls each item by: a section, or `app:page`. */
-const NAMES = new WeakMap()
-
 /**
  * The groups in the portal's own layout, when it declares one: each declared
  * group in order with the items it names (`overview` opens `/mijn` itself),
@@ -304,7 +304,11 @@ export function laidOut(groups, layout, t, hrefFor) {
 			}
 		}
 	}
-	const plain = ({ icon, ...rest }) => rest
+	const plain = (item) => {
+		const copy = { ...item }
+		delete copy.icon
+		return copy
+	}
 	const placed = new Set()
 	const out = []
 	layout.forEach((group, index) => {

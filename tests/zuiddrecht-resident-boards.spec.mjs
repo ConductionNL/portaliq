@@ -22,14 +22,15 @@ import { residentMenuGroups } from '../src/site/lib/residentMenu.js'
 import { pageOwnsHeading } from '../src/site/pages/registry.js'
 import { loadSfc, renderComponent, renderSfc } from './support/render-sfc.mjs'
 
-const bundle = (locale) =>
-	JSON.parse(
+function bundle(locale) {
+	return JSON.parse(
 		readFileSync(
 			new URL(`../src/shared/i18n/${locale}.json`, import.meta.url),
 			'utf8',
 		),
 	)
-const translator = (locale) => {
+}
+function translator(locale) {
 	const strings = bundle(locale)
 	// A key the bundle lacks is handed back as it is, placeholders and all,
 	// so the mijn components fall back to their own strings.
@@ -543,8 +544,9 @@ const LAYOUT = [
 	{ title: 'Uw gegevens', items: ['details', 'account'] },
 ]
 
-const names = (groups) =>
-	groups.map((group) => [group.title, group.items.map((item) => item.name)])
+function names(groups) {
+	return groups.map((group) => [group.title, group.items.map((item) => item.name)])
+}
 
 test("the resident menu in the portal's own groups, Overzicht first, nothing unreachable, icons off", () => {
 	const nav = navFor(nl)

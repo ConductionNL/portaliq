@@ -213,6 +213,7 @@ export default {
 			default: '',
 			validator: (value) => DISPLAYS.includes(value),
 		},
+
 		/** The words before the due day on a row ("Uiterlijk klaar op"). */
 		dueLabel: { type: String, default: '' },
 	},
