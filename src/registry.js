@@ -40,7 +40,6 @@
 import StatusBadge from './cellRenderers/StatusBadge.vue'
 import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
-import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import AvailabilityReport from './widgets/AvailabilityReport.vue'
@@ -316,17 +315,6 @@ export default {
 	// PascalCase keys match the manifest's `component` field so the v1
 	// customComponents.js entries work unchanged during the v1 → v2 transition.
 	// -------------------------------------------------------------------------
-
-	/**
-	 * Example custom page. The manifest does NOT reference this by default;
-	 * it is included so the registry's role is visible to first-time cloners.
-	 * Wire it up by adding a type: "custom" page entry to src/manifest.json
-	 * with component: "CustomExample" and a _note field.
-	 */
-	CustomExample: {
-		kind: 'page',
-		component: CustomExample,
-	},
 
 	/**
 	 * The page layout designer — direct-manipulation editing of a portal

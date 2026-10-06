@@ -64,6 +64,19 @@ jobs:
           fi
           echo "No conflict markers."
 
+      # No tracked file matches an ignore rule (#66). A substring glob such as
+      # `**/*references*` once covered lib/Controller/PreferencesController.php:
+      # still tracked, so nothing complained, but any tree rebuilt from a
+      # working copy (re-add, archive) dropped it — and the quality gates
+      # measured a different set of files than the commit holds. The pattern
+      # looks deliberate, so review never catches it; this does, in seconds.
+      #
+      # Pure git, so it belongs here rather than behind a dependency install.
+      # The script carries its own positive control: an empty match list only
+      # counts as a pass once it has proven the ignore rules are loaded.
+      - name: No tracked file matches an ignore rule
+        run: bash scripts/check-gitignore.sh
+
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'

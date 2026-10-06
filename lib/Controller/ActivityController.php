@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\ActivityAttendanceService;
 use OCA\Portaliq\Service\ActivityContributionService;
 use OCA\Portaliq\Service\ActivityDraft;
@@ -53,8 +54,17 @@ use OCP\IUserSession;
  * staff task on an activity (draft, places, sign-ups, roster, attendance,
  * contribution raise) plus the framework types every controller carries;
  * one facade over them would hide which task each endpoint runs.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the tenth dependency is
+ * ActionAuthService, the ADR-023 check every staff method runs first
+ * (portal.manage-activity); the other nine are the services above.
  */
 class ActivityController extends Controller {
+	/**
+	 * The ADR-023 action every staff method is gated by (author, open, close, staff and roster an activity).
+	 */
+	public const ACTION = 'portal.manage-activity';
+
 	/**
 	 * HTTP status per attendance refusal.
 	 */
@@ -92,6 +102,7 @@ class ActivityController extends Controller {
 	 * @param ActivityRoster $rosters The staff roster.
 	 * @param ActivityContributionService $contributions Raises the contribution per confirmed
 	 *                                                   place through shillinq (activity-offer-contract-fix).
+	 * @param ActionAuthService $actionAuth Decides whether this staff user may manage activities (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -103,6 +114,7 @@ class ActivityController extends Controller {
 		private readonly ActivityDraft $drafts,
 		private readonly ActivityRoster $rosters,
 		private readonly ActivityContributionService $contributions,
+		private readonly ActionAuthService $actionAuth,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -113,13 +125,16 @@ class ActivityController extends Controller {
 	 *
 	 * @return string The staff member's user id.
 	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
+	 *                               user's groups do not hold self::ACTION.
 	 */
 	private function requireAuthenticatedStaff(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSForbiddenException('Authentication required');
 		}
+
+		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
 
 		return $user->getUID();
 	}//end requireAuthenticatedStaff()

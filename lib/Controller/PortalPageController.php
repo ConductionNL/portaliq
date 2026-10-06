@@ -535,15 +535,15 @@ class PortalPageController extends Controller {
 	 * an unthemed portal would quietly restyle a page that must render
 	 * unstyled, and an unthemed page names no bundled family.
 	 *
-	 * @return array{bridge: string, fonts: string, logoInverse: string, emblem: string} The stylesheets
-	 *         (relative to the theme app's `css/`) and the two logo variants (absolute).
+	 * @return array{bridge: string, fonts: string, logoInverse: string, emblem: string, emblemGrey: string} The stylesheets
+	 *         (relative to the theme app's `css/`) and the logo variants (absolute).
 	 *
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
 	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	private function siteThemeAppSheets(): array {
-		$none = ['bridge' => '', 'fonts' => '', 'logoInverse' => '', 'emblem' => ''];
+		$none = ['bridge' => '', 'fonts' => '', 'logoInverse' => '', 'emblem' => '', 'emblemGrey' => ''];
 		if ($this->siteThemeStylesheet() === '') {
 			return $none;
 		}
@@ -557,6 +557,9 @@ class PortalPageController extends Controller {
 				// a watermark, absolute, or '' (site-chrome-follows-the-design).
 				'logoInverse' => $this->siteThemeLogoUrl(variant: 'dark'),
 				'emblem'      => $this->siteThemeLogoUrl(variant: 'emblem'),
+				// The emblem in grey, for a set whose watermark carries no
+				// tint, or '' (example-site-zuiddrecht).
+				'emblemGrey'  => $this->siteThemeLogoUrl(variant: 'emblem-grey'),
 			];
 		} catch (\Throwable) {
 			return $none;
@@ -587,7 +590,7 @@ class PortalPageController extends Controller {
 	 * footer band, or `emblem`, the mark for a watermark; '' when the set
 	 * ships none.
 	 *
-	 * @param string $variant '' for the logo, else `dark` or `emblem`.
+	 * @param string $variant '' for the logo, else `dark`, `emblem` or `emblem-grey`.
 	 *
 	 * @return string An absolute URL, or '' when there is no logo to serve.
 	 *

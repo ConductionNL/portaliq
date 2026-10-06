@@ -15,7 +15,7 @@ context: |
     registry, unified inbox, documents, WOO SPA, admin settings
   Database: PostgreSQL (via OpenRegister's ObjectService)
   Mount path: /var/www/html/custom_apps/portaliq
-  Nextcloud: min-version 32, max-version 34
+  Nextcloud: min-version 32, max-version 35
 
   Architecture:
     Pattern: Thin client — Portaliq owns no database tables

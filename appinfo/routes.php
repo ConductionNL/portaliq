@@ -120,6 +120,8 @@ return [
         // The news staff put on this portal's public website (site-school-blocks).
         ['name' => 'contentNews#index', 'url' => '/api/content/news', 'verb' => 'GET'],
         ['name' => 'contentNews#show', 'url' => '/api/content/news/{id}', 'verb' => 'GET'],
+        // A portal's public catalogue: its news and every app's public index (portal-public-catalogue).
+        ['name' => 'contentCatalogue#index', 'url' => '/api/content/catalogue', 'verb' => 'GET'],
         [
             'name' => 'content#page',
             'url' => '/api/content/page/{route}',

@@ -580,7 +580,7 @@ owns the attach and is the only writer on this path.
 - WHEN the subject uploads a file through the portal's upload block
 - THEN the file is attached to that object via OR's file service
 - AND the upload block reports the attachment and the file appears on the row
-- @e2e exclude A Playwright test for exactly this flow EXISTS and passes locally — tests/e2e/portal-document-download.spec.ts `a subject downloads a file on a row they own` drives the upload block and proves the attach by downloading the file back — but CI does not run it: tests/e2e/playwright.config.ts grepInverts it by title while ConductionNL/portaliq#29 is open (OpenRegister's FileService::addFile has no _rbac parameter, so a portal subject cannot materialise the register folder). Tagging that test would satisfy gate-19 while nothing executed — measured on hydra-gates @94c855b, the count moves 47 to 46 on the tag alone, because gate-19 honours testIgnore but not grepInvert. Replace this exclude with the @e2e reference when #29 closes and the grepInvert is deleted.
+- Covered end to end by `tests/e2e/portal-document-download.spec.ts` ("a subject downloads a file on a row they own", anchored with `@e2e`): it uploads through the detail card's upload block on an owned row, waits for the block's confirmation, and finds the file in the row's download list.
 
 #### Scenario: A non-opted-in collection and a foreign id both refuse before any write
 
@@ -750,7 +750,7 @@ property is an array, else as the only value. A field already holding 20
 references SHALL refuse with 409.
 
 #### Scenario: A pupil attaches work to the submission they just created
-@e2e exclude {the attach reaches OpenRegister's FileService, which fails on a fresh CI instance (portaliq#29, the same reason tests/e2e/portal-document-download.spec.ts is grep-inverted); asserted in tests/Unit/Controller/PortalFieldFileControllerTest.php::testUploadAttachesAndAppendsTheReference}
+@e2e exclude {no contribution on the e2e instance declares a `type: file` field (the demo register ships none), so there is no live form to drive this endpoint through; asserted in tests/Unit/Controller/PortalFieldFileControllerTest.php::testUploadAttachesAndAppendsTheReference}
 
 - **GIVEN** a create action `createSubmission` with file field `attachmentRefs` (`multiple: true`) and a submission the subject created a minute ago holding `["4702"]`
 - **WHEN** the subject uploads `essay.pdf` naming `action=createSubmission`
@@ -782,7 +782,7 @@ upload endpoint. When a file does not attach, the form SHALL keep the created
 record and SHALL name the files that did not attach.
 
 #### Scenario: The form renders a picker, not a text box
-@e2e exclude {rendered with react-dom/server in tests/schema-form-file-field.spec.mjs::renders a file input for a file field; a live portal run needs a working attach (portaliq#29)}
+@e2e exclude {rendered with react-dom/server in tests/schema-form-file-field.spec.mjs::renders a file input for a file field; no contribution on the e2e instance declares a `type: file` field, so a live portal has no such form to render}
 
 - **GIVEN** an action whose `attachmentRefs` is a file field with `multiple: true` and `accept: [".pdf"]`
 - **WHEN** the form renders
