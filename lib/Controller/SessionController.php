@@ -262,6 +262,8 @@ class SessionController extends Controller {
 	 *                                into, so a mode it does not declare
 	 *                                cannot be used against it.
 	 * @param OrganisationLoginConfig|null $loginConfig The route per provider
+	 * @param ExampleResidentRecord|null $exampleResidents The example resident install records, for the one-click demo sign-in.
+	 * @param ExampleResidentCatalogue|null $exampleCatalogue The shipped example residents.
 	 *                                                  (signin-integriq-broker-login).
 	 */
 	public function __construct(
@@ -944,13 +946,19 @@ class SessionController extends Controller {
 			return '';
 		}
 
-		$declared = $this->exampleCatalogue->find(id: $id);
-		$record   = $this->exampleResidents->read(id: $id);
+		try {
+			$declared = $this->exampleCatalogue->find(id: $id);
+			$record   = $this->exampleResidents->read(id: $id);
+			$site     = $this->portalFor(slug: $portal);
+		} catch (\Throwable) {
+			// A record, declaration or portal that cannot be read is no door.
+			return '';
+		}
+
 		if ($declared === null || $record['userId'] === '' || $portal === '' || (string)($declared['portal'] ?? '') !== $portal) {
 			return '';
 		}
 
-		$site  = $this->portalFor(slug: $portal);
 		$modes = ($site['authentication']['modes'] ?? []);
 		if ($site === null || (string)($site['slug'] ?? '') !== $portal
 			|| is_array($modes) === false || in_array(needle: 'nextcloud', haystack: $modes, strict: true) === false
