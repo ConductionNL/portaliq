@@ -1,7 +1,7 @@
 # Tasks: home-and-theme-landing-pages
 
 Wave 2. Rows 6.20, 6.23 and the portaliq half of 6.28. Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+`openspec/woo-build-rules.md`.
 
 **Before starting**, read opencatalogi's `subjects-as-first-class-records` on `development`. If it is
 not merged, sections 2 and 3 cannot be proven live; build section 1 and 4 first and stop there, and
@@ -63,7 +63,7 @@ say so in the PR body. Write in the PR body the exact keys the merged routes ans
   `npm run check:specs` and `npm run build:site` (the entry budget), plus any other leg
   `code-quality.yml` requires. Then hydra's `scripts/run-hydra-gates.sh --base origin/development`;
   count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 6.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
 - [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 6.20 and 6.23 then read `yes` (build); 6.28 when opencatalogi's half is
   merged too. `production` only with a store release.

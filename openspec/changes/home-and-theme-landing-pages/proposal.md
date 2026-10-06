@@ -15,6 +15,17 @@ Woo capability programme, round 1, wave 2. Rows 6.20 and 6.23, and the portaliq 
 
 No Ruben decision governs these rows.
 
+## Summary
+
+Give each subject a landing page with an image, a description and its publications, show live counts on the home page that link into a filtered search, and feature subjects on the home page.
+
+- Rows: 6.20 "A theme or topic has a landing page with an image, a description and its publications", 6.23 "The portal shows live counts of what it holds, each linking into a filtered search", and the portaliq half of 6.28 (none statutory).
+- Wave: 2.
+- Depends on: `opencatalogi/subjects-as-first-class-records` (https://github.com/ConductionNL/opencatalogi/issues/1764) and `portaliq/portal-federated-search` (https://github.com/ConductionNL/portaliq/issues/1224).
+- Decision: no Ruben decision governs these rows.
+
+Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 What portaliq does today, read on `development` at ca591037:
