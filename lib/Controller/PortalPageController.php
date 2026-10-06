@@ -50,6 +50,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\Site\SiteLocale;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\AppFramework\Controller;
@@ -357,12 +358,9 @@ class PortalPageController extends Controller {
 
 
 	/**
-	 * The visitor's language held against the languages the serving portal
-	 * declares (`locales`). A portal that declares only `nl` serves `nl` to a
-	 * browser that asks for English: the document language, and so every
-	 * date the widgets print, follow the portal, not the browser. A portal
-	 * that declares nothing, or that cannot be resolved, serves what the
-	 * visitor asked for, as before.
+	 * The visitor's language held to the portal's declared locales
+	 * (SiteLocale). A portal that cannot be resolved serves what the visitor
+	 * asked for, as before.
 	 *
 	 * @param string $locale The visitor's language, never empty.
 	 *
@@ -374,28 +372,10 @@ class PortalPageController extends Controller {
 		try {
 			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $this->requestedPortalSlug());
 		} catch (\Throwable) {
-			return $locale;
+			$portal = null;
 		}
 
-		$declared = [];
-		foreach ((array)($portal['locales'] ?? []) as $candidate) {
-			if (is_string($candidate) === true && trim($candidate) !== '') {
-				$declared[] = strtolower(trim($candidate));
-			}
-		}
-
-		if ($declared === []) {
-			return $locale;
-		}
-
-		$base = strtolower(substr($locale, 0, 2));
-		foreach ($declared as $candidate) {
-			if ($candidate === strtolower($locale) || substr($candidate, 0, 2) === $base) {
-				return $locale;
-			}
-		}
-
-		return $declared[0];
+		return SiteLocale::forPortal(portal: $portal, locale: $locale);
 	}//end localeThePortalServes()
 
 
