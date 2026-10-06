@@ -146,6 +146,7 @@ class PublicCatalogueTest extends TestCase {
 		$words = $catalogue->run($items, ['q' => 'WARMTEPOMP inbedrijfstelling']);
 		$this->assertSame(['learniq:c3'], array_column($words['items'], 'id'), 'every word, any case');
 		$this->assertSame(1, $catalogue->run($items, ['q' => 'herhaling', 'types' => ['course']])['total']);
+		$this->assertSame(1, $catalogue->run($items, ['q' => 'één dag', 'types' => ['course']])['total'], 'accents do not matter');
 	}
 
 	public function testUpcomingSortAndPages(): void {

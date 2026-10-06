@@ -30,15 +30,22 @@ namespace OCA\Portaliq\Service;
  * Searches, filters, sorts and pages catalogue items.
  *
  * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
- *
- * @SuppressWarnings(PHPMD.StaticAccess) -- \Normalizer::normalize, PHP's own
- * Unicode normaliser, to fold accents away before matching.
  */
 class PublicCatalogueQuery {
 	/**
 	 * The most results one page shows.
 	 */
 	public const MAX_PAGE = 50;
+
+	/**
+	 * The accented letters of the languages a portal is written in, and the
+	 * plain letter a search matches them by.
+	 */
+	private const ACCENTS = [
+		'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a', 'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+		'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i', 'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
+		'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u', 'ç' => 'c', 'ñ' => 'n', 'ĳ' => 'ij',
+	];
 
 	/**
 	 * The sorts a visitor may choose.
@@ -116,15 +123,7 @@ class PublicCatalogueQuery {
 	 * @return string
 	 */
 	private function fold(string $text): string {
-		$text = mb_strtolower($text);
-		if (class_exists(\Normalizer::class) === true) {
-			$decomposed = \Normalizer::normalize($text, \Normalizer::FORM_D);
-			if (is_string($decomposed) === true) {
-				$text = (string)preg_replace('/\p{Mn}+/u', '', $decomposed);
-			}
-		}
-
-		return $text;
+		return strtr(mb_strtolower($text), self::ACCENTS);
 	}//end fold()
 
 	/**
