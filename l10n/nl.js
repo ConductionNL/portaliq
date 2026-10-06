@@ -2297,7 +2297,8 @@ OC.L10N.register(
         "The role of that staff member in words, such as Mentor.": "De rol van die medewerker in woorden, zoals Mentor.",
         "The subject line of the conversation.": "De onderwerpregel van het gesprek.",
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "De woorden die dat record noemen, overgenomen als het gesprek begint, zoals Vera, Groep 7.",
-        "With": "Met"
+        "With": "Met",
+        "Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
     },
     "nplurals=2; plural=(n != 1);"
 )

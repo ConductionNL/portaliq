@@ -293,7 +293,7 @@ class PortalPageControllerTest extends TestCase {
 		$signin = $controller->site()->getParams()['portalConfig']['signin'];
 
 		$this->assertSame(
-			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => []],
+			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => [], 'exampleResident' => ''],
 			actual: $signin
 		);
 
@@ -395,6 +395,28 @@ class PortalPageControllerTest extends TestCase {
 
 	}//end testSiteAlwaysPassesANonEmptyLocale()
 
+
+	/**
+	 * site-matches-the-zuiddrecht-boards: the document language follows the
+	 * portal. A portal that declares only `nl` serves `nl` to a browser that
+	 * asks for English; a portal that declares `en` as well serves the English
+	 * the browser asked for; a portal that declares nothing serves what the
+	 * browser asked for, as before.
+	 *
+	 * @return void
+	 */
+	public function testSiteLocaleFollowsThePortalsDeclaredLocales(): void {
+		$dutchOnly = $this->controller(orgSlug: '', portal: ['slug' => 'zuiddrecht', 'locales' => ['nl']], acceptLanguage: 'en-US,en;q=0.9');
+		$this->assertSame(expected: 'nl', actual: $dutchOnly->site()->getParams()['locale']);
+
+		$both = $this->controller(orgSlug: '', portal: ['slug' => 'zuiddrecht', 'locales' => ['nl', 'en']], acceptLanguage: 'en-US,en;q=0.9');
+		$this->assertSame(expected: 'en-US', actual: $both->site()->getParams()['locale']);
+
+		$undeclared = $this->controller(orgSlug: '', portal: ['slug' => 'open-tilburg'], acceptLanguage: 'en-US,en;q=0.9');
+		$this->assertSame(expected: 'en-US', actual: $undeclared->site()->getParams()['locale']);
+
+	}//end testSiteLocaleFollowsThePortalsDeclaredLocales()
+
 	/**
 	 * site-page-seo-history-and-media REQ-SPH-002: the served head carries the
 	 * page's search title, description and robots, without JavaScript.
@@ -472,7 +494,8 @@ class PortalPageControllerTest extends TestCase {
 		string $portalParam = '',
 		?array $byOrganisation = null,
 		bool $byOrganisationThrows = false,
-		?PortalNoticeReader $notices = null
+		?PortalNoticeReader $notices = null,
+		string $acceptLanguage = ''
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
@@ -483,7 +506,9 @@ class PortalPageControllerTest extends TestCase {
 				default => $default,
 			}
 		);
-		$request->method('getHeader')->willReturn('');
+		$request->method('getHeader')->willReturnCallback(
+			fn (string $name) => ($name === 'Accept-Language' ? $acceptLanguage : '')
+		);
 		$request->method('getRequestUri')->willReturn($requestUri);
 
 		$default = [
@@ -545,6 +570,11 @@ class PortalPageControllerTest extends TestCase {
 		// parameters above let a single test opt into the resolved path or the
 		// throwing one, which is what the callers below exercise.
 		$portalResolver = $this->createMock(PortalResolver::class);
+		// The rule itself is PortalResolverTest's; here only the wiring: the
+		// controller hands the resolved portal and the visitor's language over.
+		$portalResolver->method('localeFor')->willReturnCallback(
+			fn (?array $portal, string $locale) => (($portal['locales'] ?? []) === ['nl'] ? 'nl' : $locale)
+		);
 		if ($portalResolverThrows === true) {
 			$portalResolver->method('resolve')
 				->willThrowException(new \RuntimeException('unknown host'));

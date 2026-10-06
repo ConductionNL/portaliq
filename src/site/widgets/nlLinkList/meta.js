@@ -18,7 +18,13 @@ export const metaOf = {
 	synonyms: ['links', 'verwijzingen', 'menu', 'handige links', 'doorverwijzingen'],
 	fields: [
 		{ name: 'heading', kind: 'string', label: 'Kop boven de lijst' },
+		{ name: 'intro', kind: 'text', label: 'Regel onder de kop' },
 		{ name: 'links', kind: 'json', label: 'Links (tekst, adres, uitleg)' },
+		{
+			name: 'display',
+			kind: 'string',
+			label: 'Weergave: plain, card of accent',
+		},
 	],
 	defaultSize: { gridWidth: 4, gridHeight: 3 },
 	scope: 'public',

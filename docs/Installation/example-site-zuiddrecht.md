@@ -92,6 +92,16 @@ The command reads the instance back like the site install does, and exits 2 when
 
 Only the example resident. The mode `nextcloud` mints a portal session for a Nextcloud account that has an active portal account under the same id, and the install makes exactly one. Other Nextcloud accounts on the instance get "no_portal_account" and nothing else. The account is a full Nextcloud account, though: it can open Files and the other apps. Keep it to a demo or test instance, and remove it when the demo is over.
 
+### One click on a demo
+
+On a demo the Nextcloud form is one step too many. Switch the one-click sign-in on:
+
+```bash
+occ config:app:set portaliq example_resident_demo_login --value=yes
+```
+
+The card "Voorbeeldinwoner" then signs the visitor in as the example resident with one click, no form, and says "Alleen op deze demo" under its button. It works only for the installed example resident, on its own site, while its portal account is active; the route (`/portal/api/session/example-resident`) answers 404 to everything else, is rate limited like the test sign-in, and `debug` mode does not open it. "Uitloggen" ends the portal session as always. Switch it off again with `occ config:app:set portaliq example_resident_demo_login --value=no`, and the card goes back to the Nextcloud form.
+
 ### Why not the test sign-in
 
 Portaliq also has a test sign-in, `POST /portal/api/session/dev-login`, which the site offers as the button "Dev-login (test)". It is closed unless the instance runs in `debug` mode or an administrator sets `occ config:app:set portaliq dev_login_enabled --value=yes`. While it is open, anyone who can reach the instance can mint a session for any subject reference without a password, so never switch it on for a site real residents use, and know that `debug` mode opens it too. The button in the site always signs in as `dev-supplier`, not as a named resident. The example resident does not need it.
@@ -109,6 +119,10 @@ Remove the resident before you remove the site.
 ## What is and is not in the site
 
 - The header, footer, home page and the page "Afval scheiden en ophalen" follow the Zuiddrecht design. The other pages are short, so that no link is dead.
+- The home page and the content page use the drawn options the design asks for: the "Let op" strip over the whole width with its link, the search on the band with "Veel gezocht", the task tiles with the design's own icons (three columns, a plain list of six on a phone), the "Openbare informatie" card, the grey "Bestuur en organisatie" band, the postcode form, the boxed table and the button with an arrow. Every option is a block property any page can use; a page that names none of them looks as it did.
+- The breadcrumb uses the menu's own words for a page the menu names ("Home › Afval").
+- The site is served in the portal's language. A browser that asks for English on a portal that declares only Dutch gets Dutch, dates included.
+- Two optional theme tokens set the size of a content page's title (`--nldesign-website-page-title-size`) and the hero watermark's opacity (`--nldesign-website-hero-decoration-opacity`); the site renders without them.
 - "Woo-publicaties" and the search box open `/zoeken`, with the search block every portal can place. It finds publications when OpenCatalogi is installed.
 - Phone numbers and addresses read `[telefoonnummer]`, `[e-mailadres]` and `[adres]`. Zuiddrecht has none.
 

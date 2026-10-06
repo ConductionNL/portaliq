@@ -213,17 +213,42 @@ function linksOf(site) {
 		for (const widget of page.body.widgets || []) {
 			const props = widget.props || {}
 			const where = `page ${page.route} widget ${widget.id}`
-			for (const key of ['href', 'moreHref', 'articleRoute', 'signInHref']) {
+			for (const key of [
+				'href',
+				'moreHref',
+				'articleRoute',
+				'signInHref',
+				'linkHref',
+			]) {
 				if (props[key]) {
 					links.push({ href: props[key], where: `${where} ${key}` })
 				}
 			}
-			for (const key of ['items', 'links', 'actions', 'buttons']) {
+			for (const key of [
+				'items',
+				'links',
+				'actions',
+				'buttons',
+				'popularLinks',
+			]) {
 				for (const entry of Array.isArray(props[key]) ? props[key] : []) {
 					if (entry && entry.href) {
 						links.push({
 							href: entry.href,
 							where: `${where} ${key} "${entry.label}"`,
+						})
+					}
+				}
+			}
+			// The link columns' links (site-matches-the-zuiddrecht-boards).
+			for (const column of Array.isArray(props.columns) ? props.columns : []) {
+				for (const entry of Array.isArray(column?.links)
+					? column.links
+					: []) {
+					if (entry && entry.href) {
+						links.push({
+							href: entry.href,
+							where: `${where} column "${column.title}" "${entry.label}"`,
 						})
 					}
 				}

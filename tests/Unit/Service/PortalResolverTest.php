@@ -685,4 +685,43 @@ class PortalResolverTest extends TestCase {
 	}//end testAnOrganisationLookupFailsClosed()
 
 
+
+	/**
+	 * A portal that declares only Dutch serves Dutch to a browser that asks for English.
+	 *
+	 * @return void
+	 */
+	public function testADutchOnlyPortalServesDutch(): void {
+		$this->assertSame(expected: 'nl', actual: $this->resolver->localeFor(portal: ['locales' => ['nl']], locale: 'en-US'));
+
+	}//end testADutchOnlyPortalServesDutch()
+
+
+	/**
+	 * A declared language is served as the browser asked for it, region included.
+	 *
+	 * @return void
+	 */
+	public function testADeclaredLanguageIsServedAsAsked(): void {
+		$this->assertSame(expected: 'en-US', actual: $this->resolver->localeFor(portal: ['locales' => ['nl', 'en']], locale: 'en-US'));
+		$this->assertSame(expected: 'nl', actual: $this->resolver->localeFor(portal: ['locales' => ['NL ', '']], locale: 'nl'));
+
+	}//end testADeclaredLanguageIsServedAsAsked()
+
+
+	/**
+	 * No portal, or no declared locales: the browser's language, as before.
+	 *
+	 * @return void
+	 */
+	public function testAnUndeclaredPortalServesWhatWasAsked(): void {
+		$this->assertSame(expected: 'en-US', actual: $this->resolver->localeFor(portal: null, locale: 'en-US'));
+		$this->assertSame(expected: 'de', actual: $this->resolver->localeFor(portal: ['locales' => []], locale: 'de'));
+		$this->assertSame(
+			expected: 'nl',
+			actual: $this->resolver->localeFor(portal: ['locales' => 'nl'], locale: 'de'),
+			message: 'one declared string counts as a list'
+		);
+
+	}//end testAnUndeclaredPortalServesWhatWasAsked()
 }//end class

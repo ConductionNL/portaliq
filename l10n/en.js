@@ -2232,7 +2232,8 @@ OC.L10N.register(
         "The role of that staff member in words, such as Mentor.": "The role of that staff member in words, such as Mentor.",
         "The subject line of the conversation.": "The subject line of the conversation.",
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "The words that name that record, copied when the thread is started, such as Vera, Groep 7.",
-        "With": "With"
+        "With": "With",
+        "Only on this demo. No password is asked.": "Only on this demo. No password is asked."
     },
     "nplurals=2; plural=(n != 1);"
 )

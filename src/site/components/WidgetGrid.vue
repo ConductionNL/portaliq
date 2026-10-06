@@ -73,7 +73,7 @@ import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { withoutStyling } from '../lib/blockProps.js'
-import { cellStyle, runsFor } from '../lib/gridPlacement.js'
+import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
 
 /**
@@ -386,7 +386,7 @@ export default {
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
 		 */
 		runs() {
-			return runsFor(this.widgets, (key) => this.isBand(key))
+			return runsFor(this.widgets, (key, widget) => this.isBand(key, widget))
 		},
 	},
 
@@ -398,13 +398,17 @@ export default {
 		 * upstream arrives with its layout contract instead of needing this app
 		 * to learn about it separately.
 		 *
+		 * This app's own bands (ownBand) are answered here as well.
+		 *
 		 * @param {string} key The registry key.
+		 * @param {object} [widget] The placement, for a band that is one on request.
 		 * @return {boolean} True when it must not be wrapped in a grid cell.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-link-columns-draw-a-heading-over-columns-of-links-on-a-band
 		 */
-		isBand(key) {
-			return siteBlockIsBand(key)
+		isBand(key, widget) {
+			return siteBlockIsBand(key) || ownBand(key, widget)
 		},
 
 		/**

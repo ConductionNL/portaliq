@@ -396,5 +396,7 @@
 	"{count} new": "{count} nieuw",
 	"{count} open": "{count} open",
 	"One less": "Eén minder",
-	"One more": "Eén meer"
+	"One more": "Eén meer",
+	"Download": "Downloaden",
+	"Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
 }

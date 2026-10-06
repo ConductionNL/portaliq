@@ -4,7 +4,10 @@
   -->
 
 <template>
-	<section class="pq-search" data-testid="federated-search">
+	<section
+		class="pq-search"
+		:class="{ 'pq-search--plain': variant === 'plain' }"
+		data-testid="federated-search">
 		<!--
 			OPTIONAL, and empty by default.
 
@@ -497,6 +500,17 @@ export default {
 		submitLabel: {
 			type: String,
 			default: 'Zoeken',
+		},
+
+		/**
+		 * `reference` (the opencatalogi.nl card look) or `plain`: the form on
+		 * the page with input and button joined, the filters in a column on
+		 * the left whether or not the API returned buckets, bordered result
+		 * cards (site-matches-the-zuiddrecht-boards, board Zoeken).
+		 */
+		variant: {
+			type: String,
+			default: 'reference',
 		},
 
 		/** Heading above the facet column. */

@@ -24,6 +24,7 @@ export const metaOf = {
 			kind: 'string',
 			label: 'Soort: primary, secondary of subtle',
 		},
+		{ name: 'icon', kind: 'string', label: 'Icoon: none of chevron' },
 	],
 	defaultSize: { gridWidth: 3, gridHeight: 1 },
 	scope: 'public',
