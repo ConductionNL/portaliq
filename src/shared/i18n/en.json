@@ -394,5 +394,7 @@
 	"Your account is already linked in another way. Contact the organisation that invited you.": "Your account is already linked in another way. Contact the organisation that invited you.",
 	"Search": "Search",
 	"{count} new": "{count} new",
-	"{count} open": "{count} open"
+	"{count} open": "{count} open",
+	"One less": "One less",
+	"One more": "One more"
 }

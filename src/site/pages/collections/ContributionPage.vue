@@ -299,6 +299,21 @@
 				:t="tr"
 				:locale="lang" />
 
+			<!-- One day as a timetable (calendar-timetable-display). -->
+			<TimetableDay
+				v-else-if="
+					item.kind === 'calendar' && item.block.display === 'timetable'
+				"
+				:items="calendarOf(item)"
+				:range="item.block.range || 'day'"
+				:firstLabel="item.block.firstLabel || ''"
+				:loading="calendarLoading(item)"
+				:label="item.block.label || ''"
+				:level="sectionLevel"
+				:today="today || undefined"
+				:t="tr"
+				:locale="lang" />
+
 			<!-- The same items as date tiles (site-school-blocks). -->
 			<CalendarTiles
 				v-else-if="
@@ -562,6 +577,7 @@ export default {
 		SegmentedFigure: defineAsyncComponent(mijnBlocks.segments),
 		GreetingBlock: defineAsyncComponent(mijnBlocks.greeting),
 		CalendarTiles: defineAsyncComponent(mijnBlocks.calendarTiles),
+		TimetableDay: defineAsyncComponent(mijnBlocks.timetable),
 	},
 
 	// The shell hands every page the whole contract (session, portal, nav, …);

@@ -2286,7 +2286,18 @@ OC.L10N.register(
         "Group title": "Groepstitel",
         "The heading over this group of the menu, such as Zaken en taken.": "De kop boven deze groep van het menu, zoals Zaken en taken.",
         "Group items": "Onderdelen van de groep",
-        "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.": "De onderdelen in deze groep, op volgorde, elk op naam: een sectie van de eigen omgeving of een bijgedragen pagina als app:page."
+        "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.": "De onderdelen in deze groep, op volgorde, elk op naam: een sectie van de eigen omgeving of een bijgedragen pagina als app:page.",
+        "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).": "Op een lijstblok: kaarten, rijen met datum, balken of cijferlabels in plaats van een tabel; bij taken de uitgelichte kaart; bij kerncijfers één verdeelde balk; bij de kalender datumtegels (site-school-blocks) of één dag als rooster (calendar-timetable-display).",
+        "On a timetable: the small label over the first item of the day.": "Op een rooster: het kleine label boven het eerste onderdeel van de dag.",
+        "firstLabel": "firstLabel",
+        "About": "Over",
+        "About record": "Gaat over",
+        "The name of the staff member, copied from the contact the app named when the thread was started.": "De naam van de medewerker, overgenomen van het contact dat de app noemde toen het gesprek begon.",
+        "The resident's own record this conversation is about, such as a child's enrolment (site-messages-per-record). Proven by MessageContactReader when the thread is started.": "Het eigen record van de inwoner waar dit gesprek over gaat, zoals de inschrijving van een kind (site-messages-per-record). Gecontroleerd door MessageContactReader als het gesprek begint.",
+        "The role of that staff member in words, such as Mentor.": "De rol van die medewerker in woorden, zoals Mentor.",
+        "The subject line of the conversation.": "De onderwerpregel van het gesprek.",
+        "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "De woorden die dat record noemen, overgenomen als het gesprek begint, zoals Vera, Groep 7.",
+        "With": "Met"
     },
     "nplurals=2; plural=(n != 1);"
 )

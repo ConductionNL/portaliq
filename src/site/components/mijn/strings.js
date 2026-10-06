@@ -14,6 +14,17 @@
 
 export default {
 	nl: {
+		// calendar-timetable-display
+		'Choose a day': 'Kies een dag',
+		'Nothing on the timetable this day.':
+			'Op deze dag staat niets op het rooster.',
+		'Break, {minutes} minutes': 'Pauze, {minutes} minuten',
+		Cancelled: 'Vervalt',
+		'1 lesson': '1 lesuur',
+		'{count} lessons': '{count} lesuren',
+		'1 change': '1 wijziging',
+		'{count} changes': '{count} wijzigingen',
+		'done at {time}': 'uit om {time} uur',
 		// site-school-blocks
 		Open: 'Openen',
 		'Nothing here yet.': 'Hier staat nog niets.',
@@ -93,6 +104,16 @@ export default {
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		// calendar-timetable-display
+		'Choose a day': 'Choose a day',
+		'Nothing on the timetable this day.': 'Nothing on the timetable this day.',
+		'Break, {minutes} minutes': 'Break, {minutes} minutes',
+		Cancelled: 'Cancelled',
+		'1 lesson': '1 lesson',
+		'{count} lessons': '{count} lessons',
+		'1 change': '1 change',
+		'{count} changes': '{count} changes',
+		'done at {time}': 'done at {time}',
 		// site-school-blocks
 		Open: 'Open',
 		'Nothing here yet.': 'Nothing here yet.',

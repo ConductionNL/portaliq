@@ -320,6 +320,42 @@ function itemOf(data, fields, kind, key) {
 		meta: typeof meta === 'string' ? meta.trim() : '',
 		kind: kind || '',
 		allDay: DATE_ONLY.test(String(data[fields.startField])),
+		...timetableParts(data, fields),
+	}
+}
+
+/**
+ * The parts a timetable draws (calendar-timetable-display): a third line, the
+ * word of a change (the source's `statusLabels`, from the collection's value
+ * labels: a value without a word draws no pill) and whether the row is
+ * cancelled (`cancelledWhen`).
+ *
+ * @param {object} data The row or element.
+ * @param {object} fields The source.
+ * @return {{note: string, status: string, cancelled: boolean}}
+ * @spec openspec/changes/calendar-timetable-display/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-may-draw-a-day-as-a-timetable
+ */
+export function timetableParts(data, fields) {
+	const note = fields.noteField ? data[fields.noteField] : ''
+	const value = fields.statusField ? data[fields.statusField] : null
+	const labels = fields.statusLabels
+	const word =
+		(typeof value === 'string' || typeof value === 'number')
+		&& labels
+		&& typeof labels === 'object'
+		&& Object.hasOwn(labels, String(value))
+			? labels[String(value)]
+			: ''
+	const rule = fields.cancelledWhen
+	const cancelled = Boolean(
+		rule
+		&& Array.isArray(rule.in)
+		&& rule.in.includes(String(data[rule.field] ?? '')),
+	)
+	return {
+		note: typeof note === 'string' ? note.trim() : '',
+		status: typeof word === 'string' ? word.trim() : '',
+		cancelled,
 	}
 }
 
