@@ -30,4 +30,6 @@ export const blocks = {
 	segments: () => import('./SegmentedFigure.vue'),
 	greeting: () => import('./GreetingBlock.vue'),
 	calendarTiles: () => import('./CalendarTiles.vue'),
+	// calendar-timetable-display
+	timetable: () => import('./TimetableDay.vue'),
 }
