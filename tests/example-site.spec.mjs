@@ -714,5 +714,5 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'rows',
 	])
 	assert.equal(portal.version, '0.12.0')
-	assert.equal(register.info.version, '0.67.0')
+	assert.equal(register.info.version, '0.69.0')
 })
