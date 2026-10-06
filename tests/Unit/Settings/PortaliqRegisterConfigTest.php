@@ -419,7 +419,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.11.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
+		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()
