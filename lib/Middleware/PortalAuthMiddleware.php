@@ -50,6 +50,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Middleware;
 use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\IL10N;
 use OCP\IRequest;
 use Throwable;
 
@@ -77,11 +78,13 @@ class PortalAuthMiddleware extends Middleware {
 	 * @param PortalContributionRegistry $registry Resolves the anonymous-reachable
 	 *                                             surface
 	 *                                             (portal-page-provisioning).
+	 * @param IL10N $l10n Localises the message of a refused staff action.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly PortalContributionRegistry $registry,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -206,9 +209,10 @@ class PortalAuthMiddleware extends Middleware {
 	 * They extend the plain Controller, not OCSController, so Nextcloud's
 	 * OCSMiddleware rethrows it and, unhandled, it ends as a 500 page and an
 	 * error-level log line for every signed-in user without the action. This
-	 * maps it to the same `{"error": "forbidden"}` 403 that PollController
-	 * and EmergencyPushController return. Portaliq has no OCSController, so
-	 * no OCS envelope is replaced.
+	 * maps it to a 403 with the ADR-050 error envelope: a localised
+	 * `message` plus the `forbidden` slug that PollController and
+	 * EmergencyPushController already return as `error`. Portaliq has no
+	 * OCSController, so no OCS envelope is replaced.
 	 *
 	 * @param object $controller The controller being dispatched.
 	 * @param string $methodName The method being invoked.
@@ -232,7 +236,13 @@ class PortalAuthMiddleware extends Middleware {
 		}
 
 		if ($exception instanceof OCSForbiddenException) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+			return new JSONResponse(
+				[
+					'message' => $this->l10n->t('You are not allowed to do this. Ask an administrator for access.'),
+					'error' => 'forbidden',
+				],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		throw $exception;

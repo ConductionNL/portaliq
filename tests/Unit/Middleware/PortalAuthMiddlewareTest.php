@@ -15,6 +15,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -141,7 +142,13 @@ class PortalAuthMiddlewareTest extends TestCase {
 
 		$this->assertInstanceOf(JSONResponse::class, $response);
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-		$this->assertSame(['error' => 'forbidden'], $response->getData());
+		$this->assertSame(
+			[
+				'message' => 'You are not allowed to do this. Ask an administrator for access.',
+				'error' => 'forbidden',
+			],
+			$response->getData()
+		);
 
 	}//end testAfterExceptionConvertsARefusedActionTo403()
 
@@ -293,7 +300,9 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$request->method('getParam')->willReturnCallback(
 			static fn (string $key, $default = null) => ($params[$key] ?? $default)
 		);
-		return new PortalAuthMiddleware($request, $session, $registry);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+		return new PortalAuthMiddleware($request, $session, $registry, $l10n);
 	}//end middleware()
 
 	private function session(?array $subject): PortalSessionService {

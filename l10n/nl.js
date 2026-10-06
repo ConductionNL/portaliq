@@ -2278,7 +2278,8 @@ OC.L10N.register(
         "Menu of the own area": "Menu van de eigen omgeving",
         "How the menu beside the visitor's own pages opens.": "Hoe het menu naast de eigen pagina's van de bezoeker begint.",
         "Card label": "Regel boven de naam",
-        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "De regel boven de naam van de organisatie bovenaan het menu, getoond als de bezoeker voor een organisatie handelt, bijvoorbeeld U regelt het voor. Leeg toont geen kaart."
+        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "De regel boven de naam van de organisatie bovenaan het menu, getoond als de bezoeker voor een organisatie handelt, bijvoorbeeld U regelt het voor. Leeg toont geen kaart.",
+        "You are not allowed to do this. Ask an administrator for access.": "Je mag dit niet doen. Vraag een beheerder om toegang."
     },
     "nplurals=2; plural=(n != 1);"
 )
