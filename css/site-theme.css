@@ -1234,8 +1234,14 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  * token nothing changes.
  */
 .pq-site [data-testid='page-title'] {
-	font-size: var(--nldesign-website-page-title-size, inherit);
-	line-height: var(--nldesign-website-page-title-line-height, inherit);
+	font-size: var(
+		--nldesign-website-page-title-size,
+		var(--utrecht-heading-2-font-size, revert)
+	);
+	line-height: var(
+		--nldesign-website-page-title-line-height,
+		var(--utrecht-heading-2-line-height, revert)
+	);
 }
 
 /*

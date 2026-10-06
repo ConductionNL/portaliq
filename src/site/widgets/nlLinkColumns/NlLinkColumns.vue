@@ -19,7 +19,10 @@
 		:aria-labelledby="heading ? headingId : null"
 		data-testid="nl-link-columns">
 		<div class="container nl-link-columns__inner">
-			<h2 v-if="heading" :id="headingId" class="utrecht-heading-2 nl-link-columns__heading">
+			<h2
+				v-if="heading"
+				:id="headingId"
+				class="utrecht-heading-2 nl-link-columns__heading">
 				{{ heading }}
 			</h2>
 			<div class="nl-link-columns__columns">
@@ -29,7 +32,9 @@
 					class="nl-link-columns__column"
 					:aria-label="column.title || undefined"
 					data-testid="nl-link-column">
-					<h3 v-if="column.title" class="utrecht-heading-3 nl-link-columns__title">
+					<h3
+						v-if="column.title"
+						class="utrecht-heading-3 nl-link-columns__title">
 						{{ column.title }}
 					</h3>
 					<ul class="utrecht-link-list nl-link-columns__list">
@@ -104,7 +109,9 @@ export default {
 							label: String(link?.label ?? '').trim(),
 							authored: authoredLink(link?.href),
 						}))
-						.filter((link) => link.label !== '' && link.authored !== null)
+						.filter(
+							(link) => link.label !== '' && link.authored !== null,
+						)
 						.map((link) => ({
 							label: link.label,
 							href: link.authored.href,
@@ -146,7 +153,13 @@ export default {
 <style scoped>
 /* Tokens only (tests/widget-tokens.spec.mjs). */
 .nl-link-columns--surface {
-	background: var(--nldesign-color-surface, var(--utrecht-color-grey-95, transparent));
+	background: var(
+		--nldesign-color-surface,
+		var(
+			--nldesign-component-content-surface-background-color,
+			var(--utrecht-color-grey-95, transparent)
+		)
+	);
 }
 
 .nl-link-columns__inner {
