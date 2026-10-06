@@ -157,3 +157,30 @@ storage it MUST behave as before. A browser that makes no offer MUST still see n
 - GIVEN Chrome offers to install the site
 - WHEN the home page opens
 - THEN the page does not move and a centred dialog asks; "Niet nu" closes it and it stays away on the next page
+
+### Requirement: The search page may draw the boards plain look
+
+`federatedSearch` MUST accept `variant: plain`: the form on the page with input and button joined and
+its label for screen readers only, the filter column on the left, the results as bordered cards with
+the title in the link colour, and 44px pagination, through rules in `css/site-theme.css`. The labels
+of the period filter MUST stay authorable (`periodFromLabel`, `periodToLabel`). The default variant
+MUST render as before.
+
+#### Scenario: Zoeken
+@e2e exclude held in tests/site-woo-pages.spec.mjs with fixture results; OpenCatalogi is not on the instance
+- GIVEN the search block with `variant: plain` and twelve fixture results
+- WHEN the page renders
+- THEN the form is joined, "12 resultaten" heads the cards and "Vanaf" / "Tot en met" name the period
+
+### Requirement: The publication page may draw the boards cards
+
+`publicationDetail` MUST accept `variant: cards`: the information category as a pill above the title,
+the visitor rows in a tinted box, and each document as a card with a file mark, its name, type and
+size, and a "Download" button that names the file for assistive tech. The default variant MUST
+render as before.
+
+#### Scenario: Publicatie
+@e2e exclude held in tests/site-woo-pages.spec.mjs with a fixture publication; OpenCatalogi is not on the instance
+- GIVEN a publication in category Woo-verzoeken en -besluiten with two PDF documents
+- WHEN the page renders with `variant: cards`
+- THEN the pill reads the category, the rows sit in a box and two document cards carry "Downloaden"
