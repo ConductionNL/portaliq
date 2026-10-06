@@ -41,7 +41,7 @@ class TimelineProviderMethod {
 	/**
 	 * The contract's own methods, which a timeline may never name.
 	 */
-	private const RESERVED = ['getContribution', 'getAudience', 'getAudiences'];
+	private const RESERVED = ['getContribution', 'getAudience', 'getAudiences', 'getPublicIndex'];
 
 	/**
 	 * Keep a well-formed `timeline` (`{label, provider}`) on a collection;

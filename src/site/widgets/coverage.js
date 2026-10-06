@@ -1016,4 +1016,15 @@ export const SITE_COMPOSITIONS = [
 		composes: ['Form Field', 'Button'],
 		why: 'A few fields in one row and a button that opens a page with the answers in its address ("Toon mijn afvalkalender").',
 	},
+	{
+		key: 'nlCatalogue',
+		composes: [
+			'Text Input',
+			'Checkbox Group',
+			'Select',
+			'Card as Link',
+			'Page Number Navigation',
+		],
+		why: 'The portal\'s public catalogue: search, facets, results and pages ("Cursusaanbod", "Opleidingen").',
+	},
 ]

@@ -59,4 +59,5 @@ export const loaders = {
 	nlEventList: () => import('./nlEventList/NlEventList.vue'),
 	nlLinkColumns: () => import('./nlLinkColumns/NlLinkColumns.vue'),
 	nlLookupForm: () => import('./nlLookupForm/NlLookupForm.vue'),
+	nlCatalogue: () => import('./nlCatalogue/NlCatalogue.vue'),
 }

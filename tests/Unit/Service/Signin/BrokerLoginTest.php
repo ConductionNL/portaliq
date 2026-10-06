@@ -71,6 +71,13 @@ class BrokerLoginTest extends TestCase {
 	 */
 	private array $sessionCalls = [];
 
+	/**
+	 * The audience the found account holds, or null for a new account.
+	 *
+	 * @var string|null
+	 */
+	private ?string $accountAudience = null;
+
 
 	/**
 	 * The login over an organisation whose override is given, and an exchange
@@ -137,6 +144,10 @@ class BrokerLoginTest extends TestCase {
 		$accounts->method('findOrCreate')->willReturnCallback(
 			function (...$args): array {
 				$this->accountCalls[] = $args;
+				if ($this->accountAudience !== null) {
+					return ['subjectRef' => 'subject-9', 'isNew' => false, 'audience' => $this->accountAudience];
+				}
+
 				return ['subjectRef' => 'subject-9', 'isNew' => true];
 			}
 		);
@@ -320,6 +331,26 @@ class BrokerLoginTest extends TestCase {
 		// (signin-session-idle-warning-and-sso D6).
 		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', ''], $this->sessionCalls[0]);
 	}//end testEnvelopeMintsASessionWithItsTrust()
+
+
+	/**
+	 * An account an app invited as `employer` signs in through the broker:
+	 * the session takes the account's audience, not the preset's.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 */
+	public function testAnInvitedAccountKeepsItsAudience(): void {
+		$this->accountAudience = 'employer';
+		$login = $this->login($this->routed(), 200, $this->exchangeBody());
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/p', callbackUrl: 'https://p/cb'))['relayState'];
+
+		$this->assertSame('bearer-1', $login->complete(state: $state, code: 'one-time-code')['token']);
+		$this->assertSame('client', $this->accountCalls[0][3]);
+		$this->assertSame('employer', $this->sessionCalls[0][1]);
+		$this->assertSame(['employer:read'], $this->sessionCalls[0][4]);
+	}//end testAnInvitedAccountKeepsItsAudience()
 
 
 	/**

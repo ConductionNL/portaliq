@@ -39,6 +39,9 @@ use OCA\Portaliq\Service\Branch\PortalBranchScope;
  * Validates and sanitises the v3 collection presentation config, fail-closed.
  *
  * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one small normaliser per
+ * collection key, called in a row; the coupling is the list of keys, not logic.
  */
 class CollectionConfigNormaliser {
 	/**
@@ -94,6 +97,8 @@ class CollectionConfigNormaliser {
 			// Steps, answer date and whose turn, on a cases collection only
 			// (site-mijn-omgeving-components REQ-SMO-022).
 			$collection = (new StepsProviderMethod())->normalise(collection: $collection);
+			// Who a resident may write to about each row (site-messages-per-record).
+			$collection = (new MessageContactsKeys())->normalise(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
 			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
 			$collection = $this->normaliseGroupByField(collection: $collection);

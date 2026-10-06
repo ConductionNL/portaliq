@@ -541,6 +541,15 @@ export default {
 				return { ...props, portal: this.portal, routeParam: this.routeParam }
 			}
 
+			// portal-public-catalogue: the catalogue and a dated list that
+			// fills itself from it read THIS portal's catalogue.
+			if (
+				widget.widgetKey === 'nlCatalogue'
+				|| widget.widgetKey === 'nlEventList'
+			) {
+				return { ...props, portal: this.portal }
+			}
+
 			if (widget.widgetKey === 'nlSignIn') {
 				return {
 					...props,

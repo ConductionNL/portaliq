@@ -38,6 +38,11 @@ export const metaOf = {
 		{ name: 'moreLabel', kind: 'string', label: 'Tekst van de link eronder' },
 		{ name: 'moreHref', kind: 'string', label: 'Adres van de link eronder' },
 		{ name: 'framed', kind: 'boolean', label: 'Als kaart' },
+		{
+			name: 'source',
+			kind: 'json',
+			label: 'Uit het aanbod in plaats van de data: {"types": ["event"]} of ["course"]',
+		},
 	],
 	defaultSize: { gridWidth: 4, gridHeight: 4 },
 	scope: 'public',
