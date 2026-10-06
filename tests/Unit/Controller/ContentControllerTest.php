@@ -466,6 +466,24 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
+	 * The page read is told both the requested locale and the portal's
+	 * default, so a route with no English page falls back to the Dutch one
+	 * rather than to whichever row comes first (#703).
+	 *
+	 * @return void
+	 */
+	public function testThePageReadKnowsThePortalsDefaultLocale(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->reader->expects($this->once())
+			->method('page')
+			->with('open-tilburg', '/over', 'en', 'anonymous', 'nl')
+			->willReturn(['route' => '/over']);
+
+		$this->controller()->page(route: 'over', portal: 'open-tilburg', locale: 'en');
+	}//end testThePageReadKnowsThePortalsDefaultLocale()
+
+
+	/**
 	 * A route without a leading slash is normalised.
 	 *
 	 * @return void

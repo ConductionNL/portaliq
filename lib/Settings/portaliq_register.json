@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.66.0"
+        "version": "0.67.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.66.0",
+                "version": "0.67.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -4129,7 +4129,7 @@
             "menu": {
                 "slug": "menu",
                 "icon": "Menu",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Menu",
                 "authorization": {
                     "read": [
@@ -4154,6 +4154,12 @@
                         "type": "integer",
                         "description": "Ordering of this menu relative to others on the same portal (a header menu versus a footer menu).",
                         "example": 0
+                    },
+                    "locale": {
+                        "title": "Locale",
+                        "type": "string",
+                        "description": "Locale of this menu, one of its portal's `locales`. Empty: the menu is shown in every language.",
+                        "example": "en"
                     },
                     "items": {
                         "title": "Items",
@@ -4614,7 +4620,7 @@
             "glossaryTerm": {
                 "slug": "glossaryTerm",
                 "icon": "BookAlphabet",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Glossary Term",
                 "authorization": {
                     "read": [
@@ -4640,6 +4646,12 @@
                         "type": "string",
                         "description": "The definition, in plain language.",
                         "example": "Een verzoek om openbaarmaking van overheidsinformatie."
+                    },
+                    "locale": {
+                        "title": "Locale",
+                        "type": "string",
+                        "description": "Locale of this term, one of its portal's `locales`. Empty: the term is shown in every language.",
+                        "example": "en"
                     },
                     "synonyms": {
                         "title": "Synonyms",

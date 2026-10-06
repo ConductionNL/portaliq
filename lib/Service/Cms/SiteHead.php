@@ -65,7 +65,14 @@ class SiteHead {
 			return $head;
 		}
 
-		$page = $this->reader->page(portal: $slug, route: $this->normalise(route: $route), locale: $locale, audience: 'anonymous');
+		$locales = array_values((array)($portal['locales'] ?? []));
+		$page    = $this->reader->page(
+			portal: $slug,
+			route: $this->normalise(route: $route),
+			locale: $locale,
+			audience: 'anonymous',
+			defaultLocale: (string)($locales[0] ?? '')
+		);
 		if ($page === null) {
 			return $head;
 		}
