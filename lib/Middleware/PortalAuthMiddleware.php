@@ -49,6 +49,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Middleware;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use Throwable;
 
@@ -197,7 +198,17 @@ class PortalAuthMiddleware extends Middleware {
 	}//end anonymousCreateActionMatches()
 
 	/**
-	 * Convert a portal auth failure to a 401 JSON response.
+	 * Convert a portal auth failure to a 401 JSON response, and a refused
+	 * staff action to a 403.
+	 *
+	 * The staff controllers (news, newsletters, activities, events, …) call
+	 * ActionAuthService::requireAction(), which throws OCSForbiddenException.
+	 * They extend the plain Controller, not OCSController, so Nextcloud's
+	 * OCSMiddleware rethrows it and, unhandled, it ends as a 500 page and an
+	 * error-level log line for every signed-in user without the action. This
+	 * maps it to the same `{"error": "forbidden"}` 403 that PollController
+	 * and EmergencyPushController return. Portaliq has no OCSController, so
+	 * no OCS envelope is replaced.
 	 *
 	 * @param object $controller The controller being dispatched.
 	 * @param string $methodName The method being invoked.
@@ -205,7 +216,7 @@ class PortalAuthMiddleware extends Middleware {
 	 *
 	 * @return Response
 	 *
-	 * @throws Throwable Re-thrown when it is not a portal auth failure.
+	 * @throws Throwable Re-thrown when it is not a portal auth failure or a refused action.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 *
@@ -218,6 +229,10 @@ class PortalAuthMiddleware extends Middleware {
 
 		if ($exception instanceof PortalReadOnlySessionException) {
 			return new JSONResponse(['error' => 'reference_session_reads_only'], Http::STATUS_FORBIDDEN);
+		}
+
+		if ($exception instanceof OCSForbiddenException) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
 		throw $exception;
