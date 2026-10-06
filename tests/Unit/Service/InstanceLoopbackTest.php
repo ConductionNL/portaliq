@@ -52,9 +52,10 @@ class InstanceLoopbackTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->calls = [];
-		$this->client = $this->getMockBuilder(IClient::class)
-			->onlyMethods(['get', 'head', 'post', 'put', 'patch', 'delete', 'options', 'getResponseFromThrowable', 'request', 'sendRequest', 'getAsync', 'headAsync', 'postAsync', 'putAsync', 'deleteAsync', 'optionsAsync'])
-			->getMock();
+		// A plain createMock() doubles whatever IClient declares on the server under
+		// test. A hard-coded onlyMethods() list broke on stable32/33, whose
+		// IClient has no sendRequest() (only stable34+ extends PSR-18).
+		$this->client = $this->createMock(IClient::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 	}//end setUp()
 

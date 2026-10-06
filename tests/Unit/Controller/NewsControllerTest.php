@@ -42,6 +42,7 @@ use RuntimeException;
  * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
  */
 class NewsControllerTest extends TestCase {
+	use StaffActionDoubleTrait;
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -74,14 +75,14 @@ class NewsControllerTest extends TestCase {
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
 
-		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
 		$controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]);
 	}//end testCreateRefusesAnUnauthenticatedCaller()
 
 	public function testCreateRejectsATargetWithNoDimension(): void {
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$response = $controller->create('Title', 'Body', []);
 
@@ -104,7 +105,7 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -120,7 +121,7 @@ class NewsControllerTest extends TestCase {
 			}//end find()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->publish('missing');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
@@ -146,7 +147,7 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->publish('n1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -189,7 +190,7 @@ class NewsControllerTest extends TestCase {
 		$clock = $this->createMock(ITimeFactory::class);
 		$clock->method('getTime')->willReturn(1791018000);
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), null, $clock);
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION), null, $clock);
 
 		$controller->publish('n1');
 		$this->assertSame('published', $objectService->saved['status']);
@@ -207,7 +208,7 @@ class NewsControllerTest extends TestCase {
 			}//end find()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->unpublish('missing');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
@@ -233,7 +234,7 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->unpublish('n1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -266,7 +267,7 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $controller->update('n1', 'New', 'New body', [])->getStatus());
 		$this->assertSame([], $objectService->saved);
@@ -303,7 +304,7 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$controller->create('T', 'B', ['schoolRef' => 's'], [], true, 'wilgenboom', ' hele school ');
 		$this->assertTrue($objectService->saved['public']);
@@ -344,7 +345,7 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$controller->update('n1', 'New', 'B', ['schoolRef' => 's']);
 		$this->assertTrue($objectService->saved['public']);
@@ -364,7 +365,7 @@ class NewsControllerTest extends TestCase {
 	public function testUpdateAndAudiencesRefuseAnUnauthenticatedCaller(): void {
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
-		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$refused = 0;
 		foreach ([fn () => $controller->update('n1', 'T', 'B', ['schoolRef' => 's']), fn () => $controller->audiences()] as $call) {
@@ -386,8 +387,38 @@ class NewsControllerTest extends TestCase {
 	public function testAudiencesListsTheSchoolAndGroupChoices(): void {
 		$options = $this->createMock(NewsAudienceOptions::class);
 		$options->method('options')->willReturn(['schools' => [], 'groups' => [['id' => 'g7', 'label' => 'Groep 7']]]);
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $options);
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION), $options);
 
 		$this->assertSame(['schools' => [], 'groups' => [['id' => 'g7', 'label' => 'Groep 7']]], $controller->audiences()->getData());
 	}//end testAudiencesListsTheSchoolAndGroupChoices()
+
+	/**
+	 * A signed-in user without portal.author-news is refused by every staff method,
+	 * before anything is read or written (#1094).
+	 *
+	 * @return void
+	 */
+	public function testEveryStaffMethodRefusesAUserWithoutTheAction(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $container, $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION, false));
+
+		$refused = 0;
+		$calls = [
+			fn () => $controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]),
+			fn () => $controller->update('n1', 'T', 'B', ['schoolRef' => 's']),
+			fn () => $controller->audiences(),
+			fn () => $controller->publish('n1'),
+			fn () => $controller->unpublish('n1'),
+		];
+		foreach ($calls as $call) {
+			try {
+				$call();
+			} catch (\OCP\AppFramework\OCS\OCSForbiddenException $e) {
+				$refused++;
+			}
+		}
+
+		$this->assertSame(count($calls), $refused);
+	}//end testEveryStaffMethodRefusesAUserWithoutTheAction()
 }//end class

@@ -92,7 +92,7 @@ class PortalThemeResolver {
 	 *
 	 * @var array<string, string>
 	 */
-	private const LOGO_VARIANTS = ['' => '', 'dark' => '-dark', 'emblem' => '-emblem'];
+	private const LOGO_VARIANTS = ['' => '', 'dark' => '-dark', 'emblem' => '-emblem', 'emblem-grey' => '-emblem-grey'];
 
 
 	/**
@@ -206,10 +206,12 @@ class PortalThemeResolver {
 	 * A variant (site-chrome-follows-the-design) is `dark`, the light logo
 	 * for a dark band such as a school portal's footer (`<theme>-dark.svg`,
 	 * named after the dark scheme it was drawn for), or `emblem`, the mark
-	 * without the name for a faint watermark (`<theme>-emblem.svg`).
+	 * without the name for a faint watermark (`<theme>-emblem.svg`), or
+	 * `emblem-grey`, that mark in grey for a set whose watermark carries no
+	 * tint (`<theme>-emblem-grey.svg`, example-site-zuiddrecht).
 	 *
 	 * @param string $theme   The portal's theme reference, e.g. 'opencatalogi'.
-	 * @param string $variant '' for the logo, else `dark` or `emblem`.
+	 * @param string $variant '' for the logo, else `dark`, `emblem` or `emblem-grey`.
 	 *
 	 * @return string|null The path relative to the theme app, or null.
 	 *

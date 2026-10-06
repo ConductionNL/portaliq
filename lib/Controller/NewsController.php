@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\NewsAudienceOptions;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Controller;
@@ -60,12 +61,18 @@ class NewsController extends Controller {
 	private const SCHEMA = 'newsItem';
 
 	/**
+	 * The ADR-023 action every staff method is gated by (create, edit, publish and unpublish a news item).
+	 */
+	public const ACTION = 'portal.author-news';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
+	 * @param ActionAuthService $actionAuth Decides whether this staff user may author news (ADR-023).
 	 * @param NewsAudienceOptions|null $audienceOptions The school and group choices for the News screen.
 	 * @param ITimeFactory|null $timeFactory The server clock that stamps the publish moment.
 	 */
@@ -74,6 +81,7 @@ class NewsController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ActionAuthService $actionAuth,
 		private readonly ?NewsAudienceOptions $audienceOptions=null,
 		private readonly ?ITimeFactory $timeFactory=null,
 	) {
@@ -85,18 +93,21 @@ class NewsController extends Controller {
 	 * FIRST, before any read or write: `#[NoAdminRequired]` already opens
 	 * this endpoint to every authenticated Nextcloud user, so this makes the
 	 * requirement explicit at the call site (ADR-005) rather than relying
-	 * only on the framework attribute, and gives future role-narrowing (e.g.
-	 * a dedicated staff group) exactly one place to land.
+	 * only on the framework attribute, and narrows it to the groups holding
+	 * the ADR-023 action `portal.author-news`.
 	 *
 	 * @return string The staff member's user id.
 	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
+	 *                               user's groups do not hold self::ACTION.
 	 */
 	private function requireAuthenticatedStaff(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSForbiddenException('Authentication required');
 		}
+
+		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
 
 		return $user->getUID();
 	}//end requireAuthenticatedStaff()

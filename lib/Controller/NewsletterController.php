@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\NewsletterPreflightService;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Controller;
@@ -58,6 +59,11 @@ class NewsletterController extends Controller {
 	private const SCHEMA = 'newsletter';
 
 	/**
+	 * The ADR-023 action every staff method is gated by (compose, preflight and send a newsletter).
+	 */
+	public const ACTION = 'portal.send-newsletter';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
@@ -65,6 +71,7 @@ class NewsletterController extends Controller {
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param NewsletterPreflightService $preflight The recipient-count/refusal check.
 	 * @param LoggerInterface $logger The logger.
+	 * @param ActionAuthService $actionAuth Decides whether this staff user may send newsletters (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -72,6 +79,7 @@ class NewsletterController extends Controller {
 		private readonly ContainerInterface $container,
 		private readonly NewsletterPreflightService $preflight,
 		private readonly LoggerInterface $logger,
+		private readonly ActionAuthService $actionAuth,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -83,12 +91,16 @@ class NewsletterController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
+	 *                               user's groups do not hold self::ACTION.
 	 */
 	private function requireAuthenticatedStaff(): void {
-		if ($this->userSession->getUser() === null) {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
 			throw new OCSForbiddenException('Authentication required');
 		}
+
+		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
 	}//end requireAuthenticatedStaff()
 
 	/**

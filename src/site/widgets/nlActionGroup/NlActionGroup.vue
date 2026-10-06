@@ -16,7 +16,8 @@
 			:key="`${index}-${button.href}`"
 			:label="button.label"
 			:href="button.href"
-			:kind="button.kind" />
+			:kind="button.kind"
+			@navigate="$emit('navigate', $event)" />
 	</div>
 </template>
 
@@ -36,6 +37,8 @@ export default {
 		/** The buttons: `{label, href, kind}`. */
 		buttons: { type: Array, default: () => [] },
 	},
+
+	emits: ['navigate'],
 
 	computed: {
 		/**

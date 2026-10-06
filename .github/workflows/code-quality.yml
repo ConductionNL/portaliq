@@ -167,22 +167,23 @@ jobs:
       # openregister cannot load.
       #
       # THE WHOLE DECLARED RANGE, NOT A POINT IN IT. appinfo/info.xml declares
-      # <nextcloud min-version="32" max-version="34"/>, and
+      # <nextcloud min-version="32" max-version="35"/>, and
       # tests/Unit/AppInfoDependenciesTest::testFloorIsNotBelowTheOldestTestedVersion
       # fails the build when the floor sits below the oldest tested leg. Adopting
       # NC 34 by REPLACING the list left 32 and 33 advertised to the App Store
       # with no job touching them; adding stable34 to the two legs that were
-      # already here covers 32, 33 and 34 — every major inside the declared
-      # range, which is also what testEveryTestedVersionIsInsideTheDeclaredRange
-      # checks from the other direction.
+      # already here covered 32, 33 and 34, and stable35 joined when max-version
+      # rose to 35 — every major inside the declared range, which is also what
+      # testEveryTestedVersionIsInsideTheDeclaredRange checks from the other
+      # direction.
       #
-      # stable34 is FIRST on purpose, for the same reason stable31 must not have
-      # been: [0] is the single server playwright and newman get, and NC 34 is
-      # the one this app had never been exercised on. That ordering immediately
+      # The newest major is FIRST on purpose, for the same reason stable31 must
+      # not have been: [0] is the single server playwright and newman get, so it
+      # is stable35 since max-version rose to 35. When stable34 led, the ordering
       # earned its keep — it caught tests/e2e/app-shell-and-admin.spec.ts
       # scoping the admin nav to `#app-navigation`, markup NC 34 no longer
       # renders.
-      nextcloud-test-refs: '["stable34", "stable32", "stable33"]'
+      nextcloud-test-refs: '["stable35", "stable32", "stable33", "stable34"]'
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: true
