@@ -68,8 +68,8 @@
         repository when it was written.
 
         The floor is 32 as a deliberate fleet policy (NC 32 is the PHP 8.3
-        baseline), matched by <php min-version="8.3"/> below. max-version stays
-        34, which is the fleet-wide value everywhere except openconnector (35).
+        baseline), matched by <php min-version="8.3"/> below. max-version is
+        35; the CI matrix is derived from this range.
         -->
         <php min-version="8.3"/>
         <nextcloud min-version="32" max-version="35"/>
