@@ -220,6 +220,7 @@ test('the offer is a modal dialog over the page, never in its flow', async () =>
 test('Escape answers "Not now" and Tab stays inside the dialog', async () => {
 	const component = await loadSfc(FILE)
 	const self = instance()
+	self.dismiss = () => component.methods.dismiss.call(self)
 	component.methods.onOffer.call(self, { preventDefault: () => {} })
 	let prevented = 0
 	component.methods.onKey.call(self, {
