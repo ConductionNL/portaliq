@@ -50,33 +50,32 @@ test('the "Let op" strip reads the attention roles first and keeps the notice lo
 		css.indexOf('.nl-banner--notice{'),
 		css.indexOf('.nl-banner__text{'),
 	)
-	for (const [prop, role, notice, fallback] of [
-		[
-			'border-block-end-color',
-			'border-color',
-			'border-color',
-			'--nl-banner-notice-line',
-		],
+	for (const [prop, role, local, notice, fallback] of [
+		['border-block-end-color', 'border-color', 'edge', 'border-color', 'line'],
 		[
 			'background-color',
 			'background-color',
+			'fill',
 			'background-color',
-			'--nl-banner-notice-ground',
+			'ground',
 		],
-		['color', 'color', 'color', '--nl-banner-notice-ink'],
+		['color', 'color', 'text', 'color', 'ink'],
 	]) {
-		const at = rule.indexOf(`${prop}:var(--thematiq-attention-${role},`)
-		assert.ok(at >= 0, `${prop} reads --thematiq-attention-${role} first`)
-		const value = rule.slice(at, rule.indexOf(';', at))
 		assert.ok(
-			value.includes(
-				`var(--nldesign-website-notice-${notice},var(${fallback}))`,
+			rule.includes(
+				`${prop}:var(--thematiq-attention-${role},var(--nl-banner-notice-${local}))`,
 			),
-			`${prop} falls back to the notice look: ${value}`,
+			`${prop} reads --thematiq-attention-${role} first`,
+		)
+		assert.ok(
+			rule.includes(
+				`--nl-banner-notice-${local}:var(--nldesign-website-notice-${notice},var(--nl-banner-notice-${fallback}))`,
+			),
+			`${prop} falls back to the notice look`,
 		)
 	}
 	assert.doesNotMatch(
-		rule,
+		rule.replace(/\/\*.*?\*\//g, ''),
 		/--nldesign-website-attention-/,
 		'the strip reads the bridge role, not the set token',
 	)

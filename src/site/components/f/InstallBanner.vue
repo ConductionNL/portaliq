@@ -24,7 +24,15 @@
 		class="pq-install-dialog"
 		data-testid="install-banner"
 		@keydown="onKey">
-		<div class="pq-install-dialog__scrim" @click="dismiss" />
+		<!-- The scrim is a mouse convenience with no meaning of its own: the
+		     keyboard answers "Not now" with Escape (onKey above) or the
+		     button, so it is presentational and never in the tab order. -->
+		<div
+			class="pq-install-dialog__scrim"
+			role="presentation"
+			tabindex="-1"
+			@click="dismiss"
+			@keydown.esc="dismiss" />
 		<section
 			ref="dialog"
 			class="pq-install-dialog__panel"

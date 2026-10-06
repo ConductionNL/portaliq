@@ -217,21 +217,28 @@ export default {
 	);
 	--nl-banner-notice-ground: var(--utrecht-alert-warning-background-color, Canvas);
 	--nl-banner-notice-ink: var(--utrecht-alert-warning-color, CanvasText);
+	/* Today's look, the fallback of the attention roles below. */
+	--nl-banner-notice-edge: var(
+		--nldesign-website-notice-border-color,
+		var(--nl-banner-notice-line)
+	);
+	--nl-banner-notice-fill: var(
+		--nldesign-website-notice-background-color,
+		var(--nl-banner-notice-ground)
+	);
+	--nl-banner-notice-text: var(
+		--nldesign-website-notice-color,
+		var(--nl-banner-notice-ink)
+	);
 	border-block-end-color: var(
 		--thematiq-attention-border-color,
-		var(--nldesign-website-notice-border-color, var(--nl-banner-notice-line))
+		var(--nl-banner-notice-edge)
 	);
 	background-color: var(
 		--thematiq-attention-background-color,
-		var(
-			--nldesign-website-notice-background-color,
-			var(--nl-banner-notice-ground)
-		)
+		var(--nl-banner-notice-fill)
 	);
-	color: var(
-		--thematiq-attention-color,
-		var(--nldesign-website-notice-color, var(--nl-banner-notice-ink))
-	);
+	color: var(--thematiq-attention-color, var(--nl-banner-notice-text));
 }
 
 .nl-banner__text {
