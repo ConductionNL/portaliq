@@ -50,7 +50,6 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
-use OCA\Portaliq\Service\Site\SiteLocale;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\AppFramework\Controller;
@@ -359,8 +358,8 @@ class PortalPageController extends Controller {
 
 	/**
 	 * The visitor's language held to the portal's declared locales
-	 * (SiteLocale). A portal that cannot be resolved serves what the visitor
-	 * asked for, as before.
+	 * (PortalResolver::localeFor). A portal that cannot be resolved serves
+	 * what the visitor asked for, as before.
 	 *
 	 * @param string $locale The visitor's language, never empty.
 	 *
@@ -375,7 +374,7 @@ class PortalPageController extends Controller {
 			$portal = null;
 		}
 
-		return SiteLocale::forPortal(portal: $portal, locale: $locale);
+		return $this->portalResolver->localeFor(portal: $portal, locale: $locale);
 	}//end localeThePortalServes()
 
 

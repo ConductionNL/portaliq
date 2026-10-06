@@ -568,6 +568,11 @@ class PortalPageControllerTest extends TestCase {
 		// parameters above let a single test opt into the resolved path or the
 		// throwing one, which is what the callers below exercise.
 		$portalResolver = $this->createMock(PortalResolver::class);
+		// The rule itself is PortalResolverTest's; here only the wiring: the
+		// controller hands the resolved portal and the visitor's language over.
+		$portalResolver->method('localeFor')->willReturnCallback(
+			fn (?array $portal, string $locale) => (($portal['locales'] ?? []) === ['nl'] ? 'nl' : $locale)
+		);
 		if ($portalResolverThrows === true) {
 			$portalResolver->method('resolve')
 				->willThrowException(new \RuntimeException('unknown host'));
