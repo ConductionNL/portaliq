@@ -55,6 +55,38 @@ class PortalAccountServiceTest extends TestCase {
 
 	}//end testAReturningIdentityReusesItsOwnExistingSubjectRefRegardlessOfAnyOverride()
 
+	/**
+	 * An account an app invited as `employer` stays an employer when the
+	 * person signs in through eHerkenning, whose preset proposes `supplier`.
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 */
+	public function testAReturningIdentityKeepsItsOwnAudience(): void {
+		[$service] = $this->serviceWithStore();
+
+		$first  = $service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-7', organisation: 'gemeente-x', audience: 'employer');
+		$second = $service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-7', organisation: 'gemeente-x', audience: 'supplier');
+
+		$this->assertSame('employer', $first['audience']);
+		$this->assertSame('employer', $second['audience']);
+		$this->assertSame($first['subjectRef'], $second['subjectRef']);
+
+	}//end testAReturningIdentityKeepsItsOwnAudience()
+
+	/**
+	 * A new account takes the audience the sign-in route proposes.
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 */
+	public function testANewIdentityTakesTheProposedAudience(): void {
+		[$service] = $this->serviceWithStore();
+
+		$account = $service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-8', organisation: 'gemeente-x', audience: 'supplier');
+
+		$this->assertSame('supplier', $account['audience']);
+
+	}//end testANewIdentityTakesTheProposedAudience()
+
 	public function testDifferentOrganisationsGetDistinctAccountsForTheSameIdentityRef(): void {
 		[$service] = $this->serviceWithStore();
 

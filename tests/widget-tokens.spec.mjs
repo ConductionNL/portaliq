@@ -215,6 +215,9 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		'nlNewsList',
 		'nlNewsArticle',
 		'nlEventList',
+		// portal-public-catalogue: a composition too (search, facets, cards,
+		// pages); layout and theme tokens only.
+		'nlCatalogue',
 	]
 
 	for (const { key, source } of components()) {

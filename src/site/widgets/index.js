@@ -42,6 +42,7 @@ import { metaOf as actionGroupMeta } from './nlActionGroup/meta.js'
 import { metaOf as alertMeta } from './nlAlert/meta.js'
 import { metaOf as bannerMeta } from './nlBanner/meta.js'
 import { metaOf as buttonLinkMeta } from './nlButtonLink/meta.js'
+import { metaOf as catalogueMeta } from './nlCatalogue/meta.js'
 import { metaOf as codeBlockMeta } from './nlCodeBlock/meta.js'
 import { metaOf as descriptionListMeta } from './nlDescriptionList/meta.js'
 import { metaOf as dialogMeta } from './nlDialog/meta.js'
@@ -124,6 +125,7 @@ export const metas = {
 	nlNewsList: newsListMeta,
 	nlNewsArticle: newsArticleMeta,
 	nlEventList: eventListMeta,
+	nlCatalogue: catalogueMeta,
 }
 
 /**

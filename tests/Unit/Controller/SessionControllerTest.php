@@ -712,6 +712,80 @@ class SessionControllerTest extends TestCase {
 
 	}//end testIndexNamesThePersonNeverTheReference()
 
+	/**
+	 * the-account-names-the-audience-and-the-company: the session names the
+	 * company from an app's `organisationName` claim, and nothing else.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
+	 */
+	public function testIndexNamesTheCompanyFromAClaim(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+		$cases = [
+			'a claim' => [['claims' => ['learniq' => ['organisationRef' => 'o-1', 'organisationName' => ' Jansen Installatietechniek BV ']]], 'Jansen Installatietechniek BV'],
+			'the first app with one' => [['claims' => ['other' => ['x' => 'y'], 'learniq' => ['organisationName' => 'Bakker Techniek BV']]], 'Bakker Techniek BV'],
+			'an empty claim' => [['claims' => ['learniq' => ['organisationName' => '  ']]], ''],
+			'not a string' => [['claims' => ['learniq' => ['organisationName' => ['a']]]], ''],
+			'no claims' => [['displayName' => 'Linda'], ''],
+			'no account' => [null, ''],
+		];
+		foreach ($cases as $label => [$account, $expected]) {
+			$accounts = $this->createMock(PortalAccountService::class);
+			$accounts->method('findBySubjectRef')->willReturn($account === null ? null : $account + ['subjectRef' => 's1']);
+
+			$data = $this->controller(session: $session, accounts: $accounts)->index()->getData();
+
+			$this->assertSame($expected, $data['organisationName'], $label);
+		}
+
+	}//end testIndexNamesTheCompanyFromAClaim()
+
+	/**
+	 * An OIDC sign-in for an account an app invited as `employer` keeps that
+	 * audience, whatever the claim map proposes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 */
+	public function testOidcCallbackKeepsTheAccountsOwnAudience(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
+		$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->method('discover')->willReturn($this->discoveryFixture());
+		$oidc->method('exchangeCode')->willReturn(['id_token' => 'x.y.z']);
+		$oidc->method('verifyIdToken')->willReturn(['sub' => 'kvk-1']);
+		$claimMapper = $this->createMock(OidcClaimMapperService::class);
+		$claimMapper->method('mapClaims')->willReturn($this->mappedFixture());
+		$claimMapper->method('mapLoaToTrust')->willReturn('substantial');
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->method('consume')->willReturn($this->pendingFixture());
+		$accounts = $this->createMock(PortalAccountService::class);
+		$accounts->method('findOrCreate')->willReturn(['subjectRef' => 'linda', 'isNew' => false, 'audience' => 'employer']);
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->once())->method('issueSession')
+			->with('linda', 'employer', 'gemeente-x', 'substantial', ['employer:read'])
+			->willReturn(['token' => 't', 'jti' => 'j']);
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
+
+		$response = $this->controller(
+			session: $session,
+			orgConfig: $orgConfig,
+			oidc: $oidc,
+			claimMapper: $claimMapper,
+			stateStore: $stateStore,
+			accounts: $accounts,
+			urlGenerator: $urlGenerator
+		)->oidcCallback(state: 's', code: 'c');
+
+		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+
+	}//end testOidcCallbackKeepsTheAccountsOwnAudience()
+
 	public function testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);

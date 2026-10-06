@@ -345,6 +345,8 @@ class SessionController extends Controller {
 				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
 				// Change identity-profile-page T06: ask for an e-mail address when none is in use.
 				'contactPrompt' => (new ContactAddressValues())->needsContactPrompt(account: $account),
+				// Change the-account-names-the-audience-and-the-company: the company the person acts for.
+				'organisationName' => $this->organisationNameOf(account: $account),
 			] + $this->session->sessionTimes(subject: $subject)
 		);
 	}//end index()
@@ -374,6 +376,42 @@ class SessionController extends Controller {
 
 		return $name;
 	}//end displayNameOf()
+
+	/**
+	 * The company the signed-in person acts for, or '' when none is known.
+	 *
+	 * An app that invites a person for a company writes the company's display
+	 * name as an `organisationName` claim on the account, in its own claim
+	 * namespace (`claims.<appId>.organisationName`), next to the claim its
+	 * collections scope by. The first non-empty one is served, trimmed and at
+	 * most 200 characters. The portal's own organisation slug is a tenant,
+	 * not this company, and is never used here.
+	 *
+	 * @param array<string, mixed>|null $account The person's portal account, or null.
+	 *
+	 * @return string The company's name, or ''.
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
+	 */
+	private function organisationNameOf(?array $account): string {
+		$claims = ($account['claims'] ?? null);
+		if (is_array($claims) === false) {
+			return '';
+		}
+
+		foreach ($claims as $appClaims) {
+			$name = '';
+			if (is_array($appClaims) === true && is_string($appClaims['organisationName'] ?? null) === true) {
+				$name = trim($appClaims['organisationName']);
+			}
+
+			if ($name !== '') {
+				return mb_substr($name, 0, 200);
+			}
+		}
+
+		return '';
+	}//end organisationNameOf()
 
 	/**
 	 * Mint a dev session (no real IdP). Gated — 404 unless dev-login is enabled.
@@ -665,12 +703,14 @@ class SessionController extends Controller {
 		}
 
 		$trust = $this->claimMapper->mapLoaToTrust(claims: $claims, config: $config);
-		$issued = $this->session->issueSession(
+		// The account's own audience wins over the claim map's (the-account-names-the-audience-and-the-company).
+		$audience = (string)($account['audience'] ?? $mapped['audience']);
+		$issued   = $this->session->issueSession(
 			subjectRef: $account['subjectRef'],
-			audience: $mapped['audience'],
+			audience: $audience,
 			organisation: $pending['org'],
 			trust: $trust,
-			roles: [$mapped['audience'] . ':read'],
+			roles: [$audience . ':read'],
 			branch: (string)($mapped['branch'] ?? ''),
 			provider: $pending['provider']
 		);

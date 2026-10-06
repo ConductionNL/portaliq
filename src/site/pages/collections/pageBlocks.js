@@ -45,6 +45,27 @@ export function findCollection(contribution, id) {
 }
 
 /**
+ * A calendar source with the words of its `statusField`, from its collection's
+ * value labels, so a timetable's pill reads "Ander lokaal", never a code
+ * (calendar-timetable-display).
+ *
+ * @param {object} source The calendar source.
+ * @param {object} contribution The contribution.
+ * @return {object} The source, with `statusLabels` when there are any.
+ * @spec openspec/changes/calendar-timetable-display/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-may-draw-a-day-as-a-timetable
+ */
+export function withStatusLabels(source, contribution) {
+	if (!source?.statusField) {
+		return source
+	}
+	const collection = findCollection(contribution, source.collection)
+	const labels = collection?.fieldConfigs?.[source.statusField]?.valueLabels
+	return labels && typeof labels === 'object'
+		? { ...source, statusLabels: labels }
+		: source
+}
+
+/**
  * An action of the contribution, by id.
  *
  * @param {object} contribution The contribution.
@@ -238,9 +259,9 @@ function resolveEachBlock(page, contribution) {
 				: { index, block, kind: 'none' }
 		}
 		if (type === 'calendar') {
-			const sources = (block.sources || []).filter((source) =>
-				findCollection(contribution, source?.collection),
-			)
+			const sources = (block.sources || [])
+				.filter((source) => findCollection(contribution, source?.collection))
+				.map((source) => withStatusLabels(source, contribution))
 			return sources.length > 0
 				? { index, block: { ...block, sources }, kind: 'calendar' }
 				: { index, block, kind: 'none' }
