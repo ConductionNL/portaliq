@@ -1376,3 +1376,172 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 		display: none;
 	}
 }
+
+/*
+ * THE PLAIN SEARCH (site-matches-the-zuiddrecht-boards, board Zoeken): the
+ * form on the page with input and button joined, the filters in a column on
+ * the left, the results as bordered cards with the title as the link colour,
+ * 44px pagination. Only for `variant: plain`; the reference look is untouched.
+ */
+.pq-site .pq-search--plain {
+	display: flex;
+	flex-direction: column;
+	gap: 1.75rem;
+}
+
+.pq-site .pq-search--plain .ac-search-box {
+	max-inline-size: 47.5rem;
+}
+
+.pq-site .pq-search--plain .ac-search-box__label {
+	position: absolute;
+	inline-size: 1px;
+	block-size: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.pq-site .pq-search--plain .ac-search-box__search {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 0;
+}
+
+.pq-site .pq-search--plain .ac-search-box__input.utrecht-textbox {
+	flex: 1 1 20rem;
+	min-inline-size: 0;
+	block-size: 3.25rem;
+	box-sizing: border-box;
+	padding-inline: 1rem;
+	border: 2px solid var(--utrecht-document-color, currentcolor);
+	border-inline-end: 0;
+	border-radius: var(--nldesign-website-border-radius, 0) 0 0
+		var(--nldesign-website-border-radius, 0);
+	font-size: 1.125rem;
+}
+
+.pq-site .pq-search--plain .ac-search-box__button.utrecht-button {
+	block-size: 3.25rem;
+	padding-inline: 1.625rem;
+	border: 0;
+	border-radius: 0 var(--nldesign-website-border-radius, 0)
+		var(--nldesign-website-border-radius, 0) 0;
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-site .pq-search--plain .ac-search-box__search-icon {
+	display: none;
+}
+
+.pq-site .pq-search--plain .pq-search__status:empty {
+	display: none;
+}
+
+.pq-site .pq-search--plain .pq-search__layout--faceted {
+	grid-template-columns: minmax(16.25rem, 18.75rem) minmax(0, 1fr);
+	gap: 2.5rem;
+}
+
+.pq-site .pq-search--plain .pq-search__facets h2 {
+	margin: 0 0 1.5rem;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-group {
+	margin-block-end: 1.5rem;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-group > legend {
+	margin-block-end: 0.5rem;
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-group input[type='date'] {
+	block-size: 3rem;
+	box-sizing: border-box;
+	padding-inline: 0.75rem;
+	border: 2px solid var(--nldesign-color-border-strong, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 0);
+	font-size: 1.0625rem;
+}
+
+.pq-site .pq-search--plain .pq-search__sort select {
+	block-size: 2.75rem;
+	padding-inline: 0.625rem;
+	border: 2px solid var(--nldesign-color-border-strong, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 0);
+	background: var(--utrecht-document-background-color, Canvas);
+	font-size: 1.0625rem;
+}
+
+.pq-site .pq-search--plain .pq-search__list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.pq-site .pq-search--plain .pq-search__result.ac-card {
+	margin: 0;
+	padding: 1.25rem 1.5rem;
+	border: 1px solid var(--nldesign-color-border-dark, currentcolor);
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	background: var(--utrecht-document-background-color, Canvas);
+	box-shadow: none;
+}
+
+.pq-site .pq-search--plain .pq-search__result-title {
+	font-size: 1.375rem;
+	font-weight: 600;
+	color: var(--nldesign-color-primary, currentcolor);
+	text-decoration: underline;
+}
+
+.pq-site .pq-search--plain .pq-search__meta-item {
+	color: var(--nldesign-color-text-muted, currentcolor);
+	font-weight: 400;
+}
+
+.pq-site .pq-search--plain .pq-search__more {
+	color: var(--nldesign-color-primary, currentcolor);
+}
+
+.pq-site .pq-search--plain .ams-pagination__button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-inline-size: 2.75rem;
+	block-size: 2.75rem;
+	padding-inline: 0.875rem;
+	border: 1px solid var(--nldesign-color-border-dark, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 0);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.pq-site .pq-search--plain .ams-pagination__button--current {
+	border-color: var(--nldesign-color-primary, currentcolor);
+	background: var(--nldesign-color-primary, CanvasText);
+	color: var(--nldesign-color-primary-text, Canvas);
+}
+
+@media (max-width: 800px) {
+	.pq-site .pq-search--plain .pq-search__layout--faceted {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.pq-site .pq-search--plain .pq-search__layout--faceted .pq-search__facets,
+	.pq-site .pq-search--plain .pq-search__layout--faceted .pq-search__results {
+		grid-column: 1;
+	}
+
+	.pq-site .pq-search--plain .pq-search__layout--faceted .pq-search__facets {
+		grid-row: 2;
+	}
+
+	.pq-site .pq-search--plain .pq-search__layout--faceted .pq-search__results {
+		grid-row: 1;
+	}
+}
