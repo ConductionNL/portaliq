@@ -95,6 +95,26 @@ class BoardKeys {
 
 
 	/**
+	 * A tasks block's board key: `emptyNotice: true` (with nothing to do,
+	 * the sentence is a notice in the ok tone, as the board draws it on the
+	 * case page).
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+	 */
+	public function tasksKeys(array $block): array {
+		if (($block['emptyNotice'] ?? null) === true) {
+			return ['emptyNotice' => true];
+		}
+
+		return [];
+	}//end tasksKeys()
+
+
+	/**
 	 * A highlight tasks block's board keys: `tone` and `dueInLine`.
 	 *
 	 * @param array<string, mixed> $block The declared block.

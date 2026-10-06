@@ -66,6 +66,8 @@ class BoardKeysTest extends TestCase {
 			actual: $keys->highlightKeys(block: ['tone' => 'info', 'dueInLine' => 'true'])
 		);
 		$this->assertSame(expected: [], actual: $keys->highlightKeys(block: ['tone' => 'danger']));
+		$this->assertSame(expected: ['emptyNotice' => true], actual: $keys->tasksKeys(block: ['emptyNotice' => true]));
+		$this->assertSame(expected: [], actual: $keys->tasksKeys(block: ['emptyNotice' => 'yes']));
 	}//end testAHighlightKeepsItsToneAndDueLine()
 
 

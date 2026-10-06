@@ -29,6 +29,30 @@
 			:text="tr('What you still have to do could not be loaded.')"
 			:retryLabel="tr('Try again')"
 			@retry="$emit('retry')" />
+		<!-- With `emptyNotice` nothing to do reads as a notice in the ok
+		     tone (zuiddrecht-resident-pages-match-the-boards). -->
+		<div
+			v-else-if="entries.length === 0 && block.emptyNotice === true"
+			class="utrecht-alert utrecht-alert--ok pq-tasks-block__ok"
+			role="status"
+			data-testid="mijn-tasks-ok">
+			<svg
+				class="pq-tasks-block__ok-icon"
+				viewBox="0 0 24 24"
+				aria-hidden="true"
+				focusable="false">
+				<path
+					d="M5 12.5l4.5 4.5L19 7"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.4"
+					stroke-linecap="round"
+					stroke-linejoin="round" />
+			</svg>
+			<p class="utrecht-paragraph pq-tasks-block__ok-text">
+				{{ tr('You have nothing to do right now.') }}
+			</p>
+		</div>
 		<EmptyState
 			v-else-if="entries.length === 0"
 			:text="tr('You have nothing to do right now.')" />
@@ -321,5 +345,42 @@ export default {
 .pq-tasks-block__list {
 	margin: 0;
 	padding: 0;
+}
+
+/* Nothing to do, as a notice in the ok tone: a tick and one sentence. */
+.pq-tasks-block__ok {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 1rem 1.25rem;
+	border: 1px solid
+		var(
+			--utrecht-alert-ok-border-color,
+			var(--nldesign-color-success, currentcolor)
+		);
+	border-radius: var(--utrecht-alert-border-radius, 0.25rem);
+	background-color: var(
+		--utrecht-alert-ok-background-color,
+		var(
+			--nldesign-component-status-badge-success-background-color,
+			rgba(var(--nldesign-color-success-rgb, 57, 135, 12), 0.12)
+		)
+	);
+	color: var(--utrecht-alert-ok-color, inherit);
+}
+
+.pq-tasks-block__ok-icon {
+	flex: none;
+	inline-size: 1.375rem;
+	block-size: 1.375rem;
+	color: var(
+		--utrecht-alert-icon-ok-color,
+		var(--nldesign-color-success, currentcolor)
+	);
+}
+
+.pq-tasks-block__ok-text {
+	margin: 0;
+	font-size: 1.125rem;
 }
 </style>

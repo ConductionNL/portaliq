@@ -554,7 +554,7 @@ test("the resident menu in the portal's own groups, Overzicht first, nothing unr
 	const laid = residentMenuGroups(nav, nl, 2, href, {}, LAYOUT)
 	assert.deepEqual(names(laid).slice(0, 4), [
 		['Mijn Zuiddrecht', ['Overzicht', 'Berichten']],
-		['Zaken en taken', ['Mijn zaken', 'Mijn taken']],
+		['Zaken en taken', ['Mijn zaken', 'Mijn taken', 'Toegang tot zaken']],
 		['Vragen en meldingen', ['Melding indienen']],
 		['Uw gegevens', ['Mijn gegevens', 'Mijn account']],
 	])

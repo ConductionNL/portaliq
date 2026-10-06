@@ -336,7 +336,15 @@ export function laidOut(groups, layout, t, hrefFor) {
 	})
 	for (const group of groups) {
 		const rest = group.items.filter((item) => !placed.has(item))
-		if (rest.length > 0) {
+		if (rest.length === 0) {
+			continue
+		}
+		// The site's own group under the same heading as a declared one
+		// joins it, so one heading never stands twice.
+		const same = out.find((candidate) => candidate.title === group.title)
+		if (same) {
+			same.items.push(...rest.map(plain))
+		} else {
 			out.push({ ...group, items: rest.map(plain) })
 		}
 	}
