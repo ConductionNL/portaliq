@@ -88,7 +88,7 @@ After `site-multi-step-forms` wave 1.
 
 ## Amendment, 2026-10-05: Woo capability programme (row 6.13)
 
-Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`. A test marked **fails today** must be run
+Build rules: `openspec/woo-build-rules.md`. A test marked **fails today** must be run
 on `origin/development` first and seen red; put the failing line in the PR body.
 
 - [ ] **T8c**: the language switch renders and the chosen language reaches the content (REQ-SNW-013).
