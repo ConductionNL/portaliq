@@ -77,6 +77,14 @@
 					<p v-if="way.card && way.card.hint" class="pq-signin__hint">
 						{{ way.card.hint }}
 					</p>
+					<!-- The one-click demo sign-in says so under its button
+					     (example-resident-demo-login). -->
+					<p
+						v-if="way.demo"
+						class="pq-signin__hint pq-signin__demo"
+						data-testid="site-account-signin-demo">
+						{{ demoLabel }}
+					</p>
 				</li>
 			</ul>
 			<p v-else class="utrecht-paragraph">
@@ -160,6 +168,12 @@ export default {
 		/** The portal's `authentication.signInPage`. */
 		page: { type: Object, default: () => ({}) },
 		welcomeLabel: { type: String, default: 'Welkom' },
+		/** The note under a one-click demo way in. */
+		demoLabel: {
+			type: String,
+			default: 'Alleen op deze demo. Er wordt geen wachtwoord gevraagd.',
+		},
+
 		introLabel: { type: String, default: 'Log in om uw gegevens te bekijken.' },
 		noWayLabel: {
 			type: String,

@@ -1327,7 +1327,13 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		signInRoutes() {
-			return signInRoutes(this.site, authBaseFrom(resolveApiBase()), this.t)
+			return signInRoutes(
+				this.site,
+				authBaseFrom(resolveApiBase()),
+				this.t,
+				// One click on a demo for the example resident (example-resident-demo-login).
+				this.signinConfig.exampleResident || '',
+			)
 		},
 
 		/**

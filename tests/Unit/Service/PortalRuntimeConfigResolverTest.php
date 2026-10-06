@@ -21,6 +21,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\ExampleResident\ExampleResidentCatalogue;
+use OCA\Portaliq\Service\ExampleResident\ExampleResidentRecord;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
@@ -467,6 +469,67 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		$this->assertSame([['provider' => 'digid', 'label' => 'DigiD']], $config['oidcProviders']);
 	}//end testTheOrgParameterNamesTheSignInOrganisation()
 
+
+	/**
+	 * The one-click demo sign-in is offered only while the switch is on,
+	 * for the installed resident of this portal (example-resident-demo-login).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	public function testTheOneClickSignInIsOfferedOnlyWithTheSwitch(): void {
+		$zuiddrecht = ['slug' => 'zuiddrecht', 'organisation' => ''];
+		$off        = $this->demoResolver(switch: 'no');
+		$on         = $this->demoResolver(switch: 'yes');
+
+		// Off: nothing, even in debug mode.
+		$this->assertSame(expected: '', actual: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResident']);
+		// On: this portal's resident; another portal, or none, gets nothing.
+		$this->assertSame(expected: 'zuiddrecht', actual: $on->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResident']);
+		$this->assertSame(expected: '', actual: $on->runtimeConfigFor(portal: ['slug' => 'other'], orgValue: '', locale: 'nl')['exampleResident']);
+		$this->assertSame(expected: '', actual: $on->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['exampleResident']);
+	}//end testTheOneClickSignInIsOfferedOnlyWithTheSwitch()
+
+
+	/**
+	 * A resolver on a debug instance with the example resident `zuiddrecht`
+	 * installed as `sanne.devries`, and the switch as given.
+	 *
+	 * @param string $switch The app config `example_resident_demo_login`.
+	 *
+	 * @return PortalRuntimeConfigResolver
+	 */
+	private function demoResolver(string $switch): PortalRuntimeConfigResolver {
+		$config = $this->createMock(originalClassName: IConfig::class);
+		$config->method('getSystemValueBool')->willReturn(true);
+		$config->method('getAppValue')->willReturnCallback(
+			static function (string $app, string $key, mixed $default = '') use ($switch): string {
+				if ($key === 'example_resident_demo_login') {
+					return $switch;
+				}
+
+				return (string)$default;
+			}
+		);
+		$record = $this->createMock(originalClassName: ExampleResidentRecord::class);
+		$record->method('read')->willReturn(
+			['userId' => 'sanne.devries', 'userCreated' => true, 'account' => 'a', 'signIn' => ['mode' => 'nextcloud', 'label' => true], 'objects' => []]
+		);
+		$catalogue = $this->createMock(originalClassName: ExampleResidentCatalogue::class);
+		$catalogue->method('ids')->willReturn(['zuiddrecht']);
+		$catalogue->method('find')->willReturn(['id' => 'zuiddrecht', 'portal' => 'zuiddrecht']);
+
+		return new PortalRuntimeConfigResolver(
+			portalResolver: $this->createMock(originalClassName: PortalResolver::class),
+			orgResolver: $this->orgResolverDouble(),
+			themeResolver: $this->createMock(originalClassName: PortalThemeResolver::class),
+			config: $config,
+			waysIn: null,
+			exampleResidents: $record,
+			exampleCatalogue: $catalogue
+		);
+	}//end demoResolver()
 
 	/**
 	 * The dev login is only offered where the server accepts it.
