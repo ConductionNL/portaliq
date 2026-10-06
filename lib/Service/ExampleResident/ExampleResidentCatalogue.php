@@ -140,22 +140,30 @@ class ExampleResidentCatalogue {
 		$keys = [];
 		foreach ($objects as $object) {
 			$key = ($object['key'] ?? null);
-			if (is_string($key) === false || $key === '' || isset($keys[$key]) === true) {
+			if (is_string($key) === false || $key === '' || isset($keys[$key]) === true || $this->isObject(object: $object) === false) {
 				return false;
 			}
 
 			$keys[$key] = true;
-			if (is_string($object['register'] ?? null) === false || is_string($object['schema'] ?? null) === false) {
-				return false;
-			}
-
-			if (is_array($object['data'] ?? null) === false || $object['data'] === []) {
-				return false;
-			}
 		}
 
 		return true;
 	}//end listsObjects()
+
+	/**
+	 * Whether a declared object names a register, a schema and data.
+	 *
+	 * @param mixed $object The declared object.
+	 *
+	 * @return bool
+	 */
+	private function isObject(mixed $object): bool {
+		if (is_array($object) === false || is_string($object['register'] ?? null) === false || is_string($object['schema'] ?? null) === false) {
+			return false;
+		}
+
+		return is_array($object['data'] ?? null) === true && $object['data'] !== [];
+	}//end isObject()
 
 	/**
 	 * The folder the declarations are read from.

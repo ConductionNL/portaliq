@@ -120,6 +120,27 @@ class ExampleResidentInstall extends Command {
 			return 1;
 		}
 
+		$this->printReport(resident: $resident, report: $report, output: $output);
+		if ($report['ok'] === false) {
+			$output->writeln('<error>The example resident is not complete. See the lines above.</error>');
+			return 2;
+		}
+
+		return 0;
+	}//end execute()
+
+	/**
+	 * Write what the install did, per part and per type, then what went wrong, the password and where to sign in.
+	 *
+	 * @param array<string, mixed> $resident The declaration.
+	 * @param array<string, mixed> $report   The installer's report.
+	 * @param OutputInterface      $output   The command output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-install-must-prove-what-arrived
+	 */
+	private function printReport(array $resident, array $report, OutputInterface $output): void {
 		$output->writeln('Nextcloud account ' . $report['userId'] . ': ' . self::word(outcome: $report['user']));
 		$output->writeln('Portal account ' . $report['userId'] . ': ' . self::word(outcome: $report['account']));
 		$output->writeln('Sign-in mode ' . $resident['signIn']['mode'] . ' on portal ' . $report['portal'] . ': ' . self::word(outcome: $report['signIn']));
@@ -136,16 +157,15 @@ class ExampleResidentInstall extends Command {
 			);
 		}
 
-		foreach ($report['dropped'] as $dropped) {
-			$output->writeln('<error>Not written: ' . $dropped . '</error>');
-		}
-
-		foreach ($report['missing'] as $missing) {
-			$output->writeln('<error>Not on the instance: ' . $missing . '</error>');
-		}
-
-		foreach ($report['lost'] as $lost) {
-			$output->writeln('<error>Written but not kept: ' . $lost . '</error>');
+		$problems = [
+			'Not written: '          => $report['dropped'],
+			'Not on the instance: '  => $report['missing'],
+			'Written but not kept: ' => $report['lost'],
+		];
+		foreach ($problems as $words => $lines) {
+			foreach ($lines as $line) {
+				$output->writeln('<error>' . $words . $line . '</error>');
+			}
 		}
 
 		if ($report['password'] !== '') {
@@ -156,13 +176,7 @@ class ExampleResidentInstall extends Command {
 			'Sign in at /index.php/apps/portaliq/site?portal=' . $report['portal'] . '&route=/mijn with the card "'
 			. (string)($resident['signIn']['label']['title'] ?? $resident['signIn']['mode']) . '".'
 		);
-		if ($report['ok'] === false) {
-			$output->writeln('<error>The example resident is not complete. See the lines above.</error>');
-			return 2;
-		}
-
-		return 0;
-	}//end execute()
+	}//end printReport()
 
 	/**
 	 * The words for an outcome.

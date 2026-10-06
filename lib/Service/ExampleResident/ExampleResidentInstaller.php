@@ -124,18 +124,7 @@ class ExampleResidentInstaller {
 		}
 
 		$declaredAccount = $this->wayIn->accountFor(resident: (array)$resident['resident'], subject: $userId);
-		if ($record['account'] === '' || $this->wayIn->account(id: $record['account']) === null) {
-			$record['account'] = $this->wayIn->createAccount(account: $declaredAccount);
-			$report['account'] = 'created';
-		}
-
-		$mode = (string)$resident['signIn']['mode'];
-		if ($this->wayIn->offered(portal: $portal, mode: $mode) === false) {
-			$offer             = $this->wayIn->offer(portal: $portal, signIn: (array)$resident['signIn']);
-			$report['signIn']  = 'added';
-			$record['signIn']  = ['mode' => $mode, 'label' => $offer['label']];
-		}
-
+		$report          = $this->openWayIn(resident: $resident, portal: $portal, account: $declaredAccount, report: $report, record: $record);
 		$this->record->write(id: $report['id'], record: $record);
 
 		$written = $this->objects->write(
@@ -153,6 +142,35 @@ class ExampleResidentInstaller {
 
 		return $this->proven(resident: $resident, report: $report, record: $record, written: ($written['written'] + ['@account' => $declaredAccount]));
 	}//end install()
+
+	/**
+	 * Write the portal account and add the sign-in mode, each when the record does not hold it yet.
+	 *
+	 * @param array<string, mixed> $resident The declaration.
+	 * @param array<string, mixed> $portal   The portal row.
+	 * @param array<string, mixed> $account  The portal account to write, from ExampleResidentWayIn::accountFor().
+	 * @param array<string, mixed> $report   The report so far.
+	 * @param array<string, mixed> $record   The record; gains the account id and the mode.
+	 *
+	 * @return array<string, mixed> The report, with `account` and `signIn` filled in.
+	 *
+	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-resident-must-sign-in-without-a-test-door
+	 */
+	private function openWayIn(array $resident, array $portal, array $account, array $report, array &$record): array {
+		if ($record['account'] === '' || $this->wayIn->account(id: $record['account']) === null) {
+			$record['account'] = $this->wayIn->createAccount(account: $account);
+			$report['account'] = 'created';
+		}
+
+		$mode = (string)$resident['signIn']['mode'];
+		if ($this->wayIn->offered(portal: $portal, mode: $mode) === false) {
+			$offer            = $this->wayIn->offer(portal: $portal, signIn: (array)$resident['signIn']);
+			$report['signIn'] = 'added';
+			$record['signIn'] = ['mode' => $mode, 'label' => $offer['label']];
+		}
+
+		return $report;
+	}//end openWayIn()
 
 	/**
 	 * This moment in the declaration's time zone, so "09:12" is a quarter
@@ -201,6 +219,19 @@ class ExampleResidentInstaller {
 			return 'This example resident is installed as "' . $record['userId'] . '". Remove it first to use another account id.';
 		}
 
+		return $this->takenBy(userId: $userId, record: $record);
+	}//end stoppedBy()
+
+	/**
+	 * Why the account id cannot be used, or '': it names a Nextcloud account
+	 * or a portal account that this command did not make.
+	 *
+	 * @param string               $userId The account id to use.
+	 * @param array<string, mixed> $record What an earlier install created.
+	 *
+	 * @return string
+	 */
+	private function takenBy(string $userId, array $record): string {
 		$ours = ($record['userId'] === $userId && $record['userCreated'] === true);
 		if ($this->user->exists(userId: $userId) === true && $ours === false) {
 			return 'A Nextcloud account "' . $userId . '" exists and this command did not make it, so it is left alone.'
@@ -214,7 +245,7 @@ class ExampleResidentInstaller {
 		}
 
 		return '';
-	}//end stoppedBy()
+	}//end takenBy()
 
 	/**
 	 * Create the Nextcloud account, with the given password or a new one.
@@ -255,11 +286,38 @@ class ExampleResidentInstaller {
 	 * @return array<string, mixed> The finished report.
 	 */
 	private function proven(array $resident, array $report, array $record, array $written): array {
-		$account = $this->wayIn->account(id: $record['account']);
-		if ($account === null) {
+		$report = $this->provenWayIn(resident: $resident, report: $report, record: $record, account: $written['@account']);
+		foreach ((array)$resident['objects'] as $object) {
+			$key = (string)$object['key'];
+			if (isset($record['objects'][$key]) === false) {
+				// Never written: named among the dropped ones already.
+				continue;
+			}
+
+			$report = $this->provenObject(object: $object, id: $record['objects'][$key]['id'], declared: ($written[$key] ?? []), report: $report);
+		}
+
+		$report['ok'] = ($report['dropped'] === [] && $report['missing'] === [] && $report['lost'] === []);
+
+		return $report;
+	}//end proven()
+
+	/**
+	 * Read the portal account and the portal back.
+	 *
+	 * @param array<string, mixed> $resident The declaration.
+	 * @param array<string, mixed> $report   The report so far.
+	 * @param array<string, mixed> $record   The record as written.
+	 * @param array<string, mixed> $account  The portal account this run meant to write.
+	 *
+	 * @return array<string, mixed> The report.
+	 */
+	private function provenWayIn(array $resident, array $report, array $record, array $account): array {
+		$stored = $this->wayIn->account(id: $record['account']);
+		if ($stored === null) {
 			$report['missing'][] = 'portal account ' . $report['userId'];
 		} else if ($report['account'] === 'created') {
-			foreach ($this->proof->lostPaths(declared: $written['@account'], stored: $account) as $path) {
+			foreach ($this->proof->lostPaths(declared: $account, stored: $stored) as $path) {
 				$report['lost'][] = 'portal account ' . $report['userId'] . ': ' . $path;
 			}
 		}
@@ -269,35 +327,39 @@ class ExampleResidentInstaller {
 			$report['missing'][] = 'sign-in mode ' . $resident['signIn']['mode'] . ' on portal ' . $report['portal'];
 		}
 
-		foreach ((array)$resident['objects'] as $object) {
-			$key  = (string)$object['key'];
-			$type = $object['register'] . ' ' . $object['schema'];
-			if (isset($record['objects'][$key]) === false) {
-				// Never written: named among the dropped ones already.
-				continue;
-			}
+		return $report;
+	}//end provenWayIn()
 
-			$stored = $this->store->get(register: $object['register'], schema: $object['schema'], id: $record['objects'][$key]['id']);
-			if ($stored === null) {
-				$report['missing'][] = $type . ' ' . $key;
-				continue;
-			}
+	/**
+	 * Read one object back and compare it with what this run wrote.
+	 *
+	 * @param array<string, mixed> $object   The declared object.
+	 * @param string               $id       The id the record holds for it.
+	 * @param array<string, mixed> $declared What this run wrote, or [] for an object from an earlier run.
+	 * @param array<string, mixed> $report   The report so far.
+	 *
+	 * @return array<string, mixed> The report.
+	 */
+	private function provenObject(array $object, string $id, array $declared, array $report): array {
+		$type   = $object['register'] . ' ' . $object['schema'];
+		$stored = $this->store->get(register: $object['register'], schema: $object['schema'], id: $id);
+		if ($stored === null) {
+			$report['missing'][] = $type . ' ' . $object['key'];
+			return $report;
+		}
 
-			$report['types'][$type]['arrived']++;
-			foreach ((array)($object['jsonFields'] ?? []) as $field) {
-				// Kept as JSON text; a register may hand it back as text or as the list.
-				if (is_string($stored[$field] ?? null) === true) {
-					$stored[$field] = json_decode($stored[$field], true);
-				}
-			}
-
-			foreach ($this->proof->lostPaths(declared: ($written[$key] ?? []), stored: $stored) as $path) {
-				$report['lost'][] = $type . ' ' . $key . ': ' . $path;
+		$report['types'][$type]['arrived']++;
+		foreach ((array)($object['jsonFields'] ?? []) as $field) {
+			// Kept as JSON text; a register may hand it back as text or as the list.
+			if (is_string($stored[$field] ?? null) === true) {
+				$stored[$field] = json_decode($stored[$field], true);
 			}
 		}
 
-		$report['ok'] = ($report['dropped'] === [] && $report['missing'] === [] && $report['lost'] === []);
+		foreach ($this->proof->lostPaths(declared: $declared, stored: $stored) as $path) {
+			$report['lost'][] = $type . ' ' . $object['key'] . ': ' . $path;
+		}
 
 		return $report;
-	}//end proven()
+	}//end provenObject()
 }//end class
