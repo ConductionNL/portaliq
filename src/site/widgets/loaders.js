@@ -57,4 +57,6 @@ export const loaders = {
 	nlNewsList: () => import('./nlNewsList/NlNewsList.vue'),
 	nlNewsArticle: () => import('./nlNewsArticle/NlNewsArticle.vue'),
 	nlEventList: () => import('./nlEventList/NlEventList.vue'),
+	nlLinkColumns: () => import('./nlLinkColumns/NlLinkColumns.vue'),
+	nlLookupForm: () => import('./nlLookupForm/NlLookupForm.vue'),
 }

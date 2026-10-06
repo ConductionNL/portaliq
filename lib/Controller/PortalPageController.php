@@ -349,11 +349,54 @@ class PortalPageController extends Controller {
 	private function siteLocale(): string {
 		$locale = $this->resolveLocale();
 		if ($locale === '') {
-			return 'nl';
+			$locale = 'nl';
 		}
 
-		return $locale;
+		return $this->localeThePortalServes(locale: $locale);
 	}//end siteLocale()
+
+
+	/**
+	 * The visitor's language held against the languages the serving portal
+	 * declares (`locales`). A portal that declares only `nl` serves `nl` to a
+	 * browser that asks for English: the document language, and so every
+	 * date the widgets print, follow the portal, not the browser. A portal
+	 * that declares nothing, or that cannot be resolved, serves what the
+	 * visitor asked for, as before.
+	 *
+	 * @param string $locale The visitor's language, never empty.
+	 *
+	 * @return string The language to serve.
+	 *
+	 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-document-language-follows-the-portal
+	 */
+	private function localeThePortalServes(string $locale): string {
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $this->requestedPortalSlug());
+		} catch (\Throwable) {
+			return $locale;
+		}
+
+		$declared = [];
+		foreach ((array)($portal['locales'] ?? []) as $candidate) {
+			if (is_string($candidate) === true && trim($candidate) !== '') {
+				$declared[] = strtolower(trim($candidate));
+			}
+		}
+
+		if ($declared === []) {
+			return $locale;
+		}
+
+		$base = strtolower(substr($locale, 0, 2));
+		foreach ($declared as $candidate) {
+			if ($candidate === strtolower($locale) || substr($candidate, 0, 2) === $base) {
+				return $locale;
+			}
+		}
+
+		return $declared[0];
+	}//end localeThePortalServes()
 
 
 	/**

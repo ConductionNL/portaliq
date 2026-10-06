@@ -1226,3 +1226,146 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	font-size: 1.0625rem;
 	font-weight: 700;
 }
+
+/*
+ * THE PAGE TITLE AT THE SET'S OWN SIZE (site-matches-the-zuiddrecht-boards).
+ * The h1 wears `utrecht-heading-2` on purpose (see App.vue); a set that wants
+ * its content pages to open larger names the size in one token. Without the
+ * token nothing changes.
+ */
+.pq-site [data-testid='page-title'] {
+	font-size: var(--nldesign-website-page-title-size, inherit);
+	line-height: var(--nldesign-website-page-title-line-height, inherit);
+}
+
+/*
+ * THE PLAIN HERO (site-matches-the-zuiddrecht-boards, board Home): the
+ * question large, the form on the band itself with input and button joined,
+ * the popular links under it, the emblem faint at the end of the band. Only
+ * when a placement asks for `variant: plain`; the card variant is untouched.
+ */
+.pq-site .ac-hero.pq-hero--plain {
+	padding-block: 4.5rem 7rem;
+}
+
+.pq-site .ac-hero.pq-hero--plain > .container {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-hero__title {
+	max-inline-size: 45rem;
+	margin: 0;
+	font-size: var(--nldesign-website-hero-title-size, 3.5rem);
+	font-weight: 700;
+	line-height: 1.05;
+	letter-spacing: -0.01em;
+}
+
+.pq-site .ac-hero.pq-hero--plain .pq-hero__search {
+	max-inline-size: 45rem;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__label {
+	margin-block-end: 0.625rem;
+	font-size: 1.125rem;
+	font-weight: 400;
+	color: var(--nldesign-hero-body-color, inherit);
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__search {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__input.utrecht-textbox {
+	flex: 1 1 20rem;
+	min-inline-size: 0;
+	block-size: 3.75rem;
+	box-sizing: border-box;
+	padding-inline: 1.125rem;
+	border: 2px solid var(--nldesign-color-primary-hover, currentcolor);
+	border-inline-end: 0;
+	border-radius: var(--nldesign-website-border-radius, 0) 0 0
+		var(--nldesign-website-border-radius, 0);
+	background: var(--utrecht-document-background-color, Canvas);
+	font-size: 1.1875rem;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__button.utrecht-button {
+	block-size: 3.75rem;
+	padding-inline: 1.875rem;
+	border: 0;
+	border-radius: 0 var(--nldesign-website-border-radius, 0)
+		var(--nldesign-website-border-radius, 0) 0;
+	font-size: 1.1875rem;
+	font-weight: 600;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__search-icon {
+	display: none;
+}
+
+.pq-site .ac-hero.pq-hero--plain .pq-hero__popular {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.125rem;
+	margin: 0;
+	font-size: 1.0625rem;
+	color: var(--nldesign-hero-body-color, inherit);
+}
+
+.pq-site .ac-hero.pq-hero--plain .pq-hero__popular-label {
+	color: var(--nldesign-color-text-muted, inherit);
+}
+
+.pq-site .ac-hero.pq-hero--plain .pq-hero__popular-link {
+	color: var(--nldesign-color-primary, inherit);
+}
+
+.pq-site .ac-hero.pq-hero--plain::after {
+	inset-block: -60px auto;
+	inset-inline-end: -70px;
+	inline-size: auto;
+	block-size: 620px;
+	aspect-ratio: 1;
+	opacity: var(--nldesign-website-hero-decoration-opacity, 0.1);
+}
+
+@media (max-width: 600px) {
+	.pq-site .ac-hero.pq-hero--plain {
+		padding-block: 2rem 2.5rem;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain > .container {
+		gap: 0.875rem;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-hero__title {
+		font-size: 2rem;
+		line-height: 1.15;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__search {
+		flex-wrap: nowrap;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__input.utrecht-textbox,
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__button.utrecht-button {
+		block-size: 3.25rem;
+		font-size: 1.125rem;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__input.utrecht-textbox {
+		flex: 1 1 auto;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__button.utrecht-button {
+		padding-inline: 1.125rem;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain::after {
+		display: none;
+	}
+}

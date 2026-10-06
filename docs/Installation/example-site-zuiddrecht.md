@@ -109,6 +109,10 @@ Remove the resident before you remove the site.
 ## What is and is not in the site
 
 - The header, footer, home page and the page "Afval scheiden en ophalen" follow the Zuiddrecht design. The other pages are short, so that no link is dead.
+- The home page and the content page use the drawn options the design asks for: the "Let op" strip over the whole width with its link, the search on the band with "Veel gezocht", the task tiles with the design's own icons (three columns, a plain list of six on a phone), the "Openbare informatie" card, the grey "Bestuur en organisatie" band, the postcode form, the boxed table and the button with an arrow. Every option is a block property any page can use; a page that names none of them looks as it did.
+- The breadcrumb uses the menu's own words for a page the menu names ("Home › Afval").
+- The site is served in the portal's language. A browser that asks for English on a portal that declares only Dutch gets Dutch, dates included.
+- Two optional theme tokens set the size of a content page's title (`--nldesign-website-page-title-size`) and the hero watermark's opacity (`--nldesign-website-hero-decoration-opacity`); the site renders without them.
 - "Woo-publicaties" and the search box open `/zoeken`, with the search block every portal can place. It finds publications when OpenCatalogi is installed.
 - Phone numbers and addresses read `[telefoonnummer]`, `[e-mailadres]` and `[adres]`. Zuiddrecht has none.
 
