@@ -67,6 +67,16 @@ class SiteHeadTest extends TestCase {
 		(new SiteHead($reader))->for(portal: self::PORTAL, route: 'contact/', locale: 'nl', canonical: '');
 	}//end testThePageIsReadAsTheAnonymousPublicReadsIt()
 
+	public function testTheHeadReadsThePageInTheDocumentLanguageWithThePortalsDefaultBehindIt(): void {
+		$reader = $this->getMockBuilder(CmsReader::class)->disableOriginalConstructor()->onlyMethods(['page'])->getMock();
+		$reader->expects($this->once())
+			->method('page')
+			->with('gemeente', '/contact', 'en', 'anonymous', 'nl')
+			->willReturn(null);
+
+		(new SiteHead($reader))->for(portal: self::PORTAL + ['locales' => ['nl', 'en']], route: '/contact', locale: 'en', canonical: '');
+	}//end testTheHeadReadsThePageInTheDocumentLanguageWithThePortalsDefaultBehindIt()
+
 	public function testOnlyAnAbsoluteImageAddressBecomesTheShareImage(): void {
 		$absolute = $this->head(page: ['title' => 'A', 'seo' => ['image' => 'https://example.nl/a.jpg']])
 			->for(portal: self::PORTAL, route: '/a', locale: 'nl', canonical: '');

@@ -354,8 +354,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `authentication.signInPage` (site-chrome-follows-the-design). Additive.
 		// 0.66.0 (portal 0.11.0): `residentMenu.cardLabel`
 		// (resident-menu-badges-and-cards). Additive.
-		$this->assertSame('0.66.0', self::$register['info']['version']);
-		$this->assertSame('0.66.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.67.0 (menu 0.2.0, glossaryTerm 0.2.0): `locale`, so a menu and a
+		// glossary term can be translated like a page (#703). Additive; a row
+		// without it is served in every language.
+		$this->assertSame('0.67.0', self::$register['info']['version']);
+		$this->assertSame('0.67.0', self::$register['components']['registers']['portaliq']['version']);
+		foreach (['menu', 'glossaryTerm'] as $translatable) {
+			$this->assertSame('0.2.0', self::$register['components']['schemas'][$translatable]['version']);
+			$this->assertSame('string', self::$register['components']['schemas'][$translatable]['properties']['locale']['type']);
+		}
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);

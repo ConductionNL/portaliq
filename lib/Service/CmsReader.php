@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Cms\ContentLocale;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalShell;
 use OCP\ICache;
@@ -89,6 +90,7 @@ class CmsReader {
 	 * @param MediaReferences       $media        Resolves a page's media:<id> references.
 	 * @param PortalRegionResolver  $regions      Groups a page's widgets by region.
 	 * @param PortalShell           $shell        Projects the portal's header, footer and regions.
+	 * @param ContentLocale         $locales      Chooses the rows in the visitor's language.
 	 *
 	 * @return void
 	 */
@@ -100,6 +102,7 @@ class CmsReader {
 		private readonly MediaReferences $media,
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 		private readonly PortalShell $shell=new PortalShell(),
+		private readonly ContentLocale $locales=new ContentLocale(),
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
 	}//end __construct()
@@ -130,24 +133,32 @@ class CmsReader {
 
 
 	/**
-	 * Read the menus of a portal.
+	 * Read the menus of a portal, in one locale.
 	 *
-	 * @param string $portal  The portal slug.
-	 * @param string $locale   The locale.
-	 * @param string $audience The requesting audience.
+	 * Menus are translated as a set: the requested locale's menus when it has
+	 * any, else the default locale's, plus every menu without a locale.
+	 *
+	 * @param string $portal        The portal slug.
+	 * @param string $locale        The locale.
+	 * @param string $audience      The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array The menus, ordered by position.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function menus(string $portal, string $locale, string $audience): array {
+	public function menus(string $portal, string $locale, string $audience, string $defaultLocale=''): array {
 		$key = $this->cacheKey(portal: $portal, kind: 'menus', selector: '', locale: $locale, audience: $audience);
 		$hit = $this->cache->get($key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->query(schema: 'menu', filters: ['portal' => $portal]);
+		$rows = $this->locales->filter(
+			rows: $this->query(schema: 'menu', filters: ['portal' => $portal]),
+			locale: $locale,
+			defaultLocale: $defaultLocale
+		);
 		usort($rows, static fn ($a, $b) => (int)($a['position'] ?? 0) <=> (int)($b['position'] ?? 0));
 
 		$menus = array_map(fn (array $row) => $this->shapeMenu(row: $row), $rows);
@@ -160,24 +171,32 @@ class CmsReader {
 	/**
 	 * Read the published pages of a portal, without their bodies.
 	 *
-	 * @param string $portal  The portal slug.
-	 * @param string $locale   The locale.
-	 * @param string $audience The requesting audience.
+	 * One summary per route, in the language {@see page()} would serve there.
+	 *
+	 * @param string $portal        The portal slug.
+	 * @param string $locale        The locale.
+	 * @param string $audience      The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array The page summaries.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function pages(string $portal, string $locale, string $audience): array {
+	public function pages(string $portal, string $locale, string $audience, string $defaultLocale=''): array {
 		$key = $this->cacheKey(portal: $portal, kind: 'pages', selector: '', locale: $locale, audience: $audience);
 		$hit = $this->cache->get($key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->query(schema: 'page', filters: ['portal' => $portal, 'status' => 'published']);
+		$byRoute = [];
+		foreach ($this->query(schema: 'page', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
+			$byRoute[(string)($row['route'] ?? '')][] = $row;
+		}
+
 		$pages = [];
-		foreach ($rows as $row) {
+		foreach ($byRoute as $candidates) {
+			$row = $this->locales->pick(rows: $candidates, locale: $locale, defaultLocale: $defaultLocale);
 			$pages[] = [
 				'title'   => (string)($row['title'] ?? ''),
 				'route'   => (string)($row['route'] ?? ''),
@@ -197,16 +216,22 @@ class CmsReader {
 	/**
 	 * Read one published page by route.
 	 *
-	 * @param string $portal  The portal slug.
-	 * @param string $route    The in-site route.
-	 * @param string $locale   The locale.
-	 * @param string $audience The requesting audience.
+	 * A route can hold one page per language. The page in the requested locale
+	 * is served; failing that the one in the portal's default locale, then one
+	 * without a locale, then whichever there is.
+	 *
+	 * @param string $portal        The portal slug.
+	 * @param string $route         The in-site route.
+	 * @param string $locale        The locale.
+	 * @param string $audience      The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array|null The page, or null when there is no published page there.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function page(string $portal, string $route, string $locale, string $audience): ?array {
+	public function page(string $portal, string $route, string $locale, string $audience, string $defaultLocale=''): ?array {
 		$key = $this->cacheKey(portal: $portal, kind: 'page', selector: $route, locale: $locale, audience: $audience);
 		$hit = $this->cache->get($key);
 		if ($hit !== null) {
@@ -223,12 +248,14 @@ class CmsReader {
 		// unpublished route and a non-existent route are answered identically,
 		// so the API is not an existence oracle for unreleased content.
 		$rows = $this->query(schema: 'page', filters: ['portal' => $portal, 'route' => $route, 'status' => 'published']);
-		$page = null;
-		foreach ($rows as $row) {
-			if ((string)($row['route'] ?? '') === $route) {
-				$page = $this->shapePage(row: $row);
-				break;
-			}
+
+		// The route is re-checked here, not trusted to the filter: a filter
+		// that silently widened would serve a DIFFERENT page under this route.
+		$atRoute = array_filter($rows, static fn (array $row): bool => (string)($row['route'] ?? '') === $route);
+		$chosen  = $this->locales->pick(rows: array_values($atRoute), locale: $locale, defaultLocale: $defaultLocale);
+		$page    = null;
+		if ($chosen !== null) {
+			$page = $this->shapePage(row: $chosen);
 		}
 
 		$this->cache->set($key, json_encode($page ?? []), self::TTL);
@@ -313,24 +340,32 @@ class CmsReader {
 
 
 	/**
-	 * Read the glossary of a portal.
+	 * Read the glossary of a portal, in one locale.
 	 *
-	 * @param string $portal  The portal slug.
-	 * @param string $locale   The locale.
-	 * @param string $audience The requesting audience.
+	 * Translated as a set, like the menus: the requested locale's terms when
+	 * it has any, else the default locale's, plus every term without a locale.
+	 *
+	 * @param string $portal        The portal slug.
+	 * @param string $locale        The locale.
+	 * @param string $audience      The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array The glossary terms, alphabetical.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function glossary(string $portal, string $locale, string $audience): array {
+	public function glossary(string $portal, string $locale, string $audience, string $defaultLocale=''): array {
 		$key = $this->cacheKey(portal: $portal, kind: 'glossary', selector: '', locale: $locale, audience: $audience);
 		$hit = $this->cache->get($key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->query(schema: 'glossaryTerm', filters: ['portal' => $portal]);
+		$rows = $this->locales->filter(
+			rows: $this->query(schema: 'glossaryTerm', filters: ['portal' => $portal]),
+			locale: $locale,
+			defaultLocale: $defaultLocale
+		);
 		$terms = [];
 		foreach ($rows as $row) {
 			$terms[] = [
