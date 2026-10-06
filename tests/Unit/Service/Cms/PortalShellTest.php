@@ -55,6 +55,41 @@ class PortalShellTest extends TestCase {
 		$this->assertSame([], (new PortalShell())->project(portal: ['residentMenu' => 'x'])['residentMenu']);
 	}//end testTheProjectionServesTheHeaderSearchAndTheAccountLabel()
 
+	/**
+	 * The portal's own menu groups and the cases display reach the site, well
+	 * formed only (zuiddrecht-resident-pages-match-the-boards).
+	 *
+	 * @return void
+	 */
+	public function testTheProjectionServesTheMenuGroupsAndTheCasesDisplay(): void {
+		$projected = (new PortalShell())->project(portal: [
+			'residentMenu' => [
+				'cardLabel' => 'U regelt het voor',
+				'groups'    => [
+					['title' => ' Mijn Zuiddrecht ', 'items' => ['overview', 'inbox', 'bad name', 7, '']],
+					['title' => '', 'items' => ['cases']],
+					['title' => 'Leeg', 'items' => []],
+					'x',
+					['title' => 'Vragen en meldingen', 'items' => ['portaliq:meldingen']],
+				],
+			],
+			'myCases'      => ['display' => 'rows'],
+		]);
+		$this->assertSame(
+			expected: [
+				'cardLabel' => 'U regelt het voor',
+				'groups'    => [
+					['title' => 'Mijn Zuiddrecht', 'items' => ['overview', 'inbox']],
+					['title' => 'Vragen en meldingen', 'items' => ['portaliq:meldingen']],
+				],
+			],
+			actual: $projected['residentMenu']
+		);
+		$this->assertSame(expected: ['display' => 'rows'], actual: $projected['myCases']);
+		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: ['myCases' => ['display' => 'cards']])['myCases']);
+		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: [])['myCases']);
+	}//end testTheProjectionServesTheMenuGroupsAndTheCasesDisplay()
+
 	public function testTheFooterServesItsButtonAndContactColumnOnNamedKeys(): void {
 		$footer = (new PortalShell())->footer(portal: ['footer' => [
 			'cta'     => ['label' => 'Contact en schooltijden', 'href' => '/contact', 'style' => 'x'],
