@@ -88,6 +88,15 @@ class OpenRegisterAutoloaderTest extends TestCase {
 
 	}//end testReturnsFalseWhenDisabled()
 
+	public function testReturnsFalseWhenAppHasNoLibDirectory(): void {
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isEnabledForAnyone')->with('openregister')->willReturn(true);
+		$appManager->method('getAppPath')->with('openregister')->willReturn($this->appPath . '/lib/Fake');
+
+		$this->assertFalse(OpenRegisterAutoloader::register(appManager: $appManager));
+
+	}//end testReturnsFalseWhenAppHasNoLibDirectory()
+
 	public function testNeverThrows(): void {
 		$appManager = $this->createMock(IAppManager::class);
 		$appManager->method('isEnabledForAnyone')->willThrowException(new \RuntimeException('boom'));
