@@ -560,6 +560,7 @@ import {
 	ownAreaLink as ownAreaLinkFor,
 	residentMenuGroups,
 	showsResidentMenu,
+	withAreaName,
 } from './lib/residentMenu.js'
 import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js'
 import {
@@ -1121,13 +1122,19 @@ export default {
 		/**
 		 * The site translator: English source strings, Dutch and English
 		 * bundles shared with `/portal` (src/shared/i18n).
+		 * The resident's own area reads under the name the portal gives its
+		 * account button, when it gives one.
 		 *
 		 * @return {(key: string, vars?: object) => string} The translator.
 		 *
 		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-the-own-area-must-carry-the-name-the-portal-gives-it
 		 */
 		t() {
-			return createTranslator(this.locale)
+			return withAreaName(
+				createTranslator(this.locale),
+				this.site?.accountLabel,
+			)
 		},
 
 		/**

@@ -49,6 +49,27 @@ export function showsResidentMenu(session, route, nav) {
 }
 
 /**
+ * A translator that calls the resident's own area what the portal calls it.
+ *
+ * A portal that names its account button ("Mijn Zuiddrecht") means that name
+ * for the area behind it too: the breadcrumb, the menu and the link in the
+ * header would otherwise read "Mijn omgeving" under a button that says
+ * something else. Without a name the translator is handed back as it is.
+ *
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @param {string} name The portal's `accountLabel`, possibly empty.
+ * @return {(key: string, vars?: object) => string} The translator to use.
+ * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-the-own-area-must-carry-the-name-the-portal-gives-it
+ */
+export function withAreaName(t, name) {
+	const own = String(name ?? '').trim()
+	if (own === '') {
+		return t
+	}
+	return (key, vars) => (key === 'My area' ? own : t(key, vars))
+}
+
+/**
  * The top right link to the resident's own area, or null when signed out.
  *
  * @param {object|null} session The session, or null.

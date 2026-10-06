@@ -277,6 +277,24 @@
 	padding-block-start: var(--cn-brand-stripe-height, 0);
 }
 
+/*
+ * A trail keeps the room the breadcrumb bar had of its own, under the motif
+ * (example-site-zuiddrecht). The motif's height alone put the trail against
+ * the line: seen live on the Zuiddrecht waste page and sign-in page. A page
+ * without a trail, such as the home page, keeps the rule above.
+ */
+.pq-site
+	.pq-site__header
+	.ac-header__navigation-breadcrumb:not(:has(.container:empty)) {
+	padding-block-start: calc(
+		var(--cn-brand-stripe-height, 0px) +
+			var(
+				--utrecht-breadcrumb-nav-padding-block-start,
+				var(--tilburg-space-block-mouse, 0px)
+			)
+	);
+}
+
 .pq-site .ac-footer .pq-footer__band--content::before {
 	--pq-stripe-first: var(--cn-brand-stripe-ratio-1, 1);
 	--pq-stripe-second: var(--cn-brand-stripe-ratio-2, 1);

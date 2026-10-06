@@ -7,7 +7,7 @@ A resident hears about a change on their case in the portal and, if they want, b
 
 ### Requirement: A case app declares which change a resident hears about (REQ-NAP-001)
 
-A contribution's `notifications` list SHALL accept, next to plain rule keys, a rule object naming a `ruleKey`, one of the contribution's own `collection`s and an `on` condition with a `field` that the collection projects and the operator `changed`. Portaliq SHALL drop a rule whose collection is scoped through `scopeClaim` or `via`, or whose field is not projected, and SHALL log it.
+A contribution's `notifications` list SHALL accept, next to plain rule keys, a rule object naming a `ruleKey`, one of the contribution's own `collection`s and an `on` condition with a `field` that the collection projects and the operator `changed`. Portaliq SHALL drop a rule whose collection is scoped through `scopeClaim` or `via`, or whose field is not projected, and SHALL log it. A plain rule key SHALL be kept only when something can fire it: `message.created`, `status.changed`, the `ruleKey` of a change rule kept in the same list, or a key in the contributing app's own namespace (`<appId>.<key>`). Portaliq SHALL drop any other plain key, a bare key or another app's, and SHALL log it with the app, so a declaration that can never send anything is not silent (#701).
 
 #### Scenario: A well-formed rule is kept
 - **GIVEN** a case app declaring a rule on its cases collection for the `status` field
@@ -20,6 +20,18 @@ A contribution's `notifications` list SHALL accept, next to plain rule keys, a r
 - **WHEN** portaliq aggregates the contributions
 - **THEN** the rule is dropped and a warning names the app and the rule
 - @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsAnUnprojectedField
+
+#### Scenario: A plain key nothing fires is dropped
+- **GIVEN** a supplier app declaring `notifications: ["tenderPublished", "message.created", "dossiq.invoiceDue"]` as app `dossiq`
+- **WHEN** portaliq aggregates the contributions
+- **THEN** `message.created` and `dossiq.invoiceDue` are kept, `tenderPublished` is dropped, and a warning names the app and says how to declare the key
+- @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsABareKeyNothingFires, ::testKeepsKeysSomethingFires and ::testLogsADroppedKeyWithTheApp
+
+#### Scenario: Another app's key is dropped
+- **GIVEN** app `opencatalogi` declaring `pipelinq.question.answered`
+- **WHEN** portaliq aggregates the contributions
+- **THEN** the key is dropped: a portalMessage carrying it is dispatched for `pipelinq` only, so it never fires for `opencatalogi`
+- @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsAnotherAppsKeyAndTheKeyOfADroppedRule
 
 ### Requirement: A declared change reaches the resident's inbox (REQ-NAP-002)
 

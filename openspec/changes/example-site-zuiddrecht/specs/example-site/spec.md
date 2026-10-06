@@ -104,3 +104,28 @@ addresses MUST pass unchanged; anything else MUST NOT become a link.
 - GIVEN the site at `/apps/portaliq/site?portal=zuiddrecht`
 - WHEN a link list holds `/afval`
 - THEN the link's address keeps `portal=zuiddrecht` and names the route `/afval`
+
+### Requirement: The own area must carry the name the portal gives it
+
+A portal that sets `accountLabel` MUST show that name wherever the site names the resident's own
+area: the breadcrumb, the resident menu, the link in the header and the tab title. A portal
+without one MUST keep "Mijn omgeving".
+
+#### Scenario: Mijn Zuiddrecht
+@e2e exclude Checked in node: tests/example-site.spec.mjs; rendered signed out in the lane's preview
+- GIVEN a portal with `accountLabel` "Mijn Zuiddrecht"
+- WHEN a visitor opens `/mijn`
+- THEN the breadcrumb reads "Home", "Mijn Zuiddrecht"
+
+### Requirement: The Zuiddrecht site must offer its two ways in as the design shows
+
+The Zuiddrecht declaration MUST hold a sign-in card for each way in it names besides `public`:
+DigiD for a resident, eHerkenning for a company, each with the title, text and button of the
+Inloggen board, and the page's heading, introduction and notice.
+
+#### Scenario: The sign-in page
+@e2e exclude Checked in node: tests/example-site.spec.mjs; rendered in the lane's preview through the real shell projection
+- GIVEN the installed site
+- WHEN a visitor opens `/mijn` signed out
+- THEN the page reads "Inloggen op Mijn Zuiddrecht" with the cards "Als inwoner" and "Namens een bedrijf"
+

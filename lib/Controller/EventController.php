@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -43,6 +44,11 @@ use Throwable;
  * Staff authoring for events.
  *
  * @spec openspec/changes/events-and-signups/design.md#api-design
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` and
+ * `ActionAuthService` are the authorization guard every `#[NoAdminRequired]`
+ * method calls first (portal.manage-event); a security requirement, not
+ * incidental coupling (see NewsController).
  */
 class EventController extends Controller {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -52,18 +58,25 @@ class EventController extends Controller {
 	private const SCHEMA = 'schoolEvent';
 
 	/**
+	 * The ADR-023 action every staff method is gated by (create and publish an event).
+	 */
+	public const ACTION = 'portal.manage-event';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
+	 * @param ActionAuthService $actionAuth Decides whether this staff user may author events (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ActionAuthService $actionAuth,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -75,13 +88,16 @@ class EventController extends Controller {
 	 *
 	 * @return string The staff member's user id.
 	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
+	 *                               user's groups do not hold self::ACTION.
 	 */
 	private function requireAuthenticatedStaff(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSForbiddenException('Authentication required');
 		}
+
+		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
 
 		return $user->getUID();
 	}//end requireAuthenticatedStaff()

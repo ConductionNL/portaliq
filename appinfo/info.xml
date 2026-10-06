@@ -68,11 +68,12 @@
         repository when it was written.
 
         The floor is 32 as a deliberate fleet policy (NC 32 is the PHP 8.3
-        baseline), matched by <php min-version="8.3"/> below. max-version stays
-        34, which is the fleet-wide value everywhere except openconnector (35).
+        baseline), matched by <php min-version="8.3"/> below. max-version is 35:
+        every new release of the WOO autumn release 2026 has to run on Nextcloud
+        35, and openregister, the data layer, declares 35 as well.
         -->
         <php min-version="8.3"/>
-        <nextcloud min-version="32" max-version="34"/>
+        <nextcloud min-version="32" max-version="35"/>
     </dependencies>
 
     <!-- The resident task leg (portal-task-delivery): drains openregister's
@@ -142,6 +143,10 @@
              instance, and take it off again. -->
         <command>OCA\Portaliq\Command\ExampleSiteInstall</command>
         <command>OCA\Portaliq\Command\ExampleSiteRemove</command>
+        <!-- example-resident-zuiddrecht: give an example site its resident,
+             so the area behind the sign-in button has something to show. -->
+        <command>OCA\Portaliq\Command\ExampleResidentInstall</command>
+        <command>OCA\Portaliq\Command\ExampleResidentRemove</command>
     </commands>
 
     <settings>

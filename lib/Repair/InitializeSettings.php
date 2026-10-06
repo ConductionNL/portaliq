@@ -116,7 +116,7 @@ class InitializeSettings implements IRepairStep {
 			$output->warning('Could not auto-configure Portaliq: ' . $e->getMessage());
 			$this->logger->error(
 				'Portaliq initialization failed',
-				['exception' => $e->getMessage()]
+				['exception' => $e]
 			);
 		}//end try
 	}//end run()

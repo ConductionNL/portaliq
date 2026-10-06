@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\PollService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -35,6 +36,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -44,6 +46,11 @@ use OCP\IUserSession;
  * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
  */
 class PollController extends Controller {
+	/**
+	 * The ADR-023 action a staff member needs to create a poll; the portal
+	 * subject's own endpoints are gated by their bearer instead.
+	 */
+	public const ACTION = 'portal.create-poll';
 
 	/**
 	 * Constructor.
@@ -52,12 +59,14 @@ class PollController extends Controller {
 	 * @param PollService $polls Creates, lists and answers polls.
 	 * @param PortalSessionService $session Resolves a portal subject.
 	 * @param IUserSession $userSession The staff user, when there is one.
+	 * @param ActionAuthService $actionAuth Decides whether this staff user may create a poll (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PollService $polls,
 		private readonly PortalSessionService $session,
 		private readonly IUserSession $userSession,
+		private readonly ActionAuthService $actionAuth,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -86,6 +95,12 @@ class PollController extends Controller {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
 		$result = $this->polls->create(

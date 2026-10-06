@@ -51,6 +51,7 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\Notifications\ChangeRuleNotices;
 use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
@@ -346,7 +347,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 */
 	private function onForeignMessage(array $data, string $recordId): void {
 		$ruleKey = ($data['ruleKey'] ?? null);
-		if (is_string($ruleKey) === false || preg_match('/^([a-z][a-z0-9_-]*)\.[A-Za-z0-9_.-]+$/', $ruleKey, $match) !== 1) {
+		if (is_string($ruleKey) === false || preg_match(NotificationRuleNormaliser::APP_RULE_KEY_PATTERN, $ruleKey, $match) !== 1) {
 			return;
 		}
 

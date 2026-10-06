@@ -12,6 +12,7 @@ Zuiddrecht is a municipality that does not exist. Its website shows what a porta
 
 - Portaliq and OpenRegister, both enabled.
 - The theme app (thematiq) with the `zuiddrecht` set. Without it the site installs and shows without its house style. The command tells you when the set is missing.
+- From a source checkout only: the built site bundle. `npm run dev` builds the admin screens and nothing else. The public site needs `npx webpack --config webpack.site.js` (and `webpack.traffic.js` for traffic measurement), or `npm run build` for everything. Without it the site is a blank page with one 404 on `portaliq-site.js`. A release from the app store has the bundle.
 
 ## Install
 
@@ -51,13 +52,59 @@ The site answers at `/index.php/apps/portaliq/site?portal=zuiddrecht`. To serve 
 
 ## Signing in
 
-The header shows the button "Mijn Zuiddrecht". The portal names DigiD and eHerkenning as its ways in, as the design does. They work once your instance has a sign-in broker for them: see [Signing in through integriq](../operations/signing-in-through-integriq.md). On a test instance you can switch on the test sign-in instead:
+The header shows the button "Mijn Zuiddrecht". It opens the sign-in page with two cards: "Als inwoner" with DigiD and "Namens een bedrijf" with eHerkenning. They work once your instance has a sign-in broker for them: see [Signing in through integriq](../operations/signing-in-through-integriq.md).
+
+After signing in, a resident sees what the installed apps offer. With dossiq that is the overview, "Mijn zaken" and the page of one case with its steps, details and documents. The site calls this area "Mijn Zuiddrecht" everywhere, after the name on the button.
+
+Did you install the site before the sign-in cards were added? The install never changes a portal that exists. Remove the site and install it again.
+
+## The example resident
+
+A fresh site has nobody to sign in as, so the area behind the button stays empty. On a demo or test instance, give the site its resident:
 
 ```bash
-occ config:app:set portaliq dev_login_enabled --value=yes
+occ portaliq:example-resident:install zuiddrecht
 ```
 
-Never switch that on for a site real residents use.
+This needs the site (above) and dossiq. You get:
+
+- A Nextcloud account `sanne.devries`, named Sanne de Vries. Its password is shown once, on the last lines of the output. Prefer your own? Put it in `OC_PASS` and add `--password-from-env`.
+- A portal account under the same id, so the site greets her by name and asks her for an e-mail address, as the design does.
+- A third card on the sign-in page, "Voorbeeldinwoner", with the button "Inloggen als voorbeeldinwoner". It opens Nextcloud's own sign-in form. The portal gets the sign-in mode `nextcloud` for it.
+- Five cases in dossiq: a Woo request in treatment, a building permit that waits for a drawing, a report about a loose paving stone, and two finished cases. One open question ("Stuur de bouwtekening van uw dakkapel") and four messages belong to them. Every date is counted from the day you install, so the cases stay current.
+
+```
+Nextcloud account sanne.devries: created
+Portal account sanne.devries: created
+Sign-in mode nextcloud on portal zuiddrecht: added
+dossiq case: 5 declared, 5 created, 0 already there, 5 found afterwards
+dossiq aanvullingsverzoek: 1 declared, 1 created, 0 already there, 1 found afterwards
+dossiq portaalBericht: 4 declared, 4 created, 0 already there, 4 found afterwards
+The password of sanne.devries is shown once, here: ...
+Sign in at /index.php/apps/portaliq/site?portal=zuiddrecht&route=/mijn with the card "Voorbeeldinwoner".
+```
+
+Open the site, press "Mijn Zuiddrecht", choose "Inloggen als voorbeeldinwoner" and sign in as `sanne.devries`. You land on the overview with the question, three running cases and the newest messages. "Mijn zaken" lists them under Lopend and Afgerond. Open a case for its steps, details and messages.
+
+The command reads the instance back like the site install does, and exits 2 when something is missing or a key was not kept. Running it again writes nothing: every part is reported as "already there". Is `sanne.devries` taken on your instance? The command refuses to touch an account it did not make. Give it another id with `--user demo-inwoner`.
+
+### Who can sign in this way
+
+Only the example resident. The mode `nextcloud` mints a portal session for a Nextcloud account that has an active portal account under the same id, and the install makes exactly one. Other Nextcloud accounts on the instance get "no_portal_account" and nothing else. The account is a full Nextcloud account, though: it can open Files and the other apps. Keep it to a demo or test instance, and remove it when the demo is over.
+
+### Why not the test sign-in
+
+Portaliq also has a test sign-in, `POST /portal/api/session/dev-login`, which the site offers as the button "Dev-login (test)". It is closed unless the instance runs in `debug` mode or an administrator sets `occ config:app:set portaliq dev_login_enabled --value=yes`. While it is open, anyone who can reach the instance can mint a session for any subject reference without a password, so never switch it on for a site real residents use, and know that `debug` mode opens it too. The button in the site always signs in as `dev-supplier`, not as a named resident. The example resident does not need it.
+
+### Remove the resident
+
+```bash
+occ portaliq:example-resident:remove zuiddrecht
+```
+
+This deletes what the install recorded: the messages, the question, the portal account and the Nextcloud account, and takes the sign-in mode off the portal when the install added it. The cases are the exception. OpenRegister keeps a case as an archive record and refuses to delete it, and dossiq keeps a case whose legal term is running. The command names them and exits 2. They stay in dossiq, where a colleague sees them as demo cases; no resident can open them, because the accounts are gone. Install the resident again under the same id and the command uses the same cases instead of writing new ones.
+
+Remove the resident before you remove the site.
 
 ## What is and is not in the site
 

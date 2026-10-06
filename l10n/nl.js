@@ -108,7 +108,6 @@ OC.L10N.register(
         "Copied unchanged from the bound form.": "Ongewijzigd overgenomen van het gekoppelde formulier.",
         "Count": "Aantal",
         "Custom dimensions": "Eigen dimensies",
-        "Custom example component": "Voorbeeldcomponent",
         "Custom period": "Eigen periode",
         "DB-IP Lite (free, CC BY 4.0)": "DB-IP Lite (gratis, CC BY 4.0)",
         "Dashboard": "Dashboard",
@@ -504,7 +503,6 @@ OC.L10N.register(
         "Reminder about your task: %1$s": "Herinnering aan uw taak: %1$s",
         "Removed at": "Verwijderd op",
         "Rendering hint: text, email, tel, number, date, url, textarea or select.": "Weergavehint: text, email, tel, number, date, url, textarea of select.",
-        "Replace the body of this component with whatever bespoke behaviour your page needs — realtime UI, vendor integrations, anything that does not fit the built-in page types.": "Vervang de inhoud van dit component door het maatwerk dat je pagina nodig heeft: realtime UI, koppelingen met leveranciers, alles wat niet in de ingebouwde paginatypen past.",
         "Reports": "Rapportages",
         "Requested at": "Aangevraagd op",
         "Required": "Verplicht",
@@ -798,7 +796,6 @@ OC.L10N.register(
         "Themed portals": "Portalen met thema",
         "Themes": "Thema's",
         "This app needs OpenRegister to store and manage data. Please install OpenRegister from the app store to get started.": "Deze app heeft OpenRegister nodig om gegevens op te slaan en te beheren. Installeer OpenRegister via de app store om te beginnen.",
-        "This is the canonical example of a custom-type page in the manifest renderer pattern. It is rendered when a manifest page declares `type: \"custom\"` and `component: \"CustomExample\"`.": "Dit is het standaardvoorbeeld van een pagina van het type custom in het manifest-renderpatroon. Het wordt getoond wanneer een manifestpagina `type: \"custom\"` en `component: \"CustomExample\"` declareert.",
         "This portal has no glossary terms yet": "Dit portaal heeft nog geen begrippen",
         "This portal has no menus yet": "Dit portaal heeft nog geen menu's",
         "This portal has no pages yet": "Dit portaal heeft nog geen pagina's",
@@ -2281,7 +2278,18 @@ OC.L10N.register(
         "Menu of the own area": "Menu van de eigen omgeving",
         "How the menu beside the visitor's own pages opens.": "Hoe het menu naast de eigen pagina's van de bezoeker begint.",
         "Card label": "Regel boven de naam",
-        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "De regel boven de naam van de organisatie bovenaan het menu, getoond als de bezoeker voor een organisatie handelt, bijvoorbeeld U regelt het voor. Leeg toont geen kaart."
+        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "De regel boven de naam van de organisatie bovenaan het menu, getoond als de bezoeker voor een organisatie handelt, bijvoorbeeld U regelt het voor. Leeg toont geen kaart.",
+        "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).": "Op een lijstblok: kaarten, rijen met datum, balken of cijferlabels in plaats van een tabel; bij taken de uitgelichte kaart; bij kerncijfers één verdeelde balk; bij de kalender datumtegels (site-school-blocks) of één dag als rooster (calendar-timetable-display).",
+        "On a timetable: the small label over the first item of the day.": "Op een rooster: het kleine label boven het eerste onderdeel van de dag.",
+        "firstLabel": "firstLabel",
+        "About": "Over",
+        "About record": "Gaat over",
+        "The name of the staff member, copied from the contact the app named when the thread was started.": "De naam van de medewerker, overgenomen van het contact dat de app noemde toen het gesprek begon.",
+        "The resident's own record this conversation is about, such as a child's enrolment (site-messages-per-record). Proven by MessageContactReader when the thread is started.": "Het eigen record van de inwoner waar dit gesprek over gaat, zoals de inschrijving van een kind (site-messages-per-record). Gecontroleerd door MessageContactReader als het gesprek begint.",
+        "The role of that staff member in words, such as Mentor.": "De rol van die medewerker in woorden, zoals Mentor.",
+        "The subject line of the conversation.": "De onderwerpregel van het gesprek.",
+        "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "De woorden die dat record noemen, overgenomen als het gesprek begint, zoals Vera, Groep 7.",
+        "With": "Met"
     },
     "nplurals=2; plural=(n != 1);"
 )
