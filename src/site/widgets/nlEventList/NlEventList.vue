@@ -80,6 +80,8 @@
 <script>
 import DateTile from '../../components/mijn/DateTile.vue'
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
+import { fetchCatalogue } from '../../lib/publicCatalogue.js'
+import { eventItemsOf } from '../nlCatalogue/catalogue.js'
 import { eventRows } from './events.js'
 
 import '@utrecht/heading-3-css/dist/index.css'
@@ -115,6 +117,18 @@ export default {
 		framed: { type: Boolean, default: true },
 		/** What is said when nothing is coming up. */
 		emptyLabel: { type: String, default: 'Er staat niets gepland.' },
+		/**
+		 * Fill the list from the portal's public catalogue instead of the
+		 * authored items: `{types: ['event' | 'course' | ...]}`
+		 * (portal-public-catalogue).
+		 */
+		source: { type: Object, default: null },
+		/** The portal, handed in by the host. */
+		portal: { type: String, default: '' },
+	},
+
+	data() {
+		return { fetched: null }
 	},
 
 	emits: ['navigate'],
@@ -133,7 +147,7 @@ export default {
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-dated-list-shows-each-date-as-a-tile-or-a-label
 		 */
 		rows() {
-			return eventRows(this.items, {
+			return eventRows(this.fetched || this.items, {
 				upcomingOnly: this.upcomingOnly,
 				limit: this.limit,
 			})
@@ -148,7 +162,38 @@ export default {
 		},
 	},
 
+	mounted() {
+		this.loadSource()
+	},
+
 	methods: {
+		/**
+		 * Read the dated items of the catalogue when the list declares a
+		 * source; a read that fails leaves the authored items.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/portal-public-catalogue/specs/portaliq-cms/spec.md#requirement-a-dated-list-may-fill-itself-from-the-catalogue
+		 */
+		async loadSource() {
+			const types = Array.isArray(this.source?.types)
+				? this.source.types.filter((type) => typeof type === 'string')
+				: []
+			if (types.length === 0) {
+				return
+			}
+			try {
+				const page = await fetchCatalogue(this.portal, {
+					types,
+					upcoming: true,
+					sort: 'date',
+					limit: 20,
+				})
+				this.fetched = eventItemsOf(page.items)
+			} catch {
+				this.fetched = null
+			}
+		},
+
 		/**
 		 * @param {MouseEvent} event The click.
 		 * @param {object} link The link.

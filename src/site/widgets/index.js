@@ -47,6 +47,7 @@ import { metaOf as descriptionListMeta } from './nlDescriptionList/meta.js'
 import { metaOf as dialogMeta } from './nlDialog/meta.js'
 import { metaOf as drawerMeta } from './nlDrawer/meta.js'
 import { metaOf as eventListMeta } from './nlEventList/meta.js'
+import { metaOf as catalogueMeta } from './nlCatalogue/meta.js'
 import { metaOf as headingMeta } from './nlHeading/meta.js'
 import { metaOf as imageMeta } from './nlImage/meta.js'
 import { metaOf as languageNavMeta } from './nlLanguageNav/meta.js'
@@ -124,6 +125,7 @@ export const metas = {
 	nlNewsList: newsListMeta,
 	nlNewsArticle: newsArticleMeta,
 	nlEventList: eventListMeta,
+	nlCatalogue: catalogueMeta,
 }
 
 /**

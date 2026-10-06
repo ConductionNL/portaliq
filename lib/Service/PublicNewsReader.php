@@ -59,6 +59,11 @@ class PublicNewsReader {
 	public const MAX_LIMIT = 12;
 
 	/**
+	 * The most items the catalogue reads (portal-public-catalogue).
+	 */
+	public const ALL_LIMIT = 200;
+
+	/**
 	 * The longest intro, in characters.
 	 */
 	private const INTRO_LENGTH = 280;
@@ -84,6 +89,22 @@ class PublicNewsReader {
 	) {
 		$this->rows = new NewsRowSource(container: $container, logger: $logger);
 	}//end __construct()
+
+	/**
+	 * Every public item of a portal, newest first, at most ALL_LIMIT: the
+	 * news half of the public catalogue (portal-public-catalogue).
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<int, array<string, mixed>> The summaries.
+	 *
+	 * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
+	 */
+	public function allFor(string $portal): array {
+		$items = array_slice($this->publicRows(portal: $portal), 0, self::ALL_LIMIT);
+
+		return array_map(fn (array $row): array => $this->summary(portal: $portal, row: $row), $items);
+	}//end allFor()
 
 	/**
 	 * The newest public items of a portal, newest first.

@@ -1006,4 +1006,9 @@ export const SITE_COMPOSITIONS = [
 		composes: ['Link List', 'Card as Link'],
 		why: 'A dated list with date tiles or date labels ("Agenda", "Deze maand").',
 	},
+	{
+		key: 'nlCatalogue',
+		composes: ['Text Input', 'Checkbox Group', 'Select', 'Card as Link', 'Page Number Navigation'],
+		why: 'The portal\'s public catalogue: search, facets, results and pages ("Cursusaanbod", "Opleidingen").',
+	},
 ]
