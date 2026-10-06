@@ -1,7 +1,7 @@
 # Tasks: publication-detail-page-complete
 
 Wave 2. Rows 6.4, 6.19, 6.35, 6.36 and 7.20. Decision D11. Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+`openspec/woo-build-rules.md`.
 
 **Before starting**, read on `development`: opencatalogi's `publication-detail-for-the-portal` (merged
 or not; the keys for document id, metadata URL, DiWoo URL and comment period), and nextcloud-vue's
@@ -62,7 +62,7 @@ run on `origin/development` first and seen red.
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:specs` and `npm run build:site`, plus any other leg `code-quality.yml` requires. Then
   hydra's `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 6.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
 - [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. The rows then read `yes` (build), 6.4 fully only with
   `files-preview-in-place` in the pinned library, and `production` only with a store release.

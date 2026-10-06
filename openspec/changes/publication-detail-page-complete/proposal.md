@@ -19,6 +19,17 @@ Implements Ruben's decision **D11** for 6.19: a content hit resolves to the docu
 which this change builds, so `portal-federated-search` (row 6.2) and `search-filter-by-kind` (row
 6.30) have a page to link to.
 
+## Summary
+
+Complete the public publication detail page: render a document in the browser, give each document its own public page, download a publication as one archive and a document's metadata in an open format, and show the reaction period.
+
+- Rows: 6.4, 6.19, 6.35, 6.36 and 7.20 (none statutory).
+- Wave: 2.
+- Depends on: `opencatalogi/publication-detail-for-the-portal` (https://github.com/ConductionNL/opencatalogi/issues/1761). Outside the plan: `nextcloud-vue/files-preview-in-place` (no issue; https://github.com/ConductionNL/nextcloud-vue/tree/development/openspec/changes/files-preview-in-place); without it 6.4 stays partial.
+- Decision: D11 (2026-10-05) for 6.19, a content hit resolves to the document's own public page, which this change builds.
+
+Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 What portaliq does today, read on `development` at ca591037: `PublicationDetailBlock.vue` lists a
