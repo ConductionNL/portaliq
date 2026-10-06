@@ -16,6 +16,17 @@ Implements Ruben's decision **D9**: both are policy choices an organisation make
 per organisation and off by default. An anonymous channel for reporting an error needs throttling and
 a named owner; publishing that a withheld record exists is itself a disclosure choice.
 
+## Summary
+
+Let a citizen report an error in a publication that reaches a named owner, and show that a withheld record exists and why, both opt-in per organisation and off by default.
+
+- Rows: 6.15 "A citizen reports an error in a publication, and it reaches someone" and 6.16 "The portal shows that a withheld record exists, and why it is withheld" (neither statutory).
+- Wave: 2.
+- Depends on: `opencatalogi/publication-detail-for-the-portal` (https://github.com/ConductionNL/opencatalogi/issues/1761) and `opencatalogi/publication-withdrawal-aftercare` (https://github.com/ConductionNL/opencatalogi/issues/1772).
+- Decision: D9 (2026-10-05), both are policy choices an organisation makes, so both are opt-in and off by default.
+
+Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 What portaliq does today, read on `development` at ca591037:

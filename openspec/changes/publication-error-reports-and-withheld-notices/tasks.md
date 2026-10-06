@@ -1,7 +1,7 @@
 # Tasks: publication-error-reports-and-withheld-notices
 
 Wave 2. Rows 6.15 and 6.16. Decision D9. Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+`openspec/woo-build-rules.md`.
 
 **Before starting**, read on opencatalogi `development`: `publication-detail-for-the-portal` and
 `publication-withdrawal-aftercare` (merged or not, and the exact 410 body), and whether any change
@@ -71,7 +71,7 @@ test marked **fails today** must be run on `origin/development` first and seen r
   `npm run check:register`, `npm run check:specs` and `npm run build:site`, plus any other leg
   `code-quality.yml` requires. Then hydra's `scripts/run-hydra-gates.sh --base origin/development`;
   count the gates that ran.
-- [ ] 5.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 5.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
 - [ ] 5.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 6.15 and 6.16 then read `yes` (build) as opt-in features (6.16's list
   half as stated in 3.2), and `production` only with a store release.
