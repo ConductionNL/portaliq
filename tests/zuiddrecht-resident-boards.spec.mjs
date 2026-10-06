@@ -570,11 +570,9 @@ test("the resident menu in the portal's own groups, Overzicht first, nothing unr
 		assert.ok(routes(laid).includes(route), `${route} stays reachable`)
 	}
 	// Toegang tot zaken, not named by the layout, follows in its own group.
-	const rest = names(laid).slice(4)
-	assert.ok(
-		rest.some(([, items]) => items.includes('Toegang tot zaken')),
-		JSON.stringify(rest),
-	)
+	// Toegang tot zaken, not named by the layout, joined the declared group
+	// of the same name above, so one heading never stands twice.
+	assert.equal(new Set(laid.map((group) => group.title)).size, laid.length)
 	assert.ok(
 		laid
 			.flatMap((group) => group.items)
