@@ -7,12 +7,21 @@
 	A list of links, with a heading above it (design D1 row 54).
 
 	A `nav`, because that is what a list of links to other pages is, and a
-	screen-reader user navigates by landmark.
+	screen-reader user navigates by landmark. The heading names the landmark,
+	so three link lists on one page are three different landmarks. A list
+	without a heading has no name to give, so it is no landmark: an unnamed
+	`nav` beside a named one is the axe `landmark-unique` finding.
 -->
 <template>
-	<nav class="utrecht-link-list-nav" data-testid="nl-link-list">
-		<h2 v-if="heading" class="utrecht-heading-3">{{ heading }}</h2>
-		<ul class="utrecht-link-list">
+	<component
+		:is="heading ? 'nav' : 'div'"
+		class="utrecht-link-list-nav"
+		:aria-labelledby="heading ? headingId : undefined"
+		data-testid="nl-link-list">
+		<h2 v-if="heading" :id="headingId" class="utrecht-heading-3">
+			{{ heading }}
+		</h2>
+		<ul class="utrecht-link-list utrecht-link-list--html-ul">
 			<li
 				v-for="(link, index) in safeLinks"
 				:key="index"
@@ -28,7 +37,7 @@
 				</span>
 			</li>
 		</ul>
-	</nav>
+	</component>
 </template>
 
 <script>
@@ -37,6 +46,9 @@ import { authoredLink, staysInSite } from '../../components/mijn/links.js'
 import '@utrecht/link-list-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
 import '@utrecht/heading-3-css/dist/index.css'
+
+/** A number per mounted list, so every heading id on the page is unique. */
+let instances = 0
 
 export default {
 	name: 'NlLinkList',
@@ -49,6 +61,14 @@ export default {
 	},
 
 	emits: ['navigate'],
+
+	data() {
+		instances += 1
+		return {
+			/** The id of the heading that names this list's landmark. */
+			headingId: `nl-link-list-${instances}`,
+		}
+	},
 
 	computed: {
 		/**

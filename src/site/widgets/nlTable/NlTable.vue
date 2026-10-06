@@ -10,39 +10,44 @@
 	which column a cell belongs to, and a short row is padded rather than
 	drawn: cells sliding under the wrong header is a wrong table, not an untidy
 	one.
+
+	Utrecht's container scrolls sideways on a narrow screen, so a wide table
+	never pushes the page past the edge of a phone.
 -->
 <template>
-	<table class="utrecht-table" data-testid="nl-table">
-		<caption v-if="caption" class="utrecht-table__caption">
-			{{
-				caption
-			}}
-		</caption>
-		<thead v-if="safeColumns.length" class="utrecht-table__header">
-			<tr class="utrecht-table__row">
-				<th
-					v-for="column in safeColumns"
-					:key="column"
-					class="utrecht-table__header-cell"
-					scope="col">
-					{{ column }}
-				</th>
-			</tr>
-		</thead>
-		<tbody class="utrecht-table__body">
-			<tr
-				v-for="(row, index) in safeRows"
-				:key="index"
-				class="utrecht-table__row">
-				<td
-					v-for="(cell, cellIndex) in row"
-					:key="`${index}-${cellIndex}`"
-					class="utrecht-table__cell">
-					{{ cell }}
-				</td>
-			</tr>
-		</tbody>
-	</table>
+	<div class="utrecht-table-container">
+		<table class="utrecht-table" data-testid="nl-table">
+			<caption v-if="caption" class="utrecht-table__caption">
+				{{
+					caption
+				}}
+			</caption>
+			<thead v-if="safeColumns.length" class="utrecht-table__header">
+				<tr class="utrecht-table__row">
+					<th
+						v-for="column in safeColumns"
+						:key="column"
+						class="utrecht-table__header-cell"
+						scope="col">
+						{{ column }}
+					</th>
+				</tr>
+			</thead>
+			<tbody class="utrecht-table__body">
+				<tr
+					v-for="(row, index) in safeRows"
+					:key="index"
+					class="utrecht-table__row">
+					<td
+						v-for="(cell, cellIndex) in row"
+						:key="`${index}-${cellIndex}`"
+						class="utrecht-table__cell">
+						{{ cell }}
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 </template>
 
 <script>
