@@ -153,13 +153,11 @@ export default {
 <style scoped>
 /* Tokens only (tests/widget-tokens.spec.mjs). */
 .nl-link-columns--surface {
-	background: var(
-		--nldesign-color-surface,
-		var(
-			--nldesign-component-content-surface-background-color,
-			var(--utrecht-color-grey-95, transparent)
-		)
+	--nl-surface: var(
+		--nldesign-component-content-surface-background-color,
+		transparent
 	);
+	background: var(--nldesign-color-surface, var(--nl-surface));
 }
 
 .nl-link-columns__inner {

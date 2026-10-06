@@ -117,10 +117,11 @@ export default {
 }
 
 .nl-table--boxed .utrecht-table__header-cell {
-	background: var(
-		--nldesign-color-surface,
-		var(--utrecht-color-grey-95, transparent)
+	--nl-surface: var(
+		--nldesign-component-content-surface-background-color,
+		transparent
 	);
+	background: var(--nldesign-color-surface, var(--nl-surface));
 }
 
 .nl-table--boxed .utrecht-table__header-cell,

@@ -442,7 +442,10 @@ test('the Zuiddrecht declaration follows the boards and keeps every route', () =
 
 test('the site stylesheet reads the two optional tokens and draws the plain hero', () => {
 	const css = read('css/site-theme.css')
-	assert.match(css, /--nldesign-website-page-title-size, inherit/)
+	assert.match(
+		css,
+		/--nldesign-website-page-title-size,\s+var\(--utrecht-heading-2-font-size, revert\)/,
+	)
 	assert.match(
 		css,
 		/\.pq-site \.ac-hero\.pq-hero--plain \.ac-search-box__input\.utrecht-textbox/,
