@@ -1,6 +1,6 @@
 # Tasks: site-accessibility-statement
 
-Wave 1. Rows 6.7 and 15.2. Kind: code. Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 1. Rows 6.7 and 15.2. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 Load the hydra `writing` skill before writing the statement's sentences: they are user-facing copy.
 A test marked **fails today** must be run on `origin/development` first and seen red.
@@ -57,7 +57,7 @@ A test marked **fails today** must be run on `origin/development` first and seen
   `npm run check:register`, `npm run check:specs` and `npm run build:site`, plus any other leg
   `code-quality.yml` requires. Then hydra's `scripts/run-hydra-gates.sh --base origin/development`;
   count the gates that ran.
-- [ ] 4.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 4.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
 - [ ] 4.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 6.7 and 15.2 then read `yes` (build), and `production` only with a
   store release.

@@ -14,6 +14,17 @@ Woo capability programme, round 1, wave 1. Rows 6.7 and 15.2.
 
 No Ruben decision governs these rows.
 
+## Summary
+
+Measure the portal's accessibility on the instance with axe-core, generate the accessibility statement in the national model from that measurement, and never claim a status beyond the evidence (an independent audit is needed for A or B).
+
+- Rows: 6.7 "The portal meets WCAG 2.2 AA, and says so in a statement" and 15.2 "An accessibility statement is generated from the product's own state" (neither is a statutory row in the matrix; the duty to publish a statement comes from the Besluit digitale toegankelijkheid overheid).
+- Wave: 1.
+- Depends on: nothing.
+- Decision: no Ruben decision governs these rows.
+
+Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 A Dutch public body publishes an accessibility statement (toegankelijkheidsverklaring) for each
