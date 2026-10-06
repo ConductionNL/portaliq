@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\AppInfo;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\AppInfo\OpenRegisterAutoloader;
 use OCA\Portaliq\AppInfo\StorePlaneRegistrar;
 use OCP\App\AppPathNotFoundException;
 use OCP\App\IAppManager;
@@ -44,6 +45,16 @@ final class StorePlaneRegistrarTest extends TestCase {
 	 * The class name Nextcloud's router derives from the `store#…` route names.
 	 */
 	private const ROUTED_CONTROLLER = 'OCA\\Portaliq\\Controller\\StoreController';
+
+	/**
+	 * Take the prelude's static loader off the SPL chain between tests.
+	 *
+	 * @return void
+	 */
+	protected function tearDown(): void {
+		OpenRegisterAutoloader::unregister();
+		parent::tearDown();
+	}//end tearDown()
 
 	/**
 	 * A registration context that records every `registerService()` name.
@@ -118,6 +129,7 @@ final class StorePlaneRegistrarTest extends TestCase {
 	 */
 	public function testPreludeAsksForOpenRegisterAndSwallowsItsAbsence(): void {
 		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isEnabledForAnyone')->with('openregister')->willReturn(true);
 		$appManager->expects($this->once())
 			->method('getAppPath')
 			->with('openregister')
@@ -136,14 +148,14 @@ final class StorePlaneRegistrarTest extends TestCase {
 	 * A DISABLED OpenRegister is the one state the path-and-class guards cannot
 	 * see: the directory resolves, the classes autoload, and the store plane
 	 * would be served out of an app an administrator switched off. The
-	 * `isInstalled()` guard has to answer before anything is bound — this is
+	 * `isEnabledForAnyone()` guard has to answer before anything is bound — this is
 	 * the deterministic half of the degraded path (review of #500).
 	 *
 	 * @return void
 	 */
 	public function testADisabledOpenRegisterBindsNothing(): void {
 		$appManager = $this->createMock(IAppManager::class);
-		$appManager->method('isInstalled')->with('openregister')->willReturn(false);
+		$appManager->method('isEnabledForAnyone')->with('openregister')->willReturn(false);
 		$appManager->expects($this->never())->method('getAppPath');
 
 		$recorded = [];

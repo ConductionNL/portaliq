@@ -70,8 +70,9 @@ use Throwable;
  *
  * @SuppressWarnings(PHPMD.StaticAccess) `Server::get()` is the only way to a
  *   service from a composition root that has no container yet,
- *   `OC_App::registerAutoloading()` is the only way to pull another app's
- *   PSR-4 prefix into the running process (ADR-040 prescribes both verbatim),
+ *   `OpenRegisterAutoloader::register()` pulls OpenRegister's PSR-4 prefix
+ *   into the running process with public API only (ADR-040; the private
+ *   `OC_App::registerAutoloading()` it replaces is gone in Nextcloud 35),
  *   and `Bootstrap::aliasStoreController()` is the engine's designated static
  *   entry point for an app that binds its controllers by hand.
  *
@@ -96,7 +97,7 @@ final class StorePlaneRegistrar {
 	 * bound and the store routes report their missing controller at dispatch
 	 * time instead of taking the whole app registration down with them. Three
 	 * guards cover the three states, because none of them implies the others:
-	 * `isInstalled()` (a disabled app still has a path and autoloadable
+	 * `isEnabledForAnyone()` (a disabled app still has a path and autoloadable
 	 * classes), `class_exists()` (the app is there but predates AppHost), and
 	 * `method_exists()` — `Bootstrap` shipped 2026-08-29, `aliasStoreController()`
 	 * only on 2026-09-04, so every OpenRegister release up to v2.0.12 has the
@@ -120,13 +121,13 @@ final class StorePlaneRegistrar {
 	public function register(IRegistrationContext $context, ?IAppManager $appManager = null): bool {
 		try {
 			$manager = ($appManager ?? Server::get(IAppManager::class));
-			if ($manager->isInstalled('openregister') === false) {
+			if ($manager->isEnabledForAnyone('openregister') === false) {
 				// Present-but-disabled still resolves a path; only this answers "off".
 				return false;
 			}
 
-			$orPath = $manager->getAppPath('openregister');
-			\OC_App::registerAutoloading('openregister', $orPath);
+			// Public-API PSR-4 registration; never throws, false when unresolvable.
+			OpenRegisterAutoloader::register(appManager: $manager);
 		} catch (Throwable) {
 			// OpenRegister absent — fall through to the degraded path.
 		}
