@@ -107,4 +107,22 @@ interface GuardianMessagingLeafInterface {
 	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
 	 */
 	public function markThreadRead(string $threadId, string $subjectRef, bool $isStaff): bool;
+
+	/**
+	 * Start a direct thread with a contact the caller already PROVED
+	 * (MessageContactReader::contactFor), about one record, with a title and
+	 * its first message. The thread carries the record and the contact's
+	 * name, so the site can show "Meester Daan, over Vera" without another
+	 * lookup (site-messages-per-record).
+	 *
+	 * @param string                $subjectRef The resident's own subjectRef.
+	 * @param array<string, string> $contact    The proven contact: staffRef, name, role, recordRef, recordLabel.
+	 * @param string                $title      The conversation's subject line.
+	 * @param string                $body       The first message.
+	 *
+	 * @return string|null The new thread id, or null when nothing could be stored.
+	 *
+	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
+	 */
+	public function createContactThread(string $subjectRef, array $contact, string $title, string $body): ?string;
 }//end interface

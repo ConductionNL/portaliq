@@ -115,6 +115,26 @@ on a fast connection, which is where it is developed and tested.
 - @e2e exclude Requires deterministic response ordering; asserted by the
   sequence guard in the component rather than through the browser.
 
+### Requirement: A visitor's search reaches the text inside public documents (REQ-PFS-CONTENT-001)
+
+Whenever the state has a non-empty term, `buildRequestUrl()` SHALL send `_content=true`, the opt-in
+opencatalogi's `add-document-content-search` defines (SCH-PFTS-CONTENT-001), unless the portal's
+setting `searchInsideDocuments` is false. A result row whose `resultType` (or `@self.schema`) marks it
+as a document SHALL link to that document's own public page (`/document/{id}`, decision D11), and
+SHALL name the publication it belongs to. A word that appears in a document only under a redaction
+SHALL NOT make that document a result, because only the published, redacted file is searched.
+
+#### Scenario: A word in the body of a document finds it
+- **GIVEN** a public publication whose PDF contains "geluidsscherm A2" in its text and nowhere in its metadata
+- **WHEN** a visitor searches "geluidsscherm"
+- **THEN** the request SHALL carry `_content=true`
+- **AND** a result SHALL link to that document's own page and name its publication
+
+#### Scenario: A redacted word finds nothing
+- **GIVEN** a partly public document whose published copy has the name "Jansen" redacted
+- **WHEN** a visitor searches "Jansen"
+- **THEN** that document SHALL NOT be among the results
+
 ## Out of scope
 
 ### Filtering on the source directory

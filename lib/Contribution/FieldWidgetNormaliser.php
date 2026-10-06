@@ -51,6 +51,16 @@ class FieldWidgetNormaliser {
 	public const DATE_CHOICES = 'dateChoices';
 
 	/**
+	 * A whole number asked with a stepper (count-field).
+	 */
+	public const COUNT = 'count';
+
+	/**
+	 * The highest count a stepper may offer.
+	 */
+	private const MAX_COUNT = 999;
+
+	/**
 	 * The most cards a `choiceOptions` subset may name.
 	 */
 	private const MAX_CHOICE_OPTIONS = 20;
@@ -86,6 +96,10 @@ class FieldWidgetNormaliser {
 			$entry['dateChoices'] = $this->dayCount(value: ($source['dateChoices'] ?? null));
 		}
 
+		if ($widget === self::COUNT) {
+			return (new CountWidgetKeys())->apply(entry: $entry, source: $source, maxCount: self::MAX_COUNT);
+		}
+
 		return $entry;
 	}//end apply()
 
@@ -118,6 +132,11 @@ class FieldWidgetNormaliser {
 			}
 
 			$provider = ($providers[$field] ?? null);
+			if ($config['widget'] === self::COUNT) {
+				$configs[$field] = (new CountWidgetKeys())->fit(config: $config, provider: $provider);
+				continue;
+			}
+
 			if ($config['widget'] === self::CHOICES) {
 				$configs[$field] = $this->fitChoices(config: $config, provider: $provider);
 				continue;

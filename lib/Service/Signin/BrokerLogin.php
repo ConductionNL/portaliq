@@ -228,12 +228,15 @@ class BrokerLogin {
 			return null;
 		}
 
-		$issued = $this->session->issueSession(
+		// The account's own audience wins over the preset's (the-account-names-
+		// the-audience-and-the-company): an employer an app invited stays one.
+		$audience = (string)($account['audience'] ?? $claims['audience']);
+		$issued   = $this->session->issueSession(
 			subjectRef: (string)$account['subjectRef'],
-			audience: $claims['audience'],
+			audience: $audience,
 			organisation: $pending['org'],
 			trust: $claims['trust'],
-			roles: [$claims['audience'] . ':read']
+			roles: [$audience . ':read']
 		);
 		if ($issued === null) {
 			return null;
