@@ -402,6 +402,8 @@ class PortalPageControllerTest extends TestCase {
 	 * asks for English; a portal that declares `en` as well serves the English
 	 * the browser asked for; a portal that declares nothing serves what the
 	 * browser asked for, as before.
+	 *
+	 * @return void
 	 */
 	public function testSiteLocaleFollowsThePortalsDeclaredLocales(): void {
 		$dutchOnly = $this->controller(orgSlug: '', portal: ['slug' => 'zuiddrecht', 'locales' => ['nl']], acceptLanguage: 'en-US,en;q=0.9');
