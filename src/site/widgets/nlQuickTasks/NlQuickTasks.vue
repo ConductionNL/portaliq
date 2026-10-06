@@ -110,6 +110,14 @@ export default {
 		moreHref: { type: String, default: '' },
 		/** Pull the card up over the band above it. */
 		overlap: { type: Boolean, default: false },
+		/** `circle` (an icon on a round light ground) or `plain` (a bare stroke in the accent). */
+		iconStyle: { type: String, default: 'circle' },
+		/** On a phone: `card` (the same card, one column) or `list` (bare rows, no icons). */
+		narrow: { type: String, default: 'card' },
+		/** The heading on a phone when `narrow` is `list`; the heading otherwise. */
+		narrowHeading: { type: String, default: '' },
+		/** How many rows a phone shows when `narrow` is `list`; all otherwise. */
+		narrowLimit: { type: [Number, String], default: 0 },
 	},
 
 	emits: ['navigate'],

@@ -131,10 +131,25 @@ test("the task tiles draw the author's own path, held to path data", () => {
 		true,
 	)
 	assert.equal(iconPathOf({ icon: 'nothing' }), '')
-	const source = read('src/site/widgets/nlQuickTasks/NlQuickTasks.vue')
-	assert.match(source, /nl-quick-tasks--plain-icons/)
-	assert.match(source, /nl-quick-tasks--narrow-list/)
-	assert.match(source, /nl-quick-tasks__item--beyond-narrow/)
+	// Rendered, not grepped: the first version of this test read the classes
+	// in the source while the props that switch them were never declared.
+	const html = await renderSfc('src/site/widgets/nlQuickTasks/NlQuickTasks.vue', {
+		heading: 'Direct regelen',
+		iconStyle: 'plain',
+		narrow: 'list',
+		narrowHeading: 'Veel gezocht',
+		narrowLimit: 2,
+		items: [
+			{ label: 'A', href: '/a', iconPath: board },
+			{ label: 'B', href: '/b', icon: 'card' },
+			{ label: 'C', href: '/c' },
+		],
+	})
+	assert.match(html, /nl-quick-tasks--plain-icons/)
+	assert.match(html, /nl-quick-tasks--narrow-list/)
+	assert.match(html, /nl-quick-tasks__heading-narrow[^>]*>Veel gezocht</)
+	assert.equal((html.match(/nl-quick-tasks__item--beyond-narrow/g) || []).length, 1, 'the third row is beyond the phone limit')
+	assert.match(html, new RegExp(`<path d="${board.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`))
 })
 
 test('a link list draws as a card or under an accent line, with an intro', async () => {
