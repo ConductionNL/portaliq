@@ -17,7 +17,7 @@
 
 ## Amendment, 2026-10-05: Woo capability programme (rows 6.14 and 6.17)
 
-Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`. A test marked **fails today** must be run
+Build rules: `openspec/woo-build-rules.md`. A test marked **fails today** must be run
 on `origin/development` first and seen red; put the failing line in the PR body.
 
 - [ ] **T07**: `buildRequestUrl()` sends `_fuzzy=true` for every non-empty term (REQ-SSR-004).

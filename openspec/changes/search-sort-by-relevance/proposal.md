@@ -5,6 +5,17 @@ depends_on: [portal-federated-search]
 
 # Proposal: search-sort-by-relevance
 
+## Summary
+
+Let a visitor sort portal search results by relevance, tolerate a misspelt title with a checked did-you-mean suggestion, and show the publisher how search ranks.
+
+- Rows: matrix row `srch-sort` (the original change), and Woo rows 6.14 "Search tolerates a misspelling and suggests a better query" and 6.17 "Results rank by relevance, and the publisher can explain the ranking" (neither statutory). 6.14 reads yes for titles and the suggestion only, until OpenRegister widens fuzzy matching beyond `_name`.
+- Wave: 1.
+- Depends on: `portaliq/portal-federated-search` (https://github.com/ConductionNL/portaliq/issues/1224), whose search block this change extends.
+- Decision: no Ruben decision governs these rows.
+
+Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 A visitor who searches the publications for "parkeervergunning" gets the
