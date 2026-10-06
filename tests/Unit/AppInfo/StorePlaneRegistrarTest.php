@@ -38,6 +38,7 @@ use PHPUnit\Framework\TestCase;
  * store controller with `portaliq` as the calling app.
  *
  * @covers \OCA\Portaliq\AppInfo\StorePlaneRegistrar
+ * @uses   \OCA\Portaliq\AppInfo\OpenRegisterAutoloader
  */
 final class StorePlaneRegistrarTest extends TestCase {
 
