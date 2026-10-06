@@ -15,6 +15,17 @@ Woo capability programme, round 1, wave 1. Rows 6.22 and 15.8.
 Implements the TOOI half of Ruben's decision D3: TOOI value lists have one copy, in OpenRegister's
 concept register, so the organisation type is read from there and not bundled again here.
 
+## Summary
+
+Let an administrator upload the organisation's logo, favicon and hero image in the portal admin, and set the organisation type from the TOOI list so the portal names its own kind of organisation correctly.
+
+- Rows: 6.22 "An administrator uploads the organisation's logo, favicon and hero image from the product" and 15.8 "The portal names its own organisation type correctly" (neither statutory).
+- Wave: 1.
+- Depends on: nothing before it. The TOOI organisation type list comes from `opencatalogi/woo-value-lists-on-the-concept-register` (https://github.com/ConductionNL/opencatalogi/issues/1780) and OpenRegister's bundled TOOI schemes; until it is in the concept register the picker says the list is not installed.
+- Decision: D3 (2026-10-05), the TOOI half: TOOI value lists have one copy, in OpenRegister's concept register.
+
+Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 What portaliq does today, read on `development` at ca591037:

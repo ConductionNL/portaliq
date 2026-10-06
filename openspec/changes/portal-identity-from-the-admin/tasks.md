@@ -1,7 +1,7 @@
 # Tasks: portal-identity-from-the-admin
 
 Wave 1. Rows 6.22 and 15.8. Decision D3 (TOOI half). Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+`openspec/woo-build-rules.md`.
 
 A test marked **fails today** must be run on `origin/development` first and seen red; put the failing
 line in the PR body. Node tests run with `node --test` and are wired into `check:specs`; a test file
@@ -70,7 +70,7 @@ that is not in `check:specs` does not run in CI.
   `npm run check:register`, `npm run check:specs` and `npm run build:site` (the entry budget), plus
   any other leg `code-quality.yml` requires (read the workflow). Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 5.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 5.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
 - [ ] 5.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on any
   commit. Done means merged on `development` with CI green. 6.22 and 15.8 then read `yes` (build),
   and `production` only with a store release.
