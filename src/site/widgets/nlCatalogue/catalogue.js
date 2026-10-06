@@ -36,7 +36,7 @@ export const strings = {
 		previous: 'Vorige',
 		next: 'Volgende',
 		page: 'Pagina {page}',
-		pages: 'Pagina\'s',
+		pages: "Pagina's",
 	},
 	en: {
 		search: 'Search',
@@ -137,7 +137,10 @@ export function countText(lang, total, q, countLabel = '') {
 		return countLabel.split('{count}').join(String(total))
 	}
 	if (q) {
-		return word(lang, total === 1 ? 'countOneFor' : 'countFor', { count: total, q })
+		return word(lang, total === 1 ? 'countOneFor' : 'countFor', {
+			count: total,
+			q,
+		})
 	}
 	return word(lang, total === 1 ? 'countOne' : 'count', { count: total })
 }

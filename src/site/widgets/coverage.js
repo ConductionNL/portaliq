@@ -1008,7 +1008,13 @@ export const SITE_COMPOSITIONS = [
 	},
 	{
 		key: 'nlCatalogue',
-		composes: ['Text Input', 'Checkbox Group', 'Select', 'Card as Link', 'Page Number Navigation'],
+		composes: [
+			'Text Input',
+			'Checkbox Group',
+			'Select',
+			'Card as Link',
+			'Page Number Navigation',
+		],
 		why: 'The portal\'s public catalogue: search, facets, results and pages ("Cursusaanbod", "Opleidingen").',
 	},
 ]

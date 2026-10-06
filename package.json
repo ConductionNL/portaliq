@@ -97,6 +97,7 @@
     "check:widget-registry": "node --test tests/widget-registry.spec.mjs",
     "check:site-school-blocks": "node --test tests/site-school-blocks.spec.mjs",
     "check:site-school-displays": "node --test tests/site-school-displays.spec.mjs",
+    "check:portal-public-catalogue": "node --test tests/portal-public-catalogue.spec.mjs",
     "check:action-summary-sentence": "node --test tests/action-summary-sentence.spec.mjs",
     "check:widget-palette": "node --test tests/widget-palette.spec.mjs",
     "check:site-regions": "node --test tests/site-regions.spec.mjs",

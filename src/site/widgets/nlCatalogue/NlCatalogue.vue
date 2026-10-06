@@ -34,14 +34,18 @@
 					v-model="draft"
 					class="utrecht-textbox nl-catalogue__input"
 					type="search"
-					:placeholder="placeholder">
-				<button type="submit" class="utrecht-button utrecht-button--primary-action">
+					:placeholder="placeholder" />
+				<button
+					type="submit"
+					class="utrecht-button utrecht-button--primary-action">
 					{{ w('search') }}
 				</button>
 			</span>
 		</form>
 
-		<div class="nl-catalogue__body" :class="{ 'nl-catalogue__body--rail': hasFacets }">
+		<div
+			class="nl-catalogue__body"
+			:class="{ 'nl-catalogue__body--rail': hasFacets }">
 			<aside
 				v-if="hasFacets"
 				class="nl-catalogue__facets"
@@ -64,7 +68,7 @@
 						<input
 							type="checkbox"
 							:checked="isChosen(facet.label, option.value)"
-							@change="toggle(facet.label, option.value)">
+							@change="toggle(facet.label, option.value)" />
 						{{ option.value }} ({{ option.count }})
 					</label>
 				</fieldset>
@@ -87,15 +91,24 @@
 					</h3>
 					<label class="nl-catalogue__sort">
 						{{ w('sort') }}
-						<select v-model="sortBy" class="utrecht-select" @change="reload(1)">
-							<option v-for="option in sorts" :key="option" :value="option">
+						<select
+							v-model="sortBy"
+							class="utrecht-select"
+							@change="reload(1)">
+							<option
+								v-for="option in sorts"
+								:key="option"
+								:value="option">
 								{{ w(option) }}
 							</option>
 						</select>
 					</label>
 				</div>
 
-				<p v-if="loading && cards.length === 0" class="utrecht-paragraph" role="status">
+				<p
+					v-if="loading && cards.length === 0"
+					class="utrecht-paragraph"
+					role="status">
 					{{ w('loading') }}
 				</p>
 				<p
@@ -105,7 +118,10 @@
 					data-testid="nl-catalogue-failed">
 					{{ w('failed') }}
 				</p>
-				<p v-else-if="cards.length === 0" class="utrecht-paragraph" data-testid="nl-catalogue-none">
+				<p
+					v-else-if="cards.length === 0"
+					class="utrecht-paragraph"
+					data-testid="nl-catalogue-none">
 					{{ w('none') }}
 				</p>
 				<ul v-else class="nl-catalogue__list">
@@ -114,31 +130,63 @@
 						:key="card.key"
 						class="nl-catalogue__card"
 						data-testid="nl-catalogue-item">
-						<DateTile v-if="display === 'dated' && card.date" :date="card.date.slice(0, 10)" />
+						<DateTile
+							v-if="display === 'dated' && card.date"
+							:date="card.date.slice(0, 10)" />
 						<span class="nl-catalogue__text">
 							<span class="nl-catalogue__line">
-								<span v-if="card.kind && display !== 'dated'" class="nl-catalogue__kind">{{ card.kind }}</span>
-								<time v-if="card.date && display !== 'dated'" :datetime="card.date">{{ longDate(card.date) }}</time>
-								<span v-for="part in card.meta.slice(0, 1)" :key="part">{{ part }}</span>
+								<span
+									v-if="card.kind && display !== 'dated'"
+									class="nl-catalogue__kind"
+									>{{ card.kind }}</span
+								>
+								<time
+									v-if="card.date && display !== 'dated'"
+									:datetime="card.date"
+									>{{ longDate(card.date) }}</time
+								>
+								<span
+									v-for="part in card.meta.slice(0, 1)"
+									:key="part"
+									>{{ part }}</span
+								>
 							</span>
 							<a
 								v-if="card.link"
 								class="utrecht-link nl-catalogue__title"
 								:href="card.link.href"
-								@click="open($event, card.link)">{{ card.title }}</a>
-							<strong v-else class="nl-catalogue__title">{{ card.title }}</strong>
-							<span v-if="card.summary" class="nl-catalogue__summary">{{ card.summary }}</span>
-							<span v-if="display === 'dated' && card.meta.length > 0" class="nl-catalogue__line">
-								<span v-if="card.kind" class="nl-catalogue__kind">{{ card.kind }}</span>
-								<span v-for="part in card.meta" :key="part">{{ part }}</span>
+								@click="open($event, card.link)"
+								>{{ card.title }}</a
+							>
+							<strong v-else class="nl-catalogue__title">{{
+								card.title
+							}}</strong>
+							<span
+								v-if="card.summary"
+								class="nl-catalogue__summary"
+								>{{ card.summary }}</span
+							>
+							<span
+								v-if="display === 'dated' && card.meta.length > 0"
+								class="nl-catalogue__line">
+								<span v-if="card.kind" class="nl-catalogue__kind">{{
+									card.kind
+								}}</span>
+								<span v-for="part in card.meta" :key="part">{{
+									part
+								}}</span>
 							</span>
 						</span>
-						<span v-if="card.badge || card.note" class="nl-catalogue__aside">
+						<span
+							v-if="card.badge || card.note"
+							class="nl-catalogue__aside">
 							<strong v-if="card.badge">{{ card.badge }}</strong>
 							<span
 								v-if="card.note"
 								class="nl-catalogue__note"
-								:class="`nl-catalogue__note--${card.tone}`">{{ card.note }}</span>
+								:class="`nl-catalogue__note--${card.tone}`"
+								>{{ card.note }}</span
+							>
 						</span>
 					</li>
 				</ul>
@@ -184,6 +232,7 @@ import {
 	toggleFilter,
 	word,
 } from './catalogue.js'
+
 import '@utrecht/heading-2-css/dist/index.css'
 import '@utrecht/heading-3-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
@@ -230,7 +279,8 @@ export default {
 
 	data() {
 		counter += 1
-		const q = typeof window === 'undefined' ? '' : initialQuery(window.location.search)
+		const q =
+			typeof window === 'undefined' ? '' : initialQuery(window.location.search)
 		return {
 			uid: `nl-catalogue-${counter}`,
 			q,
@@ -542,7 +592,10 @@ export default {
 }
 
 .nl-catalogue__note--warning {
-	color: var(--nldesign-color-warning-text, var(--utrecht-document-color, CanvasText));
+	color: var(
+		--nldesign-color-warning-text,
+		var(--utrecht-document-color, CanvasText)
+	);
 }
 
 .nl-catalogue__pages {

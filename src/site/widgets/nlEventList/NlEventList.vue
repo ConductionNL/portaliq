@@ -127,11 +127,11 @@ export default {
 		portal: { type: String, default: '' },
 	},
 
+	emits: ['navigate'],
+
 	data() {
 		return { fetched: null }
 	},
-
-	emits: ['navigate'],
 
 	computed: {
 		/**
