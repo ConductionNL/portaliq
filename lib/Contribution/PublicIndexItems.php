@@ -158,8 +158,10 @@ class PublicIndexItems {
 		}
 
 		if (isset($item['note']) === true) {
-			$tone             = ($entry['noteTone'] ?? 'neutral');
-			$item['noteTone'] = in_array($tone, self::TONES, true) === true ? $tone : 'neutral';
+			$item['noteTone'] = 'neutral';
+			if (in_array(($entry['noteTone'] ?? null), self::TONES, true) === true) {
+				$item['noteTone'] = $entry['noteTone'];
+			}
 		}
 
 		return $item;
@@ -196,15 +198,20 @@ class PublicIndexItems {
 	 * @return array<string, mixed>
 	 */
 	private function withLists(array $item, array $entry): array {
-		$meta = array_values(array_filter(array_map(fn ($line): ?string => $this->short(value: $line), (array)($entry['meta'] ?? [])), static fn (?string $line): bool => $line !== null));
+		$meta = $this->shortList(values: (array)($entry['meta'] ?? []));
 		if ($meta !== []) {
 			$item['meta'] = array_slice($meta, 0, self::MAX_PARTS);
 		}
 
-		$facets = [];
-		foreach ((is_array($entry['facets'] ?? null) === true ? $entry['facets'] : []) as $label => $value) {
+		$facets   = [];
+		$declared = [];
+		if (is_array($entry['facets'] ?? null) === true) {
+			$declared = $entry['facets'];
+		}
+
+		foreach ($declared as $label => $value) {
 			$label  = $this->short(value: $label);
-			$values = array_values(array_filter(array_map(fn ($one): ?string => $this->short(value: $one), (array)$value), static fn (?string $one): bool => $one !== null));
+			$values = $this->shortList(values: (array)$value);
 			if ($label === null || $values === [] || count($facets) >= self::MAX_PARTS) {
 				continue;
 			}
@@ -236,6 +243,25 @@ class PublicIndexItems {
 
 		return $item;
 	}//end withLink()
+
+	/**
+	 * The values of a list that are short one-line strings.
+	 *
+	 * @param array<int|string, mixed> $values The values.
+	 *
+	 * @return array<int, string>
+	 */
+	private function shortList(array $values): array {
+		$out = [];
+		foreach ($values as $value) {
+			$short = $this->short(value: $value);
+			if ($short !== null) {
+				$out[] = $short;
+			}
+		}
+
+		return $out;
+	}//end shortList()
 
 	/**
 	 * A trimmed one-line string of at most MAX_SHORT characters, or null.

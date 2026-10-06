@@ -31,6 +31,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
+use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -43,6 +44,9 @@ use OCP\IRequest;
  * Serves a portal's public catalogue.
  *
  * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
+ * the one trust ordering every portal gate shares.
  */
 class ContentCatalogueController extends Controller {
 	/**
@@ -73,13 +77,13 @@ class ContentCatalogueController extends Controller {
 	 * One page of the portal's catalogue.
 	 *
 	 * @param string|null $portal   The portal slug.
-	 * @param string      $q        The words searched for.
+	 * @param string      $search   The words searched for.
 	 * @param string      $types    Comma-separated item types ('' for all).
 	 * @param string      $filters  The facet choices, as JSON `{label: [values]}`.
 	 * @param string      $sort     `relevance`, `date`, `dateDesc` or `title`.
 	 * @param int         $page     The page, from 1.
 	 * @param int         $limit    Results per page, at most 50.
-	 * @param bool        $upcoming Only items whose date is today or later.
+	 * @param string      $upcoming `1` for only the items whose date is today or later.
 	 *
 	 * @return JSONResponse `{items, total, page, pages, facets}`, or 401 / 403 / 404.
 	 *
@@ -90,13 +94,13 @@ class ContentCatalogueController extends Controller {
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function index(
 		?string $portal = null,
-		string $q = '',
+		string $search = '',
 		string $types = '',
 		string $filters = '',
 		string $sort = 'relevance',
 		int $page = 1,
 		int $limit = 10,
-		bool $upcoming = false,
+		string $upcoming = '',
 	): JSONResponse {
 		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
 		if ($resolved === null) {
@@ -109,16 +113,24 @@ class ContentCatalogueController extends Controller {
 		}
 
 		$chosen = json_decode($filters, true);
-		$result = $this->catalogue->query(
+		if (is_array($chosen) === false) {
+			$chosen = [];
+		}
+
+		if (in_array($sort, PublicCatalogueQuery::SORTS, true) === false) {
+			$sort = 'relevance';
+		}
+
+		$result = (new PublicCatalogueQuery())->run(
 			items: $this->catalogue->itemsFor(portal: (string)$resolved['slug']),
 			params: [
-				'q'        => mb_substr($q, 0, self::MAX_QUERY),
+				'q'        => mb_substr($search, 0, self::MAX_QUERY),
 				'types'    => array_values(array_filter(array_map('trim', explode(',', $types)), static fn (string $type): bool => $type !== '')),
-				'filters'  => is_array($chosen) === true ? $chosen : [],
-				'sort'     => in_array($sort, PublicCatalogue::SORTS, true) === true ? $sort : 'relevance',
+				'filters'  => $chosen,
+				'sort'     => $sort,
 				'page'     => $page,
 				'limit'    => $limit,
-				'upcoming' => $upcoming,
+				'upcoming' => ($upcoming === '1'),
 				'today'    => date('Y-m-d'),
 			]
 		);

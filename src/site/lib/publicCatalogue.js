@@ -29,7 +29,7 @@ export async function fetchCatalogue(portal, query = {}) {
 	const url = new URL(resolveApiBase() + '/catalogue', window.location.origin)
 	const params = {
 		portal,
-		q: query.q || '',
+		search: query.q || '',
 		types: (query.types || []).join(','),
 		filters:
 			query.filters && Object.keys(query.filters).length > 0
