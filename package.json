@@ -7,6 +7,8 @@
     "npm": "^11.0.0"
   },
   "scripts": {
+    "docs:standards": "node scripts/generate-standards-docs.cjs",
+    "check:standards-docs": "node scripts/generate-standards-docs.cjs --check",
     "build": "npm run build:admin && npm run build:site && npm run build:traffic",
     "postbuild": "node scripts/check-single-dexie.js",
     "build:admin": "NODE_ENV=production webpack --config webpack.config.js --progress",

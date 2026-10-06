@@ -2567,5 +2567,16 @@
         ]
       }
     ]
+  },
+  "discovery": {
+    "public": true,
+    "standards": [
+      {
+        "id": "oidc",
+        "name": "OpenID Connect relying party (authorization code with PKCE) for portal sign-in",
+        "role": "consumes",
+        "specUrl": "https://openid.net/specs/openid-connect-core-1_0.html"
+      }
+    ]
   }
 }

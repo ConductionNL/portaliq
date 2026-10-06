@@ -842,6 +842,16 @@ Project / spec documentation:
 | [`openspec/ROADMAP.md`](openspec/ROADMAP.md) | Product roadmap |
 | [`openspec/`](openspec/) | Implementation specifications and changes |
 
+<!-- discovery:start -->
+## Standards & federation
+
+| Standard | Role | Access |
+|---|---|---|
+| [OpenID Connect relying party (authorization code with PKCE) for portal sign-in](https://openid.net/specs/openid-connect-core-1_0.html) | Uses | — |
+
+Other servers can read this list without logging in, from the Nextcloud capabilities endpoint (published by OpenRegister). Details, federation and admin switches: [docs/standards-and-federation.md](docs/standards-and-federation.md).
+<!-- discovery:end -->
+
 ## Standards & Compliance
 
 - **Accessibility:** WCAG AA (Dutch government requirement)
