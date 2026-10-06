@@ -36,6 +36,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
  */
 class EmergencyPushControllerTest extends TestCase {
+	use StaffActionDoubleTrait;
 
 	public function testSendDeliversToEveryMatchingGuardianAndReportsTheCount(): void {
 		$user = $this->createMock(IUser::class);
@@ -62,7 +63,7 @@ class EmergencyPushControllerTest extends TestCase {
 			['sentBy' => 'staff-directie-1', 'recipientCount' => 2, 'deliveredCount' => 2]
 		);
 
-		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $logger);
+		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $logger, $this->staffActionAuth(EmergencyPushController::ACTION));
 		$response = $controller->send(['schoolRef' => 'school-de-regenboog'], 'Alarm', 'Evacuate');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -106,7 +107,7 @@ class EmergencyPushControllerTest extends TestCase {
 			}
 		);
 
-		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $logger);
+		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $logger, $this->staffActionAuth(EmergencyPushController::ACTION));
 		$response = $controller->send(['schoolRef' => 'school-de-regenboog'], 'Alarm', 'Evacuate');
 
 		$this->assertSame(3, $response->getData()['recipientCount']);
@@ -133,9 +134,53 @@ class EmergencyPushControllerTest extends TestCase {
 		$delivery = $this->createMock(PushDeliveryService::class);
 		$delivery->expects($this->never())->method('deliver');
 
-		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $this->createMock(LoggerInterface::class));
+		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $this->createMock(LoggerInterface::class), $this->staffActionAuth(EmergencyPushController::ACTION));
 		$response = $controller->send(['groupRefs' => ['groep-empty']], 'Alarm', 'Evacuate');
 
 		$this->assertSame(0, $response->getData()['recipientCount']);
 	}//end testSendReportsZeroForAnEmptyResolvedAudience()
+
+	/**
+	 * A signed-in user without portal.send-emergency-push is refused with 403
+	 * and nobody is resolved or pushed to (#1094).
+	 *
+	 * @return void
+	 */
+	public function testAUserWithoutTheActionIsRefusedBeforeAnyPush(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('staff-leerkracht-5a');
+
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
+
+		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
+		$audienceReader->expects($this->never())->method('guardiansMatching');
+
+		$delivery = $this->createMock(PushDeliveryService::class);
+		$delivery->expects($this->never())->method('deliver');
+
+		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $audienceReader, $delivery, $this->createMock(LoggerInterface::class), $this->staffActionAuth(EmergencyPushController::ACTION, false));
+		$response = $controller->send(['schoolRef' => 'school-de-regenboog'], 'Alarm', 'Evacuate');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'forbidden'], $response->getData());
+	}//end testAUserWithoutTheActionIsRefusedBeforeAnyPush()
+
+	/**
+	 * Without a signed-in Nextcloud user the send is 401 and nothing is pushed.
+	 *
+	 * @return void
+	 */
+	public function testAnAnonymousCallerIsRefused(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
+
+		$delivery = $this->createMock(PushDeliveryService::class);
+		$delivery->expects($this->never())->method('deliver');
+
+		$controller = new EmergencyPushController($this->createMock(IRequest::class), $userSession, $this->createMock(GuardianAudienceFixtureReader::class), $delivery, $this->createMock(LoggerInterface::class), $this->staffActionAuth(EmergencyPushController::ACTION));
+		$response = $controller->send(['schoolRef' => 'school-de-regenboog'], 'Alarm', 'Evacuate');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testAnAnonymousCallerIsRefused()
 }//end class

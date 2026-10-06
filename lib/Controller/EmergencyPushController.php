@@ -29,12 +29,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\GuardianAudienceFixtureReader;
 use OCA\Portaliq\Service\Notifications\PushDeliveryService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -45,6 +47,11 @@ use Throwable;
  */
 class EmergencyPushController extends Controller {
 	/**
+	 * The ADR-023 action a staff member needs to send a noodmelding.
+	 */
+	public const ACTION = 'portal.send-emergency-push';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
@@ -52,6 +59,7 @@ class EmergencyPushController extends Controller {
 	 * @param GuardianAudienceFixtureReader $audienceReader Resolves guardians matching the target.
 	 * @param PushDeliveryService $delivery Delivers the emergency push, bypassing quiet hours.
 	 * @param LoggerInterface $logger The logger.
+	 * @param ActionAuthService $actionAuth Decides whether this staff user may send an emergency push (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -59,6 +67,7 @@ class EmergencyPushController extends Controller {
 		private readonly GuardianAudienceFixtureReader $audienceReader,
 		private readonly PushDeliveryService $delivery,
 		private readonly LoggerInterface $logger,
+		private readonly ActionAuthService $actionAuth,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -72,13 +81,25 @@ class EmergencyPushController extends Controller {
 	 *
 	 * @return JSONResponse `{recipientCount, deliveredCount}`: whom the target
 	 *                      reaches, and how many of those a push really reached
-	 *                      (0 while only the interim logging transport is bound).
+	 *                      (0 while only the interim logging transport is bound),
+	 *                      or 401 / 403 before anything is sent.
 	 *
 	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
 	 */
 	#[NoAdminRequired]
 	public function send(array $target, string $title, string $body): JSONResponse {
-		$staffRef = (string)($this->userSession->getUser()?->getUID() ?? '');
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$staffRef = $user->getUID();
 		$recipients = $this->audienceReader->guardiansMatching(target: $target);
 
 		$delivered = 0;

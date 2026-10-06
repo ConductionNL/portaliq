@@ -36,6 +36,7 @@ use RuntimeException;
  * @spec openspec/changes/events-and-signups/design.md#api-design
  */
 class EventControllerTest extends TestCase {
+	use StaffActionDoubleTrait;
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -56,13 +57,13 @@ class EventControllerTest extends TestCase {
 	public function testCreateRefusesAnUnauthenticatedCaller(): void {
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
-		$controller = new EventController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new EventController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION));
 		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
 		$controller->create('Title', '2026-11-12T09:00:00+00:00', ['groupRefs' => ['groep-5a']]);
 	}//end testCreateRefusesAnUnauthenticatedCaller()
 
 	public function testCreateRejectsATargetWithNoDimension(): void {
-		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION));
 		$response = $controller->create('Title', '2026-11-12T09:00:00+00:00', []);
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
@@ -81,7 +82,7 @@ class EventControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION));
 		$response = $controller->create('Schoolreisje', '2026-11-12T09:00:00+00:00', ['groupRefs' => ['groep-5a']], rsvpEnabled: true);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -97,7 +98,7 @@ class EventControllerTest extends TestCase {
 			}//end find()
 		};
 
-		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION));
 		$response = $controller->publish('missing');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
@@ -120,10 +121,37 @@ class EventControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION));
 		$response = $controller->publish('e1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('published', $objectService->saved['status']);
 	}//end testPublishFlipsStatus()
+
+	/**
+	 * A signed-in user without portal.manage-event is refused by every staff method,
+	 * before anything is read or written (#1094).
+	 *
+	 * @return void
+	 */
+	public function testEveryStaffMethodRefusesAUserWithoutTheAction(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $container, $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION, false));
+
+		$refused = 0;
+		$calls = [
+			fn () => $controller->create('Title', '2026-11-12T09:00:00+00:00', ['groupRefs' => ['groep-5a']]),
+			fn () => $controller->publish('e1'),
+		];
+		foreach ($calls as $call) {
+			try {
+				$call();
+			} catch (\OCP\AppFramework\OCS\OCSForbiddenException $e) {
+				$refused++;
+			}
+		}
+
+		$this->assertSame(count($calls), $refused);
+	}//end testEveryStaffMethodRefusesAUserWithoutTheAction()
 }//end class
