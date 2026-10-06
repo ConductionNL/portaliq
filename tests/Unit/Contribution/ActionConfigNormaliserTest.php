@@ -125,6 +125,40 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testAWidgetThatDoesNotFitItsFieldIsDropped()
 
 	/**
+	 * A count stepper keeps its bounds, unit and price label; a companion that
+	 * does not fit goes, and on a date or a field with options the widget goes
+	 * (count-field).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/count-field/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
+	 */
+	public function testACountStepperKeepsWhatFits(): void {
+		$configs = $this->absenceConfigs(
+			[
+				'reason'     => ['widget' => 'count', 'min' => 1, 'max' => 12, 'unit' => ['one' => 'deelnemer', 'other' => 'deelnemers'], 'priceLabel' => '[PRIJS]'],
+				'dateTo'     => ['widget' => 'count', 'min' => 1],
+				'reasonKind' => ['widget' => 'count'],
+			]
+		);
+
+		$this->assertSame(
+			['widget' => 'count', 'min' => 1, 'max' => 12, 'unit' => ['one' => 'deelnemer', 'other' => 'deelnemers'], 'priceLabel' => '[PRIJS]'],
+			array_intersect_key($configs['reason'], array_flip(['widget', 'min', 'max', 'unit', 'priceLabel']))
+		);
+		$this->assertArrayNotHasKey('widget', $configs['dateTo'], 'a date is no count');
+		$this->assertArrayNotHasKey('min', $configs['dateTo']);
+		$this->assertArrayNotHasKey('widget', $configs['reasonKind'], 'a field with options is no count');
+
+		$odd = $this->absenceConfigs(['reason' => ['widget' => 'count', 'min' => 5, 'max' => 2, 'unit' => ['one' => 'x'], 'priceLabel' => str_repeat('a', 61)]]);
+		$this->assertSame('count', $odd['reason']['widget']);
+		$this->assertSame(5, $odd['reason']['min']);
+		$this->assertArrayNotHasKey('max', $odd['reason'], 'a max below the min goes');
+		$this->assertArrayNotHasKey('unit', $odd['reason'], 'a unit needs both forms');
+		$this->assertArrayNotHasKey('priceLabel', $odd['reason'], 'a long price label goes');
+	}//end testACountStepperKeepsWhatFits()
+
+	/**
 	 * The named-day count is an integer from 1 to 5; anything else reads 2.
 	 *
 	 * @return void
