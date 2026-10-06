@@ -6815,9 +6815,9 @@
 			"built": {
 				"state": "built",
 				"evidence": "lib/Controller/SettingsController.php:65 index(), :127 update(), :158 create(), :174 load(); routes /api/settings GET/POST/PUT and /api/settings/load POST (appinfo/routes.php:14-20, with a note that PUT is added locally because portaliq does not call OpenRegister's Routes::standard())",
-				"reachedOn": "src/views/AdminRoot.vue:376,411,436,484 call /apps/portaliq/api/settings directly; src/store/modules/settings.js:30,61 too",
+				"reachedOn": "src/views/AdminRoot.vue:376,411,436,484 call /apps/portaliq/api/settings directly",
 				"owner": "ConductionNL/portaliq",
-				"note": "Reached both from the dedicated admin view and the Vuex settings module.",
+				"note": "Reached from the dedicated admin view.",
 				"origin": "code"
 			},
 			"provider": "portaliq",

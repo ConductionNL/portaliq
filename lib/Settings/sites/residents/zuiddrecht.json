@@ -1,0 +1,242 @@
+{
+	"id": "zuiddrecht",
+	"$comment": "The example resident of the Zuiddrecht example site: Sanne de Vries, five cases, one question and four messages. Installed by `occ portaliq:example-resident:install zuiddrecht`. Every date is a number of days from the day of the install, so the cases stay believable however long this file sits in the repo. Values in double braces are filled in at install time: {{subject}} is the resident's reference, {{lookup:name}} the id found by a lookup of the same object, {{object:key.field}} a field of an object written earlier in this file, {{date:n}} and {{datetime:n HH:MM}} a day n days from the install. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
+	"portal": "zuiddrecht",
+	"timezone": "Europe/Amsterdam",
+	"resident": {
+		"userId": "sanne.devries",
+		"displayName": "Sanne de Vries",
+		"audience": "citizen",
+		"organisation": "zuiddrecht"
+	},
+	"signIn": {
+		"mode": "nextcloud",
+		"label": {
+			"title": "Voorbeeldinwoner",
+			"text": "Alleen op deze demo. U logt in als Sanne de Vries.",
+			"button": "Inloggen als voorbeeldinwoner"
+		}
+	},
+	"objects": [
+		{
+			"key": "woo-fietspad",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": { "schema": "caseType", "where": { "identifier": "woo-verzoek" } },
+				"ontvangen": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Ontvangst" } },
+				"status": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Beoordeling ontvankelijkheid" } }
+			},
+			"jsonFields": ["statusHistory"],
+			"data": {
+				"title": "Verlichting fietspad Lindelaan",
+				"description": "Ik wil de documenten over de nieuwe verlichting langs het fietspad aan de Lindelaan.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"portalSubject": "{{subject}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-2}}",
+				"receivedAt": "{{datetime:-2 09:12}}",
+				"currentStatusEnteredAt": "{{datetime:-1 10:05}}",
+				"statusHistory": [
+					{ "status": "{{lookup:ontvangen}}", "enteredAt": "{{datetime:-2 09:12}}" },
+					{ "status": "{{lookup:status}}", "enteredAt": "{{datetime:-1 10:05}}" }
+				]
+			}
+		},
+		{
+			"key": "vergunning-dakkapel",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": { "schema": "caseType", "where": { "identifier": "omgevingsvergunning" } },
+				"ontvangen": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Ontvangen" } },
+				"status": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "In behandeling" } }
+			},
+			"jsonFields": ["statusHistory"],
+			"data": {
+				"title": "Dakkapel Lindelaan 14",
+				"description": "Ik wil een dakkapel plaatsen aan de achterkant van mijn huis.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"portalSubject": "{{subject}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-12}}",
+				"receivedAt": "{{datetime:-12 14:30}}",
+				"currentStatusEnteredAt": "{{datetime:-9 11:20}}",
+				"waitingOnApplicant": true,
+				"waitingOnApplicantSince": "{{datetime:-1 15:40}}",
+				"statusHistory": [
+					{ "status": "{{lookup:ontvangen}}", "enteredAt": "{{datetime:-12 14:30}}" },
+					{ "status": "{{lookup:status}}", "enteredAt": "{{datetime:-9 11:20}}" }
+				]
+			}
+		},
+		{
+			"key": "melding-stoeptegel",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": { "schema": "caseType", "where": { "identifier": "melding-openbare-ruimte" } },
+				"status": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Ontvangen" } }
+			},
+			"jsonFields": ["statusHistory"],
+			"data": {
+				"title": "Losse stoeptegel bij de bushalte Lindelaan",
+				"description": "Bij de bushalte ligt een stoeptegel los. Mensen struikelen erover.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"portalSubject": "{{subject}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-1}}",
+				"receivedAt": "{{datetime:-1 08:15}}",
+				"currentStatusEnteredAt": "{{datetime:-1 08:15}}",
+				"statusHistory": [
+					{ "status": "{{lookup:status}}", "enteredAt": "{{datetime:-1 08:15}}" }
+				]
+			}
+		},
+		{
+			"key": "melding-lantaarnpaal",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": { "schema": "caseType", "where": { "identifier": "melding-openbare-ruimte" } },
+				"ontvangen": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Ontvangen" } },
+				"bezig": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "In behandeling" } },
+				"status": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Afgehandeld" } }
+			},
+			"jsonFields": ["statusHistory"],
+			"data": {
+				"title": "Kapotte lantaarnpaal Kerkplein",
+				"description": "De lantaarnpaal bij de ingang van het Kerkplein brandt niet meer.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"portalSubject": "{{subject}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-40}}",
+				"endDate": "{{date:-33}}",
+				"receivedAt": "{{datetime:-40 19:45}}",
+				"currentStatusEnteredAt": "{{datetime:-33 16:00}}",
+				"statusHistory": [
+					{ "status": "{{lookup:ontvangen}}", "enteredAt": "{{datetime:-40 19:45}}" },
+					{ "status": "{{lookup:bezig}}", "enteredAt": "{{datetime:-38 09:00}}" },
+					{ "status": "{{lookup:status}}", "enteredAt": "{{datetime:-33 16:00}}" }
+				]
+			}
+		},
+		{
+			"key": "subsidie-buurtfeest",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": { "schema": "caseType", "where": { "identifier": "subsidieaanvraag" } },
+				"ontvangen": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Ontvangen" } },
+				"beoordeling": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Beoordeling" } },
+				"besluit": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Besluitvorming" } },
+				"status": { "schema": "statusType", "where": { "caseType": "{{lookup:caseType}}", "name": "Afgehandeld" } }
+			},
+			"jsonFields": ["statusHistory"],
+			"data": {
+				"title": "Subsidie buurtfeest Lindelaan",
+				"description": "Wij vragen een bijdrage voor het jaarlijkse buurtfeest in de Lindelaan.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"portalSubject": "{{subject}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-120}}",
+				"endDate": "{{date:-88}}",
+				"receivedAt": "{{datetime:-120 10:30}}",
+				"currentStatusEnteredAt": "{{datetime:-88 13:15}}",
+				"statusHistory": [
+					{ "status": "{{lookup:ontvangen}}", "enteredAt": "{{datetime:-120 10:30}}" },
+					{ "status": "{{lookup:beoordeling}}", "enteredAt": "{{datetime:-116 09:00}}" },
+					{ "status": "{{lookup:besluit}}", "enteredAt": "{{datetime:-95 14:00}}" },
+					{ "status": "{{lookup:status}}", "enteredAt": "{{datetime:-88 13:15}}" }
+				]
+			}
+		},
+		{
+			"key": "vraag-bouwtekening",
+			"register": "dossiq",
+			"schema": "aanvullingsverzoek",
+			"data": {
+				"case": "{{object:vergunning-dakkapel.id}}",
+				"portalSubject": "{{subject}}",
+				"summary": "Stuur de bouwtekening van uw dakkapel",
+				"missingItems": [
+					{ "item": "Bouwtekening van de dakkapel met maten", "received": false }
+				],
+				"requestedAt": "{{datetime:-1 15:40}}",
+				"hersteltermijn": "{{date:13}}",
+				"state": "open"
+			}
+		},
+		{
+			"key": "bericht-woo-ontvangen",
+			"register": "dossiq",
+			"schema": "portaalBericht",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"caseReference": "{{object:woo-fietspad.identifier}}",
+				"senderRef": "gemeente-zuiddrecht",
+				"senderName": "Gemeente Zuiddrecht",
+				"recipientRef": "{{subject}}",
+				"direction": "handler_to_citizen",
+				"subject": "Wij hebben uw Woo-verzoek ontvangen",
+				"content": "Uw verzoek heeft zaaknummer {{object:woo-fietspad.identifier}}. U krijgt binnen vier weken antwoord.",
+				"sentAt": "{{datetime:-2 09:20}}",
+				"readByRecipientAt": "{{datetime:-2 12:05}}"
+			}
+		},
+		{
+			"key": "bericht-dakkapel-vraag",
+			"register": "dossiq",
+			"schema": "portaalBericht",
+			"data": {
+				"caseId": "{{object:vergunning-dakkapel.id}}",
+				"caseReference": "{{object:vergunning-dakkapel.identifier}}",
+				"senderRef": "gemeente-zuiddrecht",
+				"senderName": "Gemeente Zuiddrecht",
+				"recipientRef": "{{subject}}",
+				"direction": "handler_to_citizen",
+				"subject": "Wij hebben nog een bouwtekening van u nodig",
+				"content": "Voor uw aanvraag {{object:vergunning-dakkapel.identifier}} missen wij de bouwtekening van de dakkapel. Voeg de tekening toe bij uw zaak. Daarna gaan wij verder met uw aanvraag.",
+				"sentAt": "{{datetime:-1 15:40}}"
+			}
+		},
+		{
+			"key": "bericht-melding-ontvangen",
+			"register": "dossiq",
+			"schema": "portaalBericht",
+			"data": {
+				"caseId": "{{object:melding-stoeptegel.id}}",
+				"caseReference": "{{object:melding-stoeptegel.identifier}}",
+				"senderRef": "gemeente-zuiddrecht",
+				"senderName": "Gemeente Zuiddrecht",
+				"recipientRef": "{{subject}}",
+				"direction": "handler_to_citizen",
+				"subject": "Wij hebben uw melding ontvangen",
+				"content": "Bedankt voor uw melding over de losse stoeptegel. Uw melding heeft nummer {{object:melding-stoeptegel.identifier}}. Wij sturen die naar de juiste dienst.",
+				"sentAt": "{{datetime:-1 08:20}}"
+			}
+		},
+		{
+			"key": "bericht-lantaarnpaal-klaar",
+			"register": "dossiq",
+			"schema": "portaalBericht",
+			"data": {
+				"caseId": "{{object:melding-lantaarnpaal.id}}",
+				"caseReference": "{{object:melding-lantaarnpaal.identifier}}",
+				"senderRef": "gemeente-zuiddrecht",
+				"senderName": "Gemeente Zuiddrecht",
+				"recipientRef": "{{subject}}",
+				"direction": "handler_to_citizen",
+				"subject": "De lantaarnpaal op het Kerkplein brandt weer",
+				"content": "Wij hebben de lantaarnpaal gerepareerd. Uw melding {{object:melding-lantaarnpaal.identifier}} is afgehandeld.",
+				"sentAt": "{{datetime:-33 16:10}}",
+				"readByRecipientAt": "{{datetime:-32 08:40}}"
+			}
+		}
+	]
+}

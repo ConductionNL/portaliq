@@ -1,0 +1,2129 @@
+{
+    "$comment": "The Zuiddrecht example site (openspec/changes/example-site-zuiddrecht). Read by ExampleSiteInstaller for `occ portaliq:example-site:install zuiddrecht`. Copy and layout follow the approved design (Kop, Voet, Home, Contentpagina). An object that already exists is never changed: only what is missing is written.",
+    "id": "zuiddrecht",
+    "name": "Gemeente Zuiddrecht",
+    "description": "The public website of a demo municipality that does not exist: header with search and a button to the resident's own area, home page with top tasks and news, content pages and a footer.",
+    "portal": {
+        "slug": "zuiddrecht",
+        "title": "Gemeente Zuiddrecht",
+        "status": "published",
+        "kind": "site",
+        "theme": "zuiddrecht",
+        "headerVariant": "double",
+        "domains": [],
+        "locales": [
+            "nl"
+        ],
+        "authentication": {
+            "modes": [
+                "public",
+                "digid",
+                "eherkenning"
+            ],
+            "minTrust": "low",
+            "modeLabels": {
+                "digid": {
+                    "title": "Als inwoner",
+                    "text": "Voor uw eigen zaken, berichten en dossiers.",
+                    "button": "Inloggen met DigiD"
+                },
+                "eherkenning": {
+                    "title": "Namens een bedrijf",
+                    "text": "Voor vergunningen, meldingen en zaken van uw organisatie.",
+                    "button": "Inloggen met eHerkenning"
+                }
+            },
+            "signInPage": {
+                "title": "Inloggen op Mijn Zuiddrecht",
+                "intro": "Kies hoe u inlogt. Als inwoner gebruikt u DigiD. Namens een bedrijf gebruikt u eHerkenning.",
+                "notice": {
+                    "text": "Geen DigiD? Bel [telefoonnummer]. Wij helpen u op een andere manier."
+                }
+            }
+        },
+        "headerSearch": {
+            "label": "Zoeken op de website",
+            "placeholder": "Zoeken",
+            "route": "/zoeken"
+        },
+        "accountLabel": "Mijn Zuiddrecht",
+        "footer": {
+            "description": "Heeft u een vraag? Bel of mail ons. We helpen u graag.",
+            "colophon": "Gemeente Zuiddrecht is een voorbeeldgemeente. Deze website laat zien hoe portaliq en Nextcloud samen werken.",
+            "cta": {
+                "label": "Contact en openingstijden",
+                "href": "/contact"
+            },
+            "contact": {
+                "title": "Contact",
+                "lines": [
+                    {
+                        "text": "Telefoon: [telefoonnummer]"
+                    },
+                    {
+                        "text": "E-mail: [e-mailadres]"
+                    },
+                    {
+                        "text": "Stadskantoor: [adres]"
+                    }
+                ]
+            }
+        }
+    },
+    "menus": [
+        {
+            "title": "Hoofdmenu",
+            "position": 0,
+            "items": [
+                {
+                    "order": 1,
+                    "name": "Home",
+                    "link": "/"
+                },
+                {
+                    "order": 2,
+                    "name": "Wonen en leven",
+                    "link": "/wonen-en-leven"
+                },
+                {
+                    "order": 3,
+                    "name": "Afval",
+                    "link": "/afval"
+                },
+                {
+                    "order": 4,
+                    "name": "Parkeren",
+                    "link": "/parkeren"
+                },
+                {
+                    "order": 5,
+                    "name": "Ondernemen",
+                    "link": "/ondernemen"
+                },
+                {
+                    "order": 6,
+                    "name": "Woo-publicaties",
+                    "link": "/zoeken"
+                },
+                {
+                    "order": 7,
+                    "name": "Bestuur en organisatie",
+                    "link": "/bestuur"
+                }
+            ]
+        },
+        {
+            "title": "Snel naar",
+            "position": 1,
+            "items": [
+                {
+                    "order": 1,
+                    "name": "Afvalkalender",
+                    "link": "/afval"
+                },
+                {
+                    "order": 2,
+                    "name": "Melding openbare ruimte",
+                    "link": "/melding-openbare-ruimte"
+                },
+                {
+                    "order": 3,
+                    "name": "Woo-publicaties",
+                    "link": "/zoeken"
+                },
+                {
+                    "order": 4,
+                    "name": "Werken bij Zuiddrecht",
+                    "link": "/werken-bij-zuiddrecht"
+                }
+            ]
+        },
+        {
+            "title": "Over deze website",
+            "position": 1,
+            "items": [
+                {
+                    "order": 1,
+                    "name": "Toegankelijkheid",
+                    "link": "/toegankelijkheid"
+                },
+                {
+                    "order": 2,
+                    "name": "Privacy",
+                    "link": "/privacy"
+                },
+                {
+                    "order": 3,
+                    "name": "Cookies",
+                    "link": "/cookies"
+                },
+                {
+                    "order": 4,
+                    "name": "Kwetsbaarheid melden",
+                    "link": "/kwetsbaarheid-melden"
+                }
+            ]
+        }
+    ],
+    "pages": [
+        {
+            "route": "/",
+            "title": "Home",
+            "summary": "Regel uw zaken met de gemeente Zuiddrecht.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-home-01-nlbanner",
+                        "widgetKey": "nlBanner",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 1,
+                        "props": {
+                            "kind": "warning",
+                            "closable": true,
+                            "text": "Let op: zaterdag 10 oktober is het stadskantoor open van 9.00 tot 13.00 uur."
+                        }
+                    },
+                    {
+                        "id": "zd-home-02-hero",
+                        "widgetKey": "hero",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 4,
+                        "props": {
+                            "title": "Wat wilt u regelen?",
+                            "search": true,
+                            "searchLabel": "Zoek op onderwerp, bijvoorbeeld paspoort of afval",
+                            "searchSubmitLabel": "Zoeken",
+                            "headingVisible": true
+                        }
+                    },
+                    {
+                        "id": "zd-home-03-nlquicktasks",
+                        "widgetKey": "nlQuickTasks",
+                        "gridX": 0,
+                        "gridY": 5,
+                        "gridWidth": 12,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Direct regelen",
+                            "columns": 4,
+                            "overlap": true,
+                            "items": [
+                                {
+                                    "label": "Paspoort en ID-kaart",
+                                    "href": "/paspoort-en-id-kaart",
+                                    "icon": "card"
+                                },
+                                {
+                                    "label": "Afvalkalender",
+                                    "href": "/afval",
+                                    "icon": "calendar"
+                                },
+                                {
+                                    "label": "Parkeervergunning",
+                                    "href": "/parkeren",
+                                    "icon": "document"
+                                },
+                                {
+                                    "label": "Verhuizing doorgeven",
+                                    "href": "/verhuizing-doorgeven",
+                                    "icon": "home"
+                                },
+                                {
+                                    "label": "Melding openbare ruimte",
+                                    "href": "/melding-openbare-ruimte",
+                                    "icon": "alert"
+                                },
+                                {
+                                    "label": "Afspraak maken",
+                                    "href": "/afspraak-maken",
+                                    "icon": "clock"
+                                },
+                                {
+                                    "label": "Woo-publicaties",
+                                    "href": "/zoeken",
+                                    "icon": "bookLines"
+                                },
+                                {
+                                    "label": "Belastingen betalen",
+                                    "href": "/belastingen",
+                                    "icon": "documentGrade"
+                                }
+                            ],
+                            "moreLabel": "Alle onderwerpen van A tot Z",
+                            "moreHref": "/onderwerpen"
+                        }
+                    },
+                    {
+                        "id": "zd-home-04-nlnewslist",
+                        "widgetKey": "nlNewsList",
+                        "gridX": 0,
+                        "gridY": 9,
+                        "gridWidth": 7,
+                        "gridHeight": 6,
+                        "props": {
+                            "heading": "Nieuws",
+                            "limit": 4,
+                            "featured": true,
+                            "showAudience": false,
+                            "moreLabel": "Al het nieuws",
+                            "moreHref": "/nieuwsoverzicht",
+                            "articleRoute": "/nieuws"
+                        }
+                    },
+                    {
+                        "id": "zd-home-05-nlsignin",
+                        "widgetKey": "nlSignIn",
+                        "gridX": 8,
+                        "gridY": 9,
+                        "gridWidth": 4,
+                        "gridHeight": 4,
+                        "props": {
+                            "heading": "Mijn Zuiddrecht",
+                            "display": "card",
+                            "tone": "inverse",
+                            "points": [
+                                "Zie waar uw aanvraag staat",
+                                "Lees berichten van de gemeente",
+                                "Bewaar documenten in een eigen dossier"
+                            ],
+                            "buttonLabel": "Inloggen bij Mijn Zuiddrecht"
+                        }
+                    },
+                    {
+                        "id": "zd-home-06-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 14,
+                        "gridWidth": 4,
+                        "gridHeight": 2,
+                        "props": {
+                            "heading": "Openbare informatie",
+                            "links": [
+                                {
+                                    "label": "Zoeken in Woo-publicaties",
+                                    "href": "/zoeken",
+                                    "description": "Besluiten, rapporten en antwoorden op Woo-verzoeken."
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-home-07-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 18,
+                        "gridWidth": 12,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Bestuur en organisatie",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-home-08-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 19,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Gemeenteraad",
+                            "links": [
+                                {
+                                    "label": "Vergaderingen en stukken",
+                                    "href": "/bestuur/vergaderingen"
+                                },
+                                {
+                                    "label": "Raadsleden",
+                                    "href": "/bestuur/raadsleden"
+                                },
+                                {
+                                    "label": "Inspreken bij de raad",
+                                    "href": "/bestuur/inspreken"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-home-09-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 4,
+                        "gridY": 19,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "College",
+                            "links": [
+                                {
+                                    "label": "Burgemeester en wethouders",
+                                    "href": "/bestuur/college"
+                                },
+                                {
+                                    "label": "Besluiten van het college",
+                                    "href": "/bestuur/collegebesluiten"
+                                },
+                                {
+                                    "label": "Coalitieakkoord",
+                                    "href": "/bestuur/coalitieakkoord"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-home-10-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 19,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Organisatie",
+                            "links": [
+                                {
+                                    "label": "Werken bij Zuiddrecht",
+                                    "href": "/werken-bij-zuiddrecht"
+                                },
+                                {
+                                    "label": "Inkoop en aanbesteding",
+                                    "href": "/bestuur/inkoop"
+                                },
+                                {
+                                    "label": "Klacht over de gemeente",
+                                    "href": "/klacht"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/afval",
+            "title": "Afval scheiden en ophalen",
+            "summary": "Wij halen uw afval om de week op. Op de afvalkalender ziet u welke container wanneer aan de straat moet.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-afval-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 7,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wij halen uw afval om de week op. Op de afvalkalender ziet u welke container wanneer aan de straat moet."
+                        }
+                    },
+                    {
+                        "id": "zd-afval-02-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 0,
+                        "gridWidth": 4,
+                        "gridHeight": 5,
+                        "props": {
+                            "heading": "Meer over afval",
+                            "links": [
+                                {
+                                    "label": "Afvalbrengstation",
+                                    "href": "/afval/afvalbrengstation"
+                                },
+                                {
+                                    "label": "Container kapot of kwijt",
+                                    "href": "/afval/container"
+                                },
+                                {
+                                    "label": "Afvalstoffenheffing",
+                                    "href": "/afval/afvalstoffenheffing"
+                                },
+                                {
+                                    "label": "Zwerfafval melden",
+                                    "href": "/melding-openbare-ruimte"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-afval-03-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 7,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Welke container is waarvoor?",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-afval-04-nltable",
+                        "widgetKey": "nlTable",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 7,
+                        "gridHeight": 3,
+                        "props": {
+                            "caption": "Containers en ophaaldagen",
+                            "columns": [
+                                "Container",
+                                "Wat mag erin",
+                                "Ophalen"
+                            ],
+                            "rows": [
+                                [
+                                    "Groen",
+                                    "Groente-, fruit- en tuinafval",
+                                    "Om de week"
+                                ],
+                                [
+                                    "Blauw",
+                                    "Papier en karton",
+                                    "Elke vier weken"
+                                ],
+                                [
+                                    "Oranje",
+                                    "Plastic, blik en drinkpakken",
+                                    "Om de week"
+                                ],
+                                [
+                                    "Grijs",
+                                    "Restafval",
+                                    "Om de week"
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-afval-05-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 7,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Grof afval",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-afval-06-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 8,
+                        "gridWidth": 7,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Grof afval brengt u zelf naar het afvalbrengstation. Of u maakt een afspraak en wij halen het op. De eerste vier keer per jaar zijn gratis."
+                        }
+                    },
+                    {
+                        "id": "zd-afval-07-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 9,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Grof afval laten ophalen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/afval/afvalbrengstation",
+            "title": "Afvalbrengstation",
+            "summary": "Breng grof afval, tuinafval en klein chemisch afval naar het afvalbrengstation.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-afvalbrengstation-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Naar het afvalbrengstation brengt u grof afval, tuinafval, puin en klein chemisch afval. Neem uw afvalpas mee."
+                        }
+                    },
+                    {
+                        "id": "zd-afvalbrengstation-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Het station is open van dinsdag tot en met zaterdag, van 9.00 tot 16.30 uur. Inwoners van Zuiddrecht betalen niets voor de eerste vier bezoeken per jaar."
+                        }
+                    },
+                    {
+                        "id": "zd-afvalbrengstation-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Afval scheiden en ophalen",
+                                    "href": "/afval"
+                                },
+                                {
+                                    "label": "Afvalstoffenheffing",
+                                    "href": "/afval/afvalstoffenheffing"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/afval/container",
+            "title": "Container kapot of kwijt",
+            "summary": "Meld een kapotte of verdwenen container. U krijgt binnen vijf werkdagen een nieuwe.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-container-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Is uw container kapot of weg? Meld het ons. U krijgt binnen vijf werkdagen een nieuwe container."
+                        }
+                    },
+                    {
+                        "id": "zd-container-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Een container die door slijtage kapot gaat, vervangen wij gratis."
+                        }
+                    },
+                    {
+                        "id": "zd-container-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Melding openbare ruimte",
+                            "href": "/melding-openbare-ruimte",
+                            "kind": "primary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/afval/afvalstoffenheffing",
+            "title": "Afvalstoffenheffing",
+            "summary": "Wat u betaalt voor het ophalen en verwerken van uw afval.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-afvalstoffenheffing-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Elk huishouden betaalt afvalstoffenheffing. Daarmee betaalt u het ophalen en verwerken van uw afval."
+                        }
+                    },
+                    {
+                        "id": "zd-afvalstoffenheffing-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Het bedrag staat op de aanslag gemeentelijke belastingen. Die krijgt u elk jaar in februari."
+                        }
+                    },
+                    {
+                        "id": "zd-afvalstoffenheffing-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Belastingen betalen",
+                                    "href": "/belastingen"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/wonen-en-leven",
+            "title": "Wonen en leven",
+            "summary": "Alles over wonen, verhuizen, afval en uw buurt.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-wonen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Hier vindt u wat u met de gemeente regelt rond uw huis en uw buurt."
+                        }
+                    },
+                    {
+                        "id": "zd-wonen-02-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Onderwerpen",
+                            "links": [
+                                {
+                                    "label": "Paspoort en ID-kaart",
+                                    "href": "/paspoort-en-id-kaart"
+                                },
+                                {
+                                    "label": "Verhuizing doorgeven",
+                                    "href": "/verhuizing-doorgeven"
+                                },
+                                {
+                                    "label": "Afval scheiden en ophalen",
+                                    "href": "/afval"
+                                },
+                                {
+                                    "label": "Melding openbare ruimte",
+                                    "href": "/melding-openbare-ruimte"
+                                },
+                                {
+                                    "label": "Belastingen betalen",
+                                    "href": "/belastingen"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/paspoort-en-id-kaart",
+            "title": "Paspoort en ID-kaart",
+            "summary": "Vraag een paspoort of ID-kaart aan bij het stadskantoor. Maak eerst een afspraak.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-paspoort-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Een paspoort of ID-kaart vraagt u zelf aan bij het stadskantoor. Maak eerst een afspraak."
+                        }
+                    },
+                    {
+                        "id": "zd-paspoort-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Neem een pasfoto mee die niet ouder is dan zes maanden, en uw oude paspoort of ID-kaart. Na vijf werkdagen haalt u het nieuwe document op."
+                        }
+                    },
+                    {
+                        "id": "zd-paspoort-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Afspraak maken",
+                            "href": "/afspraak-maken",
+                            "kind": "primary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/verhuizing-doorgeven",
+            "title": "Verhuizing doorgeven",
+            "summary": "Geef uw verhuizing door, van vier weken voor tot vijf dagen na de verhuisdag.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-verhuizing-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Verhuist u naar of binnen Zuiddrecht? Geef dat aan ons door. Dat kan vanaf vier weken voor de verhuizing tot vijf dagen erna."
+                        }
+                    },
+                    {
+                        "id": "zd-verhuizing-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "U geeft uw verhuizing door aan de balie van het stadskantoor. Maak eerst een afspraak."
+                        }
+                    },
+                    {
+                        "id": "zd-verhuizing-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Afspraak maken",
+                            "href": "/afspraak-maken",
+                            "kind": "primary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/melding-openbare-ruimte",
+            "title": "Melding openbare ruimte",
+            "summary": "Meld een losse stoeptegel, kapotte lantaarnpaal of zwerfafval.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-melding-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Ziet u een losse stoeptegel, een kapotte lantaarnpaal of zwerfafval? Meld het ons per telefoon of e-mail. Wij laten u weten wat wij ermee doen."
+                        }
+                    },
+                    {
+                        "id": "zd-melding-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Is er direct gevaar? Bel dan [telefoonnummer]."
+                        }
+                    },
+                    {
+                        "id": "zd-melding-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Contact en openingstijden",
+                            "href": "/contact",
+                            "kind": "primary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/afspraak-maken",
+            "title": "Afspraak maken",
+            "summary": "Maak een afspraak bij het stadskantoor.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-afspraak-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Bij het stadskantoor werken wij op afspraak. Zo hoeft u niet te wachten."
+                        }
+                    },
+                    {
+                        "id": "zd-afspraak-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "U maakt een afspraak per telefoon, op werkdagen van 8.30 tot 17.00 uur. Bel [telefoonnummer]."
+                        }
+                    },
+                    {
+                        "id": "zd-afspraak-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Contact en openingstijden",
+                            "href": "/contact",
+                            "kind": "primary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/belastingen",
+            "title": "Belastingen betalen",
+            "summary": "Wanneer u de aanslag krijgt en hoe u betaalt.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-belastingen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "In februari krijgt u de aanslag gemeentelijke belastingen. Daarop staan de afvalstoffenheffing, de rioolheffing en de onroerendezaakbelasting."
+                        }
+                    },
+                    {
+                        "id": "zd-belastingen-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "U betaalt in één keer, of in tien maandelijkse termijnen met automatische incasso."
+                        }
+                    },
+                    {
+                        "id": "zd-belastingen-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Afvalstoffenheffing",
+                                    "href": "/afval/afvalstoffenheffing"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren",
+            "title": "Parkeren",
+            "summary": "Parkeervergunning aanvragen en betaald parkeren in de binnenstad.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-parkeren-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "In de binnenstad parkeert u met een vergunning of betaalt u per uur. Bewoners en bedrijven in het gebied kunnen een parkeervergunning aanvragen."
+                        }
+                    },
+                    {
+                        "id": "zd-parkeren-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "U vraagt de vergunning aan bij het stadskantoor. In Mijn Zuiddrecht ziet u waar uw aanvraag staat."
+                        }
+                    },
+                    {
+                        "id": "zd-parkeren-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Naar Mijn Zuiddrecht",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/ondernemen",
+            "title": "Ondernemen",
+            "summary": "Vergunningen, meldingen en zaken voor uw bedrijf.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-ondernemen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Heeft u een bedrijf in Zuiddrecht, of wilt u er een beginnen? Hier regelt u vergunningen en meldingen voor uw organisatie."
+                        }
+                    },
+                    {
+                        "id": "zd-ondernemen-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Namens een bedrijf logt u in met eHerkenning."
+                        }
+                    },
+                    {
+                        "id": "zd-ondernemen-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Naar Mijn Zuiddrecht",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-ondernemen-04-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Inkoop en aanbesteding",
+                                    "href": "/bestuur/inkoop"
+                                },
+                                {
+                                    "label": "Parkeren",
+                                    "href": "/parkeren"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur",
+            "title": "Bestuur en organisatie",
+            "summary": "De gemeenteraad, het college en de organisatie van de gemeente Zuiddrecht.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-bestuur-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "De gemeenteraad beslist over de plannen van de gemeente. Het college van burgemeester en wethouders voert ze uit."
+                        }
+                    },
+                    {
+                        "id": "zd-bestuur-02-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Gemeenteraad",
+                            "links": [
+                                {
+                                    "label": "Vergaderingen en stukken",
+                                    "href": "/bestuur/vergaderingen"
+                                },
+                                {
+                                    "label": "Raadsleden",
+                                    "href": "/bestuur/raadsleden"
+                                },
+                                {
+                                    "label": "Inspreken bij de raad",
+                                    "href": "/bestuur/inspreken"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-bestuur-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 4,
+                        "gridY": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "College",
+                            "links": [
+                                {
+                                    "label": "Burgemeester en wethouders",
+                                    "href": "/bestuur/college"
+                                },
+                                {
+                                    "label": "Besluiten van het college",
+                                    "href": "/bestuur/collegebesluiten"
+                                },
+                                {
+                                    "label": "Coalitieakkoord",
+                                    "href": "/bestuur/coalitieakkoord"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-bestuur-04-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Organisatie",
+                            "links": [
+                                {
+                                    "label": "Werken bij Zuiddrecht",
+                                    "href": "/werken-bij-zuiddrecht"
+                                },
+                                {
+                                    "label": "Inkoop en aanbesteding",
+                                    "href": "/bestuur/inkoop"
+                                },
+                                {
+                                    "label": "Klacht over de gemeente",
+                                    "href": "/klacht"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/vergaderingen",
+            "title": "Vergaderingen en stukken",
+            "summary": "Wanneer de gemeenteraad vergadert en waar u de stukken vindt.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-vergaderingen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "De gemeenteraad vergadert om de week op donderdagavond in het stadskantoor. De vergaderingen zijn openbaar."
+                        }
+                    },
+                    {
+                        "id": "zd-vergaderingen-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "De agenda en de stukken staan een week van tevoren bij de openbare informatie."
+                        }
+                    },
+                    {
+                        "id": "zd-vergaderingen-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Zoeken in Woo-publicaties",
+                                    "href": "/zoeken"
+                                },
+                                {
+                                    "label": "Inspreken bij de raad",
+                                    "href": "/bestuur/inspreken"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/raadsleden",
+            "title": "Raadsleden",
+            "summary": "Wie er in de gemeenteraad van Zuiddrecht zitten.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-raadsleden-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "De gemeenteraad van Zuiddrecht heeft 27 leden. Inwoners kiezen de raad elke vier jaar."
+                        }
+                    },
+                    {
+                        "id": "zd-raadsleden-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wilt u een raadslid spreken? De griffie brengt u in contact."
+                        }
+                    },
+                    {
+                        "id": "zd-raadsleden-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Contact en openingstijden",
+                                    "href": "/contact"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/inspreken",
+            "title": "Inspreken bij de raad",
+            "summary": "Zo vertelt u de gemeenteraad wat u van een plan vindt.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-inspreken-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Staat er een onderwerp op de agenda waar u iets over wilt zeggen? Dan kunt u inspreken. U krijgt vijf minuten."
+                        }
+                    },
+                    {
+                        "id": "zd-inspreken-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Meld u uiterlijk een dag van tevoren aan bij de griffie."
+                        }
+                    },
+                    {
+                        "id": "zd-inspreken-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Vergaderingen en stukken",
+                                    "href": "/bestuur/vergaderingen"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/college",
+            "title": "Burgemeester en wethouders",
+            "summary": "Het college van burgemeester en wethouders bestuurt de gemeente van dag tot dag.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-college-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Het college bestaat uit de burgemeester en vier wethouders. Samen besturen zij de gemeente van dag tot dag."
+                        }
+                    },
+                    {
+                        "id": "zd-college-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Elke wethouder heeft eigen onderwerpen, zoals wonen, zorg of verkeer."
+                        }
+                    },
+                    {
+                        "id": "zd-college-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Besluiten van het college",
+                                    "href": "/bestuur/collegebesluiten"
+                                },
+                                {
+                                    "label": "Coalitieakkoord",
+                                    "href": "/bestuur/coalitieakkoord"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/collegebesluiten",
+            "title": "Besluiten van het college",
+            "summary": "Het college vergadert elke dinsdag. De besluiten zijn openbaar.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-collegebesluiten-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Het college vergadert elke dinsdag. De openbare besluiten staan een week later bij de openbare informatie."
+                        }
+                    },
+                    {
+                        "id": "zd-collegebesluiten-02-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Zoeken in Woo-publicaties",
+                                    "href": "/zoeken"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/coalitieakkoord",
+            "title": "Coalitieakkoord",
+            "summary": "De afspraken van de coalitie voor de komende vier jaar.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-coalitieakkoord-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "In het coalitieakkoord staat wat de coalitie de komende vier jaar wil bereiken. Het akkoord is openbaar."
+                        }
+                    },
+                    {
+                        "id": "zd-coalitieakkoord-02-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Zoeken in Woo-publicaties",
+                                    "href": "/zoeken"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/inkoop",
+            "title": "Inkoop en aanbesteding",
+            "summary": "Hoe de gemeente inkoopt en waar u opdrachten vindt.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-inkoop-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "De gemeente koopt in bij bedrijven uit de regio waar dat kan. Grote opdrachten besteden wij openbaar aan."
+                        }
+                    },
+                    {
+                        "id": "zd-inkoop-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Lopende aanbestedingen staan op TenderNed."
+                        }
+                    },
+                    {
+                        "id": "zd-inkoop-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Ondernemen",
+                                    "href": "/ondernemen"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/werken-bij-zuiddrecht",
+            "title": "Werken bij Zuiddrecht",
+            "summary": "Vacatures en stages bij de gemeente Zuiddrecht.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-werken-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Bij de gemeente Zuiddrecht werkt u aan de stad waarin u woont. Wij zoeken geregeld nieuwe collega's en stagiairs."
+                        }
+                    },
+                    {
+                        "id": "zd-werken-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Vragen over een vacature? Bel of mail ons."
+                        }
+                    },
+                    {
+                        "id": "zd-werken-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Contact en openingstijden",
+                                    "href": "/contact"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/klacht",
+            "title": "Klacht over de gemeente",
+            "summary": "Bent u niet tevreden over hoe wij u hebben geholpen? Vertel het ons.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-klacht-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Bent u niet tevreden over hoe wij u hebben geholpen? Vertel het ons. Wij bellen u binnen vijf werkdagen."
+                        }
+                    },
+                    {
+                        "id": "zd-klacht-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Komen wij er samen niet uit? Dan kunt u naar de gemeentelijke ombudsman."
+                        }
+                    },
+                    {
+                        "id": "zd-klacht-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Contact en openingstijden",
+                                    "href": "/contact"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/contact",
+            "title": "Contact en openingstijden",
+            "summary": "Bel, mail of kom langs bij het stadskantoor.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-contact-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Heeft u een vraag? Bel of mail ons. We helpen u graag."
+                        }
+                    },
+                    {
+                        "id": "zd-contact-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Telefoon: [telefoonnummer]. E-mail: [e-mailadres]. Stadskantoor: [adres]."
+                        }
+                    },
+                    {
+                        "id": "zd-contact-03-nltable",
+                        "widgetKey": "nlTable",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "caption": "Openingstijden van het stadskantoor",
+                            "columns": [
+                                "Dag",
+                                "Open"
+                            ],
+                            "rows": [
+                                [
+                                    "Maandag tot en met vrijdag",
+                                    "8.30 tot 17.00 uur"
+                                ],
+                                [
+                                    "Donderdag",
+                                    "8.30 tot 20.00 uur"
+                                ],
+                                [
+                                    "Zaterdag",
+                                    "9.00 tot 13.00 uur"
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-contact-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 5,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Afspraak maken",
+                            "href": "/afspraak-maken",
+                            "kind": "primary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/onderwerpen",
+            "title": "Alle onderwerpen van A tot Z",
+            "summary": "Alle onderwerpen van de gemeente Zuiddrecht op een rij.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-onderwerpen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Alle onderwerpen op deze website, op alfabet."
+                        }
+                    },
+                    {
+                        "id": "zd-onderwerpen-02-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Onderwerpen",
+                            "links": [
+                                {
+                                    "label": "Afspraak maken",
+                                    "href": "/afspraak-maken"
+                                },
+                                {
+                                    "label": "Afval scheiden en ophalen",
+                                    "href": "/afval"
+                                },
+                                {
+                                    "label": "Afvalbrengstation",
+                                    "href": "/afval/afvalbrengstation"
+                                },
+                                {
+                                    "label": "Afvalstoffenheffing",
+                                    "href": "/afval/afvalstoffenheffing"
+                                },
+                                {
+                                    "label": "Belastingen betalen",
+                                    "href": "/belastingen"
+                                },
+                                {
+                                    "label": "Container kapot of kwijt",
+                                    "href": "/afval/container"
+                                },
+                                {
+                                    "label": "Inkoop en aanbesteding",
+                                    "href": "/bestuur/inkoop"
+                                },
+                                {
+                                    "label": "Inspreken bij de raad",
+                                    "href": "/bestuur/inspreken"
+                                },
+                                {
+                                    "label": "Klacht over de gemeente",
+                                    "href": "/klacht"
+                                },
+                                {
+                                    "label": "Melding openbare ruimte",
+                                    "href": "/melding-openbare-ruimte"
+                                },
+                                {
+                                    "label": "Ondernemen",
+                                    "href": "/ondernemen"
+                                },
+                                {
+                                    "label": "Parkeren",
+                                    "href": "/parkeren"
+                                },
+                                {
+                                    "label": "Paspoort en ID-kaart",
+                                    "href": "/paspoort-en-id-kaart"
+                                },
+                                {
+                                    "label": "Verhuizing doorgeven",
+                                    "href": "/verhuizing-doorgeven"
+                                },
+                                {
+                                    "label": "Werken bij Zuiddrecht",
+                                    "href": "/werken-bij-zuiddrecht"
+                                },
+                                {
+                                    "label": "Woo-publicaties",
+                                    "href": "/zoeken"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/toegankelijkheid",
+            "title": "Toegankelijkheid",
+            "summary": "Deze website is gemaakt om voor iedereen bruikbaar te zijn.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-toegankelijkheid-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Iedereen moet deze website kunnen gebruiken. Wij bouwen de website volgens WCAG 2.2, niveau AA."
+                        }
+                    },
+                    {
+                        "id": "zd-toegankelijkheid-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Loopt u ergens tegenaan? Laat het ons weten, dan lossen wij het op."
+                        }
+                    },
+                    {
+                        "id": "zd-toegankelijkheid-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Contact en openingstijden",
+                                    "href": "/contact"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/privacy",
+            "title": "Privacy",
+            "summary": "Gemeente Zuiddrecht is een voorbeeldgemeente. Op deze website staan geen echte gegevens.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-privacy-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Gemeente Zuiddrecht is een voorbeeldgemeente. Op deze website staan geen echte gegevens van inwoners of bedrijven."
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/cookies",
+            "title": "Cookies",
+            "summary": "Deze website gebruikt alleen cookies die nodig zijn om in te loggen.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-cookies-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Deze website gebruikt alleen cookies die nodig zijn om in te loggen. Wij volgen u niet."
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/kwetsbaarheid-melden",
+            "title": "Kwetsbaarheid melden",
+            "summary": "Heeft u een zwakke plek in deze website gevonden? Meld het ons.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-kwetsbaarheid-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Heeft u een zwakke plek in deze website gevonden? Meld het ons, voordat u het aan anderen vertelt. Dan kunnen wij het eerst oplossen."
+                        }
+                    },
+                    {
+                        "id": "zd-kwetsbaarheid-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Mail uw melding naar [e-mailadres]. U krijgt binnen drie werkdagen antwoord."
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/nieuws",
+            "title": "Nieuws",
+            "summary": "Nieuws van de gemeente Zuiddrecht.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-nieuws-01-nlnewsarticle",
+                        "widgetKey": "nlNewsArticle",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 8,
+                        "props": {
+                            "backLabel": "Terug naar het nieuws"
+                        }
+                    },
+                    {
+                        "id": "zd-nieuws-02-nlnewslist",
+                        "widgetKey": "nlNewsList",
+                        "gridX": 8,
+                        "gridY": 0,
+                        "gridWidth": 4,
+                        "gridHeight": 8,
+                        "props": {
+                            "heading": "Meer nieuws",
+                            "limit": 3,
+                            "featured": false,
+                            "display": "compact",
+                            "showAudience": false,
+                            "moreLabel": "Al het nieuws",
+                            "moreHref": "/nieuwsoverzicht",
+                            "articleRoute": "/nieuws"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/nieuwsoverzicht",
+            "title": "Al het nieuws",
+            "summary": "Al het nieuws van de gemeente Zuiddrecht.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-nieuwsoverzicht-01-nlnewslist",
+                        "widgetKey": "nlNewsList",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 8,
+                        "props": {
+                            "limit": 12,
+                            "featured": false,
+                            "showAudience": false,
+                            "articleRoute": "/nieuws"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/zoeken",
+            "title": "Zoeken in Woo-publicaties",
+            "summary": "Zoek in besluiten, rapporten en antwoorden op Woo-verzoeken.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-zoeken-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Zoek in besluiten, rapporten en antwoorden op verzoeken volgens de Wet open overheid (Woo)."
+                        }
+                    },
+                    {
+                        "id": "zd-zoeken-02-federatedsearch",
+                        "widgetKey": "federatedSearch",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 8,
+                        "props": {
+                            "placeholder": "Bijvoorbeeld: fietspad"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/publicatie",
+            "title": "Publicatie",
+            "summary": "Details van één publicatie.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-publicatie-01-publicationdetail",
+                        "widgetKey": "publicationDetail",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 8,
+                        "props": {
+                            "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "news": [
+        {
+            "title": "Fietspad Lindelaan krijgt verlichting",
+            "status": "published",
+            "public": true,
+            "publishedAt": "2026-10-02T09:00:00+02:00",
+            "authorRef": "zuiddrecht-webredactie",
+            "target": {
+                "schoolRef": "zuiddrecht"
+            },
+            "body": "Vanaf maart leggen we het fietspad aan. Langs het hele pad komt verlichting.\n\nHet fietspad langs de Lindelaan is nu in het donker slecht te zien. Bewoners en de fietsersbond vroegen daarom om verlichting. De gemeenteraad heeft het geld in september vrijgemaakt.\n\n## Wat gaat er gebeuren?\n\nIn maart beginnen wij met het werk. Er komen 42 lantaarnpalen met zuinige lampen. Het werk duurt ongeveer zes weken.\n\nTijdens het werk blijft het fietspad open. Soms fietst u een klein stuk om."
+        },
+        {
+            "title": "Nieuwe afvalkalender voor 2027",
+            "status": "published",
+            "public": true,
+            "publishedAt": "2026-09-28T09:00:00+02:00",
+            "authorRef": "zuiddrecht-webredactie",
+            "target": {
+                "schoolRef": "zuiddrecht"
+            },
+            "body": "De afvalkalender voor 2027 staat klaar. U ziet per adres welke container wanneer aan de straat moet.\n\nIn 2027 halen wij papier en karton voortaan elke vier weken op een vaste dag op. De andere containers houden hun ritme."
+        },
+        {
+            "title": "Stadskantoor voortaan ook op zaterdag open",
+            "status": "published",
+            "public": true,
+            "publishedAt": "2026-09-21T09:00:00+02:00",
+            "authorRef": "zuiddrecht-webredactie",
+            "target": {
+                "schoolRef": "zuiddrecht"
+            },
+            "body": "Vanaf 10 oktober is het stadskantoor ook op zaterdag open, van 9.00 tot 13.00 uur.\n\nU kunt op zaterdag terecht voor een paspoort, een ID-kaart en een rijbewijs. Maak eerst een afspraak."
+        },
+        {
+            "title": "Denk mee over het nieuwe Havenpark",
+            "status": "published",
+            "public": true,
+            "publishedAt": "2026-09-14T09:00:00+02:00",
+            "authorRef": "zuiddrecht-webredactie",
+            "target": {
+                "schoolRef": "zuiddrecht"
+            },
+            "body": "Aan de oude haven komt een park. Wij horen graag wat u daar wilt doen en zien.\n\nOp dinsdag 20 oktober is er een inloopavond in het stadskantoor, van 19.00 tot 21.00 uur. U kunt uw idee ook mailen."
+        }
+    ]
+}
