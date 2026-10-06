@@ -68,8 +68,9 @@
         repository when it was written.
 
         The floor is 32 as a deliberate fleet policy (NC 32 is the PHP 8.3
-        baseline), matched by <php min-version="8.3"/> below. max-version is
-        35; the CI matrix is derived from this range.
+        baseline), matched by <php min-version="8.3"/> below. max-version is 35:
+        every new release of the WOO autumn release 2026 has to run on Nextcloud
+        35, and openregister, the data layer, declares 35 as well.
         -->
         <php min-version="8.3"/>
         <nextcloud min-version="32" max-version="35"/>
