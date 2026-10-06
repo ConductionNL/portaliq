@@ -262,9 +262,9 @@ class SessionController extends Controller {
 	 *                                into, so a mode it does not declare
 	 *                                cannot be used against it.
 	 * @param OrganisationLoginConfig|null $loginConfig The route per provider
+	 *                                                  (signin-integriq-broker-login).
 	 * @param ExampleResidentRecord|null $exampleResidents The example resident install records, for the one-click demo sign-in.
 	 * @param ExampleResidentCatalogue|null $exampleCatalogue The shipped example residents.
-	 *                                                  (signin-integriq-broker-login).
 	 */
 	public function __construct(
 		IRequest $request,
