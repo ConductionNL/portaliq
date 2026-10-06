@@ -288,3 +288,48 @@ export function choiceSplit(options, choiceOptions) {
 		rest: list.filter((option) => !subset.includes(String(option.value))),
 	}
 }
+
+/**
+ * The value a count stepper sends: a whole number between `min` and `max`.
+ * An empty or unreadable value becomes `min`.
+ *
+ * @param {string|number} value The typed or stepped value.
+ * @param {number} min The lowest count.
+ * @param {number} max The highest count.
+ * @return {string} The count, as the form sends it.
+ *
+ * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+ */
+export function countValue(value, min, max) {
+	const low = Number.isInteger(min) ? min : 1
+	const high = Number.isInteger(max) && max >= low ? max : Math.max(low, 99)
+	const n = Number.parseInt(String(value ?? '').trim(), 10)
+	if (Number.isNaN(n)) {
+		return String(low)
+	}
+	return String(Math.min(high, Math.max(low, n)))
+}
+
+/**
+ * The line under a count stepper: "3 deelnemers", and with a price label
+ * "3 deelnemers × [PRIJS]".
+ *
+ * @param {string|number} value The count.
+ * @param {{one?: string, other?: string}} unit The unit in its two forms.
+ * @param {string} priceLabel The price per unit as authored text, or ''.
+ * @return {string} The line, or '' without a unit.
+ *
+ * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+ */
+export function countLine(value, unit, priceLabel) {
+	const n = Number.parseInt(String(value ?? ''), 10)
+	const forms = unit && typeof unit === 'object' ? unit : {}
+	const word = n === 1 ? forms.one : forms.other
+	if (Number.isNaN(n) || typeof word !== 'string' || word === '') {
+		return ''
+	}
+	const line = `${n} ${word}`
+	return typeof priceLabel === 'string' && priceLabel !== ''
+		? `${line} × ${priceLabel}`
+		: line
+}

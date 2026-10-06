@@ -63,6 +63,22 @@
 			:monthLabel="translate('Month')"
 			:yearLabel="translate('Year')"
 			@update:modelValue="(value) => $emit('update:modelValue', value)" />
+		<CountStepper
+			v-else-if="config.widget === 'count' && input !== 'select'"
+			:id="id"
+			:modelValue="modelValue"
+			:min="countMin"
+			:max="countMax"
+			:unit="config.unit || {}"
+			:priceLabel="config.priceLabel || ''"
+			:labelledBy="`${id}-label`"
+			:describedBy="shellDescribedBy"
+			:required="required"
+			:invalid="error !== ''"
+			:disabled="config.disabled === true"
+			:fewerLabel="translate('One less')"
+			:moreLabel="translate('One more')"
+			@update:modelValue="(value) => $emit('update:modelValue', value)" />
 		<ChoiceCards
 			v-else-if="input === 'select' && config.widget === 'choices'"
 			:id="id"
@@ -129,6 +145,7 @@
 
 <script>
 import ChoiceCards from '../forms/ChoiceCards.vue'
+import CountStepper from '../forms/CountStepper.vue'
 import DateChoices from '../forms/DateChoices.vue'
 import DateInputGroup from '../forms/DateInputGroup.vue'
 import FieldShell from '../forms/FieldShell.vue'
@@ -153,7 +170,14 @@ import '@utrecht/textarea-css/dist/index.css'
 export default {
 	name: 'SchemaField',
 
-	components: { ChoiceCards, DateChoices, DateInputGroup, FieldShell, FileUpload },
+	components: {
+		ChoiceCards,
+		CountStepper,
+		DateChoices,
+		DateInputGroup,
+		FieldShell,
+		FileUpload,
+	},
 
 	props: {
 		/** The input's id; the label points at it. */
@@ -220,6 +244,28 @@ export default {
 			return this.input === 'date' && this.config.widget !== 'dateChoices'
 				? this.translate('For example 1 3 2026')
 				: ''
+		},
+
+		/**
+		 * The lowest count of a count stepper.
+		 *
+		 * @return {number} The count.
+		 *
+		 * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+		 */
+		countMin() {
+			return Number.isInteger(this.config.min) ? this.config.min : 1
+		},
+
+		/**
+		 * The highest count of a count stepper.
+		 *
+		 * @return {number} The count.
+		 *
+		 * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+		 */
+		countMax() {
+			return Number.isInteger(this.config.max) ? this.config.max : 99
 		},
 
 		accept() {
