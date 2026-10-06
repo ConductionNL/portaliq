@@ -1354,6 +1354,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	}
 
 	.pq-site .ac-hero.pq-hero--plain .ac-search-box__search {
+		flex-direction: row;
 		flex-wrap: nowrap;
 	}
 

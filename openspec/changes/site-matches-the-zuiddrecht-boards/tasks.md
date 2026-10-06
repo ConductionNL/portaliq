@@ -10,4 +10,5 @@
 - [x] 8. The Zuiddrecht declaration: home and `/afval` per the boards.
 - [x] 9. `tests/site-pixel-match.spec.mjs` in `check:specs`; PHPUnit for the locale.
 - [x] 10. Documentation: `docs/Installation/example-site-zuiddrecht.md`.
-- [ ] 11. Live check on :8097 and the token values in thematiq (coordinator, thematiq lane).
+- [x] 11. The install offer as a modal dialog that remembers "Not now" (InstallBanner.vue, tests/install-banner.spec.mjs).
+- [ ] 12. Live check on :8097 and the token values in thematiq (coordinator, thematiq lane).

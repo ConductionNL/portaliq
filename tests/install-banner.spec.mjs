@@ -34,8 +34,23 @@ function instance() {
 	return {
 		offer: null,
 		dismissed: false,
+		remembered: false,
+		storage: null,
 		emitted,
 		$emit: (name) => emitted.push(name),
+	}
+}
+
+/**
+ * A storage stand-in.
+ *
+ * @return {object} `getItem`/`setItem` over a map.
+ */
+function memory() {
+	const map = new Map()
+	return {
+		getItem: (key) => map.get(key) ?? null,
+		setItem: (key, value) => map.set(key, value),
 	}
 }
 
@@ -186,4 +201,82 @@ test('the shell mounts the banner and registers the worker after mounting', () =
 		mount > 0 && register > mount,
 		'the worker is registered after the mount',
 	)
+})
+
+// site-matches-the-zuiddrecht-boards: the offer is a dialog over the page, not
+// a strip in its flow, and "Not now" is remembered.
+test('the offer is a modal dialog over the page, never in its flow', async () => {
+	const source = readFileSync(join(ROOT, FILE), 'utf8')
+	assert.match(source, /role="dialog"/)
+	assert.match(source, /aria-modal="true"/)
+	assert.match(source, /aria-labelledby="pq-install-dialog-title"/)
+	assert.match(
+		source,
+		/\.pq-install-dialog,\n\.pq-install-dialog\.container \{\n\tposition: fixed;/,
+	)
+	assert.match(source, /\.pq-install-dialog__scrim/)
+})
+
+test('Escape answers "Not now" and Tab stays inside the dialog', async () => {
+	const component = await loadSfc(FILE)
+	const self = instance()
+	component.methods.onOffer.call(self, { preventDefault: () => {} })
+	let prevented = 0
+	component.methods.onKey.call(self, {
+		key: 'Escape',
+		preventDefault: () => prevented++,
+	})
+	assert.equal(prevented, 1)
+	assert.equal(component.computed.visible.call(self), false)
+	assert.deepEqual(self.emitted, ['dismiss'])
+
+	const focused = []
+	const first = { focus: () => focused.push('first') }
+	const last = { focus: () => focused.push('last') }
+	const trapped = {
+		...instance(),
+		$refs: { first, last, dialog: {} },
+		win: { document: { activeElement: last } },
+	}
+	component.methods.onKey.call(trapped, {
+		key: 'Tab',
+		shiftKey: false,
+		preventDefault: () => prevented++,
+	})
+	trapped.win.document.activeElement = first
+	component.methods.onKey.call(trapped, {
+		key: 'Tab',
+		shiftKey: true,
+		preventDefault: () => prevented++,
+	})
+	assert.deepEqual(focused, ['first', 'last'])
+	assert.equal(prevented, 3)
+})
+
+test('"Not now" is remembered, so the dialog does not come back on the next page', async () => {
+	const component = await loadSfc(FILE)
+	const storage = memory()
+	const self = { ...instance(), storage }
+	component.methods.onOffer.call(self, { preventDefault: () => {} })
+	component.methods.dismiss.call(self)
+	assert.ok(
+		Number(storage.getItem('portaliq-install-dismissed')) > 0,
+		'the moment is kept',
+	)
+
+	// The next page view: the data() reads the storage and the offer stays away.
+	const next = component.data.call({ storage })
+	assert.equal(next.remembered, true)
+	assert.equal(component.computed.visible.call({ ...next, offer: {} }), false)
+
+	// Thirty-one days later it may ask again.
+	storage.setItem(
+		'portaliq-install-dismissed',
+		String(Date.now() - 31 * 24 * 60 * 60 * 1000),
+	)
+	assert.equal(component.data.call({ storage }).remembered, false)
+
+	// No storage at all (a private window): nothing breaks, nothing is kept.
+	assert.equal(component.data.call({ storage: null }).remembered, false)
+	component.methods.dismiss.call({ ...instance(), storage: null })
 })

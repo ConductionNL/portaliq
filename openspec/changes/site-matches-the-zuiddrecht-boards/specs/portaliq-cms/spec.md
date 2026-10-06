@@ -143,3 +143,17 @@ before this change MUST stay reachable.
 - GIVEN `lib/Settings/sites/zuiddrecht.json`
 - WHEN it is held against the schemas and the blocks
 - THEN every option it names exists on the block it names, every link points at a page of the site, and the set of routes is unchanged
+
+### Requirement: The install offer is a dialog over the page that remembers "Not now"
+
+The site's install offer MUST render as a modal dialog over the page (`role="dialog"`,
+`aria-modal="true"`, a scrim, fixed position, never in the document flow), with the focus moved
+into it on open and held inside it, Escape and the scrim answering "Not now". "Not now" MUST be
+remembered in the browser for thirty days, so the offer does not return on every page; without
+storage it MUST behave as before. A browser that makes no offer MUST still see nothing.
+
+#### Scenario: The Zuiddrecht demo
+@e2e exclude held in tests/install-banner.spec.mjs; seen live by the coordinator
+- GIVEN Chrome offers to install the site
+- WHEN the home page opens
+- THEN the page does not move and a centred dialog asks; "Niet nu" closes it and it stays away on the next page
