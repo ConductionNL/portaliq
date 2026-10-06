@@ -509,8 +509,8 @@ portaliq/
 │   ├── formFields/             # kind: "form-field" components (EmailField.vue)
 │   ├── cellRenderers/          # kind: "cell-renderer" components (StatusBadge.vue)
 │   ├── settings.js             # Nextcloud admin settings webpack entry-point
-│   ├── store/                  # Pinia stores (used by AdminSettings)
-│   └── views/CustomExample.vue # Example custom component (registry demo)
+│   ├── store/                  # Pinia stores (the Traffic page's shared state)
+│   └── views/                  # kind: "page" components (PageLayoutDesigner.vue)
 ├── openspec/                   # Specifications, decisions, and roadmap
 │   ├── app-config.json         # Canonical app config (id, goal, dependencies, CI)
 │   ├── config.yaml             # OpenSpec CLI configuration
@@ -657,10 +657,11 @@ Pages live in [`src/manifest.json`](src/manifest.json) — NOT in
 
 You only write a Vue file when the page is `type: "custom"`. In that
 case, drop the component into `src/views/`, register it in
-[`src/customComponents.js`](src/customComponents.js), and reference
+[`src/registry.js`](src/registry.js) as `kind: "page"`, and reference
 its registry name in the manifest entry's `component` field. See
-[`src/views/CustomExample.vue`](src/views/CustomExample.vue) for the
-canonical example.
+[`src/views/PageLayoutDesigner.vue`](src/views/PageLayoutDesigner.vue)
+(the `PageLayoutDesigner` page in `src/manifest.json`) for a working
+example.
 
 ### Renaming the app
 

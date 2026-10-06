@@ -46,7 +46,6 @@ import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
 import NewsItemDialog from './dialogs/NewsItemDialog.vue'
 import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
-import CustomExample from './views/CustomExample.vue'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
 import { createFormBindingPreview } from './lib/formBindingPreview.js'
@@ -171,12 +170,6 @@ const newsHandlers = createNewsHandlers({
 	// list that was never fetched here falls back to reloading the page.
 	reload: () => refreshList(NEWS_LIST) || window.location.reload(),
 })
-// Features & Roadmap page — thin wrapper around the lib's
-// CnFeaturesAndRoadmapView (in-product roadmap surface powered by
-// OpenRegister's github-issue-proxy). Shipped wired-up so apps scaffolded
-// from this template inherit the Settings-section "Features & roadmap"
-// entry; change the repo fallback in views/FeaturesRoadmap.vue. See
-// ConductionNL/hydra#251.
 
 export default {
 	// Header-action handler: the Integrations page's Add integration
@@ -189,12 +182,6 @@ export default {
 		assign: (url) => window.location.assign(url),
 	}),
 
-	// Example custom component. Keep or delete when scaffolding a new
-	// app. The manifest does NOT reference this by default; it is
-	// included so the registry's role is visible to first-time
-	// cloners. Wire it up by adding a `type: "custom"` page entry to
-	// `src/manifest.json` with `"component": "CustomExample"`.
-	CustomExample,
 	/**
 	 * `Open portal` row action on the Portals index page. A manifest action
 	 * with `type: "handler"` resolves its `handler` string against this map
@@ -225,7 +212,4 @@ export default {
 	 * form, because news is written through NewsController's staff routes.
 	 */
 	...newsHandlers,
-	// Features & Roadmap page (lib's CnFeaturesAndRoadmapView) — wired up
-	// in src/manifest.json (the `FeaturesRoadmap` custom page + the
-	// `FeaturesRoadmapMenu` settings entry).
 }
