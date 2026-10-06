@@ -47,6 +47,40 @@
             "route": "/zoeken"
         },
         "accountLabel": "Mijn Zuiddrecht",
+        "residentMenu": {
+            "groups": [
+                {
+                    "title": "Mijn Zuiddrecht",
+                    "items": [
+                        "overview",
+                        "inbox"
+                    ]
+                },
+                {
+                    "title": "Zaken en taken",
+                    "items": [
+                        "cases",
+                        "tasks"
+                    ]
+                },
+                {
+                    "title": "Vragen en meldingen",
+                    "items": [
+                        "portaliq:meldingen"
+                    ]
+                },
+                {
+                    "title": "Uw gegevens",
+                    "items": [
+                        "details",
+                        "account"
+                    ]
+                }
+            ]
+        },
+        "myCases": {
+            "display": "rows"
+        },
         "footer": {
             "description": "Heeft u een vraag? Bel of mail ons. We helpen u graag.",
             "colophon": "Gemeente Zuiddrecht is een voorbeeldgemeente. Deze website laat zien hoe portaliq en Nextcloud samen werken.",

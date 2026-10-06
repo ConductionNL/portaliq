@@ -956,6 +956,7 @@ export default {
 									this.unreadCount,
 									this.hrefForRoute,
 									this.recordRows,
+									this.site?.residentMenu?.groups,
 								)
 							: [],
 					menus: headerMenusOf(this.menus),
@@ -1046,6 +1047,8 @@ export default {
 				this.unreadCount,
 				this.hrefForRoute,
 				this.recordRows,
+				// The portal's own groups (zuiddrecht-resident-pages-match-the-boards).
+				this.site?.residentMenu?.groups,
 			)
 		},
 

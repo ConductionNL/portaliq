@@ -20,8 +20,11 @@
 </template>
 
 <script>
-/** The states the Den Haag data badge styles. */
-const TONES = ['neutral', 'success', 'warning', 'error']
+/**
+ * The states the Den Haag data badge styles, plus `info`: a status that
+ * needs no action, in the set's info tint (zuiddrecht-resident-pages-match-the-boards).
+ */
+const TONES = ['neutral', 'success', 'warning', 'error', 'info']
 
 /**
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
@@ -71,5 +74,28 @@ export default {
 	font-weight: var(--nl-data-badge-font-weight, 600);
 	line-height: var(--nl-data-badge-line-height, 1.5);
 	white-space: nowrap;
+}
+
+/* The info tone the Den Haag package does not have: the set's status badge
+   info tint, else its primary light. */
+.pq-data-badge.nl-data-badge--info {
+	border-color: var(
+		--nl-data-badge-info-border-color,
+		var(--nldesign-component-status-badge-info-background-color, transparent)
+	);
+	background-color: var(
+		--nl-data-badge-info-background-color,
+		var(
+			--nldesign-component-status-badge-info-background-color,
+			var(--nldesign-color-primary-light, transparent)
+		)
+	);
+	color: var(
+		--nl-data-badge-info-color,
+		var(
+			--nldesign-component-status-badge-info-color,
+			var(--nldesign-color-primary, inherit)
+		)
+	);
 }
 </style>
