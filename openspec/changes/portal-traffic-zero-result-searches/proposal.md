@@ -13,6 +13,17 @@ Woo capability programme, round 1, wave 1. Row 16.3.
 
 No Ruben decision governs this row.
 
+## Summary
+
+Count the public searches that found nothing and show them on the Traffic page, so an organisation sees what the public looked for and did not find.
+
+- Rows: 16.3 "What the public searched for and did not find" (not statutory).
+- Wave: 1.
+- Depends on: nothing.
+- Decision: no Ruben decision governs this row.
+
+Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 What portaliq does today, read on `development` at ca591037:

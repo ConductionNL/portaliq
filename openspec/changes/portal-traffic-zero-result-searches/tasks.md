@@ -1,6 +1,6 @@
 # Tasks: portal-traffic-zero-result-searches
 
-Wave 1. Row 16.3. Kind: code. Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 1. Row 16.3. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 A test marked **fails today** must be run on `origin/development` first and seen red; put the failing
 line in the PR body.
@@ -50,7 +50,7 @@ line in the PR body.
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:register` and `npm run check:specs`, plus any other leg `code-quality.yml` requires.
   Then hydra's `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 4.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 4.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
 - [ ] 4.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 16.3 then reads `yes` (build), and `production` only with a store
   release.
