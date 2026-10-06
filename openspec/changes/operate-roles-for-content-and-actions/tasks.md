@@ -7,7 +7,8 @@
 ## The catalogue
 
 - [ ] **T02**: Rewrite `lib/actions.seed.json` as a catalogue of all three checked actions with labels and descriptions, no `$comment`; `InitializeActions` reads both shapes (REQ-ORA-003). Verification: `ActionSeedCensusTest` greps `lib/` for `requireAction(` action names and compares with the seed.
-- [ ] **T03**: `InitializeActions::run()` adds missing seed actions and keeps stored entries (REQ-ORA-004). Verification: `InitializeActionsTest::testNewSeedActionIsAdded`, `::testStoredGrantIsKept`.
+- [x] **T03**: `InitializeActions::run()` adds missing seed actions and keeps stored entries (REQ-ORA-004). Verification: `InitializeActionsTest::testNewSeedActionIsAdded`, `::testStoredGrantIsKept`.
+- [x] **T03b**: The six staff authoring controllers check their own action, seeded `["admin"]` (REQ-ORA-006, #1094). Verification: each controller test refuses a user without the action.
 
 ## The screen
 

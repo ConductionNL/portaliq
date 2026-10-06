@@ -77,3 +77,19 @@ writes to `page`.
 - **WHEN** they publish a page and add it to the site menu
 - **THEN** the menu entry is saved and shows on the site
 - e2e: `tests/e2e/operate-roles-for-content-and-actions.spec.ts`
+
+### Requirement: Staff authoring endpoints check an action (REQ-ORA-006)
+
+The staff endpoints that send or publish to residents SHALL each check an
+action through `requireAction()`, not only that a Nextcloud user is signed
+in: `portal.send-emergency-push` (emergency push), `portal.author-news`
+(news items), `portal.send-newsletter` (newsletters), `portal.manage-activity`
+(activities), `portal.manage-event` (events) and `portal.create-poll` (poll
+creation). Each SHALL be seeded as `["admin"]`. The resident-facing poll
+endpoints keep their bearer check.
+
+#### Scenario: A signed-in user without the grant is refused
+- **GIVEN** a Nextcloud user who is not an administrator and whose groups do not hold `portal.send-emergency-push`
+- **WHEN** they send an emergency push
+- **THEN** the answer is 403 and no guardian is pushed to
+- @e2e exclude Authorization guard; pinned by EmergencyPushControllerTest and the five other staff controller tests
