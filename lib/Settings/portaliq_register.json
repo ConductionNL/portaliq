@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.67.0"
+        "version": "0.68.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.67.0",
+                "version": "0.68.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -7733,7 +7733,7 @@
                     ]
                 },
                 "icon": "MessageText",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Report Message",
                 "description": "One message on a report's thread (REQ-RWA-003). `visibleToReporter` is what decides whether the reporter sees it: an internal note is a message with that flag false, and the reporter's own view is filtered on it server-side.",
                 "type": "object",
@@ -8419,7 +8419,7 @@
             "messageThread": {
                 "slug": "messageThread",
                 "icon": "MessageText",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Message thread",
                 "authorization": {
                     "read": [
@@ -8469,6 +8469,32 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When this thread was created, in ISO 8601."
+                    },
+                    "recordRef": {
+                        "title": "About record",
+                        "type": "string",
+                        "description": "The resident's own record this conversation is about, such as a child's enrolment (site-messages-per-record). Proven by MessageContactReader when the thread is started."
+                    },
+                    "recordLabel": {
+                        "title": "About",
+                        "type": "string",
+                        "description": "The words that name that record, copied when the thread is started, such as Vera, Groep 7."
+                    },
+                    "title": {
+                        "title": "Subject",
+                        "type": "string",
+                        "maxLength": 120,
+                        "description": "The subject line of the conversation."
+                    },
+                    "staffName": {
+                        "title": "With",
+                        "type": "string",
+                        "description": "The name of the staff member, copied from the contact the app named when the thread was started."
+                    },
+                    "staffRole": {
+                        "title": "Role",
+                        "type": "string",
+                        "description": "The role of that staff member in words, such as Mentor."
                     }
                 }
             },

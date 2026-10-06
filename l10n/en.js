@@ -2216,7 +2216,15 @@ OC.L10N.register(
         "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.",
         "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).": "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).",
         "On a timetable: the small label over the first item of the day.": "On a timetable: the small label over the first item of the day.",
-        "firstLabel": "firstLabel"
+        "firstLabel": "firstLabel",
+        "About": "About",
+        "About record": "About record",
+        "The name of the staff member, copied from the contact the app named when the thread was started.": "The name of the staff member, copied from the contact the app named when the thread was started.",
+        "The resident's own record this conversation is about, such as a child's enrolment (site-messages-per-record). Proven by MessageContactReader when the thread is started.": "The resident's own record this conversation is about, such as a child's enrolment (site-messages-per-record). Proven by MessageContactReader when the thread is started.",
+        "The role of that staff member in words, such as Mentor.": "The role of that staff member in words, such as Mentor.",
+        "The subject line of the conversation.": "The subject line of the conversation.",
+        "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "The words that name that record, copied when the thread is started, such as Vera, Groep 7.",
+        "With": "With"
     },
     "nplurals=2; plural=(n != 1);"
 )

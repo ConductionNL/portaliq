@@ -146,4 +146,39 @@ class InAppMessagingLeafTest extends TestCase {
 
 		$this->assertTrue($leaf->markThreadRead('thread-1', 'guardian-1', false));
 	}//end testMarkThreadReadAppendsAFirstTimeReceipt()
+
+	/**
+	 * A thread with a proven contact carries the record, the subject line and
+	 * the contact's name, and starts with the resident's message, already
+	 * read by her (site-messages-per-record).
+	 *
+	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
+	 */
+	public function testAContactThreadCarriesItsRecordAndFirstMessage(): void {
+		$saved = [];
+		$store = $this->createMock(MessageStore::class);
+		$store->method('save')->willReturnCallback(
+			static function (string $schema, array $object) use (&$saved): string {
+				$saved[] = [$schema, $object];
+				return $schema === 'messageThread' ? 'thread-7' : 'message-1';
+			}
+		);
+
+		$leaf    = new InAppMessagingLeaf($store, $this->createMock(MessageThreadAccessGuard::class));
+		$contact = ['staffRef' => 'po-leerkracht-09', 'name' => 'Meester Daan', 'role' => 'Leerkracht', 'recordRef' => 'enr-vera', 'recordLabel' => 'Vera, Groep 7'];
+
+		$this->assertSame('thread-7', $leaf->createContactThread('fatima', $contact, 'Topografie', 'Moet Vera de kaart uit het hoofd kennen?'));
+		$this->assertSame(['fatima', 'po-leerkracht-09'], $saved[0][1]['participantRefs']);
+		$this->assertSame(['enr-vera', 'Vera, Groep 7', 'Topografie', 'Meester Daan'], [$saved[0][1]['recordRef'], $saved[0][1]['recordLabel'], $saved[0][1]['title'], $saved[0][1]['staffName']]);
+		$this->assertSame(['guardianMessage', 'thread-7', 'fatima', ['fatima']], [$saved[1][0], $saved[1][1]['threadRef'], $saved[1][1]['senderRef'], $saved[1][1]['readBy']]);
+	}//end testAContactThreadCarriesItsRecordAndFirstMessage()
+
+	public function testAContactThreadWithoutAMessageOrWithHerselfIsNotStored(): void {
+		$store = $this->createMock(MessageStore::class);
+		$store->expects($this->never())->method('save');
+		$leaf = new InAppMessagingLeaf($store, $this->createMock(MessageThreadAccessGuard::class));
+
+		$this->assertNull($leaf->createContactThread('fatima', ['staffRef' => 'po-leerkracht-09'], 'x', '  '));
+		$this->assertNull($leaf->createContactThread('fatima', ['staffRef' => 'fatima'], 'x', 'hallo'));
+	}//end testAContactThreadWithoutAMessageOrWithHerselfIsNotStored()
 }//end class

@@ -354,8 +354,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `authentication.signInPage` (site-chrome-follows-the-design). Additive.
 		// 0.66.0 (portal 0.11.0): `residentMenu.cardLabel`
 		// (resident-menu-badges-and-cards). Additive.
-		$this->assertSame('0.67.0', self::$register['info']['version']);
-		$this->assertSame('0.67.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.67.0 (portalPage 0.7.0): the timetable keys (calendar-timetable-display, #1212)
+		// 0.68.0 (messageThread 0.2.0): record, subject and contact copies (site-messages-per-record)
+		$this->assertSame('0.68.0', self::$register['info']['version']);
+		$this->assertSame('0.68.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -418,6 +420,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.11.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
+		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()
