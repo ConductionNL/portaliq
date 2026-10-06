@@ -711,3 +711,33 @@ test('a trail keeps its own room under the menu line', () => {
 	// After the rule it adds to, so it wins at the same weight for a bar with a trail.
 	assert.ok(start > css.indexOf('the breadcrumb starts under it. */'))
 })
+
+test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken boards draw it', () => {
+	const site = sites.find((entry) => entry.site.id === 'zuiddrecht').site
+	// The menu groups of the MijnMenu board, in order; Afspraken, Mijn
+	// dossiers, Mijn zoekopdrachten, Mijn vragen and Mijn meldingen have no
+	// page on this site, so they are not named (an item named here must exist).
+	assert.deepEqual(
+		site.portal.residentMenu.groups.map((group) => [group.title, group.items]),
+		[
+			['Mijn Zuiddrecht', ['overview', 'inbox']],
+			['Zaken en taken', ['cases', 'tasks']],
+			['Vragen en meldingen', ['portaliq:meldingen']],
+			['Uw gegevens', ['details', 'account']],
+		],
+	)
+	// Mijn zaken as rows (the MijnZaken board).
+	assert.equal(site.portal.myCases.display, 'rows')
+	// Both keys are in the portal schema, so OpenRegister keeps them.
+	const portal = schemas.portal
+	assert.ok(
+		portal.properties.residentMenu.properties.groups,
+		'residentMenu.groups is in the schema',
+	)
+	assert.deepEqual(portal.properties.myCases.properties.display.enum, [
+		'cards',
+		'rows',
+	])
+	assert.equal(portal.version, '0.12.0')
+	assert.equal(register.info.version, '0.69.0')
+})

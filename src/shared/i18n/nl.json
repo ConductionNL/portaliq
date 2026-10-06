@@ -56,7 +56,6 @@
 	"Save my change": "Mijn wijziging opslaan",
 	"Your change has been saved.": "Uw wijziging is opgeslagen.",
 	"The change could not be saved. Please try again.": "De wijziging kon niet worden opgeslagen. Probeer het opnieuw.",
-	"Download": "Downloaden",
 	"Documents": "Documenten",
 	"Add a document": "Document toevoegen",
 	"{name} has been added to your case.": "{name} is aan uw zaak toegevoegd.",
@@ -200,7 +199,8 @@
 	"Sent by you": "Door u gestuurd",
 	"There are no documents on this case yet.": "Er staan nog geen documenten bij deze zaak.",
 	"The document could not be opened. Try again later.": "Het document kon niet worden geopend. Probeer het later opnieuw.",
-	"Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd.",
+	"Overview": "Overzicht",
+	"Due by": "Uiterlijk klaar op",
 	"My cases": "Mijn zaken",
 	"Open ({count})": "Lopend ({count})",
 	"Closed ({count})": "Afgerond ({count})",
@@ -396,5 +396,7 @@
 	"{count} new": "{count} nieuw",
 	"{count} open": "{count} open",
 	"One less": "Eén minder",
-	"One more": "Eén meer"
+	"One more": "Eén meer",
+	"Download": "Downloaden",
+	"Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
 }

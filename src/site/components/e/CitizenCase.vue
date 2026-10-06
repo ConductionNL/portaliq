@@ -37,9 +37,17 @@
 		data-testid="case-unavailable">
 		{{ t('This case is not yours.') }}
 	</p>
-	<section v-else class="pq-citizen-case" data-testid="citizen-case">
+	<section
+		v-else
+		class="pq-citizen-case"
+		:class="{ 'pq-citizen-case--actions': actionsOnly }"
+		data-testid="citizen-case">
+		<!-- With `display: actions` the status and the documents are other
+		     blocks' (zuiddrecht-resident-pages-match-the-boards): this screen
+		     keeps the closed window sentence as a notice, the fields, save
+		     and withdraw. -->
 		<div
-			v-if="writableSet.status && writableSet.status.label"
+			v-if="!actionsOnly && writableSet.status && writableSet.status.label"
 			class="pq-case-status"
 			data-testid="case-status">
 			<h3 class="utrecht-heading-3">
@@ -50,11 +58,31 @@
 			</p>
 		</div>
 
+		<div
+			v-if="actionsOnly && !windowOpen && !ended && windowReason"
+			class="utrecht-alert utrecht-alert--ok pq-case-ok"
+			role="status"
+			data-testid="case-window-closed">
+			<svg
+				class="pq-case-ok__icon"
+				viewBox="0 0 24 24"
+				aria-hidden="true"
+				focusable="false">
+				<path
+					d="M5 12.5l4.5 4.5L19 7"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.4"
+					stroke-linecap="round"
+					stroke-linejoin="round" />
+			</svg>
+			<p class="utrecht-paragraph pq-case-ok__text">{{ windowReason }}</p>
+		</div>
 		<p
-			v-if="!windowOpen && !ended"
+			v-else-if="!windowOpen && !ended"
 			class="utrecht-paragraph pq-case-closed"
 			data-testid="case-window-closed">
-			{{ (writableSet.window && writableSet.window.reason) || '' }}
+			{{ windowReason }}
 		</p>
 
 		<div class="pq-case-fields">
@@ -79,7 +107,10 @@
 			{{ t('Save my change') }}
 		</button>
 
-		<div class="pq-case-documents" data-testid="case-documents">
+		<div
+			v-if="!actionsOnly"
+			class="pq-case-documents"
+			data-testid="case-documents">
 			<h4 class="utrecht-heading-4">
 				{{ data.documentsLabel || t('Documents') }}
 			</h4>
@@ -202,6 +233,8 @@ export default {
 	props: {
 		/** The manifest collection the case lives in (`{id, register, schema, ...}`). */
 		collection: { type: Object, required: true },
+		/** The page block (`display: actions` keeps only the actions). */
+		block: { type: Object, default: null },
 		/** The case row selected in the table; `_mandate.id` reads it under that mandate. */
 		row: { type: Object, default: null },
 		/** Say nothing until a case is chosen: a detail card on the page already asks. */
@@ -252,6 +285,25 @@ export default {
 
 		windowOpen() {
 			return this.writableSet.window?.open === true
+		},
+
+		/**
+		 * @return {string} Why the window is shut, in the server's words.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		windowReason() {
+			return (this.writableSet.window && this.writableSet.window.reason) || ''
+		},
+
+		/**
+		 * Whether this screen keeps only the actions: the status and the
+		 * documents are other blocks' on the page.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		actionsOnly() {
+			return this.block?.display === 'actions'
 		},
 
 		documentsOpen() {
@@ -521,5 +573,42 @@ export default {
 		var(--nldesign-color-error, currentcolor)
 	);
 	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
+}
+
+/* The closed window as a notice in the ok tone: a tick and one sentence. */
+.pq-case-ok {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 1rem 1.25rem;
+	border: 1px solid
+		var(
+			--utrecht-alert-ok-border-color,
+			var(--nldesign-color-success, currentcolor)
+		);
+	border-radius: var(--utrecht-alert-border-radius, 0.25rem);
+	background-color: var(
+		--utrecht-alert-ok-background-color,
+		var(
+			--nldesign-component-status-badge-success-background-color,
+			rgba(var(--nldesign-color-success-rgb, 57, 135, 12), 0.12)
+		)
+	);
+	color: var(--utrecht-alert-ok-color, inherit);
+}
+
+.pq-case-ok__icon {
+	flex: none;
+	inline-size: 1.375rem;
+	block-size: 1.375rem;
+	color: var(
+		--utrecht-alert-icon-ok-color,
+		var(--nldesign-color-success, currentcolor)
+	);
+}
+
+.pq-case-ok__text {
+	margin: 0;
+	font-size: 1.125rem;
 }
 </style>

@@ -146,6 +146,9 @@ export function badgeRows(entry, recordRows) {
 	return Array.isArray(rows) ? rows : null
 }
 
+/** The name a portal's layout calls each item by: a section, or `app:page`. */
+const NAMES = new WeakMap()
+
 /**
  * The resident menu in groups: cases and tasks first, then the groups of the
  * contributed pages (a page's declared `group`, shared across apps, else one
@@ -170,19 +173,35 @@ export function badgeRows(entry, recordRows) {
  * @param {(route: string) => string} hrefFor A real address for a route.
  * @param {Record<string, Array<object>>} [recordRows] The rows of each
  *   `perRecord` collection, by `<app>:<collection>`.
+ * @param {Array<{title: string, items: Array<string>}>|null} [layout] The
+ *   portal's own groups (`residentMenu.groups`), or none.
  * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
  * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
+ * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
  */
-export function residentMenuGroups(nav, t, unread, hrefFor, recordRows = {}) {
+export function residentMenuGroups(
+	nav,
+	t,
+	unread,
+	hrefFor,
+	recordRows = {},
+	layout = null,
+) {
 	const entries = Array.isArray(nav) ? nav : []
+	const named = (item, name) => {
+		NAMES.set(item, name)
+		return item
+	}
 	const sectionGroup = (key, title, sections) => ({
 		key,
 		title,
 		items: sections
 			.map((special) => entries.find((entry) => entry.special === special))
 			.filter(Boolean)
-			.map((entry) => itemFor(entry, t, unread, hrefFor, recordRows)),
+			.map((entry) =>
+				named(itemFor(entry, t, unread, hrefFor, recordRows), entry.special),
+			),
 	})
 
 	const appGroups = []
@@ -216,10 +235,15 @@ export function residentMenuGroups(nav, t, unread, hrefFor, recordRows = {}) {
 			group = { key, title, items: [] }
 			appGroups.push(group)
 		}
-		group.items.push({
-			...itemFor(entry, t, unread, hrefFor, recordRows),
-			source: appNameOf(entry),
-		})
+		group.items.push(
+			named(
+				{
+					...itemFor(entry, t, unread, hrefFor, recordRows),
+					source: appNameOf(entry),
+				},
+				`${entry.contribution?.app || ''}:${entry.page?.id || ''}`,
+			),
+		)
 	}
 
 	const groups = [
@@ -250,7 +274,81 @@ export function residentMenuGroups(nav, t, unread, hrefFor, recordRows = {}) {
 			}
 		}
 	}
-	return groups
+	return laidOut(groups, layout, t, hrefFor)
+}
+
+/**
+ * The groups in the portal's own layout, when it declares one: each declared
+ * group in order with the items it names (`overview` opens `/mijn` itself),
+ * without icons; then every item the layout does not name, in the groups the
+ * site built, so nothing becomes unreachable. Without a layout the groups
+ * are handed back as they are.
+ *
+ * @param {Array<{key: string, title: string, items: Array<object>}>} groups The site's own groups.
+ * @param {Array<{title: string, items: Array<string>}>|null} layout The portal's groups.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @param {(route: string) => string} hrefFor A real address for a route.
+ * @return {Array<{key: string, title: string, items: Array<object>}>}
+ * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+ */
+export function laidOut(groups, layout, t, hrefFor) {
+	if (!Array.isArray(layout) || layout.length === 0) {
+		return groups
+	}
+	const byName = new Map()
+	for (const group of groups) {
+		for (const item of group.items) {
+			const name = NAMES.get(item)
+			if (name && !byName.has(name)) {
+				byName.set(name, item)
+			}
+		}
+	}
+	const plain = (item) => {
+		const copy = { ...item }
+		delete copy.icon
+		return copy
+	}
+	const placed = new Set()
+	const out = []
+	layout.forEach((group, index) => {
+		const title = String(group?.title ?? '').trim()
+		const items = []
+		for (const name of Array.isArray(group?.items) ? group.items : []) {
+			if (name === 'overview') {
+				items.push({
+					key: '__overview__',
+					name: t('Overview'),
+					link: ACCOUNT_ROUTE,
+					href: hrefFor(ACCOUNT_ROUTE),
+				})
+				continue
+			}
+			const item = byName.get(String(name))
+			if (item && !placed.has(item)) {
+				placed.add(item)
+				items.push(plain(item))
+			}
+		}
+		if (items.length > 0) {
+			out.push({ key: `layout:${index}`, title, items })
+		}
+	})
+	for (const group of groups) {
+		const rest = group.items.filter((item) => !placed.has(item))
+		if (rest.length === 0) {
+			continue
+		}
+		// The site's own group under the same heading as a declared one
+		// joins it, so one heading never stands twice.
+		const same = out.find((candidate) => candidate.title === group.title)
+		if (same) {
+			same.items.push(...rest.map(plain))
+		} else {
+			out.push({ ...group, items: rest.map(plain) })
+		}
+	}
+	return out
 }
 
 /**
