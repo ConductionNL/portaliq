@@ -143,6 +143,10 @@
              instance, and take it off again. -->
         <command>OCA\Portaliq\Command\ExampleSiteInstall</command>
         <command>OCA\Portaliq\Command\ExampleSiteRemove</command>
+        <!-- example-resident-zuiddrecht: give an example site its resident,
+             so the area behind the sign-in button has something to show. -->
+        <command>OCA\Portaliq\Command\ExampleResidentInstall</command>
+        <command>OCA\Portaliq\Command\ExampleResidentRemove</command>
     </commands>
 
     <settings>
