@@ -3983,6 +3983,41 @@
 			}
 		},
 		{
+			"id": "cmp-inb-read-receipt-request",
+			"area": "inbox",
+			"name": "Ask for a read receipt on a message and see which recipients have read it, and when.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: row added on 2026-10-07 in the spec round for planninq's col-read-receipts; this system was not re-read for it",
+				"nl-portal": "not checked: row added on 2026-10-07 in the spec round for planninq's col-read-receipts; this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-07 in the spec round for planninq's col-read-receipts; this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-07 in the spec round for planninq's col-read-receipts; this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-07 in the spec round for planninq's col-read-receipts; this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "portalMessage carries only a read boolean (lib/Settings/portaliq_register.json portalMessage.read): no receipt request, no read moment, nothing ties the copies of one sending together. Staff see a read badge per message (cmp-inb-read-receipt).",
+				"owner": "ConductionNL/portaliq",
+				"change": "inbox-read-receipt-on-request"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-07",
+			"note": "Owed to planninq col-read-receipts (WebUntis Mitteilungen asks for Lesebestaetigungen). Extends cmp-inb-read-receipt, which only shows a read flag.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtBericht",
+					"Berichten"
+				]
+			}
+		},
+		{
 			"id": "cmp-inb-notif-prefs",
 			"area": "inbox",
 			"name": "Choose which notifications you receive and through which channel.",
