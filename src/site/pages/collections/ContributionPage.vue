@@ -1090,13 +1090,20 @@ export default {
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		withTitle(block) {
-			if (
-				block?.type !== 'cta'
-				|| !String(block.label || '').includes('{title}')
-			) {
+			if (block?.type !== 'cta') {
 				return block
 			}
-			return { ...block, label: ctaLabel(block.label, this.recordName) }
+			// A cta with `withRecord` on a record page carries the open record,
+			// for an action that creates something about it
+			// (case-actions-on-the-case-page).
+			const withRecord =
+				block.withRecord === true && this.recordId
+					? { ...block, record: String(this.recordId) }
+					: block
+			if (!String(block.label || '').includes('{title}')) {
+				return withRecord
+			}
+			return { ...withRecord, label: ctaLabel(block.label, this.recordName) }
 		},
 
 		/**

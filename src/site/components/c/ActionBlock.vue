@@ -18,6 +18,37 @@
 				:t="t"
 				@submitted="(object) => $emit('created', object, resolved)" />
 		</template>
+		<!-- A call to action that creates something about the open record
+		     (a bezwaar, a klacht on a case page): a button that opens the
+		     action's form, with the record already in its `recordField`
+		     (case-actions-on-the-case-page). -->
+		<template v-else-if="isRecordForm">
+			<div class="pq-action-button">
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--primary-action"
+					:aria-expanded="String(open)"
+					:aria-controls="`pq-action-form-${resolved.id}`"
+					:data-testid="`action-open-${resolved.id}`"
+					@click="open = !open">
+					{{ block.label || resolved.label || resolved.id }}
+				</button>
+			</div>
+			<div
+				v-if="open"
+				:id="`pq-action-form-${resolved.id}`"
+				class="pq-action-block__form">
+				<h2 class="utrecht-heading-3">
+					{{ block.label || resolved.label || resolved.id }}
+				</h2>
+				<SchemaForm
+					:action="resolved"
+					:api="api"
+					:t="t"
+					:preset="{ [resolved.recordField]: block.record }"
+					@submitted="(object) => $emit('created', object, resolved)" />
+			</div>
+		</template>
 		<ActionButton
 			v-else
 			:action="resolved"
@@ -75,6 +106,10 @@ export default {
 
 	emits: ['created'],
 
+	data() {
+		return { open: false }
+	},
+
 	computed: {
 		resolved() {
 			return (
@@ -91,6 +126,26 @@ export default {
 				this.block.type === 'action'
 				&& (this.resolved.type === 'create'
 					|| this.resolved.type === 'update')
+			)
+		},
+
+		/**
+		 * Whether this is a call to action that creates something about the
+		 * open record: a `cta` with `withRecord`, on a record page (the page
+		 * sets `record`), for a create action that names its `recordField`.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 */
+		isRecordForm() {
+			return (
+				this.block.type === 'cta'
+				&& this.block.withRecord === true
+				&& typeof this.block.record === 'string'
+				&& this.block.record !== ''
+				&& this.resolved.type === 'create'
+				&& typeof this.resolved.recordField === 'string'
+				&& (this.resolved.fields || []).includes(this.resolved.recordField)
 			)
 		},
 	},

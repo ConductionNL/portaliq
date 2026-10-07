@@ -188,3 +188,43 @@ test('the example resident way in is left out while the demo switch is off', asy
 	// A portal without an example resident keeps every way in.
 	assert.deepEqual(modes(signInRoutes(site, '/a')), ['digid', 'nextcloud'])
 })
+
+test('a call to action carries the open case into a create form, and the form does not ask for it', async () => {
+	const action = {
+		id: 'createBezwaar',
+		type: 'create',
+		label: 'Bezwaar maken',
+		recordField: 'againstCaseId',
+		fields: ['subject', 'againstCaseId'],
+		fieldConfigs: { againstCaseId: { visible: false } },
+	}
+	const api = {}
+	const withRecord = await renderSfc('src/site/components/c/ActionBlock.vue', {
+		block: {
+			type: 'cta',
+			action: 'createBezwaar',
+			label: 'Bezwaar maken',
+			withRecord: true,
+			record: 'case-1',
+		},
+		action,
+		api,
+	})
+	assert.match(withRecord, /data-testid="action-open-createBezwaar"/)
+	assert.match(withRecord, /aria-expanded="false"/)
+	// Without an open record it stays the plain call to action.
+	const plain = await renderSfc('src/site/components/c/ActionBlock.vue', {
+		block: { type: 'cta', action: 'createBezwaar', label: 'Bezwaar maken' },
+		action,
+		api,
+	})
+	assert.doesNotMatch(plain, /action-open-createBezwaar/)
+	// The form leaves out the field the page gives.
+	const form = await renderSfc('src/site/components/c/SchemaForm.vue', {
+		action: { ...action, fieldConfigs: {} },
+		api,
+		preset: { againstCaseId: 'case-1' },
+	})
+	assert.doesNotMatch(form, /againstCaseId/)
+	assert.match(form, /subject/)
+})
