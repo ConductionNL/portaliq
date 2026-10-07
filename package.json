@@ -168,7 +168,7 @@
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.5",
     "@babel/runtime": "^7.23.6",
-    "@conduction/nextcloud-vue": "^2.57.3",
+    "@conduction/nextcloud-vue": "^2.65.0",
     "@gemeente-denhaag/action": "4.4.2",
     "@gemeente-denhaag/card": "5.1.4",
     "@gemeente-denhaag/contact-timeline": "4.1.3",
