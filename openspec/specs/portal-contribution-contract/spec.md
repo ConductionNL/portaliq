@@ -1718,6 +1718,71 @@ A `detail` block that shares its collection with a `collection` block rendered a
 - THEN the page shows "Kies een item." once
 - @e2e exclude pinned by `tests/site-collections.spec.mjs` ("a case screen under a detail card on its collection waits quietly for a case")
 
+### Requirement: A via read MUST query the subject's own rows and honour the declared filter
+
+In the reverse mode (`match: 'scopeField'`) the outer read MUST ask OpenRegister for rows whose collection `scopeField` equals a verified target, one query per target, so the result does not depend on how many other rows the schema holds. A row returned by two queries MUST be returned once. A collection's declared `filter` MUST narrow the outer read in both modes, and the collection's `scopeField` MUST override any filter entry with the same key. The per-row membership and tenant checks MUST still run on every outer row. A read by id MUST return nothing for a row that does not match the declared `filter`, on the via and the direct path.
+
+#### Scenario: A child's rows behind a full page of other rows are returned
+
+- GIVEN a schema with 250 rows of other learners before one row of the guardian's child
+- WHEN the guardian reads the reverse via collection with the default limit of 200
+- THEN the child's row is returned
+- @e2e exclude backend query shape, covered by PHPUnit `PortalObjectReaderViaQueryTest` against a fake that filters and pages like OpenRegister
+
+#### Scenario: A report card under review is not shown to a parent
+
+- GIVEN a collection with `filter: {lifecycle: published-to-parents}` and a `via` join
+- AND the guardian's child has one `draft` and one `published-to-parents` report card
+- WHEN the guardian reads the collection
+- THEN only the published report card is returned
+- @e2e exclude covered by PHPUnit `PortalObjectReaderViaQueryTest::testReverseViaAppliesTheDeclaredFilter`; exercised live by learniq's po-parent-flows e2e spec
+
+#### Scenario: A filter cannot widen a via read
+
+- GIVEN a declared filter that names the collection's scope field with another learner's reference
+- WHEN the guardian reads the collection
+- THEN only the guardian's own child's rows are returned
+- @e2e exclude covered by PHPUnit `PortalObjectReaderViaQueryTest::testADeclaredFilterOnTheScopeFieldCannotWidenTheVia`
+
+#### Scenario: A report card under review is not readable by id
+
+- GIVEN the same collection and a `draft` report card of the guardian's own child
+- WHEN the guardian reads that report card by id
+- THEN the answer is 404
+- @e2e exclude covered by PHPUnit `PortalObjectReaderViaQueryTest::testTheDeclaredFilterAlsoHoldsForAReadById`
+
+### Requirement: An endpoint action MUST be able to attach to another app's collection (REQ-WJE-004)
+
+An endpoint action that declares `attachTo: { app, schema }` and a valid
+`rowField` SHALL be listed in `attachedActions` on every collection of `app`
+whose `schema` equals `attachTo.schema`. The portal SHALL show it on that
+collection's detail and ask its declared fields. The forward SHALL prove the
+row through the TARGET collection's scope, SHALL require the action to be
+still offered in its own app's contribution, and SHALL send it to its own app
+with `rowField` set to the row id. A malformed `attachTo` SHALL attach nothing
+and SHALL leave the action as it was. Implements hydra `woo-citizen-journey`
+"A question about a dossier MUST carry a snapshot of the dossier, not access
+to it" and "A Woo request MUST be created by one dossiq path, from the portal
+and from pipelinq alike" (the portal half of each).
+
+#### Scenario: A resident asks a question about their dossier
+- **GIVEN** pipelinq offers `askAboutDossier` with `attachTo: { app: "opencatalogi", schema: "collection" }`, `rowField: "collectionId"` and field `question`
+- **WHEN** a resident opens their dossier and sends "Wanneer wordt dit besloten?" through "Stel een vraag over dit dossier"
+- **THEN** pipelinq's endpoint receives `{ question: "Wanneer wordt dit besloten?", collectionId: <dossier id> }` with the resident's subject assertion
+- test: PHPUnit `tests/Unit/Controller/PortalRowActionControllerTest.php` ("attached action forwards with the proven row")
+
+#### Scenario: A resident tries another resident's dossier
+- **GIVEN** a dossier owned by someone else
+- **WHEN** a resident forwards `askAboutDossier` on its id
+- **THEN** the answer is 404 and nothing is forwarded
+- test: PHPUnit `tests/Unit/Controller/PortalRowActionControllerTest.php` ("attached action on a foreign row")
+
+#### Scenario: An app that is gone
+- **GIVEN** dossiq is disabled
+- **WHEN** a resident opens their dossier
+- **THEN** "Start een Woo-verzoek" does not show
+- test: PHPUnit `tests/Unit/Contribution/AttachedActionResolverTest.php` ("no declaring app, no attachment")
+
 ## Non-Functional Requirements
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`

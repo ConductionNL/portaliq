@@ -274,3 +274,106 @@ The submission receipt (`SubmissionReceiptService`), the notification e-mail and
 - WHEN a task is delivered to their portal inbox
 - THEN the notice is English only
 - @e2e exclude pinned by `PortalTaskDeliveryJobTest::testAnInboxNoticeIsInThePortalsLanguageOnly` and `::testAskMailIsInThePortalsLanguageOnly`
+
+### Requirement: A change notice is written in the portal's language only (REQ-NAP-010)
+
+The inbox message portaliq writes for a declared change rule SHALL be written in
+one language: the first locale of the organisation's portal, or Dutch when the
+portal names none or cannot be read. Its subject and body SHALL NOT hold the same
+text in two languages.
+
+#### Scenario: A portal that publishes in English first
+- **GIVEN** an organisation whose portal has locales `en`, `nl`
+- **WHEN** a handler changes a field a change rule listens to on a resident's case
+- **THEN** the message subject is "Z-2026-1 has been updated" and holds no Dutch
+- @e2e exclude the portal language is per organisation config; pinned by tests/Unit/Listener/PortalRecordChangeListenerTest.php testTheNoticeIsInThePortalsLanguageOnly
+
+#### Scenario: A portal without a language
+- **GIVEN** an organisation whose portal names no locale, or whose portal cannot be read
+- **WHEN** the same change happens
+- **THEN** the message subject is "Z-2026-1 is bijgewerkt" and holds no English
+- @e2e exclude an unreadable portal cannot be staged on a live instance; pinned by tests/Unit/Listener/PortalRecordChangeListenerTest.php testWithoutAPortalLanguageTheNoticeIsDutch
+
+### Requirement: The inbox badge counts the unread messages the inbox shows (REQ-NAP-011)
+
+When the inbox has loaded its rows, on the React portal and on the Vue site, the unread badge SHALL show the number
+of loaded rows not marked read, also when notices arrived after sign-in.
+
+#### Scenario: Notices written after sign-in
+- **GIVEN** a resident signed in with 2 unread messages
+- **AND** a background job writes 6 more notices for them
+- **WHEN** they open the inbox
+- **THEN** the badge says 8
+- @e2e exclude the e2e drives the API, not a renderer; pinned by tests/inbox-unread.spec.mjs (React portal) and tests/site-inbox-pages.spec.mjs (Vue site)
+
+### Requirement: The inbox does not repeat the open link in the text (REQ-NAP-012)
+
+A notice body MAY end with a web address, because the same text is the e-mail. When the Vue site's inbox shows a row
+with an "Open" button, it SHALL NOT show a web address in the body that leads where that button leads (a link into
+the site naming the same record with `#open=` or the same route with `?route=`), nor the words that only introduce
+it. In a list line it SHALL keep the line's title. Every other address SHALL stay as written.
+
+#### Scenario: An answered question
+- **GIVEN** a pipelinq notice "Er is een antwoord op uw vraag "X". Lees het antwoord hier: <site>#open=pipelinq/myQuestions/<id>"
+- **AND** its record link is that question, which a page of the resident shows
+- **WHEN** the resident opens the inbox
+- **THEN** the row reads "Er is een antwoord op uw vraag "X"." and has "Openen"
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+#### Scenario: An address that leads elsewhere
+- **GIVEN** a notice whose address leads to another record or route than its "Open" button
+- **WHEN** the resident opens the inbox
+- **THEN** the body shows the address as written
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+### Requirement: The inbox shows other site addresses as named links (REQ-NAP-013)
+
+Every other http(s) address in a notice body that leads into this site (the page's own origin, under
+`/apps/portaliq/site`) SHALL show in the Vue site's inbox as a link with a name, never as a raw address. In a list
+item ("- Title: <url>", on its own line or after a sentence) the title SHALL be the link, and the mark "- " and ": <url>" SHALL go. After a lead-in ending in a colon, the
+link's name SHALL take the lead-in's place. The name SHALL be "Bekijk de publicatie" for a `?route=/publicatie/<id>`
+address and "Bekijk de link" for any other. An address outside this site SHALL stay plain text. A link with a
+`?route=` SHALL open through the site's own navigation.
+
+#### Scenario: A published decision
+- **GIVEN** the notice "Wij hebben het besluit ... gepubliceerd. Lees het besluit en de openbaar gemaakte documenten hier: <site>?route=/publicatie/<id>"
+- **WHEN** the resident opens the inbox
+- **THEN** the row reads "Wij hebben het besluit ... gepubliceerd." followed by the link "Bekijk de publicatie"
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+#### Scenario: An address outside this site
+- **GIVEN** a notice body with an address on another origin, or outside `/apps/portaliq/site`
+- **WHEN** the resident opens the inbox
+- **THEN** the address shows as plain text and no link is made of it
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+### Requirement: Another app's notice with a declared rule key MUST be sent by email (REQ-WJE-006)
+
+A `portalMessage` MAY carry `ruleKey`. When a `portalMessage` is created outside
+portaliq's own writes with a `ruleKey`, portaliq SHALL dispatch that rule key
+for the app named before its first dot, for the message's subject. The email
+SHALL go only when that app's contribution declares the rule key and the
+resident allows email. The inbox entry SHALL stand in every case. No Berichtenbox send SHALL be
+queued for it (hydra #730: not in this journey). This holds
+for `pipelinq.question.answered`, `dossiq.wooRequest.published` and
+`opencatalogi.savedSearch.matched`. Implements hydra `woo-citizen-journey`
+"Every answer, decision and alert MUST reach the resident through portaliq's
+notice path".
+
+#### Scenario: An answer to a question
+- **GIVEN** pipelinq declares `pipelinq.question.answered` and a resident with email on
+- **WHEN** pipelinq writes a `portalMessage` for them with that rule key
+- **THEN** the message is in their inbox and an email is queued for `pipelinq.question.answered`
+- test: PHPUnit `tests/Unit/Listener/PortalRecordChangeListenerTest.php` ("foreign message with a declared key")
+
+#### Scenario: A message borrowing another app's key
+- **GIVEN** opencatalogi does not declare `pipelinq.question.answered`
+- **WHEN** a `portalMessage` with that key is written
+- **THEN** the dispatch is asked for app `pipelinq` only, so opencatalogi's contribution never sends it
+- test: PHPUnit `tests/Unit/Listener/PortalRecordChangeListenerTest.php` ("app from the rule key")
+
+#### Scenario: portaliq's own message
+- **GIVEN** portaliq writes a change notice itself
+- **WHEN** the created event arrives
+- **THEN** nothing is dispatched a second time
+- test: PHPUnit `tests/Unit/Listener/PortalRecordChangeListenerTest.php` ("own message not dispatched twice")
