@@ -4999,7 +4999,7 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "The button is a courtesy; the real refusal happens in OpenRegister's schema authorization, by design (PageEditorService class docblock).",
 				"origin": "competitor",
-				"spec": "openspec/specs/portal-page-designer"
+				"spec": "openspec/specs/portal-in-place-editing"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8316,6 +8316,24 @@
 			"source": "spec-round-2026-10-07"
 		},
 		{
+			"id": "act-guest-signed-link",
+			"area": "case-actions",
+			"name": "Do one thing an organisation asks of you through a signed link, without an account.",
+			"portaliq": "yes",
+			"open-inwoner": "unchecked",
+			"nl-portal": "unchecked",
+			"xxllnc-pip": "unchecked",
+			"mijnoverheid": "unchecked",
+			"liferay-dxp": "unchecked",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/GuestActionController.php, lib/Contribution/GuestActionRegistry.php, guest actions declared per contribution in ActionConfigNormaliser",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/portal-guest-actions"
+			},
+			"source": "spec-round-2026-10-07"
+		},
+		{
 			"id": "dem-cl-case-outcome-explained",
 			"area": "cases",
 			"name": "See the outcome of your finished case, with the organisation's explanation of the decision.",
@@ -8675,6 +8693,60 @@
 			"originUrl": "https://www.logius.nl/diensten/mijnoverheid/update/release-informatie-mijnoverheid/Berichtenbox-app-Release-2.6"
 		},
 		{
+			"id": "inb-guardian-direct-thread",
+			"area": "inbox",
+			"name": "Start a conversation with your child's teacher, or join a group conversation, and see who read it.",
+			"portaliq": "yes",
+			"open-inwoner": "unchecked",
+			"nl-portal": "unchecked",
+			"xxllnc-pip": "unchecked",
+			"mijnoverheid": "unchecked",
+			"liferay-dxp": "unchecked",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/MessageGuardianController.php, lib/Controller/MessageStaffController.php, lib/Service/Messaging/MessageStore.php, MessageThreadAccessGuard.php",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/guardian-direct-messaging"
+			},
+			"source": "spec-round-2026-10-07"
+		},
+		{
+			"id": "inb-guardian-translation",
+			"area": "inbox",
+			"name": "Read news and messages in your own language, translated by AI with the original one step away.",
+			"portaliq": "yes",
+			"open-inwoner": "unchecked",
+			"nl-portal": "unchecked",
+			"xxllnc-pip": "unchecked",
+			"mijnoverheid": "unchecked",
+			"liferay-dxp": "unchecked",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/MessageGuardianController.php and NewsGuardianController.php serve the stored translations; translation through hermiq only when hermiq is installed",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/guardian-message-translation"
+			},
+			"source": "spec-round-2026-10-07"
+		},
+		{
+			"id": "inb-guardian-push-quiet-hours",
+			"area": "inbox",
+			"name": "Get push notifications that wait until your quiet hours end, except for an emergency.",
+			"portaliq": "yes",
+			"open-inwoner": "unchecked",
+			"nl-portal": "unchecked",
+			"xxllnc-pip": "unchecked",
+			"mijnoverheid": "unchecked",
+			"liferay-dxp": "unchecked",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/PushSubscriptionController.php, lib/BackgroundJob/PendingPushDeliveryJob.php (deferred push delivered when due)",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/guardian-push-notifications"
+			},
+			"source": "spec-round-2026-10-07"
+		},
+		{
 			"id": "cmp-srch-noindex-filtered",
 			"area": "search",
 			"name": "Keep filtered search result pages out of search engine indexes, so crawlers spend their time on the real content.",
@@ -8769,6 +8841,42 @@
 			"featureConfidence": "medium",
 			"origin": "changelog",
 			"originUrl": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/managing-user-data/managing-privacy-settings"
+		},
+		{
+			"id": "ana-page-traffic",
+			"area": "analytics",
+			"name": "See one page's traffic: visitors, where they came from and where they went next.",
+			"portaliq": "yes",
+			"open-inwoner": "unchecked",
+			"nl-portal": "unchecked",
+			"xxllnc-pip": "unchecked",
+			"mijnoverheid": "unchecked",
+			"liferay-dxp": "unchecked",
+			"built": {
+				"state": "built",
+				"evidence": "src/widgets/PageTrafficFlow.vue on the page detail; the page traffic endpoint and daily page rows per in-site route",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/portal-page-traffic"
+			},
+			"source": "spec-round-2026-10-07"
+		},
+		{
+			"id": "ana-kpi-cards",
+			"area": "analytics",
+			"name": "See a portal's four headline traffic numbers as cards on the portal and on the Traffic page.",
+			"portaliq": "yes",
+			"open-inwoner": "unchecked",
+			"nl-portal": "unchecked",
+			"xxllnc-pip": "unchecked",
+			"mijnoverheid": "unchecked",
+			"liferay-dxp": "unchecked",
+			"built": {
+				"state": "built",
+				"evidence": "src/widgets/PortalTrafficKpi.vue registered in src/registry.js; the summary endpoint returns the four totals for a period",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/portal-traffic-kpi-cards"
+			},
+			"source": "spec-round-2026-10-07"
 		},
 		{
 			"id": "dem-rm-chatbot",
@@ -8899,6 +9007,42 @@
 			"featureConfidence": "medium",
 			"origin": "roadmap",
 			"originUrl": "https://www.liferay.com/roadmap"
+		},
+		{
+			"id": "site-parent-polls",
+			"area": "site",
+			"name": "Answer a poll from the school once, and change your answer while it is open.",
+			"portaliq": "yes",
+			"open-inwoner": "unchecked",
+			"nl-portal": "unchecked",
+			"xxllnc-pip": "unchecked",
+			"mijnoverheid": "unchecked",
+			"liferay-dxp": "unchecked",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/PollController.php, lib/Service/PollService.php (audience and organisation scoped, one answer per subject)",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/parent-polls"
+			},
+			"source": "spec-round-2026-10-07"
+		},
+		{
+			"id": "site-pwa-install",
+			"area": "site",
+			"name": "Install the portal on your phone as an app.",
+			"portaliq": "yes",
+			"open-inwoner": "unchecked",
+			"nl-portal": "unchecked",
+			"xxllnc-pip": "unchecked",
+			"mijnoverheid": "unchecked",
+			"liferay-dxp": "unchecked",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/PortalManifestController.php (web app manifest per portal), src/site/lib/pwa.js (service worker caching the shell, never the API; install control)",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/parent-pwa-installability"
+			},
+			"source": "spec-round-2026-10-07"
 		}
 	],
 	"pending": [
