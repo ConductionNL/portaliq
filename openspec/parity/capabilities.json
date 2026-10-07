@@ -512,9 +512,10 @@
 				"evidence": "lib/Service/Signin/{BrokerLogin,BrokerExchangeClient,BrokerEnvelopeCheck,LoginProviders,OrganisationLoginConfig}.php; lib/Controller/BrokerSessionController.php GET /portal/api/session/broker/start|callback; SessionController::oidcStart forwards a broker-routed provider; src/portal/lib/signinRoute.js (buttons follow `route`, #signin=failed); src/widgets/PortalSignin.vue + PortalSigninController GET/PUT /api/portals/{slug}/signin (admin: route per provider, integriq start/exchange address, consumer id, write-only secret)",
 				"reachedOn": "admin: Portals -> a portal -> Sign-in widget -> DigiD/eHerkenning/eIDAS: Integriq; resident: portal login screen -> Log in with <provider> -> /portal/api/session/broker/start -> integriq start -> /portal/api/session/broker/callback -> signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived signin-integriq-broker-login, 13 of 13 tasks): lib/Controller/BrokerSessionController.php start and callback, lib/Service/Signin/*, the sign-in widget's route per provider. Integriq's browser half has since landed too: appinfo/routes.php:397-404 idpBroker#start, #callback, #exchange (lib/Controller/IdpBrokerController.php, lib/Auth/Idp/IdpLoginService.php). Still missing: the vendor SAML Service Provider or OIDC Relying Party behind integriq's GovernmentIdpAdapterInterface; a start on a live instance ends on integriq's error page. That waits on Open Decision D1 (broker vendor and contract), ConductionNL/integriq#1495. Stays building.",
 				"origin": "code",
-				"change": "2026-09-29-signin-integriq-broker-login"
+				"change": "2026-09-29-signin-integriq-broker-login",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -550,9 +551,10 @@
 				"evidence": "lib/Service/Signin/{BrokerLogin,BrokerExchangeClient,BrokerEnvelopeCheck,LoginProviders,OrganisationLoginConfig}.php; lib/Controller/BrokerSessionController.php GET /portal/api/session/broker/start|callback; SessionController::oidcStart forwards a broker-routed provider; src/portal/lib/signinRoute.js (buttons follow `route`, #signin=failed); src/widgets/PortalSignin.vue + PortalSigninController GET/PUT /api/portals/{slug}/signin (admin: route per provider, integriq start/exchange address, consumer id, write-only secret)",
 				"reachedOn": "admin: Portals -> a portal -> Sign-in widget -> DigiD/eHerkenning/eIDAS: Integriq; resident: portal login screen -> Log in with <provider> -> /portal/api/session/broker/start -> integriq start -> /portal/api/session/broker/callback -> signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived signin-integriq-broker-login, 13 of 13 tasks): lib/Controller/BrokerSessionController.php start and callback, lib/Service/Signin/*, the sign-in widget's route per provider. Integriq's browser half has since landed too: appinfo/routes.php:397-404 idpBroker#start, #callback, #exchange (lib/Controller/IdpBrokerController.php, lib/Auth/Idp/IdpLoginService.php). Still missing: the vendor SAML Service Provider or OIDC Relying Party behind integriq's GovernmentIdpAdapterInterface; a start on a live instance ends on integriq's error page. That waits on Open Decision D1 (broker vendor and contract), ConductionNL/integriq#1495. Stays building.",
 				"origin": "code",
-				"change": "2026-09-29-signin-integriq-broker-login"
+				"change": "2026-09-29-signin-integriq-broker-login",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -696,9 +698,10 @@
 				"evidence": "lib/Controller/SessionController.php:524-593 nextcloud(); src/site/lib/authApi.js:170-196 signInRoutes() emits a nextcloud entry when the portal's authentication.modes includes it",
 				"reachedOn": "public site sign-in menu (src/site/App.vue:78-99 -> signInRoutes computed at App.vue:746-747) -> GET /portal/api/session/nextcloud",
 				"owner": "ConductionNL/portaliq",
-				"note": "Reached from the site renderer; the portal React SPA itself has no nextcloud button, only OIDC + dev-login (App.jsx:313-328), so this route is a site-only affordance.",
+				"note": "Reached from the site renderer's sign-in menu. Specified after the fact on 7 Oct 2026 (openspec/specs/portal-nextcloud-account-login): only an existing, active portal account, trust low, refused when the portal does not declare the nextcloud mode.",
 				"origin": "code",
-				"spec": "none"
+				"spec": "openspec/specs/portal-nextcloud-account-login",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1083,9 +1086,10 @@
 				"evidence": "lib/Service/Signin/{BrokerLogin,BrokerExchangeClient,BrokerEnvelopeCheck,LoginProviders,OrganisationLoginConfig}.php; lib/Controller/BrokerSessionController.php GET /portal/api/session/broker/start|callback; SessionController::oidcStart forwards a broker-routed provider; src/portal/lib/signinRoute.js (buttons follow `route`, #signin=failed); src/widgets/PortalSignin.vue + PortalSigninController GET/PUT /api/portals/{slug}/signin (admin: route per provider, integriq start/exchange address, consumer id, write-only secret)",
 				"reachedOn": "admin: Portals -> a portal -> Sign-in widget -> DigiD/eHerkenning/eIDAS: Integriq; resident: portal login screen -> Log in with <provider> -> /portal/api/session/broker/start -> integriq start -> /portal/api/session/broker/callback -> signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived signin-integriq-broker-login, 13 of 13 tasks): lib/Controller/BrokerSessionController.php start and callback, lib/Service/Signin/*, the sign-in widget's route per provider. Integriq's browser half has since landed too: appinfo/routes.php:397-404 idpBroker#start, #callback, #exchange (lib/Controller/IdpBrokerController.php, lib/Auth/Idp/IdpLoginService.php). Still missing: the vendor SAML Service Provider or OIDC Relying Party behind integriq's GovernmentIdpAdapterInterface; a start on a live instance ends on integriq's error page. That waits on Open Decision D1 (broker vendor and contract), ConductionNL/integriq#1495. Stays building.",
 				"origin": "competitor",
-				"change": "2026-09-29-signin-integriq-broker-login"
+				"change": "2026-09-29-signin-integriq-broker-login",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1153,10 +1157,11 @@
 				"evidence": "lib/Service/Signin/{BrokerLogin,BrokerExchangeClient,BrokerEnvelopeCheck,LoginProviders,OrganisationLoginConfig}.php; lib/Controller/BrokerSessionController.php GET /portal/api/session/broker/start|callback; SessionController::oidcStart forwards a broker-routed provider; src/portal/lib/signinRoute.js (buttons follow `route`, #signin=failed); src/widgets/PortalSignin.vue + PortalSigninController GET/PUT /api/portals/{slug}/signin (admin: route per provider, integriq start/exchange address, consumer id, write-only secret); the session carries integriq's trust, which ContentController's minTrust gate reads",
 				"reachedOn": "admin: Portals -> a portal -> Sign-in widget -> DigiD/eHerkenning/eIDAS: Integriq; resident: portal login screen -> Log in with <provider> -> /portal/api/session/broker/start -> integriq start -> /portal/api/session/broker/callback -> signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived signin-integriq-broker-login, 13 of 13 tasks): lib/Controller/BrokerSessionController.php start and callback, lib/Service/Signin/*, the sign-in widget's route per provider. Integriq's browser half has since landed too: appinfo/routes.php:397-404 idpBroker#start, #callback, #exchange (lib/Controller/IdpBrokerController.php, lib/Auth/Idp/IdpLoginService.php). Still missing: the vendor SAML Service Provider or OIDC Relying Party behind integriq's GovernmentIdpAdapterInterface; a start on a live instance ends on integriq's error page. That waits on Open Decision D1 (broker vendor and contract), ConductionNL/integriq#1495. Stays building.",
 				"sourceId": "plt-02",
 				"origin": "sibling",
-				"change": "2026-09-29-signin-integriq-broker-login"
+				"change": "2026-09-29-signin-integriq-broker-login",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1992,7 +1997,7 @@
 			"id": "cas-mycases-unified",
 			"area": "cases",
 			"name": "See every case from every organisation and app in one merged list.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "partial",
 			"xxllnc-pip": "partial",
@@ -2006,13 +2011,14 @@
 				"liferay-dxp": "not settled from docs: no merged cross-application case list was found in the objects, data sets or proxy object pages read today; each object or proxy object is listed on its own. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "src/portal/components/MyCasesPage.jsx (the 'My cases' / 'Mijn zaken' page, first in the portal menu when GET /portal/api/contributions announces cases.enabled) over portalApi.fetchMyCases -> GET /portal/api/my-cases (MyCasesController, PortalCaseListReader): every kind: cases collection merged, newest first, each row naming its app (_source) and, when read under a mandate, the mandate's label (_mandate)",
-				"reachedOn": "resident: portal menu 'Mijn zaken'",
+				"state": "built",
+				"evidence": "lib/Controller/MyCasesController.php:99 GET /portal/api/my-cases over lib/Service/PortalCaseListReader.php:39 (every kind: cases collection merged, newest first, each row naming its app as _source); src/site/pages/e/MyCasesPage.vue (registered as __cases__ in src/site/pages/e/index.js:52) shows the list with open and closed tabs. dossiq now declares its case collection kind: cases with closedField isFinalStatus (dossiq lib/Portal/CitizenManifest.php:552-553, closed ConductionNL/dossiq#3152), so dossiq cases reach the list.",
+				"reachedOn": "resident: site menu 'Mijn zaken' (the __cases__ page)",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-cases-my-cases-page): one merged list over every collection a case app declares as kind: cases. Owed by ConductionNL/dossiq: kind: 'cases' on its mijnZaken collection, ConductionNL/dossiq#3152; until then the page lists no dossiq case.",
+				"note": "Re-read 2026-10-07: built end to end. Portaliq merges every collection a case app on the instance declares as kind: cases; dossiq declares its case collection since dossiq#3152 closed (29 Sep).",
 				"origin": "code",
-				"change": "2026-09-29-cases-my-cases-page"
+				"change": "2026-09-29-cases-my-cases-page",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2191,9 +2197,10 @@
 				"evidence": "src/portal/components/ActingForSwitcher.jsx ('Namens' in the portal header) sends the chosen mandate as mandate=<id> on GET /portal/api/my-cases (MyCasesController: party tree, group_too_large refusal shown as a sentence); lib/Service/MandatedCaseReader.php opens a case listed under that mandate read-only on the case screen (CitizenCaseController::show)",
 				"reachedOn": "resident or business user: portal header 'Namens' -> 'Mijn zaken'",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-cases-my-cases-page). A case app opens its cases to mandates by declaring mandateField on its kind: cases collection; dossiq declares neither yet (ConductionNL/dossiq#3152).",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived cases-my-cases-page): MyCasesController.php:54-56 takes a mandate value, src/site/components/e/ActingForSwitcher.vue in the site header (src/site/App.vue:90), lib/Service/MandatedCaseReader.php opens a mandated case read-only. No case app declares mandateField on its kind: cases collection yet (dossiq CitizenManifest.php has none), so a mandate lists no case. Stays building.",
 				"origin": "code",
-				"change": "2026-09-29-cases-my-cases-page"
+				"change": "2026-09-29-cases-my-cases-page",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2246,7 +2253,7 @@
 			"id": "cmp-cas-all-gov",
 			"area": "cases",
 			"name": "See your cases from several organisations in one overview.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -2260,13 +2267,14 @@
 				"liferay-dxp": "not settled from docs: one virtual instance holds one organisation's data ('completely separate data', virtual instances page); no cross-organisation case overview was found. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "src/portal/components/MyCasesPage.jsx (the 'My cases' / 'Mijn zaken' page, first in the portal menu when GET /portal/api/contributions announces cases.enabled) over portalApi.fetchMyCases -> GET /portal/api/my-cases (MyCasesController, PortalCaseListReader): every kind: cases collection merged, newest first, each row naming its app (_source) and, when read under a mandate, the mandate's label (_mandate)",
-				"reachedOn": "resident: portal menu 'Mijn zaken'",
+				"state": "built",
+				"evidence": "lib/Controller/MyCasesController.php:99 GET /portal/api/my-cases over lib/Service/PortalCaseListReader.php:39 (every kind: cases collection merged, newest first, each row naming its app as _source); src/site/pages/e/MyCasesPage.vue (registered as __cases__ in src/site/pages/e/index.js:52) shows the list with open and closed tabs. dossiq now declares its case collection kind: cases with closedField isFinalStatus (dossiq lib/Portal/CitizenManifest.php:552-553, closed ConductionNL/dossiq#3152), so dossiq cases reach the list.",
+				"reachedOn": "resident: site menu 'Mijn zaken' (the __cases__ page)",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-cases-my-cases-page): cases from every contributing app and every organisation the person acts for, in one list. Owed by ConductionNL/dossiq: kind: 'cases' on mijnZaken, ConductionNL/dossiq#3152.",
+				"note": "Re-read 2026-10-07: one list over every case app on this instance, built end to end with dossiq's kind: cases. Partial against the competitors: cases of other government organisations arrive only through a mandate, and no case app declares mandateField yet (see cas-mandate-org-cases); there is no cross-instance fan-out.",
 				"origin": "competitor",
-				"change": "2026-09-29-cases-my-cases-page"
+				"change": "2026-09-29-cases-my-cases-page",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2280,7 +2288,7 @@
 			"id": "cmp-cas-closed",
 			"area": "cases",
 			"name": "See closed cases next to open ones.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -2294,13 +2302,14 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/adding-and-managing-custom-states: entries carry a state field and object views can filter on it (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/views/adding-filters-to-views), so open and closed entries can be listed together. Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "lib/Contribution/CollectionConfigNormaliser.php keeps a collection's closedField only when it is projected; lib/Service/CaseRowMarker.php marks each case row _closed when that field holds a value; src/portal/components/MyCasesPage.jsx shows 'Lopend (n)' and 'Afgerond (n)' tabs, the closed tab only when a collection declares closedField",
-				"reachedOn": "resident: portal menu 'Mijn zaken' -> 'Afgerond' tab",
+				"state": "built",
+				"evidence": "lib/Service/CaseRowMarker.php marks a row _closed when the collection's closedField holds a value; src/shared/myCases.js splits open and closed; src/site/pages/e/MyCasesPage.vue:72 shows the closed tab when closedMarker is announced. dossiq declares closedField isFinalStatus (dossiq lib/Portal/CitizenManifest.php:553), so a withdrawn or decided case moves to the closed tab.",
+				"reachedOn": "resident: 'Mijn zaken' -> the closed tab",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-cases-my-cases-page): a case app names the field that makes a case closed. Owed by ConductionNL/dossiq: closedField: 'endDate' on mijnZaken (commented on ConductionNL/dossiq#3152).",
+				"note": "Re-read 2026-10-07: built end to end since dossiq declared closedField (dossiq#3152).",
 				"origin": "competitor",
-				"change": "2026-09-29-cases-my-cases-page"
+				"change": "2026-09-29-cases-my-cases-page",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2329,10 +2338,10 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "portaliq#732 (266328d, fixes #723): src/portal/components/TimelineList.jsx renders the entries newest first inside the DetailCard (src/portal/components/PageView.jsx:284); lib/Controller/PortalTimelineController.php:93 show(); appinfo/routes.php:298 GET /portal/api/collections/{register}/{schema}/{id}/timeline; src/portal/components/CitizenCase.jsx:155-158 the current public status",
+				"evidence": "portaliq#732 (fixes #723): lib/Controller/PortalTimelineController.php show() at GET /portal/api/collections/{register}/{schema}/{id}/timeline (appinfo/routes.php:388) proves the record is the subject's, then lib/Service/PortalTimelineReader.php:70 calls the provider the collection declares; src/site/components/collections/TimelineList.vue on the record's DetailCard and src/site/components/mijn/TimelineBlock.vue show the entries newest first (src/site/components/collections/timeline.js newestFirst). dossiq declares timeline.provider caseTimeline on its case collection.",
 				"reachedOn": "Mijn zaken: select a case row -> detail block -> the case history the case app declares, and the case screen shows the current status",
 				"owner": "ConductionNL/portaliq",
-				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: shipped after the rating with portaliq#732 (fixes issue #723, commit 69ca851, no change directory). Which steps show is the case app's decision: portaliq renders what the declared timeline provider returns.",
+				"note": "Specified after the fact on 7 Oct 2026 (openspec/specs/case-timeline). Which entries show is the case app's decision; portaliq passes them on as they came. The case's steps ('Waar staat uw aanvraag?', GET .../steps) are in the open change site-mijn-omgeving-components.",
 				"origin": "competitor",
 				"prs": [
 					{
@@ -2341,7 +2350,8 @@
 						"sha": "266328d4d95cda118bd22bb4b65077c34d54ceea"
 					}
 				],
-				"spec": "none"
+				"spec": "openspec/specs/case-timeline",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2358,7 +2368,7 @@
 			"id": "cmp-cas-documents-published",
 			"area": "cases",
 			"name": "See the documents the organisation published to you on a case, and only those.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -2372,13 +2382,14 @@
 				"liferay-dxp": "not settled from docs: no per-document publish-to-requester control on object attachments was found in the attachment field or permissions pages read today."
 			},
 			"built": {
-				"state": "building",
-				"evidence": "lib/Service/CitizenCaseDocuments.php lists a case's documents for the case screen (the case app's documents.provider entries, decision first, else the files released in OpenRegister where filesDownload is on, plus the resident's uploads tagged portal:from-applicant), never with the file reference; CitizenCaseController::document (GET /portal/api/citizen/cases/{register}/{schema}/{id}/documents/{documentId}) streams only an entry listed for that case now, audited; src/portal/components/CitizenCase.jsx shows 'Besluit', 'Documenten', 'Door u gestuurd', each a download (portalApi.downloadCitizenDocument)",
-				"reachedOn": "resident: portal case screen (citizenCase block) -> Documents section",
+				"state": "built",
+				"evidence": "lib/Service/CitizenCaseDocuments.php:93 listFor() lists the case app's documents provider entries, decisions first (:96), never with the file reference; lib/Controller/CitizenCaseController.php:205 document() streams only an entry listed for that case; src/site/components/e/CitizenCase.vue:330 documentGroups (Decision first, then the organisation's documents, then the resident's own uploads), each a download. dossiq now answers the provider: CitizenManifest.php:516 documents.provider caseDocuments, lib/Portal/PortalCaseDocuments.php returns a decisionDocument as kind decision (closed ConductionNL/dossiq#3205).",
+				"reachedOn": "resident: a case on 'Mijn zaken' -> the case screen's Documents section",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-cases-documents-on-the-case): the case app decides what is published through its documents method, and nothing else from the case folder is listed but the resident's own tagged uploads. Owed by ConductionNL/dossiq: the caseDocuments method with its publication rule, ConductionNL/dossiq#3205.",
+				"note": "Re-read 2026-10-07: built end to end. dossiq decides what a resident may see through caseDocuments (dossiq#3205 closed 29 Sep); portaliq lists only those and the resident's own uploads.",
 				"origin": "competitor",
-				"change": "2026-09-29-cases-documents-on-the-case"
+				"change": "2026-09-29-cases-documents-on-the-case",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2392,7 +2403,7 @@
 			"id": "cmp-cas-decision-download",
 			"area": "cases",
 			"name": "Download the decision letter on your case.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -2406,13 +2417,14 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/attachment-fields: a file on an object entry can be downloaded by users with view permission; a decision letter would be an attachment on a custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "lib/Service/CitizenCaseDocuments.php lists a case's documents for the case screen (the case app's documents.provider entries, decision first, else the files released in OpenRegister where filesDownload is on, plus the resident's uploads tagged portal:from-applicant), never with the file reference; CitizenCaseController::document (GET /portal/api/citizen/cases/{register}/{schema}/{id}/documents/{documentId}) streams only an entry listed for that case now, audited; src/portal/components/CitizenCase.jsx shows 'Besluit', 'Documenten', 'Door u gestuurd', each a download (portalApi.downloadCitizenDocument)",
-				"reachedOn": "resident: portal case screen (citizenCase block) -> Documents section",
+				"state": "built",
+				"evidence": "lib/Service/CitizenCaseDocuments.php:93 listFor() lists the case app's documents provider entries, decisions first (:96), never with the file reference; lib/Controller/CitizenCaseController.php:205 document() streams only an entry listed for that case; src/site/components/e/CitizenCase.vue:330 documentGroups (Decision first, then the organisation's documents, then the resident's own uploads), each a download. dossiq now answers the provider: CitizenManifest.php:516 documents.provider caseDocuments, lib/Portal/PortalCaseDocuments.php returns a decisionDocument as kind decision (closed ConductionNL/dossiq#3205).",
+				"reachedOn": "resident: a case on 'Mijn zaken' -> the case screen, Decision group -> download",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-cases-documents-on-the-case): a case app's kind decision entry is shown first under 'Besluit' and downloads. Owed by ConductionNL/dossiq: the caseDocuments method returning decisionDocument links as kind decision, ConductionNL/dossiq#3205 (and dossiq#3152 for the case screen itself).",
+				"note": "Re-read 2026-10-07: built end to end. dossiq returns a decisionDocument as kind decision; portaliq shows it first under Decision.",
 				"origin": "competitor",
-				"change": "2026-09-29-cases-documents-on-the-case"
+				"change": "2026-09-29-cases-documents-on-the-case",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2715,7 +2727,7 @@
 			"id": "sib-dossiq-2-47",
 			"area": "case-actions",
 			"name": "Applicant withdraws their own case from the portal.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -2729,14 +2741,15 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration: the entry owner holds Delete; a withdraw action can be a standalone action button (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/using-manual-actions). Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "src/portal/components/CitizenCase.jsx renders the withdrawal the server returns with the case (src/portal/lib/withdrawal.js withdrawalView: nothing, 'Withdraw this request', or the closed reason); src/portal/components/WithdrawCaseConfirm.jsx confirms with an optional reason; src/portal/lib/portalApi.js withdrawCitizenCase posts only {reason} to POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw (CitizenCaseController::withdraw); the withdrawn request shows 'Withdrawn on {date}.' and the reason, with no undo; tests/case-withdraw-screen.spec.mjs",
-				"reachedOn": "a portal cases collection with a citizenWrite update action; dossiq's has none yet",
+				"state": "built",
+				"evidence": "lib/Controller/CitizenCaseController.php:365 withdraw() (POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw); src/shared/withdrawal.js renders the server's withdrawal answer; src/site/modals/e/WithdrawCaseConfirm.vue confirms with an optional reason; src/site/components/e/CitizenCase.vue:163 shows the withdrawn state. dossiq now declares the citizenWrite update action (dossiq lib/Portal/CitizenManifest.php:462) and portalWithdrawal on its case types (dossiq lib/Settings/register.d/76-portal-citizen-writes.json:118, 81-woo-verzoek.json:143).",
+				"reachedOn": "resident: 'Mijn zaken' -> a dossiq case -> withdraw",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-case-actions-withdraw-screen). Owed by ConductionNL/dossiq: a citizenWrite update action on its case collection and portalCaseType records with portalWithdrawal; without them CitizenCaseController::context() refuses a dossiq case. Tracked in ConductionNL/dossiq#3152.",
+				"note": "Re-read 2026-10-07: built end to end since dossiq#3152 closed (29 Sep). tests/e2e/case-actions-withdraw-screen.spec.ts drives it.",
 				"sourceId": "sib-2.47",
 				"origin": "sibling",
-				"change": "2026-09-29-case-actions-withdraw-screen"
+				"change": "2026-09-29-case-actions-withdraw-screen",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2849,9 +2862,10 @@
 				"evidence": "lib/Service/Proposals/ChangeProposalsProvider.php::create (data leaf portaliq-change-proposals via OR /api/objects/{r}/{s}/{id}/integrations/portaliq-change-proposals) and ProposalController::proposeAsColleague, both refusing a user without read on the record (PortalCaseAccessGuard::mayRead) and recording the signed-in uid on channel staff",
 				"reachedOn": "OR integrations route of the data leaf; a host UI that posts to it",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-change-proposal-queue). Owed by ConductionNL/dossiq: place portaliq-change-proposal-queue on the case page and declare propose-change with a proposable list, ConductionNL/dossiq#3215; until then no page shows the queue.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived change-proposal-queue, 9 of 9 tasks). dossiq still does not place portaliq-change-proposal-queue on its case page nor declare propose-change (git grep on dossiq development finds neither); ConductionNL/dossiq#3215 is open. No page shows the queue, so the row stays building.",
 				"origin": "code",
-				"change": "2026-09-29-change-proposal-queue"
+				"change": "2026-09-29-change-proposal-queue",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2926,9 +2940,10 @@
 				"evidence": "lib/Listener/RegisterProposalLeavesListener.php contributes portaliq-change-proposal-queue (render surface, mount mode) on RegisterLeafProvidersEvent; src/integrations/ProposalQueueWidget.vue over src/integrations/proposalQueue.js lists the queued proposals with value now and proposed, Accept (409 drift -> both values + 'Accept anyway' -> /accept-confirming-drift), Reject with a required reason; registered from src/main.js and the portaliq-leaves bundle (src/leaves.js)",
 				"reachedOn": "a case app's detail page that places {type: integration, integrationId: portaliq-change-proposal-queue}",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-change-proposal-queue). Owed by ConductionNL/dossiq: place portaliq-change-proposal-queue on the case page and declare propose-change with a proposable list, ConductionNL/dossiq#3215; until then no page shows the queue.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived change-proposal-queue, 9 of 9 tasks). dossiq still does not place portaliq-change-proposal-queue on its case page nor declare propose-change (git grep on dossiq development finds neither); ConductionNL/dossiq#3215 is open. No page shows the queue, so the row stays building.",
 				"origin": "code",
-				"change": "2026-09-29-change-proposal-queue"
+				"change": "2026-09-29-change-proposal-queue",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3101,10 +3116,11 @@
 				"evidence": "the whole queue is now reachable through two OpenRegister leaves: portaliq-change-proposals (data provider) and portaliq-change-proposal-queue (review widget and tab), lib/Listener/RegisterProposalLeavesListener.php, src/integrations/",
 				"reachedOn": "dossiq's case detail page once it places the leaf",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is built (archived change 2026-09-29-change-proposal-queue). Owed by ConductionNL/dossiq: place portaliq-change-proposal-queue on the case page and declare propose-change with a proposable list, ConductionNL/dossiq#3215; until then no page shows the queue.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived change-proposal-queue, 9 of 9 tasks). dossiq still does not place portaliq-change-proposal-queue on its case page nor declare propose-change (git grep on dossiq development finds neither); ConductionNL/dossiq#3215 is open. No page shows the queue, so the row stays building.",
 				"sourceId": "sib-2.21",
 				"origin": "sibling",
-				"change": "2026-09-29-change-proposal-queue"
+				"change": "2026-09-29-change-proposal-queue",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8135,7 +8151,7 @@
 				"evidence": "src/manifest.json:143-153 Store page, type 'store', app: portaliq; appinfo/routes.php:27-46 registers store#search (GET /api/store/items) and store#install (POST /api/store/items/{slug}/install) verbatim from OpenRegister's Routes::standard(), aliased by lib/AppInfo/StorePlaneRegistrar.php to OpenRegister's GenericStoreController; portaliq ships NO StoreController of its own",
 				"reachedOn": "confirmed via the shared component's own source: nextcloud-vue src/components/CnStorePage/CnStorePage.vue:562,604 fetches /apps/{app}/api/store/items and POSTs .../install. The Store page's manifest type resolves to this shared component, which resolves the endpoint itself using the app id from its own config, exactly the pattern the lane brief asked to check before concluding 'no caller'.",
 				"owner": "ConductionNL/openregister",
-				"note": "routes.php's own comments record the FAILURE MODE this shipped to fix: without these two route entries, the SPA catch-all answered 200 HTML and the page read 'The store registry did not answer' (WOO-559) with nothing erroring. Search is reachable by any signed-in user (one tier below the rest of this app's admin-only /api/), accepted not chosen, because OpenRegister's store-plane engine has no searchAuth key to narrow it further.",
+				"note": "routes.php's own comments record the FAILURE MODE this shipped to fix: without these two route entries, the SPA catch-all answered 200 HTML and the page read 'The store registry did not answer' (WOO-559) with nothing erroring. Search is reachable by any signed-in user (one tier below the rest of this app's admin-only /api/), accepted not chosen, because OpenRegister's store-plane engine has no searchAuth key to narrow it further. Stays spec none (7 Oct 2026, decision 81): the store backend is OpenRegister's GenericStoreController and the page is nextcloud-vue's CnStorePage; portaliq only aliases the two routes.",
 				"origin": "code",
 				"spec": "none"
 			},
@@ -8171,9 +8187,10 @@
 				"evidence": "lib/Controller/PreferencesController.php:72 getPreference(string $key), :111 setPreference(); routes GET/PUT /api/preferences/{key} (appinfo/routes.php:23-24), comment: 'used by shared nextcloud-vue widgets, e.g. CnSupportDialog'",
 				"reachedOn": "nextcloud-vue CnAppRoot.vue:1169,1480 reads/writes the app's /api/preferences/support-dialog-seen endpoint (with a localStorage fallback) to track whether the support dialog was already shown",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same pattern as ops-setup-wizard and ops-store-page: the caller lives in the shared nextcloud-vue component, not in this repo's own src/, which is why the lane's frontend-api-paths.txt extraction (scoped to this repo) missed it.",
+				"note": "The caller lives in the shared nextcloud-vue component (CnAppRoot). The endpoint was already specified: settings-management REQ-CFG-005 (read) and REQ-CFG-006 (write), which lib/Controller/PreferencesController.php cites; the spec round of 7 Oct missed it because the spec numbers its requirements without the 'Requirement:' heading.",
 				"origin": "code",
-				"spec": "none"
+				"spec": "openspec/specs/settings-management",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8346,9 +8363,10 @@
 				"evidence": "lib/Middleware/PublicApiCorsMiddleware.php:54,61 registered appinfo/../lib/AppInfo/Application.php:128; PATHS regex anchors CORS headers to /api/(content|traffic)(/|$|-client.js$|-recorder.js$) only, so no unrelated public route in this app gets opened by accident",
 				"reachedOn": "docusaurus-plugin-portaliq (external frontend, not in this repo) and any statically built portal reading /api/content or posting to /api/traffic cross-origin",
 				"owner": "ConductionNL/portaliq",
-				"note": "Deliberately narrow allowlist by path pattern, not a blanket CORS policy on the whole /api/ surface.",
+				"note": "Deliberately narrow allowlist by path pattern, not a blanket CORS policy on the whole /api/ surface. Specified in the open change portal-traffic-analytics, requirement 'Cross-origin posting MUST work without a preflight', which lib/Middleware/PublicApiCorsMiddleware.php cites.",
 				"origin": "code",
-				"spec": "none"
+				"change": "portal-traffic-analytics",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8638,9 +8656,10 @@
 				"evidence": "lib/Service/Notifications/MessageBoxChannel.php queues lib/BackgroundJob/MessageBoxDispatchJob.php for a new message in an inbox collection declaring messageBox.recipientProvider, when the organisation's presentation settings carry messageBox {sourceId, label} and the resident did not switch it off; lib/Service/Notifications/MessageBoxSender.php asks the case app's provider for the recipient and dispatches integriq's DigitalPostSendRequestedEvent, logging a portalNotification row (channel messageBox) without the recipient; lib/Listener/PortalDigitalPostDeliveredListener.php records integriq's DigitalPostDeliveredEvent (simulated stays simulated); lib/Service/Notifications/MessageBoxDeliveries.php + src/portal/components/InboxPage.jsx show 'Also sent to {label}.' once delivered; NotificationSettings.jsx 'Also send letters to {label}'",
 				"reachedOn": "resident: Inbox, the delivery line under a message and the settings row, in an organisation that offers the channel",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is done (archived change 2026-09-29-inbox-berichtenbox-channel). Not built end to end: no case app names a recipient yet, owed by ConductionNL/dossiq (messageBox on its berichten inbox collection and a messageBoxRecipient method, ConductionNL/dossiq#3192), and integriq's live binding to the message box is its open change berichtenbox-digital-post-adapter, so every send is simulated or refused today and the resident sees no delivery line.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived inbox-berichtenbox-channel), and dossiq's half has landed: its berichten collection declares messageBox.recipientProvider (dossiq lib/Portal/CitizenManifest.php:181, PortalContributionProvider.php:365 messageBoxRecipient; dossiq#3192 closed). Still missing: integriq's live binding to the message box, its open change berichtenbox-digital-post-adapter; integriq's BerichtenboxClientUnavailable refuses a send without the Logius configuration. Stays building.",
 				"origin": "code",
-				"change": "2026-09-29-inbox-berichtenbox-channel"
+				"change": "2026-09-29-inbox-berichtenbox-channel",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8679,9 +8698,10 @@
 				"evidence": "src/portal/components/SigningDialog.jsx shows the document fetched through the viewDocument row action, keeps Sign disabled until the resident ticks that they read it, then sends {consent: true} through the row-scoped forward (PortalRowActionController, scope claim in the signed assertion since PR 833); src/portal/components/DeclineDialog.jsx sends {reason}; opened from PageView.jsx for the sign and decline row actions; tests/signing-dialog.spec.mjs",
 				"reachedOn": "a filinq signer's 'Documents awaiting my signature' collection in the portal SPA, Sign and Decline to sign row buttons",
 				"owner": "ConductionNL/portaliq",
-				"note": "The portaliq half is done (archived change 2026-09-28-case-actions-sign-a-document). Not built end to end: filinq's sign and decline actions declare no `fields`, so consent and reason do not reach the receiver, and viewDocument is not a row action, so the dialog says the document cannot be shown and offers no sign button. Owed by ConductionNL/filinq: sign fields [consent], decline fields [reason], viewDocument as a row action with rowField signingRequestId and scopeClaim signerEmail. Tracked in ConductionNL/filinq#1256 (filed 2026-09-28); filinq PR 1229 added rowField and scopeClaim to sign and decline only.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived case-actions-sign-a-document): src/site/modals/c/SigningDialog.vue and DeclineDialog.vue, opened from src/site/components/c/RowActionDialog.vue. Still owed by filinq, ConductionNL/filinq#1256 open: its signer collection's rowActions (filinq lib/Portal/PortalContributionProvider.php:378-392) carry no fields, so consent and reason never reach the receiver, and viewDocument is an action, not a row action (:444). Stays building.",
 				"origin": "code",
-				"change": "2026-09-28-case-actions-sign-a-document"
+				"change": "2026-09-28-case-actions-sign-a-document",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8702,7 +8722,7 @@
 			"id": "dem-tnd-reminders-overdue",
 			"area": "tasks",
 			"name": "Get automatic reminders when information or documents the organisation asked you for are overdue.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -8716,13 +8736,14 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/using-task-timers 'When a review task is idle for three days, the timer now reminds task assignees ... The reminder notification repeats daily'. A resident's outstanding request would have to be modelled as a workflow task assigned to them. [was unknown; custom: request-for-information task model]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "lib/BackgroundJob/PortalTaskDeliveryJob.php delivers kind overdue: inbox subject 'Your task is overdue: {title}', body 'This task was due on {date}.' plus the optional consequence line, mail 'Your task in the portal of {organisation} is overdue'; an unknown kind is marked failed; tests/Unit/BackgroundJob/PortalTaskDeliveryJobTest.php over openregister's real PortalTaskDelivery entity. Before the deadline: openregister lib/Listener/PortalTaskReminderListener.php preBreach rung -> KIND_REMINDER.",
-				"reachedOn": "flow timer -> openregister delivery ledger -> PortalTaskDeliveryJob (cron, appinfo/info.xml:81) -> portalMessage in InboxPage.jsx with 'View task' deep link -> TasksPage.jsx; plus a privacy-minimal mail",
+				"state": "built",
+				"evidence": "lib/BackgroundJob/PortalTaskDeliveryJob.php:121 and :163 deliver kind overdue to the inbox ('Your task is overdue') and by mail. openregister now records it: lib/Listener/PortalTaskReminderListener.php:148 maps a postBreach rung addressed to the party to PortalTaskDelivery::KIND_OVERDUE (lib/Db/PortalTaskDelivery.php:97) with the consequence line (ConductionNL/openregister#4166 closed 29 Sep). Before the deadline: preBreach -> KIND_REMINDER.",
+				"reachedOn": "flow timer postBreach rung -> openregister delivery ledger -> PortalTaskDeliveryJob (cron) -> Inbox message with 'View task' -> Tasks page",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq's half built 2026-09-29 (tasks-reminders-after-the-deadline): an overdue row reaches the inbox and the mail worded as overdue. Not reachable yet: openregister records no overdue row (only a preBreach rung becomes a party delivery; slaBreached escalates inward). Owed by openregister: a postBreach rung addressed to the party, KIND_OVERDUE and the listener branch, ConductionNL/openregister#4166.",
+				"note": "Re-read 2026-10-07: built end to end. An organisation's escalation ladder needs a postBreach rung that notifies the performer (configuration, openregister lib/Settings/flow_timer_register.json:319); no case app ships one by default.",
 				"origin": "code",
-				"change": "2026-09-29-tasks-reminders-after-the-deadline"
+				"change": "2026-09-29-tasks-reminders-after-the-deadline",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9162,9 +9183,10 @@
 				"evidence": "lib/Service/OidcClaimMapperService.php branchOf() reads claimMap.branch (12 digits, lib/Service/Branch/BranchNumber.php); PortalSessionService::issueSession(branch:) signs branch + branchRestricted, refreshSession keeps them; lib/Service/Branch/PortalBranchScope.php filters ContributionController::collection()/object(), PortalCaseListReader (My cases) and CitizenCaseController, stamps branchField on create; header text src/portal/lib/branch.js in App.jsx. Missing: dossiq declares branchField (for-ruben/dossiq-branch-field-on-business-cases.md), integriq envelope carries the branch (for-ruben/integriq-broker-envelope-carries-the-branch.md), and the whole-company user's branch choice (T05/T06, needs the KvK branch list of identity-registered-details). Branch choice (30 Sep): a whole-company session lists the company's KvK branches (GET /portal/api/session/branches, BranchChoice over identity-registered-details) and narrows to one or back to the whole company (POST /portal/api/session/branch, PortalSessionService::rebranchSession, refused for a restricted session or a foreign branch); header control src/portal/components/BranchSwitcher.jsx.",
 				"reachedOn": "after an OIDC eHerkenning login whose broker sends the claim named in claimMap.branch: the portal header and My cases",
 				"owner": "ConductionNL/portaliq",
-				"note": "A login restricted to one branch gives a session restricted to it (signin-eherkenning-branch part 1, 30 Sep 2026). The choice of a branch by a whole-company user is not built yet.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived signin-eherkenning-branch, all tasks including T05/T06): a restricted login gives a restricted session, a whole-company user chooses a branch in src/site/components/BranchSwitcher.vue (mounted in src/site/App.vue:92), lib/Service/Branch/PortalBranchScope.php filters the lists. Integriq's envelope now carries the branch (integriq lib/Auth/Idp/IdpLoginService.php:320, REQ-IDP-004) but waits on the broker vendor (integriq#1495). No case app declares branchField (dossiq has none), so a branch session lists no cases. Stays building.",
 				"origin": "code",
-				"change": "2026-09-30-signin-eherkenning-branch"
+				"change": "2026-09-30-signin-eherkenning-branch",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
