@@ -98,3 +98,33 @@ A `cases` collection MAY declare `statusLabelField`. The normaliser MUST keep it
 - WHEN the manifest is normalised
 - THEN the collection has no `statusLabelField`
 - @e2e exclude pinned by `PortalManifestNormaliserTest::testAStatusLabelFieldIsKeptOnlyWhenItNamesAProjectedField`
+
+### Requirement: A case on "My cases" shows its status in words, never a code
+
+Each case on the site's "My cases" page MUST show its status as the status's public label when the contributing app projects one (`statusPublicLabel`, else `statusLabel`), else the `status` value itself. A value that is a uuid MUST NOT be shown: the row then shows no status. No other identifier of the case (its case type, its status type) MUST appear in the row.
+
+#### Scenario: A Woo request in dossiq
+- GIVEN a case with `status: 3c0f5a00-...-b001` (the status type's uuid) and `statusPublicLabel: "Ontvangen"`
+- WHEN the resident opens "Mijn zaken"
+- THEN the row reads the title, "Dossiq" and "Ontvangen", and no uuid
+- @e2e exclude pinned by `tests/my-cases-page.spec.mjs` ("site: a case row shows the status label and no uuid")
+
+#### Scenario: A status known only by its uuid
+- GIVEN a case whose only status value is a uuid
+- WHEN the row renders
+- THEN it shows no status
+- @e2e exclude pinned by `tests/my-cases-page.spec.mjs` ("a case status reads as its public label, never as a uuid")
+
+### Requirement: My cases MUST name each case's type (REQ-SMO-030)
+
+For a `cases` collection that declares `caseTypeSource`, the case list MUST stamp the case type's name on each own and mandated row as `_caseTypeName`, read once per list. "Mijn zaken" MUST show it with the case. A row whose type does not resolve MUST show no type, and MUST NOT show the type's id.
+
+#### Scenario: A Woo request names its type
+- GIVEN dossiq's `mijnZaken` declares `caseTypeSource` and a case of type "Woo-verzoek"
+- WHEN the resident opens "Mijn zaken"
+- THEN the case shows "Woo-verzoek" and no uuid
+
+#### Scenario: An unknown type stays silent
+- GIVEN a case whose type id is not in the case type source
+- WHEN "Mijn zaken" renders
+- THEN the case shows no type
