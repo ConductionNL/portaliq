@@ -183,3 +183,72 @@ A change rule MAY declare `messages`, a map from a new value of its field to a `
 - **WHEN** portaliq aggregates the contributions
 - **THEN** the rule is dropped and the warning names the field
 - @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsAForeignClaimAMalformedRecipientAndAnUnprojectedPlaceholder
+
+### Requirement: A resident can delete their own inbox messages
+
+A resident MUST be able to delete one or several of their own inbox messages. Portaliq's own notices MAY always be deleted; a message in an app's inbox MAY be deleted only when its collection declares `deletable: true`. The server MUST check that the (register, schema) is an inbox the resident may read, MUST check the trust level again, and MUST delete a row only when its scope field holds the resident's own reference alone and its tenant matches. Another resident's message, a message shared with someone else and an unknown id MUST answer the same 404 with nothing deleted. The page MUST ask for confirmation on the page itself before deleting, never with a browser dialog, and MUST say afterwards what was deleted or that a message could not be deleted.
+
+#### Scenario: A parent deletes one message after confirming
+- GIVEN a parent with a notice in Berichten
+- WHEN she presses "Verwijderen" and then "Ja, verwijderen"
+- THEN the notice is gone from her inbox and the page says "Het bericht is verwijderd."
+- @e2e exclude pinned by the node tests in `tests/inbox-delete.spec.mjs` and `ContributionControllerTest::testDeleteMessageRemovesTheResidentsOwnNotice`; the live check on :8090 is in the PR
+
+#### Scenario: Cancel deletes nothing
+- GIVEN the question is on the page
+- WHEN the parent presses "Annuleren"
+- THEN nothing is deleted
+- @e2e exclude pinned by the node test "deleting one message asks first on the page, and Cancel deletes nothing"
+
+#### Scenario: Several messages at once
+- GIVEN three notices
+- WHEN the parent chooses "Alles selecteren", "Geselecteerde verwijderen (3)" and confirms
+- THEN all three are deleted and the unread count follows
+- @e2e exclude pinned by the node test "deleting the selected messages removes them, updates the count and says so"
+
+#### Scenario: Another resident's message is never deleted
+- GIVEN a message id that belongs to another resident, or is shared with one
+- WHEN a parent sends a delete for it
+- THEN the answer is 404 and nothing is deleted
+- @e2e exclude pinned by `PortalObjectWriterDeleteTest::testItNeverDeletesARowThatIsNotTheSubjectsAlone` and `ContributionControllerTest::testDeleteMessageOfAnotherResidentIs404`
+
+#### Scenario: An app's inbox decides
+- GIVEN an app's inbox collection without `deletable: true`
+- WHEN a parent sends a delete for one of its messages
+- THEN the answer is 403 and the page offers no delete for it
+- @e2e exclude pinned by `ContributionControllerTest::testDeleteMessageFromAnAppsInboxNeedsItsConsent` and `PortalInboxReaderTest::testEachRowSaysWhetherTheResidentMayDeleteIt`
+
+### Requirement: Portaliq's own notices reach the resident's inbox (REQ-NAP-009)
+
+The inbox SHALL include the resident's own `portalMessage` notices, whether or
+not a contribution declares an inbox collection over them. They SHALL be read on
+`subjectRef` with the bearer session's own reference, under the same
+organisation rule as every other inbox source, and SHALL show their subject,
+body, date, read state and record link. A notice that a declared inbox
+collection also returns SHALL appear once. Marking such a notice read SHALL
+write only `read`, on the bearer's own notice.
+
+#### Scenario: An answered question reaches the inbox
+- **GIVEN** a resident who asked a question from a dossier
+- **WHEN** the KCC employee posts the answer
+- **THEN** the resident's inbox serves an unread notice linking to the question
+- **AND** after the resident marks it read, the inbox serves it as read
+- e2e: `tests/e2e/woo-journey.spec.ts` J4
+
+#### Scenario: A matched saved search reaches the inbox
+- **GIVEN** a resident with a daily saved search
+- **WHEN** a new publication matches it
+- **THEN** the resident's inbox serves an unread notice linking to the search
+- e2e: `tests/e2e/woo-journey.spec.ts` J6
+
+#### Scenario: Another resident's notice never appears
+- **GIVEN** a notice written for another resident
+- **WHEN** a resident reads their inbox
+- **THEN** that notice is not in it
+- @e2e exclude pinned by PortalInboxReaderTest::testAnotherSubjectsPortalMessageNeverAppears; the per-row check is PortalObjectReader's own
+
+#### Scenario: A contributed inbox still merges
+- **GIVEN** a case app that declares an inbox collection
+- **WHEN** the resident reads their inbox
+- **THEN** its messages and portaliq's own notices are in one list, newest first
+- @e2e exclude pinned by PortalInboxReaderTest::testAResidentSeesTheirOwnPortalMessagesAlongsideAContributedInbox

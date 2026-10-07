@@ -1268,6 +1268,98 @@ When portaliq asks an app for its contribution, the app MUST see the portal's la
 - THEN it translates them to Dutch, and after the call the request no longer forces a language
 - @e2e exclude pinned by `ContributionLanguageTest::testTheRegistryAsksEachProviderInThePortalsLanguage`; the mechanism was checked against Nextcloud 34's own L10N factory (forced `nl` translates core "Settings" as "Instellingen", and the next lookup is English again)
 
+### Requirement: A column may show a Nextcloud user by name
+
+A collection column MAY declare `"render": "user"`, meaning its value is a Nextcloud user id or a list of user ids. Portaliq MUST replace each such value with that user's display name on the server, in the collection list and in the single-object read, before the row is answered. A value that names no user on the instance, or that is not a user id, MUST be answered as `''`. The user id MUST NOT appear in the answer.
+
+#### Scenario: A parent reads the teacher's name
+- GIVEN learniq declares the column `{ "field": "handledBy", "render": "user" }` on a guardian's absence reports
+- AND a report's `handledBy` is the user id `po-leerkracht-09`, whose display name is "Meester Jansen"
+- WHEN the guardian opens the absence reports
+- THEN the column reads "Meester Jansen" and the answer holds no `po-leerkracht-09`
+- @e2e exclude pinned by `ContributionControllerUserNamesTest` (list and object answers); a browser sees only the name, which any text column also shows
+
+#### Scenario: A value that names no user
+- GIVEN a `render: "user"` value that names no user on the instance
+- WHEN the row is answered
+- THEN the value is `''`
+- @e2e exclude pinned by `PortalUserDisplayNamesTest::testValuesBecomeNamesAndNothingElseLeaks`
+
+### Requirement: A column and a form field may declare how their values read
+
+A contribution collection column MAY declare `valueLabels`, and so MAY an action's field config: a map from a raw value to the label a resident reads. The normaliser MUST keep only string labels that are not blank, on string or integer keys. It MUST drop a value longer than 100 characters, a label longer than 200, and every entry after the hundredth. It MUST drop the key when nothing usable is left. The site MUST show a column's label for a value in its table cell and on the detail card, and MUST show the value as before when it has no label. When portaliq offers a field's schema `enum` or `oneOf` as a select, a declared label MUST win over the generated label and the `oneOf` title. The option MUST still submit the raw value. A label MUST NOT add a value the schema does not offer.
+
+#### Scenario: A guardian reads the status of an absence report in Dutch
+- GIVEN learniq's `parentExcuseRequests` column `lifecycle` declares `valueLabels: {"approved": "Goedgekeurd", "submitted": "Ingediend"}`
+- AND a report with `lifecycle: approved`
+- WHEN the guardian opens "Afwezigheidsmeldingen van mijn kind" on the site
+- THEN the status cell reads "Goedgekeurd"
+- AND a status without a label reads as the stored value
+- @e2e exclude cell and detail rendering pinned by `tests/value-labels.spec.mjs`; the live check on the primary-school instance is in the PR
+
+#### Scenario: The absence form offers its kinds in Dutch and submits the raw value
+- GIVEN the action `createExcuseRequest` field config `reasonKind` declares `valueLabels: {"illness": "Ziekte"}`
+- AND the schema property `reasonKind` has `enum: ["illness", "medical-appointment"]`
+- WHEN the manifest is normalised
+- THEN the select offers `{value: "illness", label: "Ziekte"}` and `{value: "medical-appointment", label: "Medical appointment"}`
+- @e2e exclude pinned by `ValueLabelsNormaliserTest::testAFieldsValueLabelsLabelItsEnumOptions`
+
+#### Scenario: A malformed map is dropped
+- GIVEN a column declaring `valueLabels: "approved"`, or a map whose labels are not strings
+- WHEN the manifest is normalised
+- THEN the column keeps its field, label and render, without `valueLabels`
+- @e2e exclude pinned by `ValueLabelsNormaliserTest::testAColumnKeepsItsValueLabels` and `::testTheMapIsFailClosed`
+
+### Requirement: A create writes through the action it names
+
+A create MUST be matched to the subject's `create` action by the id the client sends as `actionId`, among the actions declared for the requested register and schema. An id that matches none of them MUST be refused with 403 and nothing written. When no id is sent, a single matching action MUST be used as before, and two or more MUST be refused with 400 `action_required` and nothing written. The portal frontend MUST send the id of the action whose form was filled in.
+
+#### Scenario: A complaint is filed as a complaint
+
+- GIVEN two create actions on one schema, a request form and a complaint form with different `defaults`
+- WHEN a resident submits the complaint form
+- THEN the object is written with the complaint form's defaults and whitelist
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testCreateWritesThroughTheActionItNames` and `tests/create-names-its-action.spec.mjs`
+
+#### Scenario: An unknown action id is refused
+
+- GIVEN a create naming an id the subject has no create action for on that register and schema
+- WHEN it is submitted
+- THEN the answer is 403 and nothing is written
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testCreateNamingAnUnknownActionIsRefused`
+
+#### Scenario: Two actions and no id is refused, not guessed
+
+- GIVEN two create actions on one schema
+- WHEN a create arrives without an action id
+- THEN the answer is 400 `action_required` and nothing is written
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testCreateWithoutAnIdBetweenTwoActionsIsRefusedNotGuessed`
+
+#### Scenario: One action and no id keeps working
+
+- GIVEN exactly one create action on a schema
+- WHEN a create arrives without an action id
+- THEN it is written through that action
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testCreateWithoutAnIdAndOneActionStillWorks`
+
+### Requirement: An anonymous create writes through the form it names
+
+An anonymous create (no portal session) MUST be matched the same way, among the `anonymous: true` create actions for the requested register and schema only. Every active landing-page form is its own anonymous create action on `landingPageSubmission` (`submit-{formId}`), so the site's landing-page form MUST send its action id. An id that names no anonymous create action on the target MUST be refused with 403, also when it names a signed-in action, and two or more anonymous actions without an id MUST be refused with 400 `action_required`. Nothing is written in either case.
+
+#### Scenario: A second form's answers are filed under the second form
+
+- GIVEN two active landing-page forms
+- WHEN a visitor submits the second one
+- THEN the submission is written with the second form's whitelist and `formId`
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testAnonymousCreateWritesThroughTheFormItNames` and `tests/create-names-its-action.spec.mjs` (FormBlock)
+
+#### Scenario: An unknown or unnamed form is refused
+
+- GIVEN two active landing-page forms
+- WHEN an anonymous create names neither, or names none
+- THEN the answer is 403, or 400 `action_required`, and nothing is written
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testAnonymousCreateNamingNoFormOrAnUnknownOneIsRefused` and `::testAnonymousCreateNamingASignedInActionIsRefused`
+
 ## Non-Functional Requirements
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`
