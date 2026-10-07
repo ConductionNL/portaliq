@@ -2197,9 +2197,9 @@
 				"evidence": "src/portal/components/ActingForSwitcher.jsx ('Namens' in the portal header) sends the chosen mandate as mandate=<id> on GET /portal/api/my-cases (MyCasesController: party tree, group_too_large refusal shown as a sentence); lib/Service/MandatedCaseReader.php opens a case listed under that mandate read-only on the case screen (CitizenCaseController::show)",
 				"reachedOn": "resident or business user: portal header 'Namens' -> 'Mijn zaken'",
 				"owner": "ConductionNL/portaliq",
-				"note": "Re-read 2026-10-07. Portaliq's half is built (archived cases-my-cases-page): MyCasesController.php:54-56 takes a mandate value, src/site/components/e/ActingForSwitcher.vue in the site header (src/site/App.vue:90), lib/Service/MandatedCaseReader.php opens a mandated case read-only. No case app declares mandateField on its kind: cases collection yet (dossiq CitizenManifest.php has none), so a mandate lists no case. Stays building.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived cases-my-cases-page): MyCasesController.php:54-56 takes a mandate value, src/site/components/e/ActingForSwitcher.vue in the site header (src/site/App.vue:90), lib/Service/MandatedCaseReader.php opens a mandated case read-only. No case app declares mandateField on its kind: cases collection yet (dossiq CitizenManifest.php has none), so a mandate lists no case. Stays building. Missing half specified in dossiq/site-business-and-authorisation (spec round part 3, 2026-10-07); delivered half: 2026-09-29-cases-my-cases-page.",
 				"origin": "code",
-				"change": "2026-09-29-cases-my-cases-page",
+				"change": "dossiq/site-business-and-authorisation",
 				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
@@ -8656,9 +8656,9 @@
 				"evidence": "lib/Service/Notifications/MessageBoxChannel.php queues lib/BackgroundJob/MessageBoxDispatchJob.php for a new message in an inbox collection declaring messageBox.recipientProvider, when the organisation's presentation settings carry messageBox {sourceId, label} and the resident did not switch it off; lib/Service/Notifications/MessageBoxSender.php asks the case app's provider for the recipient and dispatches integriq's DigitalPostSendRequestedEvent, logging a portalNotification row (channel messageBox) without the recipient; lib/Listener/PortalDigitalPostDeliveredListener.php records integriq's DigitalPostDeliveredEvent (simulated stays simulated); lib/Service/Notifications/MessageBoxDeliveries.php + src/portal/components/InboxPage.jsx show 'Also sent to {label}.' once delivered; NotificationSettings.jsx 'Also send letters to {label}'",
 				"reachedOn": "resident: Inbox, the delivery line under a message and the settings row, in an organisation that offers the channel",
 				"owner": "ConductionNL/portaliq",
-				"note": "Re-read 2026-10-07. Portaliq's half is built (archived inbox-berichtenbox-channel), and dossiq's half has landed: its berichten collection declares messageBox.recipientProvider (dossiq lib/Portal/CitizenManifest.php:181, PortalContributionProvider.php:365 messageBoxRecipient; dossiq#3192 closed). Still missing: integriq's live binding to the message box, its open change berichtenbox-digital-post-adapter; integriq's BerichtenboxClientUnavailable refuses a send without the Logius configuration. Stays building.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived inbox-berichtenbox-channel), and dossiq's half has landed: its berichten collection declares messageBox.recipientProvider (dossiq lib/Portal/CitizenManifest.php:181, PortalContributionProvider.php:365 messageBoxRecipient; dossiq#3192 closed). Still missing: integriq's live binding to the message box, its open change berichtenbox-digital-post-adapter; integriq's BerichtenboxClientUnavailable refuses a send without the Logius configuration. Stays building. Missing half specified in integriq/berichtenbox-digital-post-adapter (spec round part 3, 2026-10-07); delivered half: 2026-09-29-inbox-berichtenbox-channel.",
 				"origin": "code",
-				"change": "2026-09-29-inbox-berichtenbox-channel",
+				"change": "integriq/berichtenbox-digital-post-adapter",
 				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
