@@ -698,9 +698,10 @@
 				"evidence": "lib/Controller/SessionController.php:524-593 nextcloud(); src/site/lib/authApi.js:170-196 signInRoutes() emits a nextcloud entry when the portal's authentication.modes includes it",
 				"reachedOn": "public site sign-in menu (src/site/App.vue:78-99 -> signInRoutes computed at App.vue:746-747) -> GET /portal/api/session/nextcloud",
 				"owner": "ConductionNL/portaliq",
-				"note": "Reached from the site renderer; the portal React SPA itself has no nextcloud button, only OIDC + dev-login (App.jsx:313-328), so this route is a site-only affordance.",
+				"note": "Reached from the site renderer's sign-in menu. Specified after the fact on 7 Oct 2026 (openspec/specs/portal-nextcloud-account-login): only an existing, active portal account, trust low, refused when the portal does not declare the nextcloud mode.",
 				"origin": "code",
-				"spec": "none"
+				"spec": "openspec/specs/portal-nextcloud-account-login",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2337,10 +2338,10 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "portaliq#732 (266328d, fixes #723): src/portal/components/TimelineList.jsx renders the entries newest first inside the DetailCard (src/portal/components/PageView.jsx:284); lib/Controller/PortalTimelineController.php:93 show(); appinfo/routes.php:298 GET /portal/api/collections/{register}/{schema}/{id}/timeline; src/portal/components/CitizenCase.jsx:155-158 the current public status",
+				"evidence": "portaliq#732 (fixes #723): lib/Controller/PortalTimelineController.php show() at GET /portal/api/collections/{register}/{schema}/{id}/timeline (appinfo/routes.php:388) proves the record is the subject's, then lib/Service/PortalTimelineReader.php:70 calls the provider the collection declares; src/site/components/collections/TimelineList.vue on the record's DetailCard and src/site/components/mijn/TimelineBlock.vue show the entries newest first (src/site/components/collections/timeline.js newestFirst). dossiq declares timeline.provider caseTimeline on its case collection.",
 				"reachedOn": "Mijn zaken: select a case row -> detail block -> the case history the case app declares, and the case screen shows the current status",
 				"owner": "ConductionNL/portaliq",
-				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: shipped after the rating with portaliq#732 (fixes issue #723, commit 69ca851, no change directory). Which steps show is the case app's decision: portaliq renders what the declared timeline provider returns.",
+				"note": "Specified after the fact on 7 Oct 2026 (openspec/specs/case-timeline). Which entries show is the case app's decision; portaliq passes them on as they came. The case's steps ('Waar staat uw aanvraag?', GET .../steps) are in the open change site-mijn-omgeving-components.",
 				"origin": "competitor",
 				"prs": [
 					{
@@ -2349,7 +2350,8 @@
 						"sha": "266328d4d95cda118bd22bb4b65077c34d54ceea"
 					}
 				],
-				"spec": "none"
+				"spec": "openspec/specs/case-timeline",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8149,7 +8151,7 @@
 				"evidence": "src/manifest.json:143-153 Store page, type 'store', app: portaliq; appinfo/routes.php:27-46 registers store#search (GET /api/store/items) and store#install (POST /api/store/items/{slug}/install) verbatim from OpenRegister's Routes::standard(), aliased by lib/AppInfo/StorePlaneRegistrar.php to OpenRegister's GenericStoreController; portaliq ships NO StoreController of its own",
 				"reachedOn": "confirmed via the shared component's own source: nextcloud-vue src/components/CnStorePage/CnStorePage.vue:562,604 fetches /apps/{app}/api/store/items and POSTs .../install. The Store page's manifest type resolves to this shared component, which resolves the endpoint itself using the app id from its own config, exactly the pattern the lane brief asked to check before concluding 'no caller'.",
 				"owner": "ConductionNL/openregister",
-				"note": "routes.php's own comments record the FAILURE MODE this shipped to fix: without these two route entries, the SPA catch-all answered 200 HTML and the page read 'The store registry did not answer' (WOO-559) with nothing erroring. Search is reachable by any signed-in user (one tier below the rest of this app's admin-only /api/), accepted not chosen, because OpenRegister's store-plane engine has no searchAuth key to narrow it further.",
+				"note": "routes.php's own comments record the FAILURE MODE this shipped to fix: without these two route entries, the SPA catch-all answered 200 HTML and the page read 'The store registry did not answer' (WOO-559) with nothing erroring. Search is reachable by any signed-in user (one tier below the rest of this app's admin-only /api/), accepted not chosen, because OpenRegister's store-plane engine has no searchAuth key to narrow it further. Stays spec none (7 Oct 2026, decision 81): the store backend is OpenRegister's GenericStoreController and the page is nextcloud-vue's CnStorePage; portaliq only aliases the two routes.",
 				"origin": "code",
 				"spec": "none"
 			},
@@ -8185,9 +8187,10 @@
 				"evidence": "lib/Controller/PreferencesController.php:72 getPreference(string $key), :111 setPreference(); routes GET/PUT /api/preferences/{key} (appinfo/routes.php:23-24), comment: 'used by shared nextcloud-vue widgets, e.g. CnSupportDialog'",
 				"reachedOn": "nextcloud-vue CnAppRoot.vue:1169,1480 reads/writes the app's /api/preferences/support-dialog-seen endpoint (with a localStorage fallback) to track whether the support dialog was already shown",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same pattern as ops-setup-wizard and ops-store-page: the caller lives in the shared nextcloud-vue component, not in this repo's own src/, which is why the lane's frontend-api-paths.txt extraction (scoped to this repo) missed it.",
+				"note": "The caller lives in the shared nextcloud-vue component (CnAppRoot). The endpoint was already specified: settings-management REQ-CFG-005 (read) and REQ-CFG-006 (write), which lib/Controller/PreferencesController.php cites; the spec round of 7 Oct missed it because the spec numbers its requirements without the 'Requirement:' heading.",
 				"origin": "code",
-				"spec": "none"
+				"spec": "openspec/specs/settings-management",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8360,9 +8363,10 @@
 				"evidence": "lib/Middleware/PublicApiCorsMiddleware.php:54,61 registered appinfo/../lib/AppInfo/Application.php:128; PATHS regex anchors CORS headers to /api/(content|traffic)(/|$|-client.js$|-recorder.js$) only, so no unrelated public route in this app gets opened by accident",
 				"reachedOn": "docusaurus-plugin-portaliq (external frontend, not in this repo) and any statically built portal reading /api/content or posting to /api/traffic cross-origin",
 				"owner": "ConductionNL/portaliq",
-				"note": "Deliberately narrow allowlist by path pattern, not a blanket CORS policy on the whole /api/ surface.",
+				"note": "Deliberately narrow allowlist by path pattern, not a blanket CORS policy on the whole /api/ surface. Specified in the open change portal-traffic-analytics, requirement 'Cross-origin posting MUST work without a preflight', which lib/Middleware/PublicApiCorsMiddleware.php cites.",
 				"origin": "code",
-				"spec": "none"
+				"change": "portal-traffic-analytics",
+				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
