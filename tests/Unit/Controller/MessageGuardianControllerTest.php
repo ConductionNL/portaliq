@@ -26,6 +26,7 @@ use OCA\Portaliq\Controller\MessageGuardianController;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
+use OCA\Portaliq\Service\Messaging\MessageContactReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -165,4 +166,44 @@ class MessageGuardianControllerTest extends TestCase {
 		$this->assertSame('De school is morgen dicht.', $response->getData()[0]['body']);
 		$this->assertArrayNotHasKey('translation', $response->getData()[0]);
 	}
+
+	private function contactsController(?array $subject, ?MessageContactReader $contacts): MessageGuardianController {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn($subject);
+
+		return new MessageGuardianController($request, $session, $this->createMock(GuardianMessagingLeafInterface::class), null, null, $contacts);
+	}//end contactsController()
+
+	public function testContactsFailsClosedWithoutAResolvedSubject(): void {
+		$contacts = $this->createMock(MessageContactReader::class);
+		$contacts->expects($this->never())->method('contactsFor');
+
+		$response = $this->contactsController(null, $contacts)->contacts();
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(['error' => 'unauthorized'], $response->getData());
+	}//end testContactsFailsClosedWithoutAResolvedSubject()
+
+	public function testContactsIsEmptyWithoutAContactReader(): void {
+		$response = $this->contactsController(['subjectRef' => 'resident-1'], null)->contacts();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['composeLabel' => '', 'composeHint' => '', 'contacts' => []], $response->getData());
+	}//end testContactsIsEmptyWithoutAContactReader()
+
+	public function testContactsReturnsWhatTheReaderNamesForTheSubject(): void {
+		$subject  = ['subjectRef' => 'resident-1'];
+		$expected = ['composeLabel' => 'Schrijf de school', 'composeHint' => 'Kies de leerkracht', 'contacts' => [['staffRef' => 'staff-1', 'recordRef' => 'child-1']]];
+
+		$contacts = $this->createMock(MessageContactReader::class);
+		$contacts->expects($this->once())->method('contactsFor')->with($subject)->willReturn($expected);
+
+		$response = $this->contactsController($subject, $contacts)->contacts();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame($expected, $response->getData());
+	}//end testContactsReturnsWhatTheReaderNamesForTheSubject()
 }//end class
