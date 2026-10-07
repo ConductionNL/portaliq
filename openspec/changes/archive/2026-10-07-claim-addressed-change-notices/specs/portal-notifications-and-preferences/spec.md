@@ -33,6 +33,18 @@ A contribution's `notifications` list SHALL accept, next to plain rule keys, a r
 - **THEN** the rule is dropped, and the listener does not act on it even when handed it unnormalised
 - @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsARuleOnAViaCollection and ClaimAddressedChangeNoticeTest::testWithoutRecipientsAViaRuleStaysSilent
 
+#### Scenario: A plain key nothing fires is dropped
+- **GIVEN** a supplier app declaring `notifications: ["tenderPublished", "message.created", "dossiq.invoiceDue"]` as app `dossiq`
+- **WHEN** portaliq aggregates the contributions
+- **THEN** `message.created` and `dossiq.invoiceDue` are kept, `tenderPublished` is dropped, and a warning names the app and says how to declare the key
+- @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsABareKeyNothingFires, ::testKeepsKeysSomethingFires and ::testLogsADroppedKeyWithTheApp
+
+#### Scenario: Another app's key is dropped
+- **GIVEN** app `opencatalogi` declaring `pipelinq.question.answered`
+- **WHEN** portaliq aggregates the contributions
+- **THEN** the key is dropped: a portalMessage carrying it is dispatched for `pipelinq` only, so it never fires for `opencatalogi`
+- @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsAnotherAppsKeyAndTheKeyOfADroppedRule
+
 ## ADDED Requirements
 
 ### Requirement: A change rule may reach residents by a claim (REQ-NAP-012)

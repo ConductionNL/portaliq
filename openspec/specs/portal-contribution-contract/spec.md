@@ -1076,6 +1076,648 @@ this item. Portaliq SHALL NOT read, compute or send an amount.
 - THEN the guardian reads that the step is not available now and stays on the list
 - @e2e exclude A provider state the test instance cannot switch; asserted by tests/row-action.spec.mjs::outcome maps each status to one message.
 
+### Requirement: A cell holding a list shows one value per line
+
+When a collection cell's value is a list of plain values (strings or numbers), the portal table and the site table MUST show each value on its own line, never joined with a comma. Values that are not lists MUST render as before.
+
+#### Scenario: Report card grades read one per line
+- GIVEN a report card row whose `gradeLines` is `["Rekenen: 7,9", "Taal: 8,3"]`
+- WHEN a guardian opens "My child's report cards"
+- THEN "Rekenen: 7,9" and "Taal: 8,3" appear on separate lines
+- @e2e exclude pinned by `tests/array-cells.spec.mjs` (portal render and site formatter); live-checked on the primary-school instance
+
+### Requirement: An attached action MUST be able to name one collection and its own app (REQ-ATO-001)
+
+An endpoint action whose `attachTo` carries a `collection` SHALL be listed in
+`attachedActions` only on that collection of `attachTo.app` (and schema). A
+`collection` that is not a plain name SHALL attach nothing. `attachTo.app` MAY
+be the declaring app itself. A forward that names `actionApp` SHALL be
+authorised as an attached action, whatever app it names, so an action attached
+to its own app's collection forwards without being one of that collection's
+`rowActions`.
+
+#### Scenario: pipelinq's reply lands on the questions only
+- **GIVEN** pipelinq offers `replyToQuestion` with `attachTo: { app: "pipelinq", schema: "ticket", collection: "myQuestions" }` and has collections `ownRequests` and `myQuestions` on `ticket`
+- **WHEN** the aggregate is resolved
+- **THEN** `myQuestions` lists `replyToQuestion` and `ownRequests` does not
+- test: PHPUnit `tests/Unit/Contribution/AttachedActionResolverTest.php` ("attach to collection narrows to that collection")
+
+#### Scenario: The reply is forwarded with the proven question
+- **GIVEN** the resident's question is waiting for them
+- **WHEN** they send "Dank u, nog een vraag." on it
+- **THEN** pipelinq receives `{ ticket: <question id>, message: "Dank u, nog een vraag." }`, never a ticket id from the browser
+- test: PHPUnit `tests/Unit/Controller/PortalRowActionControllerTest.php` ("an action attached to its own collection forwards")
+
+#### Scenario: A forged listing on another collection
+- **GIVEN** a request names `replyToQuestion` on `ownRequests`
+- **WHEN** the forward looks the action up
+- **THEN** nothing is found and the answer is 403
+- test: PHPUnit `tests/Unit/Contribution/AttachedActionResolverTest.php` ("the forward lookup honours the collection")
+
+### Requirement: An attached action MUST carry its rowWhen to the renderer (REQ-ATO-002)
+
+The listing of an attached action SHALL carry its `rowWhen`. A renderer SHALL
+leave the action off a record whose field does not hold one of the listed
+values. The forward SHALL refuse such a record with 409 and forward nothing.
+
+#### Scenario: The reply shows while the question waits for the resident
+- **GIVEN** `replyToQuestion` has `rowWhen: { field: "status", in: ["awaiting_customer"] }`
+- **WHEN** the resident opens a question with status `awaiting_customer`, and then one with status `converted`
+- **THEN** the first shows "Reageren op het antwoord" and the second does not
+- test: `tests/attached-actions.spec.mjs` ("an attached action shows only on the rows its rowWhen names")
+
+#### Scenario: A reply on a converted question
+- **GIVEN** a question with status `converted`
+- **WHEN** a client forwards `replyToQuestion` on it anyway
+- **THEN** the answer is 409 and nothing is forwarded
+- test: PHPUnit `tests/Unit/Controller/PortalRowActionControllerTest.php` ("an attached action outside its rowWhen is 409")
+
+### Requirement: A claim-scoped create stamps the claim
+
+When a `create` action declares `scopeClaim`, the writer MUST stamp the action's `scopeField` with the claim value resolved server side from the subject's own `portalAccount`, over any client value, exactly as the read path resolves it. When the claim is absent the create MUST be refused with 403 and nothing written. Without `scopeClaim` the stamp MUST remain the subject's `subjectRef`.
+
+#### Scenario: A guardian's absence report carries the guardian's learniq reference
+
+- GIVEN a guardian whose portal account carries `claims.learniq.guardianRef`
+- AND learniq's action `createExcuseRequest` with `scopeField: submittedByRef` and `scopeClaim: guardianRef`
+- WHEN the guardian reports their child absent
+- THEN the stored report's `submittedByRef` is the guardian's learniq reference
+- @e2e learniq `tests/e2e/po-parent-flows.spec.ts`
+
+#### Scenario: No claim, no write
+
+- GIVEN a subject whose portal account lacks the declared claim
+- WHEN they submit the create action
+- THEN the answer is 403 and nothing is written
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testAClaimScopedCreateWithoutTheClaimIsRefused`
+
+### Requirement: A collection MAY group its rows by a declared field
+
+A contribution collection MAY declare `groupByField`, the row field whose value groups the rows. The normaliser MUST keep it only when it is a non-empty string naming one of the collection's projected `fields`, or any field when the collection projects none, and MUST drop it otherwise. When a collection keeps `groupByField` and its rows carry two or more distinct values, the portal MUST show one table per value, each under its own heading. The heading MUST be the name of the row with that id in the contribution's `guardianAudience.children` collection when there is one, else the value itself; rows without a value MUST come last under a heading reading "Other". With fewer than two groups the portal MUST show one table, as without the key.
+
+#### Scenario: A guardian with two children sees one table per child
+- GIVEN learniq's `parentGrades` declares `groupByField: 'learnerRef'` and `guardianAudience.children: 'parentChildren'`
+- AND a guardian has grades for two children
+- WHEN the guardian opens their child's grades
+- THEN they see one table per child, each headed by the child's name
+- @e2e exclude grouping and naming pinned by `tests/collection-groups.spec.mjs`; the live check on the primary-school instance is in the PR
+
+#### Scenario: One child shows one table
+- GIVEN the same collection and a guardian with one child
+- WHEN they open the grades
+- THEN they see one table without a child heading
+- @e2e exclude pinned by `tests/collection-groups.spec.mjs` ("one child, or no group field, renders ungrouped")
+
+#### Scenario: A group field the rows do not carry is dropped
+- GIVEN a collection projecting `fields: ['value']` that declares `groupByField: 'learnerRef'`
+- WHEN the manifest is normalised
+- THEN `groupByField` is dropped
+- @e2e exclude pinned by `PortalManifestNormaliserTest::testAGroupByFieldIsKeptOnlyWhenItNamesAProjectedField`
+
+### Requirement: A page MAY be the record page of a collection
+
+A contribution page MAY declare `record` with a `collection` id and optional `titleFields`. The normaliser MUST keep `record` only when its collection resolves in the same contribution, and MUST keep `titleFields` only as a list of non-empty strings. The portal MUST open such a page on the rows of that collection. Choosing a row MUST open the record: a heading with the record's title fields, a way back to the list when there is more than one row, and the page's other blocks. With exactly one row the portal MUST open that record directly. A record link to a row outside the subject's own rows MUST open nothing of it and say so.
+
+#### Scenario: A guardian opens one child
+- GIVEN learniq's "Mijn kinderen" page declares `record: {collection: 'parentChildren'}`
+- AND a guardian with two children opens it
+- WHEN she picks Vera
+- THEN she sees a heading "Vera Hulstkamp", a button back to her children, and Vera's blocks
+- @e2e exclude rendered by `tests/record-page.spec.mjs`; the live walk through on the primary-school instance is learniq's `tests/e2e/po-parent-flows.spec.ts`
+
+#### Scenario: A record page whose collection is unknown keeps its blocks but loses `record`
+- GIVEN a page declaring `record: {collection: 'unknown'}`
+- WHEN the manifest is normalised
+- THEN the page has no `record` key
+- @e2e exclude pinned by `RecordPageNormaliserTest::testARecordIsKeptOnlyWhenItsCollectionResolves`
+
+### Requirement: A block on a record page MAY narrow its rows to the open record
+
+A `collection`, `kpi` or `calendar` block (per calendar source) MAY declare `recordField` and `recordKey` (default `id`). On an open record the portal MUST show only the rows whose `recordField` value equals the record's `recordKey` value, or, when the row holds a list there, contains it. A block or source MAY also declare `recordGroupsField`: a row that names groups there MUST show only for the open record's groups (the rows of the contribution's `guardianAudience.groups` collection that link to the record), or, without an open record, for the groups of every row of that collection; a row that names no group shows for everyone. The narrowing MUST only ever subset the rows the server already scoped to the subject.
+
+#### Scenario: A school trip for another group stays off Vera's page
+- GIVEN school events for the whole school, for Vera's group and for another group, and a source with `recordGroupsField: 'cohortIds'`
+- WHEN Vera's record is open
+- THEN the school-wide event and her group's event show, the other group's does not
+- @e2e exclude pinned by `tests/record-page.spec.mjs` ("group-bound rows show for the record's groups")
+
+#### Scenario: Only Vera's report cards show on Vera's page
+- GIVEN `parentReportCards` rows for two children and a block with `recordField: 'learnerRef'`
+- WHEN Vera's record is open
+- THEN only the rows whose `learnerRef` is Vera's id show
+- @e2e exclude pinned by `tests/record-page.spec.mjs` ("rows narrow to the open record")
+
+### Requirement: A kpi block MUST show figure cards from one row
+
+A `kpi` block names a collection and `cards`, each with a `field`, a `label`, and optional `unit`, `details` (a list of `{field, label}`) and `highlight`. The normaliser MUST drop a card without a field or label and the block when no card survives. `pick: {field, direction}` chooses the row with the highest (`desc`) or lowest (`asc`) value of that field; without `pick` the first row counts. Without a row the portal MUST say there are no figures yet. An optional `caption: {field, label}` MUST show under the heading which value the cards read (for example the school year). A highlighted card MUST be marked in text, not by colour alone.
+
+#### Scenario: A guardian reads her child's absence figures
+- GIVEN an attendance summary row with 5 absent days, 3 with permission and 2 without, and 4 late arrivals of 35 minutes
+- WHEN the kpi block renders
+- THEN she reads "5 days" with "3 with permission, 2 without permission", "4 times" with "35 minutes", and the unexcused card is marked as needing attention
+- @e2e exclude pinned by `tests/record-page.spec.mjs` ("kpi cards")
+
+### Requirement: A calendar block MUST show dated rows as a list and a month
+
+A `calendar` block names `sources`, each with a `collection`, a `startField`, a `titleField` or a fixed `title` (a row without a title value takes the fixed one), an optional `endField`, an optional `kind` label, an optional `only: {field, in}` that keeps only the rows whose field holds one of the listed values, and an optional `expand: {field, startField, endField, titleField}` that turns each element of a list field into its own item. The normaliser MUST drop a source whose collection does not resolve, and the block when no source survives. The portal MUST show the items from today onward as a list grouped by month, and a month view with previous and next buttons, both reachable by keyboard and readable on a phone.
+
+#### Scenario: Holidays, school events and conference times share one calendar
+- GIVEN school events, a report period holding holidays, and a booked conference time
+- WHEN the guardian opens the calendar
+- THEN she sees each as one item with its date and its kind, in date order
+- @e2e exclude pinned by `tests/record-page.spec.mjs` ("calendar items")
+
+### Requirement: A news block MUST show the subject's latest news
+
+A `news` block MAY declare `limit` (1 to 20, default 3). The portal MUST show that many of the newest items of the subject's news feed. On an open record it MUST show only items whose target names the record's school (the contribution's `guardianAudience.schoolField`), one of its groups (`guardianAudience.groups`) or the record itself.
+
+#### Scenario: Vera's page shows the news for her school and group
+- GIVEN a feed with an item for Vera's school, one for her group and one for another group
+- WHEN Vera's record is open
+- THEN the news block shows the first two
+- @e2e exclude pinned by `tests/record-page.spec.mjs` ("news narrows to the record")
+
+### Requirement: A collection block MAY label its rows from a second collection
+
+A `collection` block MAY declare `lookups`, each with `as`, a `collection` of the same contribution, a `matchField`, a `valueField`, and optional `recordField`, `values` (a map from value to label) and `fallback`. The normaliser MUST drop a lookup that misses a name or whose collection does not resolve. The portal MUST write under `as`, on each row, the `valueField` of the first row of the lookup collection whose `matchField` holds the row's id (narrowed to the open record through `recordField`), labelled through `values`, else `fallback`.
+
+#### Scenario: Homework shows whether the child handed it in
+- GIVEN three assignments of Vera's group and her submissions for two of them
+- WHEN her homework table renders with a lookup `as: 'status'` over her submissions
+- THEN the rows read "Ingeleverd", "Open" and "Te laat ingeleverd"
+- @e2e exclude pinned by `tests/record-page.spec.mjs` ("a lookup labels each homework row") and `RecordPageNormaliserTest::testAGroupBoundBlockKeepsItsGroupFieldAndLookups`
+
+### Requirement: The site MUST ask the portal API in the site's language
+
+The site MUST send its own language as `Accept-Language` on every read of the portal API, so a contributing app that answers in the reader's language (learniq's parent sections) answers a Dutch site in Dutch, whatever language the visitor's browser prefers.
+
+#### Scenario: A guardian on an English browser reads learniq's sections in Dutch
+- GIVEN the Wilgenboom site is Dutch and the guardian's browser prefers English
+- WHEN the site reads her contributions
+- THEN the request carries `Accept-Language: nl` and learniq's sections read "Mijn kinderen"
+- @e2e exclude pinned by `tests/portal-language.spec.mjs`; the live check reads the sections on the Wilgenboom site
+
+### Requirement: The portal API MUST ask contributing apps in the portal's language
+
+When portaliq asks an app for its contribution, the app MUST see the portal's language, without a change to `getContribution(array $subject)`. Of the portal's declared `locales`, the one the request asks for (`Accept-Language`, which the site sets to its own language) MUST be used; otherwise the portal's first locale. The portal is the one the site names (`X-Portaliq-Portal`), else the one for the host, else the subject's organisation's. Portaliq MUST set Nextcloud's `forceLanguage` request parameter to that language for the duration of the provider call only and MUST put it back afterwards, also when the provider throws. An instance-wide `force_language` and a `forceLanguage` the request carries itself MUST win. Without a portal or locales, Nextcloud MUST choose as before.
+
+#### Scenario: A Dutch portal asked from an English browser
+- GIVEN the Wilgenboom portal declares `locales: ['nl']`
+- AND a request for its contributions carries `Accept-Language: en-US`
+- WHEN learniq's provider translates its section labels
+- THEN it translates them to Dutch, and after the call the request no longer forces a language
+- @e2e exclude pinned by `ContributionLanguageTest::testTheRegistryAsksEachProviderInThePortalsLanguage`; the mechanism was checked against Nextcloud 34's own L10N factory (forced `nl` translates core "Settings" as "Instellingen", and the next lookup is English again)
+
+### Requirement: A column may show a Nextcloud user by name
+
+A collection column MAY declare `"render": "user"`, meaning its value is a Nextcloud user id or a list of user ids. Portaliq MUST replace each such value with that user's display name on the server, in the collection list and in the single-object read, before the row is answered. A value that names no user on the instance, or that is not a user id, MUST be answered as `''`. The user id MUST NOT appear in the answer.
+
+#### Scenario: A parent reads the teacher's name
+- GIVEN learniq declares the column `{ "field": "handledBy", "render": "user" }` on a guardian's absence reports
+- AND a report's `handledBy` is the user id `po-leerkracht-09`, whose display name is "Meester Jansen"
+- WHEN the guardian opens the absence reports
+- THEN the column reads "Meester Jansen" and the answer holds no `po-leerkracht-09`
+- @e2e exclude pinned by `ContributionControllerUserNamesTest` (list and object answers); a browser sees only the name, which any text column also shows
+
+#### Scenario: A value that names no user
+- GIVEN a `render: "user"` value that names no user on the instance
+- WHEN the row is answered
+- THEN the value is `''`
+- @e2e exclude pinned by `PortalUserDisplayNamesTest::testValuesBecomeNamesAndNothingElseLeaks`
+
+### Requirement: A column and a form field may declare how their values read
+
+A contribution collection column MAY declare `valueLabels`, and so MAY an action's field config: a map from a raw value to the label a resident reads. The normaliser MUST keep only string labels that are not blank, on string or integer keys. It MUST drop a value longer than 100 characters, a label longer than 200, and every entry after the hundredth. It MUST drop the key when nothing usable is left. The site MUST show a column's label for a value in its table cell and on the detail card, and MUST show the value as before when it has no label. When portaliq offers a field's schema `enum` or `oneOf` as a select, a declared label MUST win over the generated label and the `oneOf` title. The option MUST still submit the raw value. A label MUST NOT add a value the schema does not offer.
+
+#### Scenario: A guardian reads the status of an absence report in Dutch
+- GIVEN learniq's `parentExcuseRequests` column `lifecycle` declares `valueLabels: {"approved": "Goedgekeurd", "submitted": "Ingediend"}`
+- AND a report with `lifecycle: approved`
+- WHEN the guardian opens "Afwezigheidsmeldingen van mijn kind" on the site
+- THEN the status cell reads "Goedgekeurd"
+- AND a status without a label reads as the stored value
+- @e2e exclude cell and detail rendering pinned by `tests/value-labels.spec.mjs`; the live check on the primary-school instance is in the PR
+
+#### Scenario: The absence form offers its kinds in Dutch and submits the raw value
+- GIVEN the action `createExcuseRequest` field config `reasonKind` declares `valueLabels: {"illness": "Ziekte"}`
+- AND the schema property `reasonKind` has `enum: ["illness", "medical-appointment"]`
+- WHEN the manifest is normalised
+- THEN the select offers `{value: "illness", label: "Ziekte"}` and `{value: "medical-appointment", label: "Medical appointment"}`
+- @e2e exclude pinned by `ValueLabelsNormaliserTest::testAFieldsValueLabelsLabelItsEnumOptions`
+
+#### Scenario: A malformed map is dropped
+- GIVEN a column declaring `valueLabels: "approved"`, or a map whose labels are not strings
+- WHEN the manifest is normalised
+- THEN the column keeps its field, label and render, without `valueLabels`
+- @e2e exclude pinned by `ValueLabelsNormaliserTest::testAColumnKeepsItsValueLabels` and `::testTheMapIsFailClosed`
+
+### Requirement: A create writes through the action it names
+
+A create MUST be matched to the subject's `create` action by the id the client sends as `actionId`, among the actions declared for the requested register and schema. An id that matches none of them MUST be refused with 403 and nothing written. When no id is sent, a single matching action MUST be used as before, and two or more MUST be refused with 400 `action_required` and nothing written. The portal frontend MUST send the id of the action whose form was filled in.
+
+#### Scenario: A complaint is filed as a complaint
+
+- GIVEN two create actions on one schema, a request form and a complaint form with different `defaults`
+- WHEN a resident submits the complaint form
+- THEN the object is written with the complaint form's defaults and whitelist
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testCreateWritesThroughTheActionItNames` and `tests/create-names-its-action.spec.mjs`
+
+#### Scenario: An unknown action id is refused
+
+- GIVEN a create naming an id the subject has no create action for on that register and schema
+- WHEN it is submitted
+- THEN the answer is 403 and nothing is written
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testCreateNamingAnUnknownActionIsRefused`
+
+#### Scenario: Two actions and no id is refused, not guessed
+
+- GIVEN two create actions on one schema
+- WHEN a create arrives without an action id
+- THEN the answer is 400 `action_required` and nothing is written
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testCreateWithoutAnIdBetweenTwoActionsIsRefusedNotGuessed`
+
+#### Scenario: One action and no id keeps working
+
+- GIVEN exactly one create action on a schema
+- WHEN a create arrives without an action id
+- THEN it is written through that action
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testCreateWithoutAnIdAndOneActionStillWorks`
+
+### Requirement: An anonymous create writes through the form it names
+
+An anonymous create (no portal session) MUST be matched the same way, among the `anonymous: true` create actions for the requested register and schema only. Every active landing-page form is its own anonymous create action on `landingPageSubmission` (`submit-{formId}`), so the site's landing-page form MUST send its action id. An id that names no anonymous create action on the target MUST be refused with 403, also when it names a signed-in action, and two or more anonymous actions without an id MUST be refused with 400 `action_required`. Nothing is written in either case.
+
+#### Scenario: A second form's answers are filed under the second form
+
+- GIVEN two active landing-page forms
+- WHEN a visitor submits the second one
+- THEN the submission is written with the second form's whitelist and `formId`
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testAnonymousCreateWritesThroughTheFormItNames` and `tests/create-names-its-action.spec.mjs` (FormBlock)
+
+#### Scenario: An unknown or unnamed form is refused
+
+- GIVEN two active landing-page forms
+- WHEN an anonymous create names neither, or names none
+- THEN the answer is 403, or 400 `action_required`, and nothing is written
+- @e2e exclude covered by PHPUnit `ContributionControllerTest::testAnonymousCreateNamingNoFormOrAnUnknownOneIsRefused` and `::testAnonymousCreateNamingASignedInActionIsRefused`
+
+### Requirement: A figure card's unit may name its singular and plural
+
+A `kpi` card's `unit`, and the `label` of each of its `details`, MUST be either a non-empty string or `{one, other}` with both forms non-empty strings, already in the reader's language. The normaliser MUST drop anything else, including half a pair. The portal MUST show `one` beside a figure of exactly 1 and `other` beside every other figure, also when the row holds none. A string MUST read as it is.
+
+#### Scenario: One day reads singular
+- GIVEN a card with `unit: {one: "dag", other: "dagen"}` and a row whose figure is 1
+- WHEN the guardian opens the child's record page
+- THEN the card says "1 dag"
+- @e2e exclude pinned by the node test "a kpi card says "1 dag" and "1 minuut", and "5 dagen" beside it"; the live check on :8090 is in the PR
+
+#### Scenario: Any other figure reads plural
+- GIVEN the same card and a figure of 0, 5 or none
+- WHEN the card renders
+- THEN it says "dagen"
+- @e2e exclude pinned by the node test "a unit reads singular for one and plural for every other figure"
+
+#### Scenario: Half a pair is dropped
+- GIVEN a card with `unit: {one: "dag"}`
+- WHEN the contribution is normalised
+- THEN the card keeps no unit
+- @e2e exclude pinned by `RecordPageNormaliserTest::testAKpiUnitMayNameItsSingularAndPlural`
+
+### Requirement: A collection MUST be able to declare an item list read from its app (REQ-MYD-001)
+
+A collection MAY declare `itemList: { label?, provider, removeAction? }`. The
+portal SHALL call `provider` with the object id only after the resident's own
+scoped read of that object succeeded, and SHALL answer 404 without calling it
+otherwise. It SHALL pass on per item only `id`, `title`, `url`, `note`,
+`public` and `addedAt`, and SHALL drop a `url` that is not https or an
+instance-local path. Implements hydra `woo-citizen-journey` "A resident's
+dossier MUST be owned by the resident and readable by nobody else unless
+shared".
+
+#### Scenario: A resident opens their own dossier
+- **GIVEN** a signed-in resident who owns a dossier with two items, each with a note
+- **WHEN** they open it on the portal
+- **THEN** they see both items with their titles, links and notes
+- test: PHPUnit `tests/Unit/Controller/PortalItemListControllerTest.php` ("own object, items returned")
+
+#### Scenario: A resident guesses another resident's dossier id
+- **GIVEN** a dossier owned by someone else
+- **WHEN** a resident asks for its items
+- **THEN** the answer is 404 and the provider method is not called
+- test: PHPUnit `tests/Unit/Controller/PortalItemListControllerTest.php` ("foreign object, provider not called")
+
+#### Scenario: An unsafe link in an item
+- **GIVEN** an item whose `url` is `javascript:alert(1)`
+- **WHEN** the items are read
+- **THEN** that item has no `url`
+- test: PHPUnit `tests/Unit/Service/PortalItemReaderTest.php` ("unsafe url dropped")
+
+### Requirement: An item that is no longer public MUST say so (REQ-MYD-002)
+
+An item with `public: false` SHALL stay in the owner's list, marked "Niet meer
+openbaar". Implements hydra `woo-citizen-journey` "A shared dossier MUST show
+only what is public at the moment it is read" (the owner's view).
+
+#### Scenario: A depublished item in the owner's view
+- **GIVEN** a dossier item whose publication was depublished yesterday
+- **WHEN** the owner opens the dossier
+- **THEN** the item shows with "Niet meer openbaar"
+- test: `tests/my-dossiers.spec.mjs` ("not public marker")
+
+### Requirement: A resident MUST be able to remove one item (REQ-MYD-003)
+
+When `itemList.removeAction` names an endpoint row action of the same
+contribution with the field `itemId`, each item SHALL offer "Verwijderen", which
+forwards `{ itemId }` with the proven dossier id. A `removeAction` without
+`itemId` in its fields SHALL be dropped.
+
+#### Scenario: A resident removes an item
+- **GIVEN** a dossier with two items and a `removeAction` `removeCollectionItem`
+- **WHEN** the resident removes the first item
+- **THEN** `removeCollectionItem` is forwarded with `{ itemId: <first item id> }` and the dossier id
+- test: `tests/my-dossiers.spec.mjs` ("remove body")
+
+#### Scenario: A remove action that cannot say which item
+- **GIVEN** a `removeAction` whose fields lack `itemId`
+- **WHEN** the manifest is normalised
+- **THEN** `removeAction` is dropped and the list still renders
+- test: PHPUnit `tests/Unit/Contribution/ItemListConfigNormaliserTest.php` ("remove action without itemId")
+
+### Requirement: A link in an action's answer MUST be shown to the resident (REQ-MYD-004)
+
+When an endpoint row action succeeds and its answer carries `link` that is
+https or instance-local, the confirm step SHALL show that link in a read-only
+field with a copy button. Instance-local is a path on this instance, or an
+absolute link on the page's own origin (also when that origin is plain http,
+as on a dev or intranet instance). A `javascript:` link or an http link on
+another origin SHALL NOT be shown.
+
+#### Scenario: A resident shares a dossier
+- **GIVEN** a dossier and a share action that answers `{ link: "https://gemeente.nl/…/shared/abc" }`
+- **WHEN** the resident runs it
+- **THEN** the link shows in a read-only field with "Kopieer link"
+- test: `tests/my-dossiers.spec.mjs` ("answer link")
+
+#### Scenario: A share link on the site's own origin
+- **GIVEN** the site on `http://localhost:8080` and a share action that answers `{ link: "http://localhost:8080/index.php/apps/portaliq/site?route=/gedeeld-dossier/tok-1" }`
+- **WHEN** the resident runs it
+- **THEN** the link shows in the read-only field, and a link on another origin such as `http://evil.example/x` does not
+- test: `tests/my-dossiers.spec.mjs` ("answer link on the site's own origin")
+
+### Requirement: A page may show a count in its menu entry
+
+A contributed page MAY declare `badge` with a `collection` and an optional `label`. The server MUST keep it only when `collection` names one of the same contribution's collections, and MUST keep `label` only as text of at most 80 characters. A `badge` that is not an object, names no collection or names a collection of another contribution MUST be dropped. The site counts the rows of that collection the subject may read and shows the count beside the page's menu entry.
+
+#### Scenario: A count of parent evenings to book
+- GIVEN a page "Oudergesprekken" with `badge: {collection: "parentConferenceTasks", label: "{count} om te doen"}` and that collection in the same contribution
+- WHEN the contribution is normalised
+- THEN the page keeps `badge` with that collection and label
+
+#### Scenario: A badge on another app's rows
+- GIVEN a page whose `badge.collection` is not a collection of its contribution
+- WHEN the contribution is normalised
+- THEN the page carries no badge
+
+### Requirement: A contributed page may name the menu group it belongs to
+
+A contribution page MAY declare `group`: a short label in the reader's language, sent the same way as the page `label`. The normaliser MUST keep it trimmed when it is a string of 1 to 80 characters, and MUST drop it otherwise, keeping the rest of the page. A group is presentation only and MUST NOT change which pages or blocks a subject may reach.
+
+#### Scenario: A page keeps its group
+- GIVEN pipelinq's page `vragen` declares `group: "Vragen en contact"`
+- WHEN the manifest is normalised
+- THEN the page carries `group: "Vragen en contact"`
+- @e2e exclude pinned by `PortalPageGroupTest::testAPageKeepsItsGroup`
+
+#### Scenario: A malformed group is dropped
+- GIVEN a page declaring `group` as an empty string, a number, a list or a string over 80 characters
+- WHEN the manifest is normalised
+- THEN the page has no `group` and keeps its id, label and blocks
+- @e2e exclude pinned by `PortalPageGroupTest::testAMalformedGroupIsDropped`
+
+### Requirement: A collection may say how the values of any of its fields read
+
+A collection MAY declare `fieldConfigs`: per field, a `label` and a `valueLabels` map of the same shape a column carries. The normaliser MUST keep a non-blank string label of at most 200 characters and a `valueLabels` map under the column rules, only for a field the collection projects (any field, when it projects none), and MUST drop the key when nothing usable is left. The site MUST use them for a detail field that is no column, and for a column that declares no value labels of its own. A column's own `label` and `valueLabels` MUST win.
+
+#### Scenario: A complaint's category reads in words on the detail card
+- GIVEN pipelinq's complaint collection declares `fieldConfigs.complaintCategory: {label: "Soort klacht", valueLabels: {"service": "Dienstverlening"}}`
+- AND `complaintCategory` is a detail field and no column
+- WHEN the resident opens a complaint with `complaintCategory: service`
+- THEN the detail card reads "Soort klacht" and "Dienstverlening"
+- @e2e exclude pinned by `tests/value-labels.spec.mjs` ("the detail card shows the fieldConfigs label and value label") and `CollectionFieldConfigsTest::testAFieldKeepsItsLabelAndValueLabels`
+
+#### Scenario: Malformed field configs are dropped
+- GIVEN `fieldConfigs` that is no map, an entry for a field the collection does not project, or an entry with a blank label and a malformed map
+- WHEN the manifest is normalised
+- THEN those entries are dropped, and the key goes when nothing is left
+- @e2e exclude pinned by `CollectionFieldConfigsTest::testFieldConfigsAreFailClosed`
+
+### Requirement: A contributed page MAY place itself in the menu, per record, or as home (REQ-SMO-020)
+
+The page resolver MUST keep these page keys and drop malformed ones: `group` (a string of 1 to 80 characters), `menu` (only the value `false`), `perRecord` (a collection id of the contribution), `records` (`{ collection, titleFields?, subtitleFields? }`, or a bare collection id read as `{ collection }`) and `home` (only `true`). `perRecord` MUST be dropped unless the page is a record page on the same collection. A page with `menu: false` MUST keep its route and MUST NOT appear in the menu. A page with `perRecord` MUST appear in the menu once per row of that collection the resident may read, under a group titled by the row.
+
+#### Scenario: Old routes stay, the menu shrinks
+- GIVEN learniq's fifteen guardian collection pages declare `menu: false`
+- WHEN the guardian opens `/mijn/learniq/parentGrades` from a bookmark
+- THEN the page renders
+- AND the menu does not list it
+
+#### Scenario: A page per child
+- GIVEN a page "Afwezigheid" with `record: { collection: parentChildren }` and `perRecord: parentChildren`
+- AND the guardian may read Vera and Sami
+- WHEN the menu renders
+- THEN "Afwezigheid" appears under "Vera" and under "Sami", each linking to that child's record
+
+#### Scenario: A perRecord on another collection is dropped
+- GIVEN a page with `record: { collection: parentChildren }` and `perRecord: parentGrades`
+- WHEN the contribution is normalised
+- THEN the page has no `perRecord`
+
+### Requirement: A contributed page MAY use the tasks, inbox, cases, steps, documents and timeline blocks (REQ-SMO-021)
+
+The block resolver MUST accept the block types `tasks`, `inbox`, `cases`, `steps`, `documents` and `timeline`. `tasks` and `cases` MUST name a collection of the contribution; `inbox` MAY name a `kind: inbox` collection. `steps`, `documents` and `timeline` MUST be dropped unless the page is a record page whose collection declares that provider. A `collection` block MAY declare `limit` (an integer 1 to 50) and `sort` (`{ field, direction }` with `asc` or `desc`, on a projected field). A `calendar` block MAY declare `range` (`day`, `week` or `month`). An out-of-range or unknown value MUST be dropped, leaving the block as it was without it.
+
+#### Scenario: The three newest grades
+- GIVEN a `collection` block on `parentGrades` with `limit: 3` and `sort: { field: gradedAt, direction: desc }`
+- AND the guardian's child has eight grades
+- WHEN the block renders
+- THEN it shows the three newest and a link to all grades
+
+#### Scenario: This week only
+- GIVEN a `calendar` block with `range: week`
+- WHEN the guardian opens the overview on Friday 2 October 2026
+- THEN the block lists only items from Monday 28 September to Sunday 4 October
+
+#### Scenario: Today only
+- GIVEN a pupil's `calendar` block with `range: day`
+- WHEN the pupil opens the overview on Friday 2 October 2026
+- THEN the block lists only that day's lessons
+
+#### Scenario: A placeholder name is not a block
+- GIVEN a page declares a block of type `caseCards`
+- WHEN the contribution is normalised
+- THEN the block is dropped
+
+### Requirement: A cases collection MAY supply steps, an answer date and whose turn it is (REQ-SMO-022)
+
+A `cases` collection MAY declare `steps: { label?, provider }`, naming a provider method that answers a list of `{ label, description?, state, date? }` for one case, with `state` one of `done`, `current`, `todo`. It MAY declare `dueField` and `turnField`, each kept only when it names a projected field. Portaliq MUST drop a steps entry that does not fit the shape and MUST call the provider only for cases on screen.
+
+#### Scenario: Dossiq's folded steps
+- GIVEN `mijnZaken` declares `steps: { label: "Waar staat uw aanvraag?", provider: caseSteps }`
+- WHEN the case page renders the steps block for case 2026-0003
+- THEN it shows the provider's steps under "Waar staat uw aanvraag?"
+
+#### Scenario: A turn field that is not projected
+- GIVEN `turnField: waitingOn` and `waitingOn` is not in the collection's `fields`
+- WHEN the manifest is normalised
+- THEN the collection has no `turnField`
+
+### Requirement: A via join MAY grant only through live join rows (REQ-SMO-023)
+
+A `via` declaration MAY carry `when: { field, in: [scalars] }` and `validUntilField`. A join row MUST grant access only when its `when` field holds one of the listed values, and only when its `validUntilField` date is empty or not in the past. A malformed `when` or `validUntilField` MUST fail the whole join closed, to zero rows. The check MUST run where every reader's join is verified, so cases, inbox, collections, timelines, row actions and change notices all honour it.
+
+#### Scenario: A withdrawn enrolment shows no timetable
+- GIVEN a pupil's collection joins `enrolment` with `when: { field: status, in: [active] }`
+- AND the pupil's only enrolment in group 3B has status `withdrawn`
+- WHEN the pupil opens the timetable
+- THEN no session of group 3B is listed
+
+#### Scenario: An expired share grants nothing
+- GIVEN an assessor's collection joins `portfolio-share` with `validUntilField: expiresAt`
+- AND the share expired on 1 October 2026
+- WHEN the assessor opens the entries on 2 October 2026
+- THEN no entry of that share is listed
+
+#### Scenario: A malformed filter fails closed
+- GIVEN a `via` with `when: { field: status }` and no `in`
+- WHEN the collection is read
+- THEN it returns zero rows
+
+### Requirement: A cta block MAY open a page or a site route, for the open record, with the record in its label (REQ-SMO-024)
+
+A `cta` block MUST name exactly one of: an `action` of the contribution (as today), a `page` id of the contribution, or a `route` inside the portal. A `route` MUST start with a single `/`, MUST NOT carry a scheme, a host or `//`, and is dropped otherwise. On a record page a cta MAY declare `withRecord: true`: a page or route then opens with the open record chosen, and an action opens with the field named by its `recordField` preset to the record. The `label` MAY hold `{title}`, filled with the open record's title as plain text. A cta that names none or more than one target MUST be dropped.
+
+#### Scenario: Report Vera sick from the overview
+- GIVEN the guardian overview with `records: parentChildren` and Vera chosen
+- AND a cta with `action: createExcuseRequest`, `withRecord: true` and label "{title} ziek of afwezig melden"
+- WHEN the guardian presses "Vera ziek of afwezig melden"
+- THEN the absence form opens with Vera chosen
+
+#### Scenario: A tile to a page
+- GIVEN a cta with `page: parentGrades` and `withRecord: true` on Sami's overview
+- WHEN the guardian presses it
+- THEN the grades page opens with Sami chosen
+
+#### Scenario: An outside address is refused
+- GIVEN a cta with `route: "//example.org/x"`
+- WHEN the contribution is normalised
+- THEN the block is dropped
+
+### Requirement: Tasks and inbox blocks MAY narrow to the open record and leave rows out by a lookup (REQ-SMO-025)
+
+A `tasks` block MUST accept the record scope (`recordField`, `recordKey`) and `lookups` that a `collection` block accepts today (`RecordScopeNormaliser`). It MAY declare `excludeWhen: { lookup, in: [scalars] }`: a row whose value under that lookup's `as` is in the list MUST be left out. An `excludeWhen` naming no declared lookup MUST be dropped. An `inbox` block MUST accept `recordField`, keeping only messages whose field holds the open record's id.
+
+#### Scenario: Handed-in work is not a task
+- GIVEN a pupil's `tasks` block on assignments with a lookup `as: submission` and `excludeWhen: { lookup: submission, in: [submitted, graded] }`
+- AND one of two assignments has a submission in state `submitted`
+- WHEN the block renders
+- THEN it lists only the other assignment
+
+#### Scenario: The open question of this case only
+- GIVEN dossiq's case page with a `tasks` block on `vragenAanU` and `recordField: case`
+- AND the resident has open questions on two cases
+- WHEN case 2026-0003 is open
+- THEN the block lists only the question on 2026-0003
+
+#### Scenario: Messages about the chosen child
+- GIVEN the guardian overview with Vera chosen and an `inbox` block with `recordField: learnerRef`
+- WHEN the block renders
+- THEN it lists no message about Sami
+
+### Requirement: The record switcher MAY take its subtitle from a related record (REQ-SMO-026)
+
+`records` MAY declare `subtitleLookup` with the one-hop lookup shape (`collection`, `matchField`, `valueField`). The switcher MUST show the looked-up value under the title when one is found, and nothing when not. A lookup over two hops is not offered.
+
+#### Scenario: Vera, Groep 6
+- GIVEN `records: { collection: parentChildren, subtitleLookup: { collection: parentGroupMemberships, matchField: learnerRef, valueField: cohortName } }`
+- WHEN the switcher renders
+- THEN Vera's option reads "Vera" with "Groep 6" under it
+
+### Requirement: A text block on a record page MAY be filled from the record (REQ-SMO-027)
+
+A `richText` block on a record page MAY declare `template` instead of `markdown`, with `{field}` placeholders naming projected fields of the record's collection. Values MUST be inserted as plain text, never as markdown or HTML. A sentence whose placeholder has no value MUST be left out, unless the block declares `whenEmpty: { field: text }`, whose text is then used for that sentence. A placeholder naming an unprojected field MUST make the block drop that placeholder's sentence.
+
+#### Scenario: Access without an end date
+- GIVEN the assessor's share page with `template: "U heeft toegang tot {expiresAt}."` and `whenEmpty: { expiresAt: "U heeft toegang zonder einddatum." }`
+- AND the share has no `expiresAt`
+- WHEN the block renders
+- THEN it reads "U heeft toegang zonder einddatum."
+
+#### Scenario: A value is not markup
+- GIVEN a record whose title is `**Jan**`
+- WHEN a template places `{title}`
+- THEN the page shows the asterisks as text
+
+### Requirement: A collection block MAY show its rows as cards with a progress figure (REQ-SMO-028)
+
+A `collection` block MAY declare `display: cards` and `progress: { valueField, totalField, label }`, both fields projected. Each card MUST show the row's title, the figure as text ("120 van 400 uur") and a decorative bar. A row with no total MUST show no figure. A `progress` naming an unprojected field MUST be dropped.
+
+The block MAY declare `titleFields`, the projected fields that name each card, read in the order given and joined by a space. An unprojected name MUST be dropped. Where the block names none, the collection's own `titleFields` apply, and failing those the first of `name`, `title` and `givenName` the row carries. A card nothing can name MUST show no empty heading.
+
+#### Scenario: The trainer's students
+- GIVEN the trainer's students collection with `progress: { valueField: hoursDone, totalField: hoursRequired, label: "uur" }`
+- AND a student with 120 of 400 hours
+- WHEN the block renders
+- THEN the student's card reads "120 van 400 uur"
+
+#### Scenario: A card over a schema with no name, title or givenName
+- GIVEN a cards block over `bpv-placement`, which carries none of `name`, `title` or `givenName`
+- AND the block declares `titleFields: [trainingCompanyName]`
+- WHEN the block renders
+- THEN each card names its company
+- AND without that declaration the card would show a bar and a number and nothing identifying
+- @e2e tests/e2e/site-mijn-omgeving-live.spec.ts
+
+### Requirement: A table reads in its collection's default order
+
+A `collection` block that renders as a table or as cards MUST show its rows in the block's `sort` when it declares one, else in its collection's `defaultSort`, else in the order the rows arrived. A table that renders one group per `groupByField` value MUST apply the same order inside each group. Rows without a value for the sort field come last, as they do for a block's `sort`.
+
+#### Scenario: The newest absence first
+- GIVEN learniq's `parentExcuseRequests` collection declares `defaultSort: { field: dateFrom, direction: desc }`
+- AND the guardian's child has absences from 1 October, 5 October, 2 October and 25 September
+- WHEN the guardian opens `/mijn/learniq/parentExcuseRequests`
+- THEN the rows read 5 October, 2 October, 1 October, 25 September
+- @e2e exclude pinned by `tests/mijn-lists.spec.mjs` ("a table reads in its collection's default order, and a block's own sort wins")
+
+#### Scenario: A block's own sort wins
+- GIVEN the same collection
+- AND a `collection` block on it with `sort: { field: dateFrom, direction: asc }`
+- WHEN the page renders
+- THEN the rows read oldest first
+- @e2e exclude pinned by `tests/mijn-lists.spec.mjs`
+
+#### Scenario: A table per child
+- GIVEN the same collection with `groupByField: learnerRef`
+- AND two children with absences
+- WHEN the page renders one table per child
+- THEN each table reads newest first
+- @e2e exclude pinned by `tests/mijn-lists.spec.mjs`
+
+### Requirement: A detail card under its own table waits quietly for a row
+
+A `detail` block that shares its collection with a `collection` block rendered as a table on the same page MUST show nothing until a row is chosen. A `detail` block without that table on the page MUST still say "Select an item.". A `detail` block that shares its collection with a `citizenCase` block MUST still say it too, because that case screen stays quiet in its favour.
+
+#### Scenario: Nothing under the list of absences
+- GIVEN learniq's `parentExcuseRequests` page has an `action`, a `collection` and a `detail` block on `parentExcuseRequests`
+- WHEN the guardian opens the page without choosing a row
+- THEN the page does not show "Kies een item."
+- AND choosing a row shows its detail card
+- @e2e exclude pinned by `tests/site-collections.spec.mjs` ("a detail card under the table of its own collection waits quietly for a row")
+
+#### Scenario: Mijn zaken still asks once
+- GIVEN dossiq's `mijnZaken` page has a `collection`, a `detail` and a `citizenCase` block on `mijnZaken`
+- WHEN the resident opens the page without choosing a case
+- THEN the page shows "Kies een item." once
+- @e2e exclude pinned by `tests/site-collections.spec.mjs` ("a case screen under a detail card on its collection waits quietly for a case")
+
 ## Non-Functional Requirements
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`
