@@ -589,7 +589,10 @@ export default {
 }
 
 .pq-detail__document-meta {
-	color: var(--nldesign-color-text-muted, #65757b);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #65757b)
+	);
 	margin-inline-start: 4px;
 }
 

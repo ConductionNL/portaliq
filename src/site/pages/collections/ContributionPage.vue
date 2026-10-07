@@ -1543,7 +1543,10 @@ export default {
 
 .pq-record__eyebrow {
 	margin: 0;
-	color: var(--nldesign-color-text-muted, inherit);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 	font-size: 1rem;
 }
 

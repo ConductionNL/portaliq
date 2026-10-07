@@ -2462,7 +2462,10 @@ body.layout-base .pq-site {
 		var(--nldesign-color-text, #1a1a1a)
 	);
 	--pq-border-color: var(--nldesign-color-border, #d0d0d0);
-	--pq-muted-color: var(--nldesign-color-text-muted, #6b6b6b);
+	--pq-muted-color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #6b6b6b)
+	);
 	--pq-link-color: var(
 		--nldesign-color-link,
 		var(--nldesign-color-primary, #0b5cab)

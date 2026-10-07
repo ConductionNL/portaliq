@@ -325,7 +325,10 @@ export default {
 		--nldesign-website-border-radius-large,
 		var(--utrecht-border-radius-md, 0.75rem)
 	);
-	background: var(--nldesign-color-primary-light, transparent);
+	background: var(
+		--thematiq-placeholder-background-color,
+		var(--nldesign-color-primary-light, transparent)
+	);
 }
 
 .nl-news-list__photo--placeholder {
@@ -361,8 +364,8 @@ export default {
 
 .nl-news-list__meta {
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 	font-size: 0.9375rem;
 }

@@ -445,7 +445,10 @@ export default {
 }
 
 .pq-case-card--closed {
-	color: var(--nldesign-color-text-muted, inherit);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 }
 
 .pq-case-card__ident {
@@ -459,7 +462,10 @@ export default {
 .pq-case-card__number,
 .pq-case-card__line,
 .pq-case-card__due-label {
-	color: var(--nldesign-color-text-muted, inherit);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 }
 
 .pq-case-card__number {
