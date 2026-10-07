@@ -205,8 +205,8 @@ export default {
 .pq-kpi__label,
 .pq-kpi__details {
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 }
 

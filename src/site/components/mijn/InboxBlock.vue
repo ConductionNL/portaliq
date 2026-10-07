@@ -424,7 +424,10 @@ export default {
 }
 
 .pq-inbox-block__plain-day {
-	color: var(--nldesign-color-text-muted, inherit);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 	font-size: 0.9375rem;
 }
 </style>

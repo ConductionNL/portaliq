@@ -23,7 +23,7 @@ export const metaOf = {
 		{
 			name: 'display',
 			kind: 'string',
-			label: 'Weergave: plain, card of accent',
+			label: 'Weergave: plain, card, tinted of accent',
 		},
 	],
 	defaultSize: { gridWidth: 4, gridHeight: 3 },

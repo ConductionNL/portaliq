@@ -336,7 +336,7 @@
                         "gridX": 0,
                         "gridY": 9,
                         "gridWidth": 7,
-                        "gridHeight": 6,
+                        "gridHeight": 3,
                         "props": {
                             "heading": "Nieuws",
                             "limit": 4,
@@ -354,7 +354,7 @@
                         "gridX": 8,
                         "gridY": 9,
                         "gridWidth": 4,
-                        "gridHeight": 4,
+                        "gridHeight": 1,
                         "props": {
                             "heading": "Mijn Zuiddrecht",
                             "display": "card",
@@ -371,9 +371,9 @@
                         "id": "zd-home-06-nllinklist",
                         "widgetKey": "nlLinkList",
                         "gridX": 8,
-                        "gridY": 14,
+                        "gridY": 10,
                         "gridWidth": 4,
-                        "gridHeight": 2,
+                        "gridHeight": 1,
                         "props": {
                             "heading": "Openbare informatie",
                             "intro": "Besluiten, rapporten en antwoorden op Woo-verzoeken.",
@@ -536,7 +536,7 @@
                         "id": "zd-afval-03-nlheading",
                         "widgetKey": "nlHeading",
                         "gridX": 0,
-                        "gridY": 3,
+                        "gridY": 2,
                         "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
@@ -548,7 +548,7 @@
                         "id": "zd-afval-04-nltable",
                         "widgetKey": "nlTable",
                         "gridX": 0,
-                        "gridY": 4,
+                        "gridY": 3,
                         "gridWidth": 7,
                         "gridHeight": 3,
                         "props": {
@@ -588,7 +588,7 @@
                         "id": "zd-afval-05-nlheading",
                         "widgetKey": "nlHeading",
                         "gridX": 0,
-                        "gridY": 8,
+                        "gridY": 6,
                         "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
@@ -600,7 +600,7 @@
                         "id": "zd-afval-06-nlparagraph",
                         "widgetKey": "nlParagraph",
                         "gridX": 0,
-                        "gridY": 9,
+                        "gridY": 7,
                         "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
@@ -611,7 +611,7 @@
                         "id": "zd-afval-07-nlbuttonlink",
                         "widgetKey": "nlButtonLink",
                         "gridX": 0,
-                        "gridY": 10,
+                        "gridY": 8,
                         "gridWidth": 4,
                         "gridHeight": 1,
                         "props": {
@@ -2178,7 +2178,7 @@
                         "props": {
                             "heading": "Bewaren of volgen",
                             "display": "card",
-                            "tone": "light",
+                            "tone": "outline",
                             "intro": "Log in om deze publicatie in uw eigen dossier te bewaren.",
                             "buttonLabel": "Inloggen en bewaren"
                         }
@@ -2193,7 +2193,7 @@
                         "props": {
                             "heading": "Zelf iets opvragen?",
                             "intro": "Staat wat u zoekt er niet bij? Dien dan een Woo-verzoek in.",
-                            "display": "card",
+                            "display": "tinted",
                             "links": [
                                 {
                                     "label": "Woo-verzoek indienen",

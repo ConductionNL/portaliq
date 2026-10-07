@@ -30,7 +30,12 @@
 				data-testid="site-header-search-input" />
 			<button type="submit" class="pq-header-tools__submit">
 				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-					<path :d="SEARCH" fill="currentColor" />
+					<path
+						:d="SEARCH"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.4"
+						stroke-linecap="round" />
 				</svg>
 				<span class="sr-only">{{ searchLabel }}</span>
 			</button>
@@ -75,7 +80,12 @@
 			data-testid="site-account-button"
 			@click.prevent="$emit('navigate', accountRoute)">
 			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-				<path :d="PERSON" fill="currentColor" />
+				<path
+					:d="PERSON"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.4"
+					stroke-linecap="round" />
 			</svg>
 			{{ accountLabel }}
 		</a>
@@ -89,7 +99,12 @@
 			data-testid="site-header-menu-toggle"
 			@click="$emit('toggleMenu')">
 			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-				<path :d="MENU" fill="currentColor" />
+				<path
+					:d="MENU"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.4"
+					stroke-linecap="round" />
 			</svg>
 			{{ menuLabel }}
 		</button>
@@ -137,10 +152,11 @@ export default {
 	data() {
 		return {
 			term: '',
-			// Material Design Icons (Apache 2.0): magnify, account-outline, menu.
-			SEARCH: 'M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z',
-			PERSON: 'M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 2a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m0 7c2.67 0 8 1.33 8 4v3H4v-3c0-2.67 5.33-4 8-4m0 1.9c-2.97 0-6.1 1.46-6.1 2.1v1.1h12.2V17c0-.64-3.13-2.1-6.1-2.1Z',
-			MENU: 'M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z',
+			// Outlined, as the Zuiddrecht Kop and MobielHome boards draw them: a
+			// magnifier, a person and three bars, stroked in the text colour.
+			SEARCH: 'M4 11a7 7 0 1 0 14 0a7 7 0 1 0-14 0M20 20l-4-4',
+			PERSON: 'M8 8a4 4 0 1 0 8 0a4 4 0 1 0-8 0M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
+			MENU: 'M4 7h16M4 12h16M4 17h16',
 		}
 	},
 

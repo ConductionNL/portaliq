@@ -293,7 +293,7 @@ class PortalPageControllerTest extends TestCase {
 		$signin = $controller->site()->getParams()['portalConfig']['signin'];
 
 		$this->assertSame(
-			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => [], 'exampleResident' => ''],
+			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => [], 'exampleResident' => '', 'exampleResidentWayIn' => ''],
 			actual: $signin
 		);
 
