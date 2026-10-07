@@ -1365,6 +1365,8 @@ export default {
 				this.t,
 				// One click on a demo for the example resident (example-resident-demo-login).
 				this.signinConfig.exampleResident || '',
+				// Its way in stays out while the demo switch is off.
+				this.signinConfig.exampleResidentWayIn || '',
 			)
 		},
 
@@ -2510,7 +2512,10 @@ body.layout-base .pq-site {
 		var(--nldesign-color-text, #1a1a1a)
 	);
 	--pq-border-color: var(--nldesign-color-border, #d0d0d0);
-	--pq-muted-color: var(--nldesign-color-text-muted, #6b6b6b);
+	--pq-muted-color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #6b6b6b)
+	);
 	--pq-link-color: var(
 		--nldesign-color-link,
 		var(--nldesign-color-primary, #0b5cab)

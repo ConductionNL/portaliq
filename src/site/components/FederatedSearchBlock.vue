@@ -1356,13 +1356,19 @@ export default {
 }
 
 .pq-search__source {
-	color: var(--nldesign-color-text-muted, #65757b);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #65757b)
+	);
 	font-size: 0.875rem;
 	margin: 0;
 }
 
 .pq-search__facet-count {
-	color: var(--nldesign-color-text-muted, #65757b);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #65757b)
+	);
 }
 
 /* A filter group: the fieldset carries the legend for assistive tech and no

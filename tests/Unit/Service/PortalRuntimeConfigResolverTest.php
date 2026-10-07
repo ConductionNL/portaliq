@@ -493,6 +493,26 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 
 
 	/**
+	 * With the switch off the site learns which way in the resident's install
+	 * added, so it can leave that demo card out; with the switch on, or on
+	 * another portal, it learns nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	public function testTheResidentsWayInIsNamedWhileTheSwitchIsOff(): void {
+		$zuiddrecht = ['slug' => 'zuiddrecht', 'organisation' => ''];
+		$off        = $this->demoResolver(switch: 'no');
+		$on         = $this->demoResolver(switch: 'yes');
+
+		$this->assertSame(expected: 'nextcloud', actual: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidentWayIn']);
+		$this->assertSame(expected: '', actual: $on->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidentWayIn']);
+		$this->assertSame(expected: '', actual: $off->runtimeConfigFor(portal: ['slug' => 'other'], orgValue: '', locale: 'nl')['exampleResidentWayIn']);
+	}//end testTheResidentsWayInIsNamedWhileTheSwitchIsOff()
+
+
+	/**
 	 * A resolver on a debug instance with the example resident `zuiddrecht`
 	 * installed as `sanne.devries`, and the switch as given.
 	 *
