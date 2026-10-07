@@ -519,7 +519,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Inloggen",
+					"PtPortalInstellingen"
+				]
+			}
 		},
 		{
 			"id": "sig-eherkenning",
@@ -550,7 +557,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Inloggen",
+					"PtPortalInstellingen"
+				]
+			}
 		},
 		{
 			"id": "sig-generic-oidc",
@@ -581,7 +595,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Inloggen",
+					"PtPortalInstellingen"
+				]
+			}
 		},
 		{
 			"id": "sig-oidc-validation",
@@ -612,7 +633,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Inloggen"
+			}
 		},
 		{
 			"id": "sig-dev-login",
@@ -643,7 +668,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "supplier-portal",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own (development only)"
+			}
 		},
 		{
 			"id": "sig-nextcloud-login",
@@ -674,7 +703,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-auth-edge",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Inloggen"
+			}
 		},
 		{
 			"id": "sig-logout",
@@ -705,7 +738,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-auth-edge",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Kop"
+			}
 		},
 		{
 			"id": "sig-session-refresh",
@@ -736,7 +773,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-session-hardening-v2",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "SessieVerloopt"
+			}
 		},
 		{
 			"id": "sig-revoke-org",
@@ -767,7 +808,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-auth-edge-session-hardening",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtSessies"
+			}
 		},
 		{
 			"id": "sig-token-fragment",
@@ -798,7 +843,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "sig-per-org-broker-config",
@@ -829,7 +878,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortalInstellingen"
+			}
 		},
 		{
 			"id": "sig-broker-health",
@@ -860,7 +913,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "adopt-connection-registry",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtDashboard"
+			}
 		},
 		{
 			"id": "sig-admin-sessions-index",
@@ -891,7 +948,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtSessies"
+			}
 		},
 		{
 			"id": "sig-assurance-gate",
@@ -922,7 +983,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortalInstellingen"
+			}
 		},
 		{
 			"id": "cmp-sig-machtiging",
@@ -953,7 +1018,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MijnZaken",
+					"Machtigingen"
+				]
+			}
 		},
 		{
 			"id": "cmp-sig-sso",
@@ -983,7 +1055,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortalInstellingen"
+			}
 		},
 		{
 			"id": "cmp-sig-eidas",
@@ -1014,7 +1090,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Inloggen"
+			}
 		},
 		{
 			"id": "cmp-sig-level",
@@ -1045,7 +1125,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Inloggen"
+			}
 		},
 		{
 			"id": "sib-decidiq-plt-02",
@@ -1077,7 +1161,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Inloggen"
+			}
 		},
 		{
 			"id": "sib-opencatalogi-pub-restricted",
@@ -1109,7 +1197,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-scoping-and-auth",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Publicatie",
+					"Inloggen"
+				]
+			}
 		},
 		{
 			"id": "id-auto-provision-on-login",
@@ -1140,7 +1235,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtAccounts"
+			}
 		},
 		{
 			"id": "id-self-registration-form",
@@ -1171,7 +1270,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "AccountAanmaken"
+			}
 		},
 		{
 			"id": "id-reference-link",
@@ -1202,7 +1305,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "ZaakVolgen"
+			}
 		},
 		{
 			"id": "id-invitation-accept",
@@ -1233,7 +1340,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "AccountAanmaken"
+			}
 		},
 		{
 			"id": "id-staff-invite",
@@ -1264,7 +1375,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtUitnodigen",
+					"PtUitnodigingen"
+				]
+			}
 		},
 		{
 			"id": "id-staff-provision-desk",
@@ -1295,7 +1413,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtAccountUitgeven"
+			}
 		},
 		{
 			"id": "id-staff-void",
@@ -1326,7 +1448,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtAccount"
+			}
 		},
 		{
 			"id": "id-update-own-details",
@@ -1357,7 +1483,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnAccount"
+			}
 		},
 		{
 			"id": "id-remove-own-account",
@@ -1388,7 +1518,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnAccount"
+			}
 		},
 		{
 			"id": "id-request-access",
@@ -1419,7 +1553,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Machtigingen"
+			}
 		},
 		{
 			"id": "id-my-access-requests",
@@ -1450,7 +1588,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Machtigingen"
+			}
 		},
 		{
 			"id": "id-registration-policy",
@@ -1481,7 +1623,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortalInstellingen"
+			}
 		},
 		{
 			"id": "id-org-scope",
@@ -1512,7 +1658,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "sib-learniq-gua-guardian-sees-the-child",
@@ -1544,7 +1694,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"screen": {
+				"board": null,
+				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+			}
 		},
 		{
 			"id": "sib-dossiq-q1-14",
@@ -1576,7 +1730,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MijnAccountZonderDigid",
+					"MijnZaken"
+				]
+			}
 		},
 		{
 			"id": "sib-dossiq-13-38",
@@ -1608,7 +1769,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-visibility-follows-the-party-tree",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MijnZaken",
+					"Machtigingen"
+				]
+			}
 		},
 		{
 			"id": "sib-openregister-acc-end-user-accounts",
@@ -1640,7 +1808,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtAccounts",
+					"AccountAanmaken"
+				]
+			}
 		},
 		{
 			"id": "cmp-id-brp",
@@ -1670,7 +1845,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnGegevens"
+			}
 		},
 		{
 			"id": "cmp-id-correct",
@@ -1700,7 +1879,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnGegevens"
+			}
 		},
 		{
 			"id": "cmp-id-contact-channel",
@@ -1730,7 +1913,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnAccount"
+			}
 		},
 		{
 			"id": "cmp-id-company",
@@ -1760,7 +1947,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnGegevens"
+			}
 		},
 		{
 			"id": "cas-contrib-list",
@@ -1791,7 +1982,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "contribution-manifest-v3",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnZaken"
+			}
 		},
 		{
 			"id": "cas-mycases-unified",
@@ -1822,7 +2017,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnZaken"
+			}
 		},
 		{
 			"id": "cas-detail",
@@ -1853,7 +2052,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-scoped-crud",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Zaak",
+					"MobielZaak"
+				]
+			}
 		},
 		{
 			"id": "cas-citizen-status",
@@ -1884,7 +2090,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "what-the-citizen-may-write-on-their-own-case",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Zaak",
+					"MobielZaak"
+				]
+			}
 		},
 		{
 			"id": "cas-documents-view",
@@ -1915,7 +2128,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "what-the-citizen-may-write-on-their-own-case",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "cas-download-generic",
@@ -1946,7 +2163,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-document-download",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "cas-mandate-org-cases",
@@ -1977,7 +2198,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnZaken"
+			}
 		},
 		{
 			"id": "cas-deeplink-notify",
@@ -2008,7 +2233,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-task-delivery",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Berichten",
+					"Zaak"
+				]
+			}
 		},
 		{
 			"id": "cmp-cas-all-gov",
@@ -2038,7 +2270,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnZaken"
+			}
 		},
 		{
 			"id": "cmp-cas-closed",
@@ -2068,7 +2304,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnZaken"
+			}
 		},
 		{
 			"id": "cmp-cas-status-timeline",
@@ -2105,7 +2345,14 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Zaak",
+					"MobielZaak"
+				]
+			}
 		},
 		{
 			"id": "cmp-cas-documents-published",
@@ -2135,7 +2382,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "cmp-cas-decision-download",
@@ -2165,7 +2416,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "cmp-cas-permits",
@@ -2284,7 +2539,11 @@
 			"providerHow": "read-from-code",
 			"feature": "sal-customer-portal",
 			"featureConfidence": "medium",
-			"note": "Owners: ConductionNL/shillinq holds the payment logic; ConductionNL/portaliq forwards the action and renders it."
+			"note": "Owners: ConductionNL/shillinq holds the payment logic; ConductionNL/portaliq forwards the action and renders it.",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (a pay action is drawn on no board; shillinq owns the payment)"
+			}
 		},
 		{
 			"id": "cmp-cas-woz",
@@ -2373,7 +2632,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "what-the-citizen-may-write-on-their-own-case",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "ZaakWijzigingVoorstellen"
+			}
 		},
 		{
 			"id": "act-add-document",
@@ -2404,7 +2667,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "what-the-citizen-may-write-on-their-own-case",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "act-withdraw-case",
@@ -2435,7 +2702,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "withdrawing-your-own-case-from-the-portal",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Zaak",
+					"ZaakIntrekken"
+				]
+			}
 		},
 		{
 			"id": "sib-dossiq-2-47",
@@ -2467,7 +2741,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "withdrawing-your-own-case-from-the-portal",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Zaak",
+					"ZaakIntrekken"
+				]
+			}
 		},
 		{
 			"id": "act-write-throttle",
@@ -2498,7 +2779,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "what-the-citizen-may-write-on-their-own-case",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "act-propose-citizen",
@@ -2536,7 +2821,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "change-proposal-queue",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "ZaakWijzigingVoorstellen"
+			}
 		},
 		{
 			"id": "act-propose-colleague",
@@ -2567,7 +2856,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "change-proposal-queue",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVoorstelBeoordelen"
+			}
 		},
 		{
 			"id": "act-withdraw-proposal",
@@ -2605,7 +2898,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "change-proposal-queue",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "ZaakWijzigingVoorstellen"
+			}
 		},
 		{
 			"id": "act-staff-review-queue",
@@ -2636,7 +2933,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "change-proposal-queue",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVoorstelBeoordelen"
+			}
 		},
 		{
 			"id": "act-create-object",
@@ -2667,7 +2968,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "contribution-manifest-v3",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MeldingIndienen"
+			}
 		},
 		{
 			"id": "act-row-transition",
@@ -2698,7 +3003,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-status-transitions",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "act-file-upload-generic",
@@ -2729,7 +3038,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-scoped-crud",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "act-forward-action",
@@ -2760,7 +3073,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "contract-v2",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own (the button is drawn by whatever page declares it)"
+			}
 		},
 		{
 			"id": "sib-dossiq-2-21",
@@ -2792,7 +3109,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "change-proposal-queue",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"ZaakWijzigingVoorstellen",
+					"PtVoorstelBeoordelen"
+				]
+			}
 		},
 		{
 			"id": "tsk-list",
@@ -2823,7 +3147,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-task-delivery",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MijnTaken",
+					"MijnOverzicht"
+				]
+			}
 		},
 		{
 			"id": "tsk-detail",
@@ -2854,7 +3185,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-task-delivery",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnTaken"
+			}
 		},
 		{
 			"id": "tsk-complete",
@@ -2885,7 +3220,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-task-delivery",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnTaken"
+			}
 		},
 		{
 			"id": "tsk-upload-rules",
@@ -2916,7 +3255,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-task-delivery",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnTaken"
+			}
 		},
 		{
 			"id": "tsk-inbox-deeplink",
@@ -2947,7 +3290,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-inbox-v2",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Berichten",
+					"MijnTaken"
+				]
+			}
 		},
 		{
 			"id": "tsk-notify",
@@ -2978,7 +3328,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-task-delivery",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Berichten"
+			}
 		},
 		{
 			"id": "tsk-supplier-audience",
@@ -3009,7 +3363,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "supplier-portal",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnTaken"
+			}
 		},
 		{
 			"id": "tsk-ask-partner",
@@ -3041,7 +3399,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "partner-tasks-in-the-portal",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (the handler asks from dossiq; no board draws it)"
+			}
 		},
 		{
 			"id": "sib-dossiq-3-19",
@@ -3073,7 +3435,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "partner-tasks-in-the-portal",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnTaken"
+			}
 		},
 		{
 			"id": "cmp-tsk-appointment",
@@ -3191,7 +3557,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-inbox-v2",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Berichten"
+			}
 		},
 		{
 			"id": "inb-mark-read",
@@ -3222,7 +3592,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-inbox-v2",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Berichten"
+			}
 		},
 		{
 			"id": "inb-unread-badge",
@@ -3253,7 +3627,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-inbox-v2",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnMenu"
+			}
 		},
 		{
 			"id": "inb-wmebv-fields",
@@ -3284,7 +3662,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "wmebv-submission-receipts",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Berichten"
+			}
 		},
 		{
 			"id": "inb-staff-admin-list",
@@ -3315,7 +3697,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-inbox-v2",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtBericht"
+			}
 		},
 		{
 			"id": "inb-staff-unread-widget",
@@ -3346,7 +3732,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-inbox-v2",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtDashboard"
+			}
 		},
 		{
 			"id": "inb-staff-talk-leaf",
@@ -3377,7 +3767,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-leaf-integrations",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtBericht"
+			}
 		},
 		{
 			"id": "sib-dossiq-6-7",
@@ -3411,7 +3805,11 @@
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
 			"feature": "portal-inbox-v2",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Berichten"
+			}
 		},
 		{
 			"id": "cmp-inb-reply",
@@ -3442,7 +3840,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-leaf-integrations",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Berichten"
+			}
 		},
 		{
 			"id": "cmp-inb-attach",
@@ -3473,7 +3875,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Berichten"
+			}
 		},
 		{
 			"id": "cmp-inb-push",
@@ -3535,7 +3941,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-notifications-dispatch",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnAccount"
+			}
 		},
 		{
 			"id": "cmp-inb-read-receipt",
@@ -3566,7 +3976,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-inbox-v2",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtBericht"
+			}
 		},
 		{
 			"id": "cmp-inb-notif-prefs",
@@ -3604,7 +4018,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Berichten",
+					"MijnAccount"
+				]
+			}
 		},
 		{
 			"id": "cmp-inb-download",
@@ -3695,7 +4116,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "supplier-portal",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MeldingIndienen"
+			}
 		},
 		{
 			"id": "int-anonymous-create",
@@ -3726,7 +4151,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "landing-page-provisioning",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MeldingIndienen"
+			}
 		},
 		{
 			"id": "int-embedded-form",
@@ -3758,7 +4187,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "embedded-intake-form",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (the form embedded on another site)"
+			}
 		},
 		{
 			"id": "sib-dossiq-q1-16",
@@ -3790,7 +4223,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "embedded-intake-form",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (the form embedded on another site)"
+			}
 		},
 		{
 			"id": "int-dedicated-catalogue-unreached",
@@ -3821,7 +4258,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-intake-form-as-an-object",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Home",
+					"PtAanvraagformulieren"
+				]
+			}
 		},
 		{
 			"id": "int-status-lookup",
@@ -3852,7 +4296,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-intake-form-as-an-object",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "ZaakVolgen"
+			}
 		},
 		{
 			"id": "int-applicant-prefill-unreached",
@@ -3883,7 +4331,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-intake-form-as-an-object",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "WooVerzoekGegevens"
+			}
 		},
 		{
 			"id": "int-landing-page-lead-capture",
@@ -3914,7 +4366,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "landing-page-provisioning",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Contentpagina"
+			}
 		},
 		{
 			"id": "int-report-anonymous-file",
@@ -3945,7 +4401,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "a-report-without-an-account-and-a-custodian-who-may-reveal-it",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MeldenZonderAccount"
+			}
 		},
 		{
 			"id": "int-report-two-way-thread",
@@ -3976,7 +4436,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "a-report-without-an-account-and-a-custodian-who-may-reveal-it",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MeldingGesprek",
+					"PtMeldingZonderAccount"
+				]
+			}
 		},
 		{
 			"id": "int-report-custodian-reveal",
@@ -4007,7 +4474,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "a-report-without-an-account-and-a-custodian-who-may-reveal-it",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtMeldingZonderAccount"
+			}
 		},
 		{
 			"id": "sib-dossiq-13-33",
@@ -4039,7 +4510,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "a-report-without-an-account-and-a-custodian-who-may-reveal-it",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MeldenZonderAccount",
+					"PtMeldingZonderAccount"
+				]
+			}
 		},
 		{
 			"id": "cmp-int-conditional",
@@ -4070,7 +4548,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MeldingIndienen"
+			}
 		},
 		{
 			"id": "cmp-int-prefill",
@@ -4101,7 +4583,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-intake-form-as-an-object",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "WooVerzoekGegevens"
+			}
 		},
 		{
 			"id": "cmp-int-save-resume",
@@ -4132,7 +4618,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (no board draws a saved draft)"
+			}
 		},
 		{
 			"id": "cmp-int-pay",
@@ -4163,7 +4653,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (no board draws a pay step)"
+			}
 		},
 		{
 			"id": "cmp-int-pdf-receipt",
@@ -4194,7 +4688,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "wmebv-submission-receipts",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"WooVerzoekVerstuurd",
+					"PtInzending"
+				]
+			}
 		},
 		{
 			"id": "cmp-int-report-map",
@@ -4256,7 +4757,11 @@
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "cmp-int-product-catalogue",
@@ -4287,7 +4792,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-intake-form-as-an-object",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Home"
+			}
 		},
 		{
 			"id": "con-registry-discovery",
@@ -4318,7 +4827,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-contribution-contract",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "con-multi-audience",
@@ -4349,7 +4862,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-contribution-contract",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "con-trust-filtering",
@@ -4380,7 +4897,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-contribution-contract",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "con-fleet-adoption",
@@ -4411,7 +4932,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-leaf-integrations",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "con-contributed-pages-render",
@@ -4442,7 +4967,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "contribution-manifest-v3",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MijnZaken",
+					"MijnOverzicht"
+				]
+			}
 		},
 		{
 			"id": "con-contributed-blocks",
@@ -4473,7 +5005,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "contribution-manifest-v3",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnOverzicht"
+			}
 		},
 		{
 			"id": "con-ui-config-v3",
@@ -4504,7 +5040,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "contribution-manifest-v3",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "con-anonymous-aggregation",
@@ -4535,7 +5075,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-contribution-contract",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "con-endpoint-actions-a6",
@@ -4566,7 +5110,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-contribution-endpoint-actions",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "con-cross-ref-guard",
@@ -4599,7 +5147,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-create-cross-refs",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "con-citizen-document-upload",
@@ -4630,7 +5182,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "what-the-citizen-may-write-on-their-own-case",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "sib-stackiq-share-portal",
@@ -4662,7 +5218,11 @@
 			"provider": "stackiq",
 			"providerHow": "read-from-code",
 			"feature": "portal-contribution-contract",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (stackiq content on the portal)"
+			}
 		},
 		{
 			"id": "site-widget-grid",
@@ -4693,7 +5253,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Home",
+					"PtPagina"
+				]
+			}
 		},
 		{
 			"id": "site-glossary-block",
@@ -4724,7 +5291,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Begrippen"
+			}
 		},
 		{
 			"id": "site-contributions-block",
@@ -4755,7 +5326,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-theme-blocks-and-contributed-pages",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Home"
+			}
 		},
 		{
 			"id": "site-menus-layout",
@@ -4786,7 +5361,15 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Kop",
+					"Voet",
+					"EditorMenu"
+				]
+			}
 		},
 		{
 			"id": "site-unpublished-hidden",
@@ -4817,7 +5400,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "NietGevonden"
+			}
 		},
 		{
 			"id": "site-content-cache",
@@ -4848,7 +5435,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "site-page-designer",
@@ -4879,7 +5470,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-page-designer",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPagina"
+			}
 		},
 		{
 			"id": "site-landing-page-provisioning",
@@ -4911,7 +5506,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "contribution-landing-page-action",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortal"
+			}
 		},
 		{
 			"id": "site-landing-form-submit",
@@ -4942,7 +5541,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "landing-page-provisioning",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Contentpagina"
+			}
 		},
 		{
 			"id": "site-woo-microsite",
@@ -4973,7 +5576,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "retire-the-vendored-woo-bundle",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Zoeken",
+					"Publicatie"
+				]
+			}
 		},
 		{
 			"id": "cmp-site-inline-edit",
@@ -5004,7 +5614,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-page-designer",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Editor"
+			}
 		},
 		{
 			"id": "cmp-site-workflow",
@@ -5095,7 +5709,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPaginaZoekmachines"
+			}
 		},
 		{
 			"id": "cmp-site-multisite",
@@ -5126,7 +5744,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortals"
+			}
 		},
 		{
 			"id": "cmp-site-media",
@@ -5157,7 +5779,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtMedia",
+					"PtMediaKiezen"
+				]
+			}
 		},
 		{
 			"id": "cmp-site-seo",
@@ -5188,7 +5817,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPaginaZoekmachines"
+			}
 		},
 		{
 			"id": "cmp-site-personalise",
@@ -5249,7 +5882,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-headless-content-api",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own (an API for another frontend)"
+			}
 		},
 		{
 			"id": "cmp-site-news",
@@ -5287,7 +5924,15 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Home",
+					"PtNieuws",
+					"PtNieuwsbericht"
+				]
+			}
 		},
 		{
 			"id": "cmp-site-map",
@@ -5378,7 +6023,11 @@
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
 			"feature": "portal-federated-search",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zoeken"
+			}
 		},
 		{
 			"id": "sib-opencatalogi-pub-portal",
@@ -5409,7 +6058,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Publicatie",
+					"Zoeken"
+				]
+			}
 		},
 		{
 			"id": "sib-opencatalogi-pub-pages",
@@ -5440,7 +6096,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtPortal",
+					"PtPagina"
+				]
+			}
 		},
 		{
 			"id": "srch-hero-quick-search",
@@ -5471,7 +6134,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-federated-search",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Home"
+			}
 		},
 		{
 			"id": "srch-pagination",
@@ -5502,7 +6169,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-federated-search",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zoeken"
+			}
 		},
 		{
 			"id": "srch-a11y-live-region",
@@ -5533,7 +6204,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-public-search",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Zoeken",
+					"ZoekenGeenTreffers"
+				]
+			}
 		},
 		{
 			"id": "srch-detail-generic-properties",
@@ -5564,7 +6242,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-public-search",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Publicatie"
+			}
 		},
 		{
 			"id": "sib-opencatalogi-srch-plain",
@@ -5595,7 +6277,11 @@
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
 			"feature": "portal-federated-search",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zoeken"
+			}
 		},
 		{
 			"id": "sib-opencatalogi-srch-facets",
@@ -5626,7 +6312,11 @@
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
 			"feature": "portal-federated-search",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zoeken"
+			}
 		},
 		{
 			"id": "sib-opencatalogi-srch-sort",
@@ -5657,7 +6347,11 @@
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
 			"feature": "portal-federated-search",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zoeken"
+			}
 		},
 		{
 			"id": "thm-portal-independent-branding",
@@ -5688,7 +6382,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtPortalInstellingen",
+					"PtThemas"
+				]
+			}
 		},
 		{
 			"id": "thm-theme-fail-closed",
@@ -5719,7 +6420,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "nldesign-theme-integration",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "thm-theme-picker-missing",
@@ -5750,7 +6455,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtPortalInstellingen",
+					"PtThemas"
+				]
+			}
 		},
 		{
 			"id": "thm-white-label-runtime-config",
@@ -5781,7 +6493,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-white-label-runtime-config",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortalInstellingen"
+			}
 		},
 		{
 			"id": "thm-portal-chrome-i18n",
@@ -5812,7 +6528,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-spa-i18n-locale-support",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Kop"
+			}
 		},
 		{
 			"id": "thm-content-i18n",
@@ -5874,7 +6594,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-spa-nl-design-system-styling",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MobielHome",
+					"MobielZaak"
+				]
+			}
 		},
 		{
 			"id": "thm-nlds-dual-frontend",
@@ -5905,7 +6632,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-spa-nl-design-system-styling",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own (styling of every board)"
+			}
 		},
 		{
 			"id": "cmp-thm-languages",
@@ -5936,7 +6667,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-spa-i18n-locale-support",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Kop"
+			}
 		},
 		{
 			"id": "cmp-thm-mobile-app",
@@ -6034,7 +6769,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "nldesign-theme-integration",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtThemas"
+			}
 		},
 		{
 			"id": "sib-opencatalogi-pub-wcag",
@@ -6065,7 +6804,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-cms",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Toegankelijkheid"
+			}
 		},
 		{
 			"id": "ana-pixel-pageview",
@@ -6096,7 +6839,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ana-pixel-fallback",
@@ -6127,7 +6874,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ana-client-script-served",
@@ -6158,7 +6909,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ana-server-side-report",
@@ -6189,7 +6944,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-reporting",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortalInstellingen"
+			}
 		},
 		{
 			"id": "ana-session-recording",
@@ -6220,7 +6979,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-experiments",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-recorder-script-served",
@@ -6251,7 +7014,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-experiments",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ana-export-csv",
@@ -6282,7 +7049,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-reporting",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-per-portal-config",
@@ -6313,7 +7084,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortalInstellingen"
+			}
 		},
 		{
 			"id": "ana-daily-rollups",
@@ -6344,7 +7119,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ana-scheduled-reports",
@@ -6375,7 +7154,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-reporting",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-geo-region",
@@ -6406,7 +7189,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-visitors-and-geo",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-geo-first-download",
@@ -6437,7 +7224,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-visitors-and-geo",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ana-import-access-log",
@@ -6468,7 +7259,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-reporting",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own (an occ command)"
+			}
 		},
 		{
 			"id": "ana-journeys",
@@ -6499,7 +7294,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtVerkeer",
+					"PtPaginaVerkeer"
+				]
+			}
 		},
 		{
 			"id": "ana-funnels",
@@ -6530,7 +7332,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-outcomes",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-goals-conversion",
@@ -6561,7 +7367,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-outcomes",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-custom-dimensions",
@@ -6592,7 +7402,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-outcomes",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtVerkeer",
+					"PtPortalInstellingen"
+				]
+			}
 		},
 		{
 			"id": "ana-form-abandonment",
@@ -6623,7 +7440,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-outcomes",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-script-errors",
@@ -6654,7 +7475,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-outcomes",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-heatmap",
@@ -6685,7 +7510,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-experiments",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-campaign-utm",
@@ -6716,7 +7545,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "landing-page-provisioning",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "ana-privacy-ip",
@@ -6747,7 +7580,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ana-consent-and-dnt",
@@ -6778,7 +7615,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Cookieverklaring"
+			}
 		},
 		{
 			"id": "cmp-ana-ab",
@@ -6809,7 +7650,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-experiments",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtPaginaVerkeer",
+					"PtVerkeer"
+				]
+			}
 		},
 		{
 			"id": "cmp-ana-profiles",
@@ -6840,7 +7688,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtVerkeer"
+			}
 		},
 		{
 			"id": "cmp-ana-cookieless",
@@ -6871,7 +7723,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-traffic-analytics",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtPortalInstellingen",
+					"Cookieverklaring"
+				]
+			}
 		},
 		{
 			"id": "cmp-ana-feedback",
@@ -6932,7 +7791,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "configuration-initialization",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (the setup wizard)"
+			}
 		},
 		{
 			"id": "ops-settings-crud",
@@ -6963,7 +7826,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "settings-management",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ops-admin-settings-page",
@@ -6994,7 +7861,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "settings-management",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own (Nextcloud admin settings)"
+			}
 		},
 		{
 			"id": "ops-repair-steps",
@@ -7025,7 +7896,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "configuration-initialization",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ops-demo-data",
@@ -7056,7 +7931,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "configuration-initialization",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ops-health-endpoint",
@@ -7087,7 +7966,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "observability",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ops-metrics-endpoint",
@@ -7118,7 +8001,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "observability",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ops-audit-trail",
@@ -7149,7 +8036,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtInzending"
+			}
 		},
 		{
 			"id": "ops-integrations-page",
@@ -7181,7 +8072,11 @@
 			"providerHow": "read-from-code",
 			"feature": null,
 			"featureConfidence": "high",
-			"note": "Owners: ConductionNL/portaliq does the health reporting; ConductionNL/integriq owns the connection management UI."
+			"note": "Owners: ConductionNL/portaliq does the health reporting; ConductionNL/integriq owns the connection management UI.",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (general integrations page, see PqIntegrations for the pattern)"
+			}
 		},
 		{
 			"id": "ops-store-page",
@@ -7213,7 +8108,11 @@
 			"providerHow": "read-from-code",
 			"feature": null,
 			"featureConfidence": "high",
-			"note": "Owners: ConductionNL/openregister is the engine; ConductionNL/portaliq aliases the routes and declares the manifest page."
+			"note": "Owners: ConductionNL/openregister is the engine; ConductionNL/portaliq aliases the routes and declares the manifest page.",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (general store page, see PqStore for the pattern)"
+			}
 		},
 		{
 			"id": "ops-preferences",
@@ -7244,7 +8143,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "ops-action-auth-rbac",
@@ -7275,7 +8178,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (role settings)"
+			}
 		},
 		{
 			"id": "ops-editor-vs-admin-pages",
@@ -7306,7 +8213,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-page-designer",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Editor"
+			}
 		},
 		{
 			"id": "ops-multitenancy-organisation",
@@ -7337,7 +8248,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortals"
+			}
 		},
 		{
 			"id": "ops-mcp-tooling",
@@ -7368,7 +8283,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portaliq-mcp-adoption",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own (an MCP tool surface)"
+			}
 		},
 		{
 			"id": "ops-cors-public-api",
@@ -7399,7 +8318,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own"
+			}
 		},
 		{
 			"id": "cmp-ops-multitenant",
@@ -7430,7 +8353,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortals"
+			}
 		},
 		{
 			"id": "cmp-ops-rbac",
@@ -7461,7 +8388,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (role settings)"
+			}
 		},
 		{
 			"id": "cmp-ops-audit",
@@ -7492,7 +8423,14 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtInzending",
+					"PtAccount"
+				]
+			}
 		},
 		{
 			"id": "cmp-ops-saas",
@@ -7523,7 +8461,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own (a hosting offer, not a screen)"
+			}
 		},
 		{
 			"id": "cmp-ops-open-source",
@@ -7554,7 +8496,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"board": null,
+				"reason": "backend: no screen of its own (licence)"
+			}
 		},
 		{
 			"id": "dem-tnd-notify-on-change",
@@ -7588,7 +8534,11 @@
 			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/397282",
-			"originNote": "TenderNed 397282 Gemeente Molenlanden, requirement 'Het portaal geeft bij een wijziging een notificatie aan zowel de klant als aan de behandelaar'; also 415380 Sudwest-Fryslan 'statuswijziging ... kenbaar in het klantportaal'"
+			"originNote": "TenderNed 397282 Gemeente Molenlanden, requirement 'Het portaal geeft bij een wijziging een notificatie aan zowel de klant als aan de behandelaar'; also 415380 Sudwest-Fryslan 'statuswijziging ... kenbaar in het klantportaal'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Berichten"
+			}
 		},
 		{
 			"id": "dem-tnd-portal-talk-on-case",
@@ -7622,7 +8572,14 @@
 			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/397282",
-			"originNote": "TenderNed 397282 Gemeente Molenlanden: 'Via het portaal gevoerde communicatie wordt door de Oplossing automatisch toegevoegd aan de zaak'"
+			"originNote": "TenderNed 397282 Gemeente Molenlanden: 'Via het portaal gevoerde communicatie wordt door de Oplossing automatisch toegevoegd aan de zaak'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Zaak",
+					"Berichten"
+				]
+			}
 		},
 		{
 			"id": "dem-tnd-berichtenbox",
@@ -7656,7 +8613,14 @@
 			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/407031",
-			"originNote": "TenderNed 407031 Gemeente Gulpen-Wittem: 'beschikking kenbaar ... via het inwonerportaal, via de mail, via de MijnOverheid Berichtenbox'; 415380 Sudwest-Fryslan: 'koppeling met de Berichtenbox Overheid'"
+			"originNote": "TenderNed 407031 Gemeente Gulpen-Wittem: 'beschikking kenbaar ... via het inwonerportaal, via de mail, via de MijnOverheid Berichtenbox'; 415380 Sudwest-Fryslan: 'koppeling met de Berichtenbox Overheid'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MijnAccount",
+					"PtPortalInstellingen"
+				]
+			}
 		},
 		{
 			"id": "dem-tnd-sign-in-portal",
@@ -7690,7 +8654,14 @@
 			"featureConfidence": "low",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/409958",
-			"originNote": "TenderNed 409958 GR Sociaal (schuldhulpverlening): 'Client kan documenten ... digitaal ondertekenen in het inwonerportaal via DigiD, of ValidSign'"
+			"originNote": "TenderNed 409958 GR Sociaal (schuldhulpverlening): 'Client kan documenten ... digitaal ondertekenen in het inwonerportaal via DigiD, of ValidSign'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"DocumentOndertekenen",
+					"MijnTaken"
+				]
+			}
 		},
 		{
 			"id": "dem-tnd-reminders-overdue",
@@ -7724,7 +8695,11 @@
 			"featureConfidence": "high",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/409958",
-			"originNote": "TenderNed 409958: 'Indien de client niet tijdig de gevraagde documenten of informatie aanlevert, genereert de applicatie automatisch herinneringen ... via e-mail, brief en/of het inwonerportaal'"
+			"originNote": "TenderNed 409958: 'Indien de client niet tijdig de gevraagde documenten of informatie aanlevert, genereert de applicatie automatisch herinneringen ... via e-mail, brief en/of het inwonerportaal'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnTaken"
+			}
 		},
 		{
 			"id": "dem-tnd-joint-case-partner",
@@ -7758,7 +8733,11 @@
 			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/409958",
-			"originNote": "TenderNed 409958: 'In het geval van een gezamenlijk dossier moet de partner in het inwonerportaal kunnen inloggen zijn/haar eigen DigiD'"
+			"originNote": "TenderNed 409958: 'In het geval van een gezamenlijk dossier moet de partner in het inwonerportaal kunnen inloggen zijn/haar eigen DigiD'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnZaken"
+			}
 		},
 		{
 			"id": "dem-tnd-export-pdf",
@@ -7792,7 +8771,11 @@
 			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/409958",
-			"originNote": "TenderNed 409958: 'Client kan via het inwonerportaal verschillende gegevens (bv afschriften betalingsverkeer, of budgetplan) exporteren in PDF'"
+			"originNote": "TenderNed 409958: 'Client kan via het inwonerportaal verschillende gegevens (bv afschriften betalingsverkeer, of budgetplan) exporteren in PDF'",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (no board draws a PDF export)"
+			}
 		},
 		{
 			"id": "dem-tnd-show-per-casetype",
@@ -7827,7 +8810,11 @@
 			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/402189",
-			"originNote": "TenderNed 402189 Gemeente Alkmaar Common Ground Platform: 'Aan kunnen geven welke workflows standaard getoond worden op MijnAlkmaar en welke niet' (nota van inlichtingen)"
+			"originNote": "TenderNed 402189 Gemeente Alkmaar Common Ground Platform: 'Aan kunnen geven welke workflows standaard getoond worden op MijnAlkmaar en welke niet' (nota van inlichtingen)",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPortalInstellingen"
+			}
 		},
 		{
 			"id": "dem-tnd-availability-report",
@@ -7862,7 +8849,11 @@
 			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415380",
-			"originNote": "TenderNed 415380 Sudwest-Fryslan: 'De leverancier kan inzicht geven (gedetailleerde meetgegevens/rapportages over de afgelopen 12 maanden) m.b.t. de beschikbaarheid ... klantenportaal'"
+			"originNote": "TenderNed 415380 Sudwest-Fryslan: 'De leverancier kan inzicht geven (gedetailleerde meetgegevens/rapportages over de afgelopen 12 maanden) m.b.t. de beschikbaarheid ... klantenportaal'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtBeschikbaarheid"
+			}
 		},
 		{
 			"id": "dem-tnd-wcag22-portal",
@@ -7896,7 +8887,11 @@
 			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/410320",
-			"originNote": "TenderNed 410320 Regio Gooi en Vechtstreek, Eis 257: 'Het klantportaal voldoet aan de WCAG 2.2 eisen'; 415380: 'voldoet aan de meest recente WCAG'"
+			"originNote": "TenderNed 410320 Regio Gooi en Vechtstreek, Eis 257: 'Het klantportaal voldoet aan de WCAG 2.2 eisen'; 415380: 'voldoet aan de meest recente WCAG'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Toegankelijkheid"
+			}
 		},
 		{
 			"id": "dem-fr-case-contact-moments",
@@ -7930,7 +8925,11 @@
 			"featureConfidence": "medium",
 			"origin": "featureRequest",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/issues/2726",
-			"originNote": "open-inwoner issue #2726 'Contactmomenten toevoegen aan een zaak detailpagina' (enhancement, owner: dimpact, opened 2026-07-23)"
+			"originNote": "open-inwoner issue #2726 'Contactmomenten toevoegen aan een zaak detailpagina' (enhancement, owner: dimpact, opened 2026-07-23)",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "dem-rm-zgw-config-ui",
@@ -7997,7 +8996,11 @@
 			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/product-management/roadmap.md#L13",
-			"originNote": "NL Portal roadmap milestone 'Huisstijl configuratie via UI'"
+			"originNote": "NL Portal roadmap milestone 'Huisstijl configuratie via UI'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtThemas"
+			}
 		},
 		{
 			"id": "dem-rm-my-products",
@@ -8096,7 +9099,11 @@
 			"featureConfidence": "high",
 			"origin": "competitor",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/src/open_inwoner/extended_sessions/tests/test_views.py#L17",
-			"originNote": "test name and i18n string in two competitors"
+			"originNote": "test name and i18n string in two competitors",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "SessieVerloopt"
+			}
 		},
 		{
 			"id": "dem-cl-eherkenning-branch",
@@ -8129,7 +9136,11 @@
 			"feature": "portal-oidc-broker-login",
 			"featureConfidence": "high",
 			"origin": "changelog",
-			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/CHANGELOG.rst#L1155"
+			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/CHANGELOG.rst#L1155",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnZaken"
+			}
 		},
 		{
 			"id": "dem-cl-multiple-contact-addresses",
@@ -8162,7 +9173,11 @@
 			"feature": "portal-identity-and-the-organisations-cases",
 			"featureConfidence": "high",
 			"origin": "changelog",
-			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/CHANGELOG.rst#L149"
+			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/CHANGELOG.rst#L149",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnAccount"
+			}
 		},
 		{
 			"id": "dem-cl-waste-emptying",
@@ -8294,7 +9309,11 @@
 			"featureConfidence": "medium",
 			"origin": "competitor",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/src/open_inwoner/cms/cases/tests/test_contactform.py#L421",
-			"originNote": "test name"
+			"originNote": "test name",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "act-complaint-on-case",
@@ -8313,7 +9332,11 @@
 				"note": "Canvas decision (7 Oct 2026): Bezwaar and Klacht live on the case page, board Zaak.",
 				"change": "case-page-objection-and-complaint"
 			},
-			"source": "spec-round-2026-10-07"
+			"source": "spec-round-2026-10-07",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "act-guest-signed-link",
@@ -8331,7 +9354,11 @@
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/portal-guest-actions"
 			},
-			"source": "spec-round-2026-10-07"
+			"source": "spec-round-2026-10-07",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "GastActie"
+			}
 		},
 		{
 			"id": "dem-cl-case-outcome-explained",
@@ -8364,7 +9391,11 @@
 			"feature": "contribution-manifest-v3",
 			"featureConfidence": "medium",
 			"origin": "changelog",
-			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/release-notes/3.0.x/backend-libraries/3.0.0.md#L10"
+			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/release-notes/3.0.x/backend-libraries/3.0.0.md#L10",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
 		},
 		{
 			"id": "cmp-srch-own-messages-tasks",
@@ -8430,7 +9461,14 @@
 			"feature": "portal-page-designer",
 			"featureConfidence": "medium",
 			"origin": "changelog",
-			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/release-notes/3.0.x/app/3.0.3_3.0.2-1.md#L17"
+			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/release-notes/3.0.x/app/3.0.3_3.0.2-1.md#L17",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Home",
+					"PtMededelingen"
+				]
+			}
 		},
 		{
 			"id": "cmp-id-residents-at-address",
@@ -8464,7 +9502,11 @@
 			"featureConfidence": "low",
 			"origin": "competitor",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/frontend/packages/localization/src/i18n/messages/nl-nl.ts#L165",
-			"originNote": "i18n strings"
+			"originNote": "i18n strings",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnGegevens"
+			}
 		},
 		{
 			"id": "cmp-id-prompt-missing-email",
@@ -8498,7 +9540,11 @@
 			"featureConfidence": "medium",
 			"origin": "competitor",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/frontend/packages/localization/src/i18n/messages/nl-nl.ts#L237",
-			"originNote": "i18n strings"
+			"originNote": "i18n strings",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnOverzicht"
+			}
 		},
 		{
 			"id": "dem-cl-sub-cases",
@@ -8708,7 +9754,11 @@
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/guardian-direct-messaging"
 			},
-			"source": "spec-round-2026-10-07"
+			"source": "spec-round-2026-10-07",
+			"screen": {
+				"board": null,
+				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+			}
 		},
 		{
 			"id": "inb-guardian-translation",
@@ -8726,7 +9776,11 @@
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/guardian-message-translation"
 			},
-			"source": "spec-round-2026-10-07"
+			"source": "spec-round-2026-10-07",
+			"screen": {
+				"board": null,
+				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+			}
 		},
 		{
 			"id": "inb-guardian-push-quiet-hours",
@@ -8744,7 +9798,11 @@
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/guardian-push-notifications"
 			},
-			"source": "spec-round-2026-10-07"
+			"source": "spec-round-2026-10-07",
+			"screen": {
+				"board": null,
+				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+			}
 		},
 		{
 			"id": "cmp-srch-noindex-filtered",
@@ -8858,7 +9916,11 @@
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/portal-page-traffic"
 			},
-			"source": "spec-round-2026-10-07"
+			"source": "spec-round-2026-10-07",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtPaginaVerkeer"
+			}
 		},
 		{
 			"id": "ana-kpi-cards",
@@ -8876,7 +9938,14 @@
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/portal-traffic-kpi-cards"
 			},
-			"source": "spec-round-2026-10-07"
+			"source": "spec-round-2026-10-07",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"PtPortal",
+					"PtVerkeer"
+				]
+			}
 		},
 		{
 			"id": "dem-rm-chatbot",
@@ -8909,7 +9978,11 @@
 			"feature": "site-cms",
 			"featureConfidence": "medium",
 			"origin": "roadmap",
-			"originUrl": "https://www.liferay.com/roadmap"
+			"originUrl": "https://www.liferay.com/roadmap",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (no board draws a chat)"
+			}
 		},
 		{
 			"id": "dem-rm-shared-design-library",
@@ -8942,7 +10015,11 @@
 			"feature": "portal-theming",
 			"featureConfidence": "medium",
 			"origin": "roadmap",
-			"originUrl": "https://www.liferay.com/roadmap"
+			"originUrl": "https://www.liferay.com/roadmap",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet on the Zuiddrecht canvas (shared blocks across portals)"
+			}
 		},
 		{
 			"id": "dem-rm-ai-governed-search",
@@ -9024,7 +10101,11 @@
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/parent-polls"
 			},
-			"source": "spec-round-2026-10-07"
+			"source": "spec-round-2026-10-07",
+			"screen": {
+				"board": null,
+				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+			}
 		},
 		{
 			"id": "site-pwa-install",
@@ -9042,7 +10123,14 @@
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/parent-pwa-installability"
 			},
-			"source": "spec-round-2026-10-07"
+			"source": "spec-round-2026-10-07",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MobielHome",
+					"PtPortalInstellingen"
+				]
+			}
 		}
 	],
 	"pending": [
