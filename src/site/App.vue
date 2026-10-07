@@ -144,7 +144,9 @@
 			above the page heading (see AccountArea's `prompt` slot below);
 			here it stands above any other page.
 		-->
-		<div v-if="session && contactPrompt && !accountRoute" class="container">
+		<div
+			v-if="session && contactPrompt && !accountRoute"
+			class="container pq-site__contact-prompt">
 			<ContactPrompt
 				:t="t"
 				:navigate="goSection"
@@ -2356,6 +2358,19 @@ body.layout-base .pq-site {
 	grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
 	gap: 2rem;
 	align-items: start;
+}
+
+/*
+ * The e-mail prompt above a page outside `/mijn`. Its container is a direct
+ * child of the column-flex `.pq-site`, where the container's auto side margins
+ * stop the stretch every other container gets inside `<main>`: it shrank to
+ * its text and stood off-centre. Full width up to the container's own
+ * maximum, and a step down from the navigation, as in the account column.
+ */
+.pq-site__contact-prompt {
+	box-sizing: border-box;
+	width: 100%;
+	padding-block-start: var(--utrecht-space-block-md, 1rem);
 }
 
 .pq-site__layout--side-menu .container {
