@@ -1901,7 +1901,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 
 .pq-site:has(.pq-site__header--designed)
 	.ac-footer
-	section.pq-footer__band.pq-footer__band--legal {
+	section.pq-footer__band--legal.pq-footer__band {
 	padding-block: 16px;
 	font-size: 0.875rem;
 }
