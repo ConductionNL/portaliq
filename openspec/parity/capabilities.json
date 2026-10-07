@@ -575,7 +575,8 @@
 				"reachedOn": "portal SPA login screen -> /portal/api/session/oidc/start?provider=generic",
 				"owner": "ConductionNL/portaliq",
 				"note": "Fully generic OIDC RP: discovery, PKCE, state/nonce, per-org claim/LoA map overrides.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-24-portal-oidc-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -605,7 +606,8 @@
 				"reachedOn": "same OIDC callback path as sig-digid/sig-eherkenning/sig-generic-oidc",
 				"owner": "ConductionNL/portaliq",
 				"note": "Deliberate fail-closed design (ADR-005): every step returns the identical error so no response distinguishes which validation failed.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-24-portal-oidc-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -635,7 +637,8 @@
 				"reachedOn": "portal SPA login screen 'Dev-login (test)' button (src/portal/App.jsx:326-328) -> POST /portal/api/session/dev-login",
 				"owner": "ConductionNL/portaliq",
 				"note": "Correctly blocked outside debug/flag, so it cannot mint tokens in production.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/supplier-portal"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -665,7 +668,8 @@
 				"reachedOn": "public site sign-in menu (src/site/App.vue:78-99 -> signInRoutes computed at App.vue:746-747) -> GET /portal/api/session/nextcloud",
 				"owner": "ConductionNL/portaliq",
 				"note": "Reached from the site renderer; the portal React SPA itself has no nextcloud button, only OIDC + dev-login (App.jsx:313-328), so this route is a site-only affordance.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "none"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -695,7 +699,8 @@
 				"reachedOn": "portal SPA header logout button (src/portal/App.jsx: 'Uitloggen' handler) and site App.vue -> src/portal/lib/portalApi.js:552-561 logout()",
 				"owner": "ConductionNL/portaliq",
 				"note": "Best-effort server call, token dropped client-side regardless of the server response.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/supplier-portal"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -725,7 +730,8 @@
 				"reachedOn": "src/portal/lib/portalApi.js:497-515 refreshSession() -> POST /portal/api/session/refresh",
 				"owner": "ConductionNL/portaliq",
 				"note": "Fails closed silently: a revoked/expired/past-cap bearer is simply not rotated, and the next getSession() call surfaces the real state.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-24-portal-session-hardening-v2"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -755,7 +761,8 @@
 				"reachedOn": "admin settings page (src/views/AdminRoot.vue:69-99, submit handler revokeOrganisation() at line 509) -> POST /apps/portaliq/api/session-admin/revoke-organisation",
 				"owner": "ConductionNL/portaliq",
 				"note": "Incident-response action, staff-only, reached via the app's own admin settings form (not a generic OR page).",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-auth-edge-session-hardening"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -785,7 +792,8 @@
 				"reachedOn": "both frontends call this on every load after an OIDC/nextcloud redirect",
 				"owner": "ConductionNL/portaliq",
 				"note": "A code comment in authApi.js records that this WAS broken once (fragment redirected but nothing read it), now fixed and covered on both frontends.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-24-portal-oidc-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -815,7 +823,8 @@
 				"reachedOn": "invoked on every oidcStart call, keyed by the org slug the portal resolves",
 				"owner": "ConductionNL/portaliq",
 				"note": "Policy check and secret resolution are deliberately split so an org/provider combination that is not allowed never reaches the client secret.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-24-portal-oidc-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -845,7 +854,8 @@
 				"reachedOn": "admin integrations page (manifest.json /settings/integrations, frontend-api-paths.txt /apps/integriq/connections) reads this via integriq's connection registry",
 				"owner": "ConductionNL/portaliq",
 				"note": "reportedOnly: the row stays 'Not checked yet' until the next real broker login happens, so a broker nobody has used recently shows no health at all, not a stale-but-visible status.",
-				"origin": "code"
+				"origin": "code",
+				"change": "adopt-connection-registry"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -875,7 +885,8 @@
 				"reachedOn": "admin app /sessions and /sessions/:id pages, generic OpenRegister index/detail widgets reading the portalSession register",
 				"owner": "ConductionNL/portaliq",
 				"note": "Generic OR CRUD pages, not a bespoke session console, but a real reachable staff screen; no per-session revoke action visible on this page (only the org-wide revoke on AdminRoot.vue).",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -905,7 +916,8 @@
 				"reachedOn": "every non-public content read on the site renderer (src/site/lib/contentApi.js) goes through ContentController first",
 				"owner": "ConductionNL/portaliq",
 				"note": "The controller's own docblock (ContentController.php:106-115) records this WAS a no-op: a DigiD-only, substantial-minTrust portal served full page bodies to anonymous callers until this method was added. Now enforced.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1027,7 +1039,8 @@
 				"reachedOn": "a refusal (authentication_required / trust too low) is reached, but re-authenticating only re-runs the SAME broker at whatever level it already offers",
 				"owner": "ConductionNL/portaliq",
 				"note": "Static per-broker gating exists (yes/no at a fixed minTrust), but there is no dynamic step-up: a session already signed in at 'low' has no way to ask the SAME broker for 'substantial' specifically, it just re-runs the identical login.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1090,7 +1103,8 @@
 				"evidence": "lib/Controller/ContentController.php:135-163 (portal-level gate on authentication.modes and minTrust, 401/403 for anonymous or under-assured callers); lib/Controller/SessionController.php oidcStart/oidcCallback with lib/Service/OidcClaimMapperService.php:75-95 digid/eherkenning/eidas presets (commit eb85956)",
 				"reachedOn": "public site renderer sign-in door (src/site/lib/authApi.js, /portal/api/session/oidc/start) then /api/content/* with the portal bearer",
 				"owner": "ConductionNL/portaliq",
-				"note": "Re-rated by the lane from opencatalogi pub-restricted (building, partial). The DigiD and eHerkenning broker is live, not dormant as the SessionController docblock says, and a whole portal can be gated on a mode and assurance level. The gate is per portal, not per document: opencatalogi publications reach the site through public federation endpoints, so one document cannot be held back for signed-in readers. The src/site/lib/authApi.js docblock that says the gate is enforced nowhere is stale too."
+				"note": "Re-rated by the lane from opencatalogi pub-restricted (building, partial). The DigiD and eHerkenning broker is live, not dormant as the SessionController docblock says, and a whole portal can be gated on a mode and assurance level. The gate is per portal, not per document: opencatalogi publications reach the site through public federation endpoints, so one document cannot be held back for signed-in readers. The src/site/lib/authApi.js docblock that says the gate is enforced nowhere is stale too.",
+				"change": "portal-scoping-and-auth"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1120,7 +1134,8 @@
 				"reachedOn": "every successful OIDC callback (sig-digid/sig-eherkenning/sig-generic-oidc paths) and the Nextcloud login path",
 				"owner": "ConductionNL/portaliq",
 				"note": "This, not the dedicated /portal/api/identity/register endpoint, is the actual working registration path: a broker login mints the account with no separate form.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-identity-space"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1491,7 +1506,8 @@
 				"reachedOn": "every OIDC callback and every session read (index()) carries this scoping",
 				"owner": "ConductionNL/portaliq",
 				"note": "Organisation is server-derived from the OIDC state/nonce record started at oidcStart, not from anything the client can send at callback time.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-identity-space"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1586,7 +1602,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Re-rated from dossiq's original 'no': the party-tree walk is real, wired into the reached case-read path, and gated by whether the active mandate's reachOf() is REACH_TREE. Caveat shared with cmp-sig-machtiging: the SPA never sends a `mandate` parameter, so which mandate (and therefore whether tree-reach applies) is always the service's default, not a citizen's explicit choice.",
 				"sourceId": "13.38",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "2026-09-28-portal-visibility-follows-the-party-tree"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1617,7 +1634,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Cross-referenced from openregister's matrix (source matrix openregister, id acc-end-user-accounts): openregister correctly declines this capability and names portaliq as the provider. Confirmed from portaliq's own code: end-user accounts are real, broker-authenticated, and separate from Nextcloud staff accounts.",
 				"sourceId": "acc-end-user-accounts",
-				"origin": "sibling"
+				"origin": "sibling",
+				"spec": "openspec/specs/portal-identity-space"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1767,7 +1785,8 @@
 				"reachedOn": "portal SPA nav (App.jsx buildNav) -> PageView.jsx collection block -> CollectionTable.jsx",
 				"owner": "ConductionNL/portaliq",
 				"note": "Works for any contributing app that declares a page with a collection block. The contributing app supplies the actual case data (e.g. dossiq); portaliq only renders it.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-contribution-manifest-v3"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1828,7 +1847,8 @@
 				"reachedOn": "PageView.jsx 'detail' block, selected from a CollectionTable row (onSelect)",
 				"owner": "ConductionNL/portaliq",
 				"note": "Works for a declared detail block and, since portaliq#723, for every page portaliq synthesises for a contribution that declares no pages.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-07-portal-scoped-crud"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1858,7 +1878,8 @@
 				"reachedOn": "PageView.jsx 'citizenCase' block -> CitizenCase.jsx, when a manifest page declares that block type",
 				"owner": "ConductionNL/portaliq",
 				"note": "The status label is whatever the case-owning app's case type declares; portaliq only renders it, never invents one.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1919,7 +1940,8 @@
 				"reachedOn": "PageView.jsx DetailCard's FileList, shown only when collection.filesDownload === true",
 				"owner": "ConductionNL/portaliq",
 				"note": "Only reachable from the generic collection detail block, not from the dedicated citizen-case screen (see cas-documents-view defect).",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-23-portal-document-download"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2078,7 +2100,8 @@
 						"number": 732,
 						"sha": "266328d4d95cda118bd22bb4b65077c34d54ceea"
 					}
-				]
+				],
+				"spec": "none"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2344,7 +2367,8 @@
 				"reachedOn": "CitizenCase.jsx save button, only shown when writableSet.window.open === true",
 				"owner": "ConductionNL/portaliq",
 				"note": "Only fields the case type marks writable, and only within the open window, can be changed; a refusal shows the server's own sentence.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2374,7 +2398,8 @@
 				"reachedOn": "CitizenCase.jsx file input, shown only when writableSet.documents.open === true",
 				"owner": "ConductionNL/portaliq",
 				"note": "A name collision gets a suffix rather than overwriting an existing document.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2467,7 +2492,8 @@
 				"reachedOn": "invoked on every citizenCase#amend and citizenCase#addDocument call (see act-amend-case, act-add-document)",
 				"owner": "ConductionNL/portaliq",
 				"note": "Not a user-visible feature by itself, but a real, invoked guard rather than a declaration.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2504,7 +2530,8 @@
 						"number": 683,
 						"sha": "2f202ee1f5aee894a66364eaa43dab7c71c68e1a"
 					}
-				]
+				],
+				"spec": "openspec/specs/change-proposal-queue"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2572,7 +2599,8 @@
 						"number": 683,
 						"sha": "2f202ee1f5aee894a66364eaa43dab7c71c68e1a"
 					}
-				]
+				],
+				"spec": "openspec/specs/change-proposal-queue"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2633,7 +2661,8 @@
 				"reachedOn": "PageView.jsx action block -> SchemaForm.jsx -> createObject()",
 				"owner": "ConductionNL/portaliq",
 				"note": "Ownership is stamped server-side, not sent by the client.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-contribution-manifest-v3"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2663,7 +2692,8 @@
 				"reachedOn": "CollectionTable.jsx row action button -> onRowAction -> PATCH /portal/api/collections/{register}/{schema}/{id}?action={id}",
 				"owner": "ConductionNL/portaliq",
 				"note": "The change portal-status-transitions is implemented in code and was archived on 2026-09-29 (openspec/changes/archive/2026-09-29-portal-status-transitions).",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-portal-status-transitions"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2693,7 +2723,8 @@
 				"reachedOn": "PageView.jsx detail block, shown only when collection.filesUpload === true",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-07-portal-scoped-crud"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2723,7 +2754,8 @@
 				"reachedOn": "PageView.jsx 'action'/'cta' block (endpoint type) button",
 				"owner": "ConductionNL/portaliq",
 				"note": "Best-effort/thin trigger from the shell's side; the browser never talks to the target app directly. See cmp-cas-pay for a concrete example (shillinq payments).",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-07-contract-v2"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2785,7 +2817,8 @@
 				"reachedOn": "portal SPA nav 'My tasks' -> TasksPage.jsx",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-task-delivery"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2815,7 +2848,8 @@
 				"reachedOn": "TasksPage.jsx list row click",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-task-delivery"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2845,7 +2879,8 @@
 				"reachedOn": "TasksPage.jsx completion form",
 				"owner": "ConductionNL/portaliq",
 				"note": "Client-side validation mirrors server-side re-checks (defense in depth), see tsk-upload-rules.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-task-delivery"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2875,7 +2910,8 @@
 				"reachedOn": "TasksPage.jsx task detail form",
 				"owner": "ConductionNL/portaliq",
 				"note": "The rules are frozen onto the task when raised (see PartnerAskService docblock), so editing the case type afterwards never changes what was already asked.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-task-delivery"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2905,7 +2941,8 @@
 				"reachedOn": "InboxPage.jsx 'Bekijk taak' link -> App.jsx -> TasksPage.jsx",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-23-portal-inbox-v2"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2935,7 +2972,8 @@
 				"reachedOn": "cron-run background job, feeding InboxPage (portal-inbox-v2) and e-mail",
 				"owner": "ConductionNL/portaliq",
 				"note": "The e-mail deliberately carries only the organisation name and portal link, never task or case content.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-task-delivery"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2965,7 +3003,8 @@
 				"reachedOn": "same TasksPage.jsx path as tsk-list/tsk-complete, for a session whose audience is 'supplier' or 'partner'",
 				"owner": "ConductionNL/portaliq",
 				"note": "Confirmed at the audience-plumbing level; a live check would still be needed to see a real supplier-audience task end to end.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/supplier-portal"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2996,7 +3035,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "A fully built, guarded backend for asking an outside partner has no caseworker-facing button anywhere; the sibling row (dossiq 3.19) rated it 'partial' pointing at dossiq's own legacy page, which is unrelated and un-retired. Portaliq's half is built (openspec/changes/partner-tasks-in-the-portal). The handler's ask button is dossiq's consumer half: declare ask-partner on its case contribution and retire ExternalConsultationResponse (OpenSpec pass 2026-09-27).",
 				"origin": "code",
-				"defectCandidate": "lib/Controller/PartnerTaskController.php:1 whole controller has no UI caller in portaliq or in dossiq (code reading, needs a live check)"
+				"defectCandidate": "lib/Controller/PartnerTaskController.php:1 whole controller has no UI caller in portaliq or in dossiq (code reading, needs a live check)",
+				"spec": "openspec/specs/partner-tasks-in-the-portal"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3027,7 +3067,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "dossiq's matrix rates this 'partial' citing its own ExternalConsultationResponse page and a merged PR (#611); the PR shipped the portaliq-side controller, but nothing calls it, and dossiq's old ExternalConsultationResponse flow it was meant to retire is still shipping unchanged. Portaliq's half is built (openspec/changes/partner-tasks-in-the-portal). The handler's ask button is dossiq's consumer half: declare ask-partner on its case contribution and retire ExternalConsultationResponse (OpenSpec pass 2026-09-27).",
 				"sourceId": "sib-3.19",
-				"origin": "sibling"
+				"origin": "sibling",
+				"spec": "openspec/specs/partner-tasks-in-the-portal"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3144,7 +3185,8 @@
 				"reachedOn": "portal SPA InboxPage.jsx -> portalApi.fetchInbox() -> GET /portal/api/inbox (appinfo/routes.php:168)",
 				"owner": "ConductionNL/portaliq",
 				"note": "Works end to end. Each row carries a _source provenance tag (appId/label) so the SPA can show which app it came from.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-23-portal-inbox-v2"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3174,7 +3216,8 @@
 				"reachedOn": "InboxPage.jsx 'Mark as read' button -> PATCH /portal/api/inbox/{register}/{schema}/{id}/read",
 				"owner": "ConductionNL/portaliq",
 				"note": "Optimistic UI update only flips read on server confirmation; only the read field can ever be set by this endpoint.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-23-portal-inbox-v2"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3204,7 +3247,8 @@
 				"reachedOn": "portal SPA nav badge, App.jsx:298",
 				"owner": "ConductionNL/portaliq",
 				"note": "Live-decrements on markRead without a full reload.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-23-portal-inbox-v2"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3234,7 +3278,8 @@
 				"reachedOn": "InboxPage.jsx message detail body",
 				"owner": "ConductionNL/portaliq",
 				"note": "Only renders when a contributing app's row happens to populate these optional fields; nothing in this repo enforces that a decision message always carries them.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-23-wmebv-submission-receipts"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3264,7 +3309,8 @@
 				"reachedOn": "admin Vue app /messages route (manifest page)",
 				"owner": "ConductionNL/portaliq",
 				"note": "Generic OpenRegister-backed index/detail pages, staff-only.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-23-portal-inbox-v2"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3294,7 +3340,8 @@
 				"reachedOn": "admin dashboard widget",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-07-23-portal-inbox-v2"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3324,7 +3371,8 @@
 				"reachedOn": "admin PortalMessageDetail talk leaf widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "Internal-only per ADR-046: no Talk join link or token is ever written into a portalMessage field. The citizen's half of any answer must still arrive as an ordinary portalMessage (see inb-reply).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portaliq-leaf-integrations"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3512,7 +3560,8 @@
 				"reachedOn": "admin PortalMessages index and account-messages widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "Binary read flag visible to staff on both the messages index and the account detail widget; no read timestamp is surfaced to staff (only the boolean), and dossiq's own richer 'readByRecipientAt' field is not part of portaliq's own portalMessage schema.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "2026-07-23-portal-inbox-v2"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3640,7 +3689,8 @@
 				"reachedOn": "portal SPA PageView.jsx -> SchemaForm.jsx -> POST /portal/api/collections/{register}/{schema}",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is the actual working 'submit a form' mechanism for a signed-in or password/OIDC-authenticated subject, driven by whatever type:create actions a sibling app's contribution declares. It fires SubmissionReceiptService on success (see cmp-int-pdf-receipt / inb-wmebv-fields).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/supplier-portal"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3670,7 +3720,8 @@
 				"reachedOn": "site FormBlock.vue -> formSubmission.js -> POST /portal/api/collections/{register}/{schema} with no session",
 				"owner": "ConductionNL/portaliq",
 				"note": "Confirmed reached for landing-page forms. Whether any CASE-creating app (like a complaint) also declares an anonymous action was not confirmed for every sibling; dossiq's own citizen createKlacht requires minTrust low (password/OIDC), not anonymous.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/landing-page-provisioning"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3701,7 +3752,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "EmbeddedForm.jsx's own file header documents a real past defect: the frame route and CSP worked but the bundle only ever mounted #portaliq-portal, so the iframe rendered an empty div, caught only because the original e2e test fetched the HTML over plain HTTP and asserted the string 'portaliq-embed' was present rather than driving a browser. That gap is fixed now: EmbeddedForm.jsx is mounted and posts real answers. The follow-up link the API returns (followUrl, '...site?reference=...') is dead: nothing in src/site reads a 'reference' query param (see int-status-lookup).",
 				"origin": "code",
-				"defectCandidate": "lib/Controller/PortalEmbedController.php followUrl points to the portal site route with ?reference=... but grep of src/site for reading a reference query param returns 0 hits, so the 'come back and check' link the API promises leads to an ordinary page that ignores it (code reading, needs a live check)"
+				"defectCandidate": "lib/Controller/PortalEmbedController.php followUrl points to the portal site route with ?reference=... but grep of src/site for reading a reference query param returns 0 hits, so the 'come back and check' link the API promises leads to an ordinary page that ignores it (code reading, needs a live check)",
+				"change": "embedded-intake-form"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3732,7 +3784,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "dossiq's own matrix under-rates this: the embedded-intake-form change (all tasks checked except an admin-only CMS snippet screen) does deliver a real case object. What is NOT confirmed is whether dossiq itself has actually bound one of its own case schemas into a published portal form; the mechanism works, a live end-to-end binding to a dossiq case was not verified from this repo.",
 				"sourceId": "int-dossiq-q1.16",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "embedded-intake-form"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3855,7 +3908,8 @@
 				"reachedOn": "site page with a FormBlock -> formSubmission.js -> POST /portal/api/collections/portaliq/landingPageSubmission -> ObjectCreatedEvent -> LandingPageSubmissionDispatchListener relay",
 				"owner": "ConductionNL/portaliq",
 				"note": "The page itself is created as draft; an editor must publish it (not automatic). The relay is fail-safe: if the requesting app has not shipped its own consumer event class yet, the submission is still stored but the relay silently no-ops (logged as info, not an error).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/landing-page-provisioning"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4134,7 +4188,8 @@
 				"reachedOn": "the receipt message reaches the citizen through the ordinary inbox (see inb-view-unified); dataCopy is shown as plain data on the message, never as a downloadable file",
 				"owner": "ConductionNL/portaliq",
 				"note": "You get an honest, structured copy of what you submitted (WMEBV burden-of-proof), just not a PDF, and not through the unreached PortalIntakeController#status page either.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "2026-07-23-wmebv-submission-receipts"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4257,7 +4312,8 @@
 				"reachedOn": "every read in ContributionController flows through PortalContributionRegistry::aggregateFor()",
 				"owner": "ConductionNL/portaliq",
 				"note": "A contributing app's provider class carries no import of portaliq and no info.xml dependency, so it stays inert if portaliq is not installed.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-contribution-contract"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4287,7 +4343,8 @@
 				"reachedOn": "PortalContributionRegistry::aggregateFor(), consulted once per subject's own audience",
 				"owner": "ConductionNL/portaliq",
 				"note": "The area brief's own audience list (client/supplier/partner) undersells it: the vocabulary is open and siblings use their own domain words (citizen, inspector, vendor-org).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-contribution-contract"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4317,7 +4374,8 @@
 				"reachedOn": "every aggregation pass",
 				"owner": "ConductionNL/portaliq",
 				"note": "The mechanism is real and enforced, but the identity broker that would ever produce anything above 'low' is dormant: decidiq's own owed row plt-02 found 'citizens log in through portaliq's ordinary password/portalAccount edge at trust low' with no DigiD/eHerkenning anywhere. So today every subject sits at the one trust level, and every substantial/high-gated collection or action is unreachable by anyone.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-contribution-contract"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4347,7 +4405,8 @@
 				"reachedOn": "PortalProviderLocator resolves the FQCN per installed app; an absent class simply contributes nothing",
 				"owner": "ConductionNL/portaliq",
 				"note": "opencatalogi is a deliberate exception, not a gap: it integrates by exposing its own @PublicPage federation/search endpoints that portaliq's site renderer calls directly (FederatedSearchBlock.vue, PublicationDetailBlock.vue), bypassing the contribution registry entirely, a second, parallel integration pattern this area's brief does not mention. The other 8 missing apps (openregister, integriq, thematiq, launchpad, buildiq, keepiq, hermiq, versioniq) have no portal presence of any kind.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portaliq-leaf-integrations"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4377,7 +4436,8 @@
 				"reachedOn": "portal SPA nav -> App.jsx page list -> PageView.jsx",
 				"owner": "ConductionNL/portaliq",
 				"note": "Confirmed live for the generic mechanism. Whether every specific sibling's declared page renders without error was not checked page-by-page; PortalManifestNormaliser.php sanitises the shape fail-closed before it ever reaches PageView.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-contribution-manifest-v3"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4407,7 +4467,8 @@
 				"reachedOn": "PageView.jsx renders each block type",
 				"owner": "ConductionNL/portaliq",
 				"note": "Presentation-only per its own docblock: block composition never widens data access, the fields whitelist and collection scope stay the sole authorities.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-contribution-manifest-v3"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4437,7 +4498,8 @@
 				"reachedOn": "PageView.jsx / SchemaForm.jsx read the normalised config",
 				"owner": "ConductionNL/portaliq",
 				"note": "A collection dropdown (optionsProviders type:collection) is populated through the subject-scoped collection endpoint, so it can only ever offer values the subject may already read, the UI convenience cannot become a data leak.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-contribution-manifest-v3"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4467,7 +4529,8 @@
 				"reachedOn": "the public site's anonymous content reads (see src/site/lib/contentApi.js /contributions)",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-contribution-contract"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4497,7 +4560,8 @@
 				"reachedOn": "PageView.jsx action button -> App.jsx onAction() -> POST /portal/api/actions/{appId}/{actionId}",
 				"owner": "ConductionNL/portaliq",
 				"note": "The browser never holds the target app's credentials; portaliq signs the assertion server-to-server. App.jsx's own comment calls this 'a thin trigger; result UI is a follow-up', the response is not surfaced back to the visitor beyond a best-effort fire.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-contribution-endpoint-actions"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4529,7 +4593,8 @@
 				"note": "This is a platform capability, not a UI one: it is what lets a sibling safely accept a client-supplied cross-reference (e.g. 'which case is this objection against') without a write-IDOR.",
 				"origin": "code",
 				"defectCandidate": "Corrected 2026-09-26, no longer a portaliq-side gap: dossiq now declares crossRefs on createBezwaar and replyToMessage and ships both (dossiq lib/Portal/PortalContributionProvider.php:509-586). Only dossiq's class docblock at :38 still calls them deferred on portaliq#16, which is a stale comment in dossiq.",
-				"readOn": "2026-09-26"
+				"readOn": "2026-09-26",
+				"change": "2026-09-28-portal-create-cross-refs"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4559,7 +4624,8 @@
 				"reachedOn": "portal SPA CitizenCase.jsx upload control -> POST .../documents",
 				"owner": "ConductionNL/portaliq",
 				"note": "Whether uploads are open depends entirely on the contributing app's own writableSet declaration for that case; when closed, the UI shows the declared reason text rather than the form.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4590,7 +4656,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Confirms stackiq's own rating: the contribution is read-only and declares no create/accept actions (deferred per stackiq's own docblock), so it shows an organisation's own catalogue records to its own portal subjects, not a public catalogue browsing experience.",
 				"sourceId": "con-stackiq-share-portal",
-				"origin": "sibling"
+				"origin": "sibling",
+				"spec": "openspec/specs/portal-contribution-contract"
 			},
 			"provider": "stackiq",
 			"providerHow": "read-from-code",
@@ -4620,7 +4687,8 @@
 				"reachedOn": "/site renderer, any published page whose body is a grid",
 				"owner": "ConductionNL/portaliq",
 				"note": "The allow-list is the gate itself (one structure, not a separate flag), so a block added to the shared library does not become publicly mountable just by existing. Widgets not in the list degrade to an inert placeholder rather than throwing.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4650,7 +4718,8 @@
 				"reachedOn": "/site renderer, a page with a glossary-keyed widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "Terms are alphabetised and portal-scoped. The glossary schema carries no locale field (see thm-content-i18n), so terms cannot differ per language.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4680,7 +4749,8 @@
 				"reachedOn": "/site renderer, a page with a contributions-keyed widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "App.vue's own commentary (App.vue:282-309) records that this replaced two hard-coded sections, and that the move landed only for glossary at first, leaving contributions unreachable until a page block existed for it too.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-theme-blocks-and-contributed-pages"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4710,7 +4780,8 @@
 				"reachedOn": "/site renderer header/footer; admin Menus page at /menus",
 				"owner": "ConductionNL/portaliq",
 				"note": "Convention read off an existing field rather than a schema change; a portal with a single footer menu keeps it as a column instead of being silently demoted to the legal strip.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4740,7 +4811,8 @@
 				"reachedOn": "any /api/content/* read, and /site rendering a route",
 				"owner": "ConductionNL/portaliq",
 				"note": "Class docblock is explicit that an unknown site, an unverified domain, an unpublished page and a nonexistent route all share one response.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4770,7 +4842,8 @@
 				"reachedOn": "every /api/content/* read",
 				"owner": "ConductionNL/portaliq",
 				"note": "Event-driven invalidation rather than TTL expiry (TTL=300s is only the backstop for a missed event).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4800,7 +4873,8 @@
 				"reachedOn": "admin Pages list -> src/manifest.json:1375-1378 route /pages/:id/layout, component PageLayoutDesigner; also reached from the live site via cmp-site-inline-edit's designerUrl",
 				"owner": "ConductionNL/portaliq",
 				"note": "Same layout item shape as every dashboard in the fleet (manifest-v2 widgetEntry).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-page-designer"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4831,7 +4905,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Re-rated partial to yes on 2026-09-26: the producer is pipelinq, a repo the first reader could not read. The receiving side creates the page as a draft by design.",
 				"origin": "code",
-				"readOn": "2026-09-26"
+				"readOn": "2026-09-26",
+				"change": "contribution-landing-page-action"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4861,7 +4936,8 @@
 				"reachedOn": "any /site page carrying a form-keyed widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "The fail-safe (not fail-closed) dispatch is deliberate: a missing consumer event class must not fail the citizen's submission.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/landing-page-provisioning"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4891,7 +4967,8 @@
 				"reachedOn": "public route /woo",
 				"owner": "ConductionNL/portaliq",
 				"note": "openspec/changes/retire-the-vendored-woo-bundle has all tasks unchecked (open, not built): it proposes replacing this one-tenant vendored SPA with ordinary portal/menu/page content so every municipality gets the same pattern instead of only Tilburg. Until that lands this is a special case, not the general CMS pattern.",
-				"origin": "code"
+				"origin": "code",
+				"change": "retire-the-vendored-woo-bundle"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4921,7 +4998,8 @@
 				"reachedOn": "/site renderer, SiteEditButton mounted after App.vue:1001-1018 refreshEditingContext()",
 				"owner": "ConductionNL/portaliq",
 				"note": "The button is a courtesy; the real refusal happens in OpenRegister's schema authorization, by design (PageEditorService class docblock).",
-				"origin": "competitor"
+				"origin": "competitor",
+				"spec": "openspec/specs/portal-page-designer"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5042,7 +5120,8 @@
 				"reachedOn": "/site and /api/content/* on any request whose host or ?portal= slug names a portal",
 				"owner": "ConductionNL/portaliq",
 				"note": "Each `portal` OpenRegister object is independent: its own domains, theme, locales and authentication modes.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5164,7 +5243,8 @@
 				"reachedOn": "external frontend, not in this repo: the docusaurus-plugin-portaliq build, plus portaliq's own /site renderer as a second, independent consumer of the same contract",
 				"owner": "ConductionNL/portaliq",
 				"note": "Two known, declared gaps keep the headless claim honest rather than silently degrading.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "portal-headless-content-api"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5201,7 +5281,8 @@
 						"number": 682,
 						"sha": "d8a38bd1e9772e41ca06b3e53034fa0c0ff76ab5"
 					}
-				]
+				],
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5291,7 +5372,8 @@
 				"reachedOn": "/site renderer via a federatedSearch/publicationDetail widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "portaliq renders; opencatalogi supplies and federates the data. Matches source rating (opencatalogi matrix, id fed-portal).",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "portal-federated-search"
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
@@ -5321,7 +5403,8 @@
 				"reachedOn": "public route /site",
 				"owner": "ConductionNL/portaliq",
 				"note": "opencatalogi supplies the anonymous publication API; portaliq renders the reading room. Matches source rating (opencatalogi matrix, id pub-portal).",
-				"origin": "sibling"
+				"origin": "sibling",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5351,7 +5434,8 @@
 				"reachedOn": "admin Pages/Menus pages",
 				"owner": "ConductionNL/portaliq",
 				"note": "Re-confirmed the portaliq-side manifest routes exist. Matches source rating (opencatalogi matrix, id pub-pages); its note that opencatalogi still has dead ui#pages/ui#menus routes left over is opencatalogi's own debt, not portaliq's.",
-				"origin": "sibling"
+				"origin": "sibling",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5381,7 +5465,8 @@
 				"reachedOn": "/site home page, hero widget's search box",
 				"owner": "ConductionNL/portaliq",
 				"note": "The URL is shareable: the same `_search` param the search page itself reads.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-federated-search"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5411,7 +5496,8 @@
 				"reachedOn": "/zoeken route, FederatedSearchBlock",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-federated-search"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5441,7 +5527,8 @@
 				"reachedOn": "/zoeken route",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-public-search"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5471,7 +5558,8 @@
 				"reachedOn": "/publicatie/<id> route (parent-route fallback in App.vue:939-972)",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is a generic reflected property table, not a curated document/attachment download list; publicationDetail.js:20-24 records that 'hidden'/'downloads'/'rating' bookkeeping fields print too, only because the reference implementation does, which the same comment flags as arguably wrong.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-public-search"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5501,7 +5589,8 @@
 				"reachedOn": "/zoeken route",
 				"owner": "ConductionNL/portaliq",
 				"note": "Re-confirmed the portaliq-side wiring. Matches source rating (opencatalogi matrix, id srch-plain).",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "portal-federated-search"
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
@@ -5593,7 +5682,8 @@
 				"reachedOn": "any host request to /site or /api/content/*",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5623,7 +5713,8 @@
 				"reachedOn": "/site renderer root class binding (App.vue:548-550 themeClass)",
 				"owner": "ConductionNL/portaliq",
 				"note": "Also handles the fleet's nldesign->thematiq app-id rename: :67 THEME_APP_IDS tries both ids so a stale hardcode would silently render unthemed rather than error (:309-322 themeAppId()).",
-				"origin": "code"
+				"origin": "code",
+				"change": "nldesign-theme-integration"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5684,7 +5775,8 @@
 				"reachedOn": "public route /portal, PortalPageController's RUNTIME_CONFIG injection",
 				"owner": "ConductionNL/portaliq",
 				"note": "Fails closed to the neutral default on every unresolved path (no org param, unknown slug, OpenRegister unavailable) per :130,:473, never another tenant's branding, never a wildcard frame-ancestors.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-white-label-runtime-config"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5714,7 +5806,8 @@
 				"reachedOn": "public route /portal (React SPA shell)",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is the /portal SPA's own chrome only; it does not cover the /site CMS renderer (see thm-content-i18n) or citizen-authored content.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-spa-i18n-locale-support"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5775,7 +5868,8 @@
 				"reachedOn": "/site renderer at phone viewport width",
 				"owner": "ConductionNL/portaliq",
 				"note": null,
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-portal-spa-nl-design-system-styling"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5805,7 +5899,8 @@
 				"reachedOn": "/portal and /site, each frontend's own root",
 				"owner": "ConductionNL/portaliq",
 				"note": "Two bridges, maintained separately, to two different token vocabularies from the same theme app, a drift risk the App.vue comments document happening at least twice already (font-family, link colour).",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-portal-spa-nl-design-system-styling"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5835,7 +5930,8 @@
 				"reachedOn": "/portal only, for interface chrome; nothing reaches translated content on /site",
 				"owner": "ConductionNL/portaliq",
 				"note": "One of the fleet's four frontends here (the portal SPA) has real i18n; the CMS site renderer and its editor-authored content do not.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "portal-spa-i18n-locale-support"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5932,7 +6028,8 @@
 				"reachedOn": "/site renderer root class binding",
 				"owner": "ConductionNL/portaliq",
 				"note": "The tokens come from the theme app (thematiq/nldesign); opencatalogi has no public frontend of its own. Matches source rating (opencatalogi matrix, id pub-house-style).",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "nldesign-theme-integration"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5962,7 +6059,8 @@
 				"reachedOn": "/site renderer, the three tested page states plus the keyboard/phone checks",
 				"owner": "ConductionNL/portaliq",
 				"note": "Automated axe + a keyboard test cover three page states and the phone breakpoint. The federated-search and publication-detail block templates are not named in the axe test list, so their own controls (facet checkboxes, sort select) are unverified by this suite. Matches source rating (opencatalogi matrix, id pub-wcag): evidence of AA work, not a conformance claim.",
-				"origin": "sibling"
+				"origin": "sibling",
+				"spec": "openspec/specs/portaliq-cms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5992,7 +6090,8 @@
 				"reachedOn": "src/site renderer and the shipped client script load src/traffic/client.js, which calls POST /api/traffic on every page render",
 				"owner": "ConductionNL/portaliq",
 				"note": "Anonymous, batched, sendBeacon-compatible collector; rate-limited per client and per source (AnonRateLimit/UserRateLimit on TrafficController.php:141-142).",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6022,7 +6121,8 @@
 				"reachedOn": "public, no caller found inside this repo's own JS (a pixel is meant to be embedded as an <img> tag, e.g. from a mail or a page that cannot run JS); counts as reached as a public GET endpoint per the brief's machine/public-consumer rule",
 				"owner": "ConductionNL/portaliq",
 				"note": "Endpoint exists, is routed and rate-limited, but no in-repo caller embeds an <img> pointing at it; likely meant for external embedding (e.g. e-mail opens) similar to the recorder script.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6052,7 +6152,8 @@
 				"reachedOn": "src/site/lib/contentApi.js:139 (/site) and src/traffic/client.js itself load through this endpoint on every public page",
 				"owner": "ConductionNL/portaliq",
 				"note": "First-party script, not a third-party tag; also shippable from docusaurus-plugin-portaliq per tasks.md 5.2 (external frontend, not in this repo).",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6082,7 +6183,8 @@
 				"reachedOn": "occ portaliq:traffic:token issues the token shown once to an admin, who configures an external server to POST here; a machine consumer per the brief's rule",
 				"owner": "ConductionNL/portaliq",
 				"note": "Server-side batches use contactRef hashing instead of IP+UA (TrafficIngestService.php:367-372), for mail-open or backend-driven events.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-reporting"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6112,7 +6214,8 @@
 				"reachedOn": "Traffic dashboard page -> TrafficRecordings widget -> TrafficRecordingPlayer.vue, fed by the recorder script the client loads only when a portal switches recording on",
 				"owner": "ConductionNL/portaliq",
 				"note": "Off by default, gated on consent where required, bounded per-chunk and per-visit (TrafficController.php:311-317 docblock); TrafficRecordingMask enforces no free text or typed values are ever stored.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-experiments"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6142,7 +6245,8 @@
 				"reachedOn": "src/traffic/client.js loads /api/traffic-recorder.js only when the resolved config says recording is enabled for that portal",
 				"owner": "ConductionNL/portaliq",
 				"note": "The recorder ships as a separate script from the base client, so a portal that never enables recording never downloads it.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-experiments"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6172,7 +6276,8 @@
 				"reachedOn": "Traffic page -> src/store/traffic.js:185-193 exportUrl() builds portal/from/to/segment/format=csv and the page's Export control links to it",
 				"owner": "ConductionNL/portaliq",
 				"note": "Admin-only (docblock explicitly calls this out as ADMIN ONLY, BY OMISSION), exports exactly the date range and segment currently selected on screen.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-reporting"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6202,7 +6307,8 @@
 				"reachedOn": "the resolved config is served over the public content contract to the client (src/traffic/client.js:145 reads site.traffic.*), and openspec/changes/portal-traffic-analytics/tasks.md 2.3-2.4 assert the collector's behaviour actually changes with the config, not just stores it",
 				"owner": "ConductionNL/portaliq",
 				"note": "A config field that is declaratively stored but unread is this codebase's own named worst-case (tasks.md 2.4); the tests cited assert the collector's behaviour, not just storage.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6232,7 +6338,8 @@
 				"reachedOn": "Nextcloud cron runs the registered job every 15 minutes per the Traffic page's own description (src/manifest.json:343 'every fifteen minutes')",
 				"owner": "ConductionNL/portaliq",
 				"note": "Raw events are deleted past the retention window and only aggregates kept (TrafficAggregationService), so a portal cannot be replayed event-by-event after retentionDays elapses.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6262,7 +6369,8 @@
 				"reachedOn": "the hourly TrafficReportJob calls TrafficReportService, which resolves due reports per portal and their recipients and hands them to TrafficReportDelivery",
 				"owner": "ConductionNL/portaliq",
 				"note": "Also fires threshold alerts (an 'above' condition) within the hour it is crossed, per the job's own docblock. The mail carries numbers only, never a visitor, per TrafficReportDelivery's docblock.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-reporting"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6292,7 +6400,8 @@
 				"reachedOn": "TrafficGeoRefreshJob (monthly) keeps the DB fresh; occ portaliq:traffic:geo-refresh runs it on demand; the connections.json row surfaces its state on the Integrations/health surface",
 				"owner": "ConductionNL/portaliq",
 				"note": "Region granularity and the provider itself (or 'none') are per-instance config (traffic.geo.provider); switching it off means no DB fetch and no region stored at all, per connections.json's own disabledMessage.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-visitors-and-geo"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6322,7 +6431,8 @@
 				"reachedOn": "GeoRefreshService when an admin first enables traffic.geo.provider",
 				"owner": "ConductionNL/portaliq",
 				"note": "A one-shot job registered dynamically at runtime, not statically in info.xml; verified this is the intended pattern (IJobList self-registration), not a missed registration.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-visitors-and-geo"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6352,7 +6462,8 @@
 				"reachedOn": "occ portaliq:traffic:import-log, run by an admin from the CLI",
 				"owner": "ConductionNL/portaliq",
 				"note": "Admin/CLI capability, not reachable from the Vue UI; rated yes because occ is the documented interface for this action, consistent with the other traffic occ commands.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-reporting"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6382,7 +6493,8 @@
 				"reachedOn": "Traffic dashboard page, Journeys widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "Reconstructed by event sequence, not receipt time (tasks.md 4.2), so an out-of-order delivery on a slow connection does not corrupt the journey.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6412,7 +6524,8 @@
 				"reachedOn": "Traffic dashboard page, Funnels widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "Funnel steps are declared per portal (traffic.funnels[]) and rated against the same session data as goals and journeys.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-outcomes"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6442,7 +6555,8 @@
 				"reachedOn": "Traffic dashboard page, Goals widget, with a link into the portal's own settings to define one",
 				"owner": "ConductionNL/portaliq",
 				"note": "Goals also feed the experiments winner logic (see cmp-ana-ab) and the scheduled-report alerts (an 'above' threshold on a goal or metric).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-outcomes"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6472,7 +6586,8 @@
 				"reachedOn": "Traffic dashboard page, Custom dimensions widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "A dimension must be declared before it is stored (spec requirement quoted in the widget's own docblock), which stops an operator from silently growing an unbounded dimension set.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-outcomes"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6502,7 +6617,8 @@
 				"reachedOn": "Traffic dashboard page, Forms widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "Only form_submit is in the shipped event vocabulary; abandonment is inferred (a session that reached the form page without a matching form_submit), not a direct field-level event.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-outcomes"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6532,7 +6648,8 @@
 				"reachedOn": "Traffic dashboard page, Script errors widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "Captures window error events from the public site only (window.onerror path), not a full source-mapped stack-trace service.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-outcomes"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6562,7 +6679,8 @@
 				"reachedOn": "Traffic dashboard page, Heatmap widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "Built from the same masked recording pipeline as session replay (TrafficRecordingMask), so it inherits the same off-by-default and consent gating.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-traffic-experiments"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6592,7 +6710,8 @@
 				"reachedOn": "FormBlock.vue reads both at submit time and sends them as part of the (whitelisted) submission body, per campaignTracking.js's own docblock",
 				"owner": "ConductionNL/portaliq",
 				"note": "First-party, no third-party script, no cookie (sessionStorage only). Explicitly advisory/not security-relevant (ADR-005): a visitor could edit values in devtools before submitting.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/landing-page-provisioning"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6622,7 +6741,8 @@
 				"reachedOn": "every collect()/server() request path",
 				"owner": "ConductionNL/portaliq",
 				"note": "Tested per tasks.md 3.3: 'no stored field, log line or aggregate contains it'. The visitor identity used server-side (visitorHash) is a hash of IP+UA, not the IP itself.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6652,7 +6772,8 @@
 				"reachedOn": "src/traffic/client.js on every public page load",
 				"owner": "ConductionNL/portaliq",
 				"note": "Pre-consent events are validated server-side to be a subset of the portal's enabled events (TrafficConfigResolver.php:348-351), so a portal cannot admit before consent something it does not collect at all.",
-				"origin": "code"
+				"origin": "code",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6682,7 +6803,8 @@
 				"reachedOn": "any portal page whose route matches a running experiment (client.js), and the Traffic dashboard's Experiments widget for results",
 				"owner": "ConductionNL/portaliq",
 				"note": "Real split-testing with sticky assignment and goal-based conversion, not just an event-tagging convention. A winner is only named with enough sessions and a significant difference (widget's own docblock); a draft experiment is dropped and never served.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"spec": "openspec/specs/portal-traffic-experiments"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6712,7 +6834,8 @@
 				"reachedOn": "Traffic dashboard page, Visitors widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is a stable anonymous id used to split new/returning counts, not a visitor profile with traits or a per-visitor history view. No screen anywhere shows 'this visitor's past visits'.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6742,7 +6865,8 @@
 				"reachedOn": "portal setting traffic.consent / persistence off -> the collector still counts page views/sessions, just without a persisted id",
 				"owner": "ConductionNL/portaliq",
 				"note": "Genuine cookieless mode exists as a real, documented trade-off (loses new/returning split, keeps aggregate counts), not just an absence of a cookie banner.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "portal-traffic-analytics"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6802,7 +6926,8 @@
 				"reachedOn": "nextcloud-vue CnAppRoot.vue (~line 170,421) mounts CnSetupWizard automatically when the manifest declares a setup key and setup_completed_version is behind; CnSetupWizard.vue:813,828 POSTs /apps/{appId}/api/setup/config and /api/setup/action/{step.action}. This is NOT called from anywhere inside portaliq's own src/, only from the shared nextcloud-vue component, contrary to the lane's initial suspicion that it may be dead.",
 				"owner": "ConductionNL/portaliq",
 				"note": "Verified against node_modules-less clone by reading the shared component's source in the nextcloud-vue sibling repo directly (git show origin/development:src/components/CnSetupWizard/CnSetupWizard.vue).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/configuration-initialization"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6832,7 +6957,8 @@
 				"reachedOn": "src/views/AdminRoot.vue:376,411,436,484 call /apps/portaliq/api/settings directly",
 				"owner": "ConductionNL/portaliq",
 				"note": "Reached from the dedicated admin view.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/settings-management"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6862,7 +6988,8 @@
 				"reachedOn": "Nextcloud's own /settings/admin/portaliq section, registered through the ISettings/IDelegatedSettings contracts",
 				"owner": "ConductionNL/portaliq",
 				"note": "The empty delegated-admin map is a deliberate auth choice documented in the class's own docblock, not an oversight.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/settings-management"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6892,7 +7019,8 @@
 				"reachedOn": "Nextcloud's own repair-step runner, triggered by occ upgrade / app install",
 				"owner": "ConductionNL/portaliq",
 				"note": "InitializeDemoPortal is install-only by design (a post-migration entry would re-seed an instance whose admin deliberately deleted their demo portal, per the info.xml comment).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/configuration-initialization"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6922,7 +7050,8 @@
 				"reachedOn": "the setup wizard's demo-data step (src/manifest.json:14-27) as well as the automatic install-time repair step",
 				"owner": "ConductionNL/portaliq",
 				"note": "Picking NONE_DATASET is a first-class choice, not just skipping the step; the wizard marks the step done either way (SetupController.php:141-142).",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/configuration-initialization"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6952,7 +7081,8 @@
 				"reachedOn": "a machine consumer (Kubernetes liveness probe, load-balancer readiness check, blackbox exporter) per the spec's own stated audience; no in-repo UI calls it, which is expected for a health probe",
 				"owner": "ConductionNL/portaliq",
 				"note": "Uses the older @PublicPage/@NoCSRFRequired docblock-annotation style rather than PHP 8 attributes, unlike most other controllers in this app; Nextcloud's controller middleware reads both forms, so this is a style inconsistency, not a broken guard, but worth a live check since annotation-vs-attribute mismatches are a known gate class in this fleet.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/observability"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6982,7 +7112,8 @@
 				"reachedOn": "a Prometheus server configured with admin-scoped credentials; machine consumer per the brief's rule",
 				"owner": "ConductionNL/portaliq",
 				"note": "Deliberately admin-gated because the body counts portalNotification and portalAccount rows, which would leak tenant volume to an anonymous scrape.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/observability"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7043,7 +7174,8 @@
 				"reachedOn": "Settings > Integrations menu entry (src/manifest.json:126-140) -> Integrations page -> integriq's own Connections overview",
 				"owner": "ConductionNL/portaliq",
 				"note": "Verified integriq's <id> has already moved to 'integriq' on its own development branch (apps-extra/openconnector, appinfo/info.xml:4), so this appInstalled gate is not a silent no-op from a stale app id, unlike the fleet's general renaming risk.",
-				"origin": "code"
+				"origin": "code",
+				"change": "adopt-connection-registry"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7074,7 +7206,8 @@
 				"reachedOn": "confirmed via the shared component's own source: nextcloud-vue src/components/CnStorePage/CnStorePage.vue:562,604 fetches /apps/{app}/api/store/items and POSTs .../install. The Store page's manifest type resolves to this shared component, which resolves the endpoint itself using the app id from its own config, exactly the pattern the lane brief asked to check before concluding 'no caller'.",
 				"owner": "ConductionNL/openregister",
 				"note": "routes.php's own comments record the FAILURE MODE this shipped to fix: without these two route entries, the SPA catch-all answered 200 HTML and the page read 'The store registry did not answer' (WOO-559) with nothing erroring. Search is reachable by any signed-in user (one tier below the rest of this app's admin-only /api/), accepted not chosen, because OpenRegister's store-plane engine has no searchAuth key to narrow it further.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "none"
 			},
 			"provider": "openregister",
 			"providerHow": "read-from-code",
@@ -7105,7 +7238,8 @@
 				"reachedOn": "nextcloud-vue CnAppRoot.vue:1169,1480 reads/writes the app's /api/preferences/support-dialog-seen endpoint (with a localStorage fallback) to track whether the support dialog was already shown",
 				"owner": "ConductionNL/portaliq",
 				"note": "Same pattern as ops-setup-wizard and ops-store-page: the caller lives in the shared nextcloud-vue component, not in this repo's own src/, which is why the lane's frontend-api-paths.txt extraction (scoped to this repo) missed it.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "none"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7166,7 +7300,8 @@
 				"reachedOn": "the site renderer's editing entry point (src/site) calls editingContext(), and admin settings expose availableGroups() to pick which group is 'editor'",
 				"owner": "ConductionNL/portaliq",
 				"note": "Fails closed both ways per the method's own docblock: no session is never an editor, and an empty configured-groups list means only admins, never 'everyone signed in'.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "openspec/specs/portal-page-designer"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7258,7 +7393,8 @@
 				"reachedOn": "docusaurus-plugin-portaliq (external frontend, not in this repo) and any statically built portal reading /api/content or posting to /api/traffic cross-origin",
 				"owner": "ConductionNL/portaliq",
 				"note": "Deliberately narrow allowlist by path pattern, not a blanket CORS policy on the whole /api/ surface.",
-				"origin": "code"
+				"origin": "code",
+				"spec": "none"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7412,7 +7548,8 @@
 				"reachedOn": "the published appinfo/info.xml and every source file's header",
 				"owner": "ConductionNL/portaliq",
 				"note": "EUPL-1.2 is an OSI/FSF-recognised open-source (copyleft) licence.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"spec": "openspec/specs/source-license-headers"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7612,7 +7749,8 @@
 				"reachedOn": "portal SPA collection page -> GET /portal/api/collections/{register}/{schema} -> PortalObjectReader via-join, only when the contributing app declares it",
 				"owner": "ConductionNL/portaliq",
 				"note": "The mechanism for a co-applicant signing in with their own DigiD and seeing a shared case is in portaliq (role-join scoping), but dossiq, the case app, scopes cases on one portalSubject value, so in the fleet as shipped the partner sees nothing. Portaliq's half is built (openspec/changes/archive/2026-09-07-contract-v2, the via join, and 2026-09-07-reverse-scope-join). The missing half is dossiq's: declare a via over the case roles on mijnZaken so a co-applicant's own subjectRef reaches the shared case (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "via-read-scoped-query"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7783,7 +7921,8 @@
 				"reachedOn": "Mijn zaken page: select a case row -> detail block -> GET /portal/api/collections/{register}/{schema}/{id}/timeline -> 'Wat er is gebeurd'",
 				"owner": "ConductionNL/portaliq",
 				"note": "Which entries show is dossiq's decision: portaliq renders what caseTimeline returns, newest first. Only contact moments dossiq marks public reach the resident.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-contribution-manifest-v3"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8199,7 +8338,8 @@
 				"reachedOn": "portal SPA nav 'Mijn zaken' (synthesised page) -> CollectionTable",
 				"owner": "ConductionNL/dossiq",
 				"note": "The final status's public label and description are shown, which can carry the decision in words, but the result itself renders as a raw uuid and there is no field for the organisation's explanation of the decision (code reading, needs a live check). The dossiq half shipped in 9489ca2c6 (dossiq lane: existing): the outcome reads in words, with the organisation's explanation, and no uuid is shown. Before: ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:121 projects 'result' (a uuid $ref to the result record in dossiq_register.json) and statusPublicLabel/statusPublicDescription; src/portal/components/CollectionTable.jsx:42 deriveColumns shows every projected field as text (OpenSpec pass 2026-09-27, corrected 2026-09-28).",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-29-contribution-manifest-v3"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
