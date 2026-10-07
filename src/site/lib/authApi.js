@@ -316,11 +316,21 @@ function dutchLabel(key, vars = {}) {
  *        sign-in offers on this portal (the shell's `signin.exampleResident`),
  *        or ''. With one, the `nextcloud` way links to that route instead of
  *        the account form and is marked `demo` (example-resident-demo-login).
+ * @param {string} [residentWayIn] The way in the example resident's install
+ *        added while the demo switch is off (`signin.exampleResidentWayIn`),
+ *        or ''. That way is left out, so a demo card shows only on a portal
+ *        that switched the demo on.
  * @return {Array<{mode: string, label: string, card?: object, href: string, demo?: boolean}>} The routes.
  * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  */
-export function signInRoutes(site, authBase, t = dutchLabel, exampleResident = '') {
+export function signInRoutes(
+	site,
+	authBase,
+	t = dutchLabel,
+	exampleResident = '',
+	residentWayIn = '',
+) {
 	const modes = Array.isArray(site?.authentication?.modes)
 		? site.authentication.modes
 		: []
@@ -367,6 +377,7 @@ export function signInRoutes(site, authBase, t = dutchLabel, exampleResident = '
 
 	return modes
 		.filter((mode) => mode !== 'public' && Object.hasOwn(labels, mode))
+		.filter((mode) => residentWayIn === '' || mode !== residentWayIn)
 		.map((mode) => ({
 			mode,
 			label: cards[mode]?.button || labels[mode],

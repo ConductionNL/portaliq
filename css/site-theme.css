@@ -2341,3 +2341,29 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site:has(.pq-site__header--designed) .pq-signin__notice {
 	color: var(--nldesign-color-text, inherit);
 }
+
+/* The one-click demo card (example-resident-demo-login) is not on the board:
+   it takes a row of its own under the two board cards, with its button at
+   the end, so the two cards keep the board's place and size. */
+@media (min-width: 768px) {
+	.pq-site:has(.pq-site__header--designed) .pq-signin__card:has(.pq-signin__demo) {
+		display: grid;
+		grid-column: 1 / -1;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+		align-items: center;
+		gap: 8px 24px;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-signin__card:has(.pq-signin__demo)
+		.pq-signin__button {
+		grid-row: 1;
+		grid-column: 2;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-signin__card:has(.pq-signin__demo)
+		.pq-signin__demo {
+		grid-column: 1 / -1;
+	}
+}

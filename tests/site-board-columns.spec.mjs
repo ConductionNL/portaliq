@@ -167,3 +167,24 @@ test('the Zuiddrecht declaration stacks the side cards and leaves no empty rows'
 		'tinted',
 	)
 })
+
+test('the example resident way in is left out while the demo switch is off', async () => {
+	const { signInRoutes } = await import('../src/site/lib/authApi.js')
+	const site = {
+		authentication: {
+			modes: ['digid', 'nextcloud'],
+			modeLabels: { nextcloud: { title: 'Voorbeeldinwoner' } },
+		},
+	}
+	const modes = (routes) => routes.map((route) => route.mode)
+	// Off: the server names the way in its install added, and it stays out.
+	assert.deepEqual(modes(signInRoutes(site, '/a', undefined, '', 'nextcloud')), [
+		'digid',
+	])
+	// On: the one-click card is there, marked as the demo.
+	const on = signInRoutes(site, '/a', undefined, 'zuiddrecht', '')
+	assert.deepEqual(modes(on), ['digid', 'nextcloud'])
+	assert.equal(on[1].demo, true)
+	// A portal without an example resident keeps every way in.
+	assert.deepEqual(modes(signInRoutes(site, '/a')), ['digid', 'nextcloud'])
+})

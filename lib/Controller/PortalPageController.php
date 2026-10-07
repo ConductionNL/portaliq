@@ -416,7 +416,7 @@ class PortalPageController extends Controller {
 	 * `/portal` uses, so the two surfaces offer the same ways in.
 	 *
 	 * @return array{devLogin: bool, silentSignIn: string, signinOrganisation: string, audience: string,
-	 *               waysIn: array<string, mixed>, exampleResident: string}
+	 *               waysIn: array<string, mixed>, exampleResident: string, exampleResidentWayIn: string}
 	 *
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
@@ -430,14 +430,16 @@ class PortalPageController extends Controller {
 		$config = $this->configResolver->runtimeConfigFor(portal: $portal, orgValue: '', locale: $this->siteLocale());
 
 		return [
-			'devLogin'           => (($config['devLogin'] ?? false) === true),
-			'silentSignIn'       => (string)($config['silentSignIn'] ?? ''),
-			'signinOrganisation' => (string)($config['signinOrganisation'] ?? ''),
-			'audience'           => (string)($config['audience'] ?? ''),
+			'devLogin'             => (($config['devLogin'] ?? false) === true),
+			'silentSignIn'         => (string)($config['silentSignIn'] ?? ''),
+			'signinOrganisation'   => (string)($config['signinOrganisation'] ?? ''),
+			'audience'             => (string)($config['audience'] ?? ''),
 			// The doors besides the sign-in buttons (identity-ways-in-screens T07).
-			'waysIn'             => (array)($config['waysIn'] ?? []),
+			'waysIn'               => (array)($config['waysIn'] ?? []),
 			// One click on a demo for the example resident (example-resident-demo-login).
-			'exampleResident'    => (string)($config['exampleResident'] ?? ''),
+			'exampleResident'      => (string)($config['exampleResident'] ?? ''),
+			// The way in its install added, left out while the demo switch is off.
+			'exampleResidentWayIn' => (string)($config['exampleResidentWayIn'] ?? ''),
 		];
 	}//end siteSignin()
 

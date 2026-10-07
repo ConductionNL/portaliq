@@ -1338,6 +1338,8 @@ export default {
 				this.t,
 				// One click on a demo for the example resident (example-resident-demo-login).
 				this.signinConfig.exampleResident || '',
+				// Its way in stays out while the demo switch is off.
+				this.signinConfig.exampleResidentWayIn || '',
 			)
 		},
 
