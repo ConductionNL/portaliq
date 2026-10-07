@@ -18,7 +18,7 @@
 	<div
 		v-if="display === 'card'"
 		class="nl-signin-card"
-		:class="`nl-signin-card--${tone === 'light' ? 'light' : 'inverse'}`"
+		:class="`nl-signin-card--${['light', 'outline'].includes(tone) ? tone : 'inverse'}`"
 		data-testid="nl-sign-in">
 		<h2 v-if="heading" class="utrecht-heading-3 nl-signin-card__heading">
 			{{ heading }}
@@ -39,7 +39,11 @@
 		</ul>
 		<a
 			class="utrecht-button nl-signin-card__button"
-			:class="{ 'utrecht-button--primary-action': tone === 'light' }"
+			:class="{
+				'utrecht-button--primary-action': ['light', 'outline'].includes(
+					tone,
+				),
+			}"
 			:href="button.href"
 			:data-testid="`nl-sign-in-${button.id}`"
 			@click="open">
@@ -219,6 +223,15 @@ export default {
 		--nldesign-color-primary-hover,
 		var(--utrecht-document-color, CanvasText)
 	);
+}
+
+/* A white card with a thin line round it (board Publicatie, "Bewaren of
+   volgen"): the page's own ink, a primary button. */
+.nl-signin-card--outline {
+	padding: 1.5rem;
+	border: 1px solid
+		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
+	background: transparent;
 }
 
 .nl-signin-card__heading,

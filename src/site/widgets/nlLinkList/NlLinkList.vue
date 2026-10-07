@@ -71,7 +71,7 @@ export default {
 		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-a-link-list-may-draw-as-a-card-or-under-an-accent-line
 		 */
 		safeDisplay() {
-			return ['plain', 'card', 'accent'].includes(this.display)
+			return ['plain', 'card', 'tinted', 'accent'].includes(this.display)
 				? this.display
 				: 'plain'
 		},
@@ -124,8 +124,8 @@ export default {
 </script>
 
 <style scoped>
-/* The two drawn displays (Zuiddrecht boards Home and Contentpagina). Tokens
-   only; `plain` adds nothing. */
+/* The drawn displays (Zuiddrecht boards Home, Contentpagina and Publicatie).
+   Tokens only; `plain` adds nothing. */
 .nl-link-list__intro {
 	margin: 0 0 0.75rem;
 }
@@ -140,8 +140,20 @@ export default {
 	);
 }
 
-.nl-link-list--card .utrecht-link-list__link {
+.nl-link-list--card .utrecht-link-list__link,
+.nl-link-list--tinted .utrecht-link-list__link {
 	font-weight: 600;
+}
+
+/* A card on a light ground of the primary colour, without a line (board
+   Publicatie, "Zelf iets opvragen?"). */
+.nl-link-list--tinted {
+	padding: 1.5rem;
+	border-radius: var(
+		--nldesign-website-border-radius-large,
+		var(--utrecht-border-radius-md, 0.75rem)
+	);
+	background: var(--nldesign-color-primary-light, transparent);
 }
 
 .nl-link-list--accent {
