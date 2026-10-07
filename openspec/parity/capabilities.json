@@ -2254,7 +2254,8 @@
 				"reachedOn": "PageView.jsx 'action'/'cta' block (endpoint type) -> onAction -> PortalActionForwarder -> shillinq's own controller",
 				"owner": "ConductionNL/shillinq",
 				"note": "portaliq's forwarding path itself works. Whether a real payment happens depends entirely on shillinq's Mollie adapter, which logs instead of charging by default (matches the sal-customer-portal sibling row). Specified in ConductionNL/shillinq openspec/changes/receivables-payment-links (shillinq lane, OpenSpec pass 2026-09-27).",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "shillinq/receivables-payment-links"
 			},
 			"provider": "shillinq",
 			"providerHow": "read-from-code",
@@ -3356,7 +3357,8 @@
 				"sourceId": "inb-dossiq-portaalbericht",
 				"origin": "sibling",
 				"defectCandidate": "src/portal/components/InboxPage.jsx:86-148 never reads message.attachments or message.content; a dossiq portaalBericht row carrying attachments renders with no way to see or download them (code reading, needs a live check)",
-				"readOn": "2026-09-26"
+				"readOn": "2026-09-26",
+				"change": "dossiq/communication-portal-conversation-on-the-case"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -3386,7 +3388,8 @@
 				"reachedOn": "citizen side: nothing reaches it, no compose control anywhere in src/portal. Staff side: no dedicated 'reply' action either, but src/manifest.json:881 PortalMessages index has no allowCreate:false, so a staff member CAN hand-create a new portalMessage row via the generic OpenRegister create dialog, which the citizen would then see appear in their inbox.",
 				"owner": "ConductionNL/portaliq",
 				"note": "No citizen-facing reply exists anywhere. A staff 'reply' is possible only as a manually created, unthreaded portalMessage through the generic admin object form, there is no button, no thread, no quoting of the original message. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "inbox-reply-with-attachments"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3416,7 +3419,8 @@
 				"reachedOn": "nothing reaches it: no attachment field, no upload UI, and no way to send a message at all (see cmp-inb-reply)",
 				"owner": "ConductionNL/portaliq",
 				"note": "dossiq's portaalBericht declares an 'attachments' field to portaliq (see inb-dossiq-portaalbericht) but nothing renders it, so even a sibling-supplied attachment is invisible. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "inbox-reply-with-attachments"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3881,7 +3885,8 @@
 				"reachedOn": "nothing in any frontend in this repo calls it; the only caller anywhere is a Playwright test hitting the raw HTTP API directly, never navigating a page",
 				"owner": "ConductionNL/portaliq",
 				"note": "Every task in openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/tasks.md is checked, including e2e and PHPUnit, and the backend (receipt code, two-way thread, contact separation, reveal workflow) is genuinely complete and well-tested at the API level. But there is no page anywhere, not the portal SPA, not the public site, not the admin app, that a reporter or a citizen could actually open to use it. This is the strongest 'code, not capability' finding in this area. Specified in openspec/changes/intake-report-pages (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "intake-report-pages"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3911,7 +3916,8 @@
 				"reachedOn": "nothing reaches it: no frontend page anywhere calls /portal/api/reports/thread or /portal/api/reports/thread/answer",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is the one place in the whole repo where a genuine two-way citizen<->organisation reply channel is fully built (unlike the ordinary inbox, see cmp-inb-reply), but it is completely unreached by any UI. Specified in openspec/changes/intake-report-pages (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "intake-report-pages"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3941,7 +3947,8 @@
 				"reachedOn": "nothing reaches it: not even a generic OpenRegister index page exists for portalReport/portalRevealRequest in src/manifest.json, so staff have no UI at all for this, not even the fallback generic-pages route",
 				"owner": "ConductionNL/portaliq",
 				"note": "Matches dossiq's own owed row 13.33 ('Report accepted without an account, unmasked only by a named custodian'), which dossiq itself rates 'no'. Confirmed from portaliq's code: the backend fully implements the requirement (this is the a-report-without-an-account-and-a-custodian-who-may-reveal-it change, all tasks checked) but ships with literally no staff-facing screen, so a custodian could not act on a reveal request through this app today. Specified in openspec/changes/intake-report-pages (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "intake-report-pages"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3972,7 +3979,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "dossiq's self-rating of 'no' is confirmed, but for a stronger reason than dossiq could see from its own repo: portaliq did build the entire feature (schemas, services, both PHPUnit and an API-level Playwright spec), it is simply not wired to any page a reporter, citizen or custodian could open. Specified in openspec/changes/intake-report-pages (OpenSpec pass 2026-09-27).",
 				"sourceId": "int-dossiq-13.33",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "intake-report-pages"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4002,7 +4010,8 @@
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
 				"note": "Specified in openspec/changes/intake-conditional-questions-and-drafts (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "intake-conditional-questions-and-drafts"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4063,7 +4072,8 @@
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
 				"note": "Specified in openspec/changes/intake-conditional-questions-and-drafts (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "intake-conditional-questions-and-drafts"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4093,7 +4103,8 @@
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
 				"note": "Specified in openspec/changes/intake-pay-on-submit (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "intake-pay-on-submit"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4178,13 +4189,14 @@
 				"liferay-dxp": "A form or object entry routed through workflow (https://learn.liferay.com/w/dxp/low-code/objects/enabling-workflows-for-objects) can take an objection; the bezwaar process and its link to the contested decision are not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "dossiq lib/Portal/PortalContributionProvider.php:509-535 declares the citizen action createBezwaar (type create, schema portaalVerzoek, kind defaulted to bezwaarschrift) with a required crossRefs entry againstCaseId scoped to the citizen's own cases; portaliq lib/Controller/ContributionController.php:961 runs PortalCrossRefGuard::refusedField() before the write and refuses a foreign case with 403 cross_ref_refused. dossiq's class docblock at PortalContributionProvider.php:38 still calls the bezwaar create deferred on portaliq#16; that comment is stale, the code at :357-365 and :509 says it ships.",
 				"reachedOn": "the declared createBezwaar action in dossiq's citizen contribution, forwarded through contribution#create behind PortalCrossRefGuard",
 				"owner": "ConductionNL/dossiq",
 				"note": "Re-rated no to partial on 2026-09-26. The action is declared and guarded server-side. Partial and not yes because the portal SPA's rendering of the againstCaseId field was not traced, and the AWB deadline validation the old docblock asked for is not in the declaration.",
 				"origin": "competitor",
-				"readOn": "2026-09-26"
+				"readOn": "2026-09-26",
+				"change": "case-page-objection-and-complaint"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -5519,7 +5531,8 @@
 				"reachedOn": "/zoeken route, one facet column",
 				"owner": "ConductionNL/portaliq",
 				"note": "No category, organisation or date filter reachable; only one configurable facet field at a time. Matches source rating (opencatalogi matrix, id srch-facets). Specified in openspec/changes/portal-public-search (existing change, OpenSpec pass 2026-09-27).",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "portal-public-search"
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
@@ -5549,7 +5562,8 @@
 				"reachedOn": "/zoeken route",
 				"owner": "ConductionNL/portaliq",
 				"note": "Date sort works; relevance sort does not exist on any reachable path. Matches source rating (opencatalogi matrix, id srch-sort). Specified in openspec/changes/search-sort-by-relevance (OpenSpec pass 2026-09-27).",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "search-sort-by-relevance"
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
@@ -7121,7 +7135,8 @@
 				"reachedOn": "PortalAccountAdminController and PortalCaseAccessGuard call ActionAuthService::requireAction() on real request paths",
 				"owner": "ConductionNL/portaliq",
 				"note": "The mechanism is real and wired, but every shipped seed entry is ['admin'], admin-only out of the box, so there is no shipped example of a non-admin group actually granted an action. The seed file's own $comment is also unedited app-template boilerplate ('remove the $comment field... when implementing your app'), left in production. Specified in openspec/changes/operate-roles-for-content-and-actions (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "operate-roles-for-content-and-actions"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7181,7 +7196,8 @@
 				"reachedOn": "every authenticated portal session carries an organisation claim that scopes reads/writes through PortalObjectReader/PortalObjectWriter",
 				"owner": "ConductionNL/portaliq",
 				"note": "Rated partial rather than yes: this reader confirmed the session claim and the branding-isolation guard, but did not trace a full object-store query to prove row-level data isolation end to end for every schema; that needs a live check across the schemas in lib/Settings/portaliq_register.json (48 at portaliq db4a6cf, 23 of them without an organisation or portal property). Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "operate-portals-per-organisation"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7211,7 +7227,8 @@
 				"reachedOn": "nothing reaches it: there is no MCP tool provider in the app at all",
 				"owner": "ConductionNL/portaliq",
 				"note": "openspec/changes/hermiq-ai-tooling (0 of 12 tasks done) is the fleet-wide AI-tooling change this would eventually plug into; neither change has landed code here. Specified in openspec/changes/portaliq-mcp-adoption (existing change, OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "portaliq-mcp-adoption"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7271,7 +7288,8 @@
 				"reachedOn": "Portals admin page lists/edits multiple portal records; each portal resolves its own organisation-scoped config and session",
 				"owner": "ConductionNL/portaliq",
 				"note": "Same caveat as ops-multitenancy-organisation: the session-level and branding-level isolation is confirmed, full row-level data isolation across every schema was not traced end to end in this pass. Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "operate-portals-per-organisation"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7301,7 +7319,8 @@
 				"reachedOn": "CmsEditorController for content editing rights; PortalAccountAdminController/PortalCaseAccessGuard for action rights",
 				"owner": "ConductionNL/portaliq",
 				"note": "Content editing genuinely separates 'editor group' from 'admin'. Settings/action rights are mechanically group-based but every shipped action is admin-only, so out of the box there is no non-admin role over settings. Specified in openspec/changes/operate-roles-for-content-and-actions (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "operate-roles-for-content-and-actions"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7362,7 +7381,8 @@
 				"reachedOn": "nothing reaches it: no hosted-service surface exists here",
 				"owner": "ConductionNL/portaliq",
 				"note": "A hosting company could offer managed Nextcloud+portaliq as a service, but that would be an external arrangement, not a capability this codebase provides. Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "operate-portals-per-organisation"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7456,7 +7476,8 @@
 				"reachedOn": "portal SPA nav 'Berichten' (synthesised page) -> SchemaForm reply form -> POST /portal/api/collections/dossiq/portaalBericht (ContributionController::create, crossRef guard on caseId); incoming messages -> InboxPage.jsx via GET /portal/api/inbox",
 				"owner": "ConductionNL/dossiq",
 				"note": "Messages both ways carry the case on dossiq's schema, so they are filed on the case. Not automatic from the resident's side: the reply form shows caseId as a free text field (no optionsProvider declared), so the resident must type the case uuid, and there is no reply-from-this-message or reply-from-the-case-page control. Note: the existing row cmp-inb-reply ('no compose control') predates this dossiq action and may be stale. Specified in ConductionNL/dossiq openspec/changes/communication-portal-conversation-on-the-case (dossiq lane, OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "dossiq/communication-portal-conversation-on-the-case"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -7624,7 +7645,8 @@
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
 				"note": "No PDF or print export of the resident's own data, statements or plan; the WMEBV receipt carries a field copy in the inbox message only. Specified in openspec/changes/cases-export-own-data-pdf (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "cases-export-own-data-pdf"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8124,7 +8146,8 @@
 				"reachedOn": "portal SPA nav 'Berichten' -> SchemaForm -> POST /portal/api/collections/dossiq/portaalBericht; the answer arrives in InboxPage.jsx",
 				"owner": "ConductionNL/dossiq",
 				"note": "A resident can send a message tied to one of their cases, but from the messages page with the case uuid typed by hand, not from the case page, and the answer shows in the inbox, not on the case. Specified in ConductionNL/dossiq openspec/changes/communication-portal-conversation-on-the-case (dossiq lane, OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"origin": "code",
+				"change": "dossiq/communication-portal-conversation-on-the-case"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -8133,6 +8156,25 @@
 			"origin": "competitor",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/src/open_inwoner/cms/cases/tests/test_contactform.py#L421",
 			"originNote": "test name"
+		},
+		{
+			"id": "act-complaint-on-case",
+			"area": "case-actions",
+			"name": "File a complaint (klacht) about how a case was handled, from that case's page.",
+			"portaliq": "partial",
+			"open-inwoner": "unchecked",
+			"nl-portal": "unchecked",
+			"xxllnc-pip": "unchecked",
+			"mijnoverheid": "unchecked",
+			"liferay-dxp": "unchecked",
+			"built": {
+				"state": "specified",
+				"evidence": "dossiq lib/Portal/PortalContributionProvider.php declares the citizen create action createKlacht; it renders as a page form on the overview (zuiddrecht-resident-pages-match-the-boards), not on the case page (src/site/components/e/CitizenCase.vue has no klacht control)",
+				"owner": "ConductionNL/portaliq",
+				"note": "Canvas decision (7 Oct 2026): Bezwaar and Klacht live on the case page, board Zaak.",
+				"change": "case-page-objection-and-complaint"
+			},
+			"source": "spec-round-2026-10-07"
 		},
 		{
 			"id": "dem-cl-case-outcome-explained",
@@ -8611,7 +8653,8 @@
 				"reachedOn": "nothing",
 				"owner": "ConductionNL/portaliq",
 				"origin": "code",
-				"note": "Specified in openspec/changes/search-assistant-from-public-content (OpenSpec pass 2026-09-27)."
+				"note": "Specified in openspec/changes/search-assistant-from-public-content (OpenSpec pass 2026-09-27).",
+				"change": "search-assistant-from-public-content"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8643,7 +8686,8 @@
 				"reachedOn": "Portals admin theme field -> PortalThemeResolver at render time",
 				"owner": "ConductionNL/portaliq",
 				"origin": "code",
-				"note": "Owner moved to ConductionNL/portaliq (thematiq lane): the shared token set is built in thematiq; the missing half is a shared library of page blocks, which is portaliq's (thematiq lane, OpenSpec pass 2026-09-27; owner was ConductionNL/thematiq). Specified in openspec/changes/site-shared-page-blocks (owner-moves pass 2026-09-28): the missing half, a library of page blocks shared by the portals of one organisation."
+				"note": "Owner moved to ConductionNL/portaliq (thematiq lane): the shared token set is built in thematiq; the missing half is a shared library of page blocks, which is portaliq's (thematiq lane, OpenSpec pass 2026-09-27; owner was ConductionNL/thematiq). Specified in openspec/changes/site-shared-page-blocks (owner-moves pass 2026-09-28): the missing half, a library of page blocks shared by the portals of one organisation.",
+				"change": "site-shared-page-blocks"
 			},
 			"provider": "thematiq",
 			"providerHow": "read-from-code",
