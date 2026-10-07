@@ -1692,12 +1692,13 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 
 /*
  * THE RESIDENT AREA ON THE HEADER'S COLUMN (boards MijnOverzicht, MijnZaken,
- * Berichten, Zaak): the menu starts under the logo, 40px under the trail,
- * and the page ends 72px above the footer. A set without the header tokens
+ * Berichten, Zaak): the menu starts under the logo, 40px under the trail
+ * (24px under its own 16px of room), and the page ends 72px above the
+ * footer. A set without the header tokens
  * keeps the page column.
  */
 .pq-site:has(.pq-site__header--designed) .pq-account--with-menu {
-	padding-block: 40px 72px;
+	padding-block: 24px 72px;
 }
 
 @media screen and (min-width: 1280px) {
@@ -2141,6 +2142,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
    overview's greeting; a record's name keeps the 40px of its heading. */
 .pq-site:has(.pq-site__header--designed) .pq-account__content > h1,
 .pq-site:has(.pq-site__header--designed) .pq-cases > h1 {
+	margin-block-start: 0;
 	font-size: var(--utrecht-heading-1-font-size, 2.75rem);
 }
 
@@ -2254,6 +2256,9 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 		position: absolute;
 		inline-size: 1px;
 		block-size: 1px;
+		min-inline-size: 0;
+		padding: 0;
+		border: 0;
 		overflow: hidden;
 		clip-path: inset(50%);
 	}
@@ -2365,5 +2370,212 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 		.pq-signin__card:has(.pq-signin__demo)
 		.pq-signin__demo {
 		grid-column: 1 / -1;
+	}
+}
+
+/*
+ * THE CASE TABS (board MijnZaken): 48px tabs 18px in, 17px, a 2px grey line
+ * under the row; the current tab in bold ink with the red bar and no
+ * underline, the other in the link colour in 600.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-cases__tabs {
+	gap: 4px;
+	border-block-end-width: 2px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-cases__tabs .utrecht-button {
+	min-block-size: 48px;
+	padding-block: 0;
+	padding-inline: 18px;
+	font-size: 1.0625rem;
+	font-weight: 600;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-cases__tabs
+	.utrecht-button[aria-selected='true'] {
+	color: var(--nldesign-color-text, inherit) !important;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+/* The e-mail prompt asks on the overview only (board MijnOverzicht); the
+   other pages of the own area start with their title (MijnZaken, Berichten,
+   Zaak). */
+.pq-site:has(.pq-site__header--designed)
+	.pq-account__content:not(:has(.pq-greeting))
+	.pq-contact-prompt {
+	display: none;
+}
+
+/*
+ * THE INBOX AS CARDS (board Berichten): each message a bordered card, an
+ * unread one with the accent bar at its start and a small accent pill; the
+ * subject 20px, the date 15px muted, the text 17px; "Openen" an outlined
+ * 44px button and "Markeren als gelezen" a link. The message's source is in
+ * the subject's own words on the board, so its label steps back.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-inbox {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 0;
+	padding: 20px 24px;
+	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row--unread {
+	box-shadow: inset 4px 0 0
+		var(--thematiq-accent-color, var(--nldesign-color-primary));
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 14px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__unread {
+	padding: 2px 10px;
+	border-radius: 12px;
+	background-color: var(--thematiq-accent-color, var(--nldesign-color-primary));
+	color: var(--nldesign-color-primary-text, Canvas);
+	font-size: 0.875rem;
+	font-weight: 700;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__subject {
+	font-size: 1.25rem;
+	font-weight: 700;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__source {
+	display: none;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__date {
+	color: var(--nldesign-color-text-muted, inherit);
+	font-size: 0.9375rem;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__body {
+	margin: 0;
+	font-size: 1.0625rem;
+	line-height: 1.55 !important;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin: 0;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-row__actions
+	.utrecht-button-link--secondary-action {
+	min-block-size: 44px;
+	padding-block: 0;
+	padding-inline: 18px;
+	font-weight: 600;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-row__actions
+	.utrecht-button--subtle {
+	min-block-size: 44px;
+	padding: 0 12px;
+	border-color: transparent !important;
+	background: transparent;
+	color: var(--utrecht-link-color, currentcolor) !important;
+	font-size: 1.0625rem;
+	font-weight: 600;
+	text-decoration: underline;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-row__actions
+	.utrecht-button--subtle:disabled {
+	color: var(--nldesign-color-text-muted, inherit) !important;
+	text-decoration: none;
+}
+
+/* "Meldingen instellen" stands at the end of the title's line, as a link
+   (board Berichten); opened, the settings unfold in the flow as before. */
+.pq-site:has(.pq-site__header--designed) .pq-account__content:has(.pq-inbox-page) {
+	position: relative;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-page
+	> .pq-notification-settings:not([open])
+	> summary {
+	position: absolute;
+	inset-block-start: 16px;
+	inset-inline-end: 0;
+	color: var(--utrecht-link-color, currentcolor);
+	font-size: 1.0625rem;
+	font-weight: 600;
+	text-decoration: underline;
+	cursor: pointer;
+	list-style: none;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-page
+	> .pq-notification-settings:not([open])
+	> summary::-webkit-details-marker {
+	display: none;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox__notice:empty {
+	display: none;
+}
+
+/* On a phone the lead news item is one card: the photo across its top, then
+   the date and a 20px title (board MobielHome). */
+@media (max-width: 767px) {
+	.pq-site:has(.pq-site__header--designed) .nl-news-list__lead {
+		flex-direction: column;
+		gap: 0;
+		overflow: hidden;
+		border: 1px solid
+			var(--nldesign-color-border, var(--tilburg-line-border-color));
+		border-radius: var(--nldesign-website-border-radius-large, 6px);
+	}
+
+	.pq-site:has(.pq-site__header--designed) .nl-news-list__photo {
+		flex: none;
+		min-block-size: 150px;
+		border-radius: 0;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .nl-news-list__lead-text {
+		flex: none;
+		gap: 6px;
+		padding: 16px;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .nl-news-list__lead-title {
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.nl-news-list__lead-text
+		.utrecht-paragraph {
+		display: none;
 	}
 }
