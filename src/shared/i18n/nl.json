@@ -199,6 +199,8 @@
 	"Sent by you": "Door u gestuurd",
 	"There are no documents on this case yet.": "Er staan nog geen documenten bij deze zaak.",
 	"The document could not be opened. Try again later.": "Het document kon niet worden geopend. Probeer het later opnieuw.",
+	"Overview": "Overzicht",
+	"Due by": "Uiterlijk klaar op",
 	"My cases": "Mijn zaken",
 	"Open ({count})": "Lopend ({count})",
 	"Closed ({count})": "Afgerond ({count})",
@@ -394,5 +396,7 @@
 	"{count} new": "{count} nieuw",
 	"{count} open": "{count} open",
 	"One less": "Eén minder",
-	"One more": "Eén meer"
+	"One more": "Eén meer",
+	"Download": "Downloaden",
+	"Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
 }

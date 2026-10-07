@@ -199,6 +199,8 @@
 	"Sent by you": "Sent by you",
 	"There are no documents on this case yet.": "There are no documents on this case yet.",
 	"The document could not be opened. Try again later.": "The document could not be opened. Try again later.",
+	"Overview": "Overview",
+	"Due by": "Due by",
 	"My cases": "My cases",
 	"Open ({count})": "Open ({count})",
 	"Closed ({count})": "Closed ({count})",
@@ -394,5 +396,7 @@
 	"{count} new": "{count} new",
 	"{count} open": "{count} open",
 	"One less": "One less",
-	"One more": "One more"
+	"One more": "One more",
+	"Download": "Download",
+	"Only on this demo. No password is asked.": "Only on this demo. No password is asked."
 }

@@ -10,8 +10,18 @@
 	screen-reader user navigates by landmark.
 -->
 <template>
-	<nav class="utrecht-link-list-nav" data-testid="nl-link-list">
+	<nav
+		class="utrecht-link-list-nav"
+		:class="
+			safeDisplay === 'plain'
+				? null
+				: `nl-link-list nl-link-list--${safeDisplay}`
+		"
+		data-testid="nl-link-list">
 		<h2 v-if="heading" class="utrecht-heading-3">{{ heading }}</h2>
+		<p v-if="intro" class="utrecht-paragraph nl-link-list__intro">
+			{{ intro }}
+		</p>
 		<ul class="utrecht-link-list">
 			<li
 				v-for="(link, index) in safeLinks"
@@ -37,6 +47,7 @@ import { authoredLink, staysInSite } from '../../components/mijn/links.js'
 import '@utrecht/link-list-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
 import '@utrecht/heading-3-css/dist/index.css'
+import '@utrecht/paragraph-css/dist/index.css'
 
 export default {
 	name: 'NlLinkList',
@@ -46,11 +57,25 @@ export default {
 		heading: { type: String, default: '' },
 		/** The links: `{label, href, description}`. */
 		links: { type: Array, default: () => [] },
+		/** `plain`, `card` (a bordered card) or `accent` (a thick line in the accent above). */
+		display: { type: String, default: 'plain' },
+		/** A line under the heading, before the links. */
+		intro: { type: String, default: '' },
 	},
 
 	emits: ['navigate'],
 
 	computed: {
+		/**
+		 * @return {string} `plain`, `card` or `accent`.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-a-link-list-may-draw-as-a-card-or-under-an-accent-line
+		 */
+		safeDisplay() {
+			return ['plain', 'card', 'accent'].includes(this.display)
+				? this.display
+				: 'plain'
+		},
+
 		/**
 		 * The links that have both a text and an address inside this site or on
 		 * the web. A half-filled row is left out rather than rendered as a link
@@ -97,3 +122,38 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/* The two drawn displays (Zuiddrecht boards Home and Contentpagina). Tokens
+   only; `plain` adds nothing. */
+.nl-link-list__intro {
+	margin: 0 0 0.75rem;
+}
+
+.nl-link-list--card {
+	padding: 1.75rem 2rem;
+	border: 1px solid
+		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
+	border-radius: var(
+		--nldesign-website-border-radius-large,
+		var(--utrecht-border-radius-md, 0.75rem)
+	);
+}
+
+.nl-link-list--card .utrecht-link-list__link {
+	font-weight: 600;
+}
+
+.nl-link-list--accent {
+	padding-block-start: 1.25rem;
+	border-block-start: 4px solid var(--nldesign-color-accent, currentcolor);
+}
+
+.nl-link-list h2 {
+	margin-block-start: 0;
+}
+
+.nl-link-list .utrecht-link-list {
+	margin-block-start: 0;
+}
+</style>

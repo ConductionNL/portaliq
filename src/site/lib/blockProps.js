@@ -77,3 +77,24 @@ export function heroActions(actions) {
 		}))
 		.slice(0, 2)
 }
+
+/**
+ * The hero's popular links that render ("Veel gezocht"): each with a label
+ * and a followable destination, six at most.
+ *
+ * @param {Array} links The authored links.
+ * @return {Array} `{label, href}` entries, six at most.
+ *
+ * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-hero-may-draw-its-search-plain-with-popular-links
+ */
+export function heroPopularLinks(links) {
+	return (Array.isArray(links) ? links : [])
+		.filter(
+			(link) =>
+				link
+				&& String(link.label || '').trim() !== ''
+				&& followable(link.href),
+		)
+		.map((link) => ({ label: String(link.label), href: String(link.href) }))
+		.slice(0, 6)
+}

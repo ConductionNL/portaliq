@@ -2290,6 +2290,14 @@
         "How the menu beside the visitor's own pages opens.": "Hoe het menu naast de eigen pagina's van de bezoeker begint.",
         "Card label": "Regel boven de naam",
         "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "De regel boven de naam van de organisatie bovenaan het menu, getoond als de bezoeker voor een organisatie handelt, bijvoorbeeld U regelt het voor. Leeg toont geen kaart.",
+        "My cases page": "Pagina Mijn zaken",
+        "How the page that lists every case draws them.": "Hoe de pagina die elke zaak opsomt ze tekent.",
+        "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by.": "cards tekent de mapkaarten; rows tekent een regel per zaak met het nummer, de titel, het label en de dag waarop hij uiterlijk klaar is.",
+        "The menu in this portal's own groups, in order: each a title and the items in it by name. An item is a section of the own area (overview, cases, tasks, inbox, messages, news, access, details, account) or a contributed page as app:page, such as dossiq:berichten. An item not named here keeps its place in the groups the site builds itself, so nothing becomes unreachable. Empty keeps the site's own groups.": "Het menu in de eigen groepen van dit portaal, op volgorde: elk een titel en de onderdelen erin, op naam. Een onderdeel is een sectie van de eigen omgeving (overview, cases, tasks, inbox, messages, news, access, details, account) of een bijgedragen pagina als app:page, zoals dossiq:berichten. Een onderdeel dat hier niet staat houdt zijn plek in de groepen die de site zelf maakt, zodat niets onbereikbaar wordt. Leeg houdt de eigen groepen van de site.",
+        "Group title": "Groepstitel",
+        "The heading over this group of the menu, such as Zaken en taken.": "De kop boven deze groep van het menu, zoals Zaken en taken.",
+        "Group items": "Onderdelen van de groep",
+        "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.": "De onderdelen in deze groep, op volgorde, elk op naam: een sectie van de eigen omgeving of een bijgedragen pagina als app:page.",
         "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).": "Op een lijstblok: kaarten, rijen met datum, balken of cijferlabels in plaats van een tabel; bij taken de uitgelichte kaart; bij kerncijfers één verdeelde balk; bij de kalender datumtegels (site-school-blocks) of één dag als rooster (calendar-timetable-display).",
         "On a timetable: the small label over the first item of the day.": "Op een rooster: het kleine label boven het eerste onderdeel van de dag.",
         "firstLabel": "firstLabel",
@@ -2300,7 +2308,8 @@
         "The role of that staff member in words, such as Mentor.": "De rol van die medewerker in woorden, zoals Mentor.",
         "The subject line of the conversation.": "De onderwerpregel van het gesprek.",
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "De woorden die dat record noemen, overgenomen als het gesprek begint, zoals Vera, Groep 7.",
-        "With": "Met"
+        "With": "Met",
+        "Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

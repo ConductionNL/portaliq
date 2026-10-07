@@ -41,6 +41,13 @@
 <script>
 import { dismissPrompt } from '../../../shared/account.js'
 
+// The alert's look travels with the prompt. On a `/mijn` page another
+// component had already loaded the Utrecht alert CSS, so the prompt looked
+// right there and nowhere else: above the public home page it stood with a
+// transparent ground and a black border. Webpack loads the module once, so a
+// page that already had it renders exactly as before.
+import '@utrecht/alert-css/dist/index.css'
+
 /**
  * sessionStorage, or null where the browser refuses it.
  *

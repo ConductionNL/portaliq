@@ -196,6 +196,16 @@ class PortalBlockResolver {
 		$entry = $scopes->scope(declared: $block, entry: $entry);
 		$entry = $scopes->lookups(declared: $block, entry: $entry, collectionIds: $collectionIds);
 
+		// The board keys of a detail card and of the case screen
+		// (zuiddrecht-resident-pages-match-the-boards).
+		if ($type === 'detail') {
+			return $entry + (new BoardKeys())->detailKeys(block: $block);
+		}
+
+		if ($type === 'citizenCase') {
+			return $entry + (new BoardKeys())->citizenCaseKeys(block: $block);
+		}
+
 		if ($type !== 'collection') {
 			return $entry;
 		}

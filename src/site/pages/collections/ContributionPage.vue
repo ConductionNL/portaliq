@@ -32,12 +32,38 @@
 
 		<!-- A record page (contribution-record-page): the record's name and
 		     the way back once one is open, a hint while the list shows. -->
+		<!-- A page whose record is its heading, while no record is open
+		     (zuiddrecht-resident-pages-match-the-boards). -->
+		<h1
+			v-if="recordHeads && !activeRecord"
+			id="site-account-title"
+			class="utrecht-heading-2"
+			data-testid="site-account-title">
+			{{ entry ? entry.label : '' }}
+		</h1>
 		<div
 			v-if="recordPage && activeRecord"
 			class="pq-record__head"
+			:class="{ 'pq-record__head--titled': recordHeads }"
 			:data-record="recordId"
 			data-testid="record-head">
+			<!-- The record's name as the page's h1, the page label and the
+			     record's reference as its eyebrow. -->
+			<div v-if="recordHeads" class="pq-record__titles">
+				<p class="pq-record__eyebrow" data-testid="record-eyebrow">
+					{{ eyebrow }}
+				</p>
+				<h1
+					:id="recordHeadingId"
+					ref="recordHeading"
+					class="utrecht-heading-2 pq-record__title pq-record__title--h1"
+					tabindex="-1"
+					data-testid="site-account-title">
+					{{ recordName }}
+				</h1>
+			</div>
 			<h2
+				v-else
 				:id="recordHeadingId"
 				ref="recordHeading"
 				class="utrecht-heading-2 pq-record__title"
@@ -245,6 +271,9 @@
 				:quietWhenEmpty="item.quietWhenEmpty === true"
 				:api="api"
 				:proposeAction="item.proposeAction"
+				:label="item.block.label || ''"
+				:level="sectionLevel"
+				:showTimeline="item.block.timeline !== false"
 				:t="tr"
 				:locale="lang" />
 
@@ -735,6 +764,34 @@ export default {
 
 		recordHeadingId() {
 			return `pq-record-${this.currentPage?.id || 'page'}`
+		},
+
+		/**
+		 * Whether the open record's name is the page's h1 (the record
+		 * declares `heading: record`).
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		recordHeads() {
+			return this.recordPage?.heading === 'record'
+		},
+
+		/**
+		 * The eyebrow over the record's name: the page label and the record's
+		 * reference ("Uw zaak · 2026-0082").
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		eyebrow() {
+			const record = this.activeRecord || {}
+			const reference = ['identifier', 'reference']
+				.map((field) => record[field])
+				.find((value) => typeof value === 'string' && value.trim() !== '')
+			return [this.entry?.label || this.currentPage?.label, reference]
+				.filter(Boolean)
+				.join(' · ')
 		},
 
 		backLabel() {
@@ -1469,5 +1526,28 @@ export default {
 
 .pq-record__title {
 	margin: 0;
+}
+
+/* The board's case head: the eyebrow in the muted colour over a large
+   title, the way back at the end of the line. */
+.pq-record__head--titled {
+	align-items: flex-start;
+	gap: 1rem;
+}
+
+.pq-record__titles {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.pq-record__eyebrow {
+	margin: 0;
+	color: var(--nldesign-color-text-muted, inherit);
+	font-size: 1rem;
+}
+
+.pq-record__title--h1 {
+	line-height: 1.15;
 }
 </style>

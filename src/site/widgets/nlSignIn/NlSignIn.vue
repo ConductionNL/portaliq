@@ -260,8 +260,11 @@ export default {
 	justify-content: center;
 	inline-size: 100%;
 	max-inline-size: none;
+	min-block-size: 3.25rem;
 	margin-block-start: 0.375rem;
 	font-weight: 700;
+	font-size: 1.125rem;
+	text-decoration: none;
 }
 
 .nl-signin-card--inverse .utrecht-button.nl-signin-card__button {

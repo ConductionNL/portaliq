@@ -349,11 +349,33 @@ class PortalPageController extends Controller {
 	private function siteLocale(): string {
 		$locale = $this->resolveLocale();
 		if ($locale === '') {
-			return 'nl';
+			$locale = 'nl';
 		}
 
-		return $locale;
+		return $this->localeThePortalServes(locale: $locale);
 	}//end siteLocale()
+
+
+	/**
+	 * The visitor's language held to the portal's declared locales
+	 * (PortalResolver::localeFor). A portal that cannot be resolved serves
+	 * what the visitor asked for, as before.
+	 *
+	 * @param string $locale The visitor's language, never empty.
+	 *
+	 * @return string The language to serve.
+	 *
+	 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-document-language-follows-the-portal
+	 */
+	private function localeThePortalServes(string $locale): string {
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $this->requestedPortalSlug());
+		} catch (\Throwable) {
+			$portal = null;
+		}
+
+		return $this->portalResolver->localeFor(portal: $portal, locale: $locale);
+	}//end localeThePortalServes()
 
 
 	/**
@@ -393,7 +415,8 @@ class PortalPageController extends Controller {
 	 * The sign-in settings the site needs at boot, from the same resolver
 	 * `/portal` uses, so the two surfaces offer the same ways in.
 	 *
-	 * @return array{devLogin: bool, silentSignIn: string, signinOrganisation: string, audience: string, waysIn: array<string, mixed>}
+	 * @return array{devLogin: bool, silentSignIn: string, signinOrganisation: string, audience: string,
+	 *               waysIn: array<string, mixed>, exampleResident: string}
 	 *
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
@@ -413,6 +436,8 @@ class PortalPageController extends Controller {
 			'audience'           => (string)($config['audience'] ?? ''),
 			// The doors besides the sign-in buttons (identity-ways-in-screens T07).
 			'waysIn'             => (array)($config['waysIn'] ?? []),
+			// One click on a demo for the example resident (example-resident-demo-login).
+			'exampleResident'    => (string)($config['exampleResident'] ?? ''),
 		];
 	}//end siteSignin()
 
