@@ -456,9 +456,11 @@ export default {
 
 	methods: {
 		/**
-		 * One empty string per whitelisted field.
+		 * One empty string per whitelisted field, or the value the page gives
+		 * for it (`preset`).
 		 *
 		 * @return {Record<string, string>} The values.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		emptyValues() {
 			const values = {}
