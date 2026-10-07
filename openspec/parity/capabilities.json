@@ -1157,10 +1157,10 @@
 				"evidence": "lib/Service/Signin/{BrokerLogin,BrokerExchangeClient,BrokerEnvelopeCheck,LoginProviders,OrganisationLoginConfig}.php; lib/Controller/BrokerSessionController.php GET /portal/api/session/broker/start|callback; SessionController::oidcStart forwards a broker-routed provider; src/portal/lib/signinRoute.js (buttons follow `route`, #signin=failed); src/widgets/PortalSignin.vue + PortalSigninController GET/PUT /api/portals/{slug}/signin (admin: route per provider, integriq start/exchange address, consumer id, write-only secret); the session carries integriq's trust, which ContentController's minTrust gate reads",
 				"reachedOn": "admin: Portals -> a portal -> Sign-in widget -> DigiD/eHerkenning/eIDAS: Integriq; resident: portal login screen -> Log in with <provider> -> /portal/api/session/broker/start -> integriq start -> /portal/api/session/broker/callback -> signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Re-read 2026-10-07. Portaliq's half is built (archived signin-integriq-broker-login, 13 of 13 tasks): lib/Controller/BrokerSessionController.php start and callback, lib/Service/Signin/*, the sign-in widget's route per provider. Integriq's browser half has since landed too: appinfo/routes.php:397-404 idpBroker#start, #callback, #exchange (lib/Controller/IdpBrokerController.php, lib/Auth/Idp/IdpLoginService.php). Still missing: the vendor SAML Service Provider or OIDC Relying Party behind integriq's GovernmentIdpAdapterInterface; a start on a live instance ends on integriq's error page. That waits on Open Decision D1 (broker vendor and contract), ConductionNL/integriq#1495. Stays building.",
+				"note": "Re-read 2026-10-07. Portaliq's half is built (archived signin-integriq-broker-login, 13 of 13 tasks): lib/Controller/BrokerSessionController.php start and callback, lib/Service/Signin/*, the sign-in widget's route per provider. Integriq's browser half has since landed too: appinfo/routes.php:397-404 idpBroker#start, #callback, #exchange (lib/Controller/IdpBrokerController.php, lib/Auth/Idp/IdpLoginService.php). Still missing: the vendor SAML Service Provider or OIDC Relying Party behind integriq's GovernmentIdpAdapterInterface; a start on a live instance ends on integriq's error page. That waits on Open Decision D1 (broker vendor and contract), ConductionNL/integriq#1495. Stays building. Decision 83 (7 Oct 2026): portaliq owns the paper view. The sign-in half stays in 2026-09-29-signin-integriq-broker-login; the paper view (documents on any collection, the fail-closed opened hook, the step-up prompt) is site-member-voting-record-and-confidential-papers, with decidiq's half in decidiq/portal-voting-record-and-confidential-papers.",
 				"sourceId": "plt-02",
 				"origin": "sibling",
-				"change": "2026-09-29-signin-integriq-broker-login",
+				"change": "site-member-voting-record-and-confidential-papers",
 				"readOn": "2026-10-07"
 			},
 			"provider": "portaliq",
@@ -1170,6 +1170,40 @@
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Inloggen"
+			}
+		},
+		{
+			"id": "sib-decidiq-pub-14",
+			"area": "site",
+			"name": "Read a council member's public voting record on the website, without signing in.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: row added on 2026-10-07 in the spec round for decidiq's pub-14 (decision 83); this system was not re-read for it",
+				"nl-portal": "not checked: row added on 2026-10-07 in the spec round for decidiq's pub-14 (decision 83); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-07 in the spec round for decidiq's pub-14 (decision 83); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-07 in the spec round for decidiq's pub-14 (decision 83); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-07 in the spec round for decidiq's pub-14 (decision 83); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "No site block or page renders a record a contribution hands over outside an OpenRegister collection; decidiq's public votes exist only as ORI JSON (decidiq lib/Service/OriVotePublicationRule.php, GET /api/ori/v1/votes?voter=). The site has publicationDetail and collection blocks (src/site/components/WidgetGrid.vue), none for a public record list.",
+				"owner": "ConductionNL/portaliq",
+				"sourceId": "pub-14",
+				"origin": "sibling",
+				"change": "site-member-voting-record-and-confidential-papers"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-07",
+			"note": "Decision 83 (7 Oct 2026): portaliq owns the public page for decidiq pub-14; decidiq contributes the record list (decidiq/portal-voting-record-and-confidential-papers). NotuBiz, iBabs and GO show this on their public council sites (decidiq matrix).",
+			"screen": {
+				"board": null,
+				"reason": "not designed yet: no board draws a public voting record page; the change composes it from Contentpagina and Publicatie with the figures of DcPersoon's Stemgedrag tab"
 			}
 		},
 		{
