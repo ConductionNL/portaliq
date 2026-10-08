@@ -97,6 +97,8 @@
              portal through the instance's own URL and keeps its availability
              per day and its outages for thirteen months. -->
         <job>OCA\Portaliq\BackgroundJob\AvailabilityProbeJob</job>
+        <!-- site-multi-step-forms: hourly, deletes drafts past their retention. -->
+        <job>OCA\Portaliq\BackgroundJob\PortalDraftPurgeJob</job>
     </background-jobs>
 
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->

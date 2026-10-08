@@ -99,7 +99,7 @@ trait PortalIdentityStoreTrait {
 	private function fakeWriter(): PortalObjectWriter {
 		$writer = $this->getMockBuilder(PortalObjectWriter::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['createObject', 'updateObject'])
+			->onlyMethods(['createObject', 'updateObject', 'deleteObject'])
 			->getMock();
 		$writer->method('createObject')->willReturnCallback(
 			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data): array {
@@ -128,6 +128,17 @@ trait PortalIdentityStoreTrait {
 
 				$this->rows[$id] = array_merge($this->rows[$id], $data);
 				return $this->rows[$id];
+			}
+		);
+
+		$writer->method('deleteObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id): bool {
+				if (isset($this->rows[$id]) === false || ($this->rows[$id][$scopeField] ?? null) !== $subjectRef || $subjectRef === '') {
+					return false;
+				}
+
+				unset($this->rows[$id]);
+				return true;
 			}
 		);
 

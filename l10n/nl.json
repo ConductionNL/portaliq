@@ -2310,7 +2310,15 @@
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "De woorden die dat record noemen, overgenomen als het gesprek begint, zoals Vera, Groep 7.",
         "With": "Met",
         "You are not allowed to do this. Ask an administrator for access.": "Je mag dit niet doen. Vraag een beheerder om toegang.",
-        "Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
+        "Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd.",
+        "Action": "Actie",
+        "Always `draft`; lets the purge job find every draft.": "Altijd `draft`; zo vindt de opschoonjob elk concept.",
+        "Portal draft": "Portaalconcept",
+        "The contributing app and the action, as `app/action`.": "De bijdragende app en de actie, als `app/actie`.",
+        "The id of the step the resident reached.": "Het id van de stap waar de inwoner was gebleven.",
+        "The signed-in resident the draft belongs to.": "De ingelogde inwoner van wie het concept is.",
+        "The visible answers so far, without files.": "De zichtbare antwoorden tot nu toe, zonder bestanden.",
+        "When the purge job deletes the draft.": "Wanneer de opschoonjob het concept verwijdert."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -398,5 +398,8 @@
 	"One less": "Eén minder",
 	"One more": "Eén meer",
 	"Download": "Downloaden",
-	"Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
+	"Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd.",
+	"Save and continue later": "Opslaan en later verdergaan",
+	"Your answers are saved until {date}. You can continue later.": "Uw antwoorden zijn bewaard tot {date}. U kunt later verdergaan.",
+	"Your answers could not be saved.": "Uw antwoorden konden niet worden bewaard."
 }

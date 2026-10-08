@@ -72,7 +72,8 @@
                     "portalAvailabilityDaily",
                     "portalAvailabilityOutage",
                     "media",
-                    "portalNotice"
+                    "portalNotice",
+                    "portalDraft"
                 ]
             }
         },
@@ -9436,6 +9437,67 @@
                         ],
                         "description": "Only a published notice is shown.",
                         "example": "published"
+                    }
+                }
+            },
+            "portalDraft": {
+                "slug": "portalDraft",
+                "icon": "ContentSaveEdit",
+                "version": "0.1.0",
+                "title": "Portal draft",
+                "authorization": {
+                    "read": [],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "The half-filled answers of a create or endpoint action, kept for the signed-in resident who typed them (site-multi-step-forms). Read and written only through portaliq's own draft routes, scoped to the subject, never sent to the contributing app. Removed when the action is sent and by the purge job after the retention the action declared. File answers are not kept.",
+                "type": "object",
+                "required": [
+                    "kind",
+                    "subjectRef",
+                    "actionKey",
+                    "expiresAt"
+                ],
+                "properties": {
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "description": "Always `draft`; lets the purge job find every draft.",
+                        "example": "draft"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The signed-in resident the draft belongs to.",
+                        "example": "subject-1"
+                    },
+                    "actionKey": {
+                        "title": "Action",
+                        "type": "string",
+                        "description": "The contributing app and the action, as `app/action`.",
+                        "example": "dossiq/woo-request"
+                    },
+                    "answers": {
+                        "title": "Answers",
+                        "type": "object",
+                        "description": "The visible answers so far, without files.",
+                        "example": {
+                            "omschrijving": "Alle stukken over de rotonde"
+                        }
+                    },
+                    "step": {
+                        "title": "Step",
+                        "type": "string",
+                        "description": "The id of the step the resident reached.",
+                        "example": "step-2"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the purge job deletes the draft.",
+                        "example": "2026-11-01T12:00:00+00:00"
                     }
                 }
             }

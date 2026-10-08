@@ -2236,7 +2236,15 @@ OC.L10N.register(
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "The words that name that record, copied when the thread is started, such as Vera, Groep 7.",
         "With": "With",
         "You are not allowed to do this. Ask an administrator for access.": "You are not allowed to do this. Ask an administrator for access.",
-        "Only on this demo. No password is asked.": "Only on this demo. No password is asked."
+        "Only on this demo. No password is asked.": "Only on this demo. No password is asked.",
+        "Action": "Action",
+        "Always `draft`; lets the purge job find every draft.": "Always `draft`; lets the purge job find every draft.",
+        "Portal draft": "Portal draft",
+        "The contributing app and the action, as `app/action`.": "The contributing app and the action, as `app/action`.",
+        "The id of the step the resident reached.": "The id of the step the resident reached.",
+        "The signed-in resident the draft belongs to.": "The signed-in resident the draft belongs to.",
+        "The visible answers so far, without files.": "The visible answers so far, without files.",
+        "When the purge job deletes the draft.": "When the purge job deletes the draft."
     },
     "nplurals=2; plural=(n != 1);"
 )

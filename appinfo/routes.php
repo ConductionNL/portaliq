@@ -353,6 +353,11 @@ return [
         ['name' => 'guestAction#act', 'url' => '/portal/api/guest/{appId}/{actionId}', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
+        // The resident's saved draft of a create or endpoint action
+        // (site-multi-step-forms T8). Subject from the bearer only.
+        ['name' => 'portalDraft#show', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'GET'],
+        ['name' => 'portalDraft#save', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'PUT'],
+        ['name' => 'portalDraft#discard', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'DELETE'],
         // What the BRP or the KvK holds about the bearer (identity-registered-details).
         ['name' => 'portalRegisteredDetails#show', 'url' => '/portal/api/identity/registered-details', 'verb' => 'GET'],
         // The resident's own notice choices per kind and channel

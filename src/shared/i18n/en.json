@@ -398,5 +398,8 @@
 	"One less": "One less",
 	"One more": "One more",
 	"Download": "Download",
-	"Only on this demo. No password is asked.": "Only on this demo. No password is asked."
+	"Only on this demo. No password is asked.": "Only on this demo. No password is asked.",
+	"Save and continue later": "Save and continue later",
+	"Your answers are saved until {date}. You can continue later.": "Your answers are saved until {date}. You can continue later.",
+	"Your answers could not be saved.": "Your answers could not be saved."
 }

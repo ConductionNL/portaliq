@@ -182,6 +182,9 @@ export function createPortalApi(config, store = {}) {
 	// (guardian-direct-messages): `/apps/portaliq/api/messages/...`.
 	const appRoot = String(base).replace(/\/portal\/api\/?$/, '')
 
+	const draftUrl = (app, actionId) =>
+		`${base}/drafts/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`
+
 	const col = (register, schema) =>
 		`/collections/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
 
@@ -856,6 +859,74 @@ export function createPortalApi(config, store = {}) {
 				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/items?collection=${encodeURIComponent(collection.id)}`,
 			)
 			return body && Array.isArray(body.items) ? body : null
+		},
+
+		/**
+		 * The resident's saved draft of an action, or null (site-multi-step-forms T8).
+		 *
+		 * @param {string} app The contributing app, or the action's register.
+		 * @param {string} actionId The action id.
+		 * @return {Promise<{step: string, expiresAt: string, answers: object}|null>} The draft.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 */
+		async getDraft(app, actionId) {
+			try {
+				const res = await fetch(draftUrl(app, actionId), {
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				return res.ok ? await res.json() : null
+			} catch {
+				return null
+			}
+		},
+
+		/**
+		 * Save the resident's draft of an action.
+		 *
+		 * @param {string} app The contributing app, or the action's register.
+		 * @param {string} actionId The action id.
+		 * @param {{answers: object, step: string, retentionDays: number}} draft The draft.
+		 * @return {Promise<{step: string, expiresAt: string, answers: object}|null>} What was kept, or null.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 */
+		async saveDraft(app, actionId, draft) {
+			try {
+				const res = await fetch(draftUrl(app, actionId), {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						...authHeaders(),
+					},
+					body: JSON.stringify(draft),
+				})
+				return res.ok ? await res.json() : null
+			} catch {
+				return null
+			}
+		},
+
+		/**
+		 * Delete the draft once the action was sent.
+		 *
+		 * @param {string} app The contributing app, or the action's register.
+		 * @param {string} actionId The action id.
+		 * @return {Promise<boolean>} True when the request went through.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 */
+		async discardDraft(app, actionId) {
+			try {
+				const res = await fetch(draftUrl(app, actionId), {
+					method: 'DELETE',
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				return res.ok
+			} catch {
+				return false
+			}
 		},
 
 		/**

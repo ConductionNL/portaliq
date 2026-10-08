@@ -36,11 +36,12 @@ Four waves. Each wave is one PR to `development`. Every PR runs `npm run build:s
 
 ## Wave 4: drafts (REQ-SMF-012, REQ-SMF-021)
 
-- [ ] **T8**: `portalDraft` schema in `lib/Settings/portaliq_register.json`; routes to save, read and delete a draft for the signed-in subject; a purge job; the button and resume landing step in `SchemaForm.vue` (design D8).
+- [x] **T8**: `portalDraft` schema in `lib/Settings/portaliq_register.json`; routes to save, read and delete a draft for the signed-in subject; a purge job; the button and resume landing step in `SchemaForm.vue` (design D8).
   - PHPUnit `PortalDraftControllerTest::testADraftIsOnlyItsOwnersToRead`, `::testSendingDeletesTheDraft`, `::testFileAnswersAreNotKept`; `PortalDraftPurgeJobTest::testAnExpiredDraftIsDeleted`
-  - Route auth and IDOR gates green on the new controller
-- [ ] **T8b**: After `intake-conditional-questions-and-drafts` T06 lands: the same button and landing step on published forms. Blocked on openregister `or-form-and-journey-registry` tasks 2 and 3.
+  - Route auth and IDOR gates green on the new controller — not run: hydra-gates package not installed
+  - Node test `tests/site-form-drafts.spec.mjs` (button, save, resume landing step, delete on send). Playwright e2e — not run: needs a live instance
+- [ ] **T8b**: After `intake-conditional-questions-and-drafts` T06 lands: the same button and landing step on published forms. Blocked on openregister `or-form-and-journey-registry` tasks 2 and 3 — not run: needs openregister
 
 ## Validation
 
-- [ ] **T9**: `openspec validate site-multi-step-forms --strict`
+- [ ] **T9**: `openspec validate site-multi-step-forms --strict` — not run: openspec CLI not installed here

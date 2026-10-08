@@ -165,6 +165,15 @@
 				{{ submitting ? translate('Please wait…') : submitLabel }}
 			</button>
 			<button
+				v-if="canSaveDraft"
+				type="button"
+				class="utrecht-button utrecht-button--subtle"
+				:disabled="submitting"
+				data-testid="schema-form-save-draft"
+				@click="saveDraft">
+				{{ translate('Save and continue later') }}
+			</button>
+			<button
 				v-if="pending !== null"
 				type="button"
 				class="utrecht-button utrecht-button--secondary-action"
@@ -196,7 +205,12 @@ import {
 } from '../../../shared/fileFieldSubmit.js'
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
 import stepFlow from '../forms/stepFlow.js'
-import { confirmationText, stepHeading } from '../forms/steps.js'
+import {
+	confirmationText,
+	landingStep,
+	retentionDate,
+	stepHeading,
+} from '../forms/steps.js'
 import { summarySentence } from '../forms/summary.js'
 import {
 	collectionProviders,
@@ -306,6 +320,42 @@ export default {
 		 */
 		showsSummary() {
 			return this.summaryText !== '' && (!this.hasSteps || this.onReview)
+		},
+
+		/**
+		 * The retention the action declares for a saved draft, or 0 for none.
+		 *
+		 * @return {number} Days.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		draftDays() {
+			const days = this.action.draft && this.action.draft.retentionDays
+			return Number.isInteger(days) && days > 0 ? days : 0
+		},
+
+		/**
+		 * Whether "Opslaan en later verdergaan" shows: the action declares a
+		 * draft, the form runs in steps and the api can keep one.
+		 *
+		 * @return {boolean} True to show the button.
+		 */
+		canSaveDraft() {
+			return (
+				this.draftDays > 0
+				&& this.hasSteps
+				&& !this.confirmed
+				&& typeof this.api.saveDraft === 'function'
+			)
+		},
+
+		/**
+		 * The app part of the draft's key: the action's app, else its register.
+		 *
+		 * @return {string} The app.
+		 */
+		draftApp() {
+			return String(this.action.appId || this.action.register || 'portal')
 		},
 
 		translate() {
@@ -452,6 +502,7 @@ export default {
 
 	mounted() {
 		this.loadOptions()
+		this.resumeDraft()
 	},
 
 	methods: {
@@ -611,6 +662,80 @@ export default {
 		},
 
 		/**
+		 * The page's language, for dates.
+		 *
+		 * @return {string} The language code.
+		 */
+		pageLocale() {
+			return (
+				(typeof document !== 'undefined' && document.documentElement?.lang)
+				|| 'nl'
+			)
+		},
+
+		/**
+		 * Keep the answers so far and the step reached, without sending them
+		 * to the app. Files are not kept.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		async saveDraft() {
+			this.error = ''
+			this.done = ''
+			const kept = await this.api.saveDraft(this.draftApp, this.action.id, {
+				answers: { ...this.values },
+				step: this.currentStep ? this.currentStep.id : '',
+				retentionDays: this.draftDays,
+			})
+			if (kept === null || kept === undefined) {
+				this.error = this.translate('Your answers could not be saved.')
+				return
+			}
+			this.done = this.translate(
+				'Your answers are saved until {date}. You can continue later.',
+				{
+					date: retentionDate(kept.expiresAt, this.pageLocale()),
+				},
+			)
+		},
+
+		/**
+		 * Open a saved draft: its answers back in the fields, on the first step
+		 * with a missing required answer, else on the review.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+		 */
+		async resumeDraft() {
+			if (!this.canSaveDraft || typeof this.api.getDraft !== 'function') {
+				return
+			}
+			const draft = await this.api.getDraft(this.draftApp, this.action.id)
+			if (!draft || typeof draft.answers !== 'object') {
+				return
+			}
+			const values = { ...this.values }
+			for (const field of this.fields) {
+				if (field in draft.answers && !(field in this.preset)) {
+					values[field] = draft.answers[field]
+				}
+			}
+			this.values = values
+			this.stepIndex = landingStep(
+				this.flow,
+				(fields) => this.checkFields(fields),
+				(field) => this.isShownField(field),
+			)
+			this.done = this.translate(
+				'Your answers are saved until {date}. You can continue later.',
+				{ date: retentionDate(draft.expiresAt, this.pageLocale()) },
+			)
+		},
+
+		/**
 		 * Move focus to the error summary's heading.
 		 *
 		 * @return {void}
@@ -715,6 +840,9 @@ export default {
 				return
 			}
 
+			if (this.draftDays > 0 && typeof this.api.discardDraft === 'function') {
+				this.api.discardDraft(this.draftApp, this.action.id)
+			}
 			this.values = this.startValues()
 			this.files = {}
 			this.fileKey++
