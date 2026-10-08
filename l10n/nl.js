@@ -2383,7 +2383,24 @@ OC.L10N.register(
         "What to say on the phone": "Wat u aan de telefoon zegt",
         "What to tell the desk when calling. It may name the form with {formulier}.": "Wat u de balie vertelt als u belt. De naam van het formulier kan met {formulier} worden ingevuld.",
         "When the desk can be reached.": "Wanneer de balie bereikbaar is.",
-        "Where to go in person, and what to do first.": "Waar u langs kunt komen, en wat u eerst doet."
+        "Where to go in person, and what to do first.": "Waar u langs kunt komen, en wat u eerst doet.",
+        "Assigned to": "Toegewezen aan",
+        "Done by": "Uiterlijk klaar op",
+        "More about the step. Optional.": "Meer over de stap. Niet verplicht.",
+        "Once, or coming back.": "Eenmalig, of terugkerend.",
+        "One file kept with the step: an OpenRegister file reference. PDF, JPG or PNG, at most 10 MB.": "Eén bestand bij de stap: een OpenRegister-bestandsverwijzing. PDF, JPG of PNG, maximaal 10 MB.",
+        "Owner": "Eigenaar",
+        "Personal action": "Eigen actie",
+        "Reminder sent at": "Herinnering verstuurd op",
+        "Reminder was for": "Herinnering was voor",
+        "The day the step should be done.": "De dag waarop de stap klaar moet zijn.",
+        "The end date the reminder was sent for. A changed end date earns a new reminder.": "De einddatum waarvoor de herinnering is verstuurd. Bij een andere einddatum volgt een nieuwe herinnering.",
+        "The subject reference of the resident whose list this is. Stamped by portaliq.": "De onderwerpverwijzing van de inwoner van wie deze lijst is. Wordt door portaliq ingevuld.",
+        "The subject reference of whoever does the step: the owner, or an approved contact.": "De onderwerpverwijzing van wie de stap doet: de eigenaar, of een goedgekeurd contact.",
+        "What has to be done.": "Wat er gedaan moet worden.",
+        "When the reminder before the end date was sent. Set once per end date, so the reminder is sent once.": "Wanneer de herinnering voor de einddatum is verstuurd. Eén keer per einddatum ingesteld, zodat de herinnering één keer wordt verstuurd.",
+        "Where the step stands.": "Hoe ver de stap is.",
+        "The organisation whose portal the resident uses. Stamped by portaliq.": "De organisatie van het portaal dat de inwoner gebruikt. Wordt door portaliq ingevuld."
     },
     "nplurals=2; plural=(n != 1);"
 )

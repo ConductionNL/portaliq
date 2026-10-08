@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.74.0"
+        "version": "0.75.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.74.0",
+                "version": "0.75.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -73,7 +73,8 @@
                     "portalAvailabilityOutage",
                     "media",
                     "portalNotice",
-                    "portalDraft"
+                    "portalDraft",
+                    "portalAction"
                 ]
             }
         },
@@ -9675,6 +9676,110 @@
                         ],
                         "description": "Only a published notice is shown.",
                         "example": "published"
+                    }
+                }
+            },
+            "portalAction": {
+                "slug": "portalAction",
+                "icon": "CheckboxMarkedCircleOutline",
+                "version": "0.1.0",
+                "title": "Personal action",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One step a resident keeps on their own list, optionally given to an approved contact (personal-action-list). Read and written only through portaliq's own contribution, scoped on the owner and the assignee; the history is OpenRegister's audit trail of the object. An assignee who is not the owner may change status, file and description, never the assignee, and never delete.",
+                "type": "object",
+                "required": [
+                    "owner",
+                    "assignee",
+                    "title",
+                    "status"
+                ],
+                "properties": {
+                    "owner": {
+                        "title": "Owner",
+                        "type": "string",
+                        "example": "subject-1",
+                        "description": "The subject reference of the resident whose list this is. Stamped by portaliq."
+                    },
+                    "assignee": {
+                        "title": "Assigned to",
+                        "type": "string",
+                        "example": "subject-1",
+                        "description": "The subject reference of whoever does the step: the owner, or an approved contact."
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "example": "gemeente-zuiddrecht",
+                        "description": "The organisation whose portal the resident uses. Stamped by portaliq."
+                    },
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "maxLength": 200,
+                        "example": "Bankafschriften van drie maanden uploaden",
+                        "description": "What has to be done."
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "maxLength": 2000,
+                        "description": "More about the step. Optional."
+                    },
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "enum": [
+                            "once",
+                            "recurring"
+                        ],
+                        "default": "once",
+                        "example": "once",
+                        "description": "Once, or coming back."
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "todo",
+                            "doing",
+                            "done"
+                        ],
+                        "default": "todo",
+                        "example": "todo",
+                        "description": "Where the step stands."
+                    },
+                    "endDate": {
+                        "title": "Done by",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-14",
+                        "description": "The day the step should be done."
+                    },
+                    "file": {
+                        "title": "File",
+                        "type": "string",
+                        "description": "One file kept with the step: an OpenRegister file reference. PDF, JPG or PNG, at most 10 MB."
+                    },
+                    "reminderSentAt": {
+                        "title": "Reminder sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-10-11T07:00:00+00:00",
+                        "description": "When the reminder before the end date was sent. Set once per end date, so the reminder is sent once."
+                    },
+                    "reminderForEndDate": {
+                        "title": "Reminder was for",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-14",
+                        "description": "The end date the reminder was sent for. A changed end date earns a new reminder."
                     }
                 }
             },

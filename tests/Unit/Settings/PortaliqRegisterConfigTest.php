@@ -364,8 +364,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.72.0 (portal 0.15.0): `tokens` (portal-theme-blocks-and-contributed-pages). Additive.
 		// 0.71.0 (portal 0.14.0): `searchInsideDocuments` (portal-federated-search) and the
 		// `portalDraft` schema (site-multi-step-forms). Additive.
-		$this->assertSame('0.74.0', self::$register['info']['version']);
-		$this->assertSame('0.74.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.75.0', self::$register['info']['version']);
+		$this->assertSame('0.75.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);

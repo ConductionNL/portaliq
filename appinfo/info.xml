@@ -80,6 +80,9 @@
          portal delivery ledger into inbox messages and mails every 5 minutes. -->
     <background-jobs>
         <job>OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob</job>
+        <!-- personal-action-list: daily, the reminder three days before an
+             action's end date. -->
+        <job>OCA\Portaliq\BackgroundJob\ActionReminderJob</job>
         <job>OCA\Portaliq\BackgroundJob\TrafficAggregationJob</job>
         <!-- portal-traffic-visitors-and-geo: the visitor geography database,
              refreshed monthly from DB-IP Lite or MaxMind. -->
