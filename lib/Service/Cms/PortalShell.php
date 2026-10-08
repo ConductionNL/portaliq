@@ -43,12 +43,14 @@ class PortalShell {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalRegionResolver $regions    The closed list of regions.
-	 * @param PortalSignInText     $signInText The sign-in page's text.
+	 * @param PortalRegionResolver $regions      The closed list of regions.
+	 * @param PortalSignInText     $signInText   The sign-in page's text.
+	 * @param PortalResidentMenu   $residentMenu The resident menu's card label and groups.
 	 */
 	public function __construct(
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 		private readonly PortalSignInText $signInText=new PortalSignInText(),
+		private readonly PortalResidentMenu $residentMenu=new PortalResidentMenu(),
 	) {
 	}//end __construct()
 
@@ -70,63 +72,13 @@ class PortalShell {
 			'headerVariant'  => $this->headerVariant(portal: $portal),
 			'headerSearch'   => $this->headerSearch(portal: $portal),
 			'accountLabel'   => $this->text(value: ($portal['accountLabel'] ?? '')),
-			'residentMenu'   => $this->residentMenu(portal: $portal),
+			'residentMenu'   => $this->residentMenu->project(portal: $portal),
 			// How Mijn zaken draws its list (zuiddrecht-resident-pages-match-the-boards).
 			'myCases'        => $this->myCases(portal: $portal),
 			'footer'         => $this->footer(portal: $portal),
 			'regions'        => $this->publicRegions(portal: $portal),
 		];
 	}//end project()
-
-	/**
-	 * The resident menu's card label, when the portal names one.
-	 *
-	 * @param array<string, mixed> $portal The portal record.
-	 *
-	 * @return array<string, mixed> `{cardLabel?, groups?}`.
-	 *
-	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
-	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
-	 */
-	private function residentMenu(array $portal): array {
-		$menu = $portal['residentMenu'] ?? [];
-		if (is_array($menu) === false) {
-			return [];
-		}
-
-		$out   = [];
-		$label = $this->text(value: ($menu['cardLabel'] ?? ''));
-		if ($label !== '') {
-			$out['cardLabel'] = $label;
-		}
-
-		// The portal's own groups (zuiddrecht-resident-pages-match-the-boards):
-		// each a title and its items by name, at most 12 groups of 20.
-		$groups = [];
-		foreach (array_slice((array)($menu['groups'] ?? []), 0, 12) as $group) {
-			if (is_array($group) === false) {
-				continue;
-			}
-
-			$items = [];
-			foreach (array_slice((array)($group['items'] ?? []), 0, 20) as $item) {
-				if (is_string($item) === true && preg_match('/^[a-z0-9][a-z0-9:_-]{0,79}$/i', $item) === 1) {
-					$items[] = $item;
-				}
-			}
-
-			$title = $this->text(value: ($group['title'] ?? ''));
-			if ($items !== [] && $title !== '') {
-				$groups[] = ['title' => $title, 'items' => $items];
-			}
-		}
-
-		if ($groups !== []) {
-			$out['groups'] = $groups;
-		}
-
-		return $out;
-	}//end residentMenu()
 
 	/**
 	 * How Mijn zaken draws its list: `{display: rows}` when the portal says
