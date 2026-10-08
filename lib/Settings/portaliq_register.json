@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.88.0"
+        "version": "0.89.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.88.0",
+                "version": "0.89.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -5555,7 +5555,7 @@
                     ]
                 },
                 "icon": "ChartLine",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "title": "Portal Traffic Daily",
                 "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API. One record per portal-day for all visits and one per configured segment; a roll-up portal's record sums its members.",
                 "type": "object",
@@ -5993,6 +5993,35 @@
                             }
                         },
                         "example": []
+                    },
+                    "zeroResultSearches": {
+                        "title": "Searches that found nothing",
+                        "type": "array",
+                        "description": "Search terms whose result count was zero, with how often. Only when the portal keeps search terms. A search that did not report its count is left out.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "term": {
+                                    "title": "Term",
+                                    "type": "string",
+                                    "description": "The search term, as typed.",
+                                    "example": ""
+                                },
+                                "count": {
+                                    "title": "Count",
+                                    "type": "integer",
+                                    "description": "How often it found nothing.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "searchesWithoutCount": {
+                        "title": "Searches without a count",
+                        "type": "integer",
+                        "description": "Searches that did not report how many results they found, so they cannot be counted as found nothing.",
+                        "example": 0
                     },
                     "downloads": {
                         "title": "Downloads",

@@ -70,11 +70,63 @@
 				</tr>
 			</tbody>
 		</table>
+
+		<!-- Searches that found nothing (portal-traffic-zero-result-searches):
+		     each term opens the public search, so the editor sees what the
+		     visitor saw. -->
+		<h3
+			v-if="emptyState === '' && showZeroResults"
+			class="traffic-table__subheading">
+			{{ t('portaliq', 'Searched, nothing found') }}
+		</h3>
+		<table
+			v-if="emptyState === '' && summary.zeroResultSearches.length > 0"
+			class="traffic-table__table"
+			data-testid="traffic-zero-results">
+			<thead>
+				<tr>
+					<th scope="col">{{ t('portaliq', 'Search term') }}</th>
+					<th scope="col" class="traffic-table__number">
+						{{ t('portaliq', 'Times') }}
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr v-for="row in summary.zeroResultSearches" :key="row.term">
+					<td class="traffic-table__path">
+						<a
+							v-if="searchLink(row.term) !== ''"
+							:href="searchLink(row.term)"
+							target="_blank"
+							rel="noopener">{{ row.term }}</a>
+						<template v-else>
+							{{ row.term }}
+						</template>
+					</td>
+					<td class="traffic-table__number">{{ row.count }}</td>
+				</tr>
+			</tbody>
+		</table>
+		<p
+			v-if="emptyState === '' && summary.searchesWithoutCount > 0"
+			class="traffic-table__muted"
+			data-testid="traffic-searches-without-count">
+			{{
+				n(
+					'portaliq',
+					'%n search did not report how many results it found.',
+					'%n searches did not report how many results they found.',
+					summary.searchesWithoutCount,
+				)
+			}}
+		</p>
 	</div>
 </template>
 
 <script>
+import { generateUrl } from '@nextcloud/router'
 import TrafficEmptyState from './TrafficEmptyState.vue'
+import { searchLinkOf } from '../lib/trafficSummary.js'
 import trafficWidgetMixin from './trafficWidgetMixin.js'
 
 export default {
@@ -85,6 +137,31 @@ export default {
 	},
 
 	mixins: [trafficWidgetMixin],
+
+	computed: {
+		/**
+		 * Whether to show the heading: a list of terms, or only a count of unknown searches.
+		 *
+		 * @return {boolean} True when there is a zero-result term to list.
+		 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+		 */
+		showZeroResults() {
+			return this.summary.zeroResultSearches.length > 0
+		},
+	},
+
+	methods: {
+		/**
+		 * The public search for a term, to see what the visitor saw.
+		 *
+		 * @param {string} term The term.
+		 * @return {string} The URL, or ''.
+		 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+		 */
+		searchLink(term) {
+			return searchLinkOf(this.portal, term, generateUrl)
+		},
+	},
 }
 </script>
 

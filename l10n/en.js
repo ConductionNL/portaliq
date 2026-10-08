@@ -2659,7 +2659,14 @@ OC.L10N.register(
         "Shared plans enabled": "Shared plans enabled",
         "Whether signed-in residents of this portal get the page where they work on plans with their contacts. Off by default. It needs contacts to be on.": "Whether signed-in residents of this portal get the page where they work on plans with their contacts. Off by default. It needs contacts to be on.",
         "Collaborate": "Collaborate",
-        "Part": "Part"
+        "Part": "Part",
+        "Searched, nothing found": "Searched, nothing found",
+        "Search terms whose result count was zero, with how often. Only when the portal keeps search terms. A search that did not report its count is left out.": "Search terms whose result count was zero, with how often. Only when the portal keeps search terms. A search that did not report its count is left out.",
+        "Searches that found nothing": "Searches that found nothing",
+        "How often it found nothing.": "How often it found nothing.",
+        "Searches without a count": "Searches without a count",
+        "Searches that did not report how many results they found, so they cannot be counted as found nothing.": "Searches that did not report how many results they found, so they cannot be counted as found nothing.",
+        "_%n search did not report how many results it found._::_%n searches did not report how many results they found._": ["%n search did not report how many results it found.","%n searches did not report how many results they found."]
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -88,6 +88,7 @@ class TrafficRollup {
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
 	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-each-daily-page-row-must-carry-its-sessions-visitors-sources-and-outbound-links
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
@@ -109,6 +110,8 @@ class TrafficRollup {
 		}
 
 		$goalDefinitions = $this->definitions(options: $options, key: 'goals');
+
+		$zeroResults = $this->dimensions->zeroResults(sessions: $sessions);
 
 		return [
 			'portal' => $portal,
@@ -146,6 +149,10 @@ class TrafficRollup {
 			'languages' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'language'),
 			'regions' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'region'),
 			'searches' => $this->dimensions->perEvent(sessions: $sessions, name: 'search', keys: ['searchTerm', 'params.search_term'], label: 'term'),
+			// What the public searched for and did not find
+			// (portal-traffic-zero-result-searches).
+			'zeroResultSearches' => $zeroResults['rows'],
+			'searchesWithoutCount' => $zeroResults['withoutCount'],
 			'downloads' => $this->dimensions->perEvent(
 				sessions: $sessions,
 				name: 'file_download',

@@ -2722,7 +2722,14 @@ OC.L10N.register(
         "Shared plans enabled": "Gedeelde plannen aan",
         "Whether signed-in residents of this portal get the page where they work on plans with their contacts. Off by default. It needs contacts to be on.": "Of ingelogde inwoners van dit portaal de pagina krijgen waar ze met hun contacten aan plannen werken. Standaard uit. Contacten moeten dan aan staan.",
         "Collaborate": "Samenwerken",
-        "Part": "Onderdeel"
+        "Part": "Onderdeel",
+        "Searched, nothing found": "Gezocht, niets gevonden",
+        "Search terms whose result count was zero, with how often. Only when the portal keeps search terms. A search that did not report its count is left out.": "Zoektermen zonder resultaat, met hoe vaak. Alleen als het portaal zoektermen bewaart. Een zoekopdracht die zijn aantal niet meldde, telt niet mee.",
+        "Searches that found nothing": "Zoekopdrachten zonder resultaat",
+        "How often it found nothing.": "Hoe vaak het niets opleverde.",
+        "Searches without a count": "Zoekopdrachten zonder aantal",
+        "Searches that did not report how many results they found, so they cannot be counted as found nothing.": "Zoekopdrachten die niet meldden hoeveel resultaten ze vonden, dus ze tellen niet als zonder resultaat.",
+        "_%n search did not report how many results it found._::_%n searches did not report how many results they found._": ["%n zoekopdracht meldde niet hoeveel resultaten die vond.","%n zoekopdrachten meldden niet hoeveel resultaten ze vonden."]
     },
     "nplurals=2; plural=(n != 1);"
 )
