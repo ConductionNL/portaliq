@@ -83,7 +83,14 @@ class PortalDraftStore {
 	 *
 	 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
 	 */
-	public function save(string $subjectRef, string $actionKey, array $answers, string $step, int $retentionDays, ?DateTimeImmutable $now = null): ?array {
+	public function save(
+		string $subjectRef,
+		string $actionKey,
+		array $answers,
+		string $step,
+		int $retentionDays,
+		?DateTimeImmutable $now = null,
+	): ?array {
 		if ($subjectRef === '' || $actionKey === '') {
 			return null;
 		}
@@ -213,7 +220,9 @@ class PortalDraftStore {
 	private static function withoutFiles(array $answers): array {
 		$kept = [];
 		foreach ($answers as $key => $value) {
-			if (is_array($value) === true && (isset($value['tmp_name']) === true || isset($value['fileName']) === true || isset($value['contentBase64']) === true)) {
+			$isFile = is_array($value) === true
+				&& (isset($value['tmp_name']) === true || isset($value['fileName']) === true || isset($value['contentBase64']) === true);
+			if ($isFile === true) {
 				continue;
 			}
 

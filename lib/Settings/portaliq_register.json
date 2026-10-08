@@ -9453,7 +9453,9 @@
                 "version": "0.1.0",
                 "title": "Portal draft",
                 "authorization": {
-                    "read": [],
+                    "read": [
+                        "admin"
+                    ],
                     "create": [],
                     "update": [],
                     "delete": []
