@@ -349,7 +349,7 @@ test('the Zuiddrecht site holds what the design shows', () => {
 	)
 	// Counts the installer's own test and the documentation name.
 	assert.equal(site.menus.length, 3)
-	assert.equal(site.pages.length, 37)
+	assert.equal(site.pages.length, 38)
 	assert.equal(site.news.length, 4)
 })
 
@@ -520,13 +520,16 @@ for (const { file, site } of sites) {
 			}
 		}
 		// Every page can be reached: a page no link names is dead weight,
-		// except the detail page a search result opens by id.
+		// except the detail pages a search result opens by id (a publication, a subject).
 		const linked = new Set(linksOf(site).map(({ href }) => href))
 		const orphans = site.pages
 			.map((page) => page.route)
 			.filter(
 				(route) =>
-					route !== '/' && route !== '/publicatie' && !linked.has(route),
+					route !== '/'
+					&& route !== '/publicatie'
+					&& route !== '/onderwerp'
+					&& !linked.has(route),
 			)
 		assert.deepEqual(orphans, [])
 	})

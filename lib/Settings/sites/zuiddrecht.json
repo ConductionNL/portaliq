@@ -2409,6 +2409,31 @@
             }
         },
         {
+            "route": "/onderwerp",
+            "title": "Onderwerp",
+            "summary": "Alles wat de gemeente over één onderwerp publiceert.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "opencatalogi",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-onderwerp-01-nlsubjectlanding",
+                        "widgetKey": "nlSubjectLanding",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 10,
+                        "props": {
+                            "backLabel": "Alle onderwerpen",
+                            "backHref": "/onderwerpen"
+                        }
+                    }
+                ]
+            }
+        },
+        {
             "route": "/parkeren/productzoeker",
             "title": "Productzoeker parkeren",
             "summary": "Beantwoord een paar vragen en zie welke parkeervergunning bij u past.",

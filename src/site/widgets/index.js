@@ -49,6 +49,7 @@ import { metaOf as dialogMeta } from './nlDialog/meta.js'
 import { metaOf as drawerMeta } from './nlDrawer/meta.js'
 import { metaOf as eventListMeta } from './nlEventList/meta.js'
 import { metaOf as faqListMeta } from './nlFaqList/meta.js'
+import { metaOf as featuredSubjectsMeta } from './nlFeaturedSubjects/meta.js'
 import { metaOf as headingMeta } from './nlHeading/meta.js'
 import { metaOf as imageMeta } from './nlImage/meta.js'
 import { metaOf as languageNavMeta } from './nlLanguageNav/meta.js'
@@ -61,6 +62,7 @@ import { metaOf as newsArticleMeta } from './nlNewsArticle/meta.js'
 import { metaOf as newsListMeta } from './nlNewsList/meta.js'
 import { metaOf as noteMeta } from './nlNote/meta.js'
 import { metaOf as paragraphMeta } from './nlParagraph/meta.js'
+import { metaOf as portalCountsMeta } from './nlPortalCounts/meta.js'
 import { metaOf as productFinderMeta } from './nlProductFinder/meta.js'
 import { metaOf as progressBarMeta } from './nlProgressBar/meta.js'
 import { metaOf as progressCircleMeta } from './nlProgressCircle/meta.js'
@@ -70,6 +72,7 @@ import { metaOf as quickTasksMeta } from './nlQuickTasks/meta.js'
 import { metaOf as quoteMeta } from './nlQuote/meta.js'
 import { metaOf as separatorMeta } from './nlSeparator/meta.js'
 import { metaOf as signInMeta } from './nlSignIn/meta.js'
+import { metaOf as subjectLandingMeta } from './nlSubjectLanding/meta.js'
 import { metaOf as tableMeta } from './nlTable/meta.js'
 import { metaOf as tabsMeta } from './nlTabs/meta.js'
 import { metaOf as taskNavMeta } from './nlTaskNav/meta.js'
@@ -138,6 +141,9 @@ export const metas = {
 	nlPublicDetail: publicDetailMeta,
 	nlFaqList: faqListMeta,
 	nlProductFinder: productFinderMeta,
+	nlFeaturedSubjects: featuredSubjectsMeta,
+	nlPortalCounts: portalCountsMeta,
+	nlSubjectLanding: subjectLandingMeta,
 }
 
 /**

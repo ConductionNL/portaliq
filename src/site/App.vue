@@ -514,10 +514,6 @@ import {
 	keepClaimSecret,
 	redeemKeptClaim,
 } from '../shared/claimInvitation.js'
-import {
-	keepContactInvitation,
-	redeemKeptContactInvitation,
-} from '../shared/contactInvitation.js'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
 import { noticesFor } from '../shared/notices.js'
@@ -1464,7 +1460,10 @@ export default {
 		// An invitation's secret (`#claim=<secret>`) is kept the same way,
 		// and handed back once the visitor is signed in.
 		keepClaimSecret(window.location, window.history, this.claimStorage())
-		keepContactInvitation(window.location, window.history, this.claimStorage())
+		if (window.location.hash.includes('#contact-invitation=')) {
+			const { keepContactInvitation } = await import('../shared/contactInvitation.js')
+			keepContactInvitation(window.location, window.history, this.claimStorage())
+		}
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()
@@ -1580,13 +1579,16 @@ export default {
 			})
 
 			// A contact invitation kept from the mail is handed back the same way.
-			this.claimMessage = this.claimMessage
-				|| (await redeemKeptContactInvitation({
-					api: this.api,
-					session: this.session,
-					t: this.t,
-					storage: this.claimStorage(),
-				}))
+			if (this.claimStorage()?.getItem('portaliq.contactInvitation')) {
+				const { redeemKeptContactInvitation } = await import('../shared/contactInvitation.js')
+				this.claimMessage = this.claimMessage
+					|| (await redeemKeptContactInvitation({
+						api: this.api,
+						session: this.session,
+						t: this.t,
+						storage: this.claimStorage(),
+					}))
+			}
 
 			if (this.session) {
 				await this.loadAccount()

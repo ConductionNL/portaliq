@@ -64,4 +64,7 @@ export const loaders = {
 	nlPublicDetail: () => import('./nlPublicDetail/NlPublicDetail.vue'),
 	nlFaqList: () => import('./nlFaqList/NlFaqList.vue'),
 	nlProductFinder: () => import('./nlProductFinder/NlProductFinder.vue'),
+	nlFeaturedSubjects: () => import('./nlFeaturedSubjects/NlFeaturedSubjects.vue'),
+	nlPortalCounts: () => import('./nlPortalCounts/NlPortalCounts.vue'),
+	nlSubjectLanding: () => import('./nlSubjectLanding/NlSubjectLanding.vue'),
 }

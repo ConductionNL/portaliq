@@ -109,6 +109,18 @@
 				facet".
 			-->
 			<div class="pq-search__results">
+				<ul
+					v-if="lockedChips.length > 0"
+					class="pq-search__locked"
+					data-testid="federated-search-locked">
+					<li
+						v-for="chip in lockedChips"
+						:key="chip.key"
+						class="pq-search__locked-chip"
+						data-testid="federated-search-locked-chip">
+						{{ chip.label }}
+					</li>
+				</ul>
 				<p
 					v-if="error"
 					class="utrecht-alert utrecht-alert--error"
@@ -466,6 +478,7 @@ import { defineAsyncComponent } from 'vue'
 import SearchSuggestions from './SearchSuggestions.vue'
 import {
 	buildRequestUrl,
+	lockedFiltersOf,
 	pageWindow,
 	paginationItems,
 	readSearchState,
@@ -473,6 +486,7 @@ import {
 	toBuckets,
 	toResult,
 	withKindField,
+	withoutLocked,
 	writeSearchState,
 } from '../lib/federatedSearch.js'
 import { suggestionRoute } from '../lib/searchSuggestions.js'
@@ -671,6 +685,22 @@ export default {
 			default: false,
 		},
 
+		/**
+		 * Filters that are always sent and shown as fixed chips, for example
+		 * `{themes: '<subject id>'}` on a subject's own page. The field is not
+		 * offered as a facet and is not written to the address.
+		 */
+		lockedFilters: {
+			type: Object,
+			default: () => ({}),
+		},
+
+		/** The words on the fixed chips, by `field:value` or by field. */
+		lockedLabels: {
+			type: Object,
+			default: () => ({}),
+		},
+
 		/** The route of a subject's own page; the slug is appended. */
 		subjectRoute: {
 			type: String,
@@ -791,7 +821,34 @@ export default {
 		 */
 		fields() {
 			const own = this.facetField ? [this.facetField] : this.facetFields
-			return withKindField(own, this.hideKind)
+			return withoutLocked(withKindField(own, this.hideKind), this.locked)
+		},
+
+		/**
+		 * The locked filters in effect, field to values.
+		 *
+		 * @return {Record<string, Array<string>>} The locks.
+		 *
+		 * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#11
+		 */
+		locked() {
+			return lockedFiltersOf({ lockedFilters: this.lockedFilters })
+		},
+
+		/**
+		 * One fixed chip per locked value.
+		 *
+		 * @return {Array<{key: string, label: string}>} The chips.
+		 *
+		 * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#11
+		 */
+		lockedChips() {
+			return Object.entries(this.locked).flatMap(([field, values]) =>
+				values.map((value) => ({
+					key: `${field}:${value}`,
+					label: this.lockedLabels[`${field}:${value}`] || this.lockedLabels[field] || value,
+				})),
+			)
 		},
 
 		/**
@@ -1011,6 +1068,7 @@ export default {
 				periodTo: this.periodTo,
 				sort: this.sort,
 				searchInsideDocuments: this.searchInsideDocuments,
+				lockedFilters: this.locked,
 			})
 		},
 
@@ -1548,6 +1606,21 @@ export default {
 
 /* A filter group: the fieldset carries the legend for assistive tech and no
    frame of its own; the groups are separated by space only. */
+.pq-search__locked {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+	list-style: none;
+	margin: 0 0 var(--utrecht-space-block-md, 1rem);
+	padding: 0;
+}
+
+.pq-search__locked-chip {
+	padding: 0.125rem 0.75rem;
+	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border-radius: 999px;
+}
+
 .pq-search__facet-group {
 	border: 0;
 	margin: 0 0 16px;

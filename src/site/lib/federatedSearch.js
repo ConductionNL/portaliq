@@ -32,6 +32,7 @@
  * @param {string} state.query        Free-text term, may be empty.
  * @param {string} state.facetField   Object field to facet on.
  * @param {Array<string>} state.selectedFacets Selected facet values.
+ * @param {Record<string, string|Array<string>>} [state.lockedFilters] Filters always sent, never offered or removable.
  * @return {string} The absolute request URL.
  */
 export function buildRequestUrl(state) {
@@ -60,7 +61,10 @@ export function buildRequestUrl(state) {
 	// `facetFields` with a `facets` map is the current shape; a caller that
 	// still passes the single `facetField` with `selectedFacets` gets exactly
 	// the request it got before.
-	const fields = facetFieldsOf(state)
+	// A LOCKED FILTER IS ALWAYS SENT and is not a facet: it is neither asked
+	// for as a facet nor taken from what the visitor ticked (REQ-HTL-001).
+	const locked = lockedFiltersOf(state)
+	const fields = withoutLocked(facetFieldsOf(state), locked)
 	for (const field of fields) {
 		url.searchParams.set(`_facets[${field}][type]`, 'terms')
 	}
@@ -68,6 +72,12 @@ export function buildRequestUrl(state) {
 	const selected = state.facets || { [fields[0]]: state.selectedFacets || [] }
 	for (const field of fields) {
 		for (const value of selected[field] || []) {
+			url.searchParams.append(field, value)
+		}
+	}
+
+	for (const [field, values] of Object.entries(locked)) {
+		for (const value of values) {
 			url.searchParams.append(field, value)
 		}
 	}
@@ -532,4 +542,48 @@ export function searchQuery(state, catalog = '') {
 		},
 		catalog: String(catalog || ''),
 	}
+}
+
+/**
+ * The locked filters of a search state as a map of field to values.
+ *
+ * A locked filter belongs to the block's placement, not to the visitor: a
+ * subject's page locks its own subject. Empty fields and empty values are
+ * dropped, so a lock that names nothing locks nothing.
+ *
+ * @param {object} state The search state.
+ * @return {Record<string, Array<string>>} Field to values; empty without locks.
+ *
+ * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#11
+ */
+export function lockedFiltersOf(state) {
+	const raw = state && state.lockedFilters
+	const locked = {}
+	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+		return locked
+	}
+
+	for (const [field, value] of Object.entries(raw)) {
+		const values = (Array.isArray(value) ? value : [value])
+			.map((entry) => String(entry ?? ''))
+			.filter((entry) => entry !== '')
+		if (field !== '' && values.length > 0) {
+			locked[field] = values
+		}
+	}
+
+	return locked
+}
+
+/**
+ * The facet fields without the locked ones.
+ *
+ * @param {Array<string>} fields The facet fields.
+ * @param {Record<string, Array<string>>} locked The locked filters.
+ * @return {Array<string>} The fields the visitor may filter on.
+ *
+ * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#11
+ */
+export function withoutLocked(fields, locked) {
+	return (fields || []).filter((field) => !Object.hasOwn(locked || {}, field))
 }

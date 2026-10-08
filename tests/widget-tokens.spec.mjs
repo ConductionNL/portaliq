@@ -234,6 +234,11 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		// finder's chips, layout and result panel; layout and tokens only.
 		'nlFaqList',
 		'nlProductFinder',
+		// home-and-theme-landing-pages: a card grid, a count grid and the
+		// subject page's picture; layout and tokens only.
+		'nlFeaturedSubjects',
+		'nlPortalCounts',
+		'nlSubjectLanding',
 	]
 
 	for (const { key, source } of components()) {

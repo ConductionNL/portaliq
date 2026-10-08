@@ -33,6 +33,7 @@ import {
 	facetFieldsOf,
 	formatDutchDate,
 	KIND_FIELD,
+	lockedFiltersOf,
 	pageWindow,
 	paginationItems,
 	readSearchState,
@@ -43,6 +44,7 @@ import {
 	toResult,
 	validDate,
 	withKindField,
+	withoutLocked,
 	writeSearchState,
 } from '../src/site/lib/federatedSearch.js'
 import { kindBuckets, kindLabel, labelBuckets } from '../src/site/lib/wooCategories.js'
@@ -718,6 +720,41 @@ assertEqual(
 		/result\.kind === 'subject' && result\.slug\) \{\s*return `\$\{this\.subjectRoute\}\/\$\{result\.slug\}`/.test(block),
 	)
 	assertTrue('the block says how many publications a subject holds', /federated-search-publication-count/.test(block))
+}
+
+console.log('a locked filter (home-and-theme-landing-pages REQ-HTL-001)')
+{
+	const base = {
+		endpoint: '/index.php/apps/opencatalogi/api/federation/publications',
+		origin: 'https://portal.example',
+		pageSize: 20,
+		page: 1,
+		query: '',
+		facetFields: ['themes', 'organization'],
+		facets: { themes: ['visitor-picked'], organization: ['org-1'] },
+		lockedFilters: { themes: 'subject-7' },
+	}
+	const url = new URL(buildRequestUrl(base))
+	assertEqual('a locked filter is always sent', url.searchParams.getAll('themes'), ['subject-7'])
+	assertEqual('a locked field is not asked for as a facet', url.searchParams.has('_facets[themes][type]'), false)
+	assertEqual('the other facets still are', url.searchParams.get('_facets[organization][type]'), 'terms')
+	assertEqual('a value the visitor picked for the locked field is not sent', url.searchParams.getAll('themes').includes('visitor-picked'), false)
+	assertEqual('the other filters the visitor picked are sent', url.searchParams.getAll('organization'), ['org-1'])
+	assertEqual('several values of one lock are all sent', new URL(buildRequestUrl({ ...base, lockedFilters: { themes: ['a', 'b'] } })).searchParams.getAll('themes'), ['a', 'b'])
+	assertEqual('without a lock the request is what it was', new URL(buildRequestUrl({ ...base, lockedFilters: undefined })).searchParams.getAll('themes'), ['visitor-picked'])
+	assertEqual('a lock that names nothing locks nothing', lockedFiltersOf({ lockedFilters: { themes: '', '': 'x', other: [] } }), {})
+	assertEqual('a lock list or string is no lock', [lockedFiltersOf({ lockedFilters: ['themes'] }), lockedFiltersOf({ lockedFilters: 'themes' })], [{}, {}])
+	assertEqual('the facet fields lose the locked field', withoutLocked(['themes', 'organization'], { themes: ['s'] }), ['organization'])
+
+	const locked = lockedFiltersOf(base)
+	const offered = withoutLocked(['themes', 'organization'], locked)
+	const written = writeSearchState(new URL('https://portal.example/zoeken'), { query: '', page: 1, sort: '', facets: base.facets }, offered)
+	assertEqual('a locked filter is not written to the address', [written.searchParams.has('f.themes'), written.searchParams.get('f.organization')], [false, 'org-1'])
+	assertEqual('a locked field is not read back from the address', Object.keys(readSearchState('?f.themes=x&f.organization=y', offered).facets), ['organization'])
+
+	const block = readFileSync(new URL('../src/site/components/FederatedSearchBlock.vue', import.meta.url), 'utf8')
+	assertTrue('the block takes the lock and shows a fixed chip without a remove control', /lockedFilters: \{/.test(block) && /federated-search-locked-chip/.test(block) && !/locked-chip[^>]*@click/.test(block))
+	assertTrue('the block sends the lock and offers no facet for it', /lockedFilters: this\.locked/.test(block) && /withoutLocked\(withKindField\(own, this\.hideKind\), this\.locked\)/.test(block))
 }
 
 if (failures > 0) {
