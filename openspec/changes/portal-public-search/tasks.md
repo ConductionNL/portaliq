@@ -62,3 +62,14 @@
   - Keyboard reachable and axe-clean at serious/critical, like every other portal surface
 - [ ] Implement
 - [ ] Test
+
+### Task 6: School news and documents in the public search (added 8 October)
+- **spec_ref**: `openspec/changes/portal-public-search/specs/portal-public-search/spec.md#requirement-a-school-portals-public-news-and-documents-are-searchable-with-school-facets`
+- **files**: `lib/Settings/portaliq_register.json`, `lib/Service/PortalSearch.php`, `tests/Unit/Service/PortalSearchTest.php`
+- **acceptance_criteria**:
+  - `newsItem` and `media` get the `public` read rule only for rows whose audience is public (a property rule, asserted per schema by name)
+  - Facets kind, audience and publish year; a group or signed-in row is never counted
+  - The school examples of wilgenboom and vaartveld find their news and the school guide
+- [ ] Implement
+- [ ] Test
+
