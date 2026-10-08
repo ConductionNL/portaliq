@@ -260,6 +260,11 @@ export default {
 				: fileLine(entry, this.tr, this.locale)
 		},
 
+		/**
+		 * @param {object} entry A document.
+		 * @return {string} The state of its status pill.
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+		 */
 		stateOf(entry) {
 			return statusState(entry)
 		},

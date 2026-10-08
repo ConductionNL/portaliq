@@ -9794,7 +9794,7 @@
             },
             "portalAction": {
                 "slug": "portalAction",
-                "icon": "CheckboxMarkedCircleOutline",
+                "icon": "Check",
                 "version": "0.1.0",
                 "title": "Personal action",
                 "authorization": {

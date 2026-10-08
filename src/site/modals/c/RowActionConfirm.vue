@@ -251,6 +251,7 @@ export default {
 		 *
 		 * @param {object} errors Input name to message.
 		 * @return {object} Input name to sentence.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-the-resident-sees-what-happened-req-rai-003
 		 */
 		said(errors) {
 			const out = {}

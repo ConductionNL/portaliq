@@ -194,6 +194,8 @@ class MandateController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204, 400 for a day that is not in the future, 404, or 409 for a mandate that has ended.
 	 *
+	 * @contract exclude the refusals are pinned by PortalMandateAdminServiceTest::testAnEndedMandateCannotBeExtendedAndAPastDateIsRefused
+	 *
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-either-side-must-be-able-to-end-a-mandate-req-smr-004
 	 */
 	#[PublicPage]

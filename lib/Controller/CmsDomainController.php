@@ -82,6 +82,8 @@ class CmsDomainController extends Controller {
 	 *
 	 * @return JSONResponse `{status: verified|pending}`, or 404 for an unknown portal or domain.
 	 *
+	 * @auth admin-only because a domain decides which hostname serves whose content, so only an administrator may run the check
+	 *
 	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
 	 */
 	public function verify(string $portal = '', string $hostname = ''): JSONResponse {

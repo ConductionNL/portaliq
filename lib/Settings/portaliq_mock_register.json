@@ -3467,6 +3467,51 @@
           "portal"
         ],
         "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAction",
+          "slug": "demo-action-1"
+        },
+        "owner": "demo-subject-1",
+        "assignee": "demo-subject-1",
+        "organisation": "demo-organisation",
+        "title": "Bankafschriften van drie maanden uploaden",
+        "description": "Een eigen stap van de inwoner.",
+        "kind": "once",
+        "status": "todo",
+        "endDate": "2026-10-14"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAction",
+          "slug": "demo-action-2"
+        },
+        "owner": "demo-subject-1",
+        "assignee": "demo-subject-1",
+        "organisation": "demo-organisation",
+        "title": "Afspraak maken met de budgetcoach",
+        "description": "Een eigen stap van de inwoner.",
+        "kind": "once",
+        "status": "doing",
+        "endDate": "2026-10-21"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAction",
+          "slug": "demo-action-3"
+        },
+        "owner": "demo-subject-1",
+        "assignee": "demo-subject-1",
+        "organisation": "demo-organisation",
+        "title": "Maandelijks het energiecontract controleren",
+        "description": "Een eigen stap van de inwoner.",
+        "kind": "recurring",
+        "status": "done",
+        "endDate": "2026-09-30"
       }
     ]
   }

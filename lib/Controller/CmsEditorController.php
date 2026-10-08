@@ -129,6 +129,8 @@ class CmsEditorController extends Controller {
 	 *
 	 * @return JSONResponse `{ok, blocking[], warnings[]}`, 400 for a bad slug, 403 for a person who may not edit.
 	 *
+	 * @contract exclude the read-only check is covered by CmsPublishValidatorTest; the controller wrapper only adds the editor check and the uncacheable header
+	 *
 	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
 	 */
 	#[NoAdminRequired]
