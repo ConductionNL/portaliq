@@ -578,8 +578,27 @@
  * face it has, which its tests measure on the menu.
  */
 .pq-site:has(.pq-site__header--designed),
+body:has(.pq-site__header--designed),
 body:has(.pq-site__header--designed) .pq-site__skip {
 	font-family: var(--utrecht-document-font-family, inherit);
+}
+
+/*
+ * AND ITS HEADINGS IN THE SET'S HEADING FACE (designed-site-type).
+ *
+ * Measured on the fresh install of 08 Oct (proof run 2): a heading with an
+ * Utrecht class read the heading face (Red Hat Display, Barlow Semi
+ * Condensed), but a heading without one, such as the hero's title, inherited
+ * the body face (Red Hat Text, Barlow) from the rule above. `body` itself
+ * still computed the vendored Roboto, because the rule above named only the
+ * site root; it now names `body` too.
+ *
+ * `:where()` keeps this at no specificity: any rule that names a heading's
+ * own family (the Utrecht heading levels) still wins; it only replaces what
+ * a heading would otherwise inherit from the body.
+ */
+:where(.pq-site:has(.pq-site__header--designed)) :where(h1, h2, h3, h4, h5, h6) {
+	font-family: var(--utrecht-heading-font-family, inherit);
 }
 
 /*
