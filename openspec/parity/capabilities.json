@@ -13192,7 +13192,7 @@
 			},
 			"provider": "decidiq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "medium"
 		}
 	]
