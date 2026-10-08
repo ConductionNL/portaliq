@@ -114,6 +114,7 @@ class PortalContributionRegistry {
 		$audience = (string)($subject['audience'] ?? '');
 		$trust = PortalSessionService::normaliseTrust(trust: ($subject['trust'] ?? ''));
 		$contributions = [];
+		$stepUp = [];
 
 		foreach ($this->appManager->getInstalledApps() as $appId) {
 			$provider = $this->resolveProvider(appId: (string)$appId);
@@ -140,6 +141,8 @@ class PortalContributionRegistry {
 			}
 
 			$contribution['app'] = $appId;
+			$contribution = $this->withPublicRecords(contribution: $contribution, provider: $provider, appId: (string)$appId);
+			$stepUp = array_merge($stepUp, $this->droppedForTrust(contribution: $contribution, trust: $trust, appId: (string)$appId));
 			$filtered = $this->filterByTrust(contribution: $contribution, trust: $trust);
 
 			// Sanitise the v3 UI-configuration vocabulary AFTER trust filtering,
@@ -177,6 +180,7 @@ class PortalContributionRegistry {
 			'audience' => $audience,
 			'organisation' => (string)($subject['organisation'] ?? ''),
 			'contributions' => $contributions,
+			'stepUp' => $stepUp,
 		];
 
 		// The pages a clerk hid for this account, and the collections only
@@ -294,6 +298,7 @@ class PortalContributionRegistry {
 		}
 
 		$contribution['app'] = $appId;
+		$contribution = $this->withPublicRecords(contribution: $contribution, provider: $provider, appId: $appId);
 		$anonymousOnly = $this->keepAnonymousOnly(contribution: $contribution);
 		if ($this->hasAnonymousEntries(contribution: $anonymousOnly) === false) {
 			return [];
@@ -367,7 +372,9 @@ class PortalContributionRegistry {
 	 * @return bool
 	 */
 	private function hasAnonymousEntries(array $contribution): bool {
-		return count(($contribution['collections'] ?? [])) > 0 || count(($contribution['actions'] ?? [])) > 0;
+		return count(($contribution['collections'] ?? [])) > 0
+			|| count(($contribution['actions'] ?? [])) > 0
+			|| count(($contribution['publicRecords'] ?? [])) > 0;
 	}//end hasAnonymousEntries()
 
 	/**
@@ -508,4 +515,64 @@ class PortalContributionRegistry {
 	private function resolveProvider(string $appId): ?object {
 		return $this->locator->locate(appId: $appId);
 	}//end resolveProvider()
+
+	/**
+	 * Replace the declared `publicRecords` with the validated view: id, label,
+	 * group and app, and no provider name (site-member-voting-record-and-confidential-papers).
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param object $provider The app's provider.
+	 * @param string $appId The app id.
+	 *
+	 * @return array<string, mixed> The contribution with the sanitised list.
+	 *
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t1
+	 */
+	private function withPublicRecords(array $contribution, object $provider, string $appId): array {
+		$records = new PublicRecordsNormaliser();
+		$kept    = $records->normalise(entries: ($contribution['publicRecords'] ?? null), provider: $provider);
+		unset($contribution['publicRecords']);
+		if ($kept !== []) {
+			$contribution['publicRecords'] = $records->view(kept: $kept, app: $appId);
+		}
+
+		return $contribution;
+	}//end withPublicRecords()
+
+	/**
+	 * The collections this subject's trust drops, as `stepUp` entries: app,
+	 * collection id, label and the trust they need, and never a row or a count
+	 * (site-member-voting-record-and-confidential-papers REQ-SCR-004).
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param string $trust The subject's normalised trust.
+	 * @param string $appId The app id.
+	 *
+	 * @return array<int, array<string, string>> The entries.
+	 *
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
+	 */
+	private function droppedForTrust(array $contribution, string $trust, string $appId): array {
+		$dropped = [];
+		foreach ((array)($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === false || PortalSessionService::trustSatisfies($trust, ($collection['minTrust'] ?? null)) === true) {
+				continue;
+			}
+
+			$needs = $collection['minTrust'] ?? null;
+			if (is_string($needs) === false || PortalSessionService::normaliseTrust(trust: $needs) !== $needs) {
+				// An unrecognised level is unsatisfiable for everyone: no login would help, so it is no step-up.
+				continue;
+			}
+
+			$label = $collection['label'] ?? '';
+			if (is_string($label) === false) {
+				$label = '';
+			}
+
+			$dropped[] = ['app' => $appId, 'collection' => (string)($collection['id'] ?? ''), 'label' => $label, 'minTrust' => $needs];
+		}
+
+		return $dropped;
+	}//end droppedForTrust()
 }//end class

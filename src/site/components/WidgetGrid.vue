@@ -130,6 +130,9 @@ const IntakeCatalogueBlock = defineAsyncComponent(
 )
 const ContactForm = defineAsyncComponent(() => import('./ContactForm.vue'))
 const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
+const PublicRecordsBlock = defineAsyncComponent(
+	() => import('./PublicRecordsBlock.vue'),
+)
 const AssistantBlock = defineAsyncComponent(() => import('./AssistantBlock.vue'))
 const IntakeStatusBlock = defineAsyncComponent(
 	() => import('./IntakeStatusBlock.vue'),
@@ -236,6 +239,8 @@ const PUBLIC_WIDGETS = {
 	// search-assistant-from-public-content: only while the portal offers it, see
 	// publicWidgetFor() and assistantAvailable().
 	assistant: AssistantBlock,
+	// site-member-voting-record-and-confidential-papers: a contributed public record list.
+	publicRecords: PublicRecordsBlock,
 	intakeStatus: IntakeStatusBlock,
 	...nldsWidgets,
 	...siteBlockRegistry,

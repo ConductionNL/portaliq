@@ -211,6 +211,9 @@ return [
         // no Nextcloud session. The collector resolves the portal by HOST
         // first and accepts a slug only when the host resolves nothing.
         // Registered here, ahead of the SPA catch-all.
+        // site-member-voting-record-and-confidential-papers: the anonymous reads behind the public records block.
+        ['name' => 'publicRecord#list', 'url' => '/api/public-records/{app}/{list}', 'verb' => 'GET'],
+        ['name' => 'publicRecord#record', 'url' => '/api/public-records/{app}/{list}/{id}', 'verb' => 'GET'],
         // search-assistant-from-public-content: the anonymous, tool-free assistant.
         ['name' => 'publicAssistant#ask', 'url' => '/api/assistant/ask', 'verb' => 'POST'],
         ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
@@ -406,6 +409,9 @@ return [
         // Registered before the /portal/{path} SPA catch-all; the {id} segment
         // makes these distinct from the collection-level routes above.
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
+        // site-member-voting-record-and-confidential-papers: the papers of one object, on any collection that declares `documents`.
+        ['name' => 'portalCollectionDocuments#list', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents', 'verb' => 'GET'],
+        ['name' => 'portalCollectionDocuments#open', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents/{documentId}', 'verb' => 'GET'],
         // The declared history of one object the subject owns (portaliq#723).
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
         // Where one case stands, from its app's steps provider (site-mijn-omgeving-components REQ-SMO-022).

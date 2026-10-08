@@ -31,9 +31,29 @@ const schemas = register.components.schemas
 const siteFiles = readdirSync(new URL('lib/Settings/sites/', root)).filter((f) =>
 	f.endsWith('.json'),
 )
+/**
+ * The declaration as installed on an instance that has every app a page or link
+ * asks for: `requiresApp` is the catalogue's own key and never reaches the store.
+ *
+ * @param {*} value The declared value.
+ * @return {*} The value without `requiresApp`.
+ */
+function withApps(value) {
+	if (Array.isArray(value)) {
+		return value.map(withApps)
+	}
+	if (value && typeof value === 'object') {
+		return Object.fromEntries(
+			Object.entries(value)
+				.filter(([key]) => key !== 'requiresApp')
+				.map(([key, item]) => [key, withApps(item)]),
+		)
+	}
+	return value
+}
 const sites = siteFiles.map((file) => ({
 	file,
-	site: JSON.parse(read(`lib/Settings/sites/${file}`)),
+	site: withApps(JSON.parse(read(`lib/Settings/sites/${file}`))),
 }))
 
 /**
@@ -139,6 +159,7 @@ const blockComponents = {
 	federatedSearch: 'src/site/components/FederatedSearchBlock.vue',
 	publicationDetail: 'src/site/components/PublicationDetailBlock.vue',
 	contactForm: 'src/site/components/ContactForm.vue',
+	publicRecords: 'src/site/components/PublicRecordsBlock.vue',
 }
 const widgetProps = {}
 for (const [key, path] of Object.entries(blockComponents)) {
@@ -328,7 +349,7 @@ test('the Zuiddrecht site holds what the design shows', () => {
 	)
 	// Counts the installer's own test and the documentation name.
 	assert.equal(site.menus.length, 3)
-	assert.equal(site.pages.length, 34)
+	assert.equal(site.pages.length, 35)
 	assert.equal(site.news.length, 4)
 })
 

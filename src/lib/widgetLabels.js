@@ -31,6 +31,7 @@ const PUBLIC_LABELS = {
 	intakeStatus: 'Status van een aanvraag',
 	contactForm: 'Vraagformulier',
 	assistant: 'Vraag het de assistent',
+	publicRecords: 'Openbare overzichten',
 }
 
 /**

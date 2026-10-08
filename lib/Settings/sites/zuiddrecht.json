@@ -1352,6 +1352,43 @@
             }
         },
         {
+            "route": "/bestuur/hoe-stemden-de-raadsleden",
+            "title": "Hoe stemden de raadsleden",
+            "summary": "Zo stemde elk raadslid in de openbare rondes van de gemeenteraad.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "decidiq",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-stemmen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kies een raadslid en lees hoe hij of zij stemde in de openbare rondes."
+                        }
+                    },
+                    {
+                        "id": "zd-stemmen-02-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "decidiq",
+                            "list": "memberVotingRecords",
+                            "backText": "Alle raadsleden"
+                        }
+                    }
+                ]
+            }
+        },
+        {
             "route": "/bestuur/raadsleden",
             "title": "Raadsleden",
             "summary": "Wie er in de gemeenteraad van Zuiddrecht zitten.",
@@ -1392,6 +1429,11 @@
                         "props": {
                             "heading": "Lees ook",
                             "links": [
+                                {
+                                    "label": "Hoe stemden de raadsleden",
+                                    "href": "/bestuur/hoe-stemden-de-raadsleden",
+                                    "requiresApp": "decidiq"
+                                },
                                 {
                                     "label": "Contact en openingstijden",
                                     "href": "/contact"

@@ -31,6 +31,7 @@ import IntakeCatalogueBlock from '../site/components/IntakeCatalogueBlock.vue'
 import IntakeFormBlock from '../site/components/IntakeFormBlock.vue'
 import IntakeStatusBlock from '../site/components/IntakeStatusBlock.vue'
 import PublicationDetailBlock from '../site/components/PublicationDetailBlock.vue'
+import PublicRecordsBlock from '../site/components/PublicRecordsBlock.vue'
 import { publicWidgetFor, publicWidgetKeys } from '../site/components/WidgetGrid.vue'
 import { metas as siteWidgetMetas } from '../site/widgets/index.js'
 import { humanise, widgetLabel } from './widgetLabels.js'
@@ -73,6 +74,7 @@ const DEFAULT_SIZES = {
 	intakeStatus: { gridWidth: 6, gridHeight: 3 },
 	contactForm: { gridWidth: 8, gridHeight: 6 },
 	assistant: { gridWidth: 8, gridHeight: 6 },
+	publicRecords: { gridWidth: 12, gridHeight: 6 },
 	card: { gridWidth: 4, gridHeight: 3 },
 	emptyState: { gridWidth: 6, gridHeight: 3 },
 	markdown: { gridWidth: 6, gridHeight: 4 },
@@ -98,6 +100,7 @@ const HOST_SUPPLIED = {
 	intakeStatus: ['portal'],
 	contactForm: ['portal', 'signedIn', 'ways', 'apiOverride'],
 	assistant: ['portal', 'askOverride'],
+	publicRecords: ['recordParam', 'apiOverride'],
 }
 
 /**
@@ -142,6 +145,7 @@ const LAZY_ON_THE_SITE = {
 	intakeStatus: IntakeStatusBlock,
 	contactForm: ContactForm,
 	assistant: AssistantBlock,
+	publicRecords: PublicRecordsBlock,
 }
 
 /**

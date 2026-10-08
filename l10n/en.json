@@ -2452,7 +2452,8 @@
         "Page routes the assistant does not read or link to.": "Page routes the assistant does not read or link to.",
         "Pages the assistant leaves out": "Pages the assistant leaves out",
         "The assistant on the public site. It answers from this portal's published pages, glossary and publications only. Off unless enabled is true, and it needs hermiq.": "The assistant on the public site. It answers from this portal's published pages, glossary and publications only. Off unless enabled is true, and it needs hermiq.",
-        "Whether the assistant widget is offered and answers. Off by default.": "Whether the assistant widget is offered and answers. Off by default."
+        "Whether the assistant widget is offered and answers. Off by default.": "Whether the assistant widget is offered and answers. Off by default.",
+        "The paper cannot be opened right now": "The paper cannot be opened right now"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

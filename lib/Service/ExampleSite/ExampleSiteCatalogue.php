@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCP\App\IAppManager;
+
 /**
  * The shipped example sites.
  *
@@ -42,11 +44,13 @@ class ExampleSiteCatalogue {
 	 * Constructor.
 	 *
 	 * @param string|null $directory Where the declarations live; the shipped folder when null.
+	 * @param IAppManager|null $apps Tells which apps are installed, for a page that needs one; none means none is.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly ?string $directory = null,
+		private readonly ?IAppManager $apps = null,
 	) {
 	}//end __construct()
 
@@ -98,8 +102,44 @@ class ExampleSiteCatalogue {
 			}
 		}
 
+		$site['pages'] = $this->pagesWithTheirApps(value: $site['pages']);
+
 		return $site;
 	}//end find()
+
+	/**
+	 * Keep an object that needs an app only when that app is installed, and
+	 * strip the `requiresApp` key so it is never written to the store. It holds
+	 * for a page and for a link inside a page, at any depth.
+	 *
+	 * @param array<int|string, mixed> $value The declared pages, or anything inside them.
+	 *
+	 * @return array<int|string, mixed> What to install.
+	 *
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t7
+	 */
+	private function pagesWithTheirApps(array $value): array {
+		$kept = [];
+		foreach ($value as $key => $item) {
+			if (is_array($item) === true) {
+				$app = ($item['requiresApp'] ?? null);
+				unset($item['requiresApp']);
+				if (is_string($app) === true && ($this->apps === null || $this->apps->isInstalled($app) === false)) {
+					continue;
+				}
+
+				$item = $this->pagesWithTheirApps(value: $item);
+			}
+
+			$kept[$key] = $item;
+		}
+
+		if (array_is_list($value) === true) {
+			return array_values($kept);
+		}
+
+		return $kept;
+	}//end pagesWithTheirApps()
 
 	/**
 	 * The file with this id, parsed, when it names itself by that id.
