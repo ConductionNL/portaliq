@@ -76,5 +76,8 @@ test('the button sits above the list and on the record', () => {
 	const page = readFileSync('src/site/pages/collections/ContributionPage.vue', 'utf8')
 	assert.match(page, /<PdfDownloadButton[^>]*:collection="item.collection"[^>]*:api="api"/)
 	const detail = readFileSync('src/site/components/collections/DetailCard.vue', 'utf8')
-	assert.match(detail, /<PdfDownloadButton[^>]*:collection="collection"[^>]*:id="rowId"[^>]*:api="api"/)
+	const tag = detail.match(/<PdfDownloadButton[^>]*>/)[0]
+	for (const attribute of [':collection="collection"', ':id="rowId"', ':api="api"']) {
+		assert.ok(tag.includes(attribute), attribute)
+	}
 })
