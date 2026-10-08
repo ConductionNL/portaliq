@@ -74,6 +74,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\VisibleFromGate;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
@@ -799,6 +800,11 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function screenRows(array $subject, array $match, string $register, string $schema): array {
 		$collection = $match['collection'];
+		// A session with no organisation reads nothing of an organisation-scoped schema
+		// (operate-portals-per-organisation REQ-OPO-002).
+		if ($this->withoutTenant(subject: $subject, schema: $schema) === true) {
+			return [];
+		}
 
 		$objects = $this->reader->readCollection(
 			register: $register,
@@ -957,6 +963,21 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end object()
 
 	/**
+	 * Whether a session has no organisation while the schema is declared
+	 * organisation-scoped, which leaves it nothing to read there.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $schema The schema read.
+	 *
+	 * @return bool True when the session names no tenant for an organisation-scoped schema.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
+	 */
+	private function withoutTenant(array $subject, string $schema): bool {
+		return (string)($subject['organisation'] ?? '') === '' && SchemaTenancy::isOrganisationScoped(schema: $schema) === true;
+	}//end withoutTenant()
+
+	/**
 	 * The one row this subject may see under an id: the scoped read, then the
 	 * waiting-row, branch and hidden-case-type passes. A foreign, missing,
 	 * waiting, other-branch or hidden row is null. The record, and the PDF of
@@ -974,6 +995,9 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function screenRow(array $subject, array $match, string $register, string $schema, string $id): ?array {
 		$collection = $match['collection'];
+		if ($this->withoutTenant(subject: $subject, schema: $schema) === true) {
+			return null;
+		}
 
 		$object = $this->reader->readObject(
 			register: $register,

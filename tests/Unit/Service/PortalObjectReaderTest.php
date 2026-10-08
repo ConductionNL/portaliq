@@ -1447,27 +1447,27 @@ class PortalObjectReaderTest extends TestCase {
 	}//end testRowWithoutOrganisationIsDropped()
 
 	/**
-	 * REQ-OPO-002: a subject without an organisation reads nothing of an
-	 * organisation-scoped schema, whatever the rows carry.
+	 * A read that names no tenant is a system lookup (by subject reference or secret)
+	 * and is left as it was: the account lookup that runs before the tenant is
+	 * known must keep working.
 	 *
 	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
 	 */
-	public function testSubjectWithoutOrganisationGetsNothing(): void {
+	public function testALookupThatNamesNoTenantIsLeftAsItWas(): void {
 		$objectService = $this->objectService(
 			[
-				'portalMessage' => [
-					['id' => 'm-1', 'subjectRef' => 's1', 'organisation' => 'org-a'],
-					['id' => 'm-2', 'subjectRef' => 's1'],
+				'portalAccount' => [
+					['id' => 'a-1', 'subjectRef' => 's1'],
 				],
 			]
 		);
 		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
 
-		$this->assertSame([], $reader->readCollection('portaliq', 'portalMessage', 'subjectRef', 's1', ''));
-		$this->assertNull($reader->readObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'm-1', ''));
-		$this->assertNotNull($reader->readObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'm-1', 'org-a'), 'the same message with the right tenant');
+		$this->assertSame(['a-1'], array_column($reader->readCollection('portaliq', 'portalAccount', 'subjectRef', 's1', ''), 'id'));
+		$this->assertNotNull($reader->readObject('portaliq', 'portalAccount', 'subjectRef', 's1', 'a-1', ''));
+		$this->assertSame([], $reader->readCollection('portaliq', 'portalAccount', 'subjectRef', 's1', 'org-a'), 'but with a tenant named, a row without one is dropped');
 
-	}//end testSubjectWithoutOrganisationGetsNothing()
+	}//end testALookupThatNamesNoTenantIsLeftAsItWas()
 
 	/**
 	 * A subject-scoped schema keeps today\'s behaviour: the subject reference is

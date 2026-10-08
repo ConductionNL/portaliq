@@ -1158,13 +1158,19 @@ class PortalObjectReader {
 	 */
 	private function organisationMatches(array $row, string $organisation, string $schema=''): bool {
 		$rowOrganisation = (string)($row['organisation'] ?? '');
-		// A schema declared organisation-scoped refuses a missing tenant value on either
-		// side instead of passing it (operate-portals-per-organisation REQ-OPO-002).
-		if ($schema !== '' && SchemaTenancy::isOrganisationScoped(schema: $schema) === true) {
-			return $organisation !== '' && $rowOrganisation === $organisation;
+		// A read that names no tenant is a system lookup by reference or secret and is
+		// left as it was. When it names one, a schema declared organisation-scoped
+		// refuses a row without a tenant instead of passing it for every tenant
+		// (operate-portals-per-organisation REQ-OPO-002).
+		if ($organisation === '') {
+			return true;
 		}
 
-		return $organisation === '' || $rowOrganisation === '' || $rowOrganisation === $organisation;
+		if ($schema !== '' && SchemaTenancy::isOrganisationScoped(schema: $schema) === true) {
+			return $rowOrganisation === $organisation;
+		}
+
+		return $rowOrganisation === '' || $rowOrganisation === $organisation;
 	}//end organisationMatches()
 
 	/**
