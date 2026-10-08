@@ -139,6 +139,20 @@ export default {
 		'Withdraw this request': 'Deze aanvraag intrekken',
 		'Withdraw this request?': 'Deze aanvraag intrekken?',
 		'Withdrawn on {date}.': 'Ingetrokken op {date}.',
+		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
+			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}, dan nemen wij uiterlijk {legal} een besluit.',
+		'We still need documents from you. Send them before {due}.':
+			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}.',
+		'We still need documents from you.':
+			'Wij hebben nog stukken van u nodig.',
+		'Your tasks could not be loaded.':
+			'Uw taken konden niet worden geladen.',
+		'Expected decision':
+			'Verwacht besluit',
+		'Ready by':
+			'Uiterlijk klaar op',
+		'Next step: {step}':
+			'Volgende stap: {step}',
 		'Yes, remove my account': 'Ja, verwijder mijn account',
 		'You have no e-mail address on your account.':
 			'Er staat geen e-mailadres bij uw account.',
@@ -295,6 +309,20 @@ export default {
 		'Withdraw this request': 'Withdraw this request',
 		'Withdraw this request?': 'Withdraw this request?',
 		'Withdrawn on {date}.': 'Withdrawn on {date}.',
+		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
+			'We still need documents from you. Send them before {due}, and we will decide by {legal}.',
+		'We still need documents from you. Send them before {due}.':
+			'We still need documents from you. Send them before {due}.',
+		'We still need documents from you.':
+			'We still need documents from you.',
+		'Your tasks could not be loaded.':
+			'Your tasks could not be loaded.',
+		'Expected decision':
+			'Expected decision',
+		'Ready by':
+			'Ready by',
+		'Next step: {step}':
+			'Next step: {step}',
 		'Yes, remove my account': 'Yes, remove my account',
 		'You have no e-mail address on your account.':
 			'You have no e-mail address on your account.',

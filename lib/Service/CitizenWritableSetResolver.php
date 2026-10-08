@@ -70,6 +70,11 @@ class CitizenWritableSetResolver {
 	public const STATUS_LABELS_PROPERTY = 'portalStatusLabels';
 
 	/**
+	 * The case type property naming what the current status step offers next.
+	 */
+	public const STATUS_ACTIONS_PROPERTY = 'portalStatusActions';
+
+	/**
 	 * The property on the case type declaring whether an applicant may end
 	 * their own request, until when, and onto which status.
 	 *
@@ -453,8 +458,12 @@ class CitizenWritableSetResolver {
 			$entry = ($labels[$status] ?? null);
 		}
 
+		$extra = [
+			'action' => $this->statusAction(caseType: $caseType, status: $status),
+			'next'   => $this->nextStatus(labels: $labels, status: $status),
+		];
 		if (is_array($entry) === false) {
-			return ['value' => $status, 'label' => '', 'description' => ''];
+			return ['value' => $status, 'label' => '', 'description' => ''] + $extra;
 		}
 
 		$label = ($entry['label'] ?? '');
@@ -468,8 +477,76 @@ class CitizenWritableSetResolver {
 			$description = '';
 		}
 
-		return ['value' => $status, 'label' => $label, 'description' => $description];
+		return ['value' => $status, 'label' => $label, 'description' => $description] + $extra;
 	}//end status()
+
+	/**
+	 * The button the current status offers, or null when its entry is missing or malformed.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 * @param string $status The case's current status.
+	 *
+	 * @return array{label: string, kind: string, target: string}|null
+	 *
+	 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t04
+	 */
+	private function statusAction(array $caseType, string $status): ?array {
+		$actions = ($caseType[self::STATUS_ACTIONS_PROPERTY] ?? null);
+		$entry   = null;
+		if (is_array($actions) === true) {
+			$entry = ($actions[$status] ?? null);
+		}
+
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$label  = ($entry['label'] ?? null);
+		$kind   = ($entry['kind'] ?? null);
+		$target = ($entry['target'] ?? null);
+		if (is_string($label) === false || trim($label) === '' || in_array($kind, ['task', 'page', 'action'], true) === false
+			|| is_string($target) === false || trim($target) === ''
+		) {
+			return null;
+		}
+
+		return ['label' => trim($label), 'kind' => $kind, 'target' => trim($target)];
+	}//end statusAction()
+
+	/**
+	 * The status after the current one, in the order the case type lists its labels.
+	 *
+	 * @param mixed $labels The case type's status labels.
+	 * @param string $status The case's current status.
+	 *
+	 * @return array{value: string, label: string}|null
+	 *
+	 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t04
+	 */
+	private function nextStatus(mixed $labels, string $status): ?array {
+		if (is_array($labels) === false) {
+			return null;
+		}
+
+		$keys     = array_map('strval', array_keys($labels));
+		$position = array_search($status, $keys, true);
+		if ($position === false || isset($keys[($position + 1)]) === false) {
+			return null;
+		}
+
+		$value = $keys[($position + 1)];
+		$entry = $labels[$value];
+		$label = '';
+		if (is_array($entry) === true && is_string($entry['label'] ?? null) === true) {
+			$label = $entry['label'];
+		}
+
+		if ($label === '') {
+			return null;
+		}
+
+		return ['value' => $value, 'label' => $label];
+	}//end nextStatus()
 
 	/**
 	 * The set a case with no reachable declaration resolves to: nothing
@@ -485,7 +562,7 @@ class CitizenWritableSetResolver {
 			'writable' => [],
 			'window' => ['open' => false, 'reason' => $reason],
 			'documents' => ['open' => false, 'reason' => $reason],
-			'status' => ['value' => '', 'label' => '', 'description' => ''],
+			'status' => ['value' => '', 'label' => '', 'description' => '', 'action' => null, 'next' => null],
 		];
 	}//end closedSet()
 }//end class

@@ -448,7 +448,11 @@
 				:row="selected[item.collection.id] || null"
 				:api="api"
 				:t="tr"
-				:locale="lang" />
+				:locale="lang"
+				:taskCollections="caseTaskCollections"
+				:nav="nav"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				@navigate="$emit('navigate', $event)" />
 
 			<SlotHost
 				v-else-if="item.kind === 'timedTask'"
@@ -663,6 +667,13 @@ export default {
 
 		currentContribution() {
 			return this.entry?.contribution || this.contribution || null
+		},
+
+		/** The collections whose rows are tasks of a case (they declare `caseField`). */
+		caseTaskCollections() {
+			return (this.currentContribution?.collections || []).filter(
+				(collection) => typeof collection?.caseField === 'string',
+			)
 		},
 
 		lang() {

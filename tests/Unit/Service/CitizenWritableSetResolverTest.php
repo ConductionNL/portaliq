@@ -204,6 +204,38 @@ class CitizenWritableSetResolverTest extends TestCase {
 	}//end testTheStatusLabelIsTheCaseAppsOwnOrNothing()
 
 	/**
+	 * The current status names its button and the next status is the one the
+	 * case type lists after it (case-page-tasks-decision-dates-and-next-step).
+	 */
+	public function testTheCurrentStatusOffersItsActionAndNamesTheNextStep(): void {
+		$caseType = $this->caseType();
+		$caseType[CitizenWritableSetResolver::STATUS_LABELS_PROPERTY]['besluit'] = ['label' => 'Besluit'];
+		$caseType[CitizenWritableSetResolver::STATUS_ACTIONS_PROPERTY] = [
+			'ontvangen' => ['label' => 'Stuur de ontbrekende stukken', 'kind' => 'task', 'target' => 'aanvullen'],
+		];
+
+		$status = $this->resolve(caseType: $caseType)['status'];
+
+		$this->assertSame(['label' => 'Stuur de ontbrekende stukken', 'kind' => 'task', 'target' => 'aanvullen'], $status['action']);
+		$this->assertSame(['value' => 'besluit', 'label' => 'Besluit'], $status['next']);
+	}//end testTheCurrentStatusOffersItsActionAndNamesTheNextStep()
+
+	/**
+	 * A status without an entry, or with a malformed one, shows no button.
+	 */
+	public function testAMissingOrMalformedActionOffersNoButton(): void {
+		$none = $this->resolve(caseType: $this->caseType())['status'];
+		$this->assertNull($none['action']);
+		$this->assertNull($none['next'], 'the last status has no next step');
+
+		foreach ([['label' => '', 'kind' => 'task', 'target' => 'x'], ['label' => 'Go', 'kind' => 'url', 'target' => 'x'], ['label' => 'Go', 'kind' => 'page', 'target' => ''], 'text'] as $entry) {
+			$caseType = $this->caseType();
+			$caseType[CitizenWritableSetResolver::STATUS_ACTIONS_PROPERTY] = ['ontvangen' => $entry];
+			$this->assertNull($this->resolve(caseType: $caseType)['status']['action']);
+		}
+	}//end testAMissingOrMalformedActionOffersNoButton()
+
+	/**
 	 * A withdrawn case closes every window with the neutral sentence, not the
 	 * case type's invitation to send more, and says it has ended.
 	 *

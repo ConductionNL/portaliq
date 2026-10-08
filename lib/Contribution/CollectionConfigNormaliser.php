@@ -100,6 +100,8 @@ class CollectionConfigNormaliser {
 			// Who a resident may write to about each row (site-messages-per-record).
 			$collection = (new MessageContactsKeys())->normalise(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
+			// The field holding the case a task belongs to (case-page-tasks-decision-dates-and-next-step).
+			$collection = (new CaseFieldKey())->normalise(collection: $collection);
 			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
 			$collection = $this->normaliseGroupByField(collection: $collection);
 			$collection = (new PortalBranchScope())->normalise(collection: $collection);

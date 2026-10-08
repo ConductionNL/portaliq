@@ -408,5 +408,12 @@
 	"Unread ({count})": "Unread ({count})",
 	"Mark all as read": "Mark all as read",
 	"Filter messages": "Filter messages",
-	"This field is required.": "This field is required."
+	"This field is required.": "This field is required.",
+	"We still need documents from you. Send them before {due}, and we will decide by {legal}.": "We still need documents from you. Send them before {due}, and we will decide by {legal}.",
+	"We still need documents from you. Send them before {due}.": "We still need documents from you. Send them before {due}.",
+	"We still need documents from you.": "We still need documents from you.",
+	"Your tasks could not be loaded.": "Your tasks could not be loaded.",
+	"Expected decision": "Expected decision",
+	"Ready by": "Ready by",
+	"Next step: {step}": "Next step: {step}"
 }

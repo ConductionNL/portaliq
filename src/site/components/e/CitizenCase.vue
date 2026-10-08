@@ -46,6 +46,32 @@
 		     blocks' (zuiddrecht-resident-pages-match-the-boards): this screen
 		     keeps the closed window sentence as a notice, the fields, save
 		     and withdraw. -->
+		<!-- What the case still needs from the resident
+		     (case-page-tasks-decision-dates-and-next-step). A failed read says
+		     so; it never reads as "nothing to do". -->
+		<div
+			v-if="!actionsOnly && bannerText"
+			class="utrecht-alert utrecht-alert--warning pq-case-tasks"
+			role="status"
+			data-testid="case-tasks">
+			<p class="utrecht-paragraph pq-case-tasks__text">{{ bannerText }}</p>
+			<ul class="pq-case-tasks__list">
+				<li v-for="task in openTasks" :key="task.id">
+					<a
+						:href="taskHref(task)"
+						data-testid="case-task"
+						@click.prevent="openTask(task)">{{ task.title }}</a>
+				</li>
+			</ul>
+		</div>
+		<p
+			v-else-if="!actionsOnly && tasksFailed"
+			class="utrecht-paragraph pq-e-error"
+			role="alert"
+			data-testid="case-tasks-failed">
+			{{ t('Your tasks could not be loaded.') }}
+		</p>
+
 		<div
 			v-if="!actionsOnly && writableSet.status && writableSet.status.label"
 			class="pq-case-status"
@@ -56,7 +82,31 @@
 			<p v-if="writableSet.status.description" class="utrecht-paragraph">
 				{{ writableSet.status.description }}
 			</p>
+			<button
+				v-if="nextStep.button"
+				type="button"
+				class="utrecht-button utrecht-button--primary-action pq-case-next-action"
+				data-testid="case-next-action"
+				@click="onNextAction(nextStep.button)">
+				{{ nextStep.button.label }}
+			</button>
+			<p
+				v-if="nextStep.next"
+				class="utrecht-paragraph pq-case-next-step"
+				data-testid="case-next-step">
+				{{ t('Next step: {step}', { step: nextStep.next }) }}
+			</p>
 		</div>
+
+		<dl
+			v-if="!actionsOnly && dateRows.length > 0"
+			class="pq-case-dates"
+			data-testid="case-dates">
+			<div v-for="dateRow in dateRows" :key="dateRow.key" :data-testid="`case-date-${dateRow.key}`">
+				<dt>{{ dateRow.label }}</dt>
+				<dd>{{ dateRow.value }}</dd>
+			</div>
+		</dl>
 
 		<div
 			v-if="actionsOnly && !windowOpen && !ended && windowReason"
@@ -217,13 +267,24 @@ import FileItem from '../mijn/FileItem.vue'
 import CaseField from './CaseField.vue'
 import { groupDocuments } from '../../../shared/caseDocuments.js'
 import {
+	bannerSentence,
+	decisionDateRows,
+	nextStepView,
+	tasksOfCase,
+} from '../../../shared/casePage.js'
+import {
 	caseFieldNames,
 	caseHasEnded,
 	withdrawalView,
 } from '../../../shared/withdrawal.js'
 import { readerLocale, shortDate } from '../../pages/e/format.js'
+import {
+	keepRecordToOpen,
+	recordRoute,
+	sessionStore,
+} from '../../pages/inbox/inbox.js'
 import { fileLine } from '../mijn/documents.js'
-import { mijnTranslator } from '../mijn/rows.js'
+import { mijnTranslator, siteHref } from '../mijn/rows.js'
 
 export default {
 	name: 'CitizenCase',
@@ -249,7 +310,19 @@ export default {
 		initialData: { type: Object, default: null },
 		/** Open on the withdraw confirmation (test seam). */
 		initialConfirming: { type: Boolean, default: false },
+		/** The contribution's collections that declare `caseField`: where the case's tasks live. */
+		taskCollections: { type: Array, default: () => [] },
+		/** The portal navigation, for the route of a task's page. */
+		nav: { type: Array, default: null },
+		/** The app of the contribution the case belongs to. */
+		app: { type: String, default: '' },
+		/** The tasks already read (test seam): `[{collection, rows}]`. */
+		initialTaskReads: { type: Array, default: null },
+		/** Show the task read as failed (test seam). */
+		initialTasksFailed: { type: Boolean, default: false },
 	},
+
+	emits: ['navigate'],
 
 	data() {
 		return {
@@ -259,6 +332,8 @@ export default {
 			notice: '',
 			busy: false,
 			confirming: this.initialConfirming,
+			taskReads: this.initialTaskReads || [],
+			tasksFailed: this.initialTasksFailed,
 		}
 	},
 
@@ -316,6 +391,36 @@ export default {
 
 		withdrawal() {
 			return withdrawalView(this.data?.withdrawal, this.caseRow)
+		},
+
+		/** The open tasks whose `caseField` names this case. */
+		openTasks() {
+			return tasksOfCase(this.taskReads, [
+				this.caseRow.reference,
+				this.caseRow.identifier,
+				this.caseId,
+			])
+		},
+
+		bannerText() {
+			return bannerSentence(
+				this.openTasks,
+				this.caseRow.legalDecisionDate,
+				this.t,
+				readerLocale(this.locale),
+			)
+		},
+
+		dateRows() {
+			return decisionDateRows(this.caseRow, this.t, readerLocale(this.locale))
+		},
+
+		nextStep() {
+			return nextStepView(
+				this.writableSet.status,
+				this.openTasks,
+				(id) => this.actionOffered(id),
+			)
 		},
 
 		/** Withdrawn or closed: the screen shows the state, not why a window shut. */
@@ -380,6 +485,129 @@ export default {
 			this.data = data
 			this.loading = false
 			this.draft = {}
+			this.loadTasks()
+		},
+
+		/**
+		 * Read every tasks collection that names a case field. One failed read
+		 * marks the list as failed, so the page never claims there is nothing to do.
+		 *
+		 * @return {Promise<void>} Resolves when read.
+		 *
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
+		async loadTasks() {
+			if (this.initialTaskReads !== null) {
+				return
+			}
+			const id = this.caseId
+			const reads = []
+			let failed = false
+			for (const collection of this.taskCollections) {
+				if (!collection?.caseField) {
+					continue
+				}
+				const rows = await this.api.fetchCollection(collection, {
+					orNull: true,
+				})
+				if (rows === null) {
+					failed = true
+				} else {
+					reads.push({ collection, rows })
+				}
+			}
+			if (id !== this.caseId) {
+				return
+			}
+			this.taskReads = reads
+			this.tasksFailed = failed
+		},
+
+		/**
+		 * @param {object} task An open task of the case.
+		 * @return {string} The route of its task page, or ''.
+		 *
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
+		taskRoute(task) {
+			if (!task.id) {
+				return ''
+			}
+			return (
+				recordRoute(this.nav, {
+					app: this.app,
+					collection: task.collection.id,
+					id: task.id,
+				}) || ''
+			)
+		},
+
+		/**
+		 * @param {object} task An open task of the case.
+		 * @return {string} A real address for its link.
+		 *
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
+		taskHref(task) {
+			return siteHref(this.taskRoute(task)) || '#'
+		},
+
+		/**
+		 * Go to a task's page, keeping the task so that page selects it.
+		 *
+		 * @param {object} task An open task of the case.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
+		openTask(task) {
+			const route = this.taskRoute(task)
+			if (!route) {
+				return
+			}
+			keepRecordToOpen(sessionStore(), {
+				app: this.app,
+				collection: task.collection.id,
+				id: task.id,
+			})
+			this.$emit('navigate', route)
+		},
+
+		/**
+		 * Whether this screen offers a named case action right now: the
+		 * withdraw button, or the corrections while the window is open.
+		 *
+		 * @param {string} id The action id the case type names.
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t04
+		 */
+		actionOffered(id) {
+			if (id === 'withdraw') {
+				return this.withdrawal.kind === 'button'
+			}
+			return this.windowOpen
+		},
+
+		/**
+		 * Follow the button on the current step: a task page, a route, or the
+		 * case's own actions on this screen.
+		 *
+		 * @param {object} button The button from `nextStepView`.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t04
+		 */
+		onNextAction(button) {
+			if (button.kind === 'task') {
+				this.openTask(button.task)
+			} else if (button.kind === 'page') {
+				this.$emit('navigate', button.route)
+			} else if (button.id === 'withdraw') {
+				this.openWithdraw()
+			} else {
+				this.$el.querySelector?.('.pq-case-fields')?.scrollIntoView?.()
+			}
 		},
 
 		/**
@@ -558,6 +786,33 @@ export default {
 </script>
 
 <style scoped>
+.pq-case-tasks {
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-case-tasks__list {
+	margin: 0;
+	padding-inline-start: 1.25rem;
+}
+
+.pq-case-next-step {
+	color: var(--utrecht-color-grey-600, #5f6368);
+}
+
+.pq-case-dates {
+	display: grid;
+	gap: 0.25rem;
+	margin-block: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-case-dates dt {
+	font-weight: 600;
+}
+
+.pq-case-dates dd {
+	margin: 0;
+}
+
 .pq-citizen-case > * + * {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
 }
