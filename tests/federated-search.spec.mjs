@@ -27,20 +27,25 @@
 //   3. An empty search term must be OMITTED, not sent as `_search=`. Those
 //      are different requests and only one of them means "everything".
 
+import { readFileSync } from 'node:fs'
 import {
 	buildRequestUrl,
 	facetFieldsOf,
 	formatDutchDate,
+	KIND_FIELD,
 	pageWindow,
 	paginationItems,
 	readSearchState,
 	resultKind,
 	searchQuery,
+	subjectSlug,
 	toBuckets,
 	toResult,
 	validDate,
+	withKindField,
 	writeSearchState,
 } from '../src/site/lib/federatedSearch.js'
+import { kindBuckets, kindLabel, labelBuckets } from '../src/site/lib/wooCategories.js'
 
 let failures = 0
 
@@ -597,6 +602,122 @@ assertEqual(
 			.publication,
 		'',
 	)
+
+	// search-filter-by-kind (REQ-SFK-001, REQ-SFK-002).
+	// The facet fixture is REQ-SUB-004's response shape: opencatalogi counts
+	// `resultType` as a terms facet beside the others.
+	const kindFacet = {
+		resultType: {
+			data: {
+				buckets: [
+					{ value: 'subject', count: 1 },
+					{ value: 'publication', count: 14 },
+					{ value: 'document', count: 3 },
+				],
+			},
+		},
+	}
+	assertEqual(
+		'the kind facet reads as Publicatie, Document, Onderwerp with their counts',
+		labelBuckets(toBuckets(kindFacet, KIND_FIELD), KIND_FIELD, 'nl').map(
+			(b) => [b.value, b.label, b.count],
+		),
+		[
+			['publication', 'Publicatie', 14],
+			['document', 'Document', 3],
+			['subject', 'Onderwerp', 1],
+		],
+	)
+	assertEqual('the kinds read in English', kindLabel('subject', 'en'), 'Subject')
+	assertEqual('an unknown kind reads as itself', kindLabel('zaak', 'nl'), 'zaak')
+	assertEqual(
+		'no resultType facet offers no filter',
+		toBuckets({ wooCategory: { buckets: [{ value: 'a', count: 1 }] } }, KIND_FIELD),
+		[],
+	)
+	assertEqual('the kind is asked first', withKindField(['wooCategory']), [
+		'resultType',
+		'wooCategory',
+	])
+	assertEqual(
+		'a placement can leave the kind out',
+		withKindField(['resultType', 'wooCategory'], true),
+		['wooCategory'],
+	)
+	assertEqual(
+		'the kind is not asked twice',
+		withKindField(['resultType', 'organization']),
+		['resultType', 'organization'],
+	)
+
+	const fields = withKindField(['wooCategory'])
+	const chosen = new URL(
+		buildRequestUrl({
+			...{ endpoint: '/api/search', origin: 'https://x.example', pageSize: 10, page: 1 },
+			query: 'parkeren',
+			facetFields: fields,
+			facets: { resultType: ['subject'], wooCategory: [] },
+		}),
+	)
+	assertEqual('a chosen kind is sent', chosen.searchParams.getAll('resultType'), [
+		'subject',
+	])
+	assertEqual(
+		'the kind facet is asked for',
+		chosen.searchParams.get('_facets[resultType][type]'),
+		'terms',
+	)
+	const none = new URL(
+		buildRequestUrl({
+			...{ endpoint: '/api/search', origin: 'https://x.example', pageSize: 10, page: 1 },
+			query: 'parkeren',
+			facetFields: fields,
+			facets: { resultType: [], wooCategory: [] },
+		}),
+	)
+	assertEqual('no kind sends no resultType', none.searchParams.has('resultType'), false)
+
+	const written = writeSearchState(
+		new URL('https://x.example/zoeken'),
+		{ query: 'parkeren', page: 1, facets: { resultType: ['subject'] } },
+		fields,
+	)
+	assertEqual('the chosen kind is written to the address', written.searchParams.get('f.resultType'), 'subject')
+	assertEqual(
+		'and read back from it',
+		readSearchState(written.search, fields).facets.resultType,
+		['subject'],
+	)
+
+	const subject = toResult({
+		resultType: 'subject',
+		slug: 'parkeren',
+		name: 'Parkeren',
+		publicationCount: 14,
+		'@self': { id: 's-1' },
+	})
+	assertEqual('a subject hit keeps its slug and its count', [subject.kind, subject.slug, subject.publicationCount], ['subject', 'parkeren', 14])
+	assertEqual('a slug that is not a path segment is dropped', subjectSlug({ slug: '../x' }), '')
+	assertEqual('a publication carries no slug', 'slug' in toResult({ name: 'x', slug: 'y', '@self': { id: 'p' } }), false)
+	assertEqual(
+		'an unknown kind renders as a publication',
+		toResult({ resultType: 'zaak', name: 'x', '@self': { id: 'p' } }).kind,
+		'publication',
+	)
+	assertEqual('the buckets keep their order', kindBuckets([{ value: 'zaak', label: '', count: 1 }, { value: 'document', label: '', count: 1 }], 'nl').map((b) => b.value), ['document', 'zaak'])
+
+	// The block links a subject to its landing page and says how many
+	// publications it holds, and asks for the kind facet.
+	const block = readFileSync(
+		new URL('../src/site/components/FederatedSearchBlock.vue', import.meta.url),
+		'utf8',
+	)
+	assertTrue('the block asks for the kind facet', /withKindField\(own, this\.hideKind\)/.test(block))
+	assertTrue(
+		'a subject links to /onderwerp/{slug}',
+		/result\.kind === 'subject' && result\.slug\) \{\s*return `\$\{this\.subjectRoute\}\/\$\{result\.slug\}`/.test(block),
+	)
+	assertTrue('the block says how many publications a subject holds', /federated-search-publication-count/.test(block))
 }
 
 if (failures > 0) {

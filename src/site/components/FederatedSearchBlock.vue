@@ -472,6 +472,7 @@ import {
 	searchQuery,
 	toBuckets,
 	toResult,
+	withKindField,
 	writeSearchState,
 } from '../lib/federatedSearch.js'
 import { suggestionRoute } from '../lib/searchSuggestions.js'
@@ -660,10 +661,33 @@ export default {
 			default: () => ['wooCategory', 'organization'],
 		},
 
+		/**
+		 * Leave the "Soort" filter (publication, document or subject) out. It
+		 * shows only when the endpoint counts the kinds, so this is for a
+		 * catalogue that has one kind and says so.
+		 */
+		hideKind: {
+			type: Boolean,
+			default: false,
+		},
+
+		/** The route of a subject's own page; the slug is appended. */
+		subjectRoute: {
+			type: String,
+			default: '/onderwerp',
+		},
+
+		/** The words after the number of publications a subject holds. */
+		publicationsLabel: {
+			type: String,
+			default: 'publicaties',
+		},
+
 		/** A heading per facet field; a field without one shows its name. */
 		facetLabels: {
 			type: Object,
 			default: () => ({
+				resultType: 'Soort',
 				wooCategory: 'Informatiecategorie',
 				organization: 'Organisatie',
 				themes: 'Thema',
@@ -766,7 +790,8 @@ export default {
 		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		fields() {
-			return this.facetField ? [this.facetField] : this.facetFields
+			const own = this.facetField ? [this.facetField] : this.facetFields
+			return withKindField(own, this.hideKind)
 		},
 
 		/**
@@ -1142,6 +1167,15 @@ export default {
 				})
 			}
 
+			if (result.kind === 'subject' && result.publicationCount > 0) {
+				items.push({
+					key: 'count',
+					text: `${result.publicationCount} ${this.publicationsLabel}`,
+					prefix: '',
+					testid: 'federated-search-publication-count',
+				})
+			}
+
 			if (result.kind === 'document' && result.publication) {
 				items.push({
 					key: 'publication',
@@ -1263,6 +1297,9 @@ export default {
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
 		 */
 		detailPath(result) {
+			if (result.kind === 'subject' && result.slug) {
+				return `${this.subjectRoute}/${result.slug}`
+			}
 			const base =
 				result.kind === 'document' ? this.documentRoute : this.detailRoute
 			return `${base}/${result.id}`
@@ -1277,7 +1314,7 @@ export default {
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
 		 */
 		detailHref(result) {
-			if (!result.id) {
+			if (!result.id && !(result.kind === 'subject' && result.slug)) {
 				// No id means no detail page to link to; fall back to whatever
 				// the row itself points at rather than emitting a dead link.
 				return result.href || '#'
@@ -1303,7 +1340,7 @@ export default {
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
 		 */
 		openDetail(result) {
-			if (!result.id) {
+			if (!result.id && !(result.kind === 'subject' && result.slug)) {
 				if (result.href) {
 					window.location.href = result.href
 				}

@@ -115,6 +115,25 @@ export function buildRequestUrl(state) {
  * @return {object} The view model.
  */
 export function toResult(row) {
+	const result = baseResult(row)
+	// A subject's own page and how many publications it holds
+	// (search-filter-by-kind REQ-SFK-002). No other kind carries them.
+	if (result.kind === 'subject') {
+		result.slug = subjectSlug(row)
+		result.publicationCount = Number((row || {}).publicationCount) || 0
+	}
+
+	return result
+}
+
+/**
+ * The view-model row every kind shares.
+ *
+ * @param {object} row One row of the endpoint's answer.
+ * @return {object} The row the block draws.
+ * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+ */
+function baseResult(row) {
 	const self = (row || {})['@self'] || {}
 	const summary = self.summary || (row || {}).description || ''
 	const kind = resultKind(row)
@@ -148,6 +167,39 @@ export function toResult(row) {
 		// read; a page that knows its corpus supplies `typeLabel` instead.
 		type: self.schemaTitle || '',
 	}
+}
+
+/**
+ * A subject's slug: a plain address part, else empty, so a slug from a peer
+ * can never put anything but a path segment into a link.
+ *
+ * @param {object} row The result row.
+ * @return {string} The slug, or ''.
+ * @spec openspec/changes/search-filter-by-kind/specs/portal-federated-search/spec.md#requirement-each-kind-links-to-its-own-page-req-sfk-002
+ */
+export function subjectSlug(row) {
+	const slug = String((row || {}).slug || ((row || {})['@self'] || {}).slug || '')
+	return /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(slug) ? slug : ''
+}
+
+/** The facet field the endpoint counts the kinds of record in. */
+export const KIND_FIELD = 'resultType'
+
+/**
+ * The fields a search asks facets for: the kind of record first, then the
+ * placement's own. A placement that leaves the kind out with `hideKind` asks
+ * for no kind facet.
+ *
+ * @param {Array<string>} fields The placement's facet fields.
+ * @param {boolean} hideKind Whether the placement turned the kind filter off.
+ * @return {Array<string>} The fields to ask for.
+ * @spec openspec/changes/search-filter-by-kind/specs/portal-federated-search/spec.md#requirement-results-filter-by-kind-req-sfk-001
+ */
+export function withKindField(fields, hideKind = false) {
+	const own = (Array.isArray(fields) ? fields : []).filter(
+		(field) => field !== KIND_FIELD,
+	)
+	return hideKind === true ? own : [KIND_FIELD, ...own]
 }
 
 /**
