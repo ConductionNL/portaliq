@@ -51,4 +51,4 @@
       paths before merge; Hydra gates green (spdx-headers, forbidden-patterns,
       unsafe-auth-resolver, spec-coverage). — Hydra gates not run as part of
       this apply pass (process/review step, not implementation); flag for the
-      PR review stage.
+      PR review stage. — not run: the ADR-005 security review is a human step and the hydra-gates package is not available here

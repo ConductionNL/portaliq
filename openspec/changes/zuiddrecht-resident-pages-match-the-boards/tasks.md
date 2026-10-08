@@ -21,4 +21,4 @@
 - [x] 4.3 `tests/example-site.spec.mjs`: the Zuiddrecht portal's menu groups and rows display.
 
 ## 5. Verify
-- [ ] 5.1 Live on :8097 with dossiq declaring the keys (named in the PR), board beside render at 1440 and 390.
+- [ ] 5.1 Live on :8097 with dossiq declaring the keys (named in the PR), board beside render at 1440 and 390. — not run: needs a live instance with dossiq
