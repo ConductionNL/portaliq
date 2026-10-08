@@ -2352,7 +2352,11 @@ OC.L10N.register(
         "The subject reference of whoever ended it.": "The subject reference of whoever ended it.",
         "Valid until": "Valid until",
         "When it was ended.": "When it was ended.",
-        "Who holds the mandate, typed: kvk: and eight digits for a company, or subject: and a reference for a person. Empty means the account in subjectRef.": "Who holds the mandate, typed: kvk: and eight digits for a company, or subject: and a reference for a person. Empty means the account in subjectRef."
+        "Who holds the mandate, typed: kvk: and eight digits for a company, or subject: and a reference for a person. Empty means the account in subjectRef.": "Who holds the mandate, typed: kvk: and eight digits for a company, or subject: and a reference for a person. Empty means the account in subjectRef.",
+        "We have received your question": "We have received your question",
+        "Your question about %1$s has reached %2$s. You find it back under My questions.": "Your question about %1$s has reached %2$s. You find it back under My questions.",
+        "Your question has reached %1$s. You find it back under My questions.": "Your question has reached %1$s. You find it back under My questions.",
+        "Open My questions": "Open My questions"
     },
     "nplurals=2; plural=(n != 1);"
 )

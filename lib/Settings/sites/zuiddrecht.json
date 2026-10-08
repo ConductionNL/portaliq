@@ -1755,63 +1755,187 @@
                         "widgetKey": "nlParagraph",
                         "gridX": 0,
                         "gridY": 0,
-                        "gridWidth": 8,
+                        "gridWidth": 12,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Heeft u een vraag? Bel of mail ons. We helpen u graag."
+                            "text": "Heeft u een vraag? Kies hoe u ons het liefst bereikt.",
+                            "lead": true
                         }
                     },
                     {
-                        "id": "zd-contact-02-nlparagraph",
-                        "widgetKey": "nlParagraph",
+                        "id": "zd-contact-02-nllinklist",
+                        "widgetKey": "nlLinkList",
                         "gridX": 0,
                         "gridY": 1,
-                        "gridWidth": 8,
-                        "gridHeight": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 2,
                         "props": {
-                            "text": "Telefoon: [telefoonnummer]. E-mail: [e-mailadres]. Stadskantoor: [adres]."
+                            "heading": "Bellen",
+                            "intro": "Maandag tot en met vrijdag van 8.30 tot 17.00 uur.",
+                            "display": "card",
+                            "links": [
+                                {
+                                    "label": "Nu bellen",
+                                    "href": "tel:+31000000000"
+                                }
+                            ]
                         }
                     },
                     {
-                        "id": "zd-contact-03-nltable",
+                        "id": "zd-contact-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 4,
+                        "gridY": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 2,
+                        "props": {
+                            "heading": "Een bericht sturen",
+                            "intro": "Ingelogd stuurt u een bericht vanuit Mijn Zuiddrecht. Het antwoord vindt u bij Berichten.",
+                            "display": "card",
+                            "links": [
+                                {
+                                    "label": "Naar Berichten",
+                                    "href": "/contact/vraag"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-contact-04-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 2,
+                        "props": {
+                            "heading": "Langskomen",
+                            "intro": "Stadskantoor, Markt 1. Op afspraak.",
+                            "display": "card",
+                            "links": [
+                                {
+                                    "label": "Afspraak maken",
+                                    "href": "/afspraak-maken"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-contact-05-nltable",
                         "widgetKey": "nlTable",
                         "gridX": 0,
-                        "gridY": 2,
+                        "gridY": 3,
                         "gridWidth": 8,
                         "gridHeight": 3,
                         "props": {
-                            "caption": "Openingstijden van het stadskantoor",
+                            "caption": "Openingstijden",
                             "columns": [
                                 "Dag",
-                                "Open"
+                                "Telefonisch",
+                                "Stadskantoor"
                             ],
                             "rows": [
                                 [
                                     "Maandag tot en met vrijdag",
+                                    "8.30 tot 17.00 uur",
                                     "8.30 tot 17.00 uur"
                                 ],
                                 [
                                     "Donderdag",
+                                    "8.30 tot 20.00 uur",
                                     "8.30 tot 20.00 uur"
                                 ],
                                 [
                                     "Zaterdag",
+                                    "Gesloten",
                                     "9.00 tot 13.00 uur"
                                 ]
                             ]
                         }
                     },
                     {
-                        "id": "zd-contact-04-nlbuttonlink",
-                        "widgetKey": "nlButtonLink",
+                        "id": "zd-contact-06-nlparagraph",
+                        "widgetKey": "nlParagraph",
                         "gridX": 0,
-                        "gridY": 5,
-                        "gridWidth": 4,
+                        "gridY": 6,
+                        "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "label": "Afspraak maken",
-                            "href": "/afspraak-maken",
-                            "kind": "primary"
+                            "text": "Een vraag over uw eigen zaak? Open de zaak bij Mijn zaken en stuur daar een bericht."
+                        }
+                    },
+                    {
+                        "id": "zd-contact-07-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 4,
+                        "gridHeight": 2,
+                        "props": {
+                            "heading": "Iets melden in de openbare ruimte",
+                            "intro": "Een kapotte lantaarn of zwerfafval.",
+                            "display": "card",
+                            "links": [
+                                {
+                                    "label": "Melding indienen",
+                                    "href": "/melding-openbare-ruimte"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-contact-08-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 4,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 2,
+                        "props": {
+                            "heading": "Meer contact",
+                            "links": [
+                                {
+                                    "label": "Spreekuur wethouders",
+                                    "href": "/bestuur/college"
+                                },
+                                {
+                                    "label": "Klacht indienen",
+                                    "href": "/klacht"
+                                },
+                                {
+                                    "label": "Bezwaar maken",
+                                    "href": "/mijn"
+                                },
+                                {
+                                    "label": "Kwetsbaarheid melden",
+                                    "href": "/kwetsbaarheid-melden"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/contact/vraag",
+            "title": "Stel een vraag",
+            "summary": "Stel een vraag aan de gemeente zonder dat het over een zaak gaat.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-contact-vraag-01-contactform",
+                        "widgetKey": "contactForm",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "pipelinq",
+                            "action": "ask-question",
+                            "topicField": "onderwerp",
+                            "intro": "Kies een onderwerp en stel uw vraag. U vindt hem terug bij Mijn vragen.",
+                            "questionsRoute": "/mijn"
                         }
                     }
                 ]

@@ -29,6 +29,7 @@ const PUBLIC_LABELS = {
 	intakeCatalogue: 'Aanvragen per onderwerp',
 	intakeForm: 'Aanvraagformulier',
 	intakeStatus: 'Status van een aanvraag',
+	contactForm: 'Vraagformulier',
 }
 
 /**

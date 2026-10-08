@@ -59,6 +59,7 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeNames;
 use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Service\Identity\ContactConfirmationMailer;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
@@ -172,6 +173,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
 	 * @param PortalResolver|null $portals Finds the serving portal, for its navigation choice.
 	 *                                     Absent leaves the navigation as the aggregate has it.
+	 * @param ContactConfirmationMailer|null $confirmation Mails the resident that a question arrived, after
+	 *                                                     a create whose action asks for it; fail-safe.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -196,6 +199,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
 		private readonly ?CaseTypeNames $typeNames = null,
 		private readonly ?PortalResolver $portals = null,
+		private readonly ?ContactConfirmationMailer $confirmation = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -1200,6 +1204,10 @@ class ContributionController extends Controller implements PortalProtected {
 			whitelistedData: $data,
 			audience: (string)($subject['audience'] ?? '')
 		);
+
+		// The question is stored; the confirmation mail is a follow-on that
+		// never changes the answer (contact-page-question-form-and-not-found).
+		$this->confirmation?->afterCreate(subject: $subject, action: $action, data: $data);
 
 		return new JSONResponse(['object' => $created]);
 	}//end create()

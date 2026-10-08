@@ -415,5 +415,12 @@
 	"Your tasks could not be loaded.": "Your tasks could not be loaded.",
 	"Expected decision": "Expected decision",
 	"Ready by": "Ready by",
-	"Next step: {step}": "Next step: {step}"
+	"Next step: {step}": "Next step: {step}",
+	"Error code 404": "Error code 404",
+	"This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.": "This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.",
+	"Search for what you need": "Search for what you need",
+	"Or go on to": "Or go on to",
+	"The homepage": "The homepage",
+	"Did you get here through a link on our website? Let us know through Contact, and we will repair the link.": "Did you get here through a link on our website? Let us know through Contact, and we will repair the link.",
+	"Contact": "Contact"
 }

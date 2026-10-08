@@ -127,6 +127,7 @@ const ContributionsBlock = defineAsyncComponent(
 const IntakeCatalogueBlock = defineAsyncComponent(
 	() => import('./IntakeCatalogueBlock.vue'),
 )
+const ContactForm = defineAsyncComponent(() => import('./ContactForm.vue'))
 const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
 const IntakeStatusBlock = defineAsyncComponent(
 	() => import('./IntakeStatusBlock.vue'),
@@ -228,6 +229,8 @@ const PUBLIC_WIDGETS = {
 	// and validate before anything is recorded; nothing here decides access.
 	intakeCatalogue: IntakeCatalogueBlock,
 	intakeForm: IntakeFormBlock,
+	// A resident's question without a case (contact-page-question-form-and-not-found).
+	contactForm: ContactForm,
 	intakeStatus: IntakeStatusBlock,
 	...nldsWidgets,
 	...siteBlockRegistry,
@@ -620,6 +623,21 @@ export default {
 			// this portal's catalogue or news (hero-on-the-school-boards).
 			if (widget.widgetKey === 'hero') {
 				return { ...props, portal: this.portal }
+			}
+
+			// The host names the portal, the session and the ways in; the
+			// author names the action and the wording (contactForm).
+			if (widget.widgetKey === 'contactForm') {
+				return {
+					...props,
+					portal: this.portal,
+					signedIn: this.signedIn === true,
+					ways: this.signInRoutes.map((r) => ({
+						id: r.mode,
+						label: r.label,
+						href: r.href,
+					})),
+				}
 			}
 
 			if (widget.widgetKey === 'nlSignIn') {

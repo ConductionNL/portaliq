@@ -851,6 +851,45 @@ class ContributionControllerTest extends TestCase {
 	}//end testCreateWithoutAnIdAndOneActionStillWorks()
 
 	/**
+	 * contact-page-question-form-and-not-found T02: after a stored create the
+	 * confirmation follow-on runs with the matched action and the stored values.
+	 *
+	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 */
+	public function testACreateHandsTheStoredValuesToTheConfirmationMail(): void {
+		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(['id' => 'new']);
+		$mailer = $this->createMock(\OCA\Portaliq\Service\Identity\ContactConfirmationMailer::class);
+		$mailer->expects($this->once())->method('afterCreate')->with(
+			$this->callback(static fn (array $subject): bool => ($subject['subjectRef'] ?? '') === self::SUBJECT['subjectRef']),
+			$this->callback(static fn (array $a): bool => ($a['confirmationMail'] ?? '') === 'contact-confirmation'),
+			$this->callback(static fn (array $data): bool => ($data['title'] ?? '') === 'X')
+		);
+
+		$response = $this->controller(aggregate: $this->aggregate(actions: [$action]), writer: $writer, confirmation: $mailer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testACreateHandsTheStoredValuesToTheConfirmationMail()
+
+	/**
+	 * A create that was not stored sends no confirmation.
+	 *
+	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 */
+	public function testAFailedCreateSendsNoConfirmation(): void {
+		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(null);
+		$mailer = $this->createMock(\OCA\Portaliq\Service\Identity\ContactConfirmationMailer::class);
+		$mailer->expects($this->never())->method('afterCreate');
+
+		$response = $this->controller(aggregate: $this->aggregate(actions: [$action]), writer: $writer, confirmation: $mailer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+	}//end testAFailedCreateSendsNoConfirmation()
+
+	/**
 	 * Two create actions writing the same schema with different defaults.
 	 *
 	 * @return array<string, mixed>
@@ -2529,6 +2568,7 @@ class ContributionControllerTest extends TestCase {
 		?CaseTypeVisibility $caseTypes = null,
 		array $params = [],
 		?PortalResolver $portals = null,
+		?\OCA\Portaliq\Service\Identity\ContactConfirmationMailer $confirmation = null,
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', '']]);
@@ -2587,7 +2627,8 @@ class ContributionControllerTest extends TestCase {
 			null,
 			null,
 			$caseTypes,
-			portals: $portals
+			portals: $portals,
+			confirmation: $confirmation
 		);
 
 	}//end controller()

@@ -83,12 +83,11 @@ class CmsCacheInvalidationListener implements IEventListener {
 	/**
 	 * Handle an OpenRegister object write.
 	 *
-	 * @listener-placement inline cache-drop — removes cache keys, no I/O to a service and no write; deferring it would leave the stale entry readable.
-	 *
 	 * @param Event $event The dispatched event.
 	 *
 	 * @return void
 	 *
+	 * @listener-placement inline cache-drop — removes cache keys, no I/O to a service and no write; deferring it would leave the stale entry readable.
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
 	 */
 	public function handle(Event $event): void {

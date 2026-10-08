@@ -415,5 +415,12 @@
 	"Your tasks could not be loaded.": "Uw taken konden niet worden geladen.",
 	"Expected decision": "Verwacht besluit",
 	"Ready by": "Uiterlijk klaar op",
-	"Next step: {step}": "Volgende stap: {step}"
+	"Next step: {step}": "Volgende stap: {step}",
+	"Error code 404": "Foutcode 404",
+	"This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.": "Deze pagina bestaat niet (meer). Misschien is het adres verkeerd getypt, of hebben wij de pagina verplaatst.",
+	"Search for what you need": "Zoek wat u nodig hebt",
+	"Or go on to": "Of ga verder naar",
+	"The homepage": "De homepage",
+	"Did you get here through a link on our website? Let us know through Contact, and we will repair the link.": "Kwam u hier via een link op onze website? Laat het ons weten via Contact, dan herstellen wij de link.",
+	"Contact": "Contact"
 }

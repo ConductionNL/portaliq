@@ -126,7 +126,12 @@ class CmsReader {
 	 */
 	private function lookup(string $key): mixed {
 		$hit = $this->cache->get($key);
-		$this->count(outcome: $hit === null ? 'misses' : 'hits');
+		$outcome = 'hits';
+		if ($hit === null) {
+			$outcome = 'misses';
+		}
+
+		$this->count(outcome: $outcome);
 
 		return $hit;
 	}//end lookup()

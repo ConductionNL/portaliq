@@ -138,6 +138,7 @@ const blockComponents = {
 	hero: 'src/site/components/HeroBlock.vue',
 	federatedSearch: 'src/site/components/FederatedSearchBlock.vue',
 	publicationDetail: 'src/site/components/PublicationDetailBlock.vue',
+	contactForm: 'src/site/components/ContactForm.vue',
 }
 const widgetProps = {}
 for (const [key, path] of Object.entries(blockComponents)) {
@@ -327,7 +328,7 @@ test('the Zuiddrecht site holds what the design shows', () => {
 	)
 	// Counts the installer's own test and the documentation name.
 	assert.equal(site.menus.length, 3)
-	assert.equal(site.pages.length, 33)
+	assert.equal(site.pages.length, 34)
 	assert.equal(site.news.length, 4)
 })
 

@@ -144,6 +144,8 @@ class ActionConfigNormaliser {
 			$action = $this->form->fitWidgets(action: $action);
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
+			// The mail a create sends the resident, and the field it names (contact-page-question-form-and-not-found).
+			$action = (new ConfirmationMailKeys())->normalise(action: $action, whitelist: $whitelist);
 			// What an endpoint row action asks for and when it is offered
 			// (case-actions-row-inputs-and-conditions).
 			$action = (new RowActionInputs())->normaliseAction(action: $action);

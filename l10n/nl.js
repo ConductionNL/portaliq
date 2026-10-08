@@ -2415,7 +2415,11 @@ OC.L10N.register(
         "The subject reference of whoever ended it.": "De onderwerpverwijzing van wie de machtiging heeft beëindigd.",
         "Valid until": "Geldig tot en met",
         "When it was ended.": "Wanneer de machtiging is beëindigd.",
-        "Who holds the mandate, typed: kvk: and eight digits for a company, or subject: and a reference for a person. Empty means the account in subjectRef.": "Wie de machtiging heeft, met type: kvk: en acht cijfers voor een bedrijf, of subject: en een verwijzing voor een persoon. Leeg betekent het account in subjectRef."
+        "Who holds the mandate, typed: kvk: and eight digits for a company, or subject: and a reference for a person. Empty means the account in subjectRef.": "Wie de machtiging heeft, met type: kvk: en acht cijfers voor een bedrijf, of subject: en een verwijzing voor een persoon. Leeg betekent het account in subjectRef.",
+        "We have received your question": "Wij hebben uw vraag ontvangen",
+        "Your question about %1$s has reached %2$s. You find it back under My questions.": "Uw vraag over %1$s is aangekomen bij %2$s. U vindt hem terug bij Mijn vragen.",
+        "Your question has reached %1$s. You find it back under My questions.": "Uw vraag is aangekomen bij %1$s. U vindt hem terug bij Mijn vragen.",
+        "Open My questions": "Mijn vragen openen"
     },
     "nplurals=2; plural=(n != 1);"
 )
