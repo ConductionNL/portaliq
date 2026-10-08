@@ -1004,7 +1004,8 @@
 		"dashboard-page",
 		"portal-page-provisioning",
 		"scaffold-components",
-		"site-portal-parity"
+		"site-portal-parity",
+		"configuration-initialization"
 	],
 	"providers": [
 		{
@@ -1827,8 +1828,8 @@
 			"note": "Decision 83 (7 Oct 2026): portaliq owns the public page for decidiq pub-14; decidiq contributes the record list (decidiq/portal-voting-record-and-confidential-papers). NotuBiz, iBabs and GO show this on their public council sites (decidiq matrix).",
 			"feature": "website-pages-and-menus",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet: no board draws a public voting record page; the change composes it from Contentpagina and Publicatie with the figures of DcPersoon's Stemgedrag tab"
+				"canvas": "design-system",
+				"board": "PtStemgedrag"
 			}
 		},
 		{
@@ -4246,8 +4247,11 @@
 			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (the handler asks from dossiq; no board draws it)"
+				"canvas": "design-system",
+				"board": [
+					"MijnTaken",
+					"TaakAfronden"
+				]
 			}
 		},
 		{
@@ -5166,8 +5170,8 @@
 			"feature": "submit-a-request",
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (the form embedded on another site)"
+				"canvas": "design-system",
+				"board": "PtFormulierInsluiten"
 			}
 		},
 		{
@@ -5204,8 +5208,8 @@
 			"feature": "submit-a-request",
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (the form embedded on another site)"
+				"canvas": "design-system",
+				"board": "PtFormulierInsluiten"
 			}
 		},
 		{
@@ -6281,8 +6285,8 @@
 			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (stackiq content on the portal)"
+				"canvas": "design-system",
+				"board": "PtRegioportaal"
 			}
 		},
 		{
@@ -9003,8 +9007,8 @@
 			"feature": "setup-and-settings",
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (the setup wizard)"
+				"canvas": "design-system",
+				"board": "PtInstellen"
 			}
 		},
 		{
@@ -9304,8 +9308,8 @@
 			"featureConfidence": "high",
 			"note": "Owners: ConductionNL/portaliq does the health reporting; ConductionNL/integriq owns the connection management UI.",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (general integrations page, see PqIntegrations for the pattern)"
+				"canvas": "design-system",
+				"board": "PtIntegraties"
 			}
 		},
 		{
@@ -9342,8 +9346,8 @@
 			"featureConfidence": "high",
 			"note": "Owners: ConductionNL/openregister is the engine; ConductionNL/portaliq aliases the routes and declares the manifest page.",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (general store page, see PqStore for the pattern)"
+				"canvas": "design-system",
+				"board": "PtStore"
 			}
 		},
 		{
@@ -10049,8 +10053,8 @@
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/409958",
 			"originNote": "TenderNed 409958: 'Client kan via het inwonerportaal verschillende gegevens (bv afschriften betalingsverkeer, of budgetplan) exporteren in PDF'",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (no board draws a PDF export)"
+				"canvas": "design-system",
+				"board": "PtGegevensPdf"
 			}
 		},
 		{
@@ -11382,8 +11386,8 @@
 			"origin": "roadmap",
 			"originUrl": "https://www.liferay.com/roadmap",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (no board draws a chat)"
+				"canvas": "design-system",
+				"board": "PtStemgedrag"
 			}
 		},
 		{
@@ -11421,8 +11425,8 @@
 			"origin": "roadmap",
 			"originUrl": "https://www.liferay.com/roadmap",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (shared blocks across portals)"
+				"canvas": "design-system",
+				"board": "PtGedeeldeBibliotheek"
 			}
 		},
 		{
@@ -11987,8 +11991,8 @@
 			"source": "spec-round-2026-10-08",
 			"feature": "languages-and-plain-language",
 			"screen": {
-				"board": null,
-				"reason": "on the design session's missing-boards list (for-design/portaliq-missing-boards.md)"
+				"canvas": "design-system",
+				"board": "PtStemgedrag"
 			}
 		},
 		{
@@ -12455,8 +12459,8 @@
 			"note": "Authoring the expression is buildiq's (form-calculation, forms-live-values-and-checks).",
 			"feature": "smart-forms",
 			"screen": {
-				"board": null,
-				"reason": "not drawn yet; on for-design/portaliq-missing-boards.md"
+				"canvas": "design-system",
+				"board": "PtFormulierPrijs"
 			}
 		},
 		{
@@ -12934,8 +12938,8 @@
 			"note": "Needs integriq's broker to offer a Yivi route (CROSS).",
 			"feature": "identity-in-forms",
 			"screen": {
-				"board": null,
-				"reason": "not drawn yet; on for-design/portaliq-missing-boards.md"
+				"canvas": "design-system",
+				"board": "PtFormulierYivi"
 			}
 		},
 		{
@@ -13190,8 +13194,8 @@
 			"note": "Taking the price from the catalogue changes intake-pay-on-submit's rule that the portal holds no price: needs Ruben's call (see the change's proposal).",
 			"feature": "smart-forms",
 			"screen": {
-				"board": null,
-				"reason": "the resident's variant choice is not drawn yet (PtProduct draws the Kosten block an editor fills); on for-design/portaliq-missing-boards.md"
+				"canvas": "design-system",
+				"board": "PtFormulierPrijs"
 			}
 		}
 	],
@@ -13274,6 +13278,10 @@
 		"site-portal-parity": {
 			"board": null,
 			"reason": "Moves the old portal onto the site; every capability it moves is drawn on its own board."
+		},
+		"configuration-initialization": {
+			"board": null,
+			"reason": "Example spec of the app template: a repair step that writes default settings, with no screen."
 		}
 	}
 }
