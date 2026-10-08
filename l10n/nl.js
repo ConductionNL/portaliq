@@ -2298,6 +2298,7 @@ OC.L10N.register(
         "The subject line of the conversation.": "De onderwerpregel van het gesprek.",
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "De woorden die dat record noemen, overgenomen als het gesprek begint, zoals Vera, Groep 7.",
         "With": "Met",
+        "You are not allowed to do this. Ask an administrator for access.": "Je mag dit niet doen. Vraag een beheerder om toegang.",
         "Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
     },
     "nplurals=2; plural=(n != 1);"

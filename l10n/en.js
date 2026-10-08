@@ -2235,6 +2235,7 @@ OC.L10N.register(
         "The subject line of the conversation.": "The subject line of the conversation.",
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "The words that name that record, copied when the thread is started, such as Vera, Groep 7.",
         "With": "With",
+        "You are not allowed to do this. Ask an administrator for access.": "You are not allowed to do this. Ask an administrator for access.",
         "Only on this demo. No password is asked.": "Only on this demo. No password is asked."
     },
     "nplurals=2; plural=(n != 1);"
