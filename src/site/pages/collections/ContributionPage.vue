@@ -399,9 +399,11 @@
 				:record="activeRecord"
 				:api="api"
 				:level="sectionLevel"
+				:route="item.block.page ? tileTarget(item.block).route || '' : ''"
 				:t="tr"
 				:locale="lang"
-				:today="today || undefined" />
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)" />
 
 			<DocumentsBlock
 				v-else-if="item.kind === 'documents'"

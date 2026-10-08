@@ -236,6 +236,31 @@ class PortalBlockResolverTest extends TestCase {
 	}//end testAStepsBlockMayDrawAsBars()
 
 	/**
+	 * A steps block may draw the step that matters now as a highlight, with a
+	 * button to a page of its own contribution only (steps-highlight).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+	 */
+	public function testAStepsBlockMayDrawAHighlight(): void {
+		$declared = [
+			'type'        => 'steps',
+			'collection'  => 'zaken',
+			'display'     => 'highlight',
+			'eyebrow'     => ' Volgende stap ',
+			'buttonLabel' => 'Zelfbeoordeling afmaken',
+			'page'        => 'overzicht',
+			'withRecord'  => true,
+		];
+		$this->assertSame(
+			[['display' => 'highlight', 'eyebrow' => 'Volgende stap', 'buttonLabel' => 'Zelfbeoordeling afmaken', 'page' => 'overzicht', 'withRecord' => true, 'type' => 'steps', 'collection' => 'zaken']],
+			$this->blocks(blocks: [$declared], record: 'zaken')
+		);
+		$this->assertArrayNotHasKey('page', $this->blocks(blocks: [['page' => 'elders'] + $declared], record: 'zaken')[0]);
+	}//end testAStepsBlockMayDrawAHighlight()
+
+	/**
 	 * A documents and a timeline block read their collection's provider of
 	 * the same name, and stay only on that collection's record page
 	 * (site-mijn-omgeving-components REQ-SMO-021, wave 4).
