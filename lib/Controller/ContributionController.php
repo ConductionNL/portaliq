@@ -52,6 +52,7 @@ use OCA\Portaliq\Contribution\CreateBody;
 use OCA\Portaliq\Contribution\CreateActionMatcher;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
@@ -67,6 +68,7 @@ use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
@@ -168,6 +170,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param PortalUserDisplayNames $userNames Reads a `render: "user"` column as the user's name.
 	 * @param CaseTypeNames|null $typeNames Names each case's type on a `cases` collection
 	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
+	 * @param PortalResolver|null $portals Finds the serving portal, for its navigation choice.
+	 *                                     Absent leaves the navigation as the aggregate has it.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -191,6 +195,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
 		private readonly ?CaseTypeNames $typeNames = null,
+		private readonly ?PortalResolver $portals = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -330,6 +335,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$aggregate = $this->registry->aggregateFor($subject);
+		$aggregate = $this->withPortalNavigation(aggregate: $aggregate);
 		$aggregate['unreadCount'] = $this->inboxReader->unreadCount(subject: $subject, aggregate: $aggregate);
 		// Announce the "Mijn taken" surface (portal-task-delivery) for
 		// AUTHENTICATED subjects only — the anonymous aggregate above never
@@ -343,6 +349,37 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse($aggregate);
 	}//end index()
+
+	/**
+	 * Apply the serving portal's navigation choice for the subject's audience:
+	 * hidden pages dropped, listed pages ordered. This is presentation only, so
+	 * it sits here, where the request and so the portal are known, and not in
+	 * the aggregate the collection routes authorise against.
+	 *
+	 * @param array<string, mixed> $aggregate The subject's aggregate.
+	 *
+	 * @return array<string, mixed> The aggregate as this portal shows it.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
+	 */
+	private function withPortalNavigation(array $aggregate): array {
+		if ($this->portals === null) {
+			return $aggregate;
+		}
+
+		$slug = $this->request->getParam('portal');
+		if (is_string($slug) === false) {
+			$slug = null;
+		}
+
+		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		$navigation = $portal['navigation'][(string)($aggregate['audience'] ?? '')] ?? null;
+		if (is_array($navigation) === false) {
+			return $aggregate;
+		}
+
+		return (new PageChoice())->arrange(aggregate: $aggregate, navigation: $navigation);
+	}//end withPortalNavigation()
 
 	/**
 	 * The subject's unified inbox: every `kind: inbox` collection across ALL

@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -63,6 +64,13 @@ class PortalContributionRegistry {
 	private readonly PortalProviderLocator $locator;
 
 	/**
+	 * The hidden pages of each account read so far, by subject reference.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private array $hiddenByRef = [];
+
+	/**
 	 * Constructor.
 	 *
 	 * `$container` is deliberately NOT promoted to a property: since the provider
@@ -77,6 +85,7 @@ class PortalContributionRegistry {
 	 * @param LoggerInterface $logger The logger.
 	 * @param PortalManifestNormaliser $normaliser The fail-closed v3 UI-config sanitiser.
 	 * @param PortalProviderLocator|null $locator Provider lookup; built from the above when null.
+	 * @param PortalAccountLookup|null $accounts Reads the account's hidden pages; none hides nothing.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -84,6 +93,7 @@ class PortalContributionRegistry {
 		private readonly LoggerInterface $logger,
 		private readonly PortalManifestNormaliser $normaliser = new PortalManifestNormaliser(),
 		?PortalProviderLocator $locator = null,
+		private readonly ?PortalAccountLookup $accounts = null,
 	) {
 		$this->locator = ($locator ?? new PortalProviderLocator($appManager, $container, $logger));
 	}//end __construct()
@@ -163,12 +173,47 @@ class PortalContributionRegistry {
 		// points D3) resolve across contributions, so only once all are in.
 		$contributions = (new AttachedActionResolver())->resolve(contributions: $contributions);
 
-		return [
+		$aggregate = [
 			'audience' => $audience,
 			'organisation' => (string)($subject['organisation'] ?? ''),
 			'contributions' => $contributions,
 		];
+
+		// The pages a clerk hid for this account, and the collections only
+		// those pages showed (operate-pages-per-portal-and-client REQ-PGC-002).
+		return (new PageChoice())->withoutHidden(aggregate: $aggregate, hidden: $this->hiddenPagesOf(subject: $subject));
 	}//end aggregateFor()
+
+	/**
+	 * The pages hidden for this subject's account, read once per request.
+	 * An account that cannot be read hides nothing.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array<int, string> `<app>:<pageId>` entries.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
+	 */
+	private function hiddenPagesOf(array $subject): array {
+		$ref = (string)($subject['subjectRef'] ?? '');
+		if ($this->accounts === null || $ref === '') {
+			return [];
+		}
+
+		if (array_key_exists($ref, $this->hiddenByRef) === false) {
+			$hidden = [];
+			try {
+				$account = $this->accounts->bySubjectRef(subjectRef: $ref);
+				$hidden  = (array)($account['hiddenPages'] ?? []);
+			} catch (Throwable $e) {
+				$this->logger->warning('Portaliq: hidden pages not read', ['reason' => $e->getMessage()]);
+			}
+
+			$this->hiddenByRef[$ref] = array_values(array_filter($hidden, 'is_string'));
+		}
+
+		return $this->hiddenByRef[$ref];
+	}//end hiddenPagesOf()
 
 
 	/**

@@ -2350,7 +2350,14 @@ OC.L10N.register(
         "Who may answer": "Wie mag aanmelden",
         "Who may answer for a child: guardian, learner, or both. Without it only a guardian answers.": "Wie voor een kind mag aanmelden: ouder, leerling of beide. Zonder deze keuze meldt alleen een ouder aan.",
         "Where": "Waar",
-        "Where the event takes place, in words, such as the hall and the address.": "Waar de activiteit plaatsvindt, in woorden, zoals de zaal en het adres."
+        "Where the event takes place, in words, such as the hall and the address.": "Waar de activiteit plaatsvindt, in woorden, zoals de zaal en het adres.",
+        "Hidden": "Verborgen",
+        "Navigation": "Navigatie",
+        "Pages hidden for this client": "Pagina's verborgen voor deze klant",
+        "Pages of the installed apps this account does not see, as app:pageId. A hidden page also closes the collections only that page shows, so the account cannot read those records through the API either. Staff set it; the account holder cannot change it.": "Pagina's van de geïnstalleerde apps die dit account niet ziet, als app:paginaId. Een verborgen pagina sluit ook de verzamelingen die alleen die pagina toont, zodat het account die gegevens ook niet via de API kan lezen. Medewerkers stellen dit in; de accounthouder kan het niet wijzigen.",
+        "The page as app:pageId.": "De pagina als app:paginaId.",
+        "Whether the page is left out of the navigation.": "Of de pagina uit de navigatie wordt weggelaten.",
+        "Which pages of the installed apps this portal shows, and in which order, per audience. Each audience maps to a list of pages as app:pageId with hidden true or false. A page not in the list stays visible after the listed ones, so a newly installed app is never hidden by an older choice. Hiding a page here is not access control: the records stay readable by an account that may see them on another portal.": "Welke pagina's van de geïnstalleerde apps dit portaal toont, en in welke volgorde, per doelgroep. Elke doelgroep heeft een lijst pagina's als app:paginaId met verborgen waar of onwaar. Een pagina die niet in de lijst staat, blijft zichtbaar na de genoemde pagina's, zodat een nieuw geïnstalleerde app nooit door een oudere keuze wordt verborgen. Een pagina hier verbergen is geen toegangsbeveiliging: de gegevens blijven leesbaar voor een account dat ze op een ander portaal mag zien."
     },
     "nplurals=2; plural=(n != 1);"
 )

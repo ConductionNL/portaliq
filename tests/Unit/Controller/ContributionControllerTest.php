@@ -114,6 +114,56 @@ class ContributionControllerTest extends TestCase {
 	}//end testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject()
 
 	/**
+	 * A portal's navigation choice hides and orders the pages of the portal that serves the request.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t02
+	 */
+	public function testPortalNavigationHidesAndOrdersPages(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'organisation' => 'org-1',
+			'contributions' => [[
+				'app' => 'pipelinq',
+				'pages' => [['id' => 'quotes'], ['id' => 'invoices'], ['id' => 'cases']],
+				'collections' => [],
+			]],
+		];
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn([
+			'slug' => 'open-tilburg',
+			'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true], ['page' => 'pipelinq:cases'], ['page' => 'pipelinq:invoices']]],
+		]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals)->index()->getData();
+
+		$this->assertSame(['cases', 'invoices'], array_column($data['contributions'][0]['pages'], 'id'));
+	}//end testPortalNavigationHidesAndOrdersPages()
+
+	/**
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t02
+	 */
+	public function testUnlistedPageKeepsItsPlaceAndNoChoiceAnswersAsToday(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'organisation' => 'org-1',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [['id' => 'quotes'], ['id' => 'documents']], 'collections' => []]],
+		];
+
+		$hidingOther = $this->createMock(PortalResolver::class);
+		$hidingOther->method('resolve')->willReturn(['slug' => 'p', 'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+		$this->assertSame(['documents'], array_column($this->controller(aggregate: $aggregate, portals: $hidingOther)->index()->getData()['contributions'][0]['pages'], 'id'));
+
+		$forOtherAudience = $this->createMock(PortalResolver::class);
+		$forOtherAudience->method('resolve')->willReturn(['slug' => 'p', 'navigation' => ['supplier' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+		$this->assertSame(['quotes', 'documents'], array_column($this->controller(aggregate: $aggregate, portals: $forOtherAudience)->index()->getData()['contributions'][0]['pages'], 'id'), 'another audience\'s choice does not apply');
+
+		$noPortal = $this->createMock(PortalResolver::class);
+		$noPortal->method('resolve')->willReturn(null);
+		$this->assertSame(['quotes', 'documents'], array_column($this->controller(aggregate: $aggregate, portals: $noPortal)->index()->getData()['contributions'][0]['pages'], 'id'));
+		$this->assertSame(['quotes', 'documents'], array_column($this->controller(aggregate: $aggregate)->index()->getData()['contributions'][0]['pages'], 'id'));
+	}//end testUnlistedPageKeepsItsPlaceAndNoChoiceAnswersAsToday()
+
+	/**
 	 * cases-my-cases-page REQ-CMC-001: the contributions answer announces the
 	 * "My cases" page when any contribution declares a `kind: cases`
 	 * collection, and whether any of those declares a closed marker (the
@@ -2478,6 +2528,7 @@ class ContributionControllerTest extends TestCase {
 		?PortalSchemaReader $schemaReader = null,
 		?CaseTypeVisibility $caseTypes = null,
 		array $params = [],
+		?PortalResolver $portals = null,
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', '']]);
@@ -2535,7 +2586,8 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			null,
 			null,
-			$caseTypes
+			$caseTypes,
+			portals: $portals
 		);
 
 	}//end controller()

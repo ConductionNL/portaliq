@@ -2287,7 +2287,14 @@ OC.L10N.register(
         "Who may answer": "Who may answer",
         "Who may answer for a child: guardian, learner, or both. Without it only a guardian answers.": "Who may answer for a child: guardian, learner, or both. Without it only a guardian answers.",
         "Where": "Where",
-        "Where the event takes place, in words, such as the hall and the address.": "Where the event takes place, in words, such as the hall and the address."
+        "Where the event takes place, in words, such as the hall and the address.": "Where the event takes place, in words, such as the hall and the address.",
+        "Hidden": "Hidden",
+        "Navigation": "Navigation",
+        "Pages hidden for this client": "Pages hidden for this client",
+        "Pages of the installed apps this account does not see, as app:pageId. A hidden page also closes the collections only that page shows, so the account cannot read those records through the API either. Staff set it; the account holder cannot change it.": "Pages of the installed apps this account does not see, as app:pageId. A hidden page also closes the collections only that page shows, so the account cannot read those records through the API either. Staff set it; the account holder cannot change it.",
+        "The page as app:pageId.": "The page as app:pageId.",
+        "Whether the page is left out of the navigation.": "Whether the page is left out of the navigation.",
+        "Which pages of the installed apps this portal shows, and in which order, per audience. Each audience maps to a list of pages as app:pageId with hidden true or false. A page not in the list stays visible after the listed ones, so a newly installed app is never hidden by an older choice. Hiding a page here is not access control: the records stay readable by an account that may see them on another portal.": "Which pages of the installed apps this portal shows, and in which order, per audience. Each audience maps to a list of pages as app:pageId with hidden true or false. A page not in the list stays visible after the listed ones, so a newly installed app is never hidden by an older choice. Hiding a page here is not access control: the records stay readable by an account that may see them on another portal."
     },
     "nplurals=2; plural=(n != 1);"
 )

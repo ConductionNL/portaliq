@@ -1043,6 +1043,17 @@
                         "format": "date-time",
                         "description": "When the owner's removal request was carried out.",
                         "example": "2026-09-18T12:00:00+00:00"
+                    },
+                    "hiddenPages": {
+                        "title": "Pages hidden for this client",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Pages of the installed apps this account does not see, as app:pageId. A hidden page also closes the collections only that page shows, so the account cannot read those records through the API either. Staff set it; the account holder cannot change it.",
+                        "example": [
+                            "pipelinq:invoices"
+                        ]
                     }
                 }
             },
@@ -4190,6 +4201,33 @@
                         "description": "Whether a visitor's search also reads the text inside public documents. On by default. Switch it off when the catalogue should match titles and metadata only. Only the published, redacted copy of a document is ever searched.",
                         "default": true,
                         "example": true
+                    },
+                    "navigation": {
+                        "title": "Navigation",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "Which pages of the installed apps this portal shows, and in which order, per audience. Each audience maps to a list of pages as app:pageId with hidden true or false. A page not in the list stays visible after the listed ones, so a newly installed app is never hidden by an older choice. Hiding a page here is not access control: the records stay readable by an account that may see them on another portal.",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "page"
+                                ],
+                                "properties": {
+                                    "page": {
+                                        "type": "string",
+                                        "title": "Page",
+                                        "description": "The page as app:pageId."
+                                    },
+                                    "hidden": {
+                                        "type": "boolean",
+                                        "title": "Hidden",
+                                        "description": "Whether the page is left out of the navigation."
+                                    }
+                                }
+                            }
+                        }
                     },
                     "registeredDetails": {
                         "title": "My details forms",
