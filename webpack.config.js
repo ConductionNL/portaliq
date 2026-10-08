@@ -29,6 +29,16 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'settings.js'),
 		filename: appId + '-settings.js',
 	},
+	// The CLIENT half of portaliq's OpenRegister leaves (change-proposal-queue).
+	// OpenRegister's LeafScriptListener enqueues `portaliq-leaves` on the pages
+	// of other apps that consume OpenRegister, and SKIPS the app in silence when
+	// `js/portaliq-leaves.js` is absent. Never fold it into `main`: that bundle
+	// is the whole admin SPA. It is also kept out of the shared chunks below,
+	// because nothing loads those on another app's page.
+	leaves: {
+		import: path.join(__dirname, 'src', 'leaves.js'),
+		filename: appId + '-leaves.js',
+	},
 }
 
 // Use local source when explicitly opted in, otherwise the npm package.
@@ -125,7 +135,20 @@ webpackConfig.resolve.alias = {
 		__dirname,
 		'node_modules/@nextcloud/vue/dist/index.mjs',
 	),
-	'@nextcloud/dialogs': path.resolve(__dirname, 'node_modules/@nextcloud/dialogs'),
+	// Same ESM-only shape as @nextcloud/vue above: the exports map has
+	// '.' -> ./dist/index.mjs and there is no `main`/`module`, so this package
+	// must be aliased to a FILE or not at all. A directory alias resolves
+	// neither request: webpack stops honouring `exports` the moment an alias
+	// hands it an absolute path, so the bare specifier died on "Can't resolve
+	// '@nextcloud/dialogs'" and 'dialogs/style.css' died with it — measured
+	// with the project's own enhanced-resolve across all four configurations.
+	// The directory alias that used to sit here was the cause, not a fallback,
+	// and it protected nothing: there is exactly one copy of the package in
+	// the tree, so the block's dedupe intent needs no alias for subpaths.
+	'@nextcloud/dialogs$': path.resolve(
+		__dirname,
+		'node_modules/@nextcloud/dialogs/dist/index.mjs',
+	),
 	// Force the lib's transitive @nextcloud/axios import to resolve to
 	// the app's installed copy. Without the `$` exact-match suffix,
 	// webpack would walk up to the lib's own node_modules and load a
@@ -134,9 +157,10 @@ webpackConfig.resolve.alias = {
 	'@nextcloud/axios$': path.resolve(__dirname, 'node_modules/@nextcloud/axios'),
 }
 
-// This app emits THREE independent bundles into the SAME `js/` directory:
-// the Vue admin SPA (this config), the React public portal
-// (webpack.portal.js) and the Vue site renderer (webpack.site.js).
+// This app emits independent bundles into the SAME `js/` directory: the Vue
+// admin SPA (this config), the Vue site renderer (webpack.site.js) and the
+// traffic client (webpack.traffic.js). The React portal's own build
+// was the third until it retired (site-reaches-portal-parity).
 // @nextcloud/webpack-vue-config sets `output.clean: true`, so the admin build
 // WIPES js/ — including bundles only the other configs ever write.
 //
@@ -144,17 +168,19 @@ webpackConfig.resolve.alias = {
 // Anything that rebuilds the admin bundle alone — `npm run build:admin`,
 // `npm run watch` — silently deletes the others, and the affected page then
 // serves a bare mount `<div>` with a 404 on its script and NO console error.
-// The other two configs set `clean: false` to protect this side; this is the
+// The other configs set `clean: false` to protect this side; this is the
 // missing other half.
 //
 // EVERY foreign entry must be listed. It was not: the site renderer was added
 // after this guard and never added to it, so `build:admin` deleted
 // `portaliq-site.js` and `/site` rendered an empty div — silently, because a
 // script that 404s produces no console error and an unmounted Vue app logs
-// nothing. Keep this in step with the `entry` blocks of webpack.portal.js and
-// webpack.site.js.
+// nothing. Keep this in step with the `entry` blocks of webpack.site.js and
+// webpack.traffic.js: the site, its editor, the embed frame and the traffic
+// client, each with its `.map` and its lazy chunks (`portaliq-site-…`,
+// `portaliq-site-editor-…`, `portaliq-embed-…`).
 webpackConfig.output.clean = {
-	keep: /^portaliq-(portal|site)\.js/,
+	keep: /^portaliq-(site|embed|traffic)[.-]/,
 }
 
 // Add SCSS rule to the existing module rules
@@ -196,7 +222,8 @@ webpackConfig.optimization = {
 	...(webpackConfig.optimization || {}),
 	splitChunks: {
 		...(webpackConfig.optimization?.splitChunks || {}),
-		chunks: 'all',
+		// Every entry but `leaves`, which must run alone on a foreign page.
+		chunks: (chunk) => chunk.name !== 'leaves',
 		cacheGroups: {
 			default: false,
 			defaultVendors: false,

@@ -29,6 +29,7 @@
 		:customComponents="customComponents"
 		:pageTypes="pageTypes"
 		:registry="registry"
+		:cellWidgets="cellWidgets"
 		appId="portaliq"
 		:translate="translateForApp"
 		:permissions="permissions"
@@ -77,6 +78,7 @@ import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { translate as ncT } from '@nextcloud/l10n'
 import { NcAppSettingsSection } from '@nextcloud/vue'
 import { reactive } from 'vue'
+import NewsTargetCell from './cellRenderers/NewsTargetCell.vue'
 
 export default {
 	name: 'App',
@@ -151,8 +153,17 @@ export default {
 		},
 	},
 
+	/**
+	 * Component state: the object sidebar channel.
+	 *
+	 * @return {object} The state.
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-004-an-admin-reads-the-connections-on-an-integrations-page
+	 */
 	data() {
 		return {
+			// Column widgets by id, for `columns[].widget` in the manifest:
+			// `news-target` shows who a news item is for (staff-news-screen).
+			cellWidgets: { 'news-target': NewsTargetCell },
 			objectSidebarState: reactive({
 				active: false,
 				open: true,

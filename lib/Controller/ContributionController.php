@@ -27,9 +27,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
- * @spec openspec/changes/contract-v2/tasks.md#T3
- * @spec openspec/changes/contract-v2/tasks.md#T5
- * @spec openspec/changes/contract-v2/tasks.md#T8
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
@@ -47,11 +47,21 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\ActionScopeResolver;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
+use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Service\CaseTypeNames;
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
+use OCA\Portaliq\Service\PortalCrossRefGuard;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
@@ -60,6 +70,9 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\PortalUserDisplayNames;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -93,6 +106,8 @@ use Psr\Log\LoggerInterface;
  * endpoint (appinfo/routes.php); the count tracks the API surface, not
  * incidental complexity.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- see ExcessiveParameterList.
+ * @SuppressWarnings(PHPMD.TooManyMethods)           -- see TooManyPublicMethods: each
+ * routed endpoint keeps its own guard beside it.
  */
 class ContributionController extends Controller implements PortalProtected {
 	/**
@@ -136,6 +151,23 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                            existing construction sites and
 	 *                                            tests keep working; absent reads
 	 *                                            as "no tasks surface".
+	 * @param PortalCrossRefGuard|null $crossRefs Checks that a declared cross
+	 *                                            reference resolves inside the
+	 *                                            subject's own scope
+	 *                                            (portal-create-cross-refs).
+	 *                                            Optional at the construction
+	 *                                            site only: absent is built in
+	 *                                            crossRefGuard(), never skipped,
+	 *                                            because it is a guard.
+	 * @param CaseTypeVisibility|null $caseTypes The case types the serving
+	 *                                           portal hides from a `cases`
+	 *                                           collection
+	 *                                           (operate-show-per-case-type).
+	 *                                           Absent hides nothing.
+	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
+	 * @param PortalUserDisplayNames $userNames Reads a `render: "user"` column as the user's name.
+	 * @param CaseTypeNames|null $typeNames Names each case's type on a `cases` collection
+	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -154,9 +186,30 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly NotificationDispatchService $notificationDispatch,
 		private readonly LoggerInterface $logger,
 		private readonly ?PortalTaskGateway $taskGateway = null,
+		private readonly ?PortalCrossRefGuard $crossRefs = null,
+		private readonly ?CaseTypeVisibility $caseTypes = null,
+		private readonly PortalBranchScope $branches = new PortalBranchScope(),
+		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
+		private readonly ?CaseTypeNames $typeNames = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * The cross-reference guard, built here when it was not injected.
+	 *
+	 * It is never skipped when absent, unlike the other optional collaborators
+	 * on this controller. This one IS a guard: an instance that did not inject
+	 * it would otherwise write unchecked references, which is the defect the
+	 * guard exists to close. Its two dependencies are already held here.
+	 *
+	 * @return PortalCrossRefGuard The guard.
+	 *
+	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 */
+	private function crossRefGuard(): PortalCrossRefGuard {
+		return ($this->crossRefs ?? new PortalCrossRefGuard(reader: $this->reader, logger: $this->logger));
+	}//end crossRefGuard()
 
 	/**
 	 * Perform an ownership-scoped write and translate every way it can fail.
@@ -259,6 +312,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -283,6 +337,9 @@ class ContributionController extends Controller implements PortalProtected {
 		// (openregister installed + signing secret configured), so the SPA
 		// never shows a task entry that can only answer unavailable.
 		$aggregate['tasks'] = ['enabled' => ($this->taskGateway?->isAvailable() === true)];
+		// Announce "My cases" (cases-my-cases-page REQ-CMC-001) and whether
+		// any case collection can tell a closed case from an open one.
+		$aggregate['cases'] = (new CaseRowMarker())->announce(aggregate: $aggregate);
 
 		return new JSONResponse($aggregate);
 	}//end index()
@@ -324,7 +381,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 * any write), and the write goes through PortalObjectWriter::updateObject()
 	 * with a LITERAL `['read' => true]` payload — never the request body — so
 	 * no other field can ever be written through this endpoint regardless of
-	 * what a client sends. updateObject() re-verifies ownership (scopeField +
+	 * what a client sends. A collection that names its own read date in
+	 * `messageFields.readAt` gets the current time in that one field instead. updateObject() re-verifies ownership (scopeField +
 	 * tenant) against OpenRegister BEFORE writing, so a foreign-owned or
 	 * non-existent id yields the SAME 404 as every other scoped write — no
 	 * existence oracle.
@@ -336,6 +394,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The updated message, or 401 / 403 / 404.
 	 *
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -373,8 +432,14 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		// The LITERAL payload — never the request body. Whatever extra fields a
-		// client sends are simply never read, so `read` is the only field this
+		// client sends are simply never read, so `read` (or the collection's
+		// own read date, messageFields.readAt) is the only field this
 		// endpoint can ever change.
+		$fields = new InboxMessageFields();
+		$payload = $fields->readPayload(
+			collection: $fields->normalise(collection: $collection),
+			now: gmdate(format: 'Y-m-d\TH:i:s\Z')
+		);
 		$updated = $this->writeScoped(
 			register: $register,
 			schema: $schema,
@@ -382,7 +447,7 @@ class ContributionController extends Controller implements PortalProtected {
 			subjectRef: $scopeValue,
 			organisation: (string)($subject['organisation'] ?? ''),
 			id: $id,
-			data: ['read' => true],
+			data: $payload,
 			context: 'markRead'
 		);
 		if ($updated instanceof JSONResponse) {
@@ -391,6 +456,76 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['object' => $updated]);
 	}//end markRead()
+
+	/**
+	 * Delete ONE of the resident's own inbox messages. The (register, schema)
+	 * must resolve to an inbox the subject may read (the same guard as
+	 * markRead()). Portaliq's own notices may always be deleted; an app's
+	 * inbox only when its collection declares `deletable: true`, because the
+	 * message is that app's record. The trust level is re-checked, and the
+	 * writer deletes the row only when it is the subject's alone (scope field
+	 * and tenant, never a row shared with someone else), so another
+	 * resident's message answers the same 404 as one that does not exist.
+	 *
+	 * @param string $register The register of the inbox collection.
+	 * @param string $schema The schema of the inbox collection.
+	 * @param string $id The message id (never trusted; ownership re-checked server-side).
+	 *
+	 * @return JSONResponse `{deleted: true}`, or 401 / 403 / 404.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function deleteMessage(string $register, string $schema, string $id): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+		if (PortalInboxReader::residentMayDelete(collection: $collection) === false
+			|| PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
+		) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$scopeValue = $this->reader->resolveScopeValue(
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			subject: $subject
+		);
+		if ($scopeValue === null || $scopeValue === '') {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		try {
+			$deleted = $this->writer->deleteObject(
+				register: $register,
+				schema: $schema,
+				scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+				subjectRef: $scopeValue,
+				organisation: (string)($subject['organisation'] ?? ''),
+				id: $id
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error('deleteMessage failed: ' . $e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		if ($deleted === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse(['deleted' => true]);
+	}//end deleteMessage()
 
 	/**
 	 * Find a `kind: inbox` collection matching (register, schema) in the
@@ -406,14 +541,23 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return array{collection: array<string, mixed>, app: string}|null
 	 *
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
 	 */
 	private function authorisedInboxCollection(array $subject, string $register, string $schema, string $collectionId = ''): ?array {
 		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || ($match['collection']['kind'] ?? '') !== 'inbox') {
-			return null;
+		if ($match !== null && ($match['collection']['kind'] ?? '') === 'inbox') {
+			return $match;
 		}
 
-		return $match;
+		// Portaliq's own notices are an inbox source of every resident
+		// (PortalInboxReader::OWN_MESSAGES), declared or not. The write that
+		// follows is still scoped on the bearer's own subjectRef.
+		$own = PortalInboxReader::OWN_MESSAGES;
+		if ($match === null && $register === $own['register'] && $schema === $own['schema'] && in_array($collectionId, ['', $own['id']], true) === true) {
+			return ['collection' => $own, 'app' => 'portaliq'];
+		}
+
+		return null;
 	}//end authorisedInboxCollection()
 
 	/**
@@ -432,9 +576,9 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The subject's rows, or 401 / 403.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T05
-	 * @spec openspec/changes/contract-v2/tasks.md#T3
-	 * @spec openspec/changes/contract-v2/tasks.md#T5
-	 * @spec openspec/changes/field-projection/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T2
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -484,8 +628,36 @@ class ContributionController extends Controller implements PortalProtected {
 			filter: (array)($collection['filter'] ?? [])
 		);
 
+		// Change signin-eherkenning-branch D2: a branch session sees its branch only.
+		$objects = $this->branches->rows(subject: $subject, collection: $collection, rows: $objects);
+
+		// A row waits until its moment has passed on the server clock
+		// (site-school-blocks, `visibleFromField`).
+		$objects = (new VisibleFromGate())->rows(rows: $objects, collection: $collection);
+
+		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
+		if ($hidden !== []) {
+			// A case of a type this portal does not show leaves the list
+			// (operate-show-per-case-type REQ-OSC-002).
+			$objects = array_values(
+				array_filter(
+					$objects,
+					fn ($row): bool => (is_array($row) === false || $this->caseTypes?->rowIsHidden(row: $row, collection: $collection, hidden: $hidden) !== true)
+				)
+			);
+		}
+
+		// A `render: "user"` column answers the user's name, never the user id
+		// (contribution-user-display-name).
+		$objects = $this->userNames->rows(rows: $objects, collection: $collection);
+
+		// A case card names its case's type, as Mijn zaken does
+		// (site-mijn-omgeving-components REQ-SMO-030).
+		$objects = ($this->typeNames?->stampRows(rows: $objects, collection: $collection) ?? $objects);
+
 		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
 	}//end collection()
+
 
 	/**
 	 * Find the collection matching (register, schema) in the subject's
@@ -548,7 +720,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The subject's object, or 401 / 403 / 404.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
 	 * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
 	 */
 	#[PublicPage]
@@ -586,11 +758,19 @@ class ContributionController extends Controller implements PortalProtected {
 			contributingApp: $match['app'],
 			via: ($collection['via'] ?? null),
 			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
+			fields: ($collection['fields'] ?? null),
+			filter: (array)($collection['filter'] ?? [])
 		);
 
 		// Null = not the subject's OR does not exist — a single 404, no oracle.
-		if ($object === null) {
+		// A case of a type the serving portal hides answers the same 404
+		// (operate-show-per-case-type REQ-OSC-002).
+		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
+		if ($object === null
+			|| (new VisibleFromGate())->rows(rows: [$object], collection: $collection) === []
+			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
+			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
+		) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -600,6 +780,8 @@ class ContributionController extends Controller implements PortalProtected {
 		if (($collection['filesDownload'] ?? false) === true) {
 			$object['_files'] = $this->fileReader->listFiles(register: $register, schema: $schema, id: $id);
 		}
+
+		$object = $this->userNames->row(row: $object, collection: $collection);
 
 		return new JSONResponse(['object' => $object]);
 	}//end object()
@@ -887,7 +1069,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The created object, or 401 / 403 / 502.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T06
-	 * @spec openspec/changes/contract-v2/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
@@ -902,6 +1084,12 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$match = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
+		if ($match === CreateActionMatcher::AMBIGUOUS) {
+			// Two or more create actions write this schema and the client
+			// named none: refuse rather than guess (create-names-its-action).
+			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
+		}
+
 		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
@@ -914,26 +1102,39 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
+		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
+		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
 
-		// A declared action `defaults` map is stamped server-side over the
-		// whitelisted client payload. It carries values the client must not choose
-		// — notably a supertype discriminator (pipelinq's `ticketType`), which is
-		// required by the schema but is never a client-editable field. Applied
-		// AFTER the whitelist so a client can never override it.
-		foreach ((array)($action['defaults'] ?? []) as $key => $value) {
-			if (is_string($key) === true && $key !== '') {
-				$data[$key] = $value;
-			}
+		// The body's own checks, before the stamp and any write. First the
+		// action's required fields (REQ-SMF-024): an empty one answers 400
+		// before anything reads the store. Then the cross-reference guard
+		// (portal-create-cross-refs): every field the action declares as a
+		// reference has to resolve inside the subject's own scope, else a uuid
+		// in a create body is accepted as typed, which is how a citizen could
+		// file an objection against somebody else's case.
+		$refused = ((new RequiredFieldsGuard())->refusal(action: $action, body: $data)
+			?? $this->crossRefGuard()->refusal(action: $action, data: $data, subject: $subject, app: $match['app']));
+		if ($refused !== null) {
+			return $refused;
+		}
+
+		// The scope field carries the declared `scopeClaim` resolved server
+		// side, else the subjectRef; an absent claim refuses the write
+		// (claim-scoped-create-stamps-the-claim).
+		$stamp = (new ActionScopeResolver(reader: $this->reader))->createStamp(action: $action, subject: $subject, appId: $match['app']);
+		if ($stamp === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
 		$created = $this->writer->createObject(
 			register: $register,
 			schema: $schema,
 			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			subjectRef: $stamp,
 			organisation: (string)($subject['organisation'] ?? ''),
-			data: $data
+			// Change signin-eherkenning-branch D2: a case filed in a branch session
+			// lands on that branch.
+			data: $this->branches->stamp(subject: $subject, action: $action, data: $data)
 		);
 
 		if ($created === null) {
@@ -966,32 +1167,36 @@ class ContributionController extends Controller implements PortalProtected {
 		return new JSONResponse(['object' => $created]);
 	}//end create()
 
+
 	/**
-	 * Find a `type: create` action for (register, schema) in the subject's
-	 * contributions, or null when the subject is not entitled to create there.
+	 * Find the subject's `type: create` action for (register, schema), by the
+	 * id the client sends as `actionId`.
+	 *
+	 * Two create actions may write one schema (a request form and a complaint
+	 * form both writing `ticket`), so the first declared one is never taken
+	 * for granted (create-names-its-action). A named id must be one of the
+	 * subject's create actions on this register and schema, else null (403).
+	 * Without an id, a single candidate is used as before, and two or more
+	 * answer CreateActionMatcher::AMBIGUOUS (400) rather than a guess.
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param string $register The requested register.
 	 * @param string $schema The requested schema.
 	 *
-	 * @return array{action: array<string, mixed>, app: string}|null The matched
-	 *                                                               action and its contributing app (the
-	 *                                                               WMEBV receipt's `appId`), or null.
+	 * @return array{action: array<string, mixed>, app: string}|string|null The matched
+	 *                                                                      action and its contributing app (the
+	 *                                                                      WMEBV receipt's `appId`), 'ambiguous',
+	 *                                                                      or null.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
 	 */
-	private function authorisedCreateAction(array $subject, string $register, string $schema): ?array {
-		$aggregate = $this->registry->aggregateFor($subject);
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') === 'create'
-					&& ($action['register'] ?? '') === $register
-					&& ($action['schema'] ?? '') === $schema
-				) {
-					return ['action' => $action, 'app' => (string)($contribution['app'] ?? '')];
-				}
-			}
-		}
-
-		return null;
+	private function authorisedCreateAction(array $subject, string $register, string $schema): array|string|null {
+		return (new CreateActionMatcher())->match(
+			aggregate: $this->registry->aggregateFor($subject),
+			register: $register,
+			schema: $schema,
+			actionId: $this->request->getParam('actionId', '')
+		);
 	}//end authorisedCreateAction()
 
 	/**
@@ -1017,22 +1222,29 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
 	private function createAnonymous(string $register, string $schema): JSONResponse {
-		$action = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
-		if ($action === null) {
+		$match = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
+		if ($match === CreateActionMatcher::AMBIGUOUS) {
+			// Two or more landing-page forms write this schema and the client
+			// named none: refuse rather than file it under the first form.
+			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
+		$action = $match['action'];
 
-		// Server-forced defaults, applied AFTER the whitelist so a client can
-		// never override them — identical discipline to the authenticated
-		// path (e.g. stamping a placeholder ownership marker a schema's
-		// `required` set may mandate, since an anonymous write carries no
-		// real subjectRef).
-		foreach ((array)($action['defaults'] ?? []) as $key => $value) {
-			if (is_string($key) === true && $key !== '') {
-				$data[$key] = $value;
-			}
+		// Server-forced defaults ride over the whitelist, identical discipline
+		// to the authenticated path (e.g. a placeholder ownership marker a
+		// schema's `required` set may mandate, since an anonymous write
+		// carries no real subjectRef).
+		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
+		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+
+		$missing = (new RequiredFieldsGuard())->refusal(action: $action, body: $data);
+		if ($missing !== null) {
+			return $missing;
 		}
 
 		$created = $this->writer->createAnonymousObject(register: $register, schema: $schema, data: $data);
@@ -1044,33 +1256,60 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end createAnonymous()
 
 	/**
-	 * Find an `anonymous: true`, `type: create` action for (register, schema)
-	 * in the fleet-wide anonymous aggregate, or null when nothing matches
-	 * (portal-page-provisioning).
+	 * Find the `anonymous: true`, `type: create` action for (register, schema)
+	 * in the fleet-wide anonymous aggregate (portal-page-provisioning), by the
+	 * id the client sends as `actionId`.
+	 *
+	 * Every active landing-page form is its own anonymous create action on
+	 * `landingPageSubmission`, so the first match is never taken for granted
+	 * (create-names-its-action): a named id must be one of the anonymous create
+	 * actions on this target, else null (403), and two or more without an id
+	 * answer CreateActionMatcher::AMBIGUOUS (400).
 	 *
 	 * @param string $register The requested register.
-	 * @param string $schema The requested schema.
+	 * @param string $schema   The requested schema.
 	 *
-	 * @return array<string, mixed>|null The matched action, or null.
+	 * @return array{action: array<string, mixed>, app: string}|string|null The match, 'ambiguous', or null.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
 	 */
-	private function authorisedAnonymousCreateAction(string $register, string $schema): ?array {
-		$aggregate = $this->registry->aggregateAnonymous();
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') === 'create'
-					&& ($action['anonymous'] ?? false) === true
-					&& ($action['register'] ?? '') === $register
-					&& ($action['schema'] ?? '') === $schema
-				) {
-					return $action;
-				}
+	private function authorisedAnonymousCreateAction(string $register, string $schema): array|string|null {
+		return (new CreateActionMatcher())->matchAnonymous(
+			aggregate: $this->registry->aggregateAnonymous(),
+			register: $register,
+			schema: $schema,
+			actionId: $this->request->getParam('actionId', '')
+		);
+	}//end authorisedAnonymousCreateAction()
+
+
+	/**
+	 * The write body with the action's server-enforced transition target applied.
+	 *
+	 * Server-enforced transition target (contribution-manifest-v3): an update
+	 * action MAY declare `set` — fixed field values the SERVER applies OVER the
+	 * client input, so an approve/reject/close transition can never be tampered
+	 * with by the client. Only whitelisted fields are honoured (defence in
+	 * depth; the normaliser already dropped non-whitelisted keys).
+	 *
+	 * @param array $action The matched update action.
+	 * @param array $data   The whitelisted client body.
+	 *
+	 * @return array The body to write.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
+	 */
+	private function withTransitionSet(array $action, array $data): array {
+		$whitelist = (array)($action['fields'] ?? []);
+		foreach ((array)($action['set'] ?? []) as $field => $value) {
+			if (in_array($field, $whitelist, true) === true) {
+				$data[$field] = $value;
 			}
 		}
 
-		return null;
-	}//end authorisedAnonymousCreateAction()
+		return $data;
+	}//end withTransitionSet()
 
 	/**
 	 * Update an object in a collection, owned by the subject (portal-scoped-crud,
@@ -1096,7 +1335,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The updated object, or 401 / 403 / 404.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 */
@@ -1138,18 +1377,23 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
+		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
-		// Server-enforced transition target (contribution-manifest-v3): an update
-		// action MAY declare `set` — fixed field values the SERVER applies OVER
-		// the client input, so an approve/reject/close transition can never be
-		// tampered with by the client. Only whitelisted fields are honoured
-		// (defence in depth; the normaliser already dropped non-whitelisted keys).
-		$whitelist = (array)($action['fields'] ?? []);
-		foreach ((array)($action['set'] ?? []) as $field => $value) {
-			if (in_array($field, $whitelist, true) === true) {
-				$data[$field] = $value;
-			}
+		$data = $this->withTransitionSet(action: $action, data: $data);
+
+		// The same guard as on create, for the same reason: an update body can
+		// name another party's object just as a create body can.
+		$refused = $this->crossRefGuard()->refusedField(
+			action: $action,
+			data: $data,
+			subject: $subject,
+			app: $match['app']
+		);
+		if ($refused !== '') {
+			return new JSONResponse(
+				['error' => 'cross_ref_refused', 'field' => $refused],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		$updated = $this->writeScoped(
@@ -1204,7 +1448,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                                               action and its contributing app (the
 	 *                                                               scopeClaim namespace), or null.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
 	 */
 	private function authorisedUpdateAction(array $subject, string $register, string $schema, string $actionId = ''): ?array {
 		$aggregate = $this->registry->aggregateFor($subject);
@@ -1243,7 +1487,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T5
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
 	 */
 	private function whitelist(array $fields): array {
 		$data = [];
@@ -1260,6 +1504,32 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return $data;
 	}//end whitelist()
+
+	/**
+	 * Remove every declared file field from a write body.
+	 *
+	 * A file field (`fieldConfigs.<field>.type: file`) holds references to
+	 * files in the object's own folder, and only the scoped field upload
+	 * writes it, with a reference portaliq produced itself. A value typed into
+	 * a create or update body could name any file, including another
+	 * person's, so it never reaches the writer.
+	 *
+	 * @param array<string, mixed> $action The matched action (normalised).
+	 * @param array<string, mixed> $data The whitelisted body.
+	 *
+	 * @return array<string, mixed> The body without file fields.
+	 *
+	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-file-field-must-never-be-written-from-a-request-body
+	 */
+	private function withoutFileFields(array $action, array $data): array {
+		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
+			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE) {
+				unset($data[$field]);
+			}
+		}
+
+		return $data;
+	}//end withoutFileFields()
 
 	/**
 	 * Extract a saved row's identifier (`id`/`uuid`, flat or in `@self`) for
@@ -1314,10 +1584,11 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The relayed response, or 401 / 403 / 502.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T8
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
 	 * (portal-session-hardening-v2), the WMEBV receipt follow-on
@@ -1341,6 +1612,29 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		// A declared `fields` whitelist rebuilds the forwarded body server-side
+		// from ONLY those request params; an action that declares none relays
+		// the raw request body as-is (contract v2, A6).
+		$whitelisted = null;
+		if (array_key_exists('fields', $action) === true) {
+			$whitelisted = $this->whitelist(fields: (array)$action['fields']);
+		}
+
+		// A declared `subjectField` (portal-take-assessment) receives the
+		// subject's resolved scope from the server, over any client value, and
+		// a declared `scopeClaim` rides server-resolved inside the signed
+		// assertion (case-actions-sign-a-document D3). Either one that does
+		// not resolve stops the forward before it is audited or made.
+		// The action's required fields (REQ-SMF-024) are checked on that same
+		// body: an unresolved scope is 403, an empty required field 400, and
+		// either stops the forward before it is audited or made.
+		$scoped = (new ActionScopeResolver(reader: $this->reader))
+			->prepare(action: $action, subject: $subject, appId: $appId, body: $whitelisted);
+		$refused = (new RequiredFieldsGuard())->forwardRefusal(action: $action, scoped: $scoped, declaresFields: $whitelisted !== null);
+		if ($refused !== null) {
+			return $refused;
+		}
+
 		// Recorded once the forward is AUTHORISED — regardless of the domain
 		// app's own response status or a transport failure below — because the
 		// fact being audited is "the subject invoked this forward", not
@@ -1357,15 +1651,7 @@ class ContributionController extends Controller implements PortalProtected {
 			jti: (string)($subject['jti'] ?? '')
 		);
 
-		// A declared `fields` whitelist rebuilds the forwarded body server-side
-		// from ONLY those request params; an action that declares none relays
-		// the raw request body as-is (contract v2, A6).
-		$whitelisted = null;
-		if (array_key_exists('fields', $action) === true) {
-			$whitelisted = $this->whitelist(fields: (array)$action['fields']);
-		}
-
-		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $whitelisted);
+		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $scoped['body'], scopeValue: $scoped['scopeValue']);
 		if ($response === null) {
 			// Transport failure — mirrors the writer's 502 posture. Never leak
 			// transport internals to the portal client.

@@ -1,0 +1,427 @@
+<?php
+
+/**
+ * Which contributions want a resident told about a record, by register and schema.
+ *
+ * PortalRecordChangeListener sees every OpenRegister create and update on the
+ * instance, so its first question has to be cheap: "does any app declare a
+ * rule for this register and schema?". This index answers it from a lookup
+ * built once per request out of every installed app's contribution, for every
+ * audience it serves. Only a hit reads further.
+ *
+ * Two kinds of entry:
+ * - `change`: a change rule (REQ-NAP-001/002). The listener compares the rule's
+ *   field between the old and the new record.
+ * - `inbox`: a `kind: inbox` collection of an app that declares
+ *   `message.created` (REQ-NAP-004). A new record in it is a message to the
+ *   resident at its scope field.
+ *
+ * A change rule that names its recipients by a claim
+ * (claim-addressed-change-notices) carries `recipientField` and
+ * `recipientClaim`; its collection and declared message texts are kept beside
+ * the entry and read through details().
+ *
+ * Collections name their register and schema by slug, while an OpenRegister
+ * object carries numeric ids. The index maps the object's ids to slugs through
+ * OpenRegister's own id-to-slug maps, and matches either form.
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @category Service
+ * @package  OCA\Portaliq\Service\Notifications
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Service\Notifications;
+
+use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
+use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\NotificationDispatchService;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Looks up change rules and inbox collections by register and schema.
+ *
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+ */
+class PortalChangeRuleIndex {
+
+	/**
+	 * OpenRegister's register mapper, resolved by name so portaliq does not
+	 * hard-depend on it.
+	 *
+	 * @var string
+	 */
+	private const REGISTER_MAPPER = 'OCA\\OpenRegister\\Db\\RegisterMapper';
+
+	/**
+	 * OpenRegister's schema mapper.
+	 *
+	 * @var string
+	 */
+	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+
+	/**
+	 * The entries, built on first use.
+	 *
+	 * @var array<int, array<string, string>>|null
+	 */
+	private ?array $entries = null;
+
+	/**
+	 * Register id to slug, and schema id to slug.
+	 *
+	 * @var array{register: array<string, string>, schema: array<string, string>}|null
+	 */
+	private ?array $slugs = null;
+
+	/**
+	 * Per change rule (`app|collection|ruleKey`): its collection and messages.
+	 *
+	 * @var array<string, array{collection: array<string, mixed>, messages: array<string, mixed>}>
+	 */
+	private array $details = [];
+
+	/**
+	 * Wire the index.
+	 *
+	 * @param PortalContributionRegistry $registry  Every app's contribution.
+	 * @param ContainerInterface         $container Resolves OpenRegister's mappers.
+	 * @param LoggerInterface            $logger    The logger.
+	 */
+	public function __construct(
+		private readonly PortalContributionRegistry $registry,
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * The change rules for a record of this register and schema.
+	 *
+	 * @param string $register The object's register id or slug.
+	 * @param string $schema   The object's schema id or slug.
+	 *
+	 * @return array<int, array<string, string>> Entries with app, ruleKey, collection, label, scopeField, field,
+	 *                                           titleField, recipientField and recipientClaim.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+	 */
+	public function changeRulesFor(string $register, string $schema): array {
+		return $this->matching(kind: 'change', register: $register, schema: $schema);
+	}//end changeRulesFor()
+
+	/**
+	 * A change rule's collection and the message texts it declares per value.
+	 *
+	 * @param array<string, string> $entry An entry changeRulesFor() returned.
+	 *
+	 * @return array{collection: array<string, mixed>, messages: array<string, mixed>}
+	 *
+	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 */
+	public function details(array $entry): array {
+		$this->entries();
+
+		return ($this->details[$this->detailKey(entry: $entry)] ?? ['collection' => [], 'messages' => []]);
+	}//end details()
+
+	/**
+	 * The inbox collections a new record of this register and schema lands in.
+	 *
+	 * @param string $register The object's register id or slug.
+	 * @param string $schema   The object's schema id or slug.
+	 *
+	 * @return array<int, array<string, string>> Entries with app, collection, register, schema, scopeField, nudge and recipientProvider.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-apps-message-triggers-an-e-mail-req-nap-004
+	 */
+	public function inboxesFor(string $register, string $schema): array {
+		return $this->matching(kind: 'inbox', register: $register, schema: $schema);
+	}//end inboxesFor()
+
+	/**
+	 * Whether this register and schema are portaliq's own inbox messages.
+	 *
+	 * @param string $register The object's register id or slug.
+	 * @param string $schema   The object's schema id or slug.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-apps-message-triggers-an-e-mail-req-nap-004
+	 */
+	public function isPortalMessage(string $register, string $schema): bool {
+		return in_array('portaliq', $this->names(map: 'register', value: $register), true)
+			&& in_array('portalMessage', $this->names(map: 'schema', value: $schema), true);
+	}//end isPortalMessage()
+
+	/**
+	 * The entries of one kind that match the register and schema.
+	 *
+	 * @param string $kind     `change` or `inbox`.
+	 * @param string $register The register id or slug.
+	 * @param string $schema   The schema id or slug.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function matching(string $kind, string $register, string $schema): array {
+		$entries = $this->entries();
+		if ($entries === [] || $register === '' || $schema === '') {
+			return [];
+		}
+
+		$registers = $this->names(map: 'register', value: $register);
+		$schemas = $this->names(map: 'schema', value: $schema);
+		$out = [];
+		foreach ($entries as $entry) {
+			if ($entry['kind'] === $kind && in_array($entry['register'], $registers, true) === true && in_array($entry['schema'], $schemas, true) === true) {
+				$out[] = $entry;
+			}
+		}
+
+		return $out;
+	}//end matching()
+
+	/**
+	 * The names a register or schema answers to: the value itself and, for an
+	 * id, its slug.
+	 *
+	 * @param string $map   `register` or `schema`.
+	 * @param string $value The id or slug.
+	 *
+	 * @return array<int, string>
+	 */
+	private function names(string $map, string $value): array {
+		$names = [$value];
+		$slug = ($this->slugs()[$map][$value] ?? null);
+		if (is_string($slug) === true && $slug !== '') {
+			$names[] = $slug;
+		}
+
+		return $names;
+	}//end names()
+
+	/**
+	 * OpenRegister's id-to-slug maps, read once.
+	 *
+	 * @return array{register: array<string, string>, schema: array<string, string>}
+	 */
+	private function slugs(): array {
+		if ($this->slugs !== null) {
+			return $this->slugs;
+		}
+
+		$this->slugs = ['register' => [], 'schema' => []];
+		foreach (['register' => self::REGISTER_MAPPER, 'schema' => self::SCHEMA_MAPPER] as $key => $class) {
+			try {
+				$mapper = $this->container->get($class);
+				$map = $mapper->getIdToSlugMap();
+				foreach ($map as $id => $slug) {
+					$this->slugs[$key][(string)$id] = (string)$slug;
+				}
+			} catch (Throwable $e) {
+				$this->logger->warning('Portaliq: could not read OpenRegister slugs for change rules', ['map' => $key, 'reason' => $e->getMessage()]);
+			}
+		}
+
+		return $this->slugs;
+	}//end slugs()
+
+	/**
+	 * Every entry, built once from every contribution.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function entries(): array {
+		if ($this->entries !== null) {
+			return $this->entries;
+		}
+
+		$entries = [];
+		foreach ($this->contributions() as $contribution) {
+			foreach ($this->entriesOf(contribution: $contribution) as $entry) {
+				// Two audiences served by the same collection give the same
+				// entry; keep one, so a change is reported once.
+				$entries[implode('|', $entry)] = $entry;
+			}
+		}
+
+		$this->entries = array_values($entries);
+
+		return $this->entries;
+	}//end entries()
+
+	/**
+	 * Every app's contribution for every audience it serves, asked with the
+	 * highest trust so no rule is lost to a trust filter. The resident's own
+	 * read still applies their trust when they open the record.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function contributions(): array {
+		$contributions = [];
+		foreach ($this->registry->servedAudiences() as $audience) {
+			$aggregate = $this->registry->aggregateFor(
+				subject: ['audience' => $audience, 'trust' => 'high', 'subjectRef' => '', 'organisation' => '']
+			);
+			foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
+				if (is_array($contribution) === true) {
+					$contributions[] = $contribution;
+				}
+			}
+		}
+
+		return $contributions;
+	}//end contributions()
+
+	/**
+	 * The entries one contribution declares.
+	 *
+	 * @param array<string, mixed> $contribution The normalised contribution.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function entriesOf(array $contribution): array {
+		$app = (string)($contribution['app'] ?? '');
+		if ($app === '') {
+			return [];
+		}
+
+		// An app with no notification rules can still send its letters to
+		// the message box: its inbox collection declares that on its own.
+		$notifications = ($contribution['notifications'] ?? []);
+		if (is_array($notifications) === false) {
+			$notifications = [];
+		}
+
+		$collections = [];
+		foreach ((array)($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === true && (string)($collection['id'] ?? '') !== '') {
+				$collections[(string)$collection['id']] = $collection;
+			}
+		}
+
+		return array_merge(
+			$this->changeEntries(app: $app, notifications: $notifications, collections: $collections),
+			$this->inboxEntries(app: $app, notifications: $notifications, collections: $collections)
+		);
+	}//end entriesOf()
+
+	/**
+	 * The change rules of one contribution.
+	 *
+	 * @param string                              $app           The contributing app.
+	 * @param array<int, mixed>                   $notifications The normalised notifications.
+	 * @param array<string, array<string, mixed>> $collections   The collections by id.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function changeEntries(string $app, array $notifications, array $collections): array {
+		$entries = [];
+		foreach ($notifications as $rule) {
+			if (is_array($rule) === false || isset($collections[(string)($rule['collection'] ?? '')]) === false) {
+				continue;
+			}
+
+			$collection = $collections[(string)$rule['collection']];
+			$recipientClaim = (string)($rule['recipients']['claim'] ?? '');
+			if ($recipientClaim === '' && (new NotificationRuleNormaliser())->scopedElsewhere(collection: $collection) === true) {
+				// The normaliser already drops this; a record of a claim or
+				// via collection does not say whose it is.
+				continue;
+			}
+
+			$entry = $this->entry(kind: 'change', app: $app, collection: $collection) + [
+				'ruleKey' => (string)$rule['ruleKey'],
+				'field' => (string)($rule['on']['field'] ?? ''),
+				'titleField' => (string)($rule['titleField'] ?? ''),
+				'recipientField' => (string)($rule['recipients']['field'] ?? ''),
+				'recipientClaim' => $recipientClaim,
+			];
+			$this->details[$this->detailKey(entry: $entry)] = ['collection' => $collection, 'messages' => (array)($rule['messages'] ?? [])];
+			$entries[] = $entry;
+		}//end foreach
+
+		return $entries;
+	}//end changeEntries()
+
+	/**
+	 * The key of a change rule's details.
+	 *
+	 * @param array<string, string> $entry The change rule entry.
+	 *
+	 * @return string
+	 */
+	private function detailKey(array $entry): string {
+		return implode('|', [($entry['app'] ?? ''), ($entry['collection'] ?? ''), ($entry['ruleKey'] ?? '')]);
+	}//end detailKey()
+
+	/**
+	 * The inbox collections of one contribution that declares `message.created`
+	 * (the e-mail nudge, `nudge` 1) or names a message box recipient method
+	 * (`recipientProvider`, inbox-berichtenbox-channel), or both.
+	 *
+	 * @param string                              $app           The contributing app.
+	 * @param array<int, mixed>                   $notifications The normalised notifications.
+	 * @param array<string, array<string, mixed>> $collections   The collections by id.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function inboxEntries(string $app, array $notifications, array $collections): array {
+		$nudge = in_array(NotificationDispatchService::RULE_MESSAGE_CREATED, $notifications, true);
+
+		$entries = [];
+		foreach ($collections as $collection) {
+			if ((string)($collection['kind'] ?? '') !== 'inbox') {
+				continue;
+			}
+
+			$recipientProvider = (string)($collection['messageBox']['recipientProvider'] ?? '');
+			if ($nudge === false && $recipientProvider === '') {
+				continue;
+			}
+
+			$entries[] = $this->entry(kind: 'inbox', app: $app, collection: $collection) + [
+				'nudge' => (string)(int)$nudge,
+				'recipientProvider' => $recipientProvider,
+				'bodyField' => (string)($collection['messageBox']['bodyField'] ?? ''),
+				'subjectField' => (string)($collection['messageBox']['subjectField'] ?? ''),
+			];
+		}
+
+		return $entries;
+	}//end inboxEntries()
+
+	/**
+	 * The fields every entry carries.
+	 *
+	 * @param string               $kind       `change` or `inbox`.
+	 * @param string               $app        The contributing app.
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, string>
+	 */
+	private function entry(string $kind, string $app, array $collection): array {
+		return [
+			'kind' => $kind,
+			'app' => $app,
+			'collection' => (string)$collection['id'],
+			'label' => (string)($collection['label'] ?? $collection['id']),
+			'register' => (string)($collection['register'] ?? ''),
+			'schema' => (string)($collection['schema'] ?? ''),
+			'scopeField' => (string)($collection['scopeField'] ?? 'subjectRef'),
+		];
+	}//end entry()
+}//end class

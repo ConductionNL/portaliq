@@ -23,13 +23,17 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
+use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -73,6 +77,20 @@ class ContentControllerTest extends TestCase {
 	private ?PortalSessionService $session = null;
 
 	/**
+	 * The notice reader, when a test sets one.
+	 *
+	 * @var PortalNoticeReader|null
+	 */
+	private ?PortalNoticeReader $notices = null;
+
+	/**
+	 * The Nextcloud session, when a test signs someone in.
+	 *
+	 * @var IUserSession|null
+	 */
+	private ?IUserSession $userSession = null;
+
+	/**
 	 * The incoming request.
 	 *
 	 * @var IRequest&MockObject
@@ -90,6 +108,11 @@ class ContentControllerTest extends TestCase {
 
 		$this->resolver = $this->createMock(PortalResolver::class);
 		$this->reader = $this->createMock(CmsReader::class);
+		// The shell projection is the real one: a stub answering [] would let
+		// the site() tests pass without the fields they assert.
+		$this->reader->method('shell')->willReturnCallback(
+			static fn (array $portal): array => (new PortalShell())->project(portal: $portal)
+		);
 		$this->request = $this->createMock(IRequest::class);
 	}//end setUp()
 
@@ -126,7 +149,9 @@ class ContentControllerTest extends TestCase {
 			// gate must not change what a public portal serves.
 			session: ($this->session ?? $this->createMock(PortalSessionService::class)),
 			traffic: new TrafficConfigResolver(),
-			urlGenerator: $this->urlGenerator()
+			urlGenerator: $this->urlGenerator(),
+			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class)),
+			userSession: ($this->userSession ?? $this->createMock(IUserSession::class))
 		);
 	}//end controller()
 
@@ -201,6 +226,26 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
+	 * operate-maintenance-notice T03 (REQ-OMN-001): the site record carries
+	 * the notices active on the site surface of the resolved portal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 */
+	public function testSiteCarriesActiveNotices(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$notice        = ['id' => 'n-1', 'message' => 'Onderhoud', 'level' => 'warning', 'linkLabel' => '', 'linkUrl' => '', 'endsAt' => '2026-10-04T02:00:00+00:00'];
+		$this->notices = $this->createMock(PortalNoticeReader::class);
+		$this->notices->expects($this->once())->method('active')->with('open-tilburg', 'site')->willReturn([$notice]);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame([$notice], $data['notices']);
+	}//end testSiteCarriesActiveNotices()
+
+
+	/**
 	 * A resolved site returns its own presentation, without secrets.
 	 *
 	 * @return void
@@ -214,6 +259,60 @@ class ContentControllerTest extends TestCase {
 		$this->assertSame('vng', $data['theme']);
 		$this->assertSame(['public'], $data['authentication']['modes']);
 	}//end testAResolvedSiteReturnsItsPresentation()
+
+
+	/**
+	 * The site carries the header's shape and a declared register destination
+	 * (portal-theme-blocks-and-contributed-pages REQ-PTB-004).
+	 *
+	 * @return void
+	 */
+	public function testTheSiteCarriesTheHeaderShapeAndTheRegisterDestination(): void {
+		$portal = $this->portal();
+		$portal['headerVariant'] = 'single';
+		$portal['authentication']['register'] = '/registreren';
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('single', $data['headerVariant']);
+		$this->assertSame('/registreren', $data['authentication']['register']);
+	}//end testTheSiteCarriesTheHeaderShapeAndTheRegisterDestination()
+
+
+	/**
+	 * A social link with a label and no destination is absent from the served
+	 * site (portal-theme-blocks-and-contributed-pages REQ-PTB-005).
+	 *
+	 * @return void
+	 */
+	public function testASocialLinkWithoutADestinationIsNotServed(): void {
+		$portal           = $this->portal();
+		$portal['footer'] = ['socials' => [['label' => 'LinkedIn'], ['label' => 'Mastodon', 'href' => 'https://social.example']]];
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame([['label' => 'Mastodon', 'href' => 'https://social.example']], $data['footer']['socials']);
+		$this->assertSame('', $data['footer']['colophon']);
+	}//end testASocialLinkWithoutADestinationIsNotServed()
+
+
+	/**
+	 * The site serves the portal's regions, an empty map as a JSON object
+	 * (portal-theme-blocks-and-contributed-pages REQ-PTB-009).
+	 *
+	 * @return void
+	 */
+	public function testTheSiteServesThePortalsRegions(): void {
+		$portal            = $this->portal();
+		$portal['regions'] = ['hero' => [['widgetKey' => 'hero', 'props' => ['title' => 'Welkom']]]];
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('Welkom', $data['regions']['hero'][0]['props']['title']);
+	}//end testTheSiteServesThePortalsRegions()
 
 
 	/**
@@ -270,6 +369,45 @@ class ContentControllerTest extends TestCase {
 		$this->assertStringContainsString('no-store', $headers['Cache-Control']);
 		$this->assertStringNotContainsString('public', $headers['Cache-Control']);
 	}//end testAnAuthenticatedResponseIsNeverShared()
+
+
+	/**
+	 * A page read by a signed-in Nextcloud user is never cached.
+	 *
+	 * An editor reads the site with their Nextcloud session and no resident
+	 * bearer, so the body is the anonymous one. Served `public, max-age=300`,
+	 * the editor's own tab answered from its browser cache for five minutes
+	 * after they published (found on :8080, 02 Oct 2026).
+	 *
+	 * @return void
+	 */
+	public function testAPageReadBySignedInNextcloudUserIsNeverCached(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->reader->method('page')->willReturn(['id' => 'p1', 'route' => '/over']);
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->userSession->method('getUser')->willReturn($this->createMock(IUser::class));
+
+		$headers = $this->controller()->page(route: '/over')->getHeaders();
+
+		$this->assertSame('private, no-store', $headers['Cache-Control']);
+	}//end testAPageReadBySignedInNextcloudUserIsNeverCached()
+
+
+	/**
+	 * A page read by an anonymous visitor stays publicly cacheable.
+	 *
+	 * @return void
+	 */
+	public function testAPageReadByAnonymousVisitorStaysCacheable(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->reader->method('page')->willReturn(['id' => 'p1', 'route' => '/over']);
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->userSession->method('getUser')->willReturn(null);
+
+		$headers = $this->controller()->page(route: '/over')->getHeaders();
+
+		$this->assertSame('public, max-age=300, must-revalidate', $headers['Cache-Control']);
+	}//end testAPageReadByAnonymousVisitorStaysCacheable()
 
 
 	/**

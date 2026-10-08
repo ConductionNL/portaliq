@@ -165,7 +165,7 @@ class TrafficReportDefinitions {
 
 		$out = [];
 		foreach (array_slice(array_values($value), 0, self::MAX) as $slug) {
-			if (is_string($slug) === false || preg_match('/^[a-z0-9][a-z0-9-]{0,127}$/', $slug) !== 1 || $slug === $self) {
+			if (is_string($slug) === false || preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $slug) !== 1 || $slug === $self) {
 				continue;
 			}
 

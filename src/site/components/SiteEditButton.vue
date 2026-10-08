@@ -32,6 +32,7 @@
 			@keydown="onMenuKey">
 			<li v-for="(action, index) in actions" :key="action.key" role="none">
 				<a
+					v-if="action.href"
 					:ref="setItemRef"
 					class="pq-edit__item"
 					role="menuitem"
@@ -41,6 +42,18 @@
 					@click="open = false">
 					{{ action.label }}
 				</a>
+				<!-- Editing in place is an action on this page, not a link. -->
+				<button
+					v-else
+					:ref="setItemRef"
+					type="button"
+					class="pq-edit__item"
+					role="menuitem"
+					:data-testid="`site-edit-${action.key}`"
+					:tabindex="index === activeIndex ? 0 : -1"
+					@click="runAction(action)">
+					{{ action.label }}
+				</button>
 			</li>
 		</ul>
 
@@ -107,6 +120,8 @@ export default {
 		},
 	},
 
+	emits: ['edit'],
+
 	data() {
 		return {
 			open: false,
@@ -130,14 +145,25 @@ export default {
 		 *
 		 * @return {Array<object>} The actions.
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		actions() {
 			const actions = []
-			if (this.context?.designerUrl) {
+			if (this.context?.pageId) {
+				// In place, on this page (portal-in-place-editing). The site
+				// loads the editor only when this is chosen.
 				actions.push({
 					key: 'page',
 					label: 'Deze pagina bewerken',
+					emit: 'edit',
+				})
+			}
+
+			if (this.context?.designerUrl) {
+				actions.push({
+					key: 'designer',
+					label: 'In de beheeromgeving openen',
 					href: this.context.designerUrl,
 				})
 			}
@@ -167,7 +193,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	beforeUpdate() {
 		// Vue 3 does not clear function refs between renders, so the list is
@@ -187,12 +213,25 @@ export default {
 
 	methods: {
 		/**
+		 * Run an action that is not a link: close the menu and tell the site.
+		 *
+		 * @param {object} action The action.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 */
+		runAction(action) {
+			this.open = false
+			this.$emit(action.emit, this.context?.pageId)
+		},
+
+		/**
 		 * Collect a menu item's element for keyboard navigation.
 		 *
 		 * @param {object} el The element or component instance.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		setItemRef(el) {
 			if (el) {
@@ -205,7 +244,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		toggle() {
 			if (this.open) {
@@ -222,7 +261,7 @@ export default {
 		 * @param {number} index The item to focus.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		openMenu(index) {
 			if (this.actions.length === 0) {
@@ -244,7 +283,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		close() {
 			if (!this.open) {
@@ -261,7 +300,7 @@ export default {
 		 * @param {KeyboardEvent} event The event.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		onMenuKey(event) {
 			if (event.key === 'Escape') {
@@ -296,7 +335,7 @@ export default {
 		 * @param {number} delta The direction.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		move(delta) {
 			const count = this.actions.length
@@ -313,7 +352,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		focusActive() {
 			this.items[this.activeIndex]?.focus?.()
@@ -325,7 +364,7 @@ export default {
 		 * @param {MouseEvent} event The event.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		onDocumentClick(event) {
 			if (!this.open) {
@@ -399,6 +438,12 @@ export default {
 
 .pq-edit__item {
 	display: block;
+	width: 100%;
+	border: 0;
+	background: none;
+	font: inherit;
+	text-align: start;
+	cursor: pointer;
 	padding: 0.625rem 0.75rem;
 	border-radius: 0.25rem;
 	color: inherit;

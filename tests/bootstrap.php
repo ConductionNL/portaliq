@@ -8,19 +8,176 @@ define('PHPUNIT_RUN', 1);
 // Include Composer's autoloader.
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Bootstrap Nextcloud if not already done.
-if (!defined('OC_CONSOLE')) {
-	if (file_exists(__DIR__ . '/../../../lib/base.php')) {
-		require_once __DIR__ . '/../../../lib/base.php';
+/**
+ * Tell whether a Nextcloud root is an INSTALLED instance, not just a source tree.
+ *
+ * `lib/base.php` from a source tree that was never installed still declares
+ * `OC` and builds `\OC::$server` before it throws "Not installed". That server
+ * cannot be undone (`OC::$server` is a typed static), so from then on every
+ * `\OC::$server->get()` in the code under test hits a container that knows
+ * none of this app's registrations and autowires from scratch; constructor
+ * cycles then recurse until memory runs out (19 GB on one openregister test,
+ * 2026-09-08). So the decision has to be made BEFORE base.php is loaded, and
+ * the only cheap signal is the `installed` flag in config/config.php.
+ *
+ * @param string $ncRoot Candidate Nextcloud root.
+ *
+ * @return bool True when config/config.php declares `installed => true`.
+ */
+function portaliq_nc_root_is_installed(string $ncRoot): bool
+{
+	$configFile = $ncRoot . '/config/config.php';
+	if (is_file($configFile) === false || filesize($configFile) === 0) {
+		return false;
 	}
 
-	if (file_exists(__DIR__ . '/../../../tests/autoload.php')) {
-		require_once __DIR__ . '/../../../tests/autoload.php';
-	}
+	// The config file is a plain `$CONFIG = [...]` script; including it in a
+	// closure keeps `$CONFIG` out of the global scope.
+	$config = (static function () use ($configFile): array {
+		$CONFIG = [];
+		try {
+			include $configFile;
+		} catch (\Throwable) {
+			return [];
+		}
 
-	\OC_App::loadApps();
-	\OC_App::loadApp('portaliq');
-	OC_Hook::clear();
+		if (is_array($CONFIG) === false) {
+			return [];
+		}
+
+		return $CONFIG;
+	})();
+
+	return ($config['installed'] ?? false) === true;
+}
+
+// The Nextcloud root this checkout sits under (apps-extra/portaliq/), or null
+// when there is none or it is only a bare source tree. Decided ONCE, up here,
+// so that lib/base.php is never loaded from a tree that cannot finish booting.
+$portaliqNcRoot = null;
+$portaliqNcCandidate = dirname(__DIR__, 3);
+if (is_file($portaliqNcCandidate . '/lib/base.php') === true) {
+	if (portaliq_nc_root_is_installed($portaliqNcCandidate) === true) {
+		$portaliqNcRoot = $portaliqNcCandidate;
+	} else {
+		fwrite(
+			STDERR,
+			sprintf(
+				"[portaliq/tests/bootstrap] Nextcloud tree at %s is not installed (config/config.php lacks installed => true); "
+				. "skipping lib/base.php and running in pure-unit mode.\n",
+				$portaliqNcCandidate
+			)
+		);
+	}
+}
+
+// Bootstrap Nextcloud if an INSTALLED one is available. Inside the docker
+// container we get the full NC runtime; outside (CI / local dev / a bare
+// source tree) the suite runs on Composer autoload and the tests/Stubs/ only.
+if (!defined('OC_CONSOLE') && $portaliqNcRoot !== null) {
+	try {
+		require_once $portaliqNcRoot . '/lib/base.php';
+
+		// NC's own tests/autoload.php starts with `require_once ../lib/base.php`,
+		// so it is only safe once base.php itself has succeeded.
+		if (file_exists($portaliqNcRoot . '/tests/autoload.php')) {
+			require_once $portaliqNcRoot . '/tests/autoload.php';
+		}
+
+		if (class_exists(\OC_App::class)) {
+			\OC_App::loadApps();
+			\OC_App::loadApp('portaliq');
+		}
+
+		if (class_exists(\OC_Hook::class)) {
+			\OC_Hook::clear();
+		}
+	} catch (\Throwable $e) {
+		// The tree IS installed, so the dangerous case this guard exists for
+		// (loading a bare source tree) did not happen. base.php still failed
+		// part-way.
+		//
+		// This does NOT abort. `OC::$server` is a typed static, so a half-built
+		// container cannot be unset, and aborting was tried: it turned all six
+		// PHPUnit legs red on a suite that passes (humaniq, 2026-09-08). The
+		// runaway this guard exists for needs an autowiring lookup to reach the
+		// poisoned container, this app has none in lib, and phpunit.xml's 2G cap
+		// bounds one anyway.
+		//
+		// So: say plainly that the container is unreliable, and let the pure unit
+		// tests run. A container-bound test failing loudly is the intended outcome.
+		fwrite(
+			STDERR,
+			sprintf(
+				"[portaliq/tests/bootstrap] Nextcloud at %s could not finish booting (%s).\n"
+				. "  \\OC::\$server now holds a HALF-BUILT container and cannot be unset. Pure unit tests\n"
+				. "  continue; anything resolving a service from that container is UNVERIFIED by this run.\n",
+				$portaliqNcRoot,
+				$e->getMessage()
+			)
+		);
+	}
+}
+
+// OpenRegister outside the container. Listener tests build OpenRegister's REAL
+// event and entity classes (a faked event once hid a wrong accessor that made
+// every object update 500). Inside the container Nextcloud loads them; outside
+// it, point PORTALIQ_OPENREGISTER_LIB at an openregister checkout's lib/ and
+// they autoload from there. Without either, those tests skip and say why.
+$portaliqOrLib = getenv('PORTALIQ_OPENREGISTER_LIB');
+if (is_string($portaliqOrLib) === true && $portaliqOrLib !== '' && is_dir($portaliqOrLib) === true) {
+	spl_autoload_register(
+		static function (string $class) use ($portaliqOrLib): void {
+			if (str_starts_with($class, 'OCA\\OpenRegister\\') === false) {
+				return;
+			}
+
+			$file = rtrim($portaliqOrLib, '/') . '/' . str_replace('\\', '/', substr($class, strlen('OCA\\OpenRegister\\'))) . '.php';
+			if (is_file($file) === true) {
+				require_once $file;
+			}
+		}
+	);
+}
+
+// Integriq outside the container, the same way. The message box channel
+// dispatches integriq's REAL DigitalPostSendRequestedEvent and hears its REAL
+// DigitalPostDeliveredEvent; point PORTALIQ_INTEGRIQ_LIB at an integriq
+// checkout's lib/ and they autoload from there.
+$portaliqIntegriqLib = getenv('PORTALIQ_INTEGRIQ_LIB');
+if (is_string($portaliqIntegriqLib) === true && $portaliqIntegriqLib !== '' && is_dir($portaliqIntegriqLib) === true) {
+	spl_autoload_register(
+		static function (string $class) use ($portaliqIntegriqLib): void {
+			if (str_starts_with($class, 'OCA\\Integriq\\') === false) {
+				return;
+			}
+
+			$file = rtrim($portaliqIntegriqLib, '/') . '/' . str_replace('\\', '/', substr($class, strlen('OCA\\Integriq\\'))) . '.php';
+			if (is_file($file) === true) {
+				require_once $file;
+			}
+		}
+	);
+}
+
+// OCP outside the container. `nextcloud/ocp` ships the public API as plain
+// PSR-4 files but declares no `autoload` block of its own, so Composer never
+// maps `OCP\` and every test that doubles an OCP interface dies with "Class or
+// interface OCP\… does not exist" rather than failing on its subject. Inside
+// the container lib/base.php has already defined them and this does nothing.
+if (interface_exists(\OCP\IUser::class) === false && is_dir(__DIR__ . '/../vendor/nextcloud/ocp/OCP') === true) {
+	spl_autoload_register(
+		static function (string $class): void {
+			if (str_starts_with($class, 'OCP\\') === false && str_starts_with($class, 'NCU\\') === false) {
+				return;
+			}
+
+			$file = __DIR__ . '/../vendor/nextcloud/ocp/' . str_replace('\\', '/', $class) . '.php';
+			if (is_file($file) === true) {
+				require_once $file;
+			}
+		}
+	);
 }
 
 // Load the IMcpToolProvider stub when the openregister runtime (PR #1466,
@@ -29,3 +186,54 @@ if (!defined('OC_CONSOLE')) {
 if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 	require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
 }
+
+// Integriq's connection-registry events (adopt-connection-registry).
+// ConnectionReporter sends them by string class name behind class_exists
+// (ADR-041), so portaliq stays installable without integriq. The stubs mirror
+// hydra connection-registry design D6 and integriq's own classes on
+// `development`, and load only when the real classes are absent. Without OCP on
+// the autoload path their parent class is missing, so they are skipped then.
+// OpenRegister's leaf contract (change-proposal-queue): verbatim copies under
+// tests/Stubs/OpenRegister, used only when OpenRegister itself is not loadable,
+// so the leaf tests run in CI where no sibling checkout exists.
+foreach ([
+	'Exception\\NotImplementedException' => 'Exception/NotImplementedException.php',
+	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
+	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
+	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+] as $orStubClass => $orStubFile) {
+	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
+		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+		&& interface_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+	) {
+		require_once __DIR__ . '/Stubs/OpenRegister/' . $orStubFile;
+	}
+}
+
+unset($orStubClass, $orStubFile);
+
+// Thematiq's contrast arithmetic (nldesign-theme-integration): a verbatim copy,
+// used only when thematiq itself is not loadable.
+if (class_exists('\\OCA\\Thematiq\\Service\\ContrastService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/ContrastService.php';
+}
+
+// And its custom token set validator (nldesign-theme-integration 4.2): a
+// verbatim copy, plus the one converter constant it reads.
+if (class_exists('\\OCA\\Thematiq\\Service\\TokenSetConverterService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/TokenSetConverterService.php';
+}
+
+if (class_exists('\\OCA\\Thematiq\\Service\\CustomTokenSetValidator') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/CustomTokenSetValidator.php';
+}
+
+foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $integriqStubEvent) {
+	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
+		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false
+	) {
+		require_once __DIR__ . '/Stubs/Integriq/Event/' . $integriqStubEvent . '.php';
+	}
+}
+
+unset($integriqStubEvent);

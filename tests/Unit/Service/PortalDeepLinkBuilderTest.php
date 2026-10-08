@@ -1,0 +1,130 @@
+<?php
+
+/**
+ * PortalDeepLinkBuilder tests (WOO-570).
+ *
+ * The deep link in out-of-band mail MUST come from the route table.
+ * `getAbsoluteURL('/portal')` produced `https://host/portal` — a path no
+ * deployment serves — so the only call-to-action in every task/notification
+ * mail was a 404. These tests pin the route name (the site's, since the React
+ * portal retired: site-reaches-portal-parity REQ-SRP-049), the tenant
+ * parameter and the encoding on both kinds of instance (with and without
+ * pretty URLs).
+ *
+ * @category Test
+ * @package  OCA\Portaliq\Tests\Unit\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Tests\Unit\Service;
+
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
+use OCP\IURLGenerator;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * @covers \OCA\Portaliq\Service\PortalDeepLinkBuilder
+ */
+final class PortalDeepLinkBuilderTest extends TestCase {
+	/**
+	 * Build a route-table double answering `$path` for the site route, the
+	 * only route a mail links to (site-reaches-portal-parity REQ-SRP-049).
+	 *
+	 * @param array<string, string> $expectedParameters What linkToRoute must receive.
+	 * @param string $path What the route table answers.
+	 *
+	 * @return PortalDeepLinkBuilder
+	 */
+	private function builder(array $expectedParameters, string $path): PortalDeepLinkBuilder {
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->expects($this->once())
+			->method('linkToRoute')
+			->with('portaliq.portalPage.site', $expectedParameters)
+			->willReturn($path);
+		$urlGenerator->expects($this->once())
+			->method('getAbsoluteURL')
+			->with($path)
+			->willReturn('https://portal.example.test' . $path);
+
+		return new PortalDeepLinkBuilder($urlGenerator);
+	}//end builder()
+
+	public function testTheLinkIsTheAppRouteWithIndexPhpOnAnInstanceWithoutPrettyUrls(): void {
+		$builder = $this->builder(['org' => 'dev-org'], '/index.php/apps/portaliq/site?org=dev-org');
+
+		self::assertSame(
+			'https://portal.example.test/index.php/apps/portaliq/site?org=dev-org',
+			$builder->forOrganisation('dev-org')
+		);
+	}//end testTheLinkIsTheAppRouteWithIndexPhpOnAnInstanceWithoutPrettyUrls()
+
+	public function testTheLinkFollowsTheRouteTableOnAPrettyUrlInstance(): void {
+		$builder = $this->builder(['org' => 'gemeente-x'], '/apps/portaliq/site?org=gemeente-x');
+
+		self::assertSame(
+			'https://portal.example.test/apps/portaliq/site?org=gemeente-x',
+			$builder->forOrganisation('gemeente-x')
+		);
+	}//end testTheLinkFollowsTheRouteTableOnAPrettyUrlInstance()
+
+	public function testAnUnknownTenantYieldsTheBareSiteWithoutAQuery(): void {
+		$builder = $this->builder([], '/index.php/apps/portaliq/site');
+
+		self::assertSame('https://portal.example.test/index.php/apps/portaliq/site', $builder->forOrganisation(''));
+	}//end testAnUnknownTenantYieldsTheBareSiteWithoutAQuery()
+
+	/**
+	 * portaliq#795: an identity mail belongs to the portal it was asked on,
+	 * so it names that portal by slug rather than the tenant by `?org=`.
+	 *
+	 * @return void
+	 */
+	public function testANamedPortalIsLinkedByItsSlug(): void {
+		$builder = $this->builder(['portal' => 'gemeente-x'], '/apps/portaliq/site?portal=gemeente-x');
+
+		self::assertSame('https://portal.example.test/apps/portaliq/site?portal=gemeente-x', $builder->forPortal('gemeente-x', 'organisatie-x'));
+	}//end testANamedPortalIsLinkedByItsSlug()
+
+	public function testAnEmptySlugFallsBackToTheTenantLink(): void {
+		$builder = $this->builder(['org' => 'organisatie-x'], '/apps/portaliq/site?org=organisatie-x');
+
+		self::assertSame('https://portal.example.test/apps/portaliq/site?org=organisatie-x', $builder->forPortal('', 'organisatie-x'));
+	}//end testAnEmptySlugFallsBackToTheTenantLink()
+
+	public function testTheTenantIsPassedToTheRouteTableVerbatimSoTheGeneratorEncodesIt(): void {
+		// Encoding is the URL generator's job (it owns the query-string
+		// rendering); the builder must hand the raw value over, not pre-encode
+		// it and cause a double %25 escape.
+		$builder = $this->builder(['org' => 'Gemeente Ãœ&co'], '/index.php/apps/portaliq/site?org=Gemeente+%C3%9C%26co');
+
+		self::assertStringEndsWith('?org=Gemeente+%C3%9C%26co', $builder->forOrganisation('Gemeente Ãœ&co'));
+	}//end testTheTenantIsPassedToTheRouteTableVerbatimSoTheGeneratorEncodesIt()
+
+	/**
+	 * A notice about a record links to that record: the tenant link plus a
+	 * fragment the portal reads on load (REQ-NAP-005). A fragment never
+	 * reaches the server, so the record id stays out of access logs.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-notification-leads-to-the-record-req-nap-005
+	 */
+	public function testForRecordAddsTheFragment(): void {
+		$builder = $this->builder(['org' => 'venray'], '/apps/portaliq/site?org=venray');
+
+		self::assertSame(
+			'https://portal.example.test/apps/portaliq/site?org=venray#open=dossiq/mijnZaken/zaak%201',
+			$builder->forRecord('venray', 'dossiq', 'mijnZaken', 'zaak 1')
+		);
+	}//end testForRecordAddsTheFragment()
+}//end class

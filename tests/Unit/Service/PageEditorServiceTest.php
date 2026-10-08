@@ -53,6 +53,13 @@ class PageEditorServiceTest extends TestCase {
 	 */
 	private ?array $written = null;
 
+	/**
+	 * The write rules each schema was updated with, by slug.
+	 *
+	 * @var array<string, array>
+	 */
+	private array $writtenBySlug = [];
+
 
 	/**
 	 * A service wired to doubles.
@@ -150,11 +157,20 @@ class PageEditorServiceTest extends TestCase {
 			 * @return object|null The schema double.
 			 */
 			public function findByApplicationAndSlug(string $slug, string $application): ?object {
-				if ($slug !== 'page' || $application !== 'portaliq') {
+				if (in_array($slug, ['page', 'media', 'menu', 'portalNotice'], true) === false || $application !== 'portaliq') {
 					return null;
 				}
 
-				return new class {
+				return new class($slug) {
+
+					/**
+					 * Constructor.
+					 *
+					 * @param string $slug The schema slug.
+					 */
+					public function __construct(public string $slug) {
+					}
+
 
 					/**
 					 * The block, seeded with the shipped read rules.
@@ -201,7 +217,7 @@ class PageEditorServiceTest extends TestCase {
 			 * @return object The entity.
 			 */
 			public function update(object $entity): object {
-				$this->test->record($entity->getAuthorization());
+				$this->test->record($entity->getAuthorization(), $entity->slug);
 				return $entity;
 			}
 		};
@@ -215,8 +231,11 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function record(array $authorization): void {
-		$this->written = $authorization;
+	public function record(array $authorization, string $slug='page'): void {
+		$this->writtenBySlug[$slug] = $authorization;
+		if ($slug === 'page') {
+			$this->written = $authorization;
+		}
 	}//end record()
 
 
@@ -229,6 +248,7 @@ class PageEditorServiceTest extends TestCase {
 		parent::setUp();
 		$this->stored = '';
 		$this->written = null;
+		$this->writtenBySlug = [];
 	}//end setUp()
 
 
@@ -237,7 +257,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testAnAnonymousVisitorMayNotEdit(): void {
 		$this->assertFalse($this->service(uid: null)->mayEdit());
@@ -249,7 +269,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAnAdministratorMayEdit(): void {
 		$this->assertTrue($this->service(isAdmin: true)->mayEdit());
@@ -261,7 +281,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAConfiguredEditorMayEdit(): void {
 		$this->stored = json_encode(['redacteuren']);
@@ -275,7 +295,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAnAuthenticatedNonEditorMayNotEdit(): void {
 		$this->stored = json_encode(['redacteuren']);
@@ -293,7 +313,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAnEmptySettingDoesNotMeanEveryone(): void {
 		$this->assertFalse($this->service(memberships: ['gebruikers'])->mayEdit());
@@ -305,7 +325,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testSavingWritesTheSchemaWriteRules(): void {
 		$service = $this->service(isAdmin: true);
@@ -320,6 +340,64 @@ class PageEditorServiceTest extends TestCase {
 
 
 	/**
+	 * The editor groups also write the media library (site-page-seo-history-
+	 * and-media T06): whoever may edit pages may upload the images they use.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+	 */
+	public function testTheEditorGroupsAlsoWriteTheMediaLibrary(): void {
+		$this->service(isAdmin: true)->setEditorGroups(['redacteuren']);
+
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['create'] ?? null);
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['update'] ?? null);
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['delete'] ?? null);
+	}//end testTheEditorGroupsAlsoWriteTheMediaLibrary()
+
+
+	/**
+	 * The editor groups also govern the portal's menus, so an editor may
+	 * edit the menu from the portal and nobody else may, and the menu's read
+	 * rules are left as they were.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
+	 */
+	public function testTheEditorGroupsAlsoWriteTheMenu(): void {
+		$this->service(isAdmin: true)->setEditorGroups(['redactie']);
+
+		$this->assertSame(['redactie'], $this->writtenBySlug['menu']['create'] ?? null);
+		$this->assertSame(['redactie'], $this->writtenBySlug['menu']['update'] ?? null);
+		$this->assertSame(['redactie'], $this->writtenBySlug['menu']['delete'] ?? null);
+		$this->assertSame(
+			[
+				['group' => 'public', 'match' => ['status' => 'published']],
+				'authenticated',
+			],
+			$this->writtenBySlug['menu']['read'] ?? null
+		);
+	}//end testTheEditorGroupsAlsoWriteTheMenu()
+
+	/**
+	 * The editor groups also write portal notices (operate-maintenance-notice
+	 * T01, REQ-OMN-003): whoever may edit pages may announce maintenance.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
+	 */
+	public function testEditorGroupsReachNotices(): void {
+		$this->service(isAdmin: true)->setEditorGroups(['redacteuren']);
+
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['portalNotice']['create'] ?? null);
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['portalNotice']['update'] ?? null);
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['portalNotice']['delete'] ?? null);
+	}//end testEditorGroupsReachNotices()
+
+
+	/**
 	 * The public read rule survives a write of the editor groups.
 	 *
 	 * Rewriting `read` here would take every published page off the air for
@@ -328,7 +406,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testThePublicReadRuleSurvives(): void {
 		$this->service(isAdmin: true)->setEditorGroups(['redacteuren']);
@@ -353,7 +431,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testClearingTheSettingClosesTheSchema(): void {
 		$service = $this->service(isAdmin: true);
@@ -372,7 +450,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAvailableGroupsAreListedForThePicker(): void {
 		$appConfig = $this->createMock(IAppConfig::class);
@@ -430,7 +508,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testABareStringValueIsReadAsOneGroup(): void {
 		$this->stored = 'redacteuren';
@@ -444,7 +522,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testTheSchemaWriteReportsFailureWhenOpenRegisterIsAbsent(): void {
 		$service = $this->service(isAdmin: true, withMapper: false);

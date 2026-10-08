@@ -20,10 +20,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Cms\MediaLibraryReader;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\ICache;
 use OCP\ICacheFactory;
+use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -83,7 +86,8 @@ class CmsReaderTest extends TestCase {
 			$this->container,
 			$factory,
 			$this->createMock(LoggerInterface::class),
-			$context
+			$context,
+			new MediaReferences($this->createMock(IURLGenerator::class), $this->createMock(MediaLibraryReader::class))
 		);
 	}//end setUp()
 
@@ -206,7 +210,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly
 	 */
 	public function testADraftIsNeverServedPublicly(): void {
 		$this->cache->method('get')->willReturn(null);
@@ -273,7 +277,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testIdentifyFindsAnUnpublishedPageToo(): void {
 		$this->withRows(
@@ -299,7 +303,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testIdentifyReadsAFlatIdentifier(): void {
 		$this->withRows([['id' => 'bb22', 'route' => '/contact']]);
@@ -313,7 +317,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testIdentifyReturnsNullForAnUnknownRoute(): void {
 		$this->withRows([['@self' => ['id' => 'cc33'], 'route' => '/ergens-anders']]);
@@ -331,7 +335,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testIdentifyRefusesWithoutAPortalOrRoute(): void {
 		$this->assertNull($this->reader->identify('', '/contact'));
@@ -468,6 +472,48 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
+	 * site-page-seo-history-and-media REQ-SPH-001: the flat seo fields are
+	 * served as one `seo` object, and a page without them serves empty ones.
+	 *
+	 * @return void
+	 */
+	public function testThePagesSearchFieldsAreServedAsOneObject(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Afval',
+					'route' => '/afval',
+					'seoTitle' => 'Afval en recycling',
+					'seoDescription' => 'Wanneer de container wordt geleegd.',
+					'seoNoindex' => true,
+					'seoImage' => 'https://example.nl/afval.jpg',
+					'body' => ['type' => 'markdown', 'markdown' => ''],
+				],
+			]
+		);
+
+		$page = $this->reader->page(portal: 'open-tilburg', route: '/afval', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(
+			['title' => 'Afval en recycling', 'description' => 'Wanneer de container wordt geleegd.', 'noindex' => true, 'image' => 'https://example.nl/afval.jpg'],
+			$page['seo']
+		);
+	}//end testThePagesSearchFieldsAreServedAsOneObject()
+
+	/**
+	 * A page without search fields serves empty ones, never absent ones.
+	 *
+	 * @return void
+	 */
+	public function testAPageWithoutSearchFieldsServesEmptyOnes(): void {
+		$this->withRows([['title' => 'Kaal', 'route' => '/kaal', 'body' => ['type' => 'markdown', 'markdown' => '']]]);
+
+		$page = $this->reader->page(portal: 'open-tilburg', route: '/kaal', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(['title' => '', 'description' => '', 'noindex' => false, 'image' => ''], $page['seo']);
+	}//end testAPageWithoutSearchFieldsServesEmptyOnes()
+
+	/**
 	 * A markdown page is returned as source, not converted.
 	 *
 	 * @return void
@@ -556,6 +602,67 @@ class CmsReaderTest extends TestCase {
 
 		$this->assertSame(['a', 'b', 'c'], array_column($page['body']['widgets'], 'id'));
 	}//end testGridWidgetsAreOrderedByRowThenColumn()
+
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-008 and REQ-PTB-009:
+	 * the page body serves its widgets grouped by region beside the flat
+	 * list, reports a slot that names no region, carries the regions it
+	 * clears, and still never projects `draftBody`.
+	 *
+	 * @return void
+	 */
+	public function testAPageServesItsRegionsBesideItsWidgets(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Home',
+					'route' => '/',
+					'body' => [
+						'type' => 'grid',
+						'clearedRegions' => ['aside', 'nowhere'],
+						'widgets' => [
+							['id' => 'hero', 'widgetKey' => 'hero', 'slot' => 'hero', 'gridY' => 0],
+							['id' => 'intro', 'widgetKey' => 'markdown', 'slot' => 'body', 'gridY' => 1],
+							['id' => 'typo', 'widgetKey' => 'markdown', 'slot' => 'heder', 'gridY' => 2],
+						],
+					],
+					'draftBody' => ['type' => 'grid', 'widgets' => [['id' => 'secret', 'widgetKey' => 'markdown']]],
+				],
+			]
+		);
+
+		$page = $this->reader->page(portal: 'open-tilburg', route: '/', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(['hero', 'intro', 'typo'], array_column($page['body']['widgets'], 'id'), 'body.widgets is unchanged');
+		$this->assertSame(['hero', 'main'], array_keys($page['body']['regions']));
+		$this->assertSame(['intro'], array_column($page['body']['regions']['main'], 'id'));
+		$this->assertSame(['heder'], $page['body']['unknownRegions']);
+		$this->assertSame(['aside'], $page['body']['clearedRegions']);
+		$this->assertArrayNotHasKey('draftBody', $page);
+		$this->assertStringNotContainsString('secret', (string)json_encode($page));
+	}//end testAPageServesItsRegionsBesideItsWidgets()
+
+	/**
+	 * A grid page without widgets serves `regions` as an empty JSON object,
+	 * and a markdown page still carries the regions it clears.
+	 *
+	 * @return void
+	 */
+	public function testEmptyRegionsStayAnObject(): void {
+		$this->withRows(
+			[
+				['title' => 'Leeg', 'route' => '/leeg', 'body' => ['type' => 'grid', 'widgets' => []]],
+				['title' => 'Tekst', 'route' => '/tekst', 'body' => ['type' => 'markdown', 'markdown' => 'x', 'clearedRegions' => ['hero']]],
+			]
+		);
+
+		$grid = $this->reader->page(portal: 'open-tilburg', route: '/leeg', locale: 'nl', audience: 'anonymous');
+		$this->assertSame('{}', json_encode($grid['body']['regions']));
+
+		$markdown = $this->reader->page(portal: 'open-tilburg', route: '/tekst', locale: 'nl', audience: 'anonymous');
+		$this->assertSame(['hero'], $markdown['body']['clearedRegions']);
+	}//end testEmptyRegionsStayAnObject()
 
 
 	/**
@@ -651,6 +758,147 @@ class CmsReaderTest extends TestCase {
 
 		$this->assertSame('from cache', $menus[0]['title']);
 	}//end testACachedReadSkipsTheQuery()
+
+
+	/**
+	 * A page widget shaped like an integration leaf is not served to a visitor.
+	 *
+	 * THE ADR-046 BOUNDARY, PINNED WHERE IT IS ACTUALLY ENFORCED. Portaliq now
+	 * consumes three integration leaves — forms, talk and calendar — on its
+	 * internal staff pages. Those live in `src/manifest.json`, which the portal
+	 * edge never reads, so the boundary holds structurally. This test covers
+	 * the one path that could still cross it: a `portalPage` is authored data,
+	 * an editor (or an import, or a future page designer) can put any key they
+	 * like on a widget, and `shapePage()` is the whitelist that decides which
+	 * of those keys a visitor sees.
+	 *
+	 * The fixture is deliberately hostile: the widget carries `type:
+	 * integration`, an `integrationId`, and a Talk join URL and Forms share URL
+	 * in the leaf-link positions a linked artifact would occupy. None of it is
+	 * in the whitelist, so none of it may come out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-leaf-integrations/spec.md#requirement-integration-leaves-render-on-the-internal-staff-side-only
+	 */
+	public function testALeafShapedWidgetIsStrippedFromAVisitorResponse(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Home',
+					'route' => '/',
+					'body' => [
+						'type' => 'grid',
+						'widgets' => [
+							[
+								'id' => 'smuggled',
+								'widgetKey' => 'markdown',
+								'type' => 'integration',
+								'integrationId' => 'talk',
+								'joinUrl' => 'https://cloud.example.org/call/abc123',
+								'shareUrl' => 'https://cloud.example.org/apps/forms/s/xyz789',
+								'gridX' => 0,
+								'gridY' => 0,
+								'gridWidth' => 12,
+								'gridHeight' => 2,
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$page = $this->reader->page(
+			portal: 'open-tilburg',
+			route: '/',
+			locale: 'nl',
+			audience: 'anonymous'
+		);
+
+		$widget = $page['body']['widgets'][0];
+
+		$this->assertArrayNotHasKey(
+			'integrationId',
+			$widget,
+			'A portal-edge payload MUST NOT carry an integrationId. An integration '
+			. 'leaf is a Nextcloud component rendered for a Nextcloud user; a portal '
+			. 'visitor holds a portal bearer session and is not one (ADR-046).'
+		);
+		$this->assertArrayNotHasKey(
+			'type',
+			$widget,
+			'A widget `type` of "integration" MUST NOT survive into an edge payload.'
+		);
+
+		// JSON_UNESCAPED_SLASHES is load-bearing, not tidiness. The default
+		// encoder writes `https:\/\/host\/call\/abc123`, so a needle spelled
+		// with plain slashes never matches and both assertions below pass on a
+		// payload that is leaking the URL. Found by mutation: copying `joinUrl`
+		// into the projection left this test green.
+		$serialised = json_encode($page, JSON_UNESCAPED_SLASHES);
+		$this->assertStringNotContainsString(
+			'/call/abc123',
+			$serialised,
+			'A Talk join URL reached a portal visitor. That is an invitation into '
+			. 'the Nextcloud shell, handed to somebody who has no account there.'
+		);
+		$this->assertStringNotContainsString(
+			'/apps/forms/s/xyz789',
+			$serialised,
+			'A Forms share URL reached a portal visitor. The visitor form flow is '
+			. 'the portal edge\'s own, never the Nextcloud Forms app.'
+		);
+	}//end testALeafShapedWidgetIsStrippedFromAVisitorResponse()
+
+
+	/**
+	 * The control for the test above.
+	 *
+	 * A whitelist that dropped EVERYTHING would pass the assertions above
+	 * while serving an empty page, and the two failures look identical from
+	 * the assertion's side. This proves the projection is still doing its job:
+	 * the same hostile fixture keeps the keys it is supposed to keep.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-leaf-integrations/spec.md#requirement-integration-leaves-render-on-the-internal-staff-side-only
+	 */
+	public function testTheProjectionStillServesTheWidgetItStripped(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Home',
+					'route' => '/',
+					'body' => [
+						'type' => 'grid',
+						'widgets' => [
+							[
+								'id' => 'smuggled',
+								'widgetKey' => 'markdown',
+								'type' => 'integration',
+								'integrationId' => 'talk',
+								'gridX' => 0,
+								'gridY' => 3,
+								'gridWidth' => 12,
+								'gridHeight' => 2,
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$widget = $this->reader->page(
+			portal: 'open-tilburg',
+			route: '/',
+			locale: 'nl',
+			audience: 'anonymous'
+		)['body']['widgets'][0];
+
+		$this->assertSame('smuggled', $widget['id']);
+		$this->assertSame('markdown', $widget['widgetKey']);
+		$this->assertSame(3, $widget['gridY']);
+	}//end testTheProjectionStillServesTheWidgetItStripped()
 
 
 }//end class

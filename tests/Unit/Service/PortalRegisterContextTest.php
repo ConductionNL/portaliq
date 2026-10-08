@@ -189,7 +189,7 @@ class PortalRegisterContextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
 	 */
 	public function testTheSchemaIsAppliedAsAnEntity(): void {
 		$service = $this->objectService();
@@ -212,7 +212,7 @@ class PortalRegisterContextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
 	 */
 	public function testTheSchemaIsSetBeforeTheRegister(): void {
 		$this->context()->apply($this->objectService(), 'page');
@@ -235,7 +235,7 @@ class PortalRegisterContextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
 	 */
 	public function testTheSchemaIsResolvedOncePerRequest(): void {
 		$lookups = 0;
@@ -294,7 +294,7 @@ class PortalRegisterContextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
 	 */
 	public function testAnAbsentOpenRegisterIsRefusedQuietly(): void {
 		$container = $this->createMock(ContainerInterface::class);
@@ -315,7 +315,7 @@ class PortalRegisterContextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
 	 */
 	public function testAForeignSchemaIsRefused(): void {
 		$service = $this->objectService();

@@ -34,9 +34,14 @@ __webpack_public_path__ = generateFilePath('portaliq', '', 'js/')
 import {
 	CnPageRenderer,
 	defaultPageTypes,
+	installIntegrationRegistry,
+	registerBuiltinIntegrations,
 	registerIcons,
+	registerLeafIntegrations,
 	registerTranslations,
+	useObjectStore,
 } from '@conduction/nextcloud-vue'
+import { loadState } from '@nextcloud/initial-state'
 import {
 	loadTranslations,
 	translatePlural as n,
@@ -50,6 +55,9 @@ import App from './App.vue'
 import enTranslations from '../l10n/en.json'
 import customComponents from './customComponents.js'
 import appIcons from './icons.js'
+import { registerProposalQueueLeaf } from './integrations/registerProposalQueueLeaf.js'
+import { normaliseAccess, routeAllowed, withAccess } from './lib/adminAccess.js'
+import { recordListFetches } from './lib/listRefresh.js'
 import bundledManifest from './manifest.json'
 import pinia from './pinia.js'
 // v2 five-kind registry — the replacement for customComponents.
@@ -67,6 +75,36 @@ import '@conduction/nextcloud-vue/css/index.css'
 import 'gridstack/dist/gridstack.css'
 // Global (unscoped) app styles
 import './assets/app.css'
+
+// THE HALF THAT MAKES A DECLARED LEAF VISIBLE.
+//
+// A manifest widget `{"type": "integration", "integrationId": "talk"}` is
+// resolved at render time by `useIntegrationRegistry()`, which looks the id up
+// in the shared registry and returns null when nobody registered it. Nothing
+// registers it on this app's behalf: OpenRegister's own bootstrap runs on
+// OpenRegister's pages, and its `LeafScriptListener` enqueues the bundles of
+// apps that PROVIDE a leaf to somebody else, which portaliq does not. So an
+// integration widget declared in the manifest of an app that never calls these
+// three functions renders nothing — no card, no absent state, no console error,
+// because "unknown id" and "app not installed" look identical from the outside.
+//
+// This is the same failure shape ADR-115 is about, and the reason it must be
+// stated here rather than assumed: the declaration and the rendering are two
+// halves, a parity check compares them to each other, and neither half asks
+// whether either one reached a page.
+//
+// `installIntegrationRegistry()` puts the registry on the global (draining any
+// queued pre-mount registration), `registerBuiltinIntegrations()` adds the core
+// five plus the bespoke leaf pairs, and `registerLeafIntegrations()` adds the
+// generic leaf factory entries as the no-bespoke fallback. Portaliq consumes
+// three of them — forms, talk and calendar — on internal staff pages only, per
+// ADR-046; the portal edge renders no Nextcloud app to a visitor.
+installIntegrationRegistry()
+registerBuiltinIntegrations()
+registerLeafIntegrations()
+// Portaliq's own leaf (change-proposal-queue), so its review surface renders
+// on portaliq's pages too; other apps' pages get it from `portaliq-leaves`.
+registerProposalQueueLeaf()
 
 // Register library-side icon set + lib translations once at bootstrap.
 registerIcons(appIcons)
@@ -175,6 +213,17 @@ const router = createRouter({
 	routes: routesFromManifest(bundledManifest),
 })
 
+// Which pages this user's role may use (admin-menu-follows-roles). The menu
+// hides the rest through its `visibleIf` predicates on `access.*`, and the
+// guard below sends a typed address for such a page to the dashboard.
+const access = normaliseAccess(loadState('portaliq', 'access', null))
+const manifest = withAccess(bundledManifest, access)
+router.beforeEach((to) =>
+	routeAllowed(manifest, String(to.name || ''), access)
+		? true
+		: { name: 'Dashboard' },
+)
+
 tryLoadTranslations()
 
 // Pass shallow copies of the registry maps to App.vue. The lib exports
@@ -190,7 +239,7 @@ const customComponentsProp = { ...customComponents }
 const registryProp = { ...registry }
 
 const app = createApp(App, {
-	manifest: bundledManifest,
+	manifest,
 	customComponents: customComponentsProp,
 	pageTypes: pageTypesProp,
 	registry: registryProp,
@@ -201,5 +250,8 @@ const app = createApp(App, {
 // gone from the Vue 3 bootstrap entirely.
 app.mixin({ methods: { t, n } })
 app.use(pinia)
+// Remember what each list last fetched, so a handler can refresh its list in
+// place on the same page (news-list-keeps-its-page).
+recordListFetches(useObjectStore(pinia))
 app.use(router)
 app.mount('#content')

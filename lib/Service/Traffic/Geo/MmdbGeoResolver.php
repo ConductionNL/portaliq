@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Traffic\Geo;
 
 use MaxMind\Db\Reader;
+use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -63,14 +64,18 @@ class MmdbGeoResolver implements GeoResolverInterface {
 	 * @param GeoDatabaseStore $store    Where the database lives.
 	 * @param GeoRefreshService $refresh Queues the first download.
 	 * @param LoggerInterface  $logger   The logger.
+	 * @param ConnectionReporter|null $connectionReporter Tells integriq, throttled, that the file will not open.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
 	 */
 	public function __construct(
 		private readonly GeoSettings $settings,
 		private readonly GeoDatabaseStore $store,
 		private readonly GeoRefreshService $refresh,
 		private readonly LoggerInterface $logger,
+		private readonly ?ConnectionReporter $connectionReporter = null,
 	) {
 	}
 
@@ -139,7 +144,13 @@ class MmdbGeoResolver implements GeoResolverInterface {
 	/**
 	 * The reader, opened on first use; null when there is no database.
 	 *
+	 * A file that will not open is also reported to integriq's connection
+	 * registry. The reporter throttles it, because this runs on a visitor's
+	 * traffic request (adopt-connection-registry).
+	 *
 	 * @return Reader|null The reader.
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
 	 */
 	private function reader(): ?Reader {
 		if ($this->opened === true) {
@@ -160,6 +171,7 @@ class MmdbGeoResolver implements GeoResolverInterface {
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: the geography database cannot be opened', ['path' => $path, 'reason' => $e->getMessage()]);
 			$this->reader = null;
+			$this->connectionReporter?->geoDatabaseUnreadable();
 		}
 
 		return $this->reader;

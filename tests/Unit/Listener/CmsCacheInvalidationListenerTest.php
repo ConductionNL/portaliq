@@ -202,10 +202,26 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 */
 	public function testTheDeclaredCmsSchemasAreTheCachedOnes(): void {
 		$this->assertSame(
-			['portal', 'menu', 'page', 'glossaryTerm'],
+			['portal', 'menu', 'page', 'glossaryTerm', 'media'],
 			CmsCacheInvalidationListener::cmsSchemas()
 		);
 	}//end testTheDeclaredCmsSchemasAreTheCachedOnes()
+
+
+	/**
+	 * A media write drops the portal's cache, so a replaced or unpublished
+	 * item stops resolving on its pages at once (site-page-seo-history-and-
+	 * media T09).
+	 *
+	 * @return void
+	 */
+	public function testAMediaWriteInvalidatesItsPortal(): void {
+		$this->reader->expects($this->once())
+			->method('invalidate')
+			->with(portal: 'gemeente');
+
+		$this->listener->handle(new ObjectUpdatedEvent($this->entity(data: ['portal' => 'gemeente', 'kind' => 'image', 'title' => 'Stadhuis'])));
+	}//end testAMediaWriteInvalidatesItsPortal()
 
 
 }//end class

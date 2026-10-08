@@ -1,4 +1,35 @@
 {
-  "$comment": "ADR-023 action-authorization matrix seed. Each entry maps a dot-separated action name to an array of group IDs allowed to invoke it. The special 'admin' group means Nextcloud admins; admins always pass regardless. Empty array or ['admin'] means admin-only. Admins customize via Admin Settings > Portaliq > Actions. Add entries below as the app grows — one per ActionAuthService::requireAction() call site. Template ships with an example commented pattern; remove the $comment field and add real actions when implementing your app.",
-  "actions": {}
+  "$comment": "ADR-023 action-authorization matrix seed. Each entry maps an action name that a controller passes to ActionAuthService::requireAction() to the Nextcloud group IDs allowed to invoke it. Nextcloud admins always pass; ['admin'] or [] means admin-only, and an action missing from the matrix is admin-only too. The repair step InitializeActions copies this file into the JSON app-config value `actions` (app portaliq) on install and adds any seed action the stored value lacks on every upgrade, never changing an action already stored, so an admin's grants survive upgrades. To grant an action to a group, write the whole matrix back, e.g. `occ config:app:set portaliq actions --value='{\"portal.author-news\":[\"admin\",\"communicatie\"], ...}'`; read the current value first with `occ config:app:get portaliq actions`. Every new requireAction() call site needs an entry here, defaulting to [\"admin\"].",
+  "actions": {
+    "portal.provision": [
+      "admin"
+    ],
+    "portal.ask-partner": [
+      "admin"
+    ],
+    "portal.review-proposal": [
+      "admin"
+    ],
+    "portal.answer-access-request": [
+      "admin"
+    ],
+    "portal.send-emergency-push": [
+      "admin"
+    ],
+    "portal.author-news": [
+      "admin"
+    ],
+    "portal.send-newsletter": [
+      "admin"
+    ],
+    "portal.manage-activity": [
+      "admin"
+    ],
+    "portal.manage-event": [
+      "admin"
+    ],
+    "portal.create-poll": [
+      "admin"
+    ]
+  }
 }

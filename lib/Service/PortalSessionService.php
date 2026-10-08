@@ -35,8 +35,8 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
- * @spec openspec/changes/contract-v2/tasks.md#T1
- * @spec openspec/changes/contract-v2/tasks.md#T7
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
@@ -50,6 +50,7 @@ namespace OCA\Portaliq\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Branch\BranchNumber;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
@@ -106,6 +107,33 @@ class PortalSessionService {
 	 * Default absolute maximum session lifetime: 8 hours.
 	 */
 	private const DEFAULT_MAX_LIFETIME = 28800;
+
+	/**
+	 * The app config key for the idle window (seconds): a bearer lives this
+	 * long after it was minted, and only activity refreshes it
+	 * (signin-session-idle-warning-and-sso D1).
+	 */
+	private const IDLE_TIMEOUT_CONFIG_KEY = 'session_idle_timeout';
+
+	/**
+	 * Default idle window: 15 minutes.
+	 */
+	private const DEFAULT_IDLE_TIMEOUT = 900;
+
+	/**
+	 * The shortest idle window an administrator can set: 5 minutes.
+	 */
+	private const MIN_IDLE_TIMEOUT = 300;
+
+	/**
+	 * The longest idle window an administrator can set: 1 hour.
+	 */
+	private const MAX_IDLE_TIMEOUT = 3600;
+
+	/**
+	 * The subject prefix of a reference session: `reference:<hash of the link id>`.
+	 */
+	private const REFERENCE_SUBJECT_PREFIX = 'reference:';
 
 	/**
 	 * The token minter/validator, built from the configured signing secret, or
@@ -195,7 +223,7 @@ class PortalSessionService {
 	 *
 	 * @return string One of `low`, `substantial`, `high`.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function normaliseTrust(mixed $trust): string {
 		if (is_string($trust) === true && isset(self::TRUST_ORDER[$trust]) === true) {
@@ -219,7 +247,7 @@ class PortalSessionService {
 	 *
 	 * @return bool True when the subject meets the threshold.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool {
 		if ($minTrust === null || $minTrust === '') {
@@ -246,11 +274,14 @@ class PortalSessionService {
 	 * @param string $organisation Tenant the session is scoped to.
 	 * @param string $trust Assurance level (e.g. "EH3").
 	 * @param array<int, string> $roles Roles carried in the session.
+	 * @param string $branch The vestigingsnummer the login was restricted to, or ''.
+	 * @param string $provider The OIDC provider the login came through, or '' (dev-login, Nextcloud mode, integriq route).
 	 *
-	 * @return array{token: string, jti: string}|null The minted bearer token +
-	 *                                                its id, or null when the
-	 *                                                edge is not yet configured.
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
+	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
@@ -262,14 +293,20 @@ class PortalSessionService {
 		string $organisation,
 		string $trust = '',
 		array $roles = [],
+		string $branch = '',
+		string $provider = '',
 	): ?array {
+		// A branch from the login restricts the session to it
+		// (signin-eherkenning-branch D1); a malformed one is never signed.
+		$branchNumber = (new BranchNumber())->normalise(value: $branch);
 		$issued = $this->mintSession(
 			subjectRef: $subjectRef,
 			audience: $audience,
 			organisation: $organisation,
 			trust: $trust,
 			roles: $roles,
-			authTime: null
+			authTime: null,
+			context: ['number' => $branchNumber, 'restricted' => ($branchNumber !== ''), 'provider' => $provider]
 		);
 		if ($issued === null) {
 			return null;
@@ -305,13 +342,17 @@ class PortalSessionService {
 	 * @param int|null $authTime The ORIGIN login's unix timestamp to carry
 	 *                           forward unchanged (a refresh rotation); null
 	 *                           mints a fresh origin (a genuine new login).
+	 * @param array{number?: string, restricted?: bool, provider?: string} $context The branch in effect
+	 *                                                                             (signin-eherkenning-branch) and the
+	 *                                                                             OIDC provider (signin-session-idle-
+	 *                                                                             warning-and-sso).
 	 *
-	 * @return array{token: string, jti: string}|null The minted bearer token +
-	 *                                                its id, or null when the
-	 *                                                edge is not yet configured.
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
+	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	private function mintSession(
 		string $subjectRef,
@@ -320,6 +361,7 @@ class PortalSessionService {
 		string $trust,
 		array $roles,
 		?int $authTime,
+		array $context = [],
 	): ?array {
 		if ($this->jwt === null) {
 			$this->logger->warning('Portaliq: session issuance refused — no dedicated jwt_signing_secret configured');
@@ -329,6 +371,9 @@ class PortalSessionService {
 		$jti = $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
 		$now = new DateTimeImmutable();
 		$originAuthTime = ($authTime ?? $now->getTimestamp());
+		// The bearer lives one idle window (signin-session-idle-warning-and-sso
+		// D1): a bearer nobody refreshes expires on the server.
+		$idleTimeout = $this->idleTimeoutSeconds();
 
 		$token = $this->jwt->createSession(
 			subjectRef: $subjectRef,
@@ -337,8 +382,11 @@ class PortalSessionService {
 			jti: $jti,
 			trust: $trust,
 			roles: $roles,
-			authTime: $originAuthTime
+			ttl: $idleTimeout,
+			authTime: $originAuthTime,
+			context: $context
 		);
+		$expiresAt = (int)($this->jwt->validate($token)['exp'] ?? 0);
 
 		$this->writer->createObject(
 			register: self::SESSION_REGISTER,
@@ -353,14 +401,57 @@ class PortalSessionService {
 				'jti' => $jti,
 				'trustLevel' => $trust,
 				'issuedAt' => $now->format(DATE_ATOM),
-				'expiresAt' => $now->add(new DateInterval('PT' . PortalJwtService::DEFAULT_TTL . 'S'))->format(DATE_ATOM),
+				'expiresAt' => (new DateTimeImmutable('@' . $expiresAt))->format(DATE_ATOM),
 				'revoked' => false,
 				'authTime' => (new DateTimeImmutable('@' . $originAuthTime))->format(DATE_ATOM),
 			]
 		);
 
-		return ['token' => $token, 'jti' => $jti];
+		return [
+			'token' => $token,
+			'jti' => $jti,
+			'expiresAt' => $expiresAt,
+			'hardExpiresAt' => ($originAuthTime + $this->maxLifetimeSeconds()),
+			'idleTimeout' => $idleTimeout,
+		];
 	}//end mintSession()
+
+	/**
+	 * The idle window in seconds: config `session_idle_timeout`, default 900,
+	 * clamped to 300 through 3600. A value that is not a positive number falls
+	 * back to the default rather than to a clamp.
+	 *
+	 * @return int
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
+	 */
+	private function idleTimeoutSeconds(): int {
+		$configured = (int)$this->config->getAppValue(Application::APP_ID, self::IDLE_TIMEOUT_CONFIG_KEY, (string)self::DEFAULT_IDLE_TIMEOUT);
+		if ($configured <= 0) {
+			return self::DEFAULT_IDLE_TIMEOUT;
+		}
+
+		return max(self::MIN_IDLE_TIMEOUT, min(self::MAX_IDLE_TIMEOUT, $configured));
+	}//end idleTimeoutSeconds()
+
+	/**
+	 * When a resolved session ends: its bearer's expiry, the absolute cap
+	 * measured from the origin login, and the idle window. The portal SPAs
+	 * schedule their refresh and the warning from these.
+	 *
+	 * @param array<string, mixed> $subject A subject from resolveFromBearer().
+	 *
+	 * @return array{expiresAt: int, hardExpiresAt: int, idleTimeout: int}
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
+	 */
+	public function sessionTimes(array $subject): array {
+		return [
+			'expiresAt' => (int)($subject['expiresAt'] ?? 0),
+			'hardExpiresAt' => ((int)($subject['authTime'] ?? 0) + $this->maxLifetimeSeconds()),
+			'idleTimeout' => $this->idleTimeoutSeconds(),
+		];
+	}//end sessionTimes()
 
 	/**
 	 * The absolute maximum session lifetime in seconds — config `session_max_lifetime`
@@ -447,8 +538,131 @@ class PortalSessionService {
 			// for a token minted before this claim existed, which refreshSession()
 			// treats as "cannot establish an origin" and refuses (fail-closed).
 			'authTime' => (int)($claims['authTime'] ?? 0),
+			// Change signin-eherkenning-branch: the branch in effect ('' for none)
+			// and whether the login restricted the session to it.
+			'branch' => (new BranchNumber())->normalise(value: ($claims['branch'] ?? null)),
+			'branchRestricted' => (($claims['branchRestricted'] ?? false) === true && ($claims['branch'] ?? '') !== ''),
+			// Change signin-session-idle-warning-and-sso: the OIDC provider
+			// ('' for none) and when this bearer expires.
+			'provider' => (string)($claims['provider'] ?? ''),
+			'expiresAt' => (int)($claims['exp'] ?? 0),
 		];
 	}//end resolveFromBearer()
+
+	/**
+	 * Mint the short, read-only session a redeemed reference link opens
+	 * (identity-ways-in-screens D2). It carries `use: reference`, so
+	 * `resolveFromBearer()` refuses it like any special-use token and no
+	 * route that takes a portal session accepts it; only the reference read
+	 * does, through `resolveReferenceFromBearer()`. It is recorded for
+	 * revocation and never refreshed.
+	 *
+	 * @param string $linkId The spent link's id; the subject is its hash.
+	 * @param string $caseReference The case number the session may read.
+	 * @param string $organisation The tenant.
+	 * @param string $register The case collection's register.
+	 * @param string $schema The case collection's schema.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: string}|null Null
+	 *         when the auth edge is not configured or a field is empty.
+	 *
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
+	 */
+	public function issueReferenceSession(string $linkId, string $caseReference, string $organisation, string $register, string $schema): ?array {
+		if ($this->jwt === null || in_array('', [$linkId, $caseReference, $organisation, $register, $schema], true) === true) {
+			return null;
+		}
+
+		$subjectRef = self::REFERENCE_SUBJECT_PREFIX . hash('sha256', $linkId);
+		$jti = $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+		$now = new DateTimeImmutable();
+		$expiresAt = $now->add(new DateInterval('PT' . PortalJwtService::REFERENCE_TTL . 'S'));
+
+		$token = $this->jwt->createReferenceSession(
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			caseReference: $caseReference,
+			register: $register,
+			schema: $schema,
+			jti: $jti
+		);
+
+		$this->writer->createObject(
+			register: self::SESSION_REGISTER,
+			schema: self::SESSION_SCHEMA,
+			scopeField: '',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			data: [
+				'subjectRef' => $subjectRef,
+				'audience' => 'client',
+				'organisation' => $organisation,
+				'jti' => $jti,
+				'trustLevel' => 'low',
+				'issuedAt' => $now->format(DATE_ATOM),
+				'expiresAt' => $expiresAt->format(DATE_ATOM),
+				'revoked' => false,
+				'authTime' => $now->format(DATE_ATOM),
+			]
+		);
+
+		$this->auditor->record(
+			verb: 'login',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			register: self::SESSION_REGISTER,
+			schema: self::SESSION_SCHEMA,
+			id: $jti,
+			jti: $jti
+		);
+
+		return ['token' => $token, 'jti' => $jti, 'expiresAt' => $expiresAt->format(DATE_ATOM)];
+	}//end issueReferenceSession()
+
+	/**
+	 * Resolve a reference session, and only a reference session. FAILS CLOSED.
+	 *
+	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 *
+	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
+	 *
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
+	 */
+	public function resolveReferenceFromBearer(?string $authorizationHeader): ?array {
+		if ($this->jwt === null || $authorizationHeader === null || str_starts_with($authorizationHeader, self::BEARER_PREFIX) === false) {
+			return null;
+		}
+
+		try {
+			$claims = $this->jwt->validate(substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
+		} catch (Throwable $e) {
+			$this->logger->debug('Portaliq: reference bearer rejected', ['reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (($claims['use'] ?? '') !== PortalJwtService::USE_REFERENCE) {
+			return null;
+		}
+
+		$jti = (string)($claims['jti'] ?? '');
+		if ($this->isJtiActive(jti: $jti) === false) {
+			return null;
+		}
+
+		$reference = [
+			'subjectRef' => (string)($claims['sub'] ?? ''),
+			'organisation' => (string)($claims['organisation'] ?? ''),
+			'caseReference' => (string)($claims['caseReference'] ?? ''),
+			'register' => (string)($claims['register'] ?? ''),
+			'schema' => (string)($claims['schema'] ?? ''),
+			'jti' => $jti,
+		];
+		if (in_array('', $reference, true) === true) {
+			return null;
+		}
+
+		return $reference;
+	}//end resolveReferenceFromBearer()
 
 	/**
 	 * Rotate a valid, unexpired, not-yet-revoked bearer into a NEW session with
@@ -461,9 +675,10 @@ class PortalSessionService {
 	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
 	 *
-	 * @return array{token: string, jti: string}|null The NEW bearer token + its
-	 *                                                id, or null on any rejection.
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The NEW
+	 *         bearer token, its id and when the rotated session ends, or null on any rejection.
 	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */
@@ -476,6 +691,61 @@ class PortalSessionService {
 			return null;
 		}
 
+		// A refresh carries the branch and its restriction unchanged: it
+		// can never widen a branch login to the whole company.
+		return $this->rotate(
+			subject: $subject,
+			context: [
+				'number' => (string)($subject['branch'] ?? ''),
+				'restricted' => (($subject['branchRestricted'] ?? false) === true),
+				'provider' => (string)($subject['provider'] ?? ''),
+			]
+		);
+	}//end refreshSession()
+
+	/**
+	 * Re-issue a whole-company session for one branch, or for the whole
+	 * company again with '' (signin-eherkenning-branch T05, REQ-SEB-003).
+	 *
+	 * Rotates like a refresh, within the same absolute cap. Refused (null)
+	 * for a session the login restricted to a branch, for a malformed branch
+	 * number and on every rejection refresh has. Whether the branch belongs
+	 * to the company is the caller's check (SessionBranchController).
+	 *
+	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 * @param string      $branch              A 12-digit branch number, or '' for the whole company.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
+	 *
+	 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+	 */
+	public function rebranchSession(?string $authorizationHeader, string $branch): ?array {
+		$subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);
+		if ($subject === null || ($subject['branchRestricted'] ?? false) === true) {
+			return null;
+		}
+
+		$number = (new BranchNumber())->normalise(value: $branch);
+		if ($branch !== '' && $number === '') {
+			return null;
+		}
+
+		return $this->rotate(
+			subject: $subject,
+			context: ['number' => $number, 'restricted' => false, 'provider' => (string)($subject['provider'] ?? '')]
+		);
+	}//end rebranchSession()
+
+	/**
+	 * Rotate a resolved session: mint a new bearer with the given context,
+	 * revoke the old one quietly and record one `refresh`.
+	 *
+	 * @param array<string, mixed>                                          $subject The resolved subject.
+	 * @param array{number?: string, restricted?: bool, provider?: string} $context The new bearer's context.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
+	 */
+	private function rotate(array $subject, array $context): ?array {
 		$oldJti = (string)($subject['jti'] ?? '');
 		$authTime = (int)($subject['authTime'] ?? 0);
 		if ($oldJti === '' || $authTime <= 0) {
@@ -495,7 +765,8 @@ class PortalSessionService {
 			organisation: (string)($subject['organisation'] ?? ''),
 			trust: (string)($subject['trust'] ?? ''),
 			roles: (array)($subject['roles'] ?? []),
-			authTime: $authTime
+			authTime: $authTime,
+			context: $context
 		);
 		if ($issued === null) {
 			return null;
@@ -517,7 +788,7 @@ class PortalSessionService {
 		);
 
 		return $issued;
-	}//end refreshSession()
+	}//end rotate()
 
 	/**
 	 * Whether a `jti` has a corresponding, not-revoked `portalSession` row.
@@ -754,6 +1025,8 @@ class PortalSessionService {
 	 * can never come back as a portal session (contract v2, A6).
 	 *
 	 * @param array<string, mixed> $subject The resolved subject (from resolveFromBearer).
+	 * @param string $scopeClaim The action's declared scope claim, or ''.
+	 * @param string $scopeValue The server-resolved value of that claim, or ''.
 	 *
 	 * @return string Compact assertion JWT (TTL ~60s).
 	 *
@@ -762,9 +1035,9 @@ class PortalSessionService {
 	 *                          resolved subject implies `resolveFromBearer()`
 	 *                          already required `$jwt` to be non-null.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T7
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
 	 */
-	public function issueAssertion(array $subject): string {
+	public function issueAssertion(array $subject, string $scopeClaim = '', string $scopeValue = ''): string {
 		if ($this->jwt === null) {
 			throw new RuntimeException('Portaliq: cannot issue an assertion — no dedicated jwt_signing_secret configured');
 		}
@@ -774,7 +1047,9 @@ class PortalSessionService {
 			audience: (string)($subject['audience'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
 			trust: self::normaliseTrust(trust: ($subject['trust'] ?? '')),
-			jti: (string)($subject['jti'] ?? '')
+			jti: (string)($subject['jti'] ?? ''),
+			scopeClaim: $scopeClaim,
+			scopeValue: $scopeValue
 		);
 	}//end issueAssertion()
 }//end class

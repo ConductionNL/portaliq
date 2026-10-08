@@ -371,6 +371,12 @@ class TrafficConfigResolver {
 				default: self::DEFAULT_RETENTION_DAYS
 			),
 			'consentRequired' => ($consent['required'] ?? false) === true,
+			// Paths the portal declares off-limits to analytics entirely
+			// (a-report-without-an-account REQ-RWA-007). A reporting surface
+			// is the case this exists for: a visitor row on it is a record
+			// that somebody looked at the whistleblowing form, which is
+			// exactly what must not exist.
+			'excludedPaths' => $this->excludedPaths(value: ($traffic['excludedPaths'] ?? null)),
 			'preConsentEvents' => $preConsent,
 			'regionGranularity' => $regionGranularity,
 			// Mirrored to the top level because it is the one switch the CLIENT
@@ -647,4 +653,39 @@ class TrafficConfigResolver {
 
 		return 'country';
 	}
+	/**
+	 * The paths analytics never records, normalised to leading-slash strings.
+	 *
+	 * @param mixed $value The declared list.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 */
+	private function excludedPaths(mixed $value): array {
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		$paths = [];
+		foreach ($value as $entry) {
+			if (is_string($entry) === false) {
+				continue;
+			}
+
+			$path = trim($entry);
+			if ($path === '') {
+				continue;
+			}
+
+			if (str_starts_with($path, '/') === false) {
+				$path = '/' . $path;
+			}
+
+			$paths[] = rtrim($path, '/');
+		}
+
+		return array_values(array_unique($paths));
+	}//end excludedPaths()
+
 }

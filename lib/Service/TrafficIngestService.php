@@ -175,6 +175,16 @@ class TrafficIngestService {
 				continue;
 			}
 
+			// A surface the portal declared off-limits leaves no row at all
+			// (a-report-without-an-account REQ-RWA-007). The reporting page is
+			// the case this exists for: a visitor row on it records that
+			// somebody opened the whistleblowing form, which is precisely the
+			// fact that must not exist anywhere.
+			if ($this->isExcluded(event: $result['event'], config: $config) === true) {
+				$refused['excluded-path'] = ($refused['excluded-path'] ?? 0) + 1;
+				continue;
+			}
+
 			$records[] = $this->record(
 				event: $result['event'],
 				slug: $slug,
@@ -196,6 +206,41 @@ class TrafficIngestService {
 
 		return ['accepted' => $accepted, 'refused' => $refused];
 	}
+
+	/**
+	 * Whether this event happened on a surface the portal excluded.
+	 *
+	 * A declared path matches itself and everything under it, so declaring
+	 * `/melding` covers the form, the confirmation and the thread without the
+	 * operator having to enumerate them and get one wrong.
+	 *
+	 * @param array<string, mixed> $event  The validated event.
+	 * @param array<string, mixed> $config The resolved configuration.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 */
+	private function isExcluded(array $event, array $config): bool {
+		$excluded = (array)($config['excludedPaths'] ?? []);
+		if ($excluded === []) {
+			return false;
+		}
+
+		$path = rtrim($this->referrers->path(location: (string)($event['pageLocation'] ?? '')), '/');
+		if ($path === '') {
+			$path = '/';
+		}
+
+		foreach ($excluded as $candidate) {
+			$prefix = (string)$candidate;
+			if ($path === $prefix || str_starts_with($path, $prefix . '/') === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isExcluded()
 
 	/**
 	 * One stored record from one validated event.

@@ -1,0 +1,28 @@
+{
+    "app": "portaliq",
+    "connections": [
+        {
+            "key": "geo-db",
+            "title": "Visitor geography database",
+            "description": "Downloads an offline database from DB-IP or MaxMind. Portaliq reads a visitor's country or region from it.",
+            "order": 10,
+            "settingsUrl": "/settings/admin/portaliq#section-visitor-geography",
+            "reportedOnly": true,
+            "switch": {
+                "configKey": "traffic.geo.provider",
+                "offValues": ["none"]
+            },
+            "disabledMessage": "Geography is switched off. No database is fetched and no region is stored.",
+            "unconfiguredMessage": "Not checked yet. Save the Visitor geography section, or run occ portaliq:traffic:geo-refresh."
+        },
+        {
+            "key": "oidc",
+            "title": "Login brokers",
+            "description": "DigiD, eHerkenning, eIDAS and OIDC brokers that residents and suppliers sign in through. Each portal organisation brings its own.",
+            "order": 20,
+            "settingsUrl": "/settings/admin/portaliq#section-portal-auth-edge",
+            "reportedOnly": true,
+            "unconfiguredMessage": "Not checked yet. The row reports after the next broker login. Each organisation keeps its broker settings in portaliq's app config."
+        }
+    ]
+}

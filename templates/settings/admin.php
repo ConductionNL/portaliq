@@ -9,12 +9,12 @@ $appId = Application::APP_ID;
 // Inject the app version via Nextcloud's IInitialState API so the Vue settings
 // app can read it with loadState('portaliq', 'version') — the NC-standard
 // CSP-compliant approach (replaces the prior data-version DOM attribute).
-\OC::$server->get(\OCP\IInitialStateService::class)
+\OCP\Server::get(\OCP\IInitialStateService::class)
     ->provideInitialState($appId, 'version', $_['version'] ?? '');
 
 // Whether the portal auth edge's dedicated jwt_signing_secret is configured
 // (portal-auth-edge-session-hardening) — never the secret's value.
-\OC::$server->get(\OCP\IInitialStateService::class)
+\OCP\Server::get(\OCP\IInitialStateService::class)
     ->provideInitialState($appId, 'jwtSigningSecretConfigured', $_['jwtSigningSecretConfigured'] ?? false);
 
 // webpack splitChunks emits shared chunks that every entry-point depends on

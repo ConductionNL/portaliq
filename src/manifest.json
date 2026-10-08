@@ -16,17 +16,10 @@
         "display": "cards",
         "optionsSource": "datasets",
         "configKey": "demo_dataset",
+        "loadAction": "load-demo-data",
         "title": "Load example data?",
         "required": false,
-        "body": "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install."
-      },
-      {
-        "id": "load-demo-data",
-        "type": "run-action",
-        "action": "load-demo-data",
-        "title": "Load the example data",
-        "required": false,
-        "body": "Loads what you picked. The data is obviously sample data, it is safe to run more than once, and you can delete it afterwards."
+        "body": "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Each card has its own Load button. Pick \"None\" on a production install."
       },
       {
         "id": "done",
@@ -60,21 +53,97 @@
       "label": "Portals",
       "icon": "Web",
       "route": "Portals",
-      "order": 20
+      "order": 20,
+      "visibleIf": {
+        "access.pages": true
+      }
+    },
+    {
+      "id": "MediaMenu",
+      "label": "Media",
+      "icon": "FolderOutline",
+      "route": "Media",
+      "order": 25,
+      "visibleIf": {
+        "access.pages": true
+      }
+    },
+    {
+      "id": "NoticesMenu",
+      "label": "Notices",
+      "icon": "AlertCircleOutline",
+      "route": "Notices",
+      "order": 26,
+      "visibleIf": {
+        "access.pages": true
+      }
+    },
+    {
+      "id": "NewsMenu",
+      "label": "News",
+      "icon": "NewspaperVariantOutline",
+      "route": "News",
+      "order": 27
     },
     {
       "id": "PortalAccounts",
       "label": "Accounts",
       "icon": "Account",
       "route": "PortalAccounts",
-      "order": 30
+      "order": 30,
+      "visibleIf": {
+        "access.accounts": true
+      }
+    },
+    {
+      "id": "InvitationsMenu",
+      "label": "Invitations",
+      "icon": "EmailOutline",
+      "route": "Invitations",
+      "order": 31,
+      "visibleIf": {
+        "access.accounts": true
+      }
+    },
+    {
+      "id": "AccessRequestsMenu",
+      "label": "Access requests",
+      "icon": "AccountKey",
+      "route": "AccessRequests",
+      "order": 32,
+      "visibleIf": {
+        "access.accessRequests": true
+      }
+    },
+    {
+      "id": "PortalSubmissionsMenu",
+      "label": "Submissions",
+      "icon": "FileCheckOutline",
+      "route": "PortalSubmissions",
+      "order": 35,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "FormBindingsMenu",
+      "label": "Request forms",
+      "icon": "FormSelect",
+      "route": "FormBindings",
+      "order": 36,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "Themes",
       "label": "Themes",
       "icon": "Palette",
       "route": "Themes",
-      "order": 40
+      "order": 40,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "Documentation",
@@ -90,15 +159,21 @@
       "icon": "StoreOutline",
       "route": "Store",
       "section": "footer",
-      "order": 92
+      "order": 92,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "ReportsMenu",
       "label": "Reports",
       "icon": "ChartBoxOutline",
       "route": "Reports",
-      "section": "footer",
-      "order": 95
+      "section": "settings",
+      "order": 95,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "FeaturesRoadmapMenu",
@@ -106,7 +181,10 @@
       "icon": "MapMarkerPath",
       "route": "FeaturesRoadmap",
       "section": "footer",
-      "order": 100
+      "order": 100,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "FlowsMenu",
@@ -114,7 +192,26 @@
       "icon": "Sitemap",
       "route": "Flows",
       "section": "settings",
-      "order": 96
+      "order": 96,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "IntegrationsMenu",
+      "label": "Integrations",
+      "icon": "PowerPlugOutline",
+      "route": "Integrations",
+      "query": {
+        "app": "portaliq"
+      },
+      "section": "settings",
+      "order": 98,
+      "permission": "admin",
+      "visibleIf": {
+        "appInstalled": "integriq",
+        "access.admin": true
+      }
     }
   ],
   "pages": [
@@ -307,6 +404,13 @@
             "description": "How much your portals are used, and by whom.",
             "icon": "ChartLine",
             "route": "Traffic"
+          },
+          {
+            "id": "Availability",
+            "label": "Availability",
+            "description": "How available each portal was, month by month, with every outage.",
+            "icon": "ShieldCheckOutline",
+            "route": "Availability"
           }
         ]
       },
@@ -326,6 +430,48 @@
             "title": "Traffic"
           },
           {
+            "id": "traffic-kpi-page-views",
+            "type": "TrafficKpi",
+            "title": "Page views",
+            "content": {
+              "metric": "pageViews",
+              "label": "Page views",
+              "testId": "traffic-tile-page-views",
+              "variant": "primary"
+            }
+          },
+          {
+            "id": "traffic-kpi-sessions",
+            "type": "TrafficKpi",
+            "title": "Sessions",
+            "content": {
+              "metric": "sessions",
+              "label": "Sessions",
+              "testId": "traffic-tile-sessions"
+            }
+          },
+          {
+            "id": "traffic-kpi-visitors",
+            "type": "TrafficKpi",
+            "title": "Visitors",
+            "content": {
+              "metric": "visitors",
+              "label": "Visitors",
+              "testId": "traffic-tile-visitors"
+            }
+          },
+          {
+            "id": "traffic-kpi-engaged",
+            "type": "TrafficKpi",
+            "title": "Engaged sessions",
+            "content": {
+              "metric": "engagedSessions",
+              "label": "Engaged sessions",
+              "testId": "traffic-tile-engaged",
+              "variant": "success"
+            }
+          },
+          {
             "id": "traffic-daily",
             "type": "TrafficDaily",
             "title": "Per day"
@@ -336,9 +482,9 @@
             "title": "Pages"
           },
           {
-            "id": "traffic-journeys",
-            "type": "TrafficJourneys",
-            "title": "Journeys"
+            "id": "traffic-paths",
+            "type": "TrafficPathExplorer",
+            "title": "Paths"
           },
           {
             "id": "traffic-sources",
@@ -398,13 +544,49 @@
             "gridX": 0,
             "gridY": 0,
             "gridWidth": 12,
-            "gridHeight": 3
+            "gridHeight": 2
+          },
+          {
+            "id": 15,
+            "widgetId": "traffic-kpi-page-views",
+            "gridX": 0,
+            "gridY": 2,
+            "gridWidth": 3,
+            "gridHeight": 2,
+            "showTitle": false
+          },
+          {
+            "id": 16,
+            "widgetId": "traffic-kpi-sessions",
+            "gridX": 3,
+            "gridY": 2,
+            "gridWidth": 3,
+            "gridHeight": 2,
+            "showTitle": false
+          },
+          {
+            "id": 17,
+            "widgetId": "traffic-kpi-visitors",
+            "gridX": 6,
+            "gridY": 2,
+            "gridWidth": 3,
+            "gridHeight": 2,
+            "showTitle": false
+          },
+          {
+            "id": 18,
+            "widgetId": "traffic-kpi-engaged",
+            "gridX": 9,
+            "gridY": 2,
+            "gridWidth": 3,
+            "gridHeight": 2,
+            "showTitle": false
           },
           {
             "id": 2,
             "widgetId": "traffic-daily",
             "gridX": 0,
-            "gridY": 3,
+            "gridY": 4,
             "gridWidth": 12,
             "gridHeight": 3
           },
@@ -412,23 +594,23 @@
             "id": 3,
             "widgetId": "traffic-pages",
             "gridX": 0,
-            "gridY": 6,
-            "gridWidth": 6,
+            "gridY": 7,
+            "gridWidth": 12,
             "gridHeight": 4
           },
           {
             "id": 4,
-            "widgetId": "traffic-journeys",
-            "gridX": 6,
-            "gridY": 6,
-            "gridWidth": 6,
-            "gridHeight": 4
+            "widgetId": "traffic-paths",
+            "gridX": 0,
+            "gridY": 11,
+            "gridWidth": 12,
+            "gridHeight": 8
           },
           {
             "id": 5,
             "widgetId": "traffic-sources",
             "gridX": 0,
-            "gridY": 10,
+            "gridY": 19,
             "gridWidth": 12,
             "gridHeight": 3
           },
@@ -436,7 +618,7 @@
             "id": 6,
             "widgetId": "traffic-visitors",
             "gridX": 0,
-            "gridY": 13,
+            "gridY": 22,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -444,7 +626,7 @@
             "id": 7,
             "widgetId": "traffic-goals",
             "gridX": 0,
-            "gridY": 18,
+            "gridY": 27,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -452,7 +634,7 @@
             "id": 8,
             "widgetId": "traffic-funnels",
             "gridX": 6,
-            "gridY": 18,
+            "gridY": 27,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -460,7 +642,7 @@
             "id": 9,
             "widgetId": "traffic-forms",
             "gridX": 0,
-            "gridY": 22,
+            "gridY": 31,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -468,7 +650,7 @@
             "id": 10,
             "widgetId": "traffic-dimensions",
             "gridX": 6,
-            "gridY": 22,
+            "gridY": 31,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -476,7 +658,7 @@
             "id": 11,
             "widgetId": "traffic-errors",
             "gridX": 0,
-            "gridY": 26,
+            "gridY": 35,
             "gridWidth": 12,
             "gridHeight": 3
           },
@@ -484,7 +666,7 @@
             "id": 12,
             "widgetId": "traffic-experiments",
             "gridX": 0,
-            "gridY": 29,
+            "gridY": 38,
             "gridWidth": 12,
             "gridHeight": 4
           },
@@ -492,7 +674,7 @@
             "id": 13,
             "widgetId": "traffic-heatmap",
             "gridX": 0,
-            "gridY": 33,
+            "gridY": 42,
             "gridWidth": 6,
             "gridHeight": 5
           },
@@ -500,13 +682,41 @@
             "id": 14,
             "widgetId": "traffic-recordings",
             "gridX": 6,
-            "gridY": 33,
+            "gridY": 42,
             "gridWidth": 6,
             "gridHeight": 5
           }
         ]
       },
-      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning."
+      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning. portal-traffic-kpi-cards moved the four headline numbers out of the overview into four TrafficKpi cards below it. They follow the overview's portal, period and segment and carry no picker of their own: the page has one period. The page selects the portal named in ?portal=, which is how a portal page's KPI cards link here."
+    },
+    {
+      "id": "Availability",
+      "route": "/availability",
+      "type": "dashboard",
+      "title": "Availability",
+      "config": {
+        "description": "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.",
+        "widgets": [
+          {
+            "id": "availability-report",
+            "type": "AvailabilityReport",
+            "title": "Availability"
+          }
+        ],
+        "layout": [
+          {
+            "id": 1,
+            "widgetId": "availability-report",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 10,
+            "showTitle": false
+          }
+        ]
+      },
+      "_note": "operate-availability-report. One widget: a portal picker, the twelve monthly percentages, the outages, 'How this is measured' and 'Download as CSV', read from AvailabilityController (admin-only). Reached from the Reports hub's Availability card; not in the main navigation (ADR-114 Decision 3)."
     },
     {
       "id": "PortalAccounts",
@@ -537,7 +747,78 @@
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "showAdd": false,
+        "headerActions": [
+          {
+            "id": "issue-account",
+            "label": "Issue an account",
+            "icon": "AccountPlus",
+            "handler": "issueAccount"
+          },
+          {
+            "id": "invite-someone",
+            "label": "Invite someone",
+            "icon": "EmailPlusOutline",
+            "handler": "inviteSomeone"
+          }
+        ],
+        "_note": "identity-staff-account-screens T04: the generic Add is hidden, because a portal account made through the object form skips the identity de-duplication of the provision route. 'Issue an account' and 'Invite someone' are handlers that post PortalAccountAdminController behind portal.provision; see src/lib/staffAccountActions.js."
+      }
+    },
+    {
+      "id": "Invitations",
+      "route": "/invitations",
+      "type": "index",
+      "title": "Invitations",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalInvitation",
+        "_note": "identity-staff-account-screens T05: the invitations staff sent, with their state and expiry. The secret is never on the row (tokenHash only, not a column). 'Withdraw invitation' posts /api/invitations/{id}/revoke behind portal.provision, which refuses an accepted invitation; 'Invite someone' opens InviteDialog. No generic Add: an invitation made through the object form would never be mailed.",
+        "showAdd": false,
+        "columns": [
+          "email",
+          {
+            "key": "state",
+            "label": "State",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "sent": "info",
+                "opened": "info",
+                "accepted": "success",
+                "expired": "warning",
+                "revoked": "error"
+              }
+            }
+          },
+          "sentAt",
+          "expiresAt",
+          "invitedBy",
+          "organisation"
+        ],
+        "headerActions": [
+          {
+            "id": "invite-someone",
+            "label": "Invite someone",
+            "icon": "EmailPlusOutline",
+            "handler": "inviteSomeone"
+          }
+        ],
+        "actions": [
+          {
+            "id": "withdraw-invitation",
+            "label": "Withdraw invitation",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "withdrawInvitation",
+            "visibleWhen": {
+              "field": "state",
+              "op": "neq",
+              "value": "accepted"
+            }
+          }
+        ]
       }
     },
     {
@@ -549,7 +830,7 @@
         "register": "portaliq",
         "schema": "portalAccount",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Identity/access-holder archetype: a portalAccount links one external IdP identity (eHerkenning/DigiD/eIDAS) to the subjectRef domain apps scope data by, so its detail page answers 'who is this and what sessions have they used to access the portal'. ADR-062 rev3 update: the summaryAggregates header chips are retired in favour of an in-grid stats-block card (account-stats) placed top-right of the lead account-data widget, both sized h5 so the row closes together; account-sessions moves below as its own full-width row. account-sessions gets allowCreate:false — sessions are IdP-minted at login time, never hand-created — plus a viewAllRoute to the fleet-wide PortalSessions index (the only session-listing page; no per-account filtered page exists) with a token-resolved viewAllQuery so the link at least carries the account's id. CORRECTION (measured): every filter on this page addressed `accountRef`, a property NO portalSession carries — the objects link to their account by `subjectRef`. A filter naming a property the rows do not have matches nothing and reports it as an honest zero, so the two session stats read 0 and the session list read 'No sessions issued yet' for every account, always, while looking perfectly configured. Now filtered on `subjectRef: @object.subjectRef`. Verified against the API before and after: `?accountRef=<id>` returned 0 of 100 sessions, `?subjectRef=e2e-smoke` returned 3 — the positive control that proves the mechanism works and the property was the fault. The same correction admits the messages list this note previously ruled out: subjectRef is not an object id, so `@objectId` indeed cannot filter it, but `@object.<field>` can and does (2 messages for dev-supplier). No Related panel: portalAccount declares no object-reference properties of its own (organisation is a plain tenant string, not an OR ref). No files/calendar/contacts/talk leaves: this is an auth-edge identity record, not a document- or comms-bearing object. status is a genuine two-state lifecycle (active/suspended) so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
+        "_note": "Identity/access-holder archetype: a portalAccount links one external IdP identity (eHerkenning/DigiD/eIDAS) to the subjectRef domain apps scope data by, so its detail page answers 'who is this and what sessions have they used to access the portal'. ADR-062 rev3 update: the summaryAggregates header chips are retired in favour of an in-grid stats-block card (account-stats) placed top-right of the lead account-data widget, both sized h5 so the row closes together; account-sessions moves below as its own full-width row. account-sessions gets allowCreate:false — sessions are IdP-minted at login time, never hand-created — plus a viewAllRoute to the fleet-wide PortalSessions index (the only session-listing page; no per-account filtered page exists) with a token-resolved viewAllQuery so the link at least carries the account's id. CORRECTION (measured): every filter on this page addressed `accountRef`, a property NO portalSession carries — the objects link to their account by `subjectRef`. A filter naming a property the rows do not have matches nothing and reports it as an honest zero, so the two session stats read 0 and the session list read 'No sessions issued yet' for every account, always, while looking perfectly configured. Now filtered on `subjectRef: @object.subjectRef`. Verified against the API before and after: `?accountRef=<id>` returned 0 of 100 sessions, `?subjectRef=e2e-smoke` returned 3 — the positive control that proves the mechanism works and the property was the fault. The same correction admits the messages list this note previously ruled out: subjectRef is not an object id, so `@objectId` indeed cannot filter it, but `@object.<field>` can and does (2 messages for dev-supplier). No Related panel: portalAccount declares no object-reference properties of its own (organisation is a plain tenant string, not an OR ref). CORRECTION (leaf-integrations): the calendar leaf is now adopted. The earlier note ruled out every leaf on the grounds that an auth-edge identity record bears no documents, which holds for files and contacts and still does, but an appointment is not a document: staff had sessions and messages for this subject and nowhere to see or plan a meeting with them. The Meetings leaf renders in the Nextcloud shell only (ADR-046); any visitor-facing appointment view must be portal-rendered from OpenRegister objects and never embed or link the Calendar app. Still no files/contacts leaves. status is a genuine two-state lifecycle (active/suspended) so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
         "widgets": [
           {
             "id": "account-data",
@@ -559,6 +840,12 @@
             "content": {
               "columns": 2
             }
+          },
+          {
+            "id": "account-withdraw",
+            "type": "PortalAccountWithdraw",
+            "title": "Withdraw this account",
+            "icon": "Account"
           },
           {
             "id": "account-stats-sessions-issued",
@@ -680,6 +967,13 @@
               "emptyText": "No messages for this account",
               "allowCreate": false
             }
+          },
+          {
+            "id": "account-calendar",
+            "type": "integration",
+            "integrationId": "calendar",
+            "title": "Meetings",
+            "icon": "Calendar"
           }
         ],
         "layout": [
@@ -708,10 +1002,18 @@
             "gridHeight": 3
           },
           {
+            "id": "account-withdraw",
+            "widgetId": "account-withdraw",
+            "gridX": 0,
+            "gridY": 5,
+            "gridWidth": 12,
+            "gridHeight": 2
+          },
+          {
             "id": "3",
             "widgetId": "account-sessions",
             "gridX": 0,
-            "gridY": 5,
+            "gridY": 7,
             "gridWidth": 12,
             "gridHeight": 4
           },
@@ -719,9 +1021,17 @@
             "id": "4",
             "widgetId": "account-messages",
             "gridX": 0,
-            "gridY": 9,
+            "gridY": 11,
             "gridWidth": 12,
             "gridHeight": 4
+          },
+          {
+            "id": "account-calendar",
+            "widgetId": "account-calendar",
+            "gridX": 0,
+            "gridY": 15,
+            "gridWidth": 12,
+            "gridHeight": 3
           }
         ],
         "lifecycleActions": {
@@ -879,7 +1189,7 @@
         "register": "portaliq",
         "schema": "portalMessage",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Inbox-item archetype: a portalMessage is a single notification delivered to a subject's portal inbox, so the whole record is small enough to read at a glance — the body is one full-width data card with all fields (subject, body, read, receivedAt, subjectRef, organisation). No Related panel: subjectRef is the plain pseudonymous identity string the IdP/domain app returned, NOT an OR object reference (portalMessage has no accountRef FK), so there is nothing to resolve. No child object-list: nothing in this register points at a portalMessage. No files/calendar/contacts/talk leaves: a message is text-only, not content- or comms-bearing beyond itself. No lifecycleActions: read is a one-way flag toggled by the portal UI, not a modeled lifecycle. Audit history stays a sidebar tab.",
+        "_note": "Inbox-item archetype: a portalMessage is a single notification delivered to a subject's portal inbox, so the whole record is small enough to read at a glance — the body is one full-width data card with all fields (subject, body, read, receivedAt, subjectRef, organisation). No Related panel: subjectRef is the plain pseudonymous identity string the IdP/domain app returned, NOT an OR object reference (portalMessage has no accountRef FK), so there is nothing to resolve. No child object-list: nothing in this register points at a portalMessage. CORRECTION (leaf-integrations): the talk leaf is now adopted. The earlier note reasoned about the message as a document and concluded it carried nothing to chat about, but the thing staff need a conversation for is not the text, it is the answer: two employees deciding how to reply to a citizen did that in an unlinked room or in email, off the record. The talk leaf attaches that conversation to the message object, on the internal side only (ADR-046): the citizen's half of the exchange stays a portalMessage served through the portal edge, and no join link is ever written into an edge-served field. Still no files/contacts leaves, for the original reason. No lifecycleActions: read is a one-way flag toggled by the portal UI, not a modeled lifecycle. Audit history stays a sidebar tab.",
         "widgets": [
           {
             "id": "message-data",
@@ -889,6 +1199,13 @@
             "content": {
               "columns": 2
             }
+          },
+          {
+            "id": "message-talk",
+            "type": "integration",
+            "integrationId": "talk",
+            "title": "Staff conversation",
+            "icon": "ChatOutline"
           }
         ],
         "layout": [
@@ -897,6 +1214,14 @@
             "widgetId": "message-data",
             "gridX": 0,
             "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
+            "id": "message-talk",
+            "widgetId": "message-talk",
+            "gridX": 0,
+            "gridY": 4,
             "gridWidth": 12,
             "gridHeight": 4
           }
@@ -920,24 +1245,26 @@
       }
     },
     {
-      "id": "Documents",
-      "route": "/documents",
+      "id": "PortalSubmissions",
+      "route": "/submissions",
       "type": "index",
-      "title": "Documents",
+      "title": "Portal Submissions",
       "config": {
         "register": "portaliq",
-        "schema": "exampleDocument",
+        "schema": "portalSubmission",
         "columns": [
-          "title",
-          "subjectRef",
-          "organisation",
+          "appId",
+          "actionId",
+          "submittedAt",
           {
-            "key": "status",
-            "label": "Status",
+            "key": "deliveryStatus",
+            "label": "Receipt",
             "widget": "badge",
             "widgetProps": {
               "colorMap": {
-                "open": "warning"
+                "delivered": "success",
+                "pending": "warning",
+                "failed": "error"
               }
             }
           }
@@ -949,54 +1276,51 @@
       }
     },
     {
-      "id": "DocumentDetail",
-      "route": "/documents/:id",
+      "id": "PortalSubmissionDetail",
+      "route": "/submissions/:id",
       "type": "detail",
-      "title": "Document",
+      "title": "Portal Submission",
       "config": {
         "register": "portaliq",
-        "schema": "exampleDocument",
+        "schema": "portalSubmission",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Document-record archetype: exampleDocument is the register's own demo, subject-scoped content object (x-schema-org DigitalDocument) that exercises the portal object reader end-to-end; its schema description says apps should replace it with real content schemas (procest ships supplierContract etc.), so this page is designed honestly for what exists today. The body leads with the document's own fields (title, status, subjectRef, organisation) in a full-width data card, with a full-width Files leaf below since the schema is schema.org DigitalDocument — a document-bearing type — even though this demo schema has no binary field yet. ADR-062 rev3 update: both cells shrunk from h4 to h3 — only 4 fields (2 rows at columns:2) and an empty-by-default Files leaf don't fill an h4 budget (rule 1's 60% floor). No Related panel: no object-reference properties are declared. No object-list: nothing else in this register points at an exampleDocument. status is a plain lifecycle string so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
+        "_note": "Proof-of-receipt archetype, following the PortalMessages / PortalMessageDetail pair. The schema has carried the WMEBV burden of proof since the receipts change and had no page at all: staff triaging a failed delivery read the database or nothing. The index projects the facts a triage list needs (appId, actionId, submittedAt, deliveryStatus as a badge) and deliberately leaves payloadCopy off, because payloadCopy is whatever a citizen typed and a list renders many rows at once; it belongs on the detail page, where reading one record is the intent. Adding these pages changes who RENDERS the record, not who may read it: access stays OpenRegister RBAC exactly as for account-messages. The forms leaf sits beside the data card so a handler can link the Nextcloud Form behind a submission or a follow-up form to it. That leaf is internal-only (ADR-046): the visitor's form experience is the portal edge's own submission flow and its receipt message, and a portal visitor is never shown or invited into the Forms app. No lifecycleActions: deliveryStatus is a retriability signal the receipt service writes, not a lifecycle a person drives. Audit history stays a sidebar tab.",
         "widgets": [
           {
-            "id": "document-data",
+            "id": "submission-data",
             "type": "data",
-            "title": "Document details",
-            "icon": "FileDocument",
+            "title": "Submission",
+            "icon": "FileCheckOutline",
             "content": {
               "columns": 2
             }
           },
           {
-            "id": "document-files",
+            "id": "submission-forms",
             "type": "integration",
-            "integrationId": "files",
-            "title": "Attachments",
-            "icon": "FolderOutline"
+            "integrationId": "forms",
+            "title": "Forms",
+            "icon": "ClipboardText"
           }
         ],
         "layout": [
           {
             "id": "1",
-            "widgetId": "document-data",
+            "widgetId": "submission-data",
             "gridX": 0,
             "gridY": 0,
             "gridWidth": 12,
-            "gridHeight": 3
+            "gridHeight": 5
           },
           {
-            "id": "2",
-            "widgetId": "document-files",
+            "id": "submission-forms",
+            "widgetId": "submission-forms",
             "gridX": 0,
-            "gridY": 3,
+            "gridY": 5,
             "gridWidth": 12,
-            "gridHeight": 3
+            "gridHeight": 4
           }
         ],
-        "lifecycleActions": {
-          "field": "status"
-        },
         "sidebar": {
           "enabled": true,
           "showMetadata": true,
@@ -1052,7 +1376,16 @@
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "actions": [
+          {
+            "id": "open-site",
+            "label": "Open portal",
+            "icon": "OpenInNew",
+            "type": "handler",
+            "handler": "openPortalSite"
+          }
+        ]
       }
     },
     {
@@ -1063,8 +1396,137 @@
       "config": {
         "register": "portaliq",
         "schema": "portal",
-        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg.",
+        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the picker opens on its `default`, 30 days, and the card sends the picked preset as `days` through the `@range.preset` token. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing. portal-home-page sits DIRECTLY under the KPI row and above the portal's own fields, because it reports a configuration error and an error nobody scrolls to is not reported. It is the only widget on this page whose subject is a route rather than a record: a portal with no published page at `/` serves not-found at its own address, which no other widget here can show. Its placement, not its registration, is what puts it in front of an administrator, and tests/portal-home-page.spec.mjs asserts both.",
         "widgets": [
+          {
+            "id": "portal-kpi-page-views",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "metric": "pageViews",
+              "label": "Page views",
+              "testId": "portal-kpi-page-views",
+              "dateRange": {
+                "default": "30",
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "30",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              },
+              "variant": "primary"
+            }
+          },
+          {
+            "id": "portal-kpi-sessions",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "metric": "sessions",
+              "label": "Sessions",
+              "testId": "portal-kpi-sessions",
+              "dateRange": {
+                "default": "30",
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "30",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "portal-kpi-visitors",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "metric": "visitors",
+              "label": "Visitors",
+              "testId": "portal-kpi-visitors",
+              "dateRange": {
+                "default": "30",
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "30",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "portal-kpi-engaged",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "metric": "engagedSessions",
+              "label": "Engaged sessions",
+              "testId": "portal-kpi-engaged",
+              "dateRange": {
+                "default": "30",
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "30",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              },
+              "variant": "success"
+            }
+          },
+          {
+            "id": "portal-home-page",
+            "type": "PortalHomePage",
+            "title": "Home page",
+            "icon": "Home",
+            "content": {}
+          },
           {
             "id": "portal-data",
             "type": "data",
@@ -1170,14 +1632,81 @@
               "viewAllRoute": "Glossary",
               "emptyText": "This portal has no glossary terms yet"
             }
+          },
+          {
+            "id": "portal-case-types",
+            "type": "PortalCaseTypes",
+            "title": "Case types",
+            "icon": "ClipboardText",
+            "content": {}
+          },
+          {
+            "id": "portal-theme",
+            "type": "PortalTheme",
+            "title": "House style",
+            "icon": "Palette",
+            "content": {}
+          },
+          {
+            "id": "portal-signin",
+            "type": "PortalSignin",
+            "title": "Sign-in",
+            "icon": "Login",
+            "content": {}
+          },
+          {
+            "id": "portal-registration",
+            "type": "PortalRegistration",
+            "title": "Registration",
+            "icon": "AccountPlus"
           }
         ],
         "layout": [
           {
+            "id": "kpi-page-views",
+            "widgetId": "portal-kpi-page-views",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-sessions",
+            "widgetId": "portal-kpi-sessions",
+            "gridX": 3,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-visitors",
+            "widgetId": "portal-kpi-visitors",
+            "gridX": 6,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-engaged",
+            "widgetId": "portal-kpi-engaged",
+            "gridX": 9,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "portal-home-page",
+            "widgetId": "portal-home-page",
+            "gridX": 0,
+            "gridY": 2,
+            "gridWidth": 12,
+            "gridHeight": 2
+          },
+          {
             "id": "1",
             "widgetId": "portal-data",
             "gridX": 0,
-            "gridY": 0,
+            "gridY": 4,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -1185,7 +1714,7 @@
             "id": "2",
             "widgetId": "portal-pages",
             "gridX": 0,
-            "gridY": 5,
+            "gridY": 9,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -1193,7 +1722,7 @@
             "id": "3",
             "widgetId": "portal-menus",
             "gridX": 0,
-            "gridY": 10,
+            "gridY": 14,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -1201,9 +1730,41 @@
             "id": "4",
             "widgetId": "portal-glossary",
             "gridX": 6,
-            "gridY": 10,
+            "gridY": 14,
             "gridWidth": 6,
             "gridHeight": 4
+          },
+          {
+            "id": "5",
+            "widgetId": "portal-case-types",
+            "gridX": 0,
+            "gridY": 18,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "portal-theme",
+            "widgetId": "portal-theme",
+            "gridX": 0,
+            "gridY": 23,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "portal-signin",
+            "widgetId": "portal-signin",
+            "gridX": 0,
+            "gridY": 28,
+            "gridWidth": 12,
+            "gridHeight": 6
+          },
+          {
+            "id": "portal-registration",
+            "widgetId": "portal-registration",
+            "gridX": 0,
+            "gridY": 34,
+            "gridWidth": 12,
+            "gridHeight": 7
           }
         ],
         "sidebar": {
@@ -1250,6 +1811,7 @@
       "route": "/pages",
       "type": "index",
       "title": "Pages",
+      "_note": "The `open-layout` row action is the list-side entry to the layout designer (`PageLayout`). `type: \"open-page\"` is the declarative form: CnIndexPage's action dispatcher pushes `{ name: target, params: { id: row.id } }`, so the action needs no handler and no route string of its own. Its counterpart is the `edit-layout` header action on PageDetail, and both exist because the designer used to be reachable only by typing `/pages/<id>/layout` into the address bar.",
       "config": {
         "register": "portaliq",
         "schema": "page",
@@ -1270,6 +1832,15 @@
           },
           "locale"
         ],
+        "actions": [
+          {
+            "id": "open-layout",
+            "label": "Layout",
+            "icon": "ViewDashboardOutline",
+            "type": "open-page",
+            "target": "PageLayout"
+          }
+        ],
         "sidebar": {
           "enabled": true,
           "showMetadata": true
@@ -1281,13 +1852,239 @@
       "route": "/pages/:id",
       "type": "detail",
       "title": "Page",
+      "_note": "A page's BODY is a widget grid, and this detail page cannot edit one — it renders the object's scalars, so `body.widgets` shows up as an array of grid integers in a textarea. `PageLayout` is the surface that edits it, and until the `edit-layout` header action below existed nothing in the UI linked there: the designer was reachable only by typing `/pages/<id>/layout` into the address bar. The action carries NO `params`: vue-router fills a named target's missing REQUIRED params from the current route (`pickParams(currentLocation.params, …)` in its matcher), and `:id` is the same param on both routes, so `PageLayout` resolves to `/pages/<this id>/layout` on its own. That is also why the library's `open-page` dispatch does not pass params.",
       "config": {
         "register": "portaliq",
         "schema": "page",
+        "_note": "portal-page-traffic: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions) for this one page, then the page details, then Incoming and Outgoing traffic side by side. The cards are the portal page's PortalTrafficKpi with scope 'page': they read GET /api/traffic/page with the page's `portal` slug and `route`, each with its own period picker, and open the Traffic page with the portal selected. A page is matched to its traffic by its route within its portal; see openspec/changes/portal-page-traffic/proposal.md. Adding widgets replaces the default detail body, so the page details are a `data` widget here, as on PortalDetail.",
+        "layout": [
+          {
+            "id": "kpi-page-views",
+            "widgetId": "page-kpi-page-views",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-sessions",
+            "widgetId": "page-kpi-sessions",
+            "gridX": 3,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-visitors",
+            "widgetId": "page-kpi-visitors",
+            "gridX": 6,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-engaged",
+            "widgetId": "page-kpi-engaged",
+            "gridX": 9,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "1",
+            "widgetId": "page-data",
+            "gridX": 0,
+            "gridY": 2,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "2",
+            "widgetId": "page-traffic-incoming",
+            "gridX": 0,
+            "gridY": 7,
+            "gridWidth": 6,
+            "gridHeight": 6
+          },
+          {
+            "id": "3",
+            "widgetId": "page-traffic-outgoing",
+            "gridX": 6,
+            "gridY": 7,
+            "gridWidth": 6,
+            "gridHeight": 6
+          }
+        ],
+        "headerActions": [
+          {
+            "id": "edit-layout",
+            "label": "Edit layout",
+            "icon": "ViewDashboardOutline",
+            "type": "open-page",
+            "target": "PageLayout"
+          }
+        ],
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "widgets": [
+          {
+            "id": "page-kpi-page-views",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "scope": "page",
+              "metric": "pageViews",
+              "label": "Page views",
+              "testId": "page-kpi-page-views",
+              "dateRange": {
+                "default": "30",
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "30",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              },
+              "variant": "primary"
+            }
+          },
+          {
+            "id": "page-kpi-sessions",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "scope": "page",
+              "metric": "sessions",
+              "label": "Sessions",
+              "testId": "page-kpi-sessions",
+              "dateRange": {
+                "default": "30",
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "30",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "page-kpi-visitors",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "scope": "page",
+              "metric": "visitors",
+              "label": "Visitors",
+              "testId": "page-kpi-visitors",
+              "dateRange": {
+                "default": "30",
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "30",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "page-kpi-engaged",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "scope": "page",
+              "metric": "engagedSessions",
+              "label": "Engaged sessions",
+              "testId": "page-kpi-engaged",
+              "dateRange": {
+                "default": "30",
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "30",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              },
+              "variant": "success"
+            }
+          },
+          {
+            "id": "page-data",
+            "type": "data",
+            "title": "Page details",
+            "icon": "FileDocument",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "page-traffic-incoming",
+            "type": "PageTrafficFlow",
+            "title": "Incoming traffic",
+            "icon": "MapMarkerPath",
+            "content": {
+              "direction": "incoming",
+              "testId": "page-traffic-incoming"
+            }
+          },
+          {
+            "id": "page-traffic-outgoing",
+            "type": "PageTrafficFlow",
+            "title": "Outgoing traffic",
+            "icon": "OpenInNew",
+            "content": {
+              "direction": "outgoing",
+              "testId": "page-traffic-outgoing"
+            }
+          }
+        ]
       }
     },
     {
@@ -1297,6 +2094,83 @@
       "title": "Page layout",
       "component": "PageLayoutDesigner",
       "_note": "A page body is a widget grid on the shared 12-column geometry, and no built-in page type edits one: the detail page renders the object as fields, which for body.widgets means an array of grid integers in a textarea. This custom page places, moves and resizes those widgets directly, and is what the floating editing control on the site links to."
+    },
+    {
+      "id": "AccessRequests",
+      "route": "/access-requests",
+      "type": "index",
+      "title": "Access requests",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalAccessRequest",
+        "_note": "The owner's side of an access request (identity-access-requests, #797). Grant and Refuse are handlers, not object-op patches: an answer goes through AccessRequestAdminController behind portal.answer-access-request, a grant also records the portalMandate that opens the cases, and a refusal asks for the reason the asker reads. See src/lib/accessRequestActions.js.",
+        "columns": [
+          "displayName",
+          "onBehalfOf",
+          "organisation",
+          "reason",
+          "state",
+          "requestedAt"
+        ],
+        "actions": [
+          {
+            "id": "grant",
+            "label": "Grant",
+            "icon": "Check",
+            "type": "handler",
+            "handler": "grantAccessRequest"
+          },
+          {
+            "id": "refuse",
+            "label": "Refuse",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "refuseAccessRequest"
+          }
+        ]
+      }
+    },
+    {
+      "id": "FormBindings",
+      "route": "/form-bindings",
+      "type": "index",
+      "title": "Request forms",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalFormBinding",
+        "_note": "Which form each portal entry opens (portal-intake-form-as-an-object T03). The row shows the binding as configured, which reads the same whether its form is published or not; Check form asks FormBindingAdminController for the form it resolves to today. See src/lib/formBindingPreview.js.",
+        "columns": [
+          "portal",
+          "route",
+          "audience",
+          "formName",
+          "intakeKind",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        },
+        "actions": [
+          {
+            "id": "check-form",
+            "label": "Check form",
+            "icon": "FormSelect",
+            "type": "handler",
+            "handler": "previewFormBinding"
+          }
+        ]
+      }
     },
     {
       "id": "Glossary",
@@ -1332,6 +2206,176 @@
       }
     },
     {
+      "id": "Media",
+      "route": "/media",
+      "type": "index",
+      "title": "Media",
+      "config": {
+        "register": "portaliq",
+        "schema": "media",
+        "_note": "A portal's media library (site-page-seo-history-and-media T06-T09). An editor creates an item here and uploads its file on the item's page (the sidebar's Files tab, OpenRegister's object files); the newest file is the one served, so uploading a new one replaces the image on every page using it. Pages refer to an item as media:<id>, picked in the page designer's Media dialog. Deleting an item a published page uses is refused by MediaWriteGuardListener, which names the pages.",
+        "columns": [
+          "title",
+          "kind",
+          "portal",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "MediaDetail",
+      "route": "/media/:id",
+      "type": "detail",
+      "title": "Media item",
+      "config": {
+        "register": "portaliq",
+        "schema": "media",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "Notices",
+      "route": "/notices",
+      "type": "index",
+      "title": "Notices",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalNotice",
+        "_note": "Maintenance and warning notices shown above every page of a portal (operate-maintenance-notice). A notice shows while it is published and its window runs, on the public site, the signed-in portal or both. Written by the page editor groups; NoticeWriteGuardListener refuses an end that is not after the start.",
+        "columns": [
+          "message",
+          "portal",
+          "startsAt",
+          "endsAt",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "NoticeDetail",
+      "route": "/notices/:id",
+      "type": "detail",
+      "title": "Portal notice",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalNotice",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "News",
+      "route": "/news",
+      "type": "index",
+      "title": "News",
+      "config": {
+        "register": "portaliq",
+        "schema": "newsItem",
+        "_note": "School news for parents (staff-news-screen). Every write goes through NewsController's staff routes, never the object form: they check the audience and keep the read receipts and translations the server owns. 'New news item' and 'Change' open NewsItemDialog, which offers the whole school or groups from GET /api/news/audiences; 'Publish' and 'Take back' call the publish routes. See src/lib/newsAuthoring.js.",
+        "showAdd": false,
+        "showEditAction": false,
+        "showCopyAction": false,
+        "columns": [
+          "title",
+          {
+            "key": "target",
+            "label": "For",
+            "widget": "news-target"
+          },
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          },
+          {
+            "key": "publishedAt",
+            "label": "Published on"
+          },
+          "authorRef"
+        ],
+        "headerActions": [
+          {
+            "id": "new-news-item",
+            "label": "New news item",
+            "icon": "Plus",
+            "handler": "newNewsItem"
+          }
+        ],
+        "actions": [
+          {
+            "id": "change-news-item",
+            "label": "Change",
+            "icon": "Pencil",
+            "type": "handler",
+            "handler": "changeNewsItem"
+          },
+          {
+            "id": "publish-news-item",
+            "label": "Publish",
+            "icon": "Check",
+            "type": "handler",
+            "handler": "publishNewsItem",
+            "visibleWhen": {
+              "field": "status",
+              "op": "neq",
+              "value": "published"
+            }
+          },
+          {
+            "id": "unpublish-news-item",
+            "label": "Take back",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "unpublishNewsItem",
+            "visibleWhen": {
+              "field": "status",
+              "op": "eq",
+              "value": "published"
+            }
+          }
+        ]
+      }
+    },
+    {
       "id": "Flows",
       "route": "/flows",
       "type": "index",
@@ -1352,6 +2396,71 @@
       },
       "sidebarComponent": "FlowDetailSidebar",
       "_note": "The shared CnFlowDetail canvas over the same single engine. Controls render in the NC app sidebar (sidebarComponent) so the canvas keeps full width, and the canvas and the sidebar share useFlowStore."
+    },
+    {
+      "id": "Integrations",
+      "route": "/settings/integrations",
+      "type": "index",
+      "title": "Integrations",
+      "permission": "admin",
+      "requiresApp": {
+        "id": "integriq",
+        "name": "Integriq"
+      },
+      "config": {
+        "register": "integriq",
+        "schema": "app_connection",
+        "showViewAction": false,
+        "showAdd": false,
+        "headerActions": [
+          {
+            "id": "add-integration",
+            "label": "Add integration",
+            "icon": "PowerPlugOutline",
+            "handler": "openIntegriqConnections"
+          }
+        ],
+        "defaultSort": {
+          "field": "order",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "key": "title",
+            "label": "Connection"
+          },
+          {
+            "key": "status",
+            "label": "Status",
+            "formatter": "connectionStatus"
+          },
+          {
+            "key": "statusMessage",
+            "label": "Status message",
+            "sortable": false
+          },
+          {
+            "key": "checkedAt",
+            "label": "Last checked"
+          },
+          {
+            "key": "settingsUrl",
+            "label": "Settings",
+            "sortable": false,
+            "formatter": "connectionSettingsLabel",
+            "widget": "link",
+            "widgetProps": {
+              "href": "{settingsUrl}"
+            }
+          }
+        ],
+        "folderSidebar": {
+          "source": "field",
+          "field": "status",
+          "allLabel": "All connections"
+        }
+      },
+      "_note": "adopt-connection-registry (hydra connection-registry D8, hydra#667, #673, #674 and #676). The rows are integriq's `app_connection` objects, synced from lib/Settings/connections.json; integriq works out each status. The app=portaliq preset is the IntegrationsMenu entry's `query` (ADR-097 decision 5), which the index page merges into the fetch as a bare filter key. `showAdd` is false because a row nothing declared has nothing to check (D9). Add integration leaves for integriq's overview through the openIntegriqConnections handler in src/customComponents.js, because a header action's `navigate` only pushes a route inside this app."
     }
   ],
   "walkthrough": {
@@ -1436,8 +2545,8 @@
           {
             "id": "go-flows",
             "placement": "right",
-            "body": "Flows automate the repetitive parts of this app. Have a look, though you do not have to build one now.",
-            "task": "Open Flows from the menu",
+            "body": "Flows automate the repetitive parts of this app. They live behind the Settings button at the bottom of the menu. Have a look, though you do not have to build one now.",
+            "task": "Open Settings at the bottom of the menu, then Flows",
             "target": {
               "kind": "nav-item",
               "ref": "Flows"

@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Cms\MediaReferences;
+use OCA\Portaliq\Service\Cms\PortalShell;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
@@ -84,6 +86,9 @@ class CmsReader {
 	 * @param ICacheFactory         $cacheFactory Creates the distributed cache.
 	 * @param LoggerInterface       $logger       The logger.
 	 * @param PortalRegisterContext $context      Points the shared ObjectService at this app's schemas.
+	 * @param MediaReferences       $media        Resolves a page's media:<id> references.
+	 * @param PortalRegionResolver  $regions      Groups a page's widgets by region.
+	 * @param PortalShell           $shell        Projects the portal's header, footer and regions.
 	 *
 	 * @return void
 	 */
@@ -92,6 +97,9 @@ class CmsReader {
 		ICacheFactory $cacheFactory,
 		private readonly LoggerInterface $logger,
 		private readonly PortalRegisterContext $context,
+		private readonly MediaReferences $media,
+		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
+		private readonly PortalShell $shell=new PortalShell(),
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
 	}//end __construct()
@@ -249,7 +257,7 @@ class CmsReader {
 	 *
 	 * @return string|null The object identifier, or null when no page is there.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function identify(string $portal, string $route): ?string {
 		if ($portal === '' || $route === '') {
@@ -428,6 +436,41 @@ class CmsReader {
 
 
 	/**
+	 * A page's search-engine fields, stored flat as `seo*` so the page form
+	 * shows them, served as one `seo` object to the API and the head
+	 * (site-page-seo-history-and-media). Missing fields are empty, never absent.
+	 *
+	 * @param array $row The stored page.
+	 *
+	 * @return array{title: string, description: string, noindex: bool, image: string}
+	 */
+	private function shapeSeo(array $row): array {
+		$portal = (string)($row['portal'] ?? '');
+
+		return [
+			'title'       => (string)($row['seoTitle'] ?? ''),
+			'description' => (string)($row['seoDescription'] ?? ''),
+			'noindex'     => (($row['seoNoindex'] ?? false) === true),
+			'image'       => $this->media->image(portal: $portal, value: (string)($row['seoImage'] ?? '')),
+		];
+	}//end shapeSeo()
+
+
+	/**
+	 * The portal's shell as the public site contract serves it.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array<string, mixed> `authentication`, `headerVariant`, `footer` and `regions`.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+	 */
+	public function shell(array $portal): array {
+		return $this->shell->project(portal: $portal);
+	}//end shell()
+
+
+	/**
 	 * Shape a stored page row for the API.
 	 *
 	 * @param array $row The stored page.
@@ -435,22 +478,30 @@ class CmsReader {
 	 * @return array The API shape.
 	 */
 	private function shapePage(array $row): array {
-		$body = (array)($row['body'] ?? []);
-		$type = (string)($body['type'] ?? 'markdown');
+		$body   = (array)($row['body'] ?? []);
+		$type   = (string)($body['type'] ?? 'markdown');
+		$portal = (string)($row['portal'] ?? '');
 
 		$shaped = [
 			'title'   => (string)($row['title'] ?? ''),
 			'route'   => (string)($row['route'] ?? ''),
 			'summary' => (string)($row['summary'] ?? ''),
 			'locale'  => (string)($row['locale'] ?? ''),
+			'seo'     => $this->shapeSeo(row: $row),
+			'hero'    => $this->media->hero(portal: $portal, value: ($row['heroImage'] ?? null)),
 			'body'    => ['type' => $type],
 		];
+
+		// The regions this page empties on purpose (REQ-PTB-009). Served for
+		// both body types: a markdown page can clear the portal's hero too.
+		$shaped['body']['clearedRegions'] = $this->regions->cleared(cleared: ($body['clearedRegions'] ?? []));
 
 		if ($type === 'markdown') {
 			// Served as SOURCE. Rendering to HTML here would force every
 			// consumer that wants markdown — a Docusaurus build, most
 			// obviously — to parse it back out, losing fidelity for nothing.
-			$shaped['body']['markdown'] = (string)($body['markdown'] ?? '');
+			// Only a media:<id> link target is rewritten to the item's address.
+			$shaped['body']['markdown'] = $this->media->markdown(portal: $portal, markdown: (string)($body['markdown'] ?? ''));
 			return $shaped;
 		}
 
@@ -478,6 +529,13 @@ class CmsReader {
 		);
 
 		$shaped['body']['widgets'] = $widgets;
+
+		// The same widgets grouped by region, beside the flat list the
+		// Docusaurus plugin reads (REQ-PTB-008). A slot that names no region
+		// is reported, not dropped silently. An empty map stays an object.
+		$grouped = $this->regions->group(widgets: $widgets);
+		$shaped['body']['regions']        = $this->regions->forJson(regions: $grouped['regions']);
+		$shaped['body']['unknownRegions'] = $grouped['unknownRegions'];
 
 		return $shaped;
 	}//end shapePage()

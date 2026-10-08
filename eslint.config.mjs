@@ -84,7 +84,9 @@ export default [
 		// therefore names a plugin that is not registered there, and eslint
 		// refuses to run at all. Measured: with `lint: "eslint src tests"` this
 		// took out ALL 12 files under tests/ while src/ was fine.
-		files: ['**/*.js', '**/*.mjs', '**/*.ts', '**/*.tsx', '**/*.vue'],
+		// `.jsx` stays listed: the retired React portal was written in it, and a
+		// `.jsx` file added again must get the same `@spec` tag rules.
+		files: ['**/*.js', '**/*.jsx', '**/*.mjs', '**/*.ts', '**/*.tsx', '**/*.vue'],
 		ignores: [
 			'**/*.test.*',
 			'**/*.spec.*',

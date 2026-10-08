@@ -51,7 +51,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
- * @spec openspec/changes/contract-v2/tasks.md#T9
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T9
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data

@@ -6,9 +6,9 @@
     <name lang="nl">Portaliq</name>
     <summary lang="en">One shared external portal for clients and suppliers.</summary>
     <summary lang="nl">Eén gedeeld extern portaal voor klanten en leveranciers.</summary>
-    <description lang="en"><![CDATA[Portaliq is the fleet's shared external portal. Clients (citizens) and suppliers (companies) get one integrated, white-label portal to see and act on their records across every app — reading data through OpenRegister and rendering each app's registered portal contribution. It owns the external auth edge (DigiD / eHerkenning / eIDAS), the white-label portal shell, the unified inbox, and the portal-contribution registry. Employees stay internal. See ADR-046.]]></description>
-    <description lang="nl"><![CDATA[Portaliq is het gedeelde externe portaal voor de hele appsuite. Klanten (burgers) en leveranciers (bedrijven) krijgen één geïntegreerd, white-label portaal om hun gegevens over alle apps heen in te zien en er acties op te doen — gegevens komen via OpenRegister en elke app levert zijn eigen portaalbijdrage. Portaliq verzorgt de externe authenticatie (DigiD / eHerkenning / eIDAS), de white-label portaalschil, de gebundelde berichtenbox en het register van portaalbijdragen. Medewerkers blijven intern. Zie ADR-046.]]></description>
-    <version>0.1.22-unstable.20260831161259</version>
+    <description lang="en"><![CDATA[Portaliq is the fleet's shared external portal. Clients (citizens) and suppliers (companies) get one integrated, white-label portal to see and act on their records across every app. Portaliq reads the data through OpenRegister and renders each app's own portal contribution. It owns the external auth edge (DigiD / eHerkenning / eIDAS), the white-label portal shell, the unified inbox, and the portal-contribution registry. Employees stay internal. See ADR-046.]]></description>
+    <description lang="nl"><![CDATA[Portaliq is het gedeelde externe portaal voor de hele appsuite. Klanten (burgers) en leveranciers (bedrijven) krijgen één geïntegreerd, white-label portaal om hun gegevens over alle apps heen in te zien en er acties op te doen. De gegevens komen via OpenRegister en elke app levert zijn eigen portaalbijdrage. Portaliq verzorgt de externe authenticatie (DigiD / eHerkenning / eIDAS), de white-label portaalschil, de gebundelde berichtenbox en het register van portaalbijdragen. Medewerkers blijven intern. Zie ADR-046.]]></description>
+    <version>0.2.5-unstable.20260930060000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Portaliq</namespace>
@@ -68,11 +68,12 @@
         repository when it was written.
 
         The floor is 32 as a deliberate fleet policy (NC 32 is the PHP 8.3
-        baseline), matched by <php min-version="8.3"/> below. max-version stays
-        34, which is the fleet-wide value everywhere except openconnector (35).
+        baseline), matched by <php min-version="8.3"/> below. max-version is 35:
+        every new release of the WOO autumn release 2026 has to run on Nextcloud
+        35, and openregister, the data layer, declares 35 as well.
         -->
         <php min-version="8.3"/>
-        <nextcloud min-version="32" max-version="34"/>
+        <nextcloud min-version="32" max-version="35"/>
     </dependencies>
 
     <!-- The resident task leg (portal-task-delivery): drains openregister's
@@ -86,6 +87,16 @@
         <!-- portal-traffic-reporting: hourly, sends the reports whose period
              ended and fires the alerts whose threshold was crossed. -->
         <job>OCA\Portaliq\BackgroundJob\TrafficReportJob</job>
+        <!-- portal-intake-form-as-an-object: turns queued intake submissions
+             into cases after the citizen already has their reference. -->
+        <job>OCA\Portaliq\BackgroundJob\PortalIntakeDeliveryJob</job>
+        <!-- push-notifications-quiet-hours: every 5 minutes, delivers every
+             deferred push whose quiet-hours window has ended. -->
+        <job>OCA\Portaliq\BackgroundJob\PendingPushDeliveryJob</job>
+        <!-- operate-availability-report: every 5 minutes, checks each published
+             portal through the instance's own URL and keeps its availability
+             per day and its outages for thirteen months. -->
+        <job>OCA\Portaliq\BackgroundJob\AvailabilityProbeJob</job>
     </background-jobs>
 
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
@@ -94,6 +105,8 @@
             <step>OCA\Portaliq\Repair\InitializeSettings</step>
             <step>OCA\Portaliq\Repair\InitializeActions</step>
             <step>OCA\Portaliq\Repair\RenameDutchColumns</step>
+            <step>OCA\Portaliq\Repair\MovePortalAuditEntries</step>
+            <step>OCA\Portaliq\Repair\BackfillNewsPublishedAt</step>
         </post-migration>
         <install>
             <step>OCA\Portaliq\Repair\InitializeSettings</step>
@@ -123,6 +136,17 @@
              the access-log import. -->
         <command>OCA\Portaliq\Command\TrafficToken</command>
         <command>OCA\Portaliq\Command\TrafficImportLog</command>
+        <!-- portal-page-traffic: rebuild the retained days now, the same
+             back-fill the aggregation job runs once after an upgrade. -->
+        <command>OCA\Portaliq\Command\TrafficReaggregate</command>
+        <!-- example-site-zuiddrecht: put a shipped example site on the
+             instance, and take it off again. -->
+        <command>OCA\Portaliq\Command\ExampleSiteInstall</command>
+        <command>OCA\Portaliq\Command\ExampleSiteRemove</command>
+        <!-- example-resident-zuiddrecht: give an example site its resident,
+             so the area behind the sign-in button has something to show. -->
+        <command>OCA\Portaliq\Command\ExampleResidentInstall</command>
+        <command>OCA\Portaliq\Command\ExampleResidentRemove</command>
     </commands>
 
     <settings>

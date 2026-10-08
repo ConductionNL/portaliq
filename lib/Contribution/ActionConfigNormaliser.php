@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  */
 
@@ -35,19 +35,32 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalSchemaReader;
 
 /**
  * Validates and sanitises the v3 action form config, fail-closed.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- PortalJwtService::isReservedScopeClaim() is a pure check on
+ *                                         the frozen assertion claims, with no state to inject.
  */
 class ActionConfigNormaliser {
 	/**
 	 * Allowed form-field sizes; anything else normalises to `medium`.
 	 */
 	private const FIELD_SIZES = ['small', 'medium', 'large', 'full'];
+
+	/**
+	 * The form-shape pass: required fields, field widgets, steps. One
+	 * collaborator rather than three, so this class's dependencies stay
+	 * countable (phpmd CouplingBetweenObjects).
+	 *
+	 * @var ActionFormShape
+	 */
+	private readonly ActionFormShape $form;
 
 	/**
 	 * Constructor.
@@ -60,6 +73,24 @@ class ActionConfigNormaliser {
 	 *                                              null reader means the guard
 	 *                                              always fails closed (drops
 	 *                                              `required`).
+	 * @param CitizenWriteConfigNormaliser|null $citizenWrite Sanitises the
+	 *                                                        per-action citizen
+	 *                                                        write declaration
+	 *                                                        (what-the-citizen-may-
+	 *                                                        write-on-their-own-case).
+	 *                                                        Optional so existing
+	 *                                                        construction sites keep
+	 *                                                        working; absent means the
+	 *                                                        key is dropped, which
+	 *                                                        closes the surface.
+	 * @param CrossRefConfigNormaliser|null $crossRefs Sanitises the per-action
+	 *                                                 cross-reference guard. Optional
+	 *                                                 for the same reason, and absent
+	 *                                                 it is CONSTRUCTED rather than
+	 *                                                 skipped: this one key is the
+	 *                                                 guard itself, so an instance
+	 *                                                 that did not inject it must not
+	 *                                                 thereby run without it.
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
 	 */
@@ -67,7 +98,10 @@ class ActionConfigNormaliser {
 		private readonly ManifestValueNormaliser $values,
 		private readonly ActionOptionsNormaliser $options,
 		private readonly ?PortalSchemaReader $schemaReader = null,
+		private readonly ?CitizenWriteConfigNormaliser $citizenWrite = null,
+		private readonly ?CrossRefConfigNormaliser $crossRefs = null,
 	) {
+		$this->form = new ActionFormShape();
 	}//end __construct()
 
 	/**
@@ -77,7 +111,10 @@ class ActionConfigNormaliser {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-an-action-may-name-its-required-fields-req-smf-023
 	 */
 	public function normaliseActions(array $actions): array {
 		$out = [];
@@ -91,18 +128,86 @@ class ActionConfigNormaliser {
 				$whitelist = array_values(array_filter($action['fields'], static fn ($f) => is_string($f) === true));
 			}
 
-			$mandatory = $this->mandatoryFields(action: $action);
+			$definition = $this->schemaDefinition(action: $action);
+			$mandatory = $this->mandatoryFields(definition: $definition);
 			$action = $this->normaliseFieldConfigs(action: $action, whitelist: $whitelist, mandatory: $mandatory);
+			// Which fields the resident must fill in: the schema's required
+			// fields on a create, plus the action's own `requiredFields`, only
+			// ever among its `fields` (REQ-SMF-023).
+			$action = $this->form->requiredFields(action: $action, whitelist: $whitelist, mandatory: $mandatory);
 			$action = $this->options->normaliseOptionsProviders(action: $action, whitelist: $whitelist);
+			// What the schema says a field holds (a date, a number, one of a
+			// list) shapes its input, after the manifest had its say.
+			$action = (new SchemaInputHintNormaliser())->apply(action: $action, whitelist: $whitelist, definition: $definition);
+			// A widget hint that does not fit its field (choice cards without
+			// options, named days on a field that is no date) is dropped.
+			$action = $this->form->fitWidgets(action: $action);
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
+			// Steps, a draft and a confirmation on a create or endpoint action
+			// (site-multi-step-forms REQ-SMF-020, -021, -022).
+			$action = $this->form->flow(action: $action, whitelist: $whitelist);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
+			// The citizen write declaration (what-the-citizen-may-write-on-their-
+			// own-case). An absent normaliser drops the key, which closes the
+			// surface rather than opening it.
+			$action = ($this->citizenWrite ?? new CitizenWriteConfigNormaliser())->normaliseAction(action: $action);
 
-			$out[] = $action;
+			// A server-stamped subject field (portal-take-assessment) is a
+			// guard too: an action whose field name cannot be read is removed
+			// rather than forwarded without its stamp.
+			if ($this->subjectFieldIsMalformed(action: $action) === true) {
+				continue;
+			}
+
+			// A declared scope claim rides in the signed assertion; one that
+			// names a frozen assertion claim (`sub`, `iss`, ...) is removed with
+			// its action, so it can never stand in for that claim.
+			if (PortalJwtService::isReservedScopeClaim(scopeClaim: ($action['scopeClaim'] ?? null)) === true) {
+				continue;
+			}
+
+			// The cross-reference guard, and the one normaliser that can
+			// remove an action rather than a key: a create whose guard could
+			// not be read must not be offered without it.
+			$guarded = ($this->crossRefs ?? new CrossRefConfigNormaliser())
+				->normaliseAction(action: $action, whitelist: $whitelist);
+			if ($guarded === null) {
+				continue;
+			}
+
+			// A guest action (identity-guest-page-for-signed-links) without a
+			// token field, local endpoints and `low` trust is removed whole.
+			$guarded = (new GuestActionConfigNormaliser())->normaliseAction(action: $guarded);
+			if ($guarded === null) {
+				continue;
+			}
+
+			$out[] = $guarded;
 		}//end foreach
 
 		return $out;
 	}//end normaliseActions()
+
+	/**
+	 * Whether an action declares a `subjectField` that is not a plain field
+	 * name. Absent is fine; anything declared must match
+	 * `^[a-zA-Z][a-zA-Z0-9_]*$`.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 */
+	private function subjectFieldIsMalformed(array $action): bool {
+		if (array_key_exists('subjectField', $action) === false) {
+			return false;
+		}
+
+		return is_string($action['subjectField']) === false
+			|| preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $action['subjectField']) !== 1;
+	}//end subjectFieldIsMalformed()
 
 	/**
 	 * Drop a non-string `submitLabel` / `successMessage`.
@@ -184,7 +289,12 @@ class ActionConfigNormaliser {
 				continue;
 			}
 
-			$configs[$field] = $this->fieldConfigEntry(field: (string)$field, config: $config, mandatory: $mandatory);
+			$configs[$field] = $this->fieldConfigEntry(
+				field: (string)$field,
+				config: $config,
+				mandatory: $mandatory,
+				actionType: (string)($action['type'] ?? '')
+			);
 		}
 
 		$action['fieldConfigs'] = $configs;
@@ -193,19 +303,28 @@ class ActionConfigNormaliser {
 
 	/**
 	 * Build ONE sanitised field-config entry: the string labels, the boolean
-	 * flags (WMEBV-guarded), and the size enum.
+	 * flags (WMEBV-guarded), the size enum, and the file keys when the field is
+	 * a file field (assignment-portal-file-upload).
 	 *
 	 * @param string $field The whitelisted field name.
 	 * @param array<string, mixed> $config The declared field config.
 	 * @param array<int, string> $mandatory The action's schema `required` set.
+	 * @param string $actionType The action's `type`; a file field lives only
+	 *                           on a create or update action.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
+	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
+	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
 	 */
-	private function fieldConfigEntry(string $field, array $config, array $mandatory): array {
+	private function fieldConfigEntry(string $field, array $config, array $mandatory, string $actionType = ''): array {
 		$entry = [];
-		foreach (['label', 'placeholder', 'help'] as $textKey) {
+		// `requiredMessage` words the error of an empty required field
+		// (REQ-SMF-006); like the label, it is text the site shows as is.
+		foreach (['label', 'placeholder', 'help', 'requiredMessage'] as $textKey) {
 			if (isset($config[$textKey]) === true && is_string($config[$textKey]) === true) {
 				$entry[$textKey] = $config[$textKey];
 			}
@@ -213,8 +332,10 @@ class ActionConfigNormaliser {
 
 		$entry = $this->applyFieldFlags(entry: $entry, field: $field, config: $config, mandatory: $mandatory);
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
+		$entry = (new ValueLabelsNormaliser())->apply(entry: $entry, source: $config);
+		$entry = $this->form->fieldWidget(entry: $entry, config: $config);
 
-		return $entry;
+		return (new FileFieldConfigNormaliser())->apply(entry: $entry, config: $config, actionType: $actionType);
 	}//end fieldConfigEntry()
 
 	/**
@@ -258,29 +379,41 @@ class ActionConfigNormaliser {
 	}//end applyFieldFlags()
 
 	/**
+	 * Read the action's schema definition once, or null when there is no
+	 * schema slug, no injected PortalSchemaReader, or no such schema.
+	 *
+	 * @param array<string, mixed> $action The action (reads its `schema` key).
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+	 */
+	private function schemaDefinition(array $action): ?array {
+		if ($this->schemaReader === null) {
+			return null;
+		}
+
+		$schemaSlug = ($action['schema'] ?? null);
+		if (is_string($schemaSlug) === false || $schemaSlug === '') {
+			return null;
+		}
+
+		return $this->schemaReader->readSchema(slug: $schemaSlug);
+	}//end schemaDefinition()
+
+	/**
 	 * Resolve an action's schema `required` set (the field names it genuinely
 	 * mandates), or an empty set when unresolvable — fail-closed, per the
 	 * WMEBV data-minimisation guard: a `required` flag is NEVER elevated on a
-	 * guess. Requires a schema slug on the action AND an injected
-	 * PortalSchemaReader; either being absent yields an empty set.
+	 * guess. An absent definition yields an empty set.
 	 *
-	 * @param array<string, mixed> $action The action (reads its `schema` key).
+	 * @param array<string, mixed>|null $definition The action's schema definition.
 	 *
 	 * @return array<int, string>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
 	 */
-	private function mandatoryFields(array $action): array {
-		if ($this->schemaReader === null) {
-			return [];
-		}
-
-		$schemaSlug = ($action['schema'] ?? null);
-		if (is_string($schemaSlug) === false || $schemaSlug === '') {
-			return [];
-		}
-
-		$definition = $this->schemaReader->readSchema(slug: $schemaSlug);
+	private function mandatoryFields(?array $definition): array {
 		if ($definition === null) {
 			return [];
 		}

@@ -34,8 +34,8 @@ use Psr\Log\LoggerInterface;
  * bearer, or with no dedicated secret configured fails closed to null. Login/
  * logout/refresh each record an audit event via the injected AuditTrailService.
  *
- * @spec openspec/changes/contract-v2/tasks.md#T1
- * @spec openspec/changes/contract-v2/tasks.md#T7
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
@@ -429,6 +429,59 @@ class PortalSessionServiceTest extends TestCase {
 		return $hPart . '.' . $cPart . '.' . $sig;
 	}//end legacyTokenWithoutAuthTimeClaim()
 
+	/**
+	 * portaliq#796, identity-ways-in-screens D2: a redeemed reference link
+	 * opens a short session for one case. It resolves as a reference session
+	 * with its claim, and is refused as a portal session everywhere else.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceSessionReadsOnlyAsAReferenceSession(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueReferenceSession(linkId: 'link-1', caseReference: 'Z-2026-0042', organisation: 'gemeente-x', register: 'dossiq', schema: 'case');
+		$this->assertNotNull($issued);
+
+		$reference = $service->resolveReferenceFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame('Z-2026-0042', $reference['caseReference']);
+		$this->assertSame('dossiq', $reference['register']);
+		$this->assertSame('case', $reference['schema']);
+		$this->assertSame('reference:' . hash('sha256', 'link-1'), $reference['subjectRef']);
+
+		// Not a portal session: every route that takes one refuses it, and it
+		// cannot be refreshed into one.
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token']));
+		$this->assertNull($service->refreshSession('Bearer ' . $issued['token']));
+
+		// Thirty minutes, not the two hours of a portal session.
+		$lifetime = (new \DateTimeImmutable($issued['expiresAt']))->getTimestamp() - time();
+		$this->assertLessThanOrEqual(1800, $lifetime);
+		$this->assertGreaterThan(1700, $lifetime);
+
+	}//end testAReferenceSessionReadsOnlyAsAReferenceSession()
+
+	public function testAPortalSessionIsNotAReferenceSession(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'gemeente-x');
+
+		$this->assertNull($service->resolveReferenceFromBearer('Bearer ' . $issued['token']));
+
+	}//end testAPortalSessionIsNotAReferenceSession()
+
+	public function testARevokedReferenceSessionReadsNothing(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+		$issued = $service->issueReferenceSession(linkId: 'link-1', caseReference: 'Z-2026-0042', organisation: 'gemeente-x', register: 'dossiq', schema: 'case');
+
+		$service->revoke($issued['jti']);
+
+		$this->assertNull($service->resolveReferenceFromBearer('Bearer ' . $issued['token']));
+
+	}//end testARevokedReferenceSessionReadsNothing()
+
 	public function testIssueSessionRecordsALoginAuditEntry(): void {
 		// record(verb, subjectRef, organisation, register, schema, id, jti[, appId]);
 		// login supplies exactly 7 (appId defaults), the new session's jti in
@@ -499,6 +552,232 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testRefreshRecordsARefreshAuditEntryNotALoginOrLogout()
 
+
+	// -- branch (signin-eherkenning-branch REQ-SEB-001) -------------------------
+
+	public function testALoginBranchTravelsWithTheSessionAsRestricted(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high', branch: '000012345678');
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame('000012345678', $subject['branch']);
+		$this->assertTrue($subject['branchRestricted']);
+
+	}//end testALoginBranchTravelsWithTheSessionAsRestricted()
+
+	public function testASessionWithoutABranchHasNone(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame('', $subject['branch']);
+		$this->assertFalse($subject['branchRestricted']);
+
+	}//end testASessionWithoutABranchHasNone()
+
+	public function testARefreshKeepsTheBranchRestriction(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high', branch: '000012345678');
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$subject = $service->resolveFromBearer('Bearer ' . $refreshed['token']);
+
+		$this->assertSame('000012345678', $subject['branch']);
+		$this->assertTrue($subject['branchRestricted'], 'a refresh can never widen a branch login to the whole company');
+
+	}//end testARefreshKeepsTheBranchRestriction()
+
+	/**
+	 * signin-eherkenning-branch T05 (REQ-SEB-003): a whole-company session
+	 * narrows to one branch and back, the old bearer stops working, and the
+	 * chosen branch never restricts the session.
+	 *
+	 * @return void
+	 */
+	public function testAWholeCompanySessionNarrowsToABranchAndBack(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high');
+		$narrowed = $service->rebranchSession('Bearer ' . $issued['token'], '000087654321');
+		$this->assertNotNull($narrowed);
+		$subject = $service->resolveFromBearer('Bearer ' . $narrowed['token']);
+		$this->assertSame('000087654321', $subject['branch']);
+		$this->assertFalse($subject['branchRestricted'], 'a chosen branch can be left again');
+		$this->assertSame('high', $subject['trust']);
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token']), 'the old bearer is rotated out');
+
+		$widened = $service->rebranchSession('Bearer ' . $narrowed['token'], '');
+		$this->assertSame('', $service->resolveFromBearer('Bearer ' . $widened['token'])['branch']);
+
+	}//end testAWholeCompanySessionNarrowsToABranchAndBack()
+
+	/**
+	 * A session the login restricted to one branch cannot choose another, nor
+	 * the whole company, and keeps working.
+	 *
+	 * @return void
+	 */
+	public function testARestrictedSessionCannotChooseABranch(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', branch: '000012345678');
+		$this->assertNull($service->rebranchSession('Bearer ' . $issued['token'], '000087654321'));
+		$this->assertNull($service->rebranchSession('Bearer ' . $issued['token'], ''));
+		$this->assertSame('000012345678', $service->resolveFromBearer('Bearer ' . $issued['token'])['branch']);
+
+	}//end testARestrictedSessionCannotChooseABranch()
+
+	/**
+	 * A malformed branch or a missing bearer changes nothing.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedBranchChoiceIsRefused(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+		$this->assertNull($service->rebranchSession('Bearer ' . $issued['token'], 'shop-12'));
+		$this->assertNull($service->rebranchSession(null, '000087654321'));
+		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $issued['token']));
+
+	}//end testAMalformedBranchChoiceIsRefused()
+
+	public function testAMalformedBranchIsNeverSigned(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', branch: 'shop-12');
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame('', $subject['branch']);
+		$this->assertFalse($subject['branchRestricted']);
+
+	}//end testAMalformedBranchIsNeverSigned()
+
+	/**
+	 * REQ-SIS-001: a new bearer lives one idle window (default 900 s), not two hours.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
+	 */
+	public function testBearerLivesOneIdleWindow(): void {
+		$issued = $this->service()->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+
+		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+		$this->assertSame(900, ((int)$claims['exp'] - (int)$claims['iat']));
+
+		$issued = $this->service(idleTimeout: '1200')->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+		$this->assertSame(1200, ((int)$claims['exp'] - (int)$claims['iat']));
+
+	}//end testBearerLivesOneIdleWindow()
+
+	/**
+	 * REQ-SIS-001: the idle window is clamped to 300 through 3600 seconds, and
+	 * a value that is not a number falls back to the default.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
+	 */
+	public function testIdleTimeoutIsClamped(): void {
+		foreach (['60' => 300, '99999' => 3600, 'soon' => 900, '0' => 900, '-5' => 900] as $configured => $expected) {
+			$issued = $this->service(idleTimeout: (string)$configured)->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+			$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+			$this->assertSame($expected, ((int)$claims['exp'] - (int)$claims['iat']), "configured '{$configured}'");
+		}
+
+	}//end testIdleTimeoutIsClamped()
+
+	/**
+	 * REQ-SIS-001: a rotated bearer lives one idle window too, and the answer
+	 * reports when the session ends; the absolute cap still refuses a refresh.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
+	 */
+	public function testRefreshPastTheCapIsStillRefused(): void {
+		$store = [];
+		$service = $this->service(store: $store, maxLifetime: 3600, idleTimeout: '600');
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+
+		$rotated = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertNotNull($rotated);
+		$claims = (new PortalJwtService(self::SECRET))->validate($rotated['token']);
+		$this->assertSame(600, ((int)$claims['exp'] - (int)$claims['iat']));
+		$this->assertSame((int)$claims['exp'], $rotated['expiresAt']);
+		$this->assertSame(((int)$claims['authTime'] + 3600), $rotated['hardExpiresAt']);
+		$this->assertSame(600, $rotated['idleTimeout']);
+
+		// A bearer whose origin login is past the cap is refused, whatever the window.
+		$old = (new PortalJwtService(self::SECRET))->createSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', jti: 'jti-old', authTime: (time() - 3601));
+		$store['uuid-old'] = ['jti' => 'jti-old', 'revoked' => false, 'uuid' => 'uuid-old', 'subjectRef' => 's1'];
+		$this->assertNull($service->refreshSession('Bearer ' . $old));
+
+	}//end testRefreshPastTheCapIsStillRefused()
+
+	/**
+	 * REQ-SIS-001: the portalSession row expires with its bearer, one idle
+	 * window after it was minted, not two hours.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
+	 */
+	public function testTheSessionRowExpiresWithTheBearer(): void {
+		$store = [];
+		$issued = $this->service(store: $store, idleTimeout: '600')->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+
+		$row = array_values($store)[0];
+		$this->assertSame((int)$claims['exp'], (new \DateTimeImmutable($row['expiresAt']))->getTimestamp());
+
+	}//end testTheSessionRowExpiresWithTheBearer()
+
+	/**
+	 * REQ-SIS-001: the times a session reports: its bearer's expiry, the
+	 * absolute cap from the origin login, and the idle window.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
+	 */
+	public function testSessionTimesComeFromTheBearer(): void {
+		$service = $this->service(maxLifetime: 28800);
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+
+		$this->assertSame(
+			['expiresAt' => (int)$claims['exp'], 'hardExpiresAt' => ((int)$claims['authTime'] + 28800), 'idleTimeout' => 900],
+			$service->sessionTimes($subject)
+		);
+
+	}//end testSessionTimesComeFromTheBearer()
+
+	/**
+	 * REQ-SIS-006: an OIDC-minted session carries the provider it came from,
+	 * a refresh keeps it, and a session without one reports ''.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 */
+	public function testTheBearerCarriesTheProvider(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', provider: 'digid');
+		$this->assertSame('digid', $service->resolveFromBearer('Bearer ' . $issued['token'])['provider']);
+
+		$rotated = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertSame('digid', $service->resolveFromBearer('Bearer ' . $rotated['token'])['provider']);
+
+		$plain = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+		$this->assertSame('', $service->resolveFromBearer('Bearer ' . $plain['token'])['provider']);
+		$claims = (new PortalJwtService(self::SECRET))->validate($plain['token']);
+		$this->assertArrayNotHasKey('provider', $claims);
+
+	}//end testTheBearerCarriesTheProvider()
+
 	/**
 	 * Build a service backed by a dedicated (default: valid) signing secret
 	 * and an in-memory fake portalSession store (create/read/update), unless
@@ -513,12 +792,15 @@ class PortalSessionServiceTest extends TestCase {
 	 * @param AuditTrailService|null $auditor Override the audit recorder; null uses a permissive mock.
 	 * @param int $maxLifetime Override `session_max_lifetime` (seconds); the default 8h otherwise.
 	 */
-	private function service(?string $secret = self::SECRET, array &$store = [], ?AuditTrailService $auditor = null, int $maxLifetime = 0): PortalSessionService {
+	private function service(?string $secret = self::SECRET, array &$store = [], ?AuditTrailService $auditor = null, int $maxLifetime = 0, ?string $idleTimeout = null): PortalSessionService {
 		$config = $this->createMock(IConfig::class);
 		$config->method('getAppValue')->willReturnCallback(
-			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime) {
+			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout) {
 				if ($key === 'session_max_lifetime' && $maxLifetime > 0) {
 					return (string)$maxLifetime;
+				}
+				if ($key === 'session_idle_timeout') {
+					return ($idleTimeout ?? $default);
 				}
 				return ($secret ?? '');
 			}

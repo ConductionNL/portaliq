@@ -3,8 +3,8 @@
 /**
  * Portaliq Portal Organisation Config Service
  *
- * Resolves the white-label `RUNTIME_CONFIG` PortalPageController injects for
- * the public, unauthenticated `/portal` shell (portal-white-label-runtime-config):
+ * Resolves the white-label `RUNTIME_CONFIG` PortalPageController hands
+ * the public, unauthenticated site (portal-white-label-runtime-config):
  * the visitor has no bearer yet, so the tenant is identified by a `?org={slug}`
  * query parameter (design.md, option 2 — no routing rework) and resolved
  * against OpenRegister's own Organisation entity (ADR-022 — no new parallel
@@ -39,6 +39,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Notifications\MessageBoxOffer;
+use OCA\Portaliq\Service\Signin\LoginProviders;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -89,11 +91,18 @@ class PortalOrganisationConfigService {
 		// includes a secret — provider + label only, for the SPA's login
 		// buttons.
 		'oidcProviders' => [],
+		// Change signin-session-idle-warning-and-sso D5: the provider the portal SPA
+		// tries a silent sign-in with once per browser session, or '' for off.
+		'silentSignIn' => '',
+		// Change portal-signin-on-its-own-address: the organisation the login
+		// buttons start with, and whether the dev login is offered.
+		'signinOrganisation' => '',
+		'devLogin' => false,
 	];
 
 	/**
-	 * Locales the portal SPA ships a translation bundle for
-	 * (`src/portal/i18n/{locale}.json`). Anything else falls back to `nl`
+	 * Locales the site ships a translation bundle for
+	 * (`src/shared/i18n/{locale}.json`). Anything else falls back to `nl`
 	 * (the current de-facto default) — never a blank/unsupported locale.
 	 */
 	private const SUPPORTED_LOCALES = ['nl', 'en'];
@@ -114,12 +123,15 @@ class PortalOrganisationConfigService {
 	 * @param OidcClaimMapperService $claimMapper Merges a provider preset with the
 	 *                                            org's raw OIDC override
 	 *                                            (portal-oidc-broker-login).
+	 * @param LoginProviders $loginProviders The login buttons per route
+	 *                                       (signin-integriq-broker-login).
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 		private readonly OidcClaimMapperService $claimMapper,
+		private readonly LoginProviders $loginProviders = new LoginProviders(),
 	) {
 	}//end __construct()
 
@@ -137,8 +149,10 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return array<string, mixed> `{organisationName, organisationSlug, theme,
 	 *                              logo, featureFlags, allowedEmbedOrigins,
-	 *                              apiBase, audience, locale, oidcProviders}`.
+	 *                              apiBase, audience, locale, oidcProviders,
+	 *                              silentSignIn}`.
 	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
 	 * @spec openspec/changes/portal-spa-i18n-locale-support/tasks.md#2.2
@@ -173,6 +187,8 @@ class PortalOrganisationConfigService {
 			$featureFlags = $overrides['featureFlags'];
 		}
 
+		$providers = $this->configuredOidcProviders(orgSlug: $orgSlug, organisationUuid: $uuid, overrides: $overrides);
+
 		return [
 			'organisationName' => $name,
 			'organisationSlug' => $orgSlug,
@@ -184,9 +200,34 @@ class PortalOrganisationConfigService {
 			'audience' => (string)($overrides['audience'] ?? self::NEUTRAL_DEFAULT['audience']),
 			'locale' => $locale,
 			// Portal-oidc-broker-login: SECRET-FREE — provider + label only.
-			'oidcProviders' => $this->configuredOidcProviders(orgSlug: $orgSlug),
+			'oidcProviders' => $providers,
+			'silentSignIn' => $this->loginProviders->silentProvider(overrides: $overrides, providers: $providers),
 		];
 	}//end resolve()
+
+	/**
+	 * The organisation's government message box channel: the integriq digital
+	 * post source to send over and the label residents read, or null when the
+	 * organisation does not offer the channel.
+	 *
+	 * Both values must be non-empty text. Half a configuration is no channel,
+	 * so an organisation that set only one of them sends nothing and shows its
+	 * residents no choice (REQ-MBC-001).
+	 *
+	 * @param string $orgSlug The organisation slug.
+	 *
+	 * @return array{sourceId: string, label: string}|null
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
+	 */
+	public function messageBox(string $orgSlug): ?array {
+		$uuid = '';
+		if ($orgSlug !== '') {
+			$uuid = (string)($this->findOrganisationBySlug(slug: $orgSlug)['uuid'] ?? '');
+		}
+
+		return (new MessageBoxOffer())->from(raw: ($this->presentationOverrides(organisationUuid: $uuid)['messageBox'] ?? null));
+	}//end messageBox()
 
 	/**
 	 * Resolve the FULL per-organisation OIDC broker config for one provider —
@@ -289,6 +330,46 @@ class PortalOrganisationConfigService {
 	}//end isLoginProviderAllowed()
 
 	/**
+	 * An organisation's uuid and its presentation override, for the sign-in
+	 * route (signin-integriq-broker-login), or null when the slug names no
+	 * organisation. No secret lives in the override.
+	 *
+	 * @param string $orgSlug The organisation slug.
+	 *
+	 * @return array{uuid: string, overrides: array<string, mixed>}|null
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function presentationFor(string $orgSlug): ?array {
+		$organisation = $this->findOrganisationBySlug(slug: $orgSlug);
+		if ($organisation === null) {
+			return null;
+		}
+
+		return ['uuid' => $organisation['uuid'], 'overrides' => $this->presentationOverrides(organisationUuid: $organisation['uuid'])];
+	}//end presentationFor()
+
+	/**
+	 * Replace an organisation's presentation override. The caller has
+	 * resolved the uuid through `presentationFor()`.
+	 *
+	 * @param string               $organisationUuid The organisation's uuid.
+	 * @param array<string, mixed> $overrides        The whole override.
+	 *
+	 * @return bool Whether it was written.
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function writePresentation(string $organisationUuid, array $overrides): bool {
+		return $this->appConfig->setValueString(
+			Application::APP_ID,
+			self::CONFIG_KEY_PREFIX . $organisationUuid,
+			(string)json_encode($overrides, JSON_UNESCAPED_SLASHES)
+		);
+	}//end writePresentation()
+
+
+	/**
 	 * Store an organisation's OIDC client secret for one provider, via a
 	 * DEDICATED `sensitive`-flagged `IAppConfig` entry — NEVER inside the
 	 * (non-sensitive) presentation-override JSON blob, and NEVER in the
@@ -370,22 +451,22 @@ class PortalOrganisationConfigService {
 	 * a provider only appears here when `resolveOidcConfig()` would actually
 	 * succeed for it. The secret itself is never placed in the returned shape.
 	 *
-	 * @param string $orgSlug The `?org=` slug.
+	 * Each entry says its route: a provider the organisation routes to
+	 * integriq's broker is listed only when that route is complete
+	 * (signin-integriq-broker-login REQ-BEL-001).
 	 *
-	 * @return array<int, array{provider: string, label: string}>
+	 * @param string               $orgSlug          The `?org=` slug.
+	 * @param string               $organisationUuid The organisation's uuid.
+	 * @param array<string, mixed> $overrides        Its presentation override.
+	 *
+	 * @return array<int, array{provider: string, label: string, route: string}>
 	 */
-	private function configuredOidcProviders(string $orgSlug): array {
-		$providers = [];
-		foreach (self::OIDC_PROVIDERS as $provider) {
-			$merged = $this->resolveOidcConfig(orgSlug: $orgSlug, provider: $provider);
-			if ($merged === null) {
-				continue;
-			}
-
-			$providers[] = ['provider' => $provider, 'label' => (string)($merged['label'] ?? $provider)];
-		}
-
-		return $providers;
+	private function configuredOidcProviders(string $orgSlug, string $organisationUuid, array $overrides): array {
+		return $this->loginProviders->list(
+			overrides: $overrides,
+			brokerSecret: $this->appConfig->getValueString(Application::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, ''),
+			oidcConfig: fn (string $provider): ?array => $this->resolveOidcConfig(orgSlug: $orgSlug, provider: $provider)
+		);
 	}//end configuredOidcProviders()
 
 	/**
@@ -425,14 +506,8 @@ class PortalOrganisationConfigService {
 			return [];
 		}
 
-		$origins = [];
-		foreach ($raw as $origin) {
-			if (is_string($origin) === true && $origin !== '') {
-				$origins[] = $origin;
-			}
-		}
-
-		return $origins;
+		// Only non-empty text: anything else is dropped, never coerced.
+		return array_values(array_diff(array_filter($raw, 'is_string'), ['']));
 	}//end allowedEmbedOrigins()
 
 	/**

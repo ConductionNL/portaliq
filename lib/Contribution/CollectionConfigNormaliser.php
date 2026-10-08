@@ -5,8 +5,9 @@
  *
  * The collection half of the fail-closed v3 UI-configuration vocabulary
  * (ADR-046 / ADR-063): columns, detail layout, default sort/filters, the
- * opt-in file flags, and the `rowActions` resolution against the surviving
- * update actions of the SAME contribution.
+ * opt-in file flags, the `noticeField`, and the `rowActions` resolution
+ * against the surviving update and endpoint row actions of the SAME
+ * contribution.
  *
  * INVARIANT: presentation-only. It NEVER alters a collection's scope /
  * scopeClaim / via / projection and never throws — every reject path returns
@@ -24,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
  */
 
@@ -32,16 +33,21 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
+
 /**
  * Validates and sanitises the v3 collection presentation config, fail-closed.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one small normaliser per
+ * collection key, called in a row; the coupling is the list of keys, not logic.
  */
 class CollectionConfigNormaliser {
 	/**
 	 * Allowed column render kinds; anything else normalises to `text`.
 	 */
-	private const RENDER_KINDS = ['text', 'date', 'datetime', 'badge', 'currency', 'boolean', 'link'];
+	private const RENDER_KINDS = ['text', 'date', 'datetime', 'badge', 'currency', 'boolean', 'link', 'user'];
 
 	/**
 	 * Allowed detail layouts; anything else normalises to `card`.
@@ -71,6 +77,7 @@ class CollectionConfigNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
 	 */
 	public function normaliseCollections(array $collections): array {
 		$out = [];
@@ -81,8 +88,24 @@ class CollectionConfigNormaliser {
 
 			$collection = $this->normaliseColumns(collection: $collection);
 			$collection = $this->normaliseDetail(collection: $collection);
+			$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
+			$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
+			$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
 			$collection = $this->normaliseDefaults(collection: $collection);
 			$collection = $this->normaliseFileFlags(collection: $collection);
+			$collection = $this->normaliseKind(collection: $collection);
+			// Steps, answer date and whose turn, on a cases collection only
+			// (site-mijn-omgeving-components REQ-SMO-022).
+			$collection = (new StepsProviderMethod())->normalise(collection: $collection);
+			// Who a resident may write to about each row (site-messages-per-record).
+			$collection = (new MessageContactsKeys())->normalise(collection: $collection);
+			$collection = $this->normaliseClosedField(collection: $collection);
+			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
+			$collection = $this->normaliseGroupByField(collection: $collection);
+			$collection = (new PortalBranchScope())->normalise(collection: $collection);
+			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
+			$collection = (new InboxMessageFields())->normalise(collection: $collection);
+			$collection = (new RowActionResolver())->normaliseNoticeField(collection: $collection);
 			$collection = $this->values->normaliseAnonymousFlag(entry: $collection);
 
 			$out[] = $collection;
@@ -92,87 +115,121 @@ class CollectionConfigNormaliser {
 	}//end normaliseCollections()
 
 	/**
-	 * Filter each collection's `rowActions` to ids that resolve to a `type:
-	 * update` action in the same contribution; drop the key when it empties out
-	 * or is malformed. A per-row transition can only ever invoke an update
-	 * action the subject already holds.
+	 * Resolve each collection's `rowActions` (and the singular `rowAction`)
+	 * against the actions of the same contribution: an update action, or an
+	 * endpoint row action that declares `rowField`. Unresolved entries are
+	 * dropped, and the key goes when it empties out (RowActionResolver).
 	 *
 	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
 	 * @param array<int, array<string, mixed>> $actions The sanitised actions.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
 	 */
 	public function resolveRowActions(array $collections, array $actions): array {
-		$updateIds = $this->updateActionIds(actions: $actions);
-		foreach ($collections as $index => $collection) {
-			$collections[$index] = $this->resolveEntryRowActions(collection: $collection, updateIds: $updateIds);
-		}
-
-		return $collections;
+		return (new RowActionResolver())->resolve(collections: $collections, actions: $actions);
 	}//end resolveRowActions()
 
 	/**
-	 * The ids of the `type: update` actions in a sanitised action list.
+	 * Keep `kind` only when it is a non-empty string.
 	 *
-	 * @param array<int, array<string, mixed>> $actions The sanitised actions.
+	 * `kind` is the hint the portal's own surfaces select on: `inbox` feeds
+	 * the unified inbox, `cases` feeds "Mijn zaken" (portal-identity-space).
+	 * A malformed value is dropped rather than carried, so a surface that
+	 * selects on it can never match a collection whose author meant nothing
+	 * by the field.
 	 *
-	 * @return array<int, string>
-	 */
-	private function updateActionIds(array $actions): array {
-		$updateIds = [];
-		foreach ($actions as $action) {
-			$id = ($action['id'] ?? null);
-			if (($action['type'] ?? null) === 'update' && is_string($id) === true && $id !== '') {
-				$updateIds[] = $id;
-			}
-		}
-
-		return $updateIds;
-	}//end updateActionIds()
-
-	/**
-	 * Resolve ONE collection's `rowActions` against the allowed update ids.
-	 *
-	 * @param array<string, mixed> $collection The sanitised collection.
-	 * @param array<int, string> $updateIds The resolvable update-action ids.
+	 * @param array<string, mixed> $collection The collection.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
 	 */
-	private function resolveEntryRowActions(array $collection, array $updateIds): array {
-		if (array_key_exists('rowActions', $collection) === false) {
+	private function normaliseKind(array $collection): array {
+		if (array_key_exists('kind', $collection) === false) {
 			return $collection;
 		}
 
-		if (is_array($collection['rowActions']) === false) {
-			unset($collection['rowActions']);
+		if (is_string($collection['kind']) === false || $collection['kind'] === '') {
+			unset($collection['kind']);
 			return $collection;
 		}
 
-		$resolved = [];
-		foreach ($collection['rowActions'] as $ref) {
-			if (in_array($ref, $updateIds, true) === true) {
-				$resolved[] = $ref;
-			}
-		}
-
-		if ($resolved === []) {
-			unset($collection['rowActions']);
-			return $collection;
-		}
-
-		$collection['rowActions'] = $resolved;
 		return $collection;
-	}//end resolveEntryRowActions()
+	}//end normaliseKind()
+
+	/**
+	 * Keep `closedField` only when it names a field the collection projects.
+	 *
+	 * The closed marker tells "My cases" which field, once it holds a value,
+	 * makes a case closed. It is kept only as a non-empty string naming one of
+	 * the projected `fields` (or any field, when the collection projects none),
+	 * because a marker on a field the row never carries would file every case
+	 * as open without anyone noticing.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 */
+	private function normaliseClosedField(array $collection): array {
+		if (array_key_exists('closedField', $collection) === false) {
+			return $collection;
+		}
+
+		$field = $collection['closedField'];
+		$fields = ($collection['fields'] ?? null);
+		$named = (is_string($field) === true && $field !== '');
+		if ($named === false || (is_array($fields) === true && in_array($field, $fields, true) === false)) {
+			unset($collection['closedField']);
+		}
+
+		return $collection;
+	}//end normaliseClosedField()
+
+	/**
+	 * Keep `groupByField` only when it names a field the collection projects.
+	 *
+	 * The hint tells the portal to show the rows in groups, one per value of
+	 * that field (learniq groups a guardian's grades per child on
+	 * `learnerRef`). It is kept only as a non-empty string naming one of the
+	 * projected `fields` (or any field, when the collection projects none),
+	 * because grouping on a field the rows never carry would put every row
+	 * under one unnamed heading.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/collection-group-by-field/tasks.md#T2
+	 */
+	private function normaliseGroupByField(array $collection): array {
+		if (array_key_exists('groupByField', $collection) === false) {
+			return $collection;
+		}
+
+		$field = $collection['groupByField'];
+		$fields = ($collection['fields'] ?? null);
+		$named = (is_string($field) === true && $field !== '');
+		if ($named === false || (is_array($fields) === true && in_array($field, $fields, true) === false)) {
+			unset($collection['groupByField']);
+		}
+
+		return $collection;
+	}//end normaliseGroupByField()
 
 	/**
 	 * Coerce the opt-in file flags to strict booleans.
 	 *
 	 * `filesUpload` opts the collection into the scoped file-upload block and
 	 * `filesDownload` into the scoped file-download block
-	 * (portal-document-download). Only an explicit true enables either; a
-	 * malformed or absent value means false (fail-closed).
+	 * (portal-document-download); `deletable` lets a resident delete their
+	 * own messages from a `kind: inbox` collection (inbox-delete-own-messages).
+	 * Only an explicit true enables any of them; a malformed or absent value
+	 * means false (fail-closed).
 	 *
 	 * @param array<string, mixed> $collection The collection.
 	 *
@@ -181,7 +238,7 @@ class CollectionConfigNormaliser {
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
 	 */
 	private function normaliseFileFlags(array $collection): array {
-		foreach (['filesUpload', 'filesDownload'] as $flag) {
+		foreach (['filesUpload', 'filesDownload', 'deletable'] as $flag) {
 			if (array_key_exists($flag, $collection) === true) {
 				$collection[$flag] = ($collection[$flag] === true || $collection[$flag] === 'true');
 			}
@@ -222,9 +279,14 @@ class CollectionConfigNormaliser {
 	/**
 	 * Sanitise ONE column entry, or null when it carries no usable `field`.
 	 *
+	 * Keeps `field`, a string `label`, the `render` kind and a well-formed
+	 * `valueLabels` map; every other key is dropped.
+	 *
 	 * @param mixed $column The declared column.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 */
 	private function normaliseColumn(mixed $column): ?array {
 		if (is_array($column) === false) {
@@ -242,7 +304,9 @@ class CollectionConfigNormaliser {
 		}
 
 		$entry['render'] = $this->values->oneOf(value: ($column['render'] ?? null), allowed: self::RENDER_KINDS, default: 'text');
-		return $entry;
+		// How each value reads ("approved" as "Goedgekeurd"); the cell falls
+		// back to the raw value for one the app did not label.
+		return (new ValueLabelsNormaliser())->apply(entry: $entry, source: $column);
 	}//end normaliseColumn()
 
 	/**

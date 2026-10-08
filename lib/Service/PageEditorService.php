@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
  * predicate, but it is not the guard: hiding a button is a courtesy, and the
  * refusal that matters happens in OpenRegister.
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
  */
 class PageEditorService {
 	/**
@@ -73,6 +73,33 @@ class PageEditorService {
 	 * @var string
 	 */
 	private const PAGE_SLUG = 'page';
+
+	/**
+	 * The media library's schema, written by the same editor groups
+	 * (site-page-seo-history-and-media T06): whoever may edit pages may upload
+	 * the images they use.
+	 *
+	 * @var string
+	 */
+	private const MEDIA_SLUG = 'media';
+
+	/**
+	 * The portal menus, written by the same editor groups
+	 * (portal-in-place-editing REQ-PIE-012): whoever may edit pages from the
+	 * portal may edit the menu that links them, and nobody else may.
+	 *
+	 * @var string
+	 */
+	private const MENU_SLUG = 'menu';
+
+	/**
+	 * The portal notices' schema, written by the same editor groups
+	 * (operate-maintenance-notice T01): whoever may edit pages may announce
+	 * maintenance above them.
+	 *
+	 * @var string
+	 */
+	private const NOTICE_SLUG = 'portalNotice';
 
 	/**
 	 * The actions the editor groups are granted on that schema.
@@ -116,7 +143,7 @@ class PageEditorService {
 	 *
 	 * @return array<string> The group ids, possibly empty.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function getEditorGroups(): array {
 		$raw = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '');
@@ -147,7 +174,7 @@ class PageEditorService {
 	 *
 	 * @return array<string> The normalised, stored group ids.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function setEditorGroups(array $groups): array {
 		$normalised = $this->normalise(groups: $groups);
@@ -176,7 +203,7 @@ class PageEditorService {
 	 *
 	 * @return bool True when the user may edit.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function mayEdit(?IUser $user = null): bool {
 		$subject = ($user ?? $this->userSession->getUser());
@@ -203,7 +230,7 @@ class PageEditorService {
 	 *
 	 * @return array<array{id: string, label: string}> The groups, id-sorted.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function availableGroups(): array {
 		$groups = [];
@@ -238,7 +265,8 @@ class PageEditorService {
 	 *
 	 * @return bool True when the schema was updated.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
 	 */
 	public function applyToSchema(array $groups): bool {
 		$mapper = $this->schemaMapper();
@@ -254,17 +282,17 @@ class PageEditorService {
 				return false;
 			}
 
-			$authorization = ($schema->getAuthorization() ?? []);
-			if (is_array($authorization) === false) {
-				$authorization = [];
-			}
+			$this->grantWrites(mapper: $mapper, schema: $schema, groups: $groups);
 
-			foreach (self::WRITE_ACTIONS as $action) {
-				$authorization[$action] = array_values($groups);
+			// The media library, the menus and the notices follow the pages. Any
+			// of them is absent on an instance whose register predates it, which
+			// leaves the pages governed.
+			foreach ([self::MEDIA_SLUG, self::MENU_SLUG, self::NOTICE_SLUG] as $slug) {
+				$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: Application::APP_ID);
+				if ($follower !== null) {
+					$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups);
+				}
 			}
-
-			$schema->setAuthorization($authorization);
-			$mapper->update($schema);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: failed to write the page schema authorization',
@@ -275,6 +303,30 @@ class PageEditorService {
 
 		return true;
 	}//end applyToSchema()
+
+
+	/**
+	 * Write the editor groups into one schema's write rules, keeping `read`.
+	 *
+	 * @param object        $mapper The schema mapper.
+	 * @param object        $schema The schema entity.
+	 * @param array<string> $groups The normalised group ids.
+	 *
+	 * @return void
+	 */
+	private function grantWrites(object $mapper, object $schema, array $groups): void {
+		$authorization = ($schema->getAuthorization() ?? []);
+		if (is_array($authorization) === false) {
+			$authorization = [];
+		}
+
+		foreach (self::WRITE_ACTIONS as $action) {
+			$authorization[$action] = array_values($groups);
+		}
+
+		$schema->setAuthorization($authorization);
+		$mapper->update($schema);
+	}//end grantWrites()
 
 
 	/**

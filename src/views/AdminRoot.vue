@@ -37,7 +37,10 @@
 			</p>
 		</NcSettingsSection>
 
+		<!-- `section-portal-auth-edge` is the anchor lib/Settings/connections.json
+			links the Login brokers row to (adopt-connection-registry). Keep it stable. -->
 		<NcSettingsSection
+			id="section-portal-auth-edge"
 			:name="t('portaliq', 'Portal auth edge')"
 			:description="
 				t(
@@ -145,9 +148,12 @@
 			Visitor geography (portal-traffic-visitors-and-geo, Ruben's
 			decision 7): DB-IP Lite by default, MaxMind with an account. The
 			licence key is write-only here: the server says whether one is
-			stored and never hands it back.
+			stored and never hands it back. `section-visitor-geography` is the
+			anchor lib/Settings/connections.json links the Visitor geography
+			database row to (adopt-connection-registry). Keep it stable.
 		-->
 		<NcSettingsSection
+			id="section-visitor-geography"
 			:name="t('portaliq', 'Visitor geography')"
 			:description="
 				t(
@@ -248,6 +254,54 @@
 				</template>
 			</p>
 		</NcSettingsSection>
+
+		<!--
+			The internal address for calls to this server
+			(instance-loopback-self-calls). Portaliq calls its own Nextcloud
+			for a resident's tasks and actions. Empty means the public
+			address, with one retry on 127.0.0.1 when that does not answer
+			from inside the server. The server validates the address.
+		-->
+		<NcSettingsSection
+			id="section-internal-address"
+			:name="t('portaliq', 'Calls to this server')"
+			:description="
+				t(
+					'portaliq',
+					'Portaliq calls this Nextcloud server itself, for example to load a resident\'s tasks. Leave the address empty to use the public address. When that does not answer from inside the server, Portaliq tries 127.0.0.1 once.',
+				)
+			">
+			<form
+				class="portaliq-admin-settings__geo"
+				@submit.prevent="saveInternalBaseUrl">
+				<NcTextField
+					v-model="internalBaseUrl"
+					:label="t('portaliq', 'Internal address')"
+					placeholder="http://nextcloud"
+					:disabled="savingInternalBaseUrl"
+					data-testid="admin-internal-base-url" />
+				<NcButton
+					variant="primary"
+					:disabled="savingInternalBaseUrl"
+					type="submit"
+					data-testid="admin-internal-base-url-save">
+					{{ t('portaliq', 'Save address') }}
+				</NcButton>
+			</form>
+
+			<p class="portaliq-admin-settings__hint" role="status">
+				<span
+					v-if="internalBaseUrlError"
+					data-testid="admin-internal-base-url-error"
+					>{{ internalBaseUrlError }}</span
+				>
+				<span
+					v-else-if="internalBaseUrlSaved"
+					data-testid="admin-internal-base-url-saved"
+					>{{ t('portaliq', 'Saved.') }}</span
+				>
+			</p>
+		</NcSettingsSection>
 	</div>
 </template>
 
@@ -310,6 +364,13 @@ export default {
 			savingGeo: false,
 			geoSaved: false,
 			geoError: '',
+
+			// The internal address for calls to this server. Empty means
+			// the public address with the loopback fallback.
+			internalBaseUrl: '',
+			savingInternalBaseUrl: false,
+			internalBaseUrlSaved: false,
+			internalBaseUrlError: '',
 		}
 	},
 
@@ -362,7 +423,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 		 */
 		async loadEditorGroups() {
 			try {
@@ -395,7 +456,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when saved.
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 		 */
 		async saveEditorGroups() {
 			this.savingGroups = true
@@ -442,6 +503,7 @@ export default {
 					present: Boolean(geo.status && geo.status.present),
 					metadata: (geo.status && geo.status.metadata) || {},
 				}
+				this.internalBaseUrl = String(data.internal_base_url || '')
 			} catch {
 				this.geoError = t(
 					'portaliq',
@@ -488,6 +550,43 @@ export default {
 				)
 			} finally {
 				this.savingGeo = false
+			}
+		},
+
+		/**
+		 * Save the internal address for calls to this server. The server
+		 * refuses an invalid address and keeps the stored one.
+		 *
+		 * @return {Promise<void>} Resolves when saved.
+		 *
+		 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
+		 */
+		async saveInternalBaseUrl() {
+			this.savingInternalBaseUrl = true
+			this.internalBaseUrlSaved = false
+			this.internalBaseUrlError = ''
+			try {
+				const { data } = await axios.put(
+					generateUrl('/apps/portaliq/api/settings'),
+					{ internal_base_url: this.internalBaseUrl.trim() },
+				)
+				const config = (data && data.config) || {}
+				if (config.internal_base_url_refused === true) {
+					this.internalBaseUrlError = t(
+						'portaliq',
+						'This address is not valid. Use http or https, without a password, a query or "..".',
+					)
+					return
+				}
+				this.internalBaseUrl = String(config.internal_base_url || '')
+				this.internalBaseUrlSaved = true
+			} catch {
+				this.internalBaseUrlError = t(
+					'portaliq',
+					'Saving the address failed.',
+				)
+			} finally {
+				this.savingInternalBaseUrl = false
 			}
 		},
 

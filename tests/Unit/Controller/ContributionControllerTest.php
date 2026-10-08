@@ -7,6 +7,9 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Service\InstanceLoopback;
+use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
@@ -15,6 +18,7 @@ use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\SubmissionReceiptService;
@@ -40,10 +44,10 @@ use RuntimeException;
  * field-projection cases prove the declared `fields` whitelist reaches the
  * reader untouched (null = no projection) — for plain AND inbox collections.
  *
- * @spec openspec/changes/contract-v2/tasks.md#T3
- * @spec openspec/changes/contract-v2/tasks.md#T5
- * @spec openspec/changes/contract-v2/tasks.md#T8
- * @spec openspec/changes/field-projection/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
+ * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T2
  */
 class ContributionControllerTest extends TestCase {
 
@@ -105,9 +109,32 @@ class ContributionControllerTest extends TestCase {
 		// (portal-inbox-v2 T04) — the default inbox reader stub yields 0 —
 		// and the tasks announcement (portal-task-delivery): with no gateway
 		// wired (this fixture's default), the surface reads disabled.
-		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false]]), $response->getData());
+		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false], 'cases' => ['enabled' => false, 'closedMarker' => false]]), $response->getData());
 
 	}//end testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject()
+
+	/**
+	 * cases-my-cases-page REQ-CMC-001: the contributions answer announces the
+	 * "My cases" page when any contribution declares a `kind: cases`
+	 * collection, and whether any of those declares a closed marker (the
+	 * "Closed" tab shows only then).
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 */
+	public function testIndexAnnouncesTheCasesPageAndItsClosedMarker(): void {
+		$plain = $this->aggregate(collections: [['id' => 'zaken', 'kind' => 'cases', 'register' => 'r', 'schema' => 'zaak']]);
+		$this->assertSame(['enabled' => true, 'closedMarker' => false], $this->controller(aggregate: $plain)->index()->getData()['cases']);
+
+		$marked = $this->aggregate(collections: [
+			['id' => 'zaken', 'kind' => 'cases', 'register' => 'r', 'schema' => 'zaak', 'closedField' => 'endDate'],
+		]);
+		$this->assertSame(['enabled' => true, 'closedMarker' => true], $this->controller(aggregate: $marked)->index()->getData()['cases']);
+
+		// A closed marker on a collection of another kind announces nothing.
+		$other = $this->aggregate(collections: [['id' => 'berichten', 'kind' => 'inbox', 'register' => 'r', 'schema' => 'm', 'closedField' => 'endDate']]);
+		$this->assertSame(['enabled' => false, 'closedMarker' => false], $this->controller(aggregate: $other)->index()->getData()['cases']);
+
+	}//end testIndexAnnouncesTheCasesPageAndItsClosedMarker()
 
 	/**
 	 * The contributions response carries the subject's own unread count,
@@ -319,6 +346,105 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testAnonymousCreateWriteFailureIs502()
 
+	/**
+	 * Every active landing-page form is its own anonymous create action on
+	 * `landingPageSubmission`. A submission names its form's action, so it
+	 * is filed under that form's whitelist and defaults, not the first one.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+	 */
+	public function testAnonymousCreateWritesThroughTheFormItNames(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createAnonymousObject')
+			->with('portaliq', 'landingPageSubmission', ['email' => 'a@example.nl', 'formId' => 'form-b'])
+			->willReturn(['id' => 'new']);
+
+		$response = $this->controller(
+			aggregate: $this->aggregate(),
+			subject: null,
+			writer: $writer,
+			anonymousAggregate: $this->twoLandingPageForms(),
+			params: ['actionId' => 'submit-form-b', 'email' => 'a@example.nl', 'name' => 'Ada']
+		)->create('portaliq', 'landingPageSubmission');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+
+	}//end testAnonymousCreateWritesThroughTheFormItNames()
+
+	/**
+	 * An anonymous create naming no anonymous action on the target is
+	 * refused, and two forms without a name are refused rather than guessed.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+	 */
+	public function testAnonymousCreateNamingNoFormOrAnUnknownOneIsRefused(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createAnonymousObject');
+
+		$unknown = $this->controller(
+			aggregate: $this->aggregate(),
+			subject: null,
+			writer: $writer,
+			anonymousAggregate: $this->twoLandingPageForms(),
+			params: ['actionId' => 'submit-form-c']
+		)->create('portaliq', 'landingPageSubmission');
+		$this->assertSame(Http::STATUS_FORBIDDEN, $unknown->getStatus());
+
+		$unnamed = $this->controller(
+			aggregate: $this->aggregate(),
+			subject: null,
+			writer: $writer,
+			anonymousAggregate: $this->twoLandingPageForms()
+		)->create('portaliq', 'landingPageSubmission');
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $unnamed->getStatus());
+		$this->assertSame('action_required', $unnamed->getData()['error']);
+
+	}//end testAnonymousCreateNamingNoFormOrAnUnknownOneIsRefused()
+
+	/**
+	 * An anonymous create can never name an action that is not anonymous,
+	 * even when the anonymous aggregate carries one for the same target.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+	 */
+	public function testAnonymousCreateNamingASignedInActionIsRefused(): void {
+		$aggregate = $this->twoLandingPageForms();
+		$aggregate['contributions'][0]['actions'][] = ['id' => 'staffOnly', 'type' => 'create', 'register' => 'portaliq', 'schema' => 'landingPageSubmission', 'fields' => ['email']];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createAnonymousObject');
+
+		$response = $this->controller(
+			aggregate: $this->aggregate(),
+			subject: null,
+			writer: $writer,
+			anonymousAggregate: $aggregate,
+			params: ['actionId' => 'staffOnly']
+		)->create('portaliq', 'landingPageSubmission');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testAnonymousCreateNamingASignedInActionIsRefused()
+
+	/**
+	 * Two active landing-page forms, as PortalContributionProvider synthesises them.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function twoLandingPageForms(): array {
+		return [
+			'contributions' => [
+				[
+					'app' => 'portaliq',
+					'actions' => [
+						['id' => 'submit-form-a', 'type' => 'create', 'anonymous' => true, 'register' => 'portaliq', 'schema' => 'landingPageSubmission', 'fields' => ['name'], 'defaults' => ['formId' => 'form-a']],
+						['id' => 'submit-form-b', 'type' => 'create', 'anonymous' => true, 'register' => 'portaliq', 'schema' => 'landingPageSubmission', 'fields' => ['email'], 'defaults' => ['formId' => 'form-b']],
+					],
+				],
+			],
+		];
+
+	}//end twoLandingPageForms()
+
 	public function testCollectionBelowTrustThresholdIs403BeforeAnyRead(): void {
 		$aggregate = $this->aggregate(
 			collections: [
@@ -387,6 +513,34 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testCollectionPassesV2ScopeParametersToReader()
 
+	/**
+	 * A row whose `visibleFromField` lies ahead is not in the list and its
+	 * read by id is the shared 404 (site-school-blocks).
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-keep-a-row-back-until-its-moment-has-passed
+	 */
+	public function testARowBeforeItsVisibleFromMomentIsNotServed(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['register' => 'r1', 'schema' => 'a', 'scopeField' => 'subjectRef', 'visibleFromField' => 'visibleFrom'],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([
+			['id' => 'now', 'visibleFrom' => '2000-01-01T00:00:00Z'],
+			['id' => 'later', 'visibleFrom' => '2999-01-01T00:00:00Z'],
+		]);
+		$reader->method('readObject')->willReturn(['id' => 'later', 'visibleFrom' => '2999-01-01T00:00:00Z']);
+
+		$controller = $this->controller(aggregate: $aggregate, reader: $reader);
+		$rows = $controller->collection('r1', 'a')->getData();
+		$ids  = array_column(($rows['results'] ?? $rows['objects'] ?? $rows), 'id');
+
+		$this->assertContains('now', $ids);
+		$this->assertNotContains('later', $ids);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->object('r1', 'a', 'later')->getStatus());
+	}//end testARowBeforeItsVisibleFromMomentIsNotServed()
+
 	public function testInboxCollectionFieldsReachTheReaderAndAbsentFieldsStayNull(): void {
 		$aggregate = $this->aggregate(
 			collections: [
@@ -435,6 +589,231 @@ class ContributionControllerTest extends TestCase {
 		$this->assertArrayNotHasKey('claims', $saved);
 
 	}//end testCreateNeverPassesClaimsToTheWriter()
+
+	/**
+	 * signin-eherkenning-branch REQ-SEB-002, from the caller: a session
+	 * restricted to a branch reads only that branch's rows, and nothing of a
+	 * collection that declares no branch field.
+	 */
+	public function testARestrictedSessionReadsOnlyItsBranchsRows(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'zaken', 'register' => 'zaken', 'schema' => 'zaak', 'scopeField' => 'kvk', 'branchField' => 'vestiging'],
+				['id' => 'andere', 'register' => 'zaken', 'schema' => 'melding', 'scopeField' => 'kvk'],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn(
+			[
+				['id' => 'z1', 'vestiging' => '000012345678'],
+				['id' => 'z2', 'vestiging' => '000087654321'],
+				['id' => 'z3'],
+			]
+		);
+		$subject = self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true];
+
+		$own = $this->controller(aggregate: $aggregate, subject: $subject, reader: $reader)->collection('zaken', 'zaak');
+		$this->assertSame(['z1'], array_column($own->getData()['objects'], 'id'));
+
+		$none = $this->controller(aggregate: $aggregate, subject: $subject, reader: $reader)->collection('zaken', 'melding');
+		$this->assertSame([], $none->getData()['objects']);
+
+		$chosen = $this->controller(aggregate: $aggregate, subject: self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => false], reader: $reader)->collection('zaken', 'melding');
+		$this->assertCount(3, $chosen->getData()['objects'], 'a chosen branch filters only where the collection can tell branches apart');
+
+	}//end testARestrictedSessionReadsOnlyItsBranchsRows()
+
+	public function testAnotherBranchsCaseAnswersNotFound(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'zaken', 'register' => 'zaken', 'schema' => 'zaak', 'scopeField' => 'kvk', 'branchField' => 'vestiging'],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readObject')->willReturn(['id' => 'z2', 'vestiging' => '000087654321']);
+		$subject = self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true];
+
+		$response = $this->controller(aggregate: $aggregate, subject: $subject, reader: $reader)->object('zaken', 'zaak', 'z2');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+
+	}//end testAnotherBranchsCaseAnswersNotFound()
+
+	public function testACaseFiledInABranchSessionLandsOnTheBranch(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title'], 'branchField' => 'vestiging'],
+			]
+		);
+		$saved = null;
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$saved) {
+				$saved = $data;
+				return ['id' => 'new'];
+			}
+		);
+		$subject = self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true];
+
+		$this->controller(aggregate: $aggregate, subject: $subject, writer: $writer)->create('r1', 'a');
+
+		$this->assertSame(['title' => 'X', 'vestiging' => '000012345678'], $saved);
+
+	}//end testACaseFiledInABranchSessionLandsOnTheBranch()
+
+	/**
+	 * A create action that declares `scopeClaim` stamps its scope field with
+	 * the server-resolved claim, not the subject's own subjectRef. Found on a
+	 * school's parent portal: learniq's guardian absence report
+	 * (`scopeField: submittedByRef`, `scopeClaim: guardianRef`) was stamped
+	 * with the portal account's subjectRef, which OpenRegister refused (not a
+	 * uuid), so no parent could report an absence.
+	 *
+	 * @spec openspec/changes/claim-scoped-create-stamps-the-claim/tasks.md#T1
+	 */
+	public function testAClaimScopedCreateStampsTheClaim(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title'], 'scopeField' => 'submittedByRef', 'scopeClaim' => 'guardianRef'],
+			]
+		);
+		$stamp = null;
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef) use (&$stamp) {
+				$stamp = [$scopeField, $subjectRef];
+				return ['id' => 'new'];
+			}
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturnCallback(
+			static fn (string $scopeClaim, string $contributingApp, array $subject): ?string => $scopeClaim === 'guardianRef' ? 'guardian-uuid' : null
+		);
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer)->create('r1', 'a');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['submittedByRef', 'guardian-uuid'], $stamp);
+
+	}//end testAClaimScopedCreateStampsTheClaim()
+
+	/**
+	 * An absent claim refuses the create before anything is written.
+	 *
+	 * @spec openspec/changes/claim-scoped-create-stamps-the-claim/tasks.md#T1
+	 */
+	public function testAClaimScopedCreateWithoutTheClaimIsRefused(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title'], 'scopeField' => 'submittedByRef', 'scopeClaim' => 'guardianRef'],
+			]
+		);
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturn(null);
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer)->create('r1', 'a');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testAClaimScopedCreateWithoutTheClaimIsRefused()
+
+	/**
+	 * Two create actions on one schema: the action the form names is the one
+	 * that writes. Before, the first declared action won, so a complaint was
+	 * saved with the request form's defaults and whitelist.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 */
+	public function testCreateWritesThroughTheActionItNames(): void {
+		$captured = null;
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$captured) {
+				$captured = $data;
+				return ['id' => 'new'];
+			}
+		);
+
+		$response = $this->controller(
+			aggregate: $this->twoCreatesOnOneSchema(),
+			writer: $writer,
+			params: ['actionId' => 'fileComplaint', 'title' => 'X']
+		)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('complaint', $captured['ticketType']);
+
+	}//end testCreateWritesThroughTheActionItNames()
+
+	/**
+	 * An id the subject has no create action for on this target is refused
+	 * before anything is written, also when it names another target's action.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 */
+	public function testCreateNamingAnUnknownActionIsRefused(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+		$aggregate = $this->twoCreatesOnOneSchema();
+		$aggregate['contributions'][0]['actions'][] = ['id' => 'elsewhere', 'type' => 'create', 'register' => 'r1', 'schema' => 'other', 'fields' => ['title']];
+
+		foreach (['nope', 'elsewhere'] as $id) {
+			$response = $this->controller(aggregate: $aggregate, writer: $writer, params: ['actionId' => $id])->create('r1', 'ticket');
+			$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus(), $id);
+		}
+
+	}//end testCreateNamingAnUnknownActionIsRefused()
+
+	/**
+	 * Without an id and with two create actions on the target, the create is
+	 * refused with a 400 that says so, rather than guessed.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 */
+	public function testCreateWithoutAnIdBetweenTwoActionsIsRefusedNotGuessed(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+
+		$response = $this->controller(aggregate: $this->twoCreatesOnOneSchema(), writer: $writer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('action_required', $response->getData()['error']);
+
+	}//end testCreateWithoutAnIdBetweenTwoActionsIsRefusedNotGuessed()
+
+	/**
+	 * Without an id and with exactly one create action on the target, the
+	 * create keeps working as it did.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 */
+	public function testCreateWithoutAnIdAndOneActionStillWorks(): void {
+		$aggregate = $this->aggregate(actions: [['id' => 'only', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title']]]);
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturn(['id' => 'new']);
+
+		$response = $this->controller(aggregate: $aggregate, writer: $writer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+
+	}//end testCreateWithoutAnIdAndOneActionStillWorks()
+
+	/**
+	 * Two create actions writing the same schema with different defaults.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function twoCreatesOnOneSchema(): array {
+		return $this->aggregate(
+			actions: [
+				['id' => 'fileRequest', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'defaults' => ['ticketType' => 'request']],
+				['id' => 'fileComplaint', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'defaults' => ['ticketType' => 'complaint']],
+			]
+		);
+
+	}//end twoCreatesOnOneSchema()
 
 	public function testCreateRecordsACreateAuditEntryWithTheNewId(): void {
 		// portal-session-hardening-v2 T09: a successful create() records a
@@ -981,6 +1360,54 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testObjectNullFromReaderIs404NoOracle()
 
+	/**
+	 * operate-show-per-case-type REQ-OSC-002: a case of a type the serving
+	 * portal hides answers the same 404 as a case that does not exist, and
+	 * leaves the list; a collection of another kind is untouched.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testHiddenCaseTypeIs404(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['register' => 'dossiq', 'schema' => 'case', 'scopeField' => 'subjectRef', 'kind' => 'cases', 'caseTypeField' => 'zaaktype'],
+				['register' => 'dossiq', 'schema' => 'note', 'scopeField' => 'subjectRef'],
+			]
+		);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readObject')->willReturnCallback(
+			static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $id): array => match ($id) {
+				'hidden-1' => ['id' => 'hidden-1', 'zaaktype' => 'handhaving'],
+				default => ['id' => $id, 'zaaktype' => 'omgevingsvergunning'],
+			}
+		);
+		$reader->method('readCollection')->willReturn([
+			['id' => 'shown-1', 'zaaktype' => 'omgevingsvergunning'],
+			['id' => 'hidden-1', 'zaaktype' => 'handhaving'],
+		]);
+
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn(null);
+		$portals->method('resolveByOrganisation')->willReturn(
+			['slug' => 'mijn-org', 'organisation' => 'org-1', 'hiddenCaseTypes' => [['typeId' => 'handhaving']]]
+		);
+		$controller = $this->controller(aggregate: $aggregate, reader: $reader, caseTypes: new CaseTypeVisibility($portals));
+
+		$hidden = $controller->object('dossiq', 'case', 'hidden-1');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $hidden->getStatus());
+		$this->assertSame(['error' => 'not_found'], $hidden->getData());
+
+		$this->assertSame(Http::STATUS_OK, $controller->object('dossiq', 'case', 'shown-1')->getStatus());
+
+		$list = $controller->collection('dossiq', 'case');
+		$this->assertSame(['shown-1'], array_column($list->getData()['objects'], 'id'));
+
+		// Not a case collection: the type field means nothing there.
+		$notes = $controller->collection('dossiq', 'note');
+		$this->assertSame(['shown-1', 'hidden-1'], array_column($notes->getData()['objects'], 'id'));
+	}//end testHiddenCaseTypeIs404()
+
 	public function testObjectReturnsTheSubjectsObjectAndPassesScopeParams(): void {
 		$aggregate = $this->aggregate(
 			collections: [
@@ -1412,6 +1839,48 @@ class ContributionControllerTest extends TestCase {
 	}//end testMarkReadSetsOnlyTheReadFieldOnTheSubjectsOwnMessage()
 
 	/**
+	 * portaliq#702: a collection that names its own read date gets the current
+	 * time in that one field, never `read`, never anything from the body.
+	 *
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
+	 */
+	public function testMarkReadWritesTheDeclaredReadAtField(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				[
+					'id' => 'berichten',
+					'kind' => 'inbox',
+					'register' => 'dossiq',
+					'schema' => 'portaalBericht',
+					'scopeField' => 'recipientRef',
+					'messageFields' => ['body' => 'content', 'readAt' => 'readByRecipientAt'],
+				],
+			]
+		);
+
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+				$received = ['scopeField' => $scopeField, 'data' => $data];
+				return ['id' => $id];
+			}
+		);
+
+		$before = time();
+		$response = $this->controller(aggregate: $aggregate, writer: $writer)->markRead('dossiq', 'portaalBericht', 'b-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['readByRecipientAt'], array_keys($received['data']));
+		$this->assertSame('recipientRef', $received['scopeField']);
+		$written = strtotime($received['data']['readByRecipientAt']);
+		$this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $received['data']['readByRecipientAt']);
+		$this->assertGreaterThanOrEqual($before, $written);
+		$this->assertLessThanOrEqual(time(), $written);
+
+	}//end testMarkReadWritesTheDeclaredReadAtField()
+
+	/**
 	 * A foreign-owned or non-existent message id: the writer's own ownership
 	 * re-verification returns null (no write happened, identical to every
 	 * other scoped write), and the controller answers the SAME 404 — no
@@ -1458,6 +1927,131 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 
 	}//end testMarkReadWithUnresolvableClaimIs404BeforeAnyWrite()
+
+	/**
+	 * A resident marks one of portaliq's own notices read although no
+	 * contribution declares an inbox over `portalMessage`: the write is scoped
+	 * on `subjectRef` with the bearer's own reference, and still sets `read`
+	 * only.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	public function testMarkReadReachesTheResidentsOwnPortalMessageWithoutADeclaredInbox(): void {
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+				$received = [$register, $schema, $scopeField, $subjectRef, $organisation, $id, $data];
+				return ['id' => $id, 'read' => true];
+			}
+		);
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'portalMessages']);
+		$response = $controller->markRead('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1', 'm-1', ['read' => true]], $received);
+	}//end testMarkReadReachesTheResidentsOwnPortalMessageWithoutADeclaredInbox()
+
+	/**
+	 * The fallback opens portaliq's own messages only: another schema, or a
+	 * collection id that is not the built-in one, stays 403 with no write.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	public function testMarkReadFallbackOpensNothingButPortaliqsOwnMessages(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('updateObject');
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'somethingElse']);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->markRead('portaliq', 'portalMessage', 'm-1')->getStatus());
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->markRead('portaliq', 'portalAccount', 'a-1')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->markRead('other', 'portalMessage', 'm-1')->getStatus());
+	}//end testMarkReadFallbackOpensNothingButPortaliqsOwnMessages()
+
+	/**
+	 * A resident deletes one of portaliq's own notices: the delete is scoped
+	 * on `subjectRef` with the bearer's own reference and tenant.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testDeleteMessageRemovesTheResidentsOwnNotice(): void {
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('deleteObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id) use (&$received): bool {
+				$received = [$register, $schema, $scopeField, $subjectRef, $organisation, $id];
+				return true;
+			}
+		);
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'portalMessages']);
+		$response = $controller->deleteMessage('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['deleted' => true], $response->getData());
+		$this->assertSame(['portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1', 'm-1'], $received);
+	}//end testDeleteMessageRemovesTheResidentsOwnNotice()
+
+	/**
+	 * Another resident's message, or one that does not exist, is the same
+	 * 404; nothing is deleted. Without a bearer it is 401.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testDeleteMessageOfAnotherResidentIs404(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('deleteObject')->willReturn(false);
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'portalMessages']);
+		$response = $controller->deleteMessage('portaliq', 'portalMessage', 'not-mine');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'not_found'], $response->getData());
+
+		$anonymous = $this->controller(aggregate: $this->aggregate(), subject: null);
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->deleteMessage('portaliq', 'portalMessage', 'm-1')->getStatus());
+	}//end testDeleteMessageOfAnotherResidentIs404()
+
+	/**
+	 * An app's inbox is the app's record: a resident deletes from it only
+	 * when the collection declares `deletable: true`. A collection that is
+	 * no inbox, or that asks more trust than the session has, stays 403.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testDeleteMessageFromAnAppsInboxNeedsItsConsent(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'berichten', 'kind' => 'inbox', 'register' => 'dossiq', 'schema' => 'portaalBericht', 'scopeField' => 'recipientRef'],
+				['id' => 'meldingen', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'notice', 'scopeField' => 'guardianRef', 'deletable' => true],
+				['id' => 'strict', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'secret', 'deletable' => true, 'minTrust' => 'high'],
+				['id' => 'docs', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'deletable' => true],
+			]
+		);
+
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('deleteObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField) use (&$received): bool {
+				$received = [$register, $schema, $scopeField];
+				return true;
+			}
+		);
+
+		$controller = $this->controller(aggregate: $aggregate, writer: $writer);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->deleteMessage('dossiq', 'portaalBericht', 'b-1')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->deleteMessage('learniq', 'secret', 'x-1')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->deleteMessage('portaliq', 'exampleDocument', 'd-1')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $controller->deleteMessage('learniq', 'notice', 'n-1')->getStatus());
+		$this->assertSame(['learniq', 'notice', 'guardianRef'], $received);
+	}//end testDeleteMessageFromAnAppsInboxNeedsItsConsent()
 
 	public function testUploadRequiresTheCollectionToOptIntoFileUploads(): void {
 		// The collection does NOT declare filesUpload → 403, no read, no attach.
@@ -1882,16 +2476,18 @@ class ContributionControllerTest extends TestCase {
 		?NotificationDispatchService $notificationDispatch = null,
 		?array $anonymousAggregate = null,
 		?PortalSchemaReader $schemaReader = null,
+		?CaseTypeVisibility $caseTypes = null,
+		array $params = [],
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', '']]);
 		$request->method('getParam')->willReturnCallback(
-			function (string $key) {
-				$params = [
+			function (string $key, $default = null) use ($params) {
+				$params = $params + [
 					'title' => 'X',
 					'claims' => ['portaliq' => ['exampleContactId' => 'HACKED']],
 				];
-				return ($params[$key] ?? null);
+				return ($params[$key] ?? $default);
 			}
 		);
 
@@ -1936,7 +2532,10 @@ class ContributionControllerTest extends TestCase {
 			($auditor ?? $this->createMock(AuditTrailService::class)),
 			($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
 			($notificationDispatch ?? $this->createMock(NotificationDispatchService::class)),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			null,
+			null,
+			$caseTypes
 		);
 
 	}//end controller()
@@ -2072,8 +2671,12 @@ class ContributionControllerTest extends TestCase {
 
 		return new PortalActionForwarder(
 			$request,
-			($clientService ?? $this->createMock(IClientService::class)),
-			$urlGenerator,
+			new InstanceLoopback(
+				($clientService ?? $this->createMock(IClientService::class)),
+				$urlGenerator,
+				$this->createMock(InternalBaseUrl::class),
+				$this->createMock(LoggerInterface::class)
+			),
 			$session
 		);
 

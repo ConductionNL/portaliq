@@ -140,4 +140,25 @@ class RegisterAuthorizationTest extends TestCase {
 	}//end testEverySchemaStillDeclaresAReadRule()
 
 
+	/**
+	 * What a reporter gave about themselves is readable by no broad group.
+	 *
+	 * The schema's own description says nothing in it is reachable except
+	 * through a reveal the named custodian allowed, and portaliq reads it only
+	 * inside that reveal, with RBAC off. A `read` grant to `authenticated`
+	 * handed every signed-in Nextcloud user the reporter's name, e-mail
+	 * address and phone number through OpenRegister's own objects API
+	 * (portaliq#800). `admin` is the tightest rule the register can state, the
+	 * same one the traffic and activity schemas carry.
+	 *
+	 * @return void
+	 */
+	public function testTheReporterContactIsReadableByNoBroadGroup(): void {
+		$read = (($this->schemas()['portalReporterContact']['authorization'] ?? [])['read'] ?? null);
+
+		$this->assertSame(['admin'], $read);
+
+	}//end testTheReporterContactIsReadableByNoBroadGroup()
+
+
 }//end class

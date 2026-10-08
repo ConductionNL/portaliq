@@ -30,16 +30,21 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+import {
+	openPortaliqDemoPage,
+	PORTAL_API,
+	readSiteSession,
+	seedSiteSession,
+	siteAddress,
+} from './portal-nav.ts'
 
-// Pretty-URL app paths, matching the convention already used by
-// tests/e2e/docs-screenshots.spec.ts (`/apps/portaliq/...`, no `index.php`).
-const PORTAL_PATH = '/apps/portaliq/portal'
-const API_BASE = '/apps/portaliq/portal/api'
+const API_BASE = PORTAL_API
 
 /**
- * Mint a low-trust supplier dev session and seed it into the SPA's
- * localStorage token slot BEFORE the app boots, so the portal loads already
- * authenticated (mirrors how a real bearer, once minted, is stored).
+ * Mint a low-trust supplier dev session and seed it into the site's session
+ * token slot BEFORE the app boots, so the site loads already signed in
+ * (mirrors how a real bearer, once minted, is stored).
  */
 async function loginAsSupplier(
 	request: APIRequestContext,
@@ -57,37 +62,39 @@ async function loginAsSupplier(
 	const token = body.token as string
 	expect(token).toBeTruthy()
 
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
+	await seedSiteSession(page, token)
 
 	return token
 }
 
 test.describe('portal-document-download', () => {
 	// This test seeds its own fixture by UPLOADING through the portal's upload
-	// block before it downloads, so its body really does exercise the scoped
-	// attach path end to end — it drives `.portaliq-fileupload input[type="file"]`
-	// on a row the subject owns and proves the file landed by downloading it
-	// back by name.
+	// block before it downloads, so its body exercises BOTH halves of the file
+	// path end to end on a row the subject owns: it drives the detail card's
+	// file input (`detail-card-upload`), proves the attach by the block's
+	// confirmation and the file appearing in the row's download list, then
+	// downloads it back by name and checks the bytes are the ones uploaded.
 	//
-	// It deliberately carries NO `@e2e` reference to
-	// `portal-contribution-contract::a-subject-attaches-a-file-to-a-row-they-own`,
-	// even though it would satisfy the gate if it did. THIS TEST DOES NOT RUN IN
-	// CI: playwright.config.ts in this directory `grepInvert`s it by title while
-	// ConductionNL/portaliq#29 is open. Measured on hydra-gates @94c855b —
-	// gate-19 honours `testIgnore` but not `grepInvert`, so adding the tag moves
-	// the count from 47 to 46 and buys a green from a test that never executes.
-	// The scenario carries a reason-bearing `@e2e exclude` naming #29 instead;
-	// swap the exclude for the tag here when #29 closes and the grepInvert goes.
+	// It used to be grep-inverted out of every run while ConductionNL/portaliq#29
+	// (a portal subject could not attach on a fresh instance) was open, and so
+	// carried no anchors — a test that never executes is not coverage. #843
+	// removed that filter once OpenRegister #4116 fixed the first upload on a
+	// fresh instance; it runs in CI again, so it now anchors the scenarios it
+	// asserts. The Content-Disposition / filename-sanitisation detail of the
+	// download scenario is not visible here (the SPA fetches with the bearer and
+	// saves through a Blob URL under the listed name); that half stays pinned by
+	// ContributionControllerTest::testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess.
+	// @e2e supplier-portal::a-subject-downloads-a-file-on-a-row-they-own
+	// @e2e portal-contribution-contract::a-subject-attaches-a-file-to-a-row-they-own
 	test('a subject downloads a file on a row they own', async ({
 		page,
 		request,
 	}) => {
 		await loginAsSupplier(request, page, `e2e-download-${Date.now()}`)
 
-		await page.goto(PORTAL_PATH)
+		await page.goto(siteAddress())
 		await page.waitForLoadState('domcontentloaded')
+		await openPortaliqDemoPage(page)
 
 		// Create a fresh example row via the demo "Nieuw voorbeeld" form so the
 		// test owns a row with no pre-existing state to collide with.
@@ -103,7 +110,7 @@ test.describe('portal-document-download', () => {
 			timeout: 20_000,
 		})
 		const row = page
-			.locator('tr.portaliq-row-clickable')
+			.getByTestId('collection-table-row')
 			.filter({ hasText: title })
 		await row.waitFor({ timeout: 20_000 })
 
@@ -112,7 +119,9 @@ test.describe('portal-document-download', () => {
 
 		// Upload a file to the owned row — the file-download list only shows
 		// files that actually exist, so the upload block seeds the fixture.
-		const fileInput = page.locator('.portaliq-fileupload input[type="file"]')
+		const fileInput = page
+			.getByTestId('detail-card-upload')
+			.locator('input[type="file"]')
 		await fileInput.setInputFiles({
 			name: 'e2e-besluit.txt',
 			mimeType: 'text/plain',
@@ -120,15 +129,15 @@ test.describe('portal-document-download', () => {
 		})
 
 		// The upload block reports success, and the download list picks up the
-		// new file (server-attached `_files`, refreshed by re-selecting the row).
-		await expect(page.locator('.portaliq-fileupload-msg')).toContainText(
-			'toegevoegd',
+		// new file (server-attached `_files`; the detail card re-reads the row
+		// after a successful upload).
+		await expect(page.getByTestId('detail-card-upload')).toContainText(
+			/toegevoegd|File added/,
 		)
-		await row.click()
 
-		const downloadButton = page.locator('.portaliq-filelist button', {
-			hasText: 'e2e-besluit.txt',
-		})
+		const downloadButton = page
+			.getByTestId('detail-card-download')
+			.filter({ hasText: 'e2e-besluit.txt' })
 		await expect(downloadButton).toBeVisible()
 
 		const [download] = await Promise.all([
@@ -139,6 +148,10 @@ test.describe('portal-document-download', () => {
 		expect(download.suggestedFilename()).toBe('e2e-besluit.txt')
 		const downloadedPath = await download.path()
 		expect(downloadedPath).toBeTruthy()
+		// The bytes served for the owned row are the file that was attached.
+		expect(await readFile(downloadedPath)).toEqual(
+			Buffer.from('e2e download fixture'),
+		)
 	})
 
 	// Asserts the three-way identical refusal against the running API.
@@ -149,17 +162,16 @@ test.describe('portal-document-download', () => {
 	}) => {
 		await loginAsSupplier(request, page, `e2e-download-404-${Date.now()}`)
 
-		await page.goto(PORTAL_PATH)
+		await page.goto(siteAddress())
 		await page.waitForLoadState('domcontentloaded')
+		await openPortaliqDemoPage(page)
 
 		const title = `E2E 404 ${Date.now()}`
 		await page.getByLabel('Onderwerp').fill(title)
 		await page.getByRole('button', { name: 'Aanmaken' }).click()
 		await page.waitForTimeout(500)
 
-		const token = await page.evaluate(() =>
-			window.localStorage.getItem('portaliq_token'),
-		)
+		const token = await readSiteSession(page)
 
 		// A non-existent fileId on a row this subject does NOT necessarily even
 		// own yet (no upload happened) still 404s — never a 401/500, and never

@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\MetricsController;
+use OCA\Portaliq\Controller\PortalHomePageController;
 use OCA\Portaliq\Controller\SessionAdminController;
 use OCA\Portaliq\Controller\SettingsController;
 use PHPUnit\Framework\TestCase;
@@ -30,7 +31,7 @@ use ReflectionClass;
 use ReflectionMethod;
 
 /**
- * These four routed methods are admin-only ON PURPOSE.
+ * These five routed methods are admin-only ON PURPOSE.
  *
  * Nextcloud expresses "instance admin required" as the ABSENCE of an opt-out
  * attribute — there is no positive `#[AdminRequired]` to assert. That makes the
@@ -48,6 +49,7 @@ use ReflectionMethod;
  * a synonym for admin-only. It additionally admits DELEGATED settings admins,
  * so adopting it here would widen access rather than document it.
  *
+ * @covers \OCA\Portaliq\Controller\PortalHomePageController
  * @covers \OCA\Portaliq\Controller\MetricsController
  * @covers \OCA\Portaliq\Controller\SessionAdminController
  * @covers \OCA\Portaliq\Controller\SettingsController
@@ -74,6 +76,7 @@ class AdminOnlyPostureTest extends TestCase {
 			'sessionadmin#revokeOrganisation' => [SessionAdminController::class, 'revokeOrganisation'],
 			'settings#update' => [SettingsController::class, 'update'],
 			'settings#create' => [SettingsController::class, 'create'],
+			'portalhomepage#index' => [PortalHomePageController::class, 'index'],
 		];
 	}//end adminOnlyMethodProvider()
 

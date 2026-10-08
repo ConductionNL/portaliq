@@ -16,8 +16,8 @@ use PHPUnit\Framework\TestCase;
  * a non-whitelisted field is dropped; a column for a projected-away field is kept
  * but carries no data because projection is the authority elsewhere).
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
  */
 class PortalManifestNormaliserTest extends TestCase {
 
@@ -53,6 +53,30 @@ class PortalManifestNormaliserTest extends TestCase {
 		$this->assertSame('text', $columns[2]['render']);
 
 	}//end testColumnsAreSanitisedAndUnknownRenderFallsBackToText()
+
+	/**
+	 * A column may declare `render: "user"` (contribution-user-display-name),
+	 * and the normaliser keeps it.
+	 *
+	 * @return void
+	 */
+	public function testAUserColumnKeepsItsRender(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					[
+						'id' => 'c1',
+						'schema' => 's',
+						'columns' => [['field' => 'handledBy', 'label' => 'Leerkracht', 'render' => 'user']],
+					],
+				],
+				'actions' => [],
+			]
+		);
+
+		$this->assertSame(['field' => 'handledBy', 'label' => 'Leerkracht', 'render' => 'user'], $out['collections'][0]['columns'][0]);
+
+	}//end testAUserColumnKeepsItsRender()
 
 	public function testDetailAndDefaultsAreValidatedFailClosed(): void {
 		$out = $this->normaliser()->normalise(
@@ -353,6 +377,167 @@ class PortalManifestNormaliserTest extends TestCase {
 
 	}//end testAbsentPagesSynthesiseOneDefaultPerListableCollection()
 
+	public function testASynthesisedPageCarriesADetailBlockSoARowCanBeOpened(): void {
+		// portaliq#723: a page synthesised for a contribution that declares no
+		// pages held only the create form and the table. Selecting a row
+		// stored the choice and nothing rendered it, so a resident could not
+		// open their own case.
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [['id' => 'mijnZaken', 'schema' => 'case', 'label' => 'Mijn zaken', 'listable' => true]],
+				'actions' => [],
+			]
+		);
+
+		$this->assertSame(
+			[
+				['type' => 'collection', 'collection' => 'mijnZaken'],
+				['type' => 'detail', 'collection' => 'mijnZaken'],
+			],
+			$out['pages'][0]['blocks']
+		);
+
+	}//end testASynthesisedPageCarriesADetailBlockSoARowCanBeOpened()
+
+	public function testATimelineIsKeptOnlyWhenItNamesAProviderMethod(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'timeline' => ['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline']],
+					['id' => 'c2', 'schema' => 's', 'timeline' => ['provider' => 'caseTimeline', 'label' => 7]],
+					['id' => 'c3', 'schema' => 's', 'timeline' => ['label' => 'Geen provider']],
+					['id' => 'c4', 'schema' => 's', 'timeline' => ['provider' => '__construct']],
+					['id' => 'c5', 'schema' => 's', 'timeline' => ['provider' => 'case-timeline']],
+					['id' => 'c6', 'schema' => 's', 'timeline' => 'caseTimeline'],
+					['id' => 'c7', 'schema' => 's', 'timeline' => ['provider' => 'getContribution']],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame(['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline'], $byId['c1']['timeline']);
+		// A label that is not text falls back to none; the provider stands.
+		$this->assertSame(['label' => '', 'provider' => 'caseTimeline'], $byId['c2']['timeline']);
+		foreach (['c3', 'c4', 'c5', 'c6', 'c7'] as $id) {
+			$this->assertArrayNotHasKey('timeline', $byId[$id], $id);
+		}
+
+	}//end testATimelineIsKeptOnlyWhenItNamesAProviderMethod()
+
+	/**
+	 * cases-my-cases-page REQ-CMC-002: a collection's closed marker is kept
+	 * only when it names a field the collection projects; an unprojected or
+	 * malformed one is dropped, so the portal never guesses what "closed" means.
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 */
+	public function testAClosedFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'kind' => 'cases', 'fields' => ['title', 'endDate'], 'closedField' => 'endDate'],
+					['id' => 'c2', 'schema' => 's', 'kind' => 'cases', 'fields' => ['title'], 'closedField' => 'endDate'],
+					['id' => 'c3', 'schema' => 's', 'kind' => 'cases', 'fields' => ['title']],
+					['id' => 'c4', 'schema' => 's', 'kind' => 'cases', 'closedField' => 'endDate'],
+					['id' => 'c5', 'schema' => 's', 'kind' => 'cases', 'closedField' => ['endDate']],
+					['id' => 'c6', 'schema' => 's', 'kind' => 'cases', 'closedField' => ''],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame('endDate', $byId['c1']['closedField']);
+		// Without a projection every field reaches the row, so the name stands.
+		$this->assertSame('endDate', $byId['c4']['closedField']);
+		foreach (['c2', 'c3', 'c5', 'c6'] as $id) {
+			$this->assertArrayNotHasKey('closedField', $byId[$id], $id);
+		}
+
+	}//end testAClosedFieldIsKeptOnlyWhenItNamesAProjectedField()
+
+	/**
+	 * `statusLabelField` follows the closed marker's rule: it stays only when
+	 * it names a projected field, so "My cases" never reads words from a field
+	 * the rows lack.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+	 */
+	public function testAStatusLabelFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'kind' => 'cases', 'fields' => ['status', 'statusPublicLabel'], 'statusLabelField' => 'statusPublicLabel'],
+					['id' => 'c2', 'schema' => 's', 'kind' => 'cases', 'fields' => ['status'], 'statusLabelField' => 'statusPublicLabel'],
+					['id' => 'c3', 'schema' => 's', 'kind' => 'cases', 'statusLabelField' => 'statusPublicLabel'],
+					['id' => 'c4', 'schema' => 's', 'kind' => 'cases', 'statusLabelField' => ['statusPublicLabel']],
+					['id' => 'c5', 'schema' => 's', 'kind' => 'cases', 'statusLabelField' => ''],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame('statusPublicLabel', $byId['c1']['statusLabelField']);
+		$this->assertSame('statusPublicLabel', $byId['c3']['statusLabelField']);
+		foreach (['c2', 'c4', 'c5'] as $id) {
+			$this->assertArrayNotHasKey('statusLabelField', $byId[$id], $id);
+		}
+
+	}//end testAStatusLabelFieldIsKeptOnlyWhenItNamesAProjectedField()
+
+	/**
+	 * collection-group-by-field T2: `groupByField` stays only when it names a
+	 * projected field, so the portal never groups on a field the rows lack.
+	 *
+	 * @spec openspec/changes/collection-group-by-field/tasks.md#T2
+	 */
+	public function testAGroupByFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'fields' => ['learnerRef', 'value'], 'groupByField' => 'learnerRef'],
+					['id' => 'c2', 'schema' => 's', 'fields' => ['value'], 'groupByField' => 'learnerRef'],
+					['id' => 'c3', 'schema' => 's', 'groupByField' => 'learnerRef'],
+					['id' => 'c4', 'schema' => 's', 'groupByField' => ['learnerRef']],
+					['id' => 'c5', 'schema' => 's', 'groupByField' => ''],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame('learnerRef', $byId['c1']['groupByField']);
+		$this->assertSame('learnerRef', $byId['c3']['groupByField']);
+		foreach (['c2', 'c4', 'c5'] as $id) {
+			$this->assertArrayNotHasKey('groupByField', $byId[$id], $id);
+		}
+
+	}//end testAGroupByFieldIsKeptOnlyWhenItNamesAProjectedField()
+
+	/**
+	 * signin-eherkenning-branch REQ-SEB-002 (T03): `branchField` stays only
+	 * when it names a projected field.
+	 */
+	public function testABranchFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'fields' => ['title', 'vestiging'], 'branchField' => 'vestiging'],
+					['id' => 'c2', 'schema' => 's', 'fields' => ['title'], 'branchField' => 'vestiging'],
+					['id' => 'c3', 'schema' => 's', 'branchField' => 'vestiging'],
+					['id' => 'c4', 'schema' => 's', 'branchField' => ['vestiging']],
+					['id' => 'c5', 'schema' => 's', 'branchField' => ''],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame('vestiging', $byId['c1']['branchField']);
+		$this->assertSame('vestiging', $byId['c3']['branchField']);
+		foreach (['c2', 'c4', 'c5'] as $id) {
+			$this->assertArrayNotHasKey('branchField', $byId[$id], $id);
+		}
+
+	}//end testABranchFieldIsKeptOnlyWhenItNamesAProjectedField()
+
 	/**
 	 * ADDITIVE-COMPAT: a pure v2 manifest round-trips with collections + actions
 	 * byte-identical; only an additive synthesised `pages` array appears.
@@ -587,4 +772,84 @@ class PortalManifestNormaliserTest extends TestCase {
 		$this->assertTrue($out['collections'][1]['anonymous']);
 
 	}//end testAnonymousSurvivesWithNoOrLowMinTrust()
-}//end class
+
+	/**
+	 * #804, T03: an action whose `scopeClaim` names one of the nine frozen
+	 * assertion claims is dropped, so its value can never stand in for `sub`,
+	 * `iss` or any other of them; an ordinary claim name keeps the action.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-case-actions-sign-a-document/tasks.md#T03
+	 */
+	public function testReservedScopeClaimNameIsDropped(): void {
+		$action = static fn (string $id, string $claim): array => [
+			'id' => $id,
+			'type' => 'endpoint',
+			'endpoint' => '/apps/filinq/api/sign',
+			'method' => 'POST',
+			'scopeClaim' => $claim,
+		];
+		$out = (new PortalManifestNormaliser())->normalise(
+			[
+				'collections' => [],
+				'actions' => [
+					$action('sign', 'filinq.signerEmail'),
+					$action('hijackSub', 'filinq.sub'),
+					$action('hijackIss', 'iss'),
+				],
+			]
+		);
+
+		$this->assertSame(['sign'], array_column($out['actions'], 'id'));
+	}//end testReservedScopeClaimNameIsDropped()
+
+	/**
+	 * A guest action without a `tokenField` has nowhere to carry the signed
+	 * token, and one aimed off the instance would forward it elsewhere: both
+	 * are dropped, a well-formed one keeps its guest keys.
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
+	 */
+	public function testGuestActionNeedsATokenField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [],
+				'actions' => [
+					['id' => 'withdraw', 'guest' => true, 'endpoint' => '/apps/shillinq/api/withdraw', 'tokenField' => 'token', 'label' => 'Withdraw from contract here', 'previewEndpoint' => '/apps/shillinq/api/withdraw/preview', 'confirmText' => 'Withdraw?'],
+					['id' => 'noToken', 'guest' => true, 'endpoint' => '/apps/shillinq/api/x'],
+					['id' => 'badToken', 'guest' => true, 'endpoint' => '/apps/shillinq/api/x', 'tokenField' => 'a b'],
+					['id' => 'remote', 'guest' => true, 'endpoint' => 'https://evil.example/x', 'tokenField' => 'token'],
+					['id' => 'remotePreview', 'guest' => true, 'endpoint' => '/apps/shillinq/api/x', 'tokenField' => 'token', 'previewEndpoint' => '//evil.example/p'],
+				],
+			]
+		);
+
+		$this->assertSame(['withdraw'], array_column($out['actions'], 'id'));
+		$this->assertTrue($out['actions'][0]['guest']);
+		$this->assertSame('token', $out['actions'][0]['tokenField']);
+		$this->assertSame('/apps/shillinq/api/withdraw/preview', $out['actions'][0]['previewEndpoint']);
+		$this->assertSame('Withdraw from contract here', $out['actions'][0]['label']);
+	}//end testGuestActionNeedsATokenField()
+
+	/**
+	 * A guest is never more than `low`: a guest action asking for more is
+	 * dropped, not offered to a visitor who cannot have it (REQ-GST-001).
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
+	 */
+	public function testGuestActionAboveLowTrustIsDropped(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [],
+				'actions' => [
+					['id' => 'withdraw', 'guest' => true, 'endpoint' => '/apps/shillinq/api/withdraw', 'tokenField' => 'token', 'minTrust' => 'substantial'],
+					['id' => 'pay', 'guest' => true, 'endpoint' => '/apps/shillinq/api/pay', 'tokenField' => 'payToken', 'minTrust' => 'low'],
+					['id' => 'resident', 'endpoint' => '/apps/shillinq/api/r', 'minTrust' => 'substantial'],
+				],
+			]
+		);
+
+		$this->assertSame(['pay', 'resident'], array_column($out['actions'], 'id'));
+	}//end testGuestActionAboveLowTrustIsDropped()
+}

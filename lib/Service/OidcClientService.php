@@ -48,6 +48,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCP\Http\Client\IClientService;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
@@ -107,11 +108,18 @@ class OidcClientService {
 	 *                                    correctness issue).
 	 * @param LoggerInterface $logger The logger — debug-level only, never
 	 *                                leaks WHICH validation check failed.
+	 * @param ConnectionReporter|null $connectionReporter Tells integriq, throttled,
+	 *                                                    what a broker answered. The
+	 *                                                    report reaches admins only,
+	 *                                                    never the login response.
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
 	public function __construct(
 		private readonly IClientService $clientService,
 		private readonly ICacheFactory $cacheFactory,
 		private readonly LoggerInterface $logger,
+		private readonly ?ConnectionReporter $connectionReporter = null,
 	) {
 	}//end __construct()
 
@@ -145,11 +153,21 @@ class OidcClientService {
 	 * configuration`), cached. Fails closed to null on any HTTP/JSON error,
 	 * or when the required endpoints are absent from the document.
 	 *
+	 * A failed request is reported to integriq's connection registry,
+	 * throttled (adopt-connection-registry). A cache hit makes no call, so
+	 * it reports nothing.
+	 *
 	 * @param string $issuer The configured issuer base URL.
 	 *
-	 * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string}|null
+	 * The broker's `end_session_endpoint` is kept too, '' when it announces
+	 * none (signin-session-idle-warning-and-sso D6). A document cached before
+	 * that may lack the key, so a reader uses `?? ''`.
+	 *
+	 * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string, end_session_endpoint: string}|null
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
 	public function discover(string $issuer): ?array {
 		if ($issuer === '') {
@@ -169,11 +187,13 @@ class OidcClientService {
 			$response = $client->get($url, ['timeout' => self::HTTP_TIMEOUT]);
 		} catch (Throwable $e) {
 			$this->logger->debug('Portaliq: OIDC discovery failed', ['reason' => $e->getMessage()]);
+			$this->connectionReporter?->oidcDiscoveryFailed(issuer: $issuer, answered: false);
 			return null;
 		}
 
 		$decoded = $this->decodeJsonBody(response: $response);
 		if ($decoded === null) {
+			$this->connectionReporter?->oidcDiscoveryFailed(issuer: $issuer, answered: true);
 			return null;
 		}
 
@@ -181,9 +201,11 @@ class OidcClientService {
 			'authorization_endpoint' => (string)($decoded['authorization_endpoint'] ?? ''),
 			'token_endpoint' => (string)($decoded['token_endpoint'] ?? ''),
 			'jwks_uri' => (string)($decoded['jwks_uri'] ?? ''),
+			'end_session_endpoint' => (string)($decoded['end_session_endpoint'] ?? ''),
 		];
 
 		if ($endpoints['authorization_endpoint'] === '' || $endpoints['token_endpoint'] === '' || $endpoints['jwks_uri'] === '') {
+			$this->connectionReporter?->oidcDiscoveryFailed(issuer: $issuer, answered: true);
 			return null;
 		}
 
@@ -202,10 +224,12 @@ class OidcClientService {
 	 * @param string $state The CSRF state token.
 	 * @param string $nonce The replay nonce.
 	 * @param string $codeChallenge The PKCE S256 code challenge.
+	 * @param string $prompt The OIDC `prompt` value (`none` for a silent sign-in), or '' to send none.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
 	 */
 	public function buildAuthorizationUrl(
 		string $authorizeEndpoint,
@@ -215,19 +239,23 @@ class OidcClientService {
 		string $state,
 		string $nonce,
 		string $codeChallenge,
+		string $prompt = '',
 	): string {
-		$query = http_build_query(
-			[
-				'response_type' => 'code',
-				'client_id' => $clientId,
-				'redirect_uri' => $redirectUri,
-				'scope' => implode(' ', $scopes),
-				'state' => $state,
-				'nonce' => $nonce,
-				'code_challenge' => $codeChallenge,
-				'code_challenge_method' => 'S256',
-			]
-		);
+		$params = [
+			'response_type' => 'code',
+			'client_id' => $clientId,
+			'redirect_uri' => $redirectUri,
+			'scope' => implode(' ', $scopes),
+			'state' => $state,
+			'nonce' => $nonce,
+			'code_challenge' => $codeChallenge,
+			'code_challenge_method' => 'S256',
+		];
+		if ($prompt !== '') {
+			$params['prompt'] = $prompt;
+		}
+
+		$query = http_build_query($params);
 
 		$separator = '?';
 		if (str_contains($authorizeEndpoint, '?') === true) {
@@ -242,6 +270,10 @@ class OidcClientService {
 	 * Fails closed to null on any transport/HTTP/JSON error or a non-2xx
 	 * response — never surfaces the broker's own error detail to the caller.
 	 *
+	 * What the broker answered is reported to integriq's connection registry,
+	 * throttled, where only admins read it (adopt-connection-registry). An
+	 * answer about one login, such as `invalid_grant`, is not reported.
+	 *
 	 * @param string $tokenEndpoint The broker's token endpoint.
 	 * @param string $code The authorization code from the callback.
 	 * @param string $codeVerifier The PKCE code verifier matching the original challenge.
@@ -252,6 +284,7 @@ class OidcClientService {
 	 * @return array<string, mixed>|null The decoded token response, or null.
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
 	public function exchangeCode(
 		string $tokenEndpoint,
@@ -280,15 +313,49 @@ class OidcClientService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->debug('Portaliq: OIDC code exchange failed', ['reason' => $e->getMessage()]);
+			$this->connectionReporter?->oidcExchangeAnswered(tokenEndpoint: $tokenEndpoint, httpStatus: null, oauthError: '', hasToken: false);
 			return null;
 		}//end try
 
-		if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
+		$decoded = $this->decodeJsonBody(response: $response);
+		$status  = $response->getStatusCode();
+		$this->reportExchange(tokenEndpoint: $tokenEndpoint, httpStatus: $status, decoded: $decoded);
+
+		if ($status < 200 || $status >= 300) {
 			return null;
 		}
 
-		return $this->decodeJsonBody(response: $response);
+		return $decoded;
 	}//end exchangeCode()
+
+	/**
+	 * Tell integriq, throttled, what the broker answered to a code exchange.
+	 *
+	 * @param string                    $tokenEndpoint The token endpoint called.
+	 * @param int                       $httpStatus    The answer's HTTP status.
+	 * @param array<string, mixed>|null $decoded       The decoded answer, or null when it was not JSON.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
+	 */
+	private function reportExchange(string $tokenEndpoint, int $httpStatus, ?array $decoded): void {
+		if ($this->connectionReporter === null) {
+			return;
+		}
+
+		$oauthError = '';
+		if (is_string($decoded['error'] ?? null) === true) {
+			$oauthError = $decoded['error'];
+		}
+
+		$this->connectionReporter->oidcExchangeAnswered(
+			tokenEndpoint: $tokenEndpoint,
+			httpStatus: $httpStatus,
+			oauthError: $oauthError,
+			hasToken: (is_string($decoded['id_token'] ?? null) === true && $decoded['id_token'] !== '')
+		);
+	}//end reportExchange()
 
 	/**
 	 * Full network-integrated ID-token verification: fetches (cached) JWKS
