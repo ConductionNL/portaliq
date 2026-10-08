@@ -555,6 +555,7 @@ import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
+import { blocksOwnHeading } from './lib/pageHeading.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
 	loadPerRecordRows,
@@ -865,6 +866,7 @@ export default {
 		 * @return {boolean} True when the renderer must not add a title.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @spec openspec/changes/site-page-layout/specs/site-look/spec.md#requirement-a-page-must-have-one-title-heading
 		 */
 		bodyProvidesHeading() {
 			const body = this.page.body || {}
@@ -879,10 +881,9 @@ export default {
 			// the reference has one, and the generic one first.
 			//
 			// A hero in the hero region counts too, the portal's included: the
-			// page then keeps one h1 (REQ-PTB-009).
-			return [...this.regions.hero, ...main].some(
-				(w) => w.widgetKey === 'hero' || w.widgetKey === 'publicationDetail',
-			)
+			// page then keeps one h1 (REQ-PTB-009). So does an `nlHeading` at
+			// level 1 (site-page-layout).
+			return blocksOwnHeading([...this.regions.hero, ...main])
 		},
 
 		/**
