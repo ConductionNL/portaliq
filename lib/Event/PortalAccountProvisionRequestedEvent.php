@@ -30,9 +30,12 @@ namespace OCA\Portaliq\Event;
 use OCP\EventDispatcher\Event;
 
 /**
- * An app asks portaliq to provision a pending portal account.
+ * An app asks portaliq to provision a pending portal account, or, with a
+ * Nextcloud user id and a portal, an active account for the `nextcloud`
+ * sign-in mode (an-app-provisions-a-nextcloud-account).
  *
  * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
  */
 class PortalAccountProvisionRequestedEvent extends Event {
 	/**
@@ -67,6 +70,12 @@ class PortalAccountProvisionRequestedEvent extends Event {
 	 * @param string $email A contact address, or ''.
 	 * @param bool $verifiedEmail True when that address was verified out of band.
 	 * @param string $displayName The name to greet the person by, or ''.
+	 * @param string $nextcloudUid A Nextcloud user id: asks for an ACTIVE
+	 *                             `nextcloud`-mode account whose subjectRef is
+	 *                             that id (an-app-provisions-a-nextcloud-account),
+	 *                             or '' for a pending account.
+	 * @param string $portal The slug of the portal the `nextcloud` account is
+	 *                       for, required with `$nextcloudUid`, else ''.
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
 	 * declared field of the account being asked for.
@@ -85,6 +94,8 @@ class PortalAccountProvisionRequestedEvent extends Event {
 		private readonly string $email = '',
 		private readonly bool $verifiedEmail = false,
 		private readonly string $displayName = '',
+		private readonly string $nextcloudUid = '',
+		private readonly string $portal = '',
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -214,4 +225,26 @@ class PortalAccountProvisionRequestedEvent extends Event {
 	public function getRefusal(): string {
 		return $this->refusal;
 	}//end getRefusal()
+
+	/**
+	 * The Nextcloud user id an active account is asked for, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 */
+	public function getNextcloudUid(): string {
+		return $this->nextcloudUid;
+	}//end getNextcloudUid()
+
+	/**
+	 * The slug of the portal the `nextcloud` account is for, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 */
+	public function getPortal(): string {
+		return $this->portal;
+	}//end getPortal()
 }//end class

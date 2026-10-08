@@ -144,8 +144,8 @@ export default {
 .pq-greeting__date {
 	margin: 0 0 0.25rem;
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 }
 

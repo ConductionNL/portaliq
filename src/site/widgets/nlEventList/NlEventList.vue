@@ -33,7 +33,10 @@
 				:key="row.key"
 				class="nl-event-list__row"
 				data-testid="nl-event-row">
-				<DateTile v-if="mode === 'tiles'" :date="row.date" />
+				<DateTile
+					v-if="mode === 'tiles'"
+					:date="row.date"
+					:locale="contentLocale()" />
 				<span v-else class="nl-event-list__label">{{ row.label }}</span>
 				<span class="nl-event-list__text">
 					<a
@@ -96,6 +99,14 @@ export default {
 
 	components: { DateTile },
 
+	inject: {
+		/**
+		 * The language of the page's content (site-dates-in-content-language);
+		 * empty outside the site shell, so the document's language applies.
+		 */
+		contentLocale: { from: 'siteContentLocale', default: () => () => '' },
+	},
+
 	props: {
 		/** The heading. */
 		heading: { type: String, default: '' },
@@ -150,6 +161,7 @@ export default {
 			return eventRows(this.fetched || this.items, {
 				upcomingOnly: this.upcomingOnly,
 				limit: this.limit,
+				locale: this.contentLocale(),
 			})
 		},
 
@@ -235,8 +247,8 @@ export default {
 .nl-event-list__subtitle {
 	margin: -0.5rem 0 0.5rem;
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 	font-size: 0.9375rem;
 }
@@ -283,8 +295,8 @@ export default {
 
 .nl-event-list__meta {
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 	font-size: 0.9375rem;
 }

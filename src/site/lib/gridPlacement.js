@@ -23,7 +23,7 @@ import { cellOf } from '../../editor/geometry.js'
  * below a band opens with empty rows reserved for the band.
  *
  * @param {Array}                    widgets The placements, in order.
- * @param {(key: string) => boolean} isBand  Whether a widget key is a band.
+ * @param {(key: string, widget: object) => boolean} isBand  Whether a widget is a band.
  * @return {Array} `{band: true, widget}` and `{band: false, widgets, rowOffset}` entries.
  *
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
@@ -32,7 +32,7 @@ export function runsFor(widgets, isBand) {
 	const out = []
 
 	for (const widget of widgets || []) {
-		if (isBand(widget.widgetKey) === true) {
+		if (isBand(widget.widgetKey, widget) === true) {
 			out.push({ band: true, widget })
 			continue
 		}
@@ -81,4 +81,24 @@ export function cellStyle(widget, rowOffset = 0) {
 		gridColumn: `${cell.gridX + 1} / span ${cell.gridWidth}`,
 		gridRow: `${row + 1} / span ${cell.gridHeight}`,
 	}
+}
+
+/**
+ * This app's own bands, beside the library's: a widget that paints edge to
+ * edge and brings its own container. `nlLinkColumns` always; `nlBanner` when
+ * its placement asks for it (`band: true`), so every banner placed before
+ * this stays in its grid cell (site-matches-the-zuiddrecht-boards).
+ *
+ * @param {string} key    The widget key.
+ * @param {object} widget The placement.
+ * @return {boolean} True when it must not be wrapped in a grid cell.
+ *
+ * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-link-columns-draw-a-heading-over-columns-of-links-on-a-band
+ * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-a-banner-may-carry-a-lead-and-a-link
+ */
+export function ownBand(key, widget) {
+	if (key === 'nlLinkColumns') {
+		return true
+	}
+	return key === 'nlBanner' && widget?.props?.band === true
 }

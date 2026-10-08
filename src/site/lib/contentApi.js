@@ -152,48 +152,63 @@ async function get(path, query = {}, options = {}) {
 	return response.json()
 }
 
-/**
- * @param {string} [portal] Explicit portal slug.
- * @return {Promise<object>} The resolved portal's presentation record.
- */
-export const fetchSite = (portal) => get('/site', { portal })
+// THE LANGUAGE GOES ALONG ON EVERY CONTENT READ. `locale` is the visitor's
+// choice from the language switch (src/site/lib/languageNav.js). The content
+// API checks it against the portal's own `locales` and falls back to the
+// first one, so an empty or unknown value is safe to send; an empty one is
+// simply left off the address.
 
 /**
  * @param {string} [portal] Explicit portal slug.
- * @return {Promise<Array>} The portal's menus.
+ * @param {string} [locale] The language the visitor chose.
+ * @return {Promise<object>} The resolved portal's presentation record.
+ * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
-export async function fetchMenus(portal) {
-	const body = await get('/menus', { portal })
+export const fetchSite = (portal, locale) => get('/site', { portal, locale })
+
+/**
+ * @param {string} [portal] Explicit portal slug.
+ * @param {string} [locale] The language the visitor chose.
+ * @return {Promise<Array>} The portal's menus.
+ * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+ */
+export async function fetchMenus(portal, locale) {
+	const body = await get('/menus', { portal, locale })
 	return body.menus || []
 }
 
 /**
  * @param {string} [portal] Explicit portal slug.
+ * @param {string} [locale] The language the visitor chose.
  * @return {Promise<Array>} The portal's published page summaries.
+ * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
-export async function fetchPages(portal) {
-	const body = await get('/pages', { portal })
+export async function fetchPages(portal, locale) {
+	const body = await get('/pages', { portal, locale })
 	return body.pages || []
 }
 
 /**
  * @param {string} [portal] Explicit portal slug.
+ * @param {string} [locale] The language the visitor chose.
  * @return {Promise<Array>} The portal's glossary terms.
+ * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
-export async function fetchGlossary(portal) {
-	const body = await get('/glossary', { portal })
+export async function fetchGlossary(portal, locale) {
+	const body = await get('/glossary', { portal, locale })
 	return body.terms || []
 }
 
 /**
  * @param {string} route  The in-site route.
  * @param {string} [portal] Explicit portal slug.
- * @param {{fresh?: boolean}} [options] `fresh` to go past the browser cache.
+ * @param {{fresh?: boolean, locale?: string}} [options] `fresh` to go past the browser cache; `locale`, the language the visitor chose.
  * @return {Promise<object>} One published page by route.
  * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
+ * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
 export function fetchPage(route, portal, options = {}) {
-	return get('/page', { route, portal }, options)
+	return get('/page', { route, portal, locale: options.locale }, options)
 }
 
 /**

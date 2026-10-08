@@ -132,7 +132,8 @@
 						data-testid="nl-catalogue-item">
 						<DateTile
 							v-if="display === 'dated' && card.date"
-							:date="card.date.slice(0, 10)" />
+							:date="card.date.slice(0, 10)"
+							:locale="contentLocale() || lang" />
 						<span class="nl-catalogue__text">
 							<span class="nl-catalogue__line">
 								<span
@@ -247,6 +248,14 @@ export default {
 	name: 'NlCatalogue',
 
 	components: { DateTile },
+
+	inject: {
+		/**
+		 * The language of the page's content (site-dates-in-content-language);
+		 * empty outside the site shell, so the document's language applies.
+		 */
+		contentLocale: { from: 'siteContentLocale', default: () => () => '' },
+	},
 
 	props: {
 		/** The portal, handed in by the host. */
@@ -366,7 +375,10 @@ export default {
 		 * @spec openspec/changes/portal-public-catalogue/specs/portaliq-cms/spec.md#requirement-a-catalogue-block-searches-and-filters-the-portals-public-catalogue
 		 */
 		longDate(value) {
-			return longDate(String(value).slice(0, 10), this.lang)
+			return longDate(
+				String(value).slice(0, 10),
+				this.contentLocale() || this.lang,
+			)
 		},
 
 		/**
@@ -557,8 +569,8 @@ export default {
 	gap: 0.25rem 0.75rem;
 	align-items: center;
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 	font-size: 0.9375rem;
 }

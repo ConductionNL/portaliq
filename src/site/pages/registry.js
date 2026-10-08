@@ -96,7 +96,13 @@ const OWNS_HEADING = new Set(['cases', 'access', 'details', 'account'])
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function pageOwnsHeading(entry) {
-	return Boolean(entry && OWNS_HEADING.has(entry.special) && sitePageLoader(entry))
+	return Boolean(
+		entry
+		&& ((OWNS_HEADING.has(entry.special) && sitePageLoader(entry))
+			// A record page whose record's name is the h1
+			// (zuiddrecht-resident-pages-match-the-boards).
+			|| entry.page?.record?.heading === 'record'),
+	)
 }
 
 /**

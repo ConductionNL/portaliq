@@ -69,7 +69,9 @@ class RecordBlockNormaliser {
 			$out['titleFields'] = $titleFields;
 		}
 
-		return $out;
+		// The record's name as the page's heading and its place in the
+		// breadcrumb (zuiddrecht-resident-pages-match-the-boards).
+		return $out + (new BoardKeys())->recordKeys(record: $record);
 	}//end pageRecord()
 
 	/**

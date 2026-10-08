@@ -24,7 +24,18 @@
 			</p>
 		</div>
 
-		<article v-else-if="publication" class="pq-detail__body">
+		<article
+			v-else-if="publication"
+			class="pq-detail__body"
+			:class="{ 'pq-detail__body--cards': cards }">
+			<!-- The cards variant (board Publicatie) names the category as a
+			     pill above the title; the plain variant keeps it in the list. -->
+			<span
+				v-if="cards && categoryName"
+				class="pq-detail__pill"
+				data-testid="publication-detail-pill">
+				{{ categoryName }}
+			</span>
 			<h1 class="utrecht-heading-1" data-testid="publication-detail-title">
 				{{ title }}
 			</h1>
@@ -51,6 +62,7 @@
 			<dl
 				v-if="fields.length > 0"
 				class="pq-detail__fields"
+				:class="{ 'pq-detail__fields--boxed': cards }"
 				data-testid="publication-detail-fields">
 				<div
 					v-for="field in fields"
@@ -87,6 +99,60 @@
 					data-testid="publication-documents-empty">
 					{{ t('This publication has no documents.') }}
 				</p>
+				<!-- The cards variant draws each document as a card: a file
+				     mark, the name with its type and size under it, and a
+				     "Download" button that names the file for assistive tech. -->
+				<ul v-else-if="cards" class="pq-detail__document-cards">
+					<li
+						v-for="document in documents"
+						:key="document.id || document.title"
+						class="pq-detail__document-card"
+						data-testid="publication-document">
+						<span class="pq-detail__document-head">
+							<svg
+								class="pq-detail__document-mark"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+								focusable="false">
+								<path d="M6 3h9l4 4v14H6zM14 3v5h5" />
+							</svg>
+							<span class="pq-detail__document-words">
+								<span class="pq-detail__document-name">{{
+									document.title
+								}}</span>
+								<span
+									v-if="document.type || document.size"
+									class="pq-detail__document-meta">
+									{{
+										[document.type, document.size]
+											.filter(Boolean)
+											.join(', ')
+									}}
+								</span>
+							</span>
+						</span>
+						<a
+							v-if="document.href"
+							class="utrecht-button utrecht-button--secondary-action pq-detail__download"
+							:href="document.href"
+							download
+							rel="noopener noreferrer">
+							<svg
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+								focusable="false">
+								<path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+							</svg>
+							{{ t('Download')
+							}}<span class="sr-only">{{ ` ${document.title}` }}</span>
+						</a>
+						<SaveToDossier
+							v-if="signedIn && document.id"
+							:publication="subjectId"
+							:attachment="document.id"
+							:subject="document.title" />
+					</li>
+				</ul>
 				<ul v-else class="pq-detail__document-list">
 					<li
 						v-for="document in documents"
@@ -178,6 +244,17 @@ export default {
 		 * Whether the page shell holds a portal session. Set by the host
 		 * after the authored props, never by page configuration.
 		 */
+		/**
+		 * `plain` (title, rows, a list of documents) or `cards`: the category
+		 * as a pill above the title, the rows in a tinted box, each document
+		 * as a card with a download button (site-matches-the-zuiddrecht-boards,
+		 * board Publicatie).
+		 */
+		variant: {
+			type: String,
+			default: 'plain',
+		},
+
 		signedIn: {
 			type: Boolean,
 			default: false,
@@ -256,6 +333,23 @@ export default {
 		 *
 		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
+		/**
+		 * @return {boolean} Whether the cards variant is drawn.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-publication-page-may-draw-the-boards-cards
+		 */
+		cards() {
+			return this.variant === 'cards'
+		},
+
+		/**
+		 * @return {string} The information category's name, for the pill.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-publication-page-may-draw-the-boards-cards
+		 */
+		categoryName() {
+			const row = this.fields.find((field) => field.name === 'wooCategory')
+			return row ? String(row.value) : ''
+		},
+
 		fields() {
 			return visitorRows(this.publication, {
 				t: this.t,
@@ -495,7 +589,145 @@ export default {
 }
 
 .pq-detail__document-meta {
-	color: var(--nldesign-color-text-muted, #65757b);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #65757b)
+	);
 	margin-inline-start: 4px;
+}
+
+/* The cards variant (board Publicatie). Tokens only. */
+.pq-detail__body--cards {
+	display: flex;
+	flex-direction: column;
+	gap: 1.75rem;
+}
+
+.pq-detail__body--cards h1 {
+	margin: 0;
+}
+
+.pq-detail__pill {
+	align-self: flex-start;
+	padding: 0.25rem 0.75rem;
+	border-radius: 0.875rem;
+	background: var(--nldesign-color-primary-light, transparent);
+	color: var(--nldesign-color-primary-hover, currentcolor);
+	font-size: 0.9375rem;
+	font-weight: 600;
+}
+
+.pq-detail__body--cards .pq-detail__summary {
+	margin: 0;
+	font-size: 1.25rem;
+	line-height: 1.5;
+}
+
+.pq-detail__fields--boxed {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 0.625rem 1.5rem;
+	padding: 1.25rem 1.5rem;
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	background: var(
+		--nldesign-color-surface,
+		var(--nldesign-component-content-surface-background-color, transparent)
+	);
+}
+
+.pq-detail__fields--boxed .pq-detail__field {
+	display: contents;
+}
+
+.pq-detail__fields--boxed .pq-detail__label,
+.pq-detail__fields--boxed .pq-detail__value {
+	display: block;
+	margin: 0;
+}
+
+.pq-detail__body--cards .pq-detail__documents {
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
+	margin: 0;
+}
+
+.pq-detail__body--cards .pq-detail__documents h2 {
+	margin: 0;
+}
+
+.pq-detail__document-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-detail__document-card {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem 1.25rem;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	border: 1px solid var(--nldesign-color-border-dark, currentcolor);
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+}
+
+.pq-detail__document-head {
+	display: flex;
+	gap: 0.875rem;
+	align-items: center;
+}
+
+.pq-detail__document-mark {
+	flex: none;
+	inline-size: 1.75rem;
+	block-size: 1.75rem;
+	fill: none;
+	stroke: var(--nldesign-color-accent, currentcolor);
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.pq-detail__document-words {
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+}
+
+.pq-detail__document-name {
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-detail__document-card .pq-detail__document-meta {
+	margin: 0;
+	font-size: 0.9375rem;
+}
+
+.pq-detail__document-card .utrecht-button.pq-detail__download {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-block-size: 2.75rem;
+	padding-inline: 1rem;
+	border: 2px solid var(--nldesign-color-primary, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 0);
+	color: var(--nldesign-color-primary, currentcolor);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.pq-detail__download svg {
+	inline-size: 1.125rem;
+	block-size: 1.125rem;
+	fill: none;
+	stroke: currentcolor;
+	stroke-width: 2.2;
+	stroke-linecap: round;
 }
 </style>

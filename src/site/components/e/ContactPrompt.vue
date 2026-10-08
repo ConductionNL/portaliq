@@ -41,6 +41,13 @@
 <script>
 import { dismissPrompt } from '../../../shared/account.js'
 
+// The alert's look travels with the prompt. On a `/mijn` page another
+// component had already loaded the Utrecht alert CSS, so the prompt looked
+// right there and nowhere else: above the public home page it stood with a
+// transparent ground and a black border. Webpack loads the module once, so a
+// page that already had it renders exactly as before.
+import '@utrecht/alert-css/dist/index.css'
+
 /**
  * sessionStorage, or null where the browser refuses it.
  *
@@ -103,6 +110,14 @@ export default {
 <style scoped>
 .pq-contact-prompt {
 	margin-block-end: var(--utrecht-space-block-md, 1rem);
+	/* The Utrecht alert reads its padding from four tokens and declares no
+	   fallback, so on a set that names none of them the text stood against
+	   the alert's left edge (measured: padding 0px on the Zuiddrecht /mijn
+	   and home pages). A set that names them keeps its own. */
+	padding-block: var(--utrecht-alert-padding-block-start, 16px)
+		var(--utrecht-alert-padding-block-end, 16px);
+	padding-inline: var(--utrecht-alert-padding-inline-start, 20px)
+		var(--utrecht-alert-padding-inline-end, 20px);
 }
 
 .pq-e-buttons {

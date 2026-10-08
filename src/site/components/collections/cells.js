@@ -111,9 +111,14 @@ function onlyIdentifiers(objects, field) {
  * The columns of a table: the app's declared `columns`, else every field the
  * rows carry, minus the envelope and fields that hold only identifiers.
  *
+ * A heading is the column's own label, else the field's label in
+ * `fieldConfigs` (which the server fills from the schema property's title
+ * when the app wrote none), else the field written as words.
+ *
  * @param {object} collection The collection.
  * @param {Array<object>} objects The rows.
  * @return {Array<{field: string, label: string, render: string}>}
+ * @spec openspec/changes/collection-column-labels/specs/portal-contribution-contract/spec.md#requirement-a-collection-field-must-read-under-its-schema-title-when-the-app-gave-no-label
  */
 export function deriveColumns(collection, objects) {
 	const declared = Array.isArray(collection?.columns)
@@ -123,11 +128,11 @@ export function deriveColumns(collection, objects) {
 		: []
 	if (declared.length > 0) {
 		return declared.map((c) => {
-			const valueLabels =
-				c.valueLabels || fieldConfigOf(collection, c.field).valueLabels
+			const config = fieldConfigOf(collection, c.field)
+			const valueLabels = c.valueLabels || config.valueLabels
 			return {
 				...c,
-				label: columnLabel(c),
+				label: columnLabel({ label: config.label, ...withLabel(c) }),
 				render: c.render || 'text',
 				...(valueLabels ? { valueLabels } : {}),
 			}
@@ -144,7 +149,29 @@ export function deriveColumns(collection, objects) {
 	}
 	return fields
 		.filter((field) => !onlyIdentifiers(rows, field))
-		.map((field) => ({ field, label: humanise(field), render: 'text' }))
+		.map((field) => ({
+			field,
+			label: columnLabel({
+				field,
+				label: fieldConfigOf(collection, field).label,
+			}),
+			render: 'text',
+		}))
+}
+
+/**
+ * A column without a blank label, so the field's config label can stand in.
+ *
+ * @param {{label?: string}} column The declared column.
+ * @return {object} The column, its label dropped when blank.
+ */
+function withLabel(column) {
+	if (typeof column.label === 'string' && column.label.trim() !== '') {
+		return column
+	}
+	const rest = { ...column }
+	delete rest.label
+	return rest
 }
 
 /**

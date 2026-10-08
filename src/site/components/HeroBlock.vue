@@ -10,7 +10,10 @@
 		hold: an eyebrow above the heading, an icon inside it, and at most two
 		calls to action (REQ-PTB-006).
 	-->
-	<CnSiteSection variant="hero" :backgroundImage="backgroundImage">
+	<CnSiteSection
+		variant="hero"
+		:backgroundImage="backgroundImage"
+		:class="{ 'pq-hero--plain': plain }">
 		<!-- A label for the heading, not a heading: one outline entry per hero. -->
 		<p v-if="eyebrow" class="pq-hero__eyebrow" data-testid="hero-eyebrow">
 			{{ eyebrow }}
@@ -27,11 +30,19 @@
 			{{ subtitle }}
 		</p>
 
-		<div v-if="search" class="ac-card ac-card--blue ac-card--padding-lg">
-			<div class="ac-card__content">
+		<!-- The plain variant (Zuiddrecht board Home) draws the form on the
+		     band itself, input and button joined, without the card. -->
+		<div
+			v-if="search"
+			:class="
+				plain
+					? 'pq-hero__search'
+					: 'ac-card ac-card--blue ac-card--padding-lg'
+			">
+			<div :class="{ 'ac-card__content': !plain }">
 				<CnSiteSearch
-					:label="searchLabel || title || 'Zoeken'"
-					:labelVisible="true"
+					:label="searchFieldLabel"
+					:labelVisible="searchLabelVisible"
 					:placeholder="searchPlaceholder"
 					:submitLabel="searchSubmitLabel"
 					:value="searchValue"
@@ -39,6 +50,22 @@
 					@search="$emit('search', $event)" />
 			</div>
 		</div>
+
+		<!-- "Veel gezocht": the pages a visitor most often searches for, as
+		     plain links under the form. -->
+		<p v-if="popular.length" class="pq-hero__popular" data-testid="hero-popular">
+			<span v-if="popularLabel" class="pq-hero__popular-label">{{
+				popularLabel
+			}}</span>
+			<a
+				v-for="link in popular"
+				:key="link.href"
+				class="utrecht-link pq-hero__popular-link"
+				:href="link.href"
+				@click="onAction($event, link.href)"
+				>{{ link.label }}</a
+			>
+		</p>
 
 		<!-- Every action navigates, so each is a link, never a button. An
 		     in-site route is emitted, like every other block's links. -->
@@ -62,7 +89,7 @@ import {
 	CnSiteSearch,
 	CnSiteSection,
 } from '@conduction/nextcloud-vue/public'
-import { heroActions } from '../lib/blockProps.js'
+import { heroActions, heroPopularLinks } from '../lib/blockProps.js'
 
 /**
  * The hero band (`hero`), registered over the library's `CnSiteHero` under
@@ -105,10 +132,16 @@ export default {
 		searchInputId: { type: String, default: 'cn-site-search' },
 		/** Optional background image for the band. */
 		backgroundImage: { type: String, default: '' },
-		/** Paint the heading; `null` paints it only without a search box. */
+		/** Paint the heading; `null` paints it, also beside a search box. */
 		headingVisible: { type: Boolean, default: null },
 		/** `{label, href}` calls to action; at most two render. */
 		actions: { type: Array, default: () => [] },
+		/** `card` (the search in a card, today's look) or `plain` (joined input and button on the band). */
+		variant: { type: String, default: 'card' },
+		/** The words before the popular links ("Veel gezocht:"). */
+		popularLabel: { type: String, default: '' },
+		/** `{label, href}` links under the form; at most six render. */
+		popularLinks: { type: Array, default: () => [] },
 	},
 
 	emits: ['search', 'navigate'],
@@ -126,16 +159,72 @@ export default {
 		},
 
 		/**
-		 * Whether the heading is painted, by `CnSiteHero`'s rule.
+		 * @return {boolean} Whether the band draws the plain variant.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-hero-may-draw-its-search-plain-with-popular-links
+		 */
+		plain() {
+			return this.variant === 'plain'
+		},
+
+		/**
+		 * The popular links that render: labelled, in-site or on the web, six at most.
+		 *
+		 * @return {Array<{label: string, href: string}>} The links.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-hero-may-draw-its-search-plain-with-popular-links
+		 */
+		popular() {
+			return heroPopularLinks(this.popularLinks)
+		},
+
+		/**
+		 * Whether the heading is painted.
+		 *
+		 * `CnSiteHero`'s rule hid the heading and the lead whenever the band
+		 * held a search box, because the box was labelled with the heading. The
+		 * school and municipality designs draw heading, lead and search box
+		 * together, so the heading shows unless an author turns it off.
 		 *
 		 * @return {boolean} True when visible.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+		 * @spec openspec/changes/site-hero-shows-its-heading/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
 		 */
 		showHeading() {
-			return this.headingVisible !== null
-				? this.headingVisible
-				: this.search === false
+			return this.headingVisible !== null ? this.headingVisible : true
+		},
+
+		/**
+		 * The search box's name. The author's label; else, with the heading
+		 * hidden, the heading (the old rule, so the band keeps one name); else
+		 * the button's word, so a visible heading is not read out twice.
+		 *
+		 * @return {string} The label.
+		 *
+		 * @spec openspec/changes/site-hero-shows-its-heading/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
+		 */
+		searchFieldLabel() {
+			if (this.searchLabel !== '') {
+				return this.searchLabel
+			}
+
+			if (this.showHeading === false && this.title !== '') {
+				return this.title
+			}
+
+			return this.searchSubmitLabel || 'Zoeken'
+		},
+
+		/**
+		 * Whether the label shows above the box: when the author wrote one, or
+		 * when it stands in for a hidden heading. A label that only repeats
+		 * the button's word is for screen readers.
+		 *
+		 * @return {boolean} True when visible.
+		 *
+		 * @spec openspec/changes/site-hero-shows-its-heading/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
+		 */
+		searchLabelVisible() {
+			return this.searchLabel !== '' || this.showHeading === false
 		},
 
 		/**

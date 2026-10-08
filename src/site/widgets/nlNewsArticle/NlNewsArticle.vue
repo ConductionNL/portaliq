@@ -83,6 +83,14 @@ export default {
 
 	components: { MarkdownBlock },
 
+	inject: {
+		/**
+		 * The language of the page's content (site-dates-in-content-language);
+		 * empty outside the site shell, so the document's language applies.
+		 */
+		contentLocale: { from: 'siteContentLocale', default: () => () => '' },
+	},
+
 	props: {
 		/** A small label above the title, such as "Nieuws". */
 		kindLabel: { type: String, default: '' },
@@ -116,7 +124,10 @@ export default {
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-article-page-shows-one-public-item-chosen-by-the-route
 		 */
 		meta() {
-			return [longDate(this.item?.publishedAt), this.item?.audienceLabel]
+			return [
+				longDate(this.item?.publishedAt, this.contentLocale()),
+				this.item?.audienceLabel,
+			]
 				.filter(Boolean)
 				.join(' · ')
 		},
@@ -210,8 +221,8 @@ export default {
 	gap: 0.625rem;
 	margin: 0;
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 }
 

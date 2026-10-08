@@ -26,6 +26,11 @@ export const metaOf = {
 		},
 		{ name: 'display', kind: 'string', label: 'Weergave: list of compact' },
 		{
+			name: 'leadPlaceholder',
+			kind: 'string',
+			label: 'Tekst op de plek van de foto zolang die er niet is',
+		},
+		{
 			name: 'showAudience',
 			kind: 'boolean',
 			label: 'Laat zien voor wie het is',

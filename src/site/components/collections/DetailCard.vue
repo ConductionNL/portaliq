@@ -18,6 +18,15 @@
 		<p v-if="notice" class="utrecht-paragraph pq-detail__notice" role="status">
 			{{ notice }}
 		</p>
+		<!-- A heading over the facts when the block names one
+		     (zuiddrecht-resident-pages-match-the-boards). -->
+		<component
+			:is="`h${level}`"
+			v-if="label"
+			class="utrecht-heading-3 pq-detail__label"
+			data-testid="detail-card-label">
+			{{ label }}
+		</component>
 		<!-- The fields as a description list (site-mijn-omgeving-components
 		     REQ-SMO-005, design D2). -->
 		<DescriptionList :items="facts" itemTestid="detail-card-field" />
@@ -96,7 +105,7 @@
 			:locale="locale" />
 
 		<TimelineList
-			v-if="collection.timeline && timeline !== false"
+			v-if="collection.timeline && timeline !== false && showTimeline"
 			:label="collection.timeline.label || ''"
 			:entries="timeline ? timeline.entries || [] : null"
 			:t="t"
@@ -150,6 +159,12 @@ export default {
 		t: { type: Function, required: true },
 		/** The language. */
 		locale: { type: String, default: 'nl' },
+		/** A heading over the facts, or '' (the block's `label`). */
+		label: { type: String, default: '' },
+		/** The heading's level. */
+		level: { type: Number, default: 2 },
+		/** Whether the card draws the collection's history (the block's `timeline`). */
+		showTimeline: { type: Boolean, default: true },
 	},
 
 	data() {

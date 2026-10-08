@@ -121,7 +121,13 @@
 				</p>
 				<!-- Each case a Den Haag case card (site-mijn-omgeving-components
 				     REQ-SMO-002), naming its type (REQ-SMO-030). -->
-				<ul v-else class="pq-cases__list" data-testid="my-cases-list">
+				<!-- Or, when the portal says `myCases.display: rows`, one row per
+				     case (zuiddrecht-resident-pages-match-the-boards). -->
+				<ul
+					v-else
+					class="pq-cases__list"
+					:class="{ 'pq-cases__list--rows': asRows }"
+					data-testid="my-cases-list">
 					<CaseCard
 						v-for="(item, index) in rows"
 						:key="
@@ -132,9 +138,11 @@
 						data-testid="my-cases-row"
 						:card="item.card"
 						:mandate="item.mandate"
-						:meta="item.meta"
+						:meta="asRows ? '' : item.meta"
 						:route="item.route"
 						:button="item.openable && !item.route"
+						:display="asRows ? 'row' : ''"
+						:dueLabel="t('Due by')"
 						@open="openCase(item.target, item.row)" />
 				</ul>
 			</div>
@@ -184,6 +192,8 @@ export default {
 		openCase: { type: Function, default: () => {} },
 		/** The in-site route a case opens on: `(target) => string`, '' for none. */
 		caseRoute: { type: Function, default: null },
+		/** The contributions aggregate (or its list), for a row's due day. */
+		contributions: { type: [Object, Array], default: null },
 		/** The list to show without fetching (test seam). */
 		initialData: { type: Object, default: null },
 		/** 'open' or 'closed' (test seam). */
@@ -213,6 +223,14 @@ export default {
 		 */
 		mt() {
 			return mijnTranslator(this.t, readerLocale(this.locale))
+		},
+
+		/**
+		 * @return {boolean} Whether the portal draws the list as rows.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		asRows() {
+			return this.portal?.myCases?.display === 'rows'
 		},
 
 		/**
@@ -258,11 +276,17 @@ export default {
 					&& typeof this.canOpen === 'function'
 					&& this.canOpen(target) === true
 				return {
-					card: caseCard(row, null, {
-						tr: this.mt,
-						locale,
-						today: new Date(),
-					}),
+					// A row reads its collection for the day it is due by; the
+					// folder card stays as it was.
+					card: caseCard(
+						row,
+						this.asRows ? this.collectionOf(row) : null,
+						{
+							tr: this.mt,
+							locale,
+							today: new Date(),
+						},
+					),
 					meta: [source, date].filter(Boolean).join(', '),
 					row,
 					target,
@@ -310,6 +334,30 @@ export default {
 
 	methods: {
 		/**
+		 * The contributed collection a merged row came from (`_source`), so a
+		 * row knows its due field; null when none is known.
+		 *
+		 * @param {object} row A case row of the merged list.
+		 * @return {object|null}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		collectionOf(row) {
+			const list = Array.isArray(this.contributions)
+				? this.contributions
+				: this.contributions?.contributions
+			const app = row?._source?.appId
+			const id = row?._source?.collection
+			const contribution = (Array.isArray(list) ? list : []).find(
+				(candidate) => candidate && candidate.app === app,
+			)
+			return (
+				(contribution?.collections || []).find(
+					(candidate) => candidate && candidate.id === id,
+				) || null
+			)
+		},
+
+		/**
 		 * Read the list under the mandate in effect; a later read wins.
 		 *
 		 * @return {Promise<void>} Resolves when read.
@@ -348,16 +396,20 @@ export default {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
 }
 
+/* The tab list reads the set's tab roles when it names them
+   (thematiq zuiddrecht-website-type-and-controls); else as it was. */
 .pq-cases__tabs {
 	display: flex;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 	border-block-end: var(--utrecht-border-width-sm, 1px) solid
-		var(--utrecht-color-grey-80, currentcolor);
+		var(--thematiq-tab-line-color, var(--utrecht-color-grey-80, currentcolor));
 }
 
 .pq-cases__tabs [aria-selected='true'] {
 	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
 	text-decoration: underline;
+	text-decoration-color: var(--thematiq-tab-current-color, currentcolor);
+	box-shadow: inset 0 -4px 0 var(--thematiq-tab-current-color, transparent);
 }
 
 .pq-cases__list {
@@ -366,6 +418,12 @@ export default {
 	gap: var(--utrecht-space-block-lg, 1.5rem) var(--utrecht-space-inline-md, 1rem);
 	margin: 0;
 	padding: 0;
+}
+
+/* The rows: one under the other, 12px apart. */
+.pq-cases__list--rows {
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0.75rem;
 }
 
 .pq-e-error {

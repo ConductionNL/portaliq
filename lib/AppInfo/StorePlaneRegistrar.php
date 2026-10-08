@@ -127,6 +127,8 @@ final class StorePlaneRegistrar {
 			}
 
 			// Public-API PSR-4 registration; never throws, false when unresolvable.
+			// apphost-prelude exclude OpenRegisterAutoloader::register() below is the prelude.
+			// Gate-64 only recognises OC_App::registerAutoloading(), which Nextcloud 35 removed.
 			OpenRegisterAutoloader::register(appManager: $manager);
 		} catch (Throwable) {
 			// OpenRegister absent — fall through to the degraded path.

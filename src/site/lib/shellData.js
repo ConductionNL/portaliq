@@ -186,3 +186,32 @@ export function headerSearchOf(site) {
 		route: /^\/(?!\/)/.test(route) ? route : '/zoeken',
 	}
 }
+
+/**
+ * The words the header menu uses for a route, or '' when the menu does not
+ * name it. A breadcrumb then reads "Home › Afval" like the menu, not the
+ * page's full title (site-matches-the-zuiddrecht-boards, board Kop).
+ *
+ * @param {Array} menus The portal's menus.
+ * @param {string} route The route.
+ * @return {string} The menu item's name, or ''.
+ *
+ * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-a-breadcrumb-reads-like-the-menu
+ */
+export function menuLabelFor(menus, route) {
+	const wanted = String(route || '').replace(/\/+$/, '') || '/'
+	const walk = (items) => {
+		for (const item of items || []) {
+			const link = String(item?.link || '').replace(/\/+$/, '') || '/'
+			if (link === wanted && String(item?.name || '').trim() !== '') {
+				return String(item.name).trim()
+			}
+			const below = walk(item?.children || item?.items)
+			if (below !== '') {
+				return below
+			}
+		}
+		return ''
+	}
+	return walk(headerMenusOf(menus).flatMap((menu) => menu.items || []))
+}

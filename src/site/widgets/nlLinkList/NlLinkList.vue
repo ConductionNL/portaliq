@@ -7,11 +7,28 @@
 	A list of links, with a heading above it (design D1 row 54).
 
 	A `nav`, because that is what a list of links to other pages is, and a
-	screen-reader user navigates by landmark.
+	screen-reader user navigates by landmark. The heading names the landmark,
+	so three link lists on one page are three different landmarks. A list
+	without a heading has no name to give, so it is no landmark: an unnamed
+	`nav` beside a named one is the axe `landmark-unique` finding.
 -->
 <template>
-	<nav class="utrecht-link-list-nav" data-testid="nl-link-list">
-		<h2 v-if="heading" class="utrecht-heading-3">{{ heading }}</h2>
+	<component
+		:is="heading ? 'nav' : 'div'"
+		class="utrecht-link-list-nav"
+		:class="
+			safeDisplay === 'plain'
+				? null
+				: `nl-link-list nl-link-list--${safeDisplay}`
+		"
+		:aria-labelledby="heading ? headingId : undefined"
+		data-testid="nl-link-list">
+		<h2 v-if="heading" :id="headingId" class="utrecht-heading-3">
+			{{ heading }}
+		</h2>
+		<p v-if="intro" class="utrecht-paragraph nl-link-list__intro">
+			{{ intro }}
+		</p>
 		<ul class="utrecht-link-list">
 			<li
 				v-for="(link, index) in safeLinks"
@@ -28,7 +45,7 @@
 				</span>
 			</li>
 		</ul>
-	</nav>
+	</component>
 </template>
 
 <script>
@@ -37,6 +54,10 @@ import { authoredLink, staysInSite } from '../../components/mijn/links.js'
 import '@utrecht/link-list-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
 import '@utrecht/heading-3-css/dist/index.css'
+import '@utrecht/paragraph-css/dist/index.css'
+
+/** A number per mounted list, so every heading id on the page is unique. */
+let instances = 0
 
 export default {
 	name: 'NlLinkList',
@@ -46,11 +67,40 @@ export default {
 		heading: { type: String, default: '' },
 		/** The links: `{label, href, description}`. */
 		links: { type: Array, default: () => [] },
+		/** `plain`, `card` (a bordered card) or `accent` (a thick line in the accent above). */
+		display: { type: String, default: 'plain' },
+		/** A line under the heading, before the links. */
+		intro: { type: String, default: '' },
 	},
 
 	emits: ['navigate'],
 
+	/**
+	 * The id of the heading that names this list's landmark, unique on the
+	 * page.
+	 *
+	 * @return {{headingId: string}} The state.
+	 * @spec openspec/changes/site-content-blocks-styled/specs/site-look/spec.md#requirement-a-link-list-must-be-a-named-landmark-with-targets-of-at-least-24px
+	 */
+	data() {
+		instances += 1
+		return {
+			/** The id of the heading that names this list's landmark. */
+			headingId: `nl-link-list-${instances}`,
+		}
+	},
+
 	computed: {
+		/**
+		 * @return {string} `plain`, `card` or `accent`.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-a-link-list-may-draw-as-a-card-or-under-an-accent-line
+		 */
+		safeDisplay() {
+			return ['plain', 'card', 'tinted', 'accent'].includes(this.display)
+				? this.display
+				: 'plain'
+		},
+
 		/**
 		 * The links that have both a text and an address inside this site or on
 		 * the web. A half-filled row is left out rather than rendered as a link
@@ -97,3 +147,50 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/* The drawn displays (Zuiddrecht boards Home, Contentpagina and Publicatie).
+   Tokens only; `plain` adds nothing. */
+.nl-link-list__intro {
+	margin: 0 0 0.75rem;
+}
+
+.nl-link-list--card {
+	padding: 1.75rem 2rem;
+	border: 1px solid
+		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
+	border-radius: var(
+		--nldesign-website-border-radius-large,
+		var(--utrecht-border-radius-md, 0.75rem)
+	);
+}
+
+.nl-link-list--card .utrecht-link-list__link,
+.nl-link-list--tinted .utrecht-link-list__link {
+	font-weight: 600;
+}
+
+/* A card on a light ground of the primary colour, without a line (board
+   Publicatie, "Zelf iets opvragen?"). */
+.nl-link-list--tinted {
+	padding: 1.5rem;
+	border-radius: var(
+		--nldesign-website-border-radius-large,
+		var(--utrecht-border-radius-md, 0.75rem)
+	);
+	background: var(--nldesign-color-primary-light, transparent);
+}
+
+.nl-link-list--accent {
+	padding-block-start: 1.25rem;
+	border-block-start: 4px solid var(--nldesign-color-accent, currentcolor);
+}
+
+.nl-link-list h2 {
+	margin-block-start: 0;
+}
+
+.nl-link-list .utrecht-link-list {
+	margin-block-start: 0;
+}
+</style>

@@ -144,7 +144,9 @@
 			above the page heading (see AccountArea's `prompt` slot below);
 			here it stands above any other page.
 		-->
-		<div v-if="session && contactPrompt && !accountRoute" class="container">
+		<div
+			v-if="session && contactPrompt && !accountRoute"
+			class="container pq-site__contact-prompt">
 			<ContactPrompt
 				:t="t"
 				:navigate="goSection"
@@ -361,6 +363,7 @@
 						<article
 							v-else-if="page"
 							:class="bodyIsGrid ? null : 'utrecht-article'"
+							:lang="contentLocale"
 							data-testid="site-page">
 							<!--
 						THE RENDERER'S OWN TITLE HEADING IS A FALLBACK, not a
@@ -552,7 +555,9 @@ import {
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
+import { languageEntries, requestedLocale } from './lib/languageNav.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
+import { blocksOwnHeading } from './lib/pageHeading.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
 	loadPerRecordRows,
@@ -568,6 +573,7 @@ import {
 	headerSearchOf,
 	headerVariantOf,
 	legalLinksOf,
+	menuLabelFor,
 	registerRouteOf,
 } from './lib/shellData.js'
 import {
@@ -654,6 +660,18 @@ export default {
 		WidgetGrid,
 	},
 
+	/**
+	 * The language the page's content is written in, for the blocks that
+	 * format a date inside it (site-dates-in-content-language). A function,
+	 * so a block reads the current page's language after a navigation.
+	 *
+	 * @return {{siteContentLocale: () => string}} The provided values.
+	 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
+	 */
+	provide() {
+		return { siteContentLocale: () => this.contentLocale }
+	},
+
 	props: {
 		/** Explicit site slug, when not resolving by host. */
 		portalSlug: {
@@ -703,6 +721,10 @@ export default {
 			// A mailed way in (`#activate=`, `#invitation=`, `#reference=`).
 			wayInLink: hasWayInLink(window.location),
 			site: {},
+			// The language the visitor chose with the language switch
+			// (`?lang=`), sent on every content read. '' asks for the
+			// portal's default.
+			chosenLocale: requestedLocale(window.location.search),
 			menus: [],
 			glossary: [],
 			contributions: [],
@@ -826,6 +848,12 @@ export default {
 				if (isLast === true && this.page && this.page.title) {
 					label = this.page.title
 				}
+				// The header menu's own words for a route it names, so the trail
+				// reads like the menu ("Home › Afval"), on every crumb.
+				const fromMenu = menuLabelFor(this.menus, route)
+				if (fromMenu !== '') {
+					label = fromMenu
+				}
 
 				crumbs.push({ route, label, href: this.hrefForRoute(route) })
 			})
@@ -856,6 +884,7 @@ export default {
 		 * @return {boolean} True when the renderer must not add a title.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @spec openspec/changes/site-page-layout/specs/site-look/spec.md#requirement-a-page-must-have-one-title-heading
 		 */
 		bodyProvidesHeading() {
 			const body = this.page.body || {}
@@ -870,10 +899,9 @@ export default {
 			// the reference has one, and the generic one first.
 			//
 			// A hero in the hero region counts too, the portal's included: the
-			// page then keeps one h1 (REQ-PTB-009).
-			return [...this.regions.hero, ...main].some(
-				(w) => w.widgetKey === 'hero' || w.widgetKey === 'publicationDetail',
-			)
+			// page then keeps one h1 (REQ-PTB-009). So does an `nlHeading` at
+			// level 1 (site-page-layout).
+			return blocksOwnHeading([...this.regions.hero, ...main])
 		},
 
 		/**
@@ -906,8 +934,30 @@ export default {
 				portal: this.site.slug || '',
 				signedIn: this.session !== null,
 				navigation: this.navigation,
+				languages: this.languages,
 				// The portal's sign-in ways, for the nlSignIn block (lane L2, G-13).
 				signInRoutes: this.signInRoutes,
+			}
+		},
+
+		/**
+		 * The language switch's data: the portal's own locales as links to
+		 * this page in each, and the one in effect. The content API answered
+		 * both on `/site` (ContentController::site), so nothing here invents
+		 * a language.
+		 *
+		 * @return {{locales: Array<object>, current: string}} The switch's props.
+		 *
+		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+		 */
+		languages() {
+			return {
+				locales: languageEntries(
+					this.site.locales,
+					this.hrefForRoute(this.route),
+				),
+
+				current: this.site.locale || '',
 			}
 		},
 
@@ -956,6 +1006,7 @@ export default {
 									this.unreadCount,
 									this.hrefForRoute,
 									this.recordRows,
+									this.site?.residentMenu?.groups,
 								)
 							: [],
 					menus: headerMenusOf(this.menus),
@@ -1046,6 +1097,8 @@ export default {
 				this.unreadCount,
 				this.hrefForRoute,
 				this.recordRows,
+				// The portal's own groups (zuiddrecht-resident-pages-match-the-boards).
+				this.site?.residentMenu?.groups,
 			)
 		},
 
@@ -1075,6 +1128,22 @@ export default {
 				runtimeConfig().portalNotices,
 				this.session !== null,
 			)
+		},
+
+		/**
+		 * The language the page's content is written in: the page record's
+		 * own `locale`, else the site's. A Dutch page on a portal that also
+		 * serves English stays Dutch for an English browser, so its dates read
+		 * "2 oktober", not "2 October" (site-dates-in-content-language). Also
+		 * the page's `lang`, so a screen reader reads the content in its own
+		 * language (WCAG 3.1.2).
+		 *
+		 * @return {string} A two-letter language.
+		 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
+		 */
+		contentLocale() {
+			const own = String(this.page?.locale || '').trim()
+			return own !== '' ? own.slice(0, 2).toLowerCase() : this.locale
 		},
 
 		/**
@@ -1320,7 +1389,15 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		signInRoutes() {
-			return signInRoutes(this.site, authBaseFrom(resolveApiBase()), this.t)
+			return signInRoutes(
+				this.site,
+				authBaseFrom(resolveApiBase()),
+				this.t,
+				// One click on a demo for the example resident (example-resident-demo-login).
+				this.signinConfig.exampleResident || '',
+				// Its way in stays out while the demo switch is off.
+				this.signinConfig.exampleResidentWayIn || '',
+			)
 		},
 
 		/**
@@ -1426,9 +1503,15 @@ export default {
 		async loadSite() {
 			try {
 				const [site, menus, glossary] = await Promise.all([
-					fetchSite(this.portalSlug),
-					this.unlessSignInNeeded(fetchMenus(this.portalSlug), []),
-					this.unlessSignInNeeded(fetchGlossary(this.portalSlug), []),
+					fetchSite(this.portalSlug, this.chosenLocale),
+					this.unlessSignInNeeded(
+						fetchMenus(this.portalSlug, this.chosenLocale),
+						[],
+					),
+					this.unlessSignInNeeded(
+						fetchGlossary(this.portalSlug, this.chosenLocale),
+						[],
+					),
 				])
 				this.site = site
 				this.menus = menus
@@ -1959,7 +2042,10 @@ export default {
 			this.error = null
 			this.routeParam = ''
 			try {
-				this.page = await fetchPage(route, this.portalSlug, { fresh })
+				this.page = await fetchPage(route, this.portalSlug, {
+					fresh,
+					locale: this.chosenLocale,
+				})
 			} catch (error) {
 				// A ROUTE CAN ADDRESS A THING RATHER THAN A PAGE.
 				//
@@ -1979,6 +2065,7 @@ export default {
 					try {
 						this.page = await fetchPage(parent, this.portalSlug, {
 							fresh,
+							locale: this.chosenLocale,
 						})
 						this.routeParam = route.slice(parent.length + 1)
 						this.loading = false
@@ -2045,6 +2132,7 @@ export default {
 			try {
 				this.page = await fetchPage(this.route, this.portalSlug, {
 					fresh: true,
+					locale: this.chosenLocale,
 				})
 			} catch {
 				// Leaving edit mode reads the page again anyway; a failed
@@ -2202,10 +2290,16 @@ export default {
 			// instance with several portals, an address without it opens
 			// another portal, or none, after a reload or in a new tab.
 			const portal = url.searchParams.get('portal')
+			// The chosen language stays as well (`?lang=`), so the next page
+			// opens in the language the visitor picked.
+			const lang = url.searchParams.get('lang')
 			url.search = ''
 			url.hash = ''
 			if (portal) {
 				url.searchParams.set('portal', portal)
+			}
+			if (lang) {
+				url.searchParams.set('lang', lang)
 			}
 			url.searchParams.set('route', this.searchRoute)
 			if (term) {
@@ -2248,10 +2342,16 @@ export default {
 			// instance with several portals, an address without it opens
 			// another portal, or none, after a reload or in a new tab.
 			const portal = url.searchParams.get('portal')
+			// The chosen language stays as well (`?lang=`), so the next page
+			// opens in the language the visitor picked.
+			const lang = url.searchParams.get('lang')
 			url.search = ''
 			url.hash = ''
 			if (portal) {
 				url.searchParams.set('portal', portal)
+			}
+			if (lang) {
+				url.searchParams.set('lang', lang)
 			}
 			if (route && route !== '/') {
 				url.searchParams.set('route', route)
@@ -2342,6 +2442,19 @@ body.layout-base .pq-site {
 	align-items: start;
 }
 
+/*
+ * The e-mail prompt above a page outside `/mijn`. Its container is a direct
+ * child of the column-flex `.pq-site`, where the container's auto side margins
+ * stop the stretch every other container gets inside `<main>`: it shrank to
+ * its text and stood off-centre. Full width up to the container's own
+ * maximum, and a step down from the navigation, as in the account column.
+ */
+.pq-site__contact-prompt {
+	box-sizing: border-box;
+	width: 100%;
+	padding-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
 .pq-site__layout--side-menu .container {
 	max-width: none;
 	margin-inline: 0;
@@ -2429,7 +2542,10 @@ body.layout-base .pq-site {
 		var(--nldesign-color-text, #1a1a1a)
 	);
 	--pq-border-color: var(--nldesign-color-border, #d0d0d0);
-	--pq-muted-color: var(--nldesign-color-text-muted, #6b6b6b);
+	--pq-muted-color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #6b6b6b)
+	);
 	--pq-link-color: var(
 		--nldesign-color-link,
 		var(--nldesign-color-primary, #0b5cab)

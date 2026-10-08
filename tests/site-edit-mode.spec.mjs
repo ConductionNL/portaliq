@@ -178,7 +178,8 @@ test('the editor tells the site it published, and the site re-reads the page fre
 	const app = read('src/site/App.vue')
 	assert.match(app, /onSaved: \(\) => this\.refreshShownPage\(\)/)
 	assert.match(app, /await this\.loadRoute\(this\.route, \{ fresh: true \}\)/)
-	assert.match(app, /fetchPage\(route, this\.portalSlug, \{ fresh \}\)/)
+	// The read must still pass `fresh`; other options (the chosen locale) may sit beside it.
+	assert.match(app, /fetchPage\(route, this\.portalSlug, \{\s*fresh\s*[,}]/)
 })
 
 // THE EDITOR'S NOTICES READ AT AA (resident-sees-words-not-codes). The editor

@@ -16,7 +16,11 @@
 <template>
 	<section
 		class="nl-quick-tasks"
-		:class="{ 'nl-quick-tasks--overlap': overlap }"
+		:class="{
+			'nl-quick-tasks--overlap': overlap,
+			'nl-quick-tasks--plain-icons': iconStyle === 'plain',
+			'nl-quick-tasks--narrow-list': narrow === 'list',
+		}"
 		:aria-labelledby="heading ? headingId : null"
 		data-testid="nl-quick-tasks">
 		<div class="nl-quick-tasks__card">
@@ -24,7 +28,14 @@
 				v-if="heading"
 				:id="headingId"
 				class="utrecht-heading-2 nl-quick-tasks__heading">
-				{{ heading }}
+				<!-- A heading of its own on a phone list; otherwise the markup it had. -->
+				<template v-if="narrow === 'list' && narrowHeading">
+					<span class="nl-quick-tasks__heading-wide">{{ heading }}</span>
+					<span class="nl-quick-tasks__heading-narrow">{{
+						narrowHeading
+					}}</span>
+				</template>
+				<template v-else>{{ heading }}</template>
 			</h2>
 			<ul
 				class="nl-quick-tasks__list"
@@ -32,7 +43,10 @@
 				<li
 					v-for="(task, index) in tasks"
 					:key="index"
-					class="nl-quick-tasks__item">
+					class="nl-quick-tasks__item"
+					:class="{
+						'nl-quick-tasks__item--beyond-narrow': index >= narrowCount,
+					}">
 					<a
 						class="nl-quick-tasks__link"
 						:href="task.link.href"
@@ -71,7 +85,7 @@
 
 <script>
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
-import icons from './icons.js'
+import { iconPathOf } from './iconPath.js'
 
 import '@utrecht/heading-2-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
@@ -80,9 +94,6 @@ import '@utrecht/paragraph-css/dist/index.css'
 /** The most tiles one card shows. */
 const MAX_TASKS = 12
 
-/**
- * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-task-list-shows-a-portals-most-asked-tasks-as-tiles
- */
 export default {
 	name: 'NlQuickTasks',
 
@@ -99,6 +110,14 @@ export default {
 		moreHref: { type: String, default: '' },
 		/** Pull the card up over the band above it. */
 		overlap: { type: Boolean, default: false },
+		/** `circle` (an icon on a round light ground) or `plain` (a bare stroke in the accent). */
+		iconStyle: { type: String, default: 'circle' },
+		/** On a phone: `card` (the same card, one column) or `list` (bare rows, no icons). */
+		narrow: { type: String, default: 'card' },
+		/** The heading on a phone when `narrow` is `list`; the heading otherwise. */
+		narrowHeading: { type: String, default: '' },
+		/** How many rows a phone shows when `narrow` is `list`; all otherwise. */
+		narrowLimit: { type: [Number, String], default: 0 },
 	},
 
 	emits: ['navigate'],
@@ -115,10 +134,19 @@ export default {
 				.map((item) => ({
 					label: String(item?.label ?? '').trim(),
 					link: authoredLink(item?.href),
-					icon: Object.hasOwn(icons, item?.icon) ? icons[item.icon] : '',
+					icon: iconPathOf(item),
 				}))
 				.filter((task) => task.label !== '' && task.link !== null)
 				.slice(0, MAX_TASKS)
+		},
+
+		/**
+		 * @return {number} The rows a phone shows as a list; every row when no limit is set.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-task-list-may-draw-bare-icons-and-a-phone-list
+		 */
+		narrowCount() {
+			const count = Math.trunc(Number(this.narrowLimit))
+			return this.narrow === 'list' && count > 0 ? count : MAX_TASKS
 		},
 
 		/**
@@ -256,6 +284,25 @@ export default {
 	stroke-linejoin: round;
 }
 
+/* Bare icons: the stroke in the accent, no ground (Zuiddrecht board Home). */
+.nl-quick-tasks--plain-icons .nl-quick-tasks__icon {
+	inline-size: 1.625rem;
+	block-size: 1.625rem;
+	border-radius: 0;
+	background: transparent;
+	color: var(--nldesign-color-accent, currentcolor);
+}
+
+.nl-quick-tasks--plain-icons .nl-quick-tasks__icon svg {
+	inline-size: 1.625rem;
+	block-size: 1.625rem;
+	stroke-width: 1.8;
+}
+
+.nl-quick-tasks__heading-narrow {
+	display: none;
+}
+
 .nl-quick-tasks__label {
 	flex: 1;
 }
@@ -292,6 +339,51 @@ export default {
 
 	.nl-quick-tasks__list {
 		grid-template-columns: minmax(0, 1fr);
+	}
+
+	/* The phone list (Zuiddrecht board MobielHome "Veel gezocht"): bare rows
+	   without icons or card, its own heading, the first rows only. */
+	.nl-quick-tasks--narrow-list.nl-quick-tasks--overlap {
+		margin-block-start: 0;
+	}
+
+	.nl-quick-tasks--narrow-list .nl-quick-tasks__card {
+		padding: 2rem 0 0;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	.nl-quick-tasks--narrow-list .nl-quick-tasks__heading-narrow {
+		display: inline;
+	}
+
+	.nl-quick-tasks--narrow-list .nl-quick-tasks__heading-wide {
+		display: none;
+	}
+
+	.nl-quick-tasks--narrow-list .nl-quick-tasks__list {
+		border-block-start: 1px solid
+			var(
+				--nldesign-color-border-dark,
+				var(--utrecht-color-grey-80, currentcolor)
+			);
+	}
+
+	.nl-quick-tasks--narrow-list .nl-quick-tasks__item {
+		border-block-end-color: var(
+			--nldesign-color-border-dark,
+			var(--utrecht-color-grey-80, currentcolor)
+		);
+	}
+
+	.nl-quick-tasks--narrow-list .nl-quick-tasks__item--beyond-narrow,
+	.nl-quick-tasks--narrow-list .nl-quick-tasks__icon {
+		display: none;
+	}
+
+	.nl-quick-tasks--narrow-list .nl-quick-tasks__link {
+		min-block-size: 3.5rem;
 	}
 }
 </style>

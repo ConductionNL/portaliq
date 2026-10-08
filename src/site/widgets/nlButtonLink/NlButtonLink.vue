@@ -15,11 +15,22 @@
 	<a
 		v-if="link"
 		class="utrecht-button utrecht-button--html-a"
-		:class="`utrecht-button--${safeKind}-action`"
+		:class="[
+			`utrecht-button--${safeKind}-action`,
+			{ 'nl-button-link--icon': icon === 'chevron' },
+		]"
 		:href="link.href"
 		data-testid="nl-button-link"
-		@click="open">
-		{{ label }}
+		@click="open"
+		>{{ label
+		}}<svg
+			v-if="icon === 'chevron'"
+			class="nl-button-link__chevron"
+			viewBox="0 0 24 24"
+			aria-hidden="true"
+			focusable="false">
+			<path d="M9 5l7 7-7 7" />
+		</svg>
 	</a>
 	<span v-else class="utrecht-paragraph" data-testid="nl-button-link-plain">{{
 		label
@@ -42,6 +53,8 @@ export default {
 		href: { type: String, default: '' },
 		/** `primary`, `secondary` or `subtle`. */
 		kind: { type: String, default: 'primary' },
+		/** `none` or `chevron` (an arrow after the words). */
+		icon: { type: String, default: 'none' },
 	},
 
 	emits: ['navigate'],
@@ -86,3 +99,23 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/* The chevron after the words (Zuiddrecht board Contentpagina). */
+.nl-button-link--icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.625rem;
+	min-block-size: 3.25rem;
+	font-size: 1.125rem;
+}
+
+.nl-button-link__chevron {
+	inline-size: 1.125rem;
+	block-size: 1.125rem;
+	fill: none;
+	stroke: currentcolor;
+	stroke-width: 2.6;
+	stroke-linecap: round;
+}
+</style>

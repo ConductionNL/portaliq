@@ -213,17 +213,42 @@ function linksOf(site) {
 		for (const widget of page.body.widgets || []) {
 			const props = widget.props || {}
 			const where = `page ${page.route} widget ${widget.id}`
-			for (const key of ['href', 'moreHref', 'articleRoute', 'signInHref']) {
+			for (const key of [
+				'href',
+				'moreHref',
+				'articleRoute',
+				'signInHref',
+				'linkHref',
+			]) {
 				if (props[key]) {
 					links.push({ href: props[key], where: `${where} ${key}` })
 				}
 			}
-			for (const key of ['items', 'links', 'actions', 'buttons']) {
+			for (const key of [
+				'items',
+				'links',
+				'actions',
+				'buttons',
+				'popularLinks',
+			]) {
 				for (const entry of Array.isArray(props[key]) ? props[key] : []) {
 					if (entry && entry.href) {
 						links.push({
 							href: entry.href,
 							where: `${where} ${key} "${entry.label}"`,
+						})
+					}
+				}
+			}
+			// The link columns' links (site-matches-the-zuiddrecht-boards).
+			for (const column of Array.isArray(props.columns) ? props.columns : []) {
+				for (const entry of Array.isArray(column?.links)
+					? column.links
+					: []) {
+					if (entry && entry.href) {
+						links.push({
+							href: entry.href,
+							where: `${where} column "${column.title}" "${entry.label}"`,
 						})
 					}
 				}
@@ -685,4 +710,34 @@ test('a trail keeps its own room under the menu line', () => {
 	)
 	// After the rule it adds to, so it wins at the same weight for a bar with a trail.
 	assert.ok(start > css.indexOf('the breadcrumb starts under it. */'))
+})
+
+test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken boards draw it', () => {
+	const site = sites.find((entry) => entry.site.id === 'zuiddrecht').site
+	// The menu groups of the MijnMenu board, in order; Afspraken, Mijn
+	// dossiers, Mijn zoekopdrachten, Mijn vragen and Mijn meldingen have no
+	// page on this site, so they are not named (an item named here must exist).
+	assert.deepEqual(
+		site.portal.residentMenu.groups.map((group) => [group.title, group.items]),
+		[
+			['Mijn Zuiddrecht', ['overview', 'inbox']],
+			['Zaken en taken', ['cases', 'tasks']],
+			['Vragen en meldingen', ['portaliq:meldingen']],
+			['Uw gegevens', ['details', 'account']],
+		],
+	)
+	// Mijn zaken as rows (the MijnZaken board).
+	assert.equal(site.portal.myCases.display, 'rows')
+	// Both keys are in the portal schema, so OpenRegister keeps them.
+	const portal = schemas.portal
+	assert.ok(
+		portal.properties.residentMenu.properties.groups,
+		'residentMenu.groups is in the schema',
+	)
+	assert.deepEqual(portal.properties.myCases.properties.display.enum, [
+		'cards',
+		'rows',
+	])
+	assert.equal(portal.version, '0.12.0')
+	assert.equal(register.info.version, '0.69.0')
 })

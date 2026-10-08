@@ -50,6 +50,7 @@
 					:routes="signInRoutes"
 					:page="signInPageText"
 					:welcomeLabel="t('Welcome')"
+					:demoLabel="t('Only on this demo. No password is asked.')"
 					:introLabel="t('Log in to view your information.')"
 					:noWayLabel="
 						t('No login method is configured for this organisation yet.')

@@ -90,6 +90,12 @@ export function accountCrumbs(entry, t, hrefFor) {
 			href: hrefFor(ACCOUNT_ROUTE),
 		},
 	]
+	// A record page under Mijn zaken passes through it
+	// (zuiddrecht-resident-pages-match-the-boards).
+	if (entry?.page?.record?.under === 'cases') {
+		const route = routeForNav({ special: 'cases' })
+		crumbs.push({ route, label: t('My cases'), href: hrefFor(route) })
+	}
 	if (entry) {
 		const route = routeForNav(entry)
 		crumbs.push({ route, label: entry.label, href: hrefFor(route) })
