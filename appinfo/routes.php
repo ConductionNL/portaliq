@@ -241,6 +241,11 @@ return [
         // front-end has no equivalent of. Registered here so it sits ahead of
         // the SPA catch-all like the content routes above.
         ['name' => 'cmsEditor#editingContext', 'url' => '/api/cms/editing-context', 'verb' => 'GET'],
+        // What would render broken if a portal's content went out as it is (portal-cms-admin-ui).
+        ['name' => 'cmsEditor#publishCheck', 'url' => '/api/cms/publish-check', 'verb' => 'GET'],
+        // The TXT record a portal's domains publish, and the check that reads it (portal-cms-admin-ui).
+        ['name' => 'cmsDomain#records', 'url' => '/api/cms/domains', 'verb' => 'GET'],
+        ['name' => 'cmsDomain#verify', 'url' => '/api/cms/domains/verify', 'verb' => 'POST'],
         // A page's published versions for the designer's History dialog
         // (site-page-seo-history-and-media REQ-SPH-003), page editors only.
         ['name' => 'pageHistory#index', 'url' => '/api/pages/{id}/history', 'verb' => 'GET'],

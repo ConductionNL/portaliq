@@ -13,8 +13,8 @@
   - `website`, `menu`, `page`, `glossaryTerm` each have index and detail surfaces built on the SHARED manifest components — no parallel object store, no hand-rolled table
   - An administrator can create a site, menu, markdown page and glossary term and publish them, with no API client, and the public site then renders
   - The menu editor enforces the two-level limit the schema declares
-- [ ] Implement
-- [ ] Test
+- [x] Implement (already built: the Portals, Menus, Pages and Glossary index and detail pages in `src/manifest.json`, over the shared manifest components; the schema declares the two-level menu limit)
+- [ ] Test — not run: the editorial path end to end needs a live instance
 
 ### Task 2: Publish-time validation
 - **spec_ref**: `openspec/changes/portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken`
@@ -24,8 +24,8 @@
   - A menu item pointing at a DRAFTED page WARNS rather than blocks; refusing it would make the guard the obstacle in a normal editorial workflow
   - A website with no published page at `/` is refused — `open-venray` currently 404s on its own front door
   - Duplicate routes within one website are refused
-- [ ] Implement
-- [ ] Test
+- [x] Implement (`lib/Service/Cms/CmsPublishValidator.php`, reached through `GET /api/cms/publish-check` on `CmsEditorController::publishCheck`; the check is read-only, so it is not yet a hook that stops an OpenRegister write: not run, that needs a decision on a pre-save event)
+- [x] Test (`tests/Unit/Service/Cms/CmsPublishValidatorTest.php`)
 
 ### Task 3: Domain verification trigger
 - **spec_ref**: `openspec/changes/portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-domain-verification-must-be-triggerable-from-the-ui`
@@ -34,5 +34,5 @@
   - The pending domain's exact TXT record name and value are shown and copyable
   - Verification can be run and RE-run without re-adding the domain, because "DNS has not propagated yet" is the normal first outcome, not an error state
   - The e2e covers the whole editorial path: create a site, add a domain, see the record, publish a page, load the public site
-- [ ] Implement
-- [ ] Test
+- [ ] Implement — partial: `PortalDomainVerifier` and `CmsDomainController` (`GET /api/cms/domains`, `POST /api/cms/domains/verify`) show the exact record, check it, and can be run again; `src/views/cms/WebsiteDomains.vue` is not built
+- [ ] Test — partial: `PortalDomainVerifierTest` covers the record, pending and verified; `tests/e2e/cms-admin.spec.ts` is not run: needs a live instance

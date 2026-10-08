@@ -281,6 +281,26 @@ class CmsReader {
 
 
 	/**
+	 * Every row of one schema for a portal, drafts included, for the editor's
+	 * publish check. The caller has already established that the person may
+	 * edit; this read bypasses RBAC like every other read here.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $schema `page` or `menu`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+	 */
+	public function rowsForCheck(string $portal, string $schema): array {
+		if (in_array($schema, ['page', 'menu'], true) === false) {
+			return [];
+		}
+
+		return $this->query(schema: $schema, filters: ['portal' => $portal]);
+	}//end rowsForCheck()
+
+	/**
 	 * The identifier of a stored row, flat or inside the `@self` envelope.
 	 *
 	 * Both shapes are read because both occur: OpenRegister's object API
