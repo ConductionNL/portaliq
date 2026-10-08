@@ -11,6 +11,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SeededPortalPages } from './lib/seeded-portal-pages.ts'
 import { pageFixture } from './mijn-fixtures.ts'
 import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
@@ -20,6 +21,9 @@ const ADMIN = Buffer.from('admin:admin').toString('base64')
 // site-mijn-omgeving-live.spec.ts for the variables).
 const ORGANISATION = process.env.PORTALIQ_E2E_ORG || 'dev-org'
 const AUDIENCE = process.env.PORTALIQ_E2E_AUDIENCE || 'client'
+
+/** The portalPage rows this file seeded; see lib/seeded-portal-pages.ts. */
+const seededPages = new SeededPortalPages()
 
 /**
  * Create one object through OpenRegister's own object API, as the dev admin.
@@ -42,6 +46,7 @@ async function seed(
 		res.ok(),
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
+	seededPages.track(schema, await res.json())
 }
 
 /**
@@ -80,6 +85,10 @@ async function signIn(
 	await seedSiteSession(page, token)
 	return label
 }
+
+test.afterEach(async ({ request }) => {
+	await seededPages.removeAll(request)
+})
 
 test.describe('site-mijn-case-cards', () => {
 	// @e2e site-mijn-omgeving::a-case-without-progress-data

@@ -11,6 +11,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SeededPortalPages } from './lib/seeded-portal-pages.ts'
 import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const API_BASE = PORTAL_API
@@ -18,6 +19,9 @@ const API_BASE = PORTAL_API
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ORGANISATION = 'dev-org'
+
+/** The portalPage rows this file seeded; see lib/seeded-portal-pages.ts. */
+const seededPages = new SeededPortalPages()
 
 /**
  * Create one object through OpenRegister's own object API, as the dev admin.
@@ -41,6 +45,7 @@ async function seed(
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
 	const body = await res.json()
+	seededPages.track(schema, body)
 	return (body.id ?? body['@self']?.id) as string
 }
 
@@ -98,7 +103,13 @@ async function signIn(
 		],
 	})
 	const subjectRef = `subject-${stamp}-${Math.floor(Math.random() * 10000)}`
-	for (const row of cases) {
+	for (const [index, row] of cases.entries()) {
+		if (index > 0) {
+			// "Newest first" orders by the created time OpenRegister stamps,
+			// to the second. Two cases created in the same second have no
+			// order between them, so each case gets a second of its own.
+			await new Promise((resolve) => setTimeout(resolve, 1100))
+		}
 		await seed(request, 'portalCase', {
 			subjectRef,
 			organisation: ORGANISATION,
@@ -117,6 +128,10 @@ async function signIn(
 	await page.goto(siteAddress('/mijn/cases'))
 	await expect(page.getByTestId('my-cases')).toBeVisible()
 }
+
+test.afterEach(async ({ request }) => {
+	await seededPages.removeAll(request)
+})
 
 test.describe('cases-my-cases-page', () => {
 	// @e2e portal-my-cases::cases-from-two-apps-in-one-list
@@ -165,7 +180,8 @@ test.describe('cases-my-cases-page', () => {
 		await signIn(request, page, [
 			{ reference: 'Kapvergunning', omschrijving: 'vergunning' },
 		])
-		await page.getByRole('button', { name: 'Kapvergunning' }).click()
+		// A real link since 6bbbde4b (a new tab, a bookmark), no longer a button.
+		await page.getByRole('link', { name: 'Kapvergunning' }).click()
 		await expect(page.getByTestId('my-cases')).toHaveCount(0)
 		await expect(page.getByText('Kapvergunning').first()).toBeVisible()
 	})
@@ -208,6 +224,7 @@ async function signInAsEmployee(
 			{
 				id: 'amend-case',
 				type: 'update',
+				label: 'Mijn aanvraag wijzigen',
 				register: 'portaliq',
 				schema: 'portalCase',
 				scopeField: 'subjectRef',
@@ -277,17 +294,22 @@ test.describe('cases-my-cases-page acting for', () => {
 		await page.getByLabel('Namens').selectOption({ label: 'Bakkerij Jansen BV' })
 		const row = page.getByTestId('my-cases-row')
 		await expect(row).toContainText('Terrasvergunning')
-		await expect(page.getByTestId('my-cases-mandate')).toHaveText(
+		// The row is a case card since b89fc9e5; the card names the mandate.
+		await expect(page.getByTestId('mijn-case-card-mandate')).toHaveText(
 			'Bakkerij Jansen BV',
 		)
 
 		await page.reload()
-		await expect(page.getByLabel('Namens')).toHaveValue(/.+/)
+		// The page's own switcher: since 3bef40d5 the acting-for bar is named
+		// "Namens wie u werkt" too, so a bare getByLabel('Namens') finds both.
+		await expect(
+			page.getByTestId('acting-for').getByLabel('Namens'),
+		).toHaveValue(/.+/)
 		await expect(page.getByTestId('my-cases-row')).toContainText(
 			'Terrasvergunning',
 		)
 
-		await page.getByRole('button', { name: 'Terrasvergunning' }).click()
+		await page.getByRole('link', { name: 'Terrasvergunning' }).click()
 		await expect(page.getByTestId('case-window-closed')).toContainText(
 			'Bakkerij Jansen BV',
 		)

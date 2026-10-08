@@ -11,12 +11,16 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SeededPortalPages } from './lib/seeded-portal-pages.ts'
 import { pageFixture } from './mijn-fixtures.ts'
 import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ORGANISATION = 'dev-org'
+
+/** The portalPage rows this file seeded; see lib/seeded-portal-pages.ts. */
+const seededPages = new SeededPortalPages()
 
 /**
  * Create one object through OpenRegister's own object API, as the dev admin.
@@ -39,7 +43,12 @@ async function seed(
 		res.ok(),
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
+	seededPages.track(schema, await res.json())
 }
+
+test.afterEach(async ({ request }) => {
+	await seededPages.removeAll(request)
+})
 
 test.describe('site-mijn-description-list', () => {
 	test('a selected case shows its fields as a description list', async ({
@@ -74,10 +83,11 @@ test.describe('site-mijn-description-list', () => {
 			.filter({ hasText: label })
 			.first()
 			.click()
-		await page
-			.getByRole('button', { name: /Kapvergunning Lindelaan/ })
-			.first()
-			.click()
+		// The fixture declares no columns, so the table takes the row's own
+		// field order and the select button carries the first field (the
+		// subject reference), not the case number. The resident has this one
+		// case, so its row is the first.
+		await page.getByTestId('collection-table-select').first().click()
 		const list = page
 			.getByTestId('detail-card')
 			.getByTestId('mijn-description-list')

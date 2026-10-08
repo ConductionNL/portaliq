@@ -42,6 +42,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SeededPortalPages } from './lib/seeded-portal-pages.ts'
 
 const API_BASE = '/apps/portaliq/portal/api'
 const APP_API_BASE = '/apps/portaliq/api'
@@ -49,6 +50,9 @@ const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ORGANISATION = 'dev-org'
+
+/** The portalPage rows this file seeded; see lib/seeded-portal-pages.ts. */
+const seededPages = new SeededPortalPages()
 
 /** Create one object through OpenRegister's own object API, as the dev admin. */
 async function seed(
@@ -65,6 +69,7 @@ async function seed(
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
 	const body = await res.json()
+	seededPages.track(schema, body)
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
 	return id
@@ -106,6 +111,10 @@ async function seedContribution(request: APIRequestContext): Promise<string> {
 		],
 	})
 }
+
+test.afterEach(async ({ request }) => {
+	await seededPages.removeAll(request)
+})
 
 test.describe('change-proposal-queue', () => {
 	test('a citizen proposes a change, it queues, and a reviewer accepts it onto the record', async ({

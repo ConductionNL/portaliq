@@ -95,6 +95,41 @@ async function cardValue(page: Page, testId: string): Promise<number> {
 }
 
 test.describe('traffic KPI cards', () => {
+	// One "all visits" day of measured traffic for open-tilburg, two days ago,
+	// so it falls inside both the 7 and the 30 day period. The cards used to
+	// lean on the daily records traffic-analytics.spec.ts's roll-up test
+	// writes, but that test needs E2E_CONTAINER and skips on CI, so the
+	// Traffic page had nothing to count and drew "No traffic recorded yet"
+	// instead of the period's numbers.
+	let seededDay = ''
+
+	test.beforeAll(async ({ request }) => {
+		const date = new Date(Date.now() - 2 * 86400000).toISOString().substring(0, 10)
+		const res = await request.post(`${OR_OBJECTS}/portalTrafficDaily`, {
+			headers: HEADERS,
+			data: {
+				portal: ENABLED,
+				date,
+				segment: '',
+				pageViews: 42,
+				sessions: 17,
+				visitors: 12,
+				engagedSessions: 9,
+			},
+		})
+		expect(res.ok(), 'a daily traffic record can be seeded').toBeTruthy()
+		const body = await res.json()
+		seededDay = String(body.id ?? body['@self']?.id ?? '')
+	})
+
+	test.afterAll(async ({ request }) => {
+		if (seededDay !== '') {
+			await request.delete(`${OR_OBJECTS}/portalTrafficDaily/${seededDay}`, {
+				headers: HEADERS,
+			})
+		}
+	})
+
 	test('the summary endpoint folds the all-visits records and refuses a bad period', async ({
 		request,
 	}) => {

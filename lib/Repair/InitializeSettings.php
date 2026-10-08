@@ -25,11 +25,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Repair;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\SettingsService;
 use OCP\IConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use OCP\Security\ISecureRandom;
+use OCP\SystemTag\ISystemTagManager;
+use OCP\SystemTag\TagAlreadyExistsException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -53,6 +56,7 @@ class InitializeSettings implements IRepairStep {
 	 * @param LoggerInterface $logger The logger interface
 	 * @param IConfig $config App config, for the signing secret
 	 * @param ISecureRandom $random Cryptographically secure generator
+	 * @param ISystemTagManager|null $tags Creates the applicant upload tag
 	 *
 	 * @return void
 	 */
@@ -61,6 +65,7 @@ class InitializeSettings implements IRepairStep {
 		private LoggerInterface $logger,
 		private IConfig $config,
 		private ISecureRandom $random,
+		private ?ISystemTagManager $tags = null,
 	) {
 	}//end __construct()
 
@@ -86,6 +91,7 @@ class InitializeSettings implements IRepairStep {
 		$output->info('Initializing Portaliq configuration...');
 
 		$this->ensureSigningSecret(output: $output);
+		$this->ensureApplicantTag(output: $output);
 
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
 			$output->warning(
@@ -149,4 +155,45 @@ class InitializeSettings implements IRepairStep {
 		$output->info('Portaliq: generated a dedicated portal auth-edge signing secret.');
 		$this->logger->info('Portaliq: generated a dedicated jwt_signing_secret on install/upgrade');
 	}//end ensureSigningSecret()
+
+	/**
+	 * Create the system tag a resident's upload carries, so the case screen
+	 * can list it under "Sent by you" (cases-documents-on-the-case).
+	 *
+	 * The upload runs without a Nextcloud session, and since Nextcloud 31
+	 * ISystemTagManager::createTag() refuses a caller with no user unless it
+	 * runs on the command line. OpenRegister creates a missing tag on attach,
+	 * so on the first resident upload it was refused, the file kept no tag,
+	 * and the resident's own document never showed. Created here, where the
+	 * repair step runs as occ or as the admin, the tag exists before any
+	 * upload and attaching it needs no creation right.
+	 *
+	 * @param IOutput $output The repair output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md
+	 */
+	private function ensureApplicantTag(IOutput $output): void {
+		if ($this->tags === null) {
+			return;
+		}
+
+		$name = PortalFileWriter::TAG_FROM_APPLICANT;
+		try {
+			foreach ($this->tags->getAllTags(visibilityFilter: null, nameSearchPattern: $name) as $tag) {
+				if ($tag->getName() === $name) {
+					return;
+				}
+			}
+
+			$this->tags->createTag(tagName: $name, userVisible: true, userAssignable: true);
+			$output->info('Portaliq: created the system tag ' . $name . '.');
+		} catch (TagAlreadyExistsException $exists) {
+			return;
+		} catch (\Throwable $e) {
+			$output->warning('Portaliq: could not create the system tag ' . $name . ': ' . $e->getMessage());
+			$this->logger->warning('Portaliq: could not create the applicant upload tag', ['exception' => $e]);
+		}
+	}//end ensureApplicantTag()
 }//end class

@@ -10,6 +10,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SeededPortalPages } from './lib/seeded-portal-pages.ts'
 import {
 	accountLink,
 	PORTAL_API,
@@ -22,6 +23,9 @@ const API_BASE = PORTAL_API
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ORGANISATION = 'dev-org'
+
+/** The portalPage rows this file seeded; see lib/seeded-portal-pages.ts. */
+const seededPages = new SeededPortalPages()
 
 /**
  * Create one object through OpenRegister's own object API, as the dev admin.
@@ -45,6 +49,7 @@ async function seed(
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
 	const body = await res.json()
+	seededPages.track(schema, body)
 	return (body.id ?? body['@self']?.id) as string
 }
 
@@ -150,6 +155,10 @@ const OPEN = {
 	targetStatus: 'ingetrokken',
 }
 
+test.afterEach(async ({ request }) => {
+	await seededPages.removeAll(request)
+})
+
 test.describe('case-actions-withdraw-screen', () => {
 	// @e2e citizen-case-withdraw-screen::a-resident-sees-the-button
 	// @e2e citizen-case-withdraw-screen::a-resident-withdraws-with-a-reason
@@ -161,7 +170,7 @@ test.describe('case-actions-withdraw-screen', () => {
 		await openCase(request, page, OPEN, 'ontvangen')
 		await page.getByTestId('case-withdraw').click()
 		await expect(
-			page.getByTestId('case-withdraw-confirm').locator('h4'),
+			page.getByTestId('case-withdraw-confirm').locator('h2'),
 		).toBeFocused()
 		await page
 			.getByTestId('case-withdraw-reason')

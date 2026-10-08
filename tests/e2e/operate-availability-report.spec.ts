@@ -89,9 +89,12 @@ test.describe('operate-availability-report', () => {
 
 		const select = page.getByTestId('availability-portal-select')
 		await select.click()
+		// "Open Tilburg" by its whole name: the seed also has "Extern Tilburg"
+		// and "Tilburg en Venray samen", and /Tilburg/ picked whichever the
+		// list showed first, a portal with no measured day.
 		await page
-			.getByRole('option', { name: /Tilburg/i })
-			.first()
+			.getByRole('option')
+			.filter({ hasText: /^\s*Open Tilburg\s*$/ })
 			.click()
 
 		const months = page.getByTestId('availability-months')

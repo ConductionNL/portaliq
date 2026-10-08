@@ -124,13 +124,33 @@ if [ -n "$OCC" ]; then
 	# Enabled BEST-EFFORT and reported either way: a runner without the app
 	# checked out should say so here, once, rather than surface as a wall of
 	# style assertions in the suite.
-	if $OCC app:enable nldesign >/dev/null 2>&1; then
-		echo "[ci-seed] nldesign enabled (design tokens available)"
+	# The app id is `thematiq` since the fleet rename (appinfo/info.xml of
+	# ConductionNL/thematiq); `nldesign` answers to nothing any more, so this
+	# step warned on every run while the workflow had already enabled thematiq.
+	if $OCC app:enable thematiq >/dev/null 2>&1; then
+		echo "[ci-seed] thematiq enabled (design tokens available)"
 	else
-		echo "[ci-seed] WARNING: could not enable nldesign — the portal will render"
+		echo "[ci-seed] WARNING: could not enable thematiq — the portal will render"
 		echo "[ci-seed]          UNSTYLED and the design-system specs will fail."
 		echo "[ci-seed]          portaliq ships no tokens of its own since css/themes/ was removed."
 	fi
+
+	# A MAILER THAT ACCEPTS. The runner has no SMTP server, so Nextcloud's
+	# default (smtp on localhost:25) refused every mail and each flow that
+	# sends one answered 503 mail_not_sent: identity-staff-account-screens
+	# could not send the invitation it then withdraws. The null transport
+	# accepts and discards, which is what a test instance wants.
+	$OCC config:system:set mail_smtpmode --value=null >/dev/null
+	echo "[ci-seed] mail_smtpmode = $($OCC config:system:get mail_smtpmode 2>/dev/null || echo '<unset>')"
+
+	# NO ANONYMOUS RATE LIMIT ON A TEST INSTANCE. dev-login allows ten
+	# anonymous calls a minute per address (AnonRateLimit on
+	# SessionController::devLogin), and the whole suite signs in from one
+	# address dozens of times a minute, so specs failed at random on "dev-login
+	# must be enabled" while it was (HTTP 429). No spec asserts a rate limit;
+	# the throttles are covered by PHPUnit.
+	$OCC config:system:set ratelimit.protection.enabled --value=false --type=boolean >/dev/null
+	echo "[ci-seed] ratelimit.protection.enabled = $($OCC config:system:get ratelimit.protection.enabled 2>/dev/null || echo '<unset>')"
 
 	echo "[ci-seed] enabling portaliq/dev_login_enabled"
 	$OCC config:app:set portaliq dev_login_enabled --value=yes
@@ -589,5 +609,21 @@ WT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
 	--data '{"value":"1"}' \
 	"${WT_BASE}/index.php/apps/portaliq/api/preferences/walkthrough_completed_version" || echo 000)"
 echo "[ci-seed] PUT preferences/walkthrough_completed_version -> HTTP ${WT_CODE}"
+
+# ── Settle the first-open support note ───────────────────────────────────────
+# CnAppRoot opens CnSupportDialog ("Hi, ...") as a modal the first time a user
+# opens the app, and remembers it per USER on the server
+# (`preferences/support-dialog-seen`). On a fresh instance that is the first
+# staff spec of the run, whichever it is: its first click lands on the note
+# (call log: "cn-support-dialog ... subtree intercepts pointer events").
+# Measured on stable35: operate-availability-report lost its first attempt to
+# it. Marked seen, as the walkthrough above, because that is what the admin
+# does by closing the note once.
+SD_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
+	-u "${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}" -X PUT \
+	-H 'Content-Type: application/json' -H 'OCS-APIRequest: true' \
+	--data '{"value":"1"}' \
+	"${WT_BASE}/index.php/apps/portaliq/api/preferences/support-dialog-seen" || echo 000)"
+echo "[ci-seed] PUT preferences/support-dialog-seen -> HTTP ${SD_CODE}"
 
 echo "[ci-seed] done."

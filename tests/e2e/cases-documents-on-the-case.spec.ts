@@ -11,6 +11,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SeededPortalPages } from './lib/seeded-portal-pages.ts'
 import {
 	accountLink,
 	PORTAL_API,
@@ -22,6 +23,9 @@ const API_BASE = PORTAL_API
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from('admin:admin').toString('base64')
+
+/** The portalPage rows this file seeded; see lib/seeded-portal-pages.ts. */
+const seededPages = new SeededPortalPages()
 
 /**
  * Create one portaliq object as the dev admin.
@@ -45,6 +49,7 @@ async function seed(
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
 	const body = await res.json()
+	seededPages.track(schema, body)
 	return (body.id ?? body['@self']?.id) as string
 }
 
@@ -129,6 +134,10 @@ async function openCase(request: APIRequestContext, page: Page): Promise<void> {
 	await page.getByTestId('collection-table-select').first().click()
 	await expect(page.getByTestId('citizen-case')).toBeVisible()
 }
+
+test.afterEach(async ({ request }) => {
+	await seededPages.removeAll(request)
+})
 
 test.describe('cases-documents-on-the-case', () => {
 	// @e2e citizen-case-documents::an-empty-case

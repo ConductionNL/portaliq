@@ -33,32 +33,44 @@ test.describe('identity-staff-account-screens', () => {
 		page,
 	}) => {
 		const ref = `9999${Date.now() % 100000}`
-		await page.goto('/apps/portaliq/#/accounts')
-		await page.getByRole('button', { name: 'Actions' }).click()
+		await page.goto('/apps/portaliq/accounts')
+		await page
+			.getByTestId('cn-actions')
+			.getByRole('button', { name: 'Actions' })
+			.click()
 		await page.getByText('Issue an account').click()
 		await page
 			.getByTestId('issue-account-organisation')
-			.locator('input')
 			.fill('dev-org')
+		// The provision route refuses a reference without its type
+		// (PortalAccountAdminController); a BSN is a DigiD reference.
 		await page
-			.getByTestId('issue-account-identity-ref')
-			.locator('input')
-			.fill(ref)
+			.getByTestId('issue-account-identity-type')
+			.getByRole('combobox')
+			.click()
+		await page.getByRole('option', { name: 'DigiD' }).click()
+		await page.getByTestId('issue-account-identity-ref').fill(ref)
 		await page.getByTestId('issue-account-confirm').click()
 		await expect(
 			page.getByText('The account is issued.', { exact: false }),
 		).toBeVisible()
 
-		await page.getByRole('button', { name: 'Actions' }).click()
+		await page
+			.getByTestId('cn-actions')
+			.getByRole('button', { name: 'Actions' })
+			.click()
 		await page.getByText('Issue an account').click()
 		await page
 			.getByTestId('issue-account-organisation')
-			.locator('input')
 			.fill('dev-org')
+		// The provision route refuses a reference without its type
+		// (PortalAccountAdminController); a BSN is a DigiD reference.
 		await page
-			.getByTestId('issue-account-identity-ref')
-			.locator('input')
-			.fill(ref)
+			.getByTestId('issue-account-identity-type')
+			.getByRole('combobox')
+			.click()
+		await page.getByRole('option', { name: 'DigiD' }).click()
+		await page.getByTestId('issue-account-identity-ref').fill(ref)
 		await page.getByTestId('issue-account-confirm').click()
 		await expect(page.getByTestId('issue-account-refusal')).toHaveText(
 			'An account for this identity already exists, so no second account was made.',
@@ -74,7 +86,7 @@ test.describe('identity-staff-account-screens', () => {
 		expect(sent.ok(), 'the instance needs a working mail transport').toBeTruthy()
 		expect(JSON.stringify(await sent.json())).not.toContain('token')
 
-		await page.goto('/apps/portaliq/#/invitations')
+		await page.goto('/apps/portaliq/invitations')
 		const row = page.getByRole('row', { name: new RegExp(email) })
 		await expect(row).toContainText('sent')
 		await row.getByRole('button', { name: 'Actions' }).click()
@@ -108,11 +120,10 @@ test.describe('identity-staff-account-screens', () => {
 		)
 		const id = (await found.json()).results[0].id
 
-		await page.goto(`/apps/portaliq/#/accounts/${id}`)
+		await page.goto(`/apps/portaliq/accounts/${id}`)
 		await page.getByTestId('portal-account-withdraw-button').click()
 		await page
 			.getByTestId('void-account-reason')
-			.locator('textarea')
 			.fill('Wrong address')
 		await page.getByTestId('void-account-confirm').click()
 		await expect(page.getByTestId('portal-account-withdraw-button')).toHaveCount(
@@ -122,14 +133,28 @@ test.describe('identity-staff-account-screens', () => {
 
 	test('A registration is approved', async ({ page, request }) => {
 		const email = `new-${Date.now()}@example.org`
-		const portals = await request.get(
-			'/apps/openregister/api/objects/portaliq/portal?organisation=dev-org',
-			{ headers: STAFF_HEADERS },
+		// A portal of its own on dev-org: the seed has none there, and turning
+		// approval on for a shared seed portal would change every later spec
+		// that registers on it.
+		const created = await request.post(
+			'/apps/openregister/api/objects/portaliq/portal',
+			{
+				headers: STAFF_HEADERS,
+				data: {
+					slug: `reg-${Date.now()}`,
+					title: 'Gemeente Registratie',
+					status: 'published',
+					organisation: 'dev-org',
+				},
+			},
 		)
-		const portal = (await portals.json()).results[0]
+		expect(created.ok(), 'a portal can be seeded').toBeTruthy()
+		const portal = await created.json()
 
-		await page.goto(`/apps/portaliq/#/portals/${portal.id}`)
-		await page.getByTestId('portal-registration-approval').click()
+		await page.goto(`/apps/portaliq/portals/${portal.id}`)
+		// The radio's own label is what a person clicks: NcCheckboxRadioSwitch
+		// lays it over the input.
+		await page.getByText('Anyone, after a staff member approves').click()
 		await page.getByTestId('portal-registration-save').click()
 		await expect(page.getByText('Your choices are saved.')).toBeVisible()
 

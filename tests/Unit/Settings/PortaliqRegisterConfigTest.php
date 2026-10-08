@@ -359,8 +359,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.69.0 (portal 0.12.0): `residentMenu.groups` and `myCases.display`
 		// (zuiddrecht-resident-pages-match-the-boards). Additive.
 		// 0.70.0 (portal 0.13.0): `residentMenu.leaveOut` (resident-menu-leave-out). Additive.
-		$this->assertSame('0.70.0', self::$register['info']['version']);
-		$this->assertSame('0.70.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.71.0 (portalPage 0.8.0): `propose-change` is an action type, so the
+		// change-proposal-queue action the portal already reads can be stored. Additive.
+		$this->assertSame('0.71.0', self::$register['info']['version']);
+		$this->assertSame('0.71.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(
+			['create', 'update', 'endpoint', 'propose-change'],
+			self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['type']['enum']
+		);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -422,7 +428,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.13.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
 		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);

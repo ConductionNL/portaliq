@@ -39,12 +39,15 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { login } from './lib/traffic.ts'
 
 const API_BASE = '/apps/portaliq/portal/api'
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ORGANISATION = 'dev-org'
+/** A portal seed-cms.sh publishes, so the site's content API answers for it. */
+const PORTAL = 'open-tilburg'
 
 /** The three leaves this app adopts, and the page each one sits on. */
 const ADOPTED = [
@@ -79,6 +82,10 @@ test.describe('leaf-integrations', () => {
 	// page: the DOM can only say a card is absent, which is equally what an
 	// uninstalled Nextcloud app looks like.
 	test('the staff bundle registers the three adopted leaves', async ({ page }) => {
+		// The staff pages need a signed-in user. Without one Nextcloud serves
+		// its login page, which also defines window.OCA, so the wait below
+		// passed and the registry was simply never there.
+		await login(page)
 		await page.goto('/apps/portaliq/accounts')
 		await page.waitForFunction(
 			() => (window as never as Record<string, never>).OCA !== undefined,
@@ -129,6 +136,7 @@ test.describe('leaf-integrations', () => {
 			payloadCopy: { geheimVeld: `payload-${stamp}` },
 		})
 
+		await login(page)
 		await page.goto('/apps/portaliq/submissions')
 		await expect(page.getByText(`melding-${stamp}`)).toBeVisible({
 			timeout: 20000,
@@ -145,8 +153,18 @@ test.describe('leaf-integrations', () => {
 	test('an anonymous visitor is served no leaf and no leaf artifact', async ({
 		request,
 	}) => {
-		for (const kind of ['site', 'pages', 'contributions']) {
-			const res = await request.get(`${API_BASE}/${kind}`)
+		// What an anonymous visitor's browser reads: the site's content API
+		// for a seeded portal, and the portal's contribution list. The React
+		// portal's /portal/api/site and /portal/api/pages were never routes of
+		// their own; since 4e3abcd9 /portal/* redirects to the site page, so
+		// probing them read an HTML page, not an answer.
+		for (const kind of [
+			`/apps/portaliq/api/content/site?portal=${PORTAL}`,
+			`/apps/portaliq/api/content/pages?portal=${PORTAL}`,
+			`/apps/portaliq/api/content/contributions?portal=${PORTAL}`,
+			`${API_BASE}/contributions`,
+		]) {
+			const res = await request.get(kind)
 			if (res.status() === 404) {
 				// No portal is configured on this instance for this endpoint;
 				// a 404 is the honest answer and carries no payload to inspect.
