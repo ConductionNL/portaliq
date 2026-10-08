@@ -408,8 +408,5 @@
 	"Unread ({count})": "Ongelezen ({count})",
 	"Mark all as read": "Alles als gelezen markeren",
 	"Filter messages": "Berichten filteren",
-	"This field is required.": "Dit veld is verplicht.",
-	"Download as PDF": "Download als pdf",
-	"This list is too long for one PDF. Filter it first.": "Deze lijst is te lang voor één pdf. Filter hem eerst.",
-	"The PDF could not be made. Try again later.": "De pdf kon niet worden gemaakt. Probeer het later opnieuw."
+	"This field is required.": "Dit veld is verplicht."
 }

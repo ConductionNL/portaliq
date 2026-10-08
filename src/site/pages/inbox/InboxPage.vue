@@ -274,6 +274,16 @@
 							{{ tr('Delete') }}
 						</button>
 					</div>
+
+					<!-- The app lets the resident answer this message
+					     (inbox-reply-with-attachments). -->
+					<InboxReply
+						v-if="replyOf(message) && api"
+						:message="message"
+						:reply="replyOf(message)"
+						:api="api"
+						:locale="lang"
+						:idBase="`pq-inbox-reply-${idOf(message, i)}`" />
 				</li>
 			</ul>
 		</template>
@@ -281,6 +291,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import BusyStatus from '../../components/inbox/BusyStatus.vue'
 import NotificationSettings from '../../components/inbox/NotificationSettings.vue'
 import TranslatedText from '../../components/inbox/TranslatedText.vue'
@@ -333,7 +344,13 @@ function pageOrigin() {
 export default {
 	name: 'InboxPage',
 
-	components: { BusyStatus, NotificationSettings, TranslatedText },
+	components: {
+		BusyStatus,
+		// On demand: only a message that can be answered needs the form.
+		InboxReply: defineAsyncComponent(() => import('../../components/inbox/InboxReply.vue')),
+		NotificationSettings,
+		TranslatedText,
+	},
 
 	props: PAGE_PROPS,
 
@@ -464,6 +481,18 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The reply a message can be answered with, or null.
+		 *
+		 * @param {object} message The message.
+		 * @return {object|null} The reply declaration.
+		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 */
+		replyOf(message) {
+			const reply = message && message._source && message._source.reply
+			return reply && reply.action && typeof reply.action.id === 'string' ? reply : null
+		},
+
 		/**
 		 * Read the merged inbox.
 		 *

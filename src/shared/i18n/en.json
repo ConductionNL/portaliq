@@ -408,8 +408,5 @@
 	"Unread ({count})": "Unread ({count})",
 	"Mark all as read": "Mark all as read",
 	"Filter messages": "Filter messages",
-	"This field is required.": "This field is required.",
-	"Download as PDF": "Download as PDF",
-	"This list is too long for one PDF. Filter it first.": "This list is too long for one PDF. Filter it first.",
-	"The PDF could not be made. Try again later.": "The PDF could not be made. Try again later."
+	"This field is required.": "This field is required."
 }

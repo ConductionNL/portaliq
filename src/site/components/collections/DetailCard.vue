@@ -32,7 +32,7 @@
 		<DescriptionList :items="facts" itemTestid="detail-card-field" />
 
 		<!-- The record as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
-		<PdfDownloadButton :id="rowId" :collection="collection" :api="api" :t="t" />
+		<PdfDownloadButton v-if="collection.exportPdf === true" :id="rowId" :collection="collection" :api="api" :locale="locale" />
 
 		<div
 			v-if="collection.filesUpload === true && api"
@@ -117,9 +117,9 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import DescriptionList from '../mijn/DescriptionList.vue'
 import ItemList from './ItemList.vue'
-import PdfDownloadButton from './PdfDownloadButton.vue'
 import SlotHost from './SlotHost.vue'
 import TimelineList from './TimelineList.vue'
 import { rowNotice } from '../../../shared/rowAction.js'
@@ -146,7 +146,14 @@ let uploadCounter = 0
 export default {
 	name: 'DetailCard',
 
-	components: { DescriptionList, ItemList, PdfDownloadButton, SlotHost, TimelineList },
+	components: {
+		DescriptionList,
+		ItemList,
+		// On demand: only a collection that opted in with `exportPdf` loads it.
+		PdfDownloadButton: defineAsyncComponent(() => import('./PdfDownloadButton.vue')),
+		SlotHost,
+		TimelineList,
+	},
 
 	props: {
 		/** The collection: `detail`, `columns`, `filesUpload`, `filesDownload`, `itemList`, `timeline`. */

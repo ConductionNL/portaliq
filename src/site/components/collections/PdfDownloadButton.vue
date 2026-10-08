@@ -17,7 +17,7 @@
 			:disabled="busy"
 			data-testid="pdf-download-button"
 			@click="download">
-			{{ t('Download as PDF') }}
+			{{ words.button }}
 		</button>
 		<p
 			v-if="message"
@@ -30,6 +30,21 @@
 </template>
 
 <script>
+// This component loads on demand, so its words are its own rather than part of the
+// site's shared bundle, which has a size budget.
+const STRINGS = {
+	nl: {
+		button: 'Download als pdf',
+		tooLong: 'Deze lijst is te lang voor één pdf. Filter hem eerst.',
+		failed: 'De pdf kon niet worden gemaakt. Probeer het later opnieuw.',
+	},
+	en: {
+		button: 'Download as PDF',
+		tooLong: 'This list is too long for one PDF. Filter it first.',
+		failed: 'The PDF could not be made. Try again later.',
+	},
+}
+
 /**
  * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t06
  */
@@ -42,12 +57,22 @@ export default {
 		id: { type: [String, Number], default: '' },
 		/** The portal api, with `downloadPdf`. */
 		api: { type: Object, default: null },
-		/** The translator. */
-		t: { type: Function, required: true },
+		/** The language, `nl` or `en`. */
+		locale: { type: String, default: 'nl' },
 	},
 
 	data() {
 		return { busy: false, message: '' }
+	},
+
+	computed: {
+		/**
+		 * @return {{button: string, tooLong: string, failed: string}} The words in the page language.
+		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t07
+		 */
+		words() {
+			return STRINGS[String(this.locale).toLowerCase().startsWith('en') ? 'en' : 'nl']
+		},
 	},
 
 	methods: {
@@ -67,8 +92,8 @@ export default {
 			}
 
 			this.message = result && result.status === 400
-				? this.t('This list is too long for one PDF. Filter it first.')
-				: this.t('The PDF could not be made. Try again later.')
+				? this.words.tooLong
+				: this.words.failed
 		},
 	},
 }

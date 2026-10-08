@@ -531,7 +531,7 @@ import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
 import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
-import { setAssistantAvailable } from './lib/assistantApi.js'
+import { setAssistantAvailable } from './lib/assistantAvailable.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,

@@ -157,6 +157,10 @@ class PortalInboxReader {
 					if (self::residentMayDelete(collection: $collection) === true) {
 						$row['_source']['deletable'] = true;
 					}
+					$reply = $this->replyOf(collection: $collection, contribution: $contribution);
+					if ($reply !== null) {
+						$row['_source']['reply'] = $reply;
+					}
 
 					$rows[] = $row;
 				}
@@ -178,6 +182,52 @@ class PortalInboxReader {
 
 		return $rows;
 	}//end aggregateInbox()
+
+	/**
+	 * What the screen needs to offer a reply under a message: the reply action
+	 * (its fields and file fields), the field that prefills the subject and the
+	 * fields the server carries over, which the form does not ask. Null when the
+	 * collection declares no reply the contribution can serve.
+	 *
+	 * @param array<string, mixed> $collection The inbox collection.
+	 * @param array<string, mixed> $contribution The contribution it belongs to.
+	 *
+	 * @return array<string, mixed>|null The reply, or null.
+	 *
+	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+	 */
+	private function replyOf(array $collection, array $contribution): ?array {
+		$declared = ($collection['reply'] ?? null);
+		if (is_array($declared) === false) {
+			return null;
+		}
+
+		foreach (($contribution['actions'] ?? []) as $action) {
+			if (is_array($action) === false || ($action['id'] ?? null) !== ($declared['action'] ?? '') || ($action['type'] ?? '') !== 'create') {
+				continue;
+			}
+
+			$reply = [
+				'action' => [
+					'id' => (string)$action['id'],
+					'label' => (string)($action['label'] ?? ''),
+					'register' => (string)($action['register'] ?? ''),
+					'schema' => (string)($action['schema'] ?? ''),
+					'fields' => array_values((array)($action['fields'] ?? [])),
+					'fieldConfigs' => (object)(array)($action['fieldConfigs'] ?? []),
+					'submitLabel' => (string)($action['submitLabel'] ?? ''),
+				],
+				'carried' => array_keys((array)($declared['carry'] ?? [])),
+			];
+			if (is_string($declared['subjectFrom'] ?? null) === true) {
+				$reply['subjectFrom'] = $declared['subjectFrom'];
+			}
+
+			return $reply;
+		}
+
+		return null;
+	}//end replyOf()
 
 	/**
 	 * Whether a resident may delete their own messages from an inbox

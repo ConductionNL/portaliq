@@ -72,7 +72,7 @@ import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/pu
 import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
-import { assistantAvailable } from '../lib/assistantApi.js'
+import { assistantAvailable } from '../lib/assistantAvailable.js'
 import { withoutStyling } from '../lib/blockProps.js'
 import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'

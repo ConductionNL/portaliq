@@ -575,6 +575,126 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end deleteMessage()
 
 	/**
+	 * Answer one of the resident's inbox messages through the create action its
+	 * collection declares as `reply`.
+	 *
+	 * The message is proven the resident's with the checks `markRead()` makes. The
+	 * fields the declaration carries are set on the server from the original
+	 * message, over anything the client sent; the rest of the body is the
+	 * action's whitelist. The reply is written through the pipeline every portal
+	 * create uses. The answer names the new reply and its action, so the screen
+	 * can upload files into it.
+	 *
+	 * @param string $register The register of the inbox collection.
+	 * @param string $schema The schema of the inbox collection.
+	 * @param string $id The message id (never trusted; ownership proven first).
+	 *
+	 * @return JSONResponse `{object, action, register, schema}`, or 401 / 403 / 404 / 400 / 502.
+	 *
+	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t03
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function reply(string $register, string $schema, string $id): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+		$declared   = ($collection['reply'] ?? null);
+		if (is_array($declared) === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$message = $this->reader->readObject(
+			register: $register,
+			schema: $schema,
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $id,
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			via: ($collection['via'] ?? null),
+			audience: (string)($subject['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null)
+		);
+		// Not the resident's, or not there: one 404, and nothing is written.
+		if ($message === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$action = $this->replyAction(subject: $subject, app: $match['app'], actionId: (string)($declared['action'] ?? ''));
+		if ($action === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$carried = [];
+		foreach ((array)($declared['carry'] ?? []) as $replyField => $messageField) {
+			$value = ($message[$messageField] ?? null);
+			if (is_string($value) === true || is_int($value) === true) {
+				$carried[(string)$replyField] = $value;
+			}
+		}
+
+		$response = $this->createFrom(
+			subject: $subject,
+			match: ['action' => $action, 'app' => $match['app']],
+			register: (string)($action['register'] ?? ''),
+			schema: (string)($action['schema'] ?? ''),
+			carried: $carried
+		);
+		if ($response->getStatus() !== Http::STATUS_OK) {
+			return $response;
+		}
+
+		$named = [
+			'action' => (string)($action['id'] ?? ''),
+			'register' => (string)($action['register'] ?? ''),
+			'schema' => (string)($action['schema'] ?? ''),
+		];
+
+		return new JSONResponse($response->getData() + $named);
+	}//end reply()
+
+	/**
+	 * The create action of one contribution the subject holds, by id.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $app The contributing app.
+	 * @param string $actionId The action id a reply declaration names.
+	 *
+	 * @return array<string, mixed>|null The action, or null when the subject does not hold it.
+	 */
+	private function replyAction(array $subject, string $app, string $actionId): ?array {
+		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
+			if (($contribution['app'] ?? null) !== $app) {
+				continue;
+			}
+
+			foreach (($contribution['actions'] ?? []) as $action) {
+				if (is_array($action) === true && ($action['id'] ?? null) === $actionId && ($action['type'] ?? '') === 'create') {
+					return $action;
+				}
+			}
+		}
+
+		return null;
+	}//end replyAction()
+
+	/**
 	 * Find a `kind: inbox` collection matching (register, schema) in the
 	 * subject's aggregated contributions — the SAME IDOR guard as
 	 * authorisedCollection(), narrowed to inbox collections only, so mark-read
@@ -1198,8 +1318,36 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
+		return $this->createFrom(subject: $subject, match: $match, register: $register, schema: $schema);
+	}//end create()
+
+	/**
+	 * Run the create pipeline for a matched create action: the whitelist, the
+	 * defaults, the required fields and cross references, the scope stamp, the
+	 * write, the audit entry, the receipt and the confirmation. `create()` and
+	 * `reply()` both write through here, so there is one write pipeline.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{action: array<string, mixed>, app: string} $match The matched create action.
+	 * @param string $register The action's register.
+	 * @param string $schema The action's schema.
+	 * @param array<string, mixed> $carried Fields set on the server over the client's body (a reply's carried fields).
+	 *
+	 * @return JSONResponse The created object, or the refusal.
+	 *
+	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t02
+	 */
+	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
+		$action = $match['action'];
+
+		$leftOut     = array_keys($carried);
+		$whitelisted = $this->withoutFileFields(
+			action: $action,
+			data: $this->whitelist(fields: array_values(array_diff((array)($action['fields'] ?? []), $leftOut)))
+		);
 		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+		// A carried field is set from the message the resident owns, over anything the client sent.
+		$data = array_merge($data, $carried);
 
 		// The body's own checks, before the stamp and any write. First the
 		// action's required fields (REQ-SMF-024): an empty one answers 400
@@ -1265,7 +1413,7 @@ class ContributionController extends Controller implements PortalProtected {
 		$this->confirmation?->afterCreate(subject: $subject, action: $action, data: $data);
 
 		return new JSONResponse(['object' => $created]);
-	}//end create()
+	}//end createFrom()
 
 
 	/**

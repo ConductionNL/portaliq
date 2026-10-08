@@ -187,7 +187,7 @@
 					{{ headingOf(item) }}
 				</component>
 				<!-- The list as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
-				<PdfDownloadButton :collection="item.collection" :api="api" :t="tr" />
+				<PdfDownloadButton v-if="item.collection.exportPdf === true" :collection="item.collection" :api="api" :locale="lang" />
 				<!-- A collection that declares groupByField shows one table per
 				     child, each named by its own heading
 				     (collection-group-by-field). -->
@@ -489,7 +489,6 @@ import CollectionTable from '../../components/collections/CollectionTable.vue'
 import DetailCard from '../../components/collections/DetailCard.vue'
 import KpiCards from '../../components/collections/KpiCards.vue'
 import NewsBlock from '../../components/collections/NewsBlock.vue'
-import PdfDownloadButton from '../../components/collections/PdfDownloadButton.vue'
 import RichTextBlock from '../../components/collections/RichTextBlock.vue'
 import SlotHost from '../../components/collections/SlotHost.vue'
 import {
@@ -571,7 +570,8 @@ export default {
 	components: {
 		CalendarBlock,
 		CollectionTable,
-		PdfDownloadButton,
+		// On demand: only a collection that opted in with `exportPdf` loads it.
+		PdfDownloadButton: defineAsyncComponent(() => import('../../components/collections/PdfDownloadButton.vue')),
 		DetailCard,
 		KpiCards,
 		NewsBlock,

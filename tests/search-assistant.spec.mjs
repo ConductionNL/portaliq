@@ -14,12 +14,8 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import {
-	askAssistant,
-	assistantAvailable,
-	assistantUrl,
-	setAssistantAvailable,
-} from '../src/site/lib/assistantApi.js'
+import { askAssistant, assistantUrl } from '../src/site/lib/assistantApi.js'
+import { assistantAvailable, setAssistantAvailable } from '../src/site/lib/assistantAvailable.js'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
 const BLOCK = 'src/site/components/AssistantBlock.vue'

@@ -18,27 +18,21 @@ import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
 const BUTTON = 'src/site/components/collections/PdfDownloadButton.vue'
 const COLLECTION = { id: 'statements', label: 'Afschriften', register: 'budgetiq', schema: 'statement', exportPdf: true }
-function nl (key) {
-  return ({
-	'Download as PDF': 'Download als pdf',
-	'This list is too long for one PDF. Filter it first.': 'Deze lijst is te lang voor één pdf. Filter hem eerst.',
-	'The PDF could not be made. Try again later.': 'De pdf kon niet worden gemaakt. Probeer het later opnieuw.',
-})[key] || key
-}
 
 test('the button shows only for a collection that opted in, and only with an api', async () => {
 	const api = { downloadPdf: async () => ({ ok: true }) }
-	assert.match(await renderSfc(BUTTON, { collection: COLLECTION, api, t: nl }), /Download als pdf/)
-	assert.doesNotMatch(await renderSfc(BUTTON, { collection: { ...COLLECTION, exportPdf: false }, api, t: nl }), /pdf-download/)
-	assert.doesNotMatch(await renderSfc(BUTTON, { collection: { ...COLLECTION, exportPdf: 'true' }, api, t: nl }), /pdf-download/)
-	assert.doesNotMatch(await renderSfc(BUTTON, { collection: COLLECTION, api: null, t: nl }), /pdf-download/)
+	assert.match(await renderSfc(BUTTON, { collection: COLLECTION, api, locale: 'nl' }), /Download als pdf/)
+	assert.doesNotMatch(await renderSfc(BUTTON, { collection: { ...COLLECTION, exportPdf: false }, api, locale: 'nl' }), /pdf-download/)
+	assert.doesNotMatch(await renderSfc(BUTTON, { collection: { ...COLLECTION, exportPdf: 'true' }, api, locale: 'nl' }), /pdf-download/)
+	assert.doesNotMatch(await renderSfc(BUTTON, { collection: COLLECTION, api: null, locale: 'nl' }), /pdf-download/)
 })
 
 test('a list that is too long and any other failure say so in words', async () => {
 	const screen = await loadSfc(BUTTON)
 	const run = async (result, id = '') => {
 		const asked = []
-		const vm = { collection: COLLECTION, id, t: nl, busy: false, message: '', api: { downloadPdf: async (...args) => { asked.push(args); return result } } }
+		const vm = { collection: COLLECTION, id, locale: 'nl', busy: false, message: '', api: { downloadPdf: async (...args) => { asked.push(args); return result } } }
+		vm.words = screen.computed.words.call(vm)
 		await screen.methods.download.call(vm)
 		return { vm, asked }
 	}
@@ -75,9 +69,10 @@ test('the api asks the list and the record routes with the bearer', async () => 
 test('the button sits above the list and on the record', () => {
 	const page = readFileSync('src/site/pages/collections/ContributionPage.vue', 'utf8')
 	assert.match(page, /<PdfDownloadButton[^>]*:collection="item.collection"[^>]*:api="api"/)
+	assert.match(page, /<PdfDownloadButton[^>]*v-if="item.collection.exportPdf === true"/, 'loaded only when a collection opted in')
 	const detail = readFileSync('src/site/components/collections/DetailCard.vue', 'utf8')
 	const tag = detail.match(/<PdfDownloadButton[^>]*>/)[0]
-	for (const attribute of [':collection="collection"', ':id="rowId"', ':api="api"']) {
+	for (const attribute of [':collection="collection"', ':id="rowId"', ':api="api"', 'v-if="collection.exportPdf === true"']) {
 		assert.ok(tag.includes(attribute), attribute)
 	}
 })

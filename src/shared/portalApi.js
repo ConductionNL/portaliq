@@ -398,6 +398,26 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Answer one of the resident's inbox messages through the create action its
+		 * collection declares (inbox-reply-with-attachments). The server proves the
+		 * message is theirs and sets the carried fields (such as the case) from it.
+		 *
+		 * @param {object} message The message, with its `_source`.
+		 * @param {object} data The fields the resident filled in, files left out.
+		 * @return {Promise<object>} `{ ok, status, object, error, errors }`.
+		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 */
+		async replyToMessage(message, data) {
+			const source = message._source || {}
+			const id = message.id || message['@self']?.id
+			if (!id || !source.register || !source.schema) {
+				return { ok: false, status: 0, object: null, error: '', errors: {} }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/reply?collection=${encodeURIComponent(source.collection || '')}`
+			return send('POST', path, data)
+		},
+
+		/**
 		 * The guardian's own message threads (guardian-direct-messages). An
 		 * answer the server refuses reads as no threads, never as an error.
 		 *
