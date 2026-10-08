@@ -792,4 +792,26 @@ class PortalThemeResolverTest extends TestCase {
 		$this->assertSame(['tokens/c4', 'tokens/c3', 'tokens/c2', 'tokens/c1'], $this->resolver()->parentStylesheetsFor('c0'));
 	}//end testACycleLinksEachSetOnceAndAChainStopsAtFourHops()
 
+
+	/**
+	 * A theme that is named and does not resolve is reported by name; one that
+	 * resolves, and a portal with no theme at all, are not
+	 * (portal-theme-application, an unresolvable theme is obvious).
+	 *
+	 * @spec openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-an-unresolvable-theme-must-be-obvious-not-silently-default
+	 *
+	 * @return void
+	 */
+	public function testAThemeThatDoesNotResolveIsReportedByName(): void {
+		$this->appManager->method('isInstalled')->willReturn(true);
+		$this->appManager->method('getAppPath')->willReturn($this->themeRoot);
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains('theme does not resolve'), ['theme' => 'no-such-municipality']);
+
+		$resolver = new PortalThemeResolver(appManager: $this->appManager, logger: $logger);
+
+		$this->assertNull($resolver->stylesheetFor(theme: 'no-such-municipality'));
+		$this->assertNotNull($resolver->stylesheetFor(theme: 'vng'), 'a theme that resolves says nothing');
+		$this->assertNull($resolver->stylesheetFor(theme: ''), 'a portal with no theme says nothing');
+	}//end testAThemeThatDoesNotResolveIsReportedByName()
 }//end class

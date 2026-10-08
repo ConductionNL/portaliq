@@ -19,6 +19,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
 use OCP\App\IAppManager;
+use Psr\Log\LoggerInterface;
 
 /**
  * Maps `portal.theme` onto the themiq (nldesign) token stylesheet that
@@ -100,12 +101,14 @@ class PortalThemeResolver {
 	 *
 	 * @param IAppManager                $appManager Tells us whether the theme app is present.
 	 * @param PortalCustomThemeSets|null $customSets The theme app's custom sets; null offers none.
+	 * @param LoggerInterface|null       $logger     Names a theme that does not resolve; null stays silent.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ?PortalCustomThemeSets $customSets = null,
+		private readonly ?LoggerInterface $logger = null,
 	) {
 	}//end __construct()
 
@@ -121,6 +124,29 @@ class PortalThemeResolver {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 	 */
 	public function stylesheetFor(string $theme): ?string {
+		$sheet = $this->resolveStylesheet(theme: $theme);
+
+		// A theme that is named but does not resolve is reported by name
+		// (ADR-086 section 6): the page then renders unthemed, and without this
+		// line nothing would say why.
+		if ($sheet === null && trim($theme) !== '') {
+			$this->logger?->warning('Portaliq: theme does not resolve, the portal renders unthemed', ['theme' => mb_substr($theme, 0, 64)]);
+		}
+
+		return $sheet;
+	}//end stylesheetFor()
+
+
+	/**
+	 * The stylesheet a theme reference resolves to, or null.
+	 *
+	 * @param string $theme The portal's theme reference.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function resolveStylesheet(string $theme): ?string {
 		if ($this->isSafeThemeName(theme: $theme) === false) {
 			return null;
 		}
@@ -160,7 +186,7 @@ class PortalThemeResolver {
 		}
 
 		return 'tokens/' . $theme;
-	}//end stylesheetFor()
+	}//end resolveStylesheet()
 
 
 	/**
