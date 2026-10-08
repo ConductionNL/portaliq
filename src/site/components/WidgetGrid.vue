@@ -580,6 +580,12 @@ export default {
 				return { ...props, portal: this.portal }
 			}
 
+			// The hero hands the portal on to the list beside it, which reads
+			// this portal's catalogue or news (hero-on-the-school-boards).
+			if (widget.widgetKey === 'hero') {
+				return { ...props, portal: this.portal }
+			}
+
 			if (widget.widgetKey === 'nlSignIn') {
 				return {
 					...props,
