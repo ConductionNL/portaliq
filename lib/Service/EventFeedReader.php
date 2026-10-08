@@ -76,6 +76,10 @@ class EventFeedReader {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
 		$rows = $this->findAll(schema: 'schoolEvent', filters: ['status' => 'published']);
 		$rsvps = $this->findAll(schema: 'eventRsvp', filters: ['guardianRef' => $subjectRef]);
+		// The learner herself sees the answer given for her, by whoever gave it.
+		$own = $this->findAll(schema: 'eventRsvp', filters: ['childRef' => $subjectRef]);
+		$rsvps = array_merge($rsvps, $own);
+		$everyRsvp = null;
 
 		$matched = [];
 		foreach ($rows as $row) {
@@ -93,6 +97,17 @@ class EventFeedReader {
 			}
 
 			$row['myRsvp'] = $this->myRsvp(eventId: $this->rowId(row: $row), subjectRef: $subjectRef, rsvps: $rsvps);
+			if (($row['askSeats'] ?? false) === true) {
+				$row['seatsTaken'] = EventRsvpService::seatsTaken(
+					answers: array_values(
+						array_filter(
+							$everyRsvp ??= $this->findAll(schema: 'eventRsvp'),
+							fn (array $rsvp): bool => (string)($rsvp['eventRef'] ?? '') === $this->rowId(row: $row)
+						)
+					)
+				);
+			}
+
 			$matched[] = $row;
 		}
 

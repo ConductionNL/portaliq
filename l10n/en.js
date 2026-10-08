@@ -2272,7 +2272,22 @@ OC.L10N.register(
         "The actions could not be loaded.": "The actions could not be loaded.",
         "Saving the actions failed. The grants are unchanged.": "Saving the actions failed. The grants are unchanged.",
         "Token overrides": "Token overrides",
-        "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped.": "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped."
+        "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped.": "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped.",
+        "Answers close after": "Answers close after",
+        "Ask for seats": "Ask for seats",
+        "Most seats per answer": "Most seats per answer",
+        "Seats": "Seats",
+        "Seats in all": "Seats in all",
+        "The event this item is about. The article then shows the event's facts and a sign-up card.": "The event this item is about. The article then shows the event's facts and a sign-up card.",
+        "The last day answers are taken, as a date or a date and time. After it every answer is refused.": "The last day answers are taken, as a date or a date and time. After it every answer is refused.",
+        "The most seats one answer may ask for, when seats are asked. Empty means 4.": "The most seats one answer may ask for, when seats are asked. Empty means 4.",
+        "The seats for the whole event. An answer that would pass it is refused.": "The seats for the whole event. An answer that would pass it is refused.",
+        "The seats this answer asks for, when the event asks for seats. Zero for an answer of no.": "The seats this answer asks for, when the event asks for seats. Zero for an answer of no.",
+        "Whether an answer carries the number of seats the person needs.": "Whether an answer carries the number of seats the person needs.",
+        "Who may answer": "Who may answer",
+        "Who may answer for a child: guardian, learner, or both. Without it only a guardian answers.": "Who may answer for a child: guardian, learner, or both. Without it only a guardian answers.",
+        "Where": "Where",
+        "Where the event takes place, in words, such as the hall and the address.": "Where the event takes place, in words, such as the hall and the address."
     },
     "nplurals=2; plural=(n != 1);"
 )

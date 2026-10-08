@@ -8067,6 +8067,11 @@
                         "description": "The words the public website shows beside the date to say who the item is for, such as 'groep 7' or 'hele school'. Written by staff, because the site never reads the school app's groups for a visitor who is not signed in. Empty shows nothing.",
                         "example": "hele school"
                     },
+                    "eventRef": {
+                        "title": "Event",
+                        "type": "string",
+                        "description": "The event this item is about. The article then shows the event's facts and a sign-up card."
+                    },
                     "photoRefs": {
                         "title": "Photos",
                         "type": "array",
@@ -8353,6 +8358,46 @@
                         "example": true,
                         "description": "Whether a guardian may RSVP to this event."
                     },
+                    "location": {
+                        "title": "Where",
+                        "type": "string",
+                        "description": "Where the event takes place, in words, such as the hall and the address."
+                    },
+                    "rsvpBy": {
+                        "title": "Who may answer",
+                        "type": "array",
+                        "items": {"type": "string", "enum": ["guardian", "learner"]},
+                        "example": ["guardian"],
+                        "description": "Who may answer for a child: guardian, learner, or both. Without it only a guardian answers."
+                    },
+                    "askSeats": {
+                        "title": "Ask for seats",
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Whether an answer carries the number of seats the person needs."
+                    },
+                    "maxSeatsPerAnswer": {
+                        "title": "Most seats per answer",
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 20,
+                        "example": 4,
+                        "description": "The most seats one answer may ask for, when seats are asked. Empty means 4."
+                    },
+                    "capacity": {
+                        "title": "Seats in all",
+                        "type": "integer",
+                        "minimum": 1,
+                        "example": 300,
+                        "description": "The seats for the whole event. An answer that would pass it is refused."
+                    },
+                    "signupDeadline": {
+                        "title": "Answers close after",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-30",
+                        "description": "The last day answers are taken, as a date or a date and time. After it every answer is refused."
+                    },
                     "signupRoles": {
                         "title": "Sign-up roles",
                         "type": "array",
@@ -8439,6 +8484,13 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the guardian last responded, in ISO 8601."
+                    },
+                    "seats": {
+                        "title": "Seats",
+                        "type": "integer",
+                        "minimum": 0,
+                        "example": 2,
+                        "description": "The seats this answer asks for, when the event asks for seats. Zero for an answer of no."
                     }
                 }
             },

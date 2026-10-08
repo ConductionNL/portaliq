@@ -143,12 +143,58 @@ class PublicNewsReader {
 			if ($this->rows->rowId(row: $row) === $id) {
 				$body = $this->media->markdown(portal: $portal, markdown: (string)($row['body'] ?? ''));
 
-				return $this->summary(portal: $portal, row: $row) + ['body' => $body];
+				$item = $this->summary(portal: $portal, row: $row) + ['body' => $body];
+				$event = $this->eventOf(row: $row);
+				if ($event !== null) {
+					$item['event'] = $event;
+				}
+
+				return $item;
 			}
 		}
 
 		return null;
 	}//end itemFor()
+
+	/**
+	 * The facts of the event a news item refers to, or null. Only a
+	 * published event is shown, and only its dates, place, deadline and
+	 * seats: its audience and its answers stay with the school.
+	 *
+	 * @param array<string, mixed> $row The news item.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+	 */
+	private function eventOf(array $row): ?array {
+		$ref = trim((string)($row['eventRef'] ?? ''));
+		if ($ref === '') {
+			return null;
+		}
+
+		foreach ($this->rows->findAll(schema: 'schoolEvent', filters: ['status' => 'published']) as $event) {
+			if (($event['status'] ?? '') !== 'published' || $this->rows->rowId(row: $event) !== $ref) {
+				continue;
+			}
+
+			$deadline = trim((string)($event['signupDeadline'] ?? ''));
+
+			return [
+				'id'                => $ref,
+				'title'             => (string)($event['title'] ?? ''),
+				'start'             => (string)($event['start'] ?? ''),
+				'end'               => (string)($event['end'] ?? ''),
+				'location'          => trim((string)($event['location'] ?? '')),
+				'signupDeadline'    => $deadline,
+				'closed'            => ($event['rsvpEnabled'] ?? false) !== true || EventDeadline::hasPassed(deadline: $deadline),
+				'askSeats'          => ($event['askSeats'] ?? false) === true,
+				'maxSeatsPerAnswer' => (int)($event['maxSeatsPerAnswer'] ?? 4),
+			];
+		}
+
+		return null;
+	}//end eventOf()
 
 	/**
 	 * Whether a stored row may show on a portal's website.

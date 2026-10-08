@@ -2335,7 +2335,22 @@ OC.L10N.register(
         "The actions could not be loaded.": "De acties konden niet worden geladen.",
         "Saving the actions failed. The grants are unchanged.": "Het opslaan van de acties is mislukt. De rechten zijn ongewijzigd.",
         "Token overrides": "Tokenoverschrijvingen",
-        "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped.": "Ontwerptokens die dit portaal bovenop zijn thema instelt, als tokennaam naar waarde. Een naam moet beginnen met --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- of --c-. Een waarde mag alleen de tekens bevatten die een tokenwaarde nodig heeft, en een waarde met url(, expression, javascript:, data:, @import of een backslash wordt weggelaten."
+        "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped.": "Ontwerptokens die dit portaal bovenop zijn thema instelt, als tokennaam naar waarde. Een naam moet beginnen met --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- of --c-. Een waarde mag alleen de tekens bevatten die een tokenwaarde nodig heeft, en een waarde met url(, expression, javascript:, data:, @import of een backslash wordt weggelaten.",
+        "Answers close after": "Aanmelden kan tot en met",
+        "Ask for seats": "Vraag om het aantal stoelen",
+        "Most seats per answer": "Meeste stoelen per aanmelding",
+        "Seats": "Stoelen",
+        "Seats in all": "Stoelen in totaal",
+        "The event this item is about. The article then shows the event's facts and a sign-up card.": "De activiteit waar dit bericht over gaat. Het artikel toont dan de gegevens van de activiteit en een aanmeldkaart.",
+        "The last day answers are taken, as a date or a date and time. After it every answer is refused.": "De laatste dag waarop aanmeldingen worden aangenomen, als datum of als datum met tijd. Daarna wordt elke aanmelding geweigerd.",
+        "The most seats one answer may ask for, when seats are asked. Empty means 4.": "Het meeste aantal stoelen dat één aanmelding mag vragen, als om stoelen wordt gevraagd. Leeg betekent 4.",
+        "The seats for the whole event. An answer that would pass it is refused.": "Het aantal stoelen voor de hele activiteit. Een aanmelding die daar overheen gaat, wordt geweigerd.",
+        "The seats this answer asks for, when the event asks for seats. Zero for an answer of no.": "Het aantal stoelen dat deze aanmelding vraagt, als de activiteit om stoelen vraagt. Nul bij het antwoord nee.",
+        "Whether an answer carries the number of seats the person needs.": "Of een aanmelding het aantal stoelen meegeeft dat iemand nodig heeft.",
+        "Who may answer": "Wie mag aanmelden",
+        "Who may answer for a child: guardian, learner, or both. Without it only a guardian answers.": "Wie voor een kind mag aanmelden: ouder, leerling of beide. Zonder deze keuze meldt alleen een ouder aan.",
+        "Where": "Waar",
+        "Where the event takes place, in words, such as the hall and the address.": "Waar de activiteit plaatsvindt, in woorden, zoals de zaal en het adres."
     },
     "nplurals=2; plural=(n != 1);"
 )

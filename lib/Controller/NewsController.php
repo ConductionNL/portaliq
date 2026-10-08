@@ -123,6 +123,7 @@ class NewsController extends Controller {
 	 * @param bool $public Whether the item also shows on a portal's public website (site-school-blocks).
 	 * @param string $portal The portal whose website shows it.
 	 * @param string $audienceLabel The words that website shows for who it is for.
+	 * @param string $eventRef The event whose sign-up the article carries; empty for none.
 	 *
 	 * @return JSONResponse The created object, or a 400/500.
 	 *
@@ -140,7 +141,8 @@ class NewsController extends Controller {
 		array $photoRefs=[],
 		bool $public=false,
 		string $portal='',
-		string $audienceLabel=''
+		string $audienceLabel='',
+		string $eventRef=''
 	): JSONResponse {
 		$authorRef = $this->requireAuthenticatedStaff();
 
@@ -163,7 +165,7 @@ class NewsController extends Controller {
 					'status' => 'draft',
 					'photoRefs' => $photoRefs,
 					'readReceipts' => [],
-				] + $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel),
+				] + $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel) + ['eventRef' => $this->eventRef(value: $eventRef)],
 				register: self::REGISTER,
 				schema: self::SCHEMA,
 				_rbac: false,
@@ -189,6 +191,7 @@ class NewsController extends Controller {
 	 * @param bool|null $public Whether the item also shows on a portal's public website; null leaves it as it is.
 	 * @param string $portal The portal whose website shows it.
 	 * @param string $audienceLabel The words that website shows for who it is for.
+	 * @param string|null $eventRef The event whose sign-up the article carries; empty clears it, null leaves it.
 	 *
 	 * @return JSONResponse The updated object, a 400 or a 404.
 	 *
@@ -203,7 +206,8 @@ class NewsController extends Controller {
 		array $target,
 		?bool $public=null,
 		string $portal='',
-		string $audienceLabel=''
+		string $audienceLabel='',
+		?string $eventRef=null
 	): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
@@ -215,6 +219,10 @@ class NewsController extends Controller {
 		// A screen that does not send `public` leaves the website choice as it is.
 		if ($public !== null) {
 			$data += $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel);
+		}
+
+		if ($eventRef !== null) {
+			$data['eventRef'] = $this->eventRef(value: $eventRef);
 		}
 
 		return $this->write(id: $id, data: $data);
@@ -337,6 +345,26 @@ class NewsController extends Controller {
 
 		return ['public' => true, 'portal' => $portal, 'audienceLabel' => mb_substr(trim($audienceLabel), 0, 60)];
 	}//end website()
+
+	/**
+	 * The event reference to store: a plain id, else empty. A reference to an
+	 * event that is not published shows nothing on the website, so the id is
+	 * not checked here.
+	 *
+	 * @param string $value The reference as sent.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+	 */
+	private function eventRef(string $value): string {
+		$value = trim($value);
+		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/', $value) !== 1) {
+			return '';
+		}
+
+		return $value;
+	}//end eventRef()
 
 	/**
 	 * Whether a target names at least one dimension.

@@ -582,7 +582,21 @@ export default {
 				widget.widgetKey === 'nlNewsList'
 				|| widget.widgetKey === 'nlNewsArticle'
 			) {
-				return { ...props, portal: this.portal, routeParam: this.routeParam }
+				const news = { ...props, portal: this.portal, routeParam: this.routeParam }
+				if (widget.widgetKey !== 'nlNewsArticle') {
+					return news
+				}
+				// The article's event card asks a visitor who is not signed in to
+				// sign in first, and sends them back to the article.
+				return {
+					...news,
+					signedIn: this.signedIn === true,
+					ways: this.signInRoutes.map((r) => ({
+						id: r.mode,
+						label: r.label,
+						href: r.href,
+					})),
+				}
 			}
 
 			// portal-public-catalogue: the catalogue and a dated list that

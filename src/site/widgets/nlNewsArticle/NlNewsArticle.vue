@@ -58,6 +58,40 @@
 				v-if="parts.rest"
 				class="nl-news-article__body"
 				:source="parts.rest" />
+			<section
+				v-if="cardState !== 'none'"
+				class="nl-news-article__event"
+				:aria-label="item.event.title"
+				data-testid="nl-news-article-event">
+				<dl class="nl-news-article__facts">
+					<div v-for="fact in facts" :key="fact.label">
+						<dt>{{ fact.label }}</dt>
+						<dd>{{ fact.value }}</dd>
+					</div>
+				</dl>
+				<p
+					v-if="cardState === 'closed'"
+					class="utrecht-paragraph"
+					role="status"
+					data-testid="nl-news-article-event-closed">
+					{{ closedLine }}
+				</p>
+				<template v-else>
+					<p v-if="cardState === 'signin'" class="utrecht-paragraph">
+						{{ say('eventSignInFirst', { area }) }}
+					</p>
+					<p v-if="item.event.askSeats" class="utrecht-paragraph">
+						{{ say('eventSeats', { count: item.event.maxSeatsPerAnswer || 4 }) }}
+					</p>
+					<a
+						class="utrecht-button utrecht-button--primary-action"
+						:href="button.href"
+						data-testid="nl-news-article-event-button"
+						@click="openButton($event)"
+						>{{ buttonLabel }}</a
+					>
+				</template>
+			</section>
 		</template>
 	</article>
 </template>
@@ -67,9 +101,10 @@ import MarkdownBlock from '../../components/MarkdownBlock.vue'
 import { longDate } from '../../components/mijn/dates.js'
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
 import { fetchPublicNewsItem } from '../../lib/publicNews.js'
-import { pageLocale } from '../../pages/inbox/translate.js'
+import { interpolate, pageLocale } from '../../pages/inbox/translate.js'
 import strings from '../nlNewsList/strings.js'
-import { splitLead } from './article.js'
+import { cardButton, safeWays } from '../nlSignIn/signIn.js'
+import { areaName, eventCardState, splitLead } from './article.js'
 
 import '@utrecht/heading-1-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
@@ -102,6 +137,14 @@ export default {
 		portal: { type: String, default: '' },
 		/** The item id, from the route, from the host. */
 		routeParam: { type: String, default: '' },
+		/** Whether the visitor holds a session, from the host. */
+		signedIn: { type: Boolean, default: false },
+		/** The portal's ways in, from the host: `{id, label, href}`. */
+		ways: { type: Array, default: () => [] },
+		/** The name of the resident area ("Mijn Vaartveld"); empty derives it from the portal. */
+		areaLabel: { type: String, default: '' },
+		/** The sign-up button's words when the visitor is signed in. */
+		signUpLabel: { type: String, default: 'Aanmelden' },
 	},
 
 	emits: ['navigate'],
@@ -130,6 +173,77 @@ export default {
 			]
 				.filter(Boolean)
 				.join(' · ')
+		},
+
+		/**
+		 * @return {('none'|'closed'|'signin'|'open')} What the sign-up card does.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+		 */
+		cardState() {
+			return eventCardState(this.item?.event, this.signedIn)
+		},
+
+		/**
+		 * @return {string} The resident area's name.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+		 */
+		area() {
+			return areaName(this.areaLabel, this.portal)
+		},
+
+		/**
+		 * @return {Array<{label: string, value: string}>} When, where, for whom, deadline.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+		 */
+		facts() {
+			const event = this.item?.event
+			if (!event) {
+				return []
+			}
+			const locale = this.contentLocale()
+			const deadline = longDate(event.signupDeadline, locale)
+			return [
+				{ label: this.say('eventWhen'), value: longDate(event.start, locale) },
+				{ label: this.say('eventWhere'), value: event.location || '' },
+				{ label: this.say('eventForWhom'), value: this.item?.audienceLabel || '' },
+				{
+					label: this.say('eventDeadline'),
+					value: deadline ? this.say('eventUntil', { date: deadline }) : '',
+				},
+			].filter((fact) => fact.value)
+		},
+
+		/**
+		 * @return {string} "Aanmelden kon tot en met vrijdag 30 oktober."
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+		 */
+		closedLine() {
+			const date = longDate(this.item?.event?.signupDeadline, this.contentLocale())
+			return date ? this.say('eventClosed', { date }) : this.say('eventClosedNoDate')
+		},
+
+		/**
+		 * @return {{label: string, href: string, route: string}} The card's button: sign in, or on to the resident area.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+		 */
+		button() {
+			const button = cardButton({
+				ways: safeWays(this.ways),
+				signedIn: this.signedIn,
+				heading: '',
+				buttonLabel: '',
+				signInHref: '/mijn',
+				say: (key) => (key === 'ownArea' ? this.signUpLabel : this.say('eventSignIn')),
+			})
+			return button.route ? { ...button, href: authoredLink(button.route).href } : button
+		},
+
+		/**
+		 * @return {string} The button's words.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+		 */
+		buttonLabel() {
+			return this.signedIn ? this.signUpLabel : this.button.label
 		},
 
 		/**
@@ -177,11 +291,27 @@ export default {
 
 		/**
 		 * @param {string} key A string key.
+		 * @param {object} [vars] Placeholders.
 		 * @return {string} The words in the page language.
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-article-page-shows-one-public-item-chosen-by-the-route
 		 */
-		say(key) {
-			return (strings[pageLocale()] || strings.nl)[key]
+		say(key, vars) {
+			return interpolate((strings[pageLocale()] || strings.nl)[key], vars)
+		},
+
+		/**
+		 * A plain click on the card's button to a route in the site stays in
+		 * the site; a way in is a real navigation to the sign-in edge.
+		 *
+		 * @param {MouseEvent} event The click.
+		 * @return {void}
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+		 */
+		openButton(event) {
+			if (staysInSite(event, this.button)) {
+				event.preventDefault()
+				this.$emit('navigate', this.button.route)
+			}
 		},
 
 		/**
@@ -201,6 +331,34 @@ export default {
 </script>
 
 <style scoped>
+.nl-news-article__event {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1.25rem;
+	border-radius: var(--utrecht-border-radius-md, 0.75rem);
+	background: var(--nldesign-color-primary-light, transparent);
+}
+
+.nl-news-article__facts {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 0.25rem 1rem;
+	margin: 0;
+}
+
+.nl-news-article__facts > div {
+	display: contents;
+}
+
+.nl-news-article__facts dt {
+	font-weight: 700;
+}
+
+.nl-news-article__facts dd {
+	margin: 0;
+}
+
 .nl-news-article {
 	display: flex;
 	flex-direction: column;
