@@ -33,8 +33,10 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Intake\PortalAddressLookup;
 use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
+use OCA\Portaliq\Service\Intake\PortalFamilyMembers;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
 use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
@@ -73,6 +75,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalIntakeQueue $queue Records and reports on submissions.
 	 * @param PortalChallengeService $challenge The portal's own challenge.
 	 * @param PortalCatalogueReader $catalogue The published request entries.
+	 * @param PortalAddressLookup|null $addresses Finds street and town for a postcode and number.
+	 * @param PortalFamilyMembers|null $family Lists and re-checks the resident's family from the BRP.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -84,6 +88,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly PortalIntakeQueue $queue,
 		private readonly PortalChallengeService $challenge,
 		private readonly PortalCatalogueReader $catalogue,
+		private readonly ?PortalAddressLookup $addresses = null,
+		private readonly ?PortalFamilyMembers $family = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -108,6 +114,34 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['topics' => $this->catalogue->topicsFor(portal: (string)($site['slug'] ?? ''))]);
 	}//end catalogue()
+
+	/**
+	 * Street and town for a postcode and house number.
+	 *
+	 * Public, because forms can be anonymous, and throttled per client. A miss
+	 * and a register that cannot be read answer the same 404, so the form
+	 * falls back to typing the street and town by hand.
+	 *
+	 * @param string $postcode The postcode.
+	 * @param string $number   The house number.
+	 * @param string $letter   The house letter.
+	 * @param string $addition The addition.
+	 *
+	 * @return JSONResponse `{street, town}` or 404.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function address(string $postcode='', string $number='', string $letter='', string $addition=''): JSONResponse {
+		$found = $this->addresses?->find(postcode: $postcode, number: $number, letter: $letter, addition: $addition);
+		if ($found === null) {
+			return new JSONResponse(['error' => 'address_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse($found);
+	}//end address()
 
 	/**
 	 * The form a route is bound to, as it stands right now.
@@ -218,6 +252,14 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['errors' => $validated['errors']], Http::STATUS_BAD_REQUEST);
 		}
 
+		// A chosen family member is checked against the BRP again here, so a
+		// reference the browser invented or kept from another day never
+		// reaches a case (data-lookups-and-checks-in-forms REQ-DIF-004).
+		$familyErrors = $this->familyErrors(fields: (array)($render['fields'] ?? []), answers: $validated['answers'], subject: $subject);
+		if ($familyErrors !== []) {
+			return new JSONResponse(['errors' => $familyErrors], Http::STATUS_BAD_REQUEST);
+		}
+
 		$accepted = $this->queue->accept(
 			portal: (string)($site['slug'] ?? ''),
 			route: $route,
@@ -235,6 +277,71 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
 		]);
 	}//end submit()
+
+	/**
+	 * The resident's partner and children to choose from, DigiD only.
+	 *
+	 * Reads the BSN from the session's own account, never from the request.
+	 * A visitor without a DigiD session, and a BRP that cannot be asked, get
+	 * the same answer: nothing to choose from here.
+	 *
+	 * @param bool $sameAddressOnly Keep only members living at the resident's address.
+	 *
+	 * @return JSONResponse `{members: [...]}`, 401 without a session, 404 when nothing can be offered.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function family(bool $sameAddressOnly=true): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$members = $this->family?->forSubject(subjectRef: (string)($subject['subjectRef'] ?? ''), sameAddressOnly: $sameAddressOnly);
+		if ($members === null) {
+			return new JSONResponse(['error' => 'family_unavailable'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse(['members' => $members]);
+	}//end family()
+
+	/**
+	 * The errors of `familyMembers` answers that are not the resident's family.
+	 *
+	 * @param array<int, array<string, mixed>> $fields  The form's fields.
+	 * @param array<string, mixed>             $answers The validated answers.
+	 * @param array<string, mixed>|null        $subject The session's subject.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	private function familyErrors(array $fields, array $answers, ?array $subject): array {
+		$errors = [];
+		foreach ($fields as $field) {
+			$name = (string)($field['name'] ?? '');
+			if (($field['type'] ?? '') !== 'familyMembers' || $name === '' || empty($answers[$name]) === true) {
+				continue;
+			}
+
+			$refs   = (array)$answers[$name];
+			$forged = [];
+			if ($this->family === null || $subject === null) {
+				$forged = $refs;
+			} else {
+				$forged = $this->family->forged(subjectRef: (string)($subject['subjectRef'] ?? ''), refs: $refs);
+			}
+
+			if ($forged !== []) {
+				$errors[$name] = 'Choose the people from the list we found.';
+			}
+		}
+
+		return $errors;
+	}//end familyErrors()
 
 	/**
 	 * What became of a submission.

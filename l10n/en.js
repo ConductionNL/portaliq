@@ -2356,7 +2356,17 @@ OC.L10N.register(
         "We have received your question": "We have received your question",
         "Your question about %1$s has reached %2$s. You find it back under My questions.": "Your question about %1$s has reached %2$s. You find it back under My questions.",
         "Your question has reached %1$s. You find it back under My questions.": "Your question has reached %1$s. You find it back under My questions.",
-        "Open My questions": "Open My questions"
+        "Open My questions": "Open My questions",
+        "This citizen service number does not look right. Check the digits.": "This citizen service number does not look right. Check the digits.",
+        "This IBAN does not look right. Check the digits.": "This IBAN does not look right. Check the digits.",
+        "This licence plate does not look right. You may fill it in with or without dashes.": "This licence plate does not look right. You may fill it in with or without dashes.",
+        "This is not a Dutch phone number. Fill it in as 06 12345678 or +31 6 12345678.": "This is not a Dutch phone number. Fill it in as 06 12345678 or +31 6 12345678.",
+        "This is not an international phone number. Start with + and the country code.": "This is not an international phone number. Start with + and the country code.",
+        "This postcode does not look right. Fill it in as 1234 AB.": "This postcode does not look right. Fill it in as 1234 AB.",
+        "A KvK number has 8 digits.": "A KvK number has 8 digits.",
+        "A branch number has 12 digits.": "A branch number has 12 digits.",
+        "Fill in the postcode, the house number, the street and the town.": "Fill in the postcode, the house number, the street and the town.",
+        "Choose the people from the list we found.": "Choose the people from the list we found."
     },
     "nplurals=2; plural=(n != 1);"
 )

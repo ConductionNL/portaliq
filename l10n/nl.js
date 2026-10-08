@@ -2419,7 +2419,17 @@ OC.L10N.register(
         "We have received your question": "Wij hebben uw vraag ontvangen",
         "Your question about %1$s has reached %2$s. You find it back under My questions.": "Uw vraag over %1$s is aangekomen bij %2$s. U vindt hem terug bij Mijn vragen.",
         "Your question has reached %1$s. You find it back under My questions.": "Uw vraag is aangekomen bij %1$s. U vindt hem terug bij Mijn vragen.",
-        "Open My questions": "Mijn vragen openen"
+        "Open My questions": "Mijn vragen openen",
+        "This citizen service number does not look right. Check the digits.": "Dit burgerservicenummer klopt niet. Controleer de cijfers.",
+        "This IBAN does not look right. Check the digits.": "Dit IBAN klopt niet. Controleer de cijfers.",
+        "This licence plate does not look right. You may fill it in with or without dashes.": "Dit kenteken klopt niet. U mag het met of zonder streepjes invullen.",
+        "This is not a Dutch phone number. Fill it in as 06 12345678 or +31 6 12345678.": "Dit is geen Nederlands telefoonnummer. Vul het in als 06 12345678 of +31 6 12345678.",
+        "This is not an international phone number. Start with + and the country code.": "Dit is geen internationaal telefoonnummer. Begin met + en de landcode.",
+        "This postcode does not look right. Fill it in as 1234 AB.": "Deze postcode klopt niet. Vul hem in als 1234 AB.",
+        "A KvK number has 8 digits.": "Een KvK-nummer heeft 8 cijfers.",
+        "A branch number has 12 digits.": "Een vestigingsnummer heeft 12 cijfers.",
+        "Fill in the postcode, the house number, the street and the town.": "Vul de postcode, het huisnummer, de straat en de plaats in.",
+        "Choose the people from the list we found.": "Kies de personen uit de lijst die wij vonden."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -224,6 +224,17 @@ export function initialValues(fields, prefill) {
 			prefill && Object.hasOwn(prefill, name) ? prefill[name] : undefined
 		if (own !== undefined && own !== null && own !== '') {
 			values[name] = String(own)
+		} else if (field.type === 'familyMembers') {
+			values[name] = []
+		} else if (field.type === 'addressNL') {
+			values[name] = {
+				postcode: '',
+				number: '',
+				letter: '',
+				addition: '',
+				street: '',
+				town: '',
+			}
 		} else if (field.preset !== undefined && field.preset !== null) {
 			values[name] = String(field.preset)
 		} else {
@@ -391,5 +402,67 @@ export function statusView(status) {
 	return {
 		tone: 'info',
 		sentence: `Uw aanvraag ${reference} is ontvangen en wordt verwerkt. Kijk later nog eens met hetzelfde kenmerk.`,
+	}
+}
+
+/**
+ * Street and town for a postcode and house number, from the portal's address
+ * route. A miss, a refusal and a network failure all answer null, so the form
+ * falls back to typing (data-lookups-and-checks-in-forms REQ-DIF-001).
+ *
+ * @param {string} base The portal api base.
+ * @param {object} block The address block (`postcode`, `number`, `letter`, `addition`).
+ * @param {Function} [fetchImpl] The fetch, for a test.
+ * @return {Promise<{street: string, town: string}|null>} The address, or null.
+ * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+ */
+export async function lookupAddress(base, block, fetchImpl) {
+	try {
+		const response = await fetcher(fetchImpl)(
+			intakeUrl(base, '/intake/address', {
+				postcode: block.postcode,
+				number: block.number,
+				letter: block.letter,
+				addition: block.addition,
+			}),
+			{ headers: headersFor('') },
+		)
+		if (!response.ok) {
+			return null
+		}
+		const body = await response.json()
+		return body && body.street && body.town
+			? { street: String(body.street), town: String(body.town) }
+			: null
+	} catch {
+		return null
+	}
+}
+
+/**
+ * The resident's partner and children from the BRP, with the bearer. `null`
+ * when nothing can be offered (no DigiD session, or the register is down), so
+ * the form says so and does not pretend there is nobody.
+ *
+ * @param {string} base The portal API base.
+ * @param {string} token The portal bearer.
+ * @param {boolean} sameAddressOnly Keep only people at the resident's address.
+ * @param {Function} [fetchImpl] The fetch, for a test.
+ * @return {Promise<Array<{ref: string, name: string, relation: string, birthYear: string}>|null>} The people, or null.
+ * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+ */
+export async function fetchFamily(base, token, sameAddressOnly, fetchImpl) {
+	try {
+		const response = await fetcher(fetchImpl)(
+			intakeUrl(base, '/intake/family', { sameAddressOnly: sameAddressOnly ? '1' : '0' }),
+			{ headers: headersFor(token) },
+		)
+		if (!response.ok) {
+			return null
+		}
+		const body = await response.json()
+		return Array.isArray(body?.members) ? body.members : null
+	} catch {
+		return null
 	}
 }

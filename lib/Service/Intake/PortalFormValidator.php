@@ -41,10 +41,12 @@ class PortalFormValidator {
 	 *
 	 * @param IL10N            $l10n        The sentences a refusal is given with.
 	 * @param VisibleWhenLocal $visibleWhen Whether a field's condition shows it.
+	 * @param DutchFormats     $formats     The Dutch format checks a field may name.
 	 */
 	public function __construct(
 		private readonly IL10N $l10n,
 		private readonly VisibleWhenLocal $visibleWhen=new VisibleWhenLocal(),
+		private readonly DutchFormats $formats=new DutchFormats(),
 	) {
 	}//end __construct()
 
@@ -101,7 +103,7 @@ class PortalFormValidator {
 				continue;
 			}
 
-			$accepted[$name] = $value;
+			$accepted[$name] = $this->stored(field: $field, value: $value);
 		}//end foreach
 
 		return ['valid' => ($errors === []), 'errors' => $errors, 'answers' => $accepted];
@@ -146,6 +148,11 @@ class PortalFormValidator {
 			return $error;
 		}
 
+		$error = $this->formatError(field: $field, value: $value);
+		if ($error !== null) {
+			return $error;
+		}
+
 		$error = $this->patternError(field: $field, value: $value);
 		if ($error !== null) {
 			return $error;
@@ -172,12 +179,124 @@ class PortalFormValidator {
 			return $this->l10n->t('This answer must be a number.');
 		}
 
+		if ($type === 'familyMembers') {
+			return $this->familyShapeError(value: $value);
+		}
+
+		if ($type === 'addressNL') {
+			return $this->addressError(value: $value);
+		}
+
 		if ($type === 'email' && filter_var((string)$value, FILTER_VALIDATE_EMAIL) === false) {
 			return $this->l10n->t('This does not look like an email address.');
 		}
 
 		return null;
 	}//end typeError()
+
+	/**
+	 * Whether a family answer is a list of references. Whether they ARE the
+	 * resident's family is the controller's check, against the BRP.
+	 *
+	 * @param mixed $value The submitted list.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	private function familyShapeError(mixed $value): ?string {
+		if (is_array($value) === false || array_is_list($value) === false) {
+			return $this->l10n->t('Choose the people from the list we found.');
+		}
+
+		foreach ($value as $ref) {
+			if (is_string($ref) === false || preg_match('/^(partner|child)-[a-f0-9]{20}$/', $ref) !== 1) {
+				return $this->l10n->t('Choose the people from the list we found.');
+			}
+		}
+
+		return null;
+	}//end familyShapeError()
+
+	/**
+	 * Whether an address block holds a real postcode, a house number, a street and a town.
+	 *
+	 * @param mixed $value The submitted block.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+	 */
+	private function addressError(mixed $value): ?string {
+		$block = [];
+		if (is_array($value) === true) {
+			$block = $value;
+		}
+
+		$complete = $this->formats->normalise(format: 'postcode', value: (string)($block['postcode'] ?? '')) !== null
+			&& preg_match('/^[1-9]\d{0,4}$/', (string)($block['number'] ?? '')) === 1
+			&& trim((string)($block['street'] ?? '')) !== ''
+			&& trim((string)($block['town'] ?? '')) !== '';
+		if ($complete === false) {
+			return $this->l10n->t('Fill in the postcode, the house number, the street and the town.');
+		}
+
+		return null;
+	}//end addressError()
+
+	/**
+	 * Whether the value fits the Dutch format the field names (`format`).
+	 *
+	 * A name this server does not know checks nothing; a known one is checked
+	 * here whatever the screen did, because the screen can be bypassed.
+	 *
+	 * @param array<string, mixed> $field The field's declaration.
+	 * @param mixed $value The submitted value.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
+	 */
+	private function formatError(array $field, mixed $value): ?string {
+		$format = (string)($field['format'] ?? '');
+		if ($this->formats->knows(format: $format) === false) {
+			return null;
+		}
+
+		if (is_string($value) === true && $this->formats->normalise(format: $format, value: $value) !== null) {
+			return null;
+		}
+
+		$messages = [
+			'bsn' => $this->l10n->t('This citizen service number does not look right. Check the digits.'),
+			'iban' => $this->l10n->t('This IBAN does not look right. Check the digits.'),
+			'nl-licence-plate' => $this->l10n->t('This licence plate does not look right. You may fill it in with or without dashes.'),
+			'phone-nl' => $this->l10n->t('This is not a Dutch phone number. Fill it in as 06 12345678 or +31 6 12345678.'),
+			'phone-international' => $this->l10n->t('This is not an international phone number. Start with + and the country code.'),
+			'postcode' => $this->l10n->t('This postcode does not look right. Fill it in as 1234 AB.'),
+			'kvk' => $this->l10n->t('A KvK number has 8 digits.'),
+			'kvk-branch' => $this->l10n->t('A branch number has 12 digits.'),
+		];
+
+		return $messages[$format];
+	}//end formatError()
+
+	/**
+	 * The value as it is stored: normalised when the field names a format.
+	 *
+	 * @param array<string, mixed> $field The field's declaration.
+	 * @param mixed $value The accepted value.
+	 *
+	 * @return mixed
+	 */
+	private function stored(array $field, mixed $value): mixed {
+		$format = (string)($field['format'] ?? '');
+		if ($this->formats->knows(format: $format) === true && is_string($value) === true) {
+			return ($this->formats->normalise(format: $format, value: $value) ?? $value);
+		}
+
+		return $value;
+	}//end stored()
 
 	/**
 	 * Whether the value matches the pattern the field declares.
@@ -209,12 +328,27 @@ class PortalFormValidator {
 	 * @return string|null
 	 */
 	private function optionsError(array $field, mixed $value): ?string {
+		if (($field['referenceListEmpty'] ?? false) === true) {
+			// A list that could not be read offers nothing, so nothing is accepted.
+			return $this->l10n->t('Choose one of the options offered.');
+		}
+
 		$options = ($field['options'] ?? null);
 		if (is_array($options) === false || $options === []) {
 			return null;
 		}
 
-		if (in_array($value, $options, true) === false) {
+		$values = array_map(
+			static function ($option) {
+				if (is_array($option) === true && array_key_exists('value', $option) === true) {
+					return $option['value'];
+				}
+
+				return $option;
+			},
+			$options
+		);
+		if (in_array($value, $values, true) === false) {
 			return $this->l10n->t('Choose one of the options offered.');
 		}
 

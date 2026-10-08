@@ -133,8 +133,23 @@
 				:error="errors[field.name] || ''"
 				:group="isDate(field)"
 				:errorTestid="`intake-field-error-${field.name}`">
+				<AddressNL
+					v-if="field.type === 'addressNL'"
+					:id="elementId(field)"
+					v-model="values[field.name]"
+					:houseLetter="field.houseLetter === true"
+					:lookup="render.settings && render.settings.addressLookup === true"
+					:base="apiBase"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`" />
+				<FamilyMembers
+					v-else-if="field.type === 'familyMembers'"
+					v-model="values[field.name]"
+					:base="apiBase"
+					:sameAddressOnly="field.sameAddressOnly !== false"
+					:testid="`intake-field-${field.name}`" />
 				<DateInputGroup
-					v-if="isDate(field)"
+					v-else-if="isDate(field)"
 					:id="elementId(field)"
 					v-model="values[field.name]"
 					:required="field.required === true"
@@ -225,8 +240,10 @@
 
 <script>
 import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
+import AddressNL from './forms/AddressNL.vue'
 import DateInputGroup from './forms/DateInputGroup.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
+import FamilyMembers from './forms/FamilyMembers.vue'
 import FieldShell from './forms/FieldShell.vue'
 import FormProgress from './forms/FormProgress.vue'
 import ReviewList from './forms/ReviewList.vue'
@@ -238,6 +255,7 @@ import {
 	loadForm,
 	submitIntake,
 } from '../lib/intakeApi.js'
+import { addressLine, addressProblem } from './forms/address.js'
 import {
 	DUTCH,
 	explainsOptional,
@@ -274,7 +292,9 @@ export default {
 	name: 'IntakeFormBlock',
 
 	components: {
+		AddressNL,
 		DateInputGroup,
+		FamilyMembers,
 		ErrorSummary,
 		FieldShell,
 		FormProgress,
@@ -399,6 +419,11 @@ export default {
 	},
 
 	computed: {
+		/** The portal api base the address lookup asks. */
+		apiBase() {
+			return authBaseFrom(resolveApiBase())
+		},
+
 		/**
 		 * The binding route this block renders: the author's, else the link's.
 		 *
@@ -706,6 +731,37 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		checkFields(names) {
+			const asked = this.fields.filter((field) => names.includes(field.name))
+			const addresses = asked.filter((field) => field.type === 'addressNL')
+			const errors = this.checkPlainFields(names)
+			for (const field of addresses) {
+				const block = this.values[field.name]
+				const problem = addressProblem(block)
+				if (problem !== '' && (field.required === true || addressLine(block) !== '')) {
+					errors[field.name] = problem
+				}
+			}
+			return errors
+		},
+
+		/**
+		 * The plain checks (required, date, format) over the names given.
+		 *
+		 * @param {string[]} names The field names.
+		 * @return {Record<string, string>} The errors.
+		 *
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
+		 */
+		checkPlainFields(names) {
+			const values = { ...this.values }
+			for (const field of this.fields) {
+				if (field.type === 'addressNL') {
+					values[field.name] = addressLine(values[field.name])
+				}
+				if (field.type === 'familyMembers') {
+					values[field.name] = (values[field.name] || []).join(',')
+				}
+			}
 			return plainFieldErrors(
 				this.fields
 					.filter((field) => names.includes(field.name))
@@ -714,8 +770,9 @@ export default {
 						label: field.label || field.name,
 						required: field.required === true,
 						date: this.isDate(field),
+						format: typeof field.format === 'string' ? field.format : '',
 					})),
-				this.values,
+				values,
 			)
 		},
 
@@ -729,6 +786,12 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		answerText(field) {
+			if (field.type === 'addressNL') {
+				return addressLine(this.values[field.name])
+			}
+			if (field.type === 'familyMembers') {
+				return (this.values[field.name] || []).length + ''
+			}
 			const value = String(this.values[field.name] ?? '')
 			const option = (Array.isArray(field.options) ? field.options : []).find(
 				(entry) => String(entry?.value ?? entry) === value,

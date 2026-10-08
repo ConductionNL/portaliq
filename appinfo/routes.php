@@ -341,6 +341,9 @@ return [
         // binding resolves to at render time, the submission, and the
         // reference page that reads the submission's real state.
         ['name' => 'portalIntake#catalogue', 'url' => '/portal/api/intake/catalogue', 'verb' => 'GET'],
+        // Street and town for a postcode and house number (data-lookups-and-checks-in-forms).
+        ['name' => 'portalIntake#address', 'url' => '/portal/api/intake/address', 'verb' => 'GET'],
+        ['name' => 'portalIntake#family', 'url' => '/portal/api/intake/family', 'verb' => 'GET'],
         ['name' => 'portalIntake#form', 'url' => '/portal/api/intake/form', 'verb' => 'GET'],
         ['name' => 'portalIntake#submit', 'url' => '/portal/api/intake/submit', 'verb' => 'POST'],
         ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],

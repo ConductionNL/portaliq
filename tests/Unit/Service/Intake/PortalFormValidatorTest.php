@@ -249,6 +249,76 @@ class PortalFormValidatorTest extends TestCase {
 	}//end testAConditionMayNameALaterField()
 
 	/**
+	 * data-lookups-and-checks-in-forms T02: a field naming a Dutch format is
+	 * checked on the server and stored normalised; a wrong IBAN is refused
+	 * with the sentence the resident reads.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
+	 */
+	public function testAFieldWithAFormatIsCheckedAndStoredNormalised(): void {
+		$fields = [
+			['name' => 'iban', 'type' => 'string', 'format' => 'iban'],
+			['name' => 'kenteken', 'type' => 'string', 'format' => 'nl-licence-plate'],
+			['name' => 'bsn', 'type' => 'string', 'format' => 'bsn'],
+		];
+
+		$good = $this->validator()->validate($fields, ['iban' => 'nl91 abna 0417 1643 00', 'kenteken' => 'ab-12-cd', 'bsn' => '111222333']);
+		$this->assertTrue($good['valid']);
+		$this->assertSame(['iban' => 'NL91ABNA0417164300', 'kenteken' => 'AB12CD', 'bsn' => '111222333'], $good['answers']);
+
+		$bad = $this->validator()->validate($fields, ['iban' => 'NL91ABNA0417164301', 'kenteken' => 'ABC', 'bsn' => '111222334']);
+		$this->assertFalse($bad['valid']);
+		$this->assertSame(['iban', 'kenteken', 'bsn'], array_keys($bad['errors']));
+		$this->assertStringContainsString('IBAN', $bad['errors']['iban']);
+	}//end testAFieldWithAFormatIsCheckedAndStoredNormalised()
+
+	/**
+	 * data-lookups-and-checks-in-forms T03: a value outside the reference
+	 * list is refused, and a list that came back empty accepts nothing.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t03
+	 */
+	public function testAValueOutsideTheReferenceListIsRefused(): void {
+		$list = ['name' => 'woning', 'type' => 'string', 'options' => [['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']]];
+		$this->assertTrue($this->validator()->validate([$list], ['woning' => 'flat'])['valid']);
+		$this->assertFalse($this->validator()->validate([$list], ['woning' => 'kasteel'])['valid']);
+
+		$closed = ['name' => 'woning', 'type' => 'string', 'options' => [], 'referenceListEmpty' => true];
+		$this->assertFalse($this->validator()->validate([$closed], ['woning' => 'flat'])['valid']);
+	}//end testAValueOutsideTheReferenceListIsRefused()
+
+	/**
+	 * data-lookups-and-checks-in-forms T01: an address block needs a real
+	 * postcode, a number, a street and a town; the street and town may have
+	 * been changed by hand.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+	 */
+	public function testAnAddressBlockMustBeComplete(): void {
+		$field = [['name' => 'adres', 'type' => 'addressNL']];
+		$block = ['postcode' => '1234 AB', 'number' => '12', 'street' => 'Lindelaan', 'town' => 'Zuiddrecht'];
+
+		$this->assertTrue($this->validator()->validate($field, ['adres' => $block])['valid']);
+		foreach (['postcode' => '12AB', 'number' => '', 'street' => ' ', 'town' => ''] as $key => $bad) {
+			$this->assertFalse($this->validator()->validate($field, ['adres' => [$key => $bad] + $block])['valid'], $key);
+		}
+
+		$this->assertFalse($this->validator()->validate($field, ['adres' => 'Lindelaan 12'])['valid']);
+	}//end testAnAddressBlockMustBeComplete()
+
+	/**
+	 * A format this server does not know checks nothing and changes nothing.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
+	 */
+	public function testAnUnknownFormatIsLeftAlone(): void {
+		$result = $this->validator()->validate([['name' => 'x', 'type' => 'string', 'format' => 'colour']], ['x' => 'red']);
+
+		$this->assertTrue($result['valid']);
+		$this->assertSame(['x' => 'red'], $result['answers']);
+	}//end testAnUnknownFormatIsLeftAlone()
+
+	/**
 	 * The validator with a translator that answers the text it was given.
 	 *
 	 * @return PortalFormValidator

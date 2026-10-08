@@ -6,6 +6,8 @@ namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\Intake\PortalReferenceLists;
+use OCA\Portaliq\Service\Intake\VisibleWhenLocal;
 use OCA\Portaliq\Service\Intake\PortalFormTrustLevel;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
@@ -156,6 +158,35 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertSame('Gemeente X', $render['fields'][0]['preset']);
 
 	}//end testAPresetIsCarriedOntoItsField()
+
+	/**
+	 * data-lookups-and-checks-in-forms T03: a field naming a reference list
+	 * gets the list's items as options; an empty or missing list closes it.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t03
+	 */
+	public function testAReferenceListFillsTheFieldsOptionsAndAnEmptyOneClosesIt(): void {
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'woning', 'order' => 1, 'options' => ['referenceList' => 'woningtypen']],
+			['name' => 'leeg', 'order' => 2, 'options' => ['referenceList' => 'bestaatniet']],
+			['name' => 'vast', 'order' => 3, 'options' => ['a', 'b']],
+		]);
+		$lists = $this->createMock(PortalReferenceLists::class);
+		$lists->method('items')->willReturnCallback(
+			static fn (string $list): array => $list === 'woningtypen' ? [['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']] : []
+		);
+
+		$fields = (new PortalFormBindingResolver($this->fakeReader(), null, new VisibleWhenLocal(), $lists))->render(binding: $this->binding())['fields'];
+
+		$this->assertSame([['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']], $fields[0]['options']);
+		$this->assertArrayNotHasKey('referenceListEmpty', $fields[0]);
+		$this->assertSame([], $fields[1]['options']);
+		$this->assertTrue($fields[1]['referenceListEmpty']);
+		$this->assertSame(['a', 'b'], $fields[2]['options'], 'a plain list is left as it is');
+
+		$none = (new PortalFormBindingResolver($this->fakeReader()))->render(binding: $this->binding())['fields'];
+		$this->assertTrue($none[0]['referenceListEmpty'], 'without a reader the field is closed, not open');
+	}//end testAReferenceListFillsTheFieldsOptionsAndAnEmptyOneClosesIt()
 
 	public function testTheFormsSignInLevelIsCarriedToTheRender(): void {
 		// portaliq#725: buildiq writes the per-form sign-in level on the

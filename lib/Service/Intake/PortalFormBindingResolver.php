@@ -83,11 +83,15 @@ class PortalFormBindingResolver {
 	 *                                           Absent hides nothing.
 	 * @param VisibleWhenLocal $visibleWhen Which field conditions the portal
 	 *                                      can check on submit.
+	 * @param PortalReferenceLists|null $lists Fills a field's `options.referenceList`. Absent
+	 *                                         leaves such a field with no options, which
+	 *                                         closes it.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
+		private readonly ?PortalReferenceLists $lists = null,
 	) {
 	}//end __construct()
 
@@ -445,7 +449,7 @@ class PortalFormBindingResolver {
 				$field['preset'] = $presets[$name];
 			}
 
-			$out[] = $field;
+			$out[] = $this->withReferenceList(field: $field);
 		}
 
 		usort(
@@ -457,6 +461,36 @@ class PortalFormBindingResolver {
 
 		return $out;
 	}//end fieldsOf()
+
+	/**
+	 * A field that names a reference list gets that list's active items as
+	 * its options. A list that comes back empty marks the field closed, so
+	 * the validator refuses every value instead of accepting any.
+	 *
+	 * @param array<string, mixed> $field The field.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t03
+	 */
+	private function withReferenceList(array $field): array {
+		$options = ($field['options'] ?? null);
+		if (is_array($options) === false || is_string($options['referenceList'] ?? null) === false) {
+			return $field;
+		}
+
+		$items = [];
+		if ($this->lists !== null) {
+			$items = $this->lists->items(list: $options['referenceList']);
+		}
+
+		$field['options'] = $items;
+		if ($items === []) {
+			$field['referenceListEmpty'] = true;
+		}
+
+		return $field;
+	}//end withReferenceList()
 
 	/**
 	 * The host a URL names, for the card the visitor reads before leaving.

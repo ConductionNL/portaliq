@@ -268,6 +268,8 @@ class PortalIntakeControllerTest extends TestCase {
 		?array $binding = ['portal' => 'gemeente-x'],
 		?array $subject = null,
 		array $site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+		?\OCA\Portaliq\Service\Intake\PortalAddressLookup $addresses = null,
+		?\OCA\Portaliq\Service\Intake\PortalFamilyMembers $family = null,
 	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -302,9 +304,67 @@ class PortalIntakeControllerTest extends TestCase {
 			new PortalFormValidator($l10n),
 			$this->doubles['queue'],
 			$this->doubles['challenge'],
-			$this->doubles['catalogue']
+			$this->doubles['catalogue'],
+			$addresses,
+			$family
 		);
 	}//end controller()
+
+	/**
+	 * data-lookups-and-checks-in-forms T01: the address route answers street
+	 * and town, or the same 404 for a miss and for a lookup that is absent.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+	 */
+	public function testTheAddressRouteAnswersStreetAndTownOrNotFound(): void {
+		$lookup = $this->double(\OCA\Portaliq\Service\Intake\PortalAddressLookup::class, ['find']);
+		$lookup->method('find')->willReturnCallback(
+			static fn (string $postcode, string $number): ?array => $number === '12' ? ['street' => 'Lindelaan', 'town' => 'Zuiddrecht'] : null
+		);
+		$controller = $this->controller(render: [], addresses: $lookup);
+
+		$found = $controller->address('1234AB', '12');
+		$this->assertSame(Http::STATUS_OK, $found->getStatus());
+		$this->assertSame(['street' => 'Lindelaan', 'town' => 'Zuiddrecht'], $found->getData());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->address('1234AB', '99')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(render: [])->address('1234AB', '12')->getStatus());
+	}//end testTheAddressRouteAnswersStreetAndTownOrNotFound()
+
+	/**
+	 * data-lookups-and-checks-in-forms T04: the family route needs a session,
+	 * and answers 404 when nothing can be offered.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	public function testTheFamilyRouteNeedsASessionAndOffersOnlyWhatTheBrpBacks(): void {
+		$family = $this->double(\OCA\Portaliq\Service\Intake\PortalFamilyMembers::class, ['forSubject']);
+		$family->method('forSubject')->willReturn([['ref' => 'partner-aaaaaaaaaaaaaaaaaaaa', 'name' => 'Henk', 'relation' => 'partner', 'birthYear' => '1983']]);
+		$subject = ['subjectRef' => 'sub-1'];
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller(render: [], family: $family)->family()->getStatus());
+		$ok = $this->controller(render: [], subject: $subject, family: $family)->family();
+		$this->assertSame(Http::STATUS_OK, $ok->getStatus());
+		$this->assertSame('Henk', $ok->getData()['members'][0]['name']);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(render: [], subject: $subject)->family()->getStatus());
+	}//end testTheFamilyRouteNeedsASessionAndOffersOnlyWhatTheBrpBacks()
+
+	/**
+	 * A forged family reference stops the submission before anything is recorded.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	public function testAForgedFamilyReferenceStopsTheSubmit(): void {
+		$family = $this->double(\OCA\Portaliq\Service\Intake\PortalFamilyMembers::class, ['forged']);
+		$family->method('forged')->willReturn(['partner-aaaaaaaaaaaaaaaaaaaa']);
+		$render = ['kind' => 'hosted', 'resolvesToNoForm' => false, 'settings' => [], 'fields' => [['name' => 'mee', 'type' => 'familyMembers']]];
+		$controller = $this->controller(render: $render, subject: ['subjectRef' => 'sub-1'], family: $family);
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit('aanvragen/verhuizing', ['mee' => ['partner-aaaaaaaaaaaaaaaaaaaa']]);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertArrayHasKey('mee', $response->getData()['errors']);
+	}//end testAForgedFamilyReferenceStopsTheSubmit()
 
 	/**
 	 * A double of one class, limited to the methods it really has.

@@ -13,6 +13,8 @@
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  */
 
+import { formatProblem } from './formats.js'
+
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
 /**
@@ -209,6 +211,11 @@ export function plainFieldErrors(fields, values, text = DUTCH) {
 		}
 		if (field.date === true && dateProblem(value)) {
 			errors[field.name] = text.date.split('{field}').join(field.label)
+			continue
+		}
+		const problem = formatProblem(field.format, value)
+		if (problem) {
+			errors[field.name] = problem
 		}
 	}
 	return errors
