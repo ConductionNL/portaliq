@@ -103,7 +103,7 @@ class TrafficSessioniser {
 	 *
 	 * @return array<int, array<string, mixed>> The events with distinct sequences.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/tasks.md#14-deferred-to-phase-1-test-an-event-whose-sequence-repeats-within-a-session-is-rejected-a-client-that-resets-its-counter-must-not-silently-corrupt-a-journey
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
 	 */
 	private function withoutRepeats(array $events): array {
 		$seen = [];

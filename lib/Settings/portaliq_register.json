@@ -9449,7 +9449,7 @@
             },
             "portalDraft": {
                 "slug": "portalDraft",
-                "icon": "ContentSaveEdit",
+                "icon": "FormSelect",
                 "version": "0.1.0",
                 "title": "Portal draft",
                 "authorization": {

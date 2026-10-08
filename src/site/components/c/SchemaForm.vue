@@ -339,6 +339,8 @@ export default {
 		 * draft, the form runs in steps and the api can keep one.
 		 *
 		 * @return {boolean} True to show the button.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
 		 */
 		canSaveDraft() {
 			return (
@@ -353,6 +355,8 @@ export default {
 		 * The app part of the draft's key: the action's app, else its register.
 		 *
 		 * @return {string} The app.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
 		 */
 		draftApp() {
 			return String(this.action.appId || this.action.register || 'portal')
@@ -500,6 +504,11 @@ export default {
 		},
 	},
 
+	/**
+	 * Load the options, then open a saved draft when the action keeps one.
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+	 */
 	mounted() {
 		this.loadOptions()
 		this.resumeDraft()
@@ -665,6 +674,8 @@ export default {
 		 * The page's language, for dates.
 		 *
 		 * @return {string} The language code.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
 		 */
 		pageLocale() {
 			return (
