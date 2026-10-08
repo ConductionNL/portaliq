@@ -218,6 +218,10 @@ class PortalBlockResolver {
 			}
 		}
 
+		// A looked-up value may stand where the block names a field
+		// (lookup-by-row-field).
+		$collection = $scopes->withLookupFields(collection: $collection, entry: $entry);
+
 		// Where a card's record stands today, from another collection of
 		// this contribution (card-status-today).
 		return $entry + (new CollectionListKeys())->collectionKeys(block: $block, collection: $collection)

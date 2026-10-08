@@ -75,6 +75,15 @@ class ListBlockNormaliser {
 
 		$entry = ['type' => 'tasks', 'collection' => $collection['id']];
 
+		// The record scope and lookups a collection block takes, plus
+		// excludeWhen over a declared lookup (REQ-SMO-025). First, so a
+		// looked-up value may name a task (lookup-by-row-field).
+		$scopes = new RecordScopeNormaliser();
+		$entry = $scopes->scope(declared: $block, entry: $entry);
+		$entry = $scopes->lookups(declared: $block, entry: $entry, collectionIds: $this->ids(collections: $collections));
+		$entry += $this->excludeWhen(declared: ($block['excludeWhen'] ?? null), lookups: ($entry['lookups'] ?? []));
+		$collection = ($scopes->withLookupFields(collection: $collection, entry: $entry) ?? $collection);
+
 		$due = ($block['dueField'] ?? null);
 		if (is_string($due) === true && $this->projects(collection: $collection, field: $due) === true) {
 			$entry['dueField'] = $due;
@@ -85,12 +94,7 @@ class ListBlockNormaliser {
 			$entry['titleFields'] = $titles;
 		}
 
-		// The record scope and lookups a collection block takes, plus
-		// excludeWhen over a declared lookup (REQ-SMO-025).
-		$scopes = new RecordScopeNormaliser();
-		$entry = $scopes->scope(declared: $block, entry: $entry);
-		$entry = $scopes->lookups(declared: $block, entry: $entry, collectionIds: $this->ids(collections: $collections));
-		$entry += $this->excludeWhen(declared: ($block['excludeWhen'] ?? null), lookups: ($entry['lookups'] ?? []));
+		$entry += (new TaskTitleTemplate())->keys(declared: ($block['titleTemplate'] ?? null), collection: $collection);
 
 		// The highlight card (site-school-blocks).
 		return $entry + $this->common(block: $block) + (new SchoolBlockKeys())->tasksKeys(block: $block, collection: $collection)
@@ -193,6 +197,7 @@ class ListBlockNormaliser {
 		// (zuiddrecht-resident-pages-match-the-boards).
 		return $entry + $this->common(block: $block) + (new BoardKeys())->casesKeys(block: $block);
 	}//end casesBlock()
+
 
 	/**
 	 * A block that reads one open record through its collection's provider:
