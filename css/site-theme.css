@@ -1540,6 +1540,80 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 /*
+ * THE HERO WITH AN ASIDE (hero-aside): the text in one column and, beside
+ * it, a list in a card (the academy's next course days) or a photo
+ * (Esdoornveen), as the school boards draw their home pages. Without an
+ * aside the main column is no box at all, so every other hero is as before.
+ * Tokens only.
+ */
+.pq-site .ac-hero .pq-hero__main {
+	display: contents;
+}
+
+.pq-site .ac-hero.pq-hero--aside > .container {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
+	gap: 2.5rem 3.5rem;
+	align-items: center;
+}
+
+.pq-site .ac-hero.pq-hero--aside .pq-hero__main {
+	display: flex;
+	flex-direction: column;
+	min-inline-size: 0;
+}
+
+.pq-site .ac-hero.pq-hero--plain.pq-hero--aside .pq-hero__main {
+	gap: 1.5rem;
+}
+
+/* The emblem would sit behind the aside; the aside is the band's picture. */
+.pq-site .ac-hero.pq-hero--aside::after {
+	display: none;
+}
+
+.pq-site .ac-hero .pq-hero__aside-card {
+	padding: 1.5rem 1.75rem 1.25rem;
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	background-color: var(--nldesign-color-background, Canvas);
+	box-shadow: 0 2px 12px
+		var(--nldesign-component-content-card-shadow-color, transparent);
+	color: var(--nldesign-color-text, CanvasText);
+}
+
+.pq-site .ac-hero .pq-hero__photo {
+	box-sizing: border-box;
+	inline-size: 100%;
+	min-block-size: 21rem;
+	margin: 0;
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	object-fit: cover;
+	clip-path: var(--nldesign-hero-image-clip-path, none);
+}
+
+/* A design that marks where a photo goes: a tinted plane with its words. */
+.pq-site .ac-hero .pq-hero__photo--label {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1.5rem;
+	background-color: var(--nldesign-color-primary-light, transparent);
+	color: var(--nldesign-color-primary, inherit);
+	font-size: 0.9375rem;
+	text-align: center;
+}
+
+@media (max-width: 768px) {
+	.pq-site .ac-hero.pq-hero--aside > .container {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.pq-site .ac-hero .pq-hero__photo {
+		min-block-size: 12rem;
+	}
+}
+
+/*
  * THE PLAIN SEARCH (site-matches-the-zuiddrecht-boards, board Zoeken): the
  * form on the page with input and button joined, the filters in a column on
  * the left, the results as bordered cards with the title as the link colour,
