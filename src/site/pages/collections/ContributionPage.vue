@@ -184,7 +184,7 @@
 					v-if="showsHeading(item)"
 					:id="headingId(item)"
 					class="utrecht-heading-3">
-					{{ item.collection.label }}
+					{{ headingOf(item) }}
 				</component>
 				<!-- A collection that declares groupByField shows one table per
 				     child, each named by its own heading
@@ -1392,8 +1392,20 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 		 */
 		showsHeading(item) {
-			const label = item.collection.label || ''
+			const label = this.headingOf(item)
 			return label !== '' && label !== (this.entry && this.entry.label)
+		},
+
+		/**
+		 * A collection block's heading: the block's own `label` ("Laatste
+		 * cijfers"), else the collection's (collection-block-label).
+		 *
+		 * @param {object} item The page item.
+		 * @return {string} The heading, or ''.
+		 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
+		 */
+		headingOf(item) {
+			return String(item.block?.label || item.collection?.label || '')
 		},
 
 		/**
