@@ -41,15 +41,26 @@
 			`labelVisible` because on a public portal the prompt is the only
 			instruction a visitor gets.
 		-->
-		<CnSiteSearch
-			:label="inputLabel"
-			:placeholder="placeholder"
-			:submitLabel="submitLabel"
-			:value="query"
-			inputId="pq-federated-search"
-			:labelVisible="true"
-			data-testid="federated-search-form"
-			@search="onSearch" />
+		<div class="pq-search__box" @input="onTyping" @keydown="onSuggestKey">
+			<CnSiteSearch
+				:label="inputLabel"
+				:placeholder="placeholder"
+				:submitLabel="submitLabel"
+				:value="query"
+				inputId="pq-federated-search"
+				:labelVisible="true"
+				data-testid="federated-search-form"
+				@search="onSearch" />
+			<!-- Suggestions while typing (search-suggestions-while-typing). The
+		     shared search control owns the input, so the combobox attributes
+		     are put on it from `suggestState` (see syncCombobox). -->
+			<SearchSuggestions
+				ref="suggestions"
+				:query="typed"
+				:endpoint="endpoint"
+				@state="onSuggestState"
+				@choose="openSuggestion" />
+		</div>
 
 		<!--
 			ONE LIVE REGION FOR THE RESULT COUNT, and it is `polite`.
@@ -452,6 +463,7 @@ import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
  * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 import { defineAsyncComponent } from 'vue'
+import SearchSuggestions from './SearchSuggestions.vue'
 import {
 	buildRequestUrl,
 	pageWindow,
@@ -462,6 +474,7 @@ import {
 	toResult,
 	writeSearchState,
 } from '../lib/federatedSearch.js'
+import { suggestionRoute } from '../lib/searchSuggestions.js'
 import { labelBuckets, pageLocale } from '../lib/wooCategories.js'
 
 export default {
@@ -469,6 +482,7 @@ export default {
 
 	components: {
 		CnSiteSearch,
+		SearchSuggestions,
 		SaveSearch: defineAsyncComponent(() => import('./SaveSearch.vue')),
 	},
 
@@ -709,6 +723,9 @@ export default {
 
 	data() {
 		return {
+			// What is typed right now, for the suggestions only; `query` stays what
+			// was searched.
+			typed: '',
 			// What was actually searched for, as opposed to what is currently
 			// typed. `CnSiteSearch` keeps the typed term to itself and hands it
 			// over on submit, so the list never thrashes per keystroke and the
@@ -1160,6 +1177,80 @@ export default {
 			this.page = 1
 			this.writeLocation(true)
 			this.search()
+		},
+
+		/**
+		 * The text now in the search input, from the input events that bubble
+		 * out of the shared search control.
+		 *
+		 * @param {Event} event The input event.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
+		onTyping(event) {
+			this.typed = String(event?.target?.value ?? '')
+		},
+
+		/**
+		 * The input's keys go to the suggestion list first; a key it uses does
+		 * not also submit or move the caret.
+		 *
+		 * @param {KeyboardEvent} event The key event.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 */
+		onSuggestKey(event) {
+			const list = this.$refs.suggestions
+			if (list && list.onKey(event)) {
+				event.preventDefault()
+			}
+		},
+
+		/**
+		 * Put the combobox attributes on the shared control's input.
+		 *
+		 * @param {{expanded: boolean, controls: string, activeId: string}} state The list's state.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 */
+		onSuggestState(state) {
+			const input =
+				typeof document !== 'undefined'
+					? document.getElementById('pq-federated-search')
+					: null
+			if (!input) {
+				return
+			}
+			input.setAttribute('role', 'combobox')
+			input.setAttribute('aria-autocomplete', 'list')
+			input.setAttribute('aria-controls', state.controls)
+			input.setAttribute('aria-expanded', String(state.expanded))
+			if (state.activeId) {
+				input.setAttribute('aria-activedescendant', state.activeId)
+			} else {
+				input.removeAttribute('aria-activedescendant')
+			}
+		},
+
+		/**
+		 * A suggestion opens its own page.
+		 *
+		 * @param {{id: string, kind: string}} item The suggestion.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
+		openSuggestion(item) {
+			this.$emit(
+				'navigate',
+				suggestionRoute(item, {
+					detail: this.detailRoute,
+					document: this.documentRoute,
+				}),
+			)
 		},
 
 		/**

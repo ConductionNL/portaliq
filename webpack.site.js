@@ -70,6 +70,28 @@ const site = {
 	},
 	plugins: [
 		new VueLoaderPlugin(),
+		// nextcloud-vue's `visibleWhen.js` (the one condition grammar, used by
+		// the intake form and the embed frame) imports three Nextcloud client
+		// packages for paths a public page never takes. Inside that folder they
+		// become a stub, so a public origin does not download them.
+		new webpack.NormalModuleReplacementPlugin(
+			/^@nextcloud\/(capabilities|router|auth)$/,
+			(resource) => {
+				if (
+					/@conduction[\\/]nextcloud-vue[\\/]src[\\/]utils/.test(
+						resource.context || '',
+					)
+				) {
+					resource.request = path.join(
+						__dirname,
+						'src',
+						'site',
+						'lib',
+						'nextcloudStub.js',
+					)
+				}
+			},
+		),
 		// Vue 3 reads these at build time; without them the runtime logs a
 		// warning on every boot about an undefined feature flag.
 		new webpack.DefinePlugin({

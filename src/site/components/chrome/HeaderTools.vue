@@ -27,7 +27,22 @@
 				class="utrecht-textbox pq-header-tools__input"
 				:placeholder="hint"
 				:aria-label="searchBox.label || hint"
-				data-testid="site-header-search-input" />
+				:role="searchBox.suggest ? 'combobox' : null"
+				:aria-autocomplete="searchBox.suggest ? 'list' : null"
+				:aria-expanded="
+					searchBox.suggest ? String(suggestState.expanded) : null
+				"
+				:aria-controls="searchBox.suggest ? suggestListId : null"
+				:aria-activedescendant="suggestState.activeId || null"
+				data-testid="site-header-search-input"
+				@keydown="onSuggestKey" />
+			<SearchSuggestions
+				v-if="searchBox.suggest"
+				ref="suggestions"
+				:query="term"
+				:listId="suggestListId"
+				@state="suggestState = $event"
+				@choose="openSuggestion" />
 			<button type="submit" class="pq-header-tools__submit">
 				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 					<path
@@ -112,6 +127,8 @@
 </template>
 
 <script>
+import SearchSuggestions from '../SearchSuggestions.vue'
+import { suggestionRoute } from '../../lib/searchSuggestions.js'
 import { personOf } from './person.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
@@ -125,6 +142,8 @@ import '@utrecht/button-link-css/dist/index.css'
  */
 export default {
 	name: 'HeaderTools',
+
+	components: { SearchSuggestions },
 
 	props: {
 		/** `{enabled, placeholder}` from headerSearchOf(). */
@@ -152,6 +171,8 @@ export default {
 	data() {
 		return {
 			term: '',
+			suggestListId: 'pq-header-suggest',
+			suggestState: { expanded: false, activeId: '' },
 			// Outlined, as the Zuiddrecht Kop and MobielHome boards draw them: a
 			// magnifier, a person and three bars, stroked in the text colour.
 			SEARCH: 'M4 11a7 7 0 1 0 14 0a7 7 0 1 0-14 0M20 20l-4-4',
@@ -173,6 +194,35 @@ export default {
 		 */
 		person() {
 			return personOf(this.session)
+		},
+	},
+
+	methods: {
+		/**
+		 * The search input's keys go to the suggestion list first.
+		 *
+		 * @param {KeyboardEvent} event The key event.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 */
+		onSuggestKey(event) {
+			const list = this.$refs.suggestions
+			if (list && list.onKey(event)) {
+				event.preventDefault()
+			}
+		},
+
+		/**
+		 * A suggestion opens its publication.
+		 *
+		 * @param {{id: string, kind: string}} item The suggestion.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
+		openSuggestion(item) {
+			this.$emit('navigate', suggestionRoute(item))
 		},
 	},
 }
