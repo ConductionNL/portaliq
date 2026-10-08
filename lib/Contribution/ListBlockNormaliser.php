@@ -93,7 +93,8 @@ class ListBlockNormaliser {
 		$entry += $this->excludeWhen(declared: ($block['excludeWhen'] ?? null), lookups: ($entry['lookups'] ?? []));
 
 		// The highlight card (site-school-blocks).
-		return $entry + $this->common(block: $block) + (new SchoolBlockKeys())->tasksKeys(block: $block, collection: $collection);
+		return $entry + $this->common(block: $block) + (new SchoolBlockKeys())->tasksKeys(block: $block, collection: $collection)
+			+ (new BoardKeys())->tasksKeys(block: $block);
 	}//end tasksBlock()
 
 	/**
@@ -162,7 +163,8 @@ class ListBlockNormaliser {
 			$entry['recordField'] = $recordField;
 		}
 
-		return $entry + $this->common(block: $block);
+		// The plain list (zuiddrecht-resident-pages-match-the-boards).
+		return $entry + $this->common(block: $block) + (new BoardKeys())->inboxKeys(block: $block);
 	}//end inboxBlock()
 
 	/**
@@ -187,7 +189,9 @@ class ListBlockNormaliser {
 			$entry['open'] = true;
 		}
 
-		return $entry + $this->common(block: $block);
+		// The compact card, the link to every case and the resident's turn
+		// (zuiddrecht-resident-pages-match-the-boards).
+		return $entry + $this->common(block: $block) + (new BoardKeys())->casesKeys(block: $block);
 	}//end casesBlock()
 
 	/**
@@ -213,7 +217,13 @@ class ListBlockNormaliser {
 			return null;
 		}
 
-		return ['type' => $type, 'collection' => $collection['id']] + $this->common(block: $block);
+		$entry = ['type' => $type, 'collection' => $collection['id']] + $this->common(block: $block);
+		if ($type === 'documents') {
+			// The upload button beside the heading (zuiddrecht-resident-pages-match-the-boards).
+			$entry += (new BoardKeys())->documentsKeys(block: $block);
+		}
+
+		return $entry;
 	}//end recordBlock()
 
 	/**

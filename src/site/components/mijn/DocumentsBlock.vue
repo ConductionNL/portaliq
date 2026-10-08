@@ -16,9 +16,39 @@
 		class="pq-documents-block"
 		:aria-labelledby="headingId"
 		data-testid="mijn-documents-block">
-		<component :is="`h${level}`" :id="headingId" class="utrecht-heading-3">
+		<!-- With `upload` an outlined button beside the heading adds a
+		     document through the case screen's route
+		     (zuiddrecht-resident-pages-match-the-boards). -->
+		<div v-if="block.upload === true && api" class="pq-documents-block__head">
+			<component :is="`h${level}`" :id="headingId" class="utrecht-heading-3">
+				{{ heading }}
+			</component>
+			<label
+				class="utrecht-button utrecht-button--secondary-action pq-documents-block__upload"
+				:class="{ 'utrecht-button--disabled': uploading }">
+				<input
+					type="file"
+					class="pq-documents-block__file"
+					data-testid="mijn-documents-upload"
+					:disabled="uploading"
+					@change="addDocument" />
+				{{ tr('Add a document') }}
+			</label>
+		</div>
+		<component
+			:is="`h${level}`"
+			v-else
+			:id="headingId"
+			class="utrecht-heading-3">
 			{{ heading }}
 		</component>
+		<p
+			v-if="uploadNotice"
+			class="utrecht-paragraph"
+			role="status"
+			data-testid="mijn-documents-upload-notice">
+			{{ uploadNotice }}
+		</p>
 		<Skeleton
 			v-if="answer === null && !failed"
 			:label="tr('Loading')"
@@ -89,6 +119,8 @@ export default {
 			failed: false,
 			busyId: null,
 			openFailed: false,
+			uploading: false,
+			uploadNotice: '',
 		}
 	},
 
@@ -222,6 +254,47 @@ export default {
 			this.busyId = null
 			this.openFailed = result?.ok !== true
 		},
+
+		/**
+		 * Add a document to the case through the case screen's route; the
+		 * list is read again on success, a failure says so.
+		 *
+		 * @param {Event} event The file input's change event.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		async addDocument(event) {
+			const file = event?.target?.files?.[0]
+			if (!file || !this.recordId) {
+				return
+			}
+			this.uploading = true
+			this.uploadNotice = ''
+			let result
+			try {
+				result = await this.api?.addCitizenDocument?.(
+					this.collection,
+					this.recordId,
+					file,
+				)
+			} catch {
+				result = null
+			}
+			this.uploading = false
+			if (event.target) {
+				event.target.value = ''
+			}
+			if (result?.ok === true) {
+				this.uploadNotice = this.tr('{name} has been added to your case.', {
+					name: result.document?.name || file.name,
+				})
+				await this.load()
+				return
+			}
+			this.uploadNotice =
+				result?.message
+				|| this.tr('The document could not be added. Try again.')
+		},
 	},
 }
 </script>
@@ -234,5 +307,41 @@ export default {
 .pq-documents-block__list {
 	margin: 0;
 	padding: 0;
+}
+
+/* The heading with the upload button beside it; the file input stays
+   reachable by keyboard behind the button. */
+.pq-documents-block__head {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.75rem;
+	margin-block-end: var(--utrecht-space-block-sm, 0.5rem);
+}
+
+.pq-documents-block__head > * {
+	margin: 0;
+}
+
+.pq-documents-block__upload {
+	position: relative;
+	cursor: pointer;
+}
+
+.pq-documents-block__file {
+	position: absolute;
+	inset: 0;
+	inline-size: 100%;
+	block-size: 100%;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.pq-documents-block__upload:has(.pq-documents-block__file:focus-visible) {
+	outline: var(--utrecht-focus-outline-width, 2px)
+		var(--utrecht-focus-outline-style, solid)
+		var(--utrecht-focus-outline-color, currentcolor);
+	outline-offset: 2px;
 }
 </style>

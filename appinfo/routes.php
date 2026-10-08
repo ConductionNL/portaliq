@@ -120,6 +120,8 @@ return [
         // The news staff put on this portal's public website (site-school-blocks).
         ['name' => 'contentNews#index', 'url' => '/api/content/news', 'verb' => 'GET'],
         ['name' => 'contentNews#show', 'url' => '/api/content/news/{id}', 'verb' => 'GET'],
+        // A portal's public catalogue: its news and every app's public index (portal-public-catalogue).
+        ['name' => 'contentCatalogue#index', 'url' => '/api/content/catalogue', 'verb' => 'GET'],
         [
             'name' => 'content#page',
             'url' => '/api/content/page/{route}',
@@ -173,6 +175,8 @@ return [
         // require a Nextcloud session.
         ['name' => 'messageGuardian#createThread', 'url' => '/api/messages/threads', 'verb' => 'POST'],
         ['name' => 'messageGuardian#threads', 'url' => '/api/messages/threads', 'verb' => 'GET'],
+        // Who a resident may write to, per record (site-messages-per-record).
+        ['name' => 'messageGuardian#contacts', 'url' => '/api/messages/contacts', 'verb' => 'GET'],
         ['name' => 'messageGuardian#messages', 'url' => '/api/messages/threads/{id}/messages', 'verb' => 'GET'],
         ['name' => 'messageGuardian#post', 'url' => '/api/messages/threads/{id}/messages', 'verb' => 'POST'],
         ['name' => 'messageGuardian#markRead', 'url' => '/api/messages/threads/{id}/read', 'verb' => 'POST'],
@@ -266,6 +270,10 @@ return [
         // Nextcloud session IS the credential, and an anonymous visitor is
         // handed to Nextcloud's own login form.
         ['name' => 'session#nextcloud', 'url' => '/portal/api/session/nextcloud', 'verb' => 'GET'],
+        // One click on a demo: the example resident's session, closed unless
+        // an administrator sets example_resident_demo_login=yes
+        // (example-resident-demo-login).
+        ['name' => 'session#exampleResident', 'url' => '/portal/api/session/example-resident', 'verb' => 'GET'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
         // Sliding-window session refresh, capped by an absolute maximum
         // session lifetime (portal-session-hardening-v2 T03). Registered

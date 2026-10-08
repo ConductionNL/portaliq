@@ -27,6 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\ExampleResident\ExampleResidentCatalogue;
+use OCA\Portaliq\Service\ExampleResident\ExampleResidentRecord;
+use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
 use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
 use OCP\IConfig;
 use OCP\IRequest;
@@ -75,6 +78,9 @@ class PortalRuntimeConfigResolver {
 	 * @param IConfig|null                    $config         Tells whether the dev login is accepted.
 	 * @param PortalWaysInResolver|null       $waysIn         The doors besides the sign-in buttons
 	 *                                                        (identity-ways-in-screens T07).
+	 * @param ExampleResidentRecord|null      $exampleResidents The example resident install records, for the
+	 *                                                          one-click demo sign-in (example-resident-demo-login).
+	 * @param ExampleResidentCatalogue|null   $exampleCatalogue The shipped example residents.
 	 *
 	 * @return void
 	 */
@@ -84,6 +90,8 @@ class PortalRuntimeConfigResolver {
 		private readonly PortalThemeResolver $themeResolver,
 		private readonly ?IConfig $config=null,
 		private readonly ?PortalWaysInResolver $waysIn=null,
+		private readonly ?ExampleResidentRecord $exampleResidents=null,
+		private readonly ?ExampleResidentCatalogue $exampleCatalogue=null,
 	) {
 	}//end __construct()
 
@@ -185,6 +193,10 @@ class PortalRuntimeConfigResolver {
 
 		$config['signinOrganisation'] = $orgValue;
 		$config['devLogin'] = $this->devLoginEnabled();
+		// One click on a demo for the example resident, while the switch is
+		// on (example-resident-demo-login); '' otherwise.
+		$config['exampleResident']      = '';
+		$config['exampleResidentWayIn'] = '';
 		if ($orgValue !== '') {
 			$resolved = $this->orgResolver->resolve(orgSlug: $orgValue, locale: $locale);
 			$config['oidcProviders'] = (array)($resolved['oidcProviders'] ?? []);
@@ -203,9 +215,32 @@ class PortalRuntimeConfigResolver {
 			$config['waysIn'] = $this->waysIn->waysIn(portal: $portal, oidcProviders: (array)($config['oidcProviders'] ?? []));
 		}
 
+		$residents = $this->exampleResidentSignIn();
+		$config['exampleResident'] = $residents->offered(portal: $portal);
+		// The way in the example resident's install added, while the switch is
+		// off: the site leaves that card out, so a demo card never shows on a
+		// portal that did not switch the demo on.
+		$config['exampleResidentWayIn'] = $residents->hiddenWayIn(portal: $portal);
+
 		return $this->applyPortalBranding(config: $config, portal: $portal);
 	}//end runtimeConfigFor()
 
+
+	/**
+	 * What the site may offer for this portal's example resident, read from
+	 * the switch and the install records (example-resident-demo-login).
+	 *
+	 * @return ExampleResidentSignIn
+	 *
+	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	private function exampleResidentSignIn(): ExampleResidentSignIn {
+		return new ExampleResidentSignIn(
+			config: $this->config,
+			records: $this->exampleResidents,
+			catalogue: $this->exampleCatalogue
+		);
+	}//end exampleResidentSignIn()
 
 	/**
 	 * Whether the server accepts the dev login, by the same rule as

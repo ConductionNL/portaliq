@@ -14,9 +14,23 @@
 		class="pq-inbox-block"
 		:aria-labelledby="label ? headingId : undefined"
 		data-testid="mijn-inbox-block">
+		<!-- The plain list carries "Alle berichten" beside its heading
+		     (zuiddrecht-resident-pages-match-the-boards). -->
+		<div v-if="label && plain" class="pq-inbox-block__head">
+			<component :is="`h${level}`" :id="headingId" class="utrecht-heading-3">
+				{{ label }}
+			</component>
+			<a
+				class="utrecht-link pq-inbox-block__all-link"
+				:href="allHref"
+				data-testid="mijn-inbox-all"
+				@click="openAll"
+				>{{ tr('All messages') }}</a
+			>
+		</div>
 		<component
 			:is="`h${level}`"
-			v-if="label"
+			v-else-if="label"
 			:id="headingId"
 			class="utrecht-heading-3">
 			{{ label }}
@@ -33,6 +47,23 @@
 		<EmptyState
 			v-else-if="entries.length === 0"
 			:text="tr('You have no messages yet.')" />
+		<!-- The plain list: a title and the day, no badge, no chevron. -->
+		<ul v-else-if="plain" class="pq-inbox-block__plain">
+			<li
+				v-for="entry in entries"
+				:key="entry.key"
+				class="pq-inbox-block__plain-row"
+				data-testid="mijn-inbox-plain-row">
+				<a
+					class="utrecht-link pq-inbox-block__plain-title"
+					:class="{ 'pq-inbox-block__plain-title--unread': entry.unread }"
+					:href="hrefOf(entry.route)"
+					@click="openRow($event, entry)"
+					>{{ entry.title }}</a
+				>
+				<span class="pq-inbox-block__plain-day">{{ entry.day }}</span>
+			</li>
+		</ul>
 		<template v-else>
 			<ul class="pq-inbox-block__list">
 				<ActionRow
@@ -67,7 +98,10 @@ import {
 	recordRoute,
 	sessionStore,
 } from '../../pages/inbox/inbox.js'
+import { dayInWords } from './cases.js'
 import { inboxRows, mijnTranslator, receivedInWords, siteHref } from './rows.js'
+
+const DAY_MS = 24 * 60 * 60 * 1000
 
 /** The site route of the inbox, as the shell builds it. */
 const INBOX_ROUTE = routeForNav({ special: 'inbox' })
@@ -170,6 +204,14 @@ export default {
 		},
 
 		/**
+		 * @return {boolean} Whether the block draws the plain list.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		plain() {
+			return this.block?.display === 'list'
+		},
+
+		/**
 		 * The rows on screen, each with where it leads.
 		 *
 		 * @return {Array<object>}
@@ -197,6 +239,7 @@ export default {
 						unread: message.read !== true,
 						link: recordAt ? link : null,
 						route: recordAt || INBOX_ROUTE,
+						day: this.dayOf(message.receivedAt),
 					}
 				},
 			)
@@ -215,6 +258,59 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The day a message came in, as the plain list says it: "vandaag",
+		 * "gisteren", else the day in words.
+		 *
+		 * @param {string} value An ISO date-time.
+		 * @return {string}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		dayOf(value) {
+			const at = value ? new Date(value) : null
+			if (!at || Number.isNaN(at.getTime())) {
+				return ''
+			}
+			const today = this.today || new Date()
+			const midnight = (d) =>
+				new Date(d.getFullYear(), d.getMonth(), d.getDate())
+			const days = Math.round(
+				(midnight(today).getTime() - midnight(at).getTime()) / DAY_MS,
+			)
+			if (days === 0) {
+				return this.tr('today')
+			}
+			if (days === 1) {
+				return this.tr('yesterday')
+			}
+			return dayInWords(value, today, this.locale)
+		},
+
+		/**
+		 * @param {string} route An in-site route.
+		 * @return {string} Its real address.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		hrefOf(route) {
+			return siteHref(route)
+		},
+
+		/**
+		 * A plain click on a row of the plain list stays in the site.
+		 *
+		 * @param {MouseEvent} event The click.
+		 * @param {object} entry The row.
+		 * @return {void}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		openRow(event, entry) {
+			if (event?.ctrlKey || event?.metaKey || event?.shiftKey) {
+				return
+			}
+			event?.preventDefault?.()
+			this.open(entry)
+		},
+
 		/**
 		 * Read the unified inbox; a read that fails says so, it is not empty.
 		 *
@@ -286,5 +382,52 @@ export default {
 
 .pq-inbox-block__all {
 	margin-block-start: var(--utrecht-space-block-sm, 0.5rem);
+}
+
+/* The plain list (zuiddrecht-resident-pages-match-the-boards): hairlines
+   between the rows, the title as a link, the day at the end. */
+.pq-inbox-block__head {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 0.5rem;
+}
+
+.pq-inbox-block__head > * {
+	margin: 0;
+}
+
+.pq-inbox-block__all-link {
+	font-weight: 600;
+}
+
+.pq-inbox-block__plain {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-block-start: 1px solid var(--nldesign-color-border, currentcolor);
+}
+
+.pq-inbox-block__plain-row {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 0.5rem 1rem;
+	padding-block: 1rem;
+	border-block-end: 1px solid var(--nldesign-color-border, currentcolor);
+}
+
+.pq-inbox-block__plain-title {
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-inbox-block__plain-day {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
+	font-size: 0.9375rem;
 }
 </style>

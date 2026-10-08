@@ -42,6 +42,7 @@ import { metaOf as actionGroupMeta } from './nlActionGroup/meta.js'
 import { metaOf as alertMeta } from './nlAlert/meta.js'
 import { metaOf as bannerMeta } from './nlBanner/meta.js'
 import { metaOf as buttonLinkMeta } from './nlButtonLink/meta.js'
+import { metaOf as catalogueMeta } from './nlCatalogue/meta.js'
 import { metaOf as codeBlockMeta } from './nlCodeBlock/meta.js'
 import { metaOf as descriptionListMeta } from './nlDescriptionList/meta.js'
 import { metaOf as dialogMeta } from './nlDialog/meta.js'
@@ -51,8 +52,10 @@ import { metaOf as headingMeta } from './nlHeading/meta.js'
 import { metaOf as imageMeta } from './nlImage/meta.js'
 import { metaOf as languageNavMeta } from './nlLanguageNav/meta.js'
 import { metaOf as linkMeta } from './nlLink/meta.js'
+import { metaOf as linkColumnsMeta } from './nlLinkColumns/meta.js'
 import { metaOf as linkListMeta } from './nlLinkList/meta.js'
 import { metaOf as listMeta } from './nlList/meta.js'
+import { metaOf as lookupFormMeta } from './nlLookupForm/meta.js'
 import { metaOf as newsArticleMeta } from './nlNewsArticle/meta.js'
 import { metaOf as newsListMeta } from './nlNewsList/meta.js'
 import { metaOf as noteMeta } from './nlNote/meta.js'
@@ -96,6 +99,8 @@ export const metas = {
 	nlParagraph: paragraphMeta,
 	nlLink: linkMeta,
 	nlLinkList: linkListMeta,
+	nlLinkColumns: linkColumnsMeta,
+	nlLookupForm: lookupFormMeta,
 	nlList: listMeta,
 	nlQuote: quoteMeta,
 	nlButtonLink: buttonLinkMeta,
@@ -124,6 +129,7 @@ export const metas = {
 	nlNewsList: newsListMeta,
 	nlNewsArticle: newsArticleMeta,
 	nlEventList: eventListMeta,
+	nlCatalogue: catalogueMeta,
 }
 
 /**

@@ -1,5 +1,7 @@
 # Tasks: portal-traffic-path-explorer
 
+> Archive pass 2026-10-07: code done; stays open because its delta MODIFIES portal-traffic-analytics, which has no main spec until the change portal-traffic-analytics archives (open: its 1.4 deferred, 5.2 and 7.2 owed by other repos).
+
 ## 1. Backend
 
 - [x] 1.1 `TrafficPaths`: a visit's path (page views only, reloads collapsed), the fold of visits into weighted paths, and the explorer's steps, "+N more" nodes, drop-offs, links and trail; PHPUnit with hand-built fixtures.

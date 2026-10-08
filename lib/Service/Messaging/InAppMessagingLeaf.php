@@ -93,6 +93,51 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	/**
 	 * {@inheritDoc}
 	 *
+	 * @param string                $subjectRef The resident's own subjectRef.
+	 * @param array<string, string> $contact    The proven contact.
+	 * @param string                $title      The subject line.
+	 * @param string                $body       The first message.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
+	 */
+	public function createContactThread(string $subjectRef, array $contact, string $title, string $body): ?string {
+		$staffRef = (string)($contact['staffRef'] ?? '');
+		if ($subjectRef === '' || $staffRef === '' || $staffRef === $subjectRef || trim($body) === '') {
+			return null;
+		}
+
+		$id = $this->store->save(schema: self::THREAD_SCHEMA, object: [
+			'kind' => self::KIND_DIRECT,
+			'participantRefs' => [$subjectRef, $staffRef],
+			'groupRef' => null,
+			'createdBy' => $subjectRef,
+			'createdAt' => gmdate('c'),
+			'recordRef' => (string)($contact['recordRef'] ?? ''),
+			'recordLabel' => (string)($contact['recordLabel'] ?? ''),
+			'title' => $title,
+			'staffName' => (string)($contact['name'] ?? ''),
+			'staffRole' => (string)($contact['role'] ?? ''),
+		]);
+		if ($id === null) {
+			return null;
+		}
+
+		$this->store->save(schema: self::MESSAGE_SCHEMA, object: [
+			'threadRef' => $id,
+			'senderRef' => $subjectRef,
+			'body' => $body,
+			'sentAt' => gmdate('c'),
+			'readBy' => [$subjectRef],
+		]);
+
+		return $id;
+	}//end createContactThread()
+
+	/**
+	 * {@inheritDoc}
+	 *
 	 * @param string $threadId The thread id.
 	 * @param string $senderRef The sender's own subjectRef.
 	 * @param bool $senderIsStaff Whether the sender is staff.

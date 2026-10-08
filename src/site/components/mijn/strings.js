@@ -14,6 +14,17 @@
 
 export default {
 	nl: {
+		// calendar-timetable-display
+		'Choose a day': 'Kies een dag',
+		'Nothing on the timetable this day.':
+			'Op deze dag staat niets op het rooster.',
+		'Break, {minutes} minutes': 'Pauze, {minutes} minuten',
+		Cancelled: 'Vervalt',
+		'1 lesson': '1 lesuur',
+		'{count} lessons': '{count} lesuren',
+		'1 change': '1 wijziging',
+		'{count} changes': '{count} wijzigingen',
+		'done at {time}': 'uit om {time} uur',
 		// site-school-blocks
 		Open: 'Openen',
 		'Nothing here yet.': 'Hier staat nog niets.',
@@ -56,6 +67,14 @@ export default {
 		'Case {reference}': 'Zaak {reference}',
 		'Step {current} of {total}': 'Stap {current} van {total}',
 		'Answer by {date}': 'Antwoord uiterlijk {date}',
+		'ready by {date}': 'klaar uiterlijk {date}',
+		'no later than {date}': 'uiterlijk {date}',
+		today: 'vandaag',
+		yesterday: 'gisteren',
+		'Add a document': 'Document toevoegen',
+		'{name} has been added to your case.': '{name} is toegevoegd aan uw zaak.',
+		'The document could not be added. Try again.':
+			'Het document kon niet worden toegevoegd. Probeer het opnieuw.',
 		Done: 'Gereed',
 		'Current step': 'Huidige stap',
 		'Still to come': 'Nog niet begonnen',
@@ -85,6 +104,16 @@ export default {
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		// calendar-timetable-display
+		'Choose a day': 'Choose a day',
+		'Nothing on the timetable this day.': 'Nothing on the timetable this day.',
+		'Break, {minutes} minutes': 'Break, {minutes} minutes',
+		Cancelled: 'Cancelled',
+		'1 lesson': '1 lesson',
+		'{count} lessons': '{count} lessons',
+		'1 change': '1 change',
+		'{count} changes': '{count} changes',
+		'done at {time}': 'done at {time}',
 		// site-school-blocks
 		Open: 'Open',
 		'Nothing here yet.': 'Nothing here yet.',
@@ -126,6 +155,14 @@ export default {
 		'Case {reference}': 'Case {reference}',
 		'Step {current} of {total}': 'Step {current} of {total}',
 		'Answer by {date}': 'Answer by {date}',
+		'ready by {date}': 'ready by {date}',
+		'no later than {date}': 'no later than {date}',
+		today: 'today',
+		yesterday: 'yesterday',
+		'Add a document': 'Add a document',
+		'{name} has been added to your case.': '{name} has been added to your case.',
+		'The document could not be added. Try again.':
+			'The document could not be added. Try again.',
 		Done: 'Done',
 		'Current step': 'Current step',
 		'Still to come': 'Still to come',

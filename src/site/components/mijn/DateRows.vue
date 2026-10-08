@@ -162,8 +162,8 @@ export default {
 .pq-date-rows__line {
 	margin: 0;
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 }
 
@@ -179,8 +179,8 @@ export default {
 	margin: 0;
 	font-size: 0.9375rem;
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 }
 

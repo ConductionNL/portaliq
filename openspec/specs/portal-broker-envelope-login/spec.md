@@ -98,3 +98,67 @@ Every failure of the broker start or callback SHALL redirect the browser to the 
 - **GIVEN** one login refused for an expired state and another refused for a wrong organisation claim
 - **WHEN** the resident lands back on the portal after each
 - **THEN** both show the same message and the same address
+
+### Requirement: A broker login returns to the portal it started from (REQ-BEL-007)
+
+The broker start SHALL resolve the `portal` it is given once. When `org` is empty the organisation SHALL be the resolved portal's `organisation`. The return address stored in the state row SHALL be the site page the login started on, when that page is on the site route, else the portal address with `?portal=<slug>` of the resolved portal, URL-encoded. An unknown portal SHALL return to the plain portal address. Only a resolved portal's slug SHALL be echoed, never the raw input. The OIDC start SHALL forward the resolved portal's slug when it hands a provider to the broker start.
+
+#### Scenario: A parent signs in through the broker on the school portal
+- **GIVEN** a portal `wilgenboom` whose organisation routes DigiD to integriq
+- **WHEN** a parent starts DigiD on `/apps/portaliq/portal?portal=wilgenboom` and the login completes
+- **THEN** she lands on `/apps/portaliq/portal?portal=wilgenboom` with the bearer in the fragment, and the header shows the portal's title
+- @e2e exclude integriq's vendor half is not built, so no broker round trip runs locally; covered by PHPUnit `BrokerSessionControllerTest::testALoginStartedFromAPortalReturnsToIt` and `SessionControllerTest::testOidcStartForwardsABrokerRoutedProvider`
+
+#### Scenario: An unknown portal returns to the plain portal
+- **GIVEN** no portal with slug `no-such-portal`
+- **WHEN** a broker login starts with `portal=no-such-portal`
+- **THEN** the stored return address is the plain portal address
+- @e2e exclude covered by PHPUnit `BrokerSessionControllerTest::testALoginStartedFromAPortalReturnsToIt`
+
+### Requirement: A failed broker login shows its message on the portal it started from (REQ-BEL-008)
+
+A failed broker start SHALL land on the resolved portal's address with `#signin=failed`. A failure after the state row is spent SHALL land on the return address stored in that row with `#signin=failed`, when that address is a path on this server, else on the plain portal address. The fragment and the message SHALL stay the same for every cause (REQ-BEL-006).
+
+#### Scenario: A refused exchange shows the message on the school portal
+- **GIVEN** a broker login started on `/apps/portaliq/portal?portal=wilgenboom`
+- **WHEN** integriq's exchange refuses the code
+- **THEN** the parent lands on `/apps/portaliq/portal?portal=wilgenboom#signin=failed`
+- @e2e exclude covered by PHPUnit `BrokerSessionControllerTest::testAFailedLoginLandsOnThePortalItStartedFrom` and `BrokerLoginTest::testCallbackRefusesANon200Exchange`
+
+### Requirement: The relay state travels under integriq's name (REQ-BEL-009)
+
+The broker start SHALL send the relay state to integriq as `relayState`. The callback SHALL read the relay state from `relayState`, and from `state` when `relayState` is absent.
+
+#### Scenario: Integriq hands the relay state back
+- **GIVEN** a broker login whose state row was written for relay state `r-1`
+- **WHEN** integriq redirects to the callback with `code` and `relayState=r-1`
+- **THEN** the callback spends the state row for `r-1`
+- @e2e exclude covered by PHPUnit `BrokerSessionControllerTest::testTheCallbackReadsIntegriqsRelayState` and `BrokerLoginTest::testStartRedirectsWithRelayState`
+
+### Requirement: A portal offers its own organisation's sign-in
+
+When the portal SPA is served for a resolved portal and no `?org=` is given, the runtime config MUST offer the login providers of the portal's own `organisation`. The runtime config MUST carry `signinOrganisation`, the organisation a login starts with (`?org=` when given, else the portal's `organisation`), and the SPA MUST start every login and silent sign-in with it, never with the portal's slug. The runtime config MUST carry `devLogin`, true only when the server accepts the dev login, and the SPA MUST show the dev login button only then.
+
+#### Scenario: A parent signs in on the school portal's own address
+
+- GIVEN a portal with slug `wilgenboom` whose `organisation` has a DigiD broker configured
+- WHEN a parent opens `/apps/portaliq/portal?portal=wilgenboom` and chooses DigiD
+- THEN the login starts for the portal's organisation and the parent lands signed in
+- @e2e learniq `tests/e2e/po-parent-flows.spec.ts`
+
+#### Scenario: No test button for residents
+
+- GIVEN an instance without `debug` and without `dev_login_enabled`
+- WHEN a resident opens the portal login screen
+- THEN no dev login button is shown
+- @e2e exclude covered by PHPUnit `PortalRuntimeConfigResolverTest::testTheDevLoginIsOfferedOnlyWhereItIsEnabled` and node `tests/broker-login.spec.mjs`
+
+### Requirement: A login returns to the portal it started from
+
+The SPA MUST send the serving portal's slug with a login start, and the OIDC start MUST record a return address with `?portal=<slug>` when that slug resolves to a portal, so the portal's title and branding survive the sign-in. An unknown slug MUST return to the plain portal address.
+
+#### Scenario: The parent lands back on the school portal
+- GIVEN a parent who starts DigiD on `/apps/portaliq/portal?portal=wilgenboom`
+- WHEN the broker sends her back
+- THEN she lands on `/apps/portaliq/portal?portal=wilgenboom` and the header shows the portal's title
+- @e2e exclude covered by PHPUnit `SessionControllerTest::testALoginStartedFromAPortalReturnsToIt`; checked live on the school portal

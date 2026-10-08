@@ -29,6 +29,30 @@
 			:text="tr('What you still have to do could not be loaded.')"
 			:retryLabel="tr('Try again')"
 			@retry="$emit('retry')" />
+		<!-- With `emptyNotice` nothing to do reads as a notice in the ok
+		     tone (zuiddrecht-resident-pages-match-the-boards). -->
+		<div
+			v-else-if="entries.length === 0 && block.emptyNotice === true"
+			class="utrecht-alert utrecht-alert--ok pq-tasks-block__ok"
+			role="status"
+			data-testid="mijn-tasks-ok">
+			<svg
+				class="pq-tasks-block__ok-icon"
+				viewBox="0 0 24 24"
+				aria-hidden="true"
+				focusable="false">
+				<path
+					d="M5 12.5l4.5 4.5L19 7"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.4"
+					stroke-linecap="round"
+					stroke-linejoin="round" />
+			</svg>
+			<p class="utrecht-paragraph pq-tasks-block__ok-text">
+				{{ tr('You have nothing to do right now.') }}
+			</p>
+		</div>
 		<EmptyState
 			v-else-if="entries.length === 0"
 			:text="tr('You have nothing to do right now.')" />
@@ -41,14 +65,15 @@
 				v-for="entry in entries"
 				:key="entry.id || entry.title"
 				class="pq-tasks-block__highlight"
+				:class="{ [`pq-tasks-block__highlight--${block.tone}`]: block.tone }"
 				data-testid="mijn-task-highlight">
 				<div class="pq-tasks-block__highlight-text">
 					<p v-if="block.eyebrow" class="pq-tasks-block__eyebrow">
 						{{ block.eyebrow }}
 					</p>
 					<p class="pq-tasks-block__highlight-title">{{ entry.title }}</p>
-					<p v-if="entry.subtitle" class="pq-tasks-block__highlight-line">
-						{{ entry.subtitle }}
+					<p v-if="lineOf(entry)" class="pq-tasks-block__highlight-line">
+						{{ lineOf(entry) }}
 					</p>
 				</div>
 				<a
@@ -82,6 +107,7 @@ import {
 	recordRoute,
 	sessionStore,
 } from '../../pages/inbox/inbox.js'
+import { dayInWords } from './cases.js'
 import { joined } from './displays.js'
 import { deadlineBadge, mijnTranslator, siteHref, taskRows } from './rows.js'
 
@@ -190,6 +216,30 @@ export default {
 		},
 
 		/**
+		 * The line under a highlight's title: its sub line, and with
+		 * `dueInLine` the day it is due by ("Voor uw aanvraag, uiterlijk 18
+		 * oktober").
+		 *
+		 * @param {object} entry The row.
+		 * @return {string}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		lineOf(entry) {
+			const parts = [entry.subtitle]
+			if (this.block?.dueInLine === true && entry.due) {
+				const day = dayInWords(
+					entry.due,
+					this.today || new Date(),
+					this.locale,
+				)
+				if (day) {
+					parts.push(this.tr('no later than {date}', { date: day }))
+				}
+			}
+			return parts.filter(Boolean).join(', ')
+		},
+
+		/**
 		 * Keep the row to open, so the page that shows it selects it, then go.
 		 *
 		 * @param {object} entry The row.
@@ -239,6 +289,38 @@ export default {
 	);
 }
 
+/* The board's tones (zuiddrecht-resident-pages-match-the-boards): a
+   warning wash for something the resident must send, an info wash for
+   something to read; the title a step larger. */
+.pq-tasks-block__highlight--warning {
+	border-color: color-mix(
+		in srgb,
+		var(--nldesign-color-warning, #e17000) 40%,
+		var(--nldesign-color-background, #fff)
+	);
+	background: var(
+		--nldesign-component-status-badge-warning-background-color,
+		rgba(var(--nldesign-color-warning-rgb, 225, 112, 0), 0.12)
+	);
+}
+
+.pq-tasks-block__highlight--info {
+	border-color: color-mix(
+		in srgb,
+		var(--nldesign-color-primary, #1b1b23) 40%,
+		var(--nldesign-color-background, #fff)
+	);
+	background: var(
+		--nldesign-component-status-badge-info-background-color,
+		var(--nldesign-color-primary-light, transparent)
+	);
+}
+
+.pq-tasks-block__highlight--warning .pq-tasks-block__highlight-title,
+.pq-tasks-block__highlight--info .pq-tasks-block__highlight-title {
+	font-size: 1.1875rem;
+}
+
 .pq-tasks-block__eyebrow {
 	margin: 0 0 0.25rem;
 	color: var(
@@ -263,5 +345,42 @@ export default {
 .pq-tasks-block__list {
 	margin: 0;
 	padding: 0;
+}
+
+/* Nothing to do, as a notice in the ok tone: a tick and one sentence. */
+.pq-tasks-block__ok {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 1rem 1.25rem;
+	border: 1px solid
+		var(
+			--utrecht-alert-ok-border-color,
+			var(--nldesign-color-success, currentcolor)
+		);
+	border-radius: var(--utrecht-alert-border-radius, 0.25rem);
+	background-color: var(
+		--utrecht-alert-ok-background-color,
+		var(
+			--nldesign-component-status-badge-success-background-color,
+			rgba(var(--nldesign-color-success-rgb, 57, 135, 12), 0.12)
+		)
+	);
+	color: var(--utrecht-alert-ok-color, inherit);
+}
+
+.pq-tasks-block__ok-icon {
+	flex: none;
+	inline-size: 1.375rem;
+	block-size: 1.375rem;
+	color: var(
+		--utrecht-alert-icon-ok-color,
+		var(--nldesign-color-success, currentcolor)
+	);
+}
+
+.pq-tasks-block__ok-text {
+	margin: 0;
+	font-size: 1.125rem;
 }
 </style>

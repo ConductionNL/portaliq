@@ -26,7 +26,7 @@ export default {
 		'Acting for': 'Namens',
 		'Add a document': 'Document toevoegen',
 		'Add an e-mail address so we can tell you when something changes.':
-			'Voeg een e-mailadres toe, dan laten we u weten als er iets verandert.',
+			'Voeg een e-mailadres toe. Dan laten we u weten als er iets verandert.',
 		'Add e-mail address': 'E-mailadres toevoegen',
 		'Add phone number': 'Telefoonnummer toevoegen',
 		Address: 'Adres',
@@ -54,7 +54,7 @@ export default {
 			'Er wachten vijf adressen op bevestiging. Bevestig of verwijder er eerst een.',
 		'For {party}': 'Voor {party}',
 		'Give a reason for your request.': 'Geef een reden voor uw aanvraag.',
-		'Go to My account': 'Naar Mijn account',
+		'Go to My account': 'Naar mijn account',
 		Granted: 'Toegekend',
 		'How should we contact you?': 'Hoe wilt u dat we contact met u opnemen?',
 		'If you withdraw, we stop handling your request. You cannot undo this.':
@@ -67,6 +67,7 @@ export default {
 		'Make preferred': 'Maak voorkeursadres',
 		'My account': 'Mijn account',
 		'My cases': 'Mijn zaken',
+		'Due by': 'Uiterlijk klaar op',
 		'My details': 'Mijn gegevens',
 		Name: 'Naam',
 		'New e-mail address': 'Nieuw e-mailadres',
@@ -225,6 +226,7 @@ export default {
 		'Make preferred': 'Make preferred',
 		'My account': 'My account',
 		'My cases': 'My cases',
+		'Due by': 'Due by',
 		'My details': 'My details',
 		Name: 'Name',
 		'New e-mail address': 'New e-mail address',

@@ -10,7 +10,12 @@
 	sanitisation posture beside the text widget's, and this app has one.
 -->
 <template>
-	<p class="utrecht-paragraph" data-testid="nl-paragraph">{{ text }}</p>
+	<p
+		class="utrecht-paragraph"
+		:class="{ 'utrecht-paragraph--lead': lead }"
+		data-testid="nl-paragraph">
+		{{ text }}
+	</p>
 </template>
 
 <script>
@@ -22,6 +27,8 @@ export default {
 	props: {
 		/** The text the visitor reads. */
 		text: { type: String, default: '' },
+		/** Larger, as the first paragraph of a page (Utrecht's lead paragraph). */
+		lead: { type: Boolean, default: false },
 	},
 }
 </script>

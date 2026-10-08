@@ -247,6 +247,12 @@ export default {
 		 * (an attached action): `(body) => Promise<{ok, object, errors?}>`.
 		 */
 		send: { type: Function, default: null },
+		/**
+		 * Values the page gives and the resident is not asked for, by field:
+		 * the open record a call to action carries into the action's
+		 * `recordField` (case-actions-on-the-case-page).
+		 */
+		preset: { type: Object, default: () => ({}) },
 	},
 
 	emits: ['submitted'],
@@ -339,7 +345,11 @@ export default {
 		 */
 		shownFields() {
 			if (!this.hasSteps) {
-				return this.fields
+				// A field the action hides, or one the page already gave
+				// (`preset`), is not asked; the step branch below does the same.
+				return this.fields.filter(
+					(field) => this.isShownField(field) && !(field in this.preset),
+				)
 			}
 			return this.onReview
 				? []
@@ -446,14 +456,17 @@ export default {
 
 	methods: {
 		/**
-		 * One empty string per whitelisted field.
+		 * One empty string per whitelisted field, or the value the page gives
+		 * for it (`preset`).
 		 *
 		 * @return {Record<string, string>} The values.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		emptyValues() {
 			const values = {}
 			for (const field of formFields(this.action)) {
-				values[field] = ''
+				values[field] =
+					field in this.preset ? String(this.preset[field]) : ''
 			}
 			return values
 		},

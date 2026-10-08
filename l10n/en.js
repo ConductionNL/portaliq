@@ -2213,7 +2213,27 @@ OC.L10N.register(
         "Menu of the own area": "Menu of the own area",
         "How the menu beside the visitor's own pages opens.": "How the menu beside the visitor's own pages opens.",
         "Card label": "Card label",
-        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card."
+        "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.": "The line above the organisation's name at the top of the menu, shown while the visitor acts for an organisation, such as U regelt het voor. Empty shows no card.",
+        "My cases page": "My cases page",
+        "How the page that lists every case draws them.": "How the page that lists every case draws them.",
+        "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by.": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by.",
+        "The menu in this portal's own groups, in order: each a title and the items in it by name. An item is a section of the own area (overview, cases, tasks, inbox, messages, news, access, details, account) or a contributed page as app:page, such as dossiq:berichten. An item not named here keeps its place in the groups the site builds itself, so nothing becomes unreachable. Empty keeps the site's own groups.": "The menu in this portal's own groups, in order: each a title and the items in it by name. An item is a section of the own area (overview, cases, tasks, inbox, messages, news, access, details, account) or a contributed page as app:page, such as dossiq:berichten. An item not named here keeps its place in the groups the site builds itself, so nothing becomes unreachable. Empty keeps the site's own groups.",
+        "Group title": "Group title",
+        "The heading over this group of the menu, such as Zaken en taken.": "The heading over this group of the menu, such as Zaken en taken.",
+        "Group items": "Group items",
+        "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.": "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.",
+        "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).": "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).",
+        "On a timetable: the small label over the first item of the day.": "On a timetable: the small label over the first item of the day.",
+        "firstLabel": "firstLabel",
+        "About": "About",
+        "About record": "About record",
+        "The name of the staff member, copied from the contact the app named when the thread was started.": "The name of the staff member, copied from the contact the app named when the thread was started.",
+        "The resident's own record this conversation is about, such as a child's enrolment (site-messages-per-record). Proven by MessageContactReader when the thread is started.": "The resident's own record this conversation is about, such as a child's enrolment (site-messages-per-record). Proven by MessageContactReader when the thread is started.",
+        "The role of that staff member in words, such as Mentor.": "The role of that staff member in words, such as Mentor.",
+        "The subject line of the conversation.": "The subject line of the conversation.",
+        "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "The words that name that record, copied when the thread is started, such as Vera, Groep 7.",
+        "With": "With",
+        "Only on this demo. No password is asked.": "Only on this demo. No password is asked."
     },
     "nplurals=2; plural=(n != 1);"
 )

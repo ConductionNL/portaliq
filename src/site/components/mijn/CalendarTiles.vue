@@ -150,8 +150,8 @@ export default {
 
 .pq-calendar-tiles__meta {
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 	font-size: 0.9375rem;
 }

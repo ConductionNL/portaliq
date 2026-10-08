@@ -64,6 +64,15 @@
 					:src="lead.image.url"
 					:alt="lead.image.alt"
 					loading="lazy" />
+				<!-- No photo yet: a quiet block that holds the photo's place, so
+				     the lead keeps the board's shape (site-matches-the-zuiddrecht-boards). -->
+				<div
+					v-else-if="leadPlaceholder"
+					class="nl-news-list__photo nl-news-list__photo--placeholder"
+					aria-hidden="true"
+					data-testid="nl-news-lead-placeholder">
+					{{ leadPlaceholder }}
+				</div>
 				<div class="nl-news-list__lead-text">
 					<span class="nl-news-list__meta">{{ metaOf(lead) }}</span>
 					<h3 class="utrecht-heading-3 nl-news-list__lead-title">
@@ -125,6 +134,8 @@ export default {
 		limit: { type: [Number, String], default: 4 },
 		/** The newest item as a card with photo and intro. */
 		featured: { type: Boolean, default: true },
+		/** Words in the photo's place while the lead has no photo; empty draws nothing. */
+		leadPlaceholder: { type: String, default: '' },
 		/** `list` or `compact`. */
 		display: { type: String, default: 'list' },
 		/** Show who an item is for beside its date. */
@@ -314,7 +325,21 @@ export default {
 		--nldesign-website-border-radius-large,
 		var(--utrecht-border-radius-md, 0.75rem)
 	);
-	background: var(--nldesign-color-primary-light, transparent);
+	background: var(
+		--thematiq-placeholder-background-color,
+		var(--nldesign-color-primary-light, transparent)
+	);
+}
+
+.nl-news-list__photo--placeholder {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(
+		--nldesign-color-primary-hover,
+		var(--utrecht-document-color, CanvasText)
+	);
+	font-size: 0.9375rem;
 }
 
 .nl-news-list__lead-text {
@@ -339,8 +364,8 @@ export default {
 
 .nl-news-list__meta {
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 	font-size: 0.9375rem;
 }

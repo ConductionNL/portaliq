@@ -11,6 +11,28 @@
  */
 
 /*
+ * THE BOARDS' TYPE ON THE PAGE (zuiddrecht round 3, board Home and the
+ * pages under it). Content text is 17px on every board while the header and
+ * the footer stay at 16px; sections carry their own heading sizes (32px for
+ * a band's heading, 26px for a card's, 22px for a small card's, 20px for a
+ * column's). Only a portal with the designed header.
+ *
+ *   --nldesign-website-content-font-size   text on the page (falls back to
+ *                                           the paragraph's own size)
+ */
+.pq-site:has(.pq-site__header--designed) .pq-site__main {
+	font-size: var(--nldesign-website-content-font-size, inherit);
+}
+
+:where(.pq-site:has(.pq-site__header--designed) .pq-site__main)
+	.utrecht-paragraph:not(.utrecht-paragraph--lead) {
+	font-size: var(
+		--nldesign-website-content-font-size,
+		var(--utrecht-paragraph-font-size, inherit)
+	);
+}
+
+/*
  * FOOTER BANDS BY ROLE (REQ-PTB-005).
  *
  * `nlds-app.css` styles the footer's bands by position:
@@ -362,10 +384,13 @@
  * column. Only a portal that declares `headerSearch` or `accountLabel`.
  */
 .pq-site .pq-site__header--designed .ac-header__navigation-main {
-	--navigation-bar-height: 96px;
+	--navigation-bar-height: 92px;
 	border-block-end: 1px solid
 		var(--nldesign-color-border, var(--tilburg-line-border-color));
-	padding-inline: max(16px, calc((100% - 1232px) / 2));
+	padding-inline: max(
+		16px,
+		calc((100% - var(--nldesign-website-header-max-width, 1232px)) / 2)
+	);
 }
 
 .pq-site .pq-site__header--designed .ac-header__right-section {
@@ -373,14 +398,14 @@
 }
 
 .pq-site .pq-site__header--designed .ac-header__navigation-secondary .container {
-	max-inline-size: 1232px;
+	max-inline-size: var(--nldesign-website-header-max-width, 1232px);
 	margin-inline: auto;
-	padding-inline: 16px;
+	padding-inline: var(--nldesign-website-header-gutter, 16px);
 }
 
 .pq-site .pq-site__header--designed .ac-c-navigation__link-container {
 	position: relative;
-	padding-block: 14px;
+	padding-block: 16px 15px;
 	padding-inline: 14px;
 }
 
@@ -480,6 +505,13 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  */
 .pq-site:has(.pq-site__header--designed) .pq-site__main {
 	padding-block-end: 64px;
+}
+
+/* A page that ends in a band (board Home: the grey "Bestuur en organisatie"
+   band) brings its own room, and the band meets the footer. */
+.pq-site:has(.pq-site__header--designed)
+	.pq-site__main:has([data-testid='widget-grid'] > :last-child:not(.container)) {
+	padding-block-end: 0;
 }
 
 /*
@@ -624,7 +656,10 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 .pq-header-tools__subline {
-	color: var(--nldesign-color-text-muted, var(--tilburg-document-subtle-color));
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--tilburg-document-subtle-color))
+	);
 	font-size: 0.8125rem;
 }
 
@@ -885,36 +920,6 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	color: var(--nldesign-hero-body-color, var(--utrecht-document-inverse-color));
 }
 
-/*
- * THE HERO'S TYPE (site-hero-and-notice-band). Every design, the four schools
- * and Zuiddrecht alike, sets the hero heading at 56px over at most about
- * thirteen words' width, so it breaks over two lines, with a 20px lead under
- * it. The vendored sheet gave both the body size, so the proof of 06 Oct
- * showed the heading small and on one line and the lead as one long line.
- *
- * A set may name its own measures; without them the heading scales from 32px
- * on a phone to 56px on a desktop.
- */
-.pq-site .ac-hero .ac-hero__title {
-	max-inline-size: var(--nldesign-hero-title-max-inline-size, 13em);
-	margin-block: 0 var(--nldesign-hero-title-margin-block-end, 22px);
-	font-size: var(
-		--nldesign-hero-title-font-size,
-		clamp(2rem, 1rem + 3.4vw, 3.5rem)
-	);
-	font-weight: var(--nldesign-hero-title-font-weight, 700);
-	line-height: var(--nldesign-hero-title-line-height, 1.08);
-	letter-spacing: var(--nldesign-hero-title-letter-spacing, -0.02em);
-	overflow-wrap: break-word;
-}
-
-.pq-site .ac-hero .ac-hero__subtitle {
-	max-inline-size: var(--nldesign-hero-subtitle-max-inline-size, 32em);
-	margin-block: 0;
-	font-size: var(--nldesign-hero-subtitle-font-size, 1.25rem);
-	line-height: var(--nldesign-hero-subtitle-line-height, 1.6);
-}
-
 .pq-site .ac-hero .pq-hero__action {
 	border-radius: var(--nldesign-website-border-radius, 0);
 }
@@ -1046,7 +1051,10 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 
 .pq-signin__hint {
 	margin: 0;
-	color: var(--nldesign-color-text-muted, var(--tilburg-document-subtle-color));
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--tilburg-document-subtle-color))
+	);
 	font-size: 0.9375rem;
 }
 
@@ -1179,7 +1187,10 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  * classes and an attribute), which load after this sheet.
  */
 .pq-site .pq-account .pq-resident-menu__title {
-	color: var(--nldesign-color-text-muted, var(--utrecht-document-color));
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color))
+	);
 	font-size: 0.8125rem;
 	font-weight: 700;
 	letter-spacing: 0.08em;
@@ -1245,7 +1256,10 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 .pq-site .pq-account .pq-resident-menu__card-label {
-	color: var(--nldesign-color-text-muted, var(--utrecht-document-color));
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color))
+	);
 	font-size: 0.8125rem;
 	font-weight: 700;
 	letter-spacing: 0.08em;
@@ -1255,4 +1269,1818 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site .pq-account .pq-resident-menu__card-title {
 	font-size: 1.0625rem;
 	font-weight: 700;
+}
+
+/*
+ * THE PAGE TITLE AT THE SET'S OWN SIZE (site-matches-the-zuiddrecht-boards).
+ * The h1 wears `utrecht-heading-2` on purpose (see App.vue); a set that wants
+ * its content pages to open larger names the size in one token. Without the
+ * token nothing changes.
+ */
+.pq-site [data-testid='page-title'] {
+	font-size: var(
+		--nldesign-website-page-title-size,
+		var(--utrecht-heading-2-font-size, revert)
+	);
+	line-height: var(
+		--nldesign-website-page-title-line-height,
+		var(--utrecht-heading-2-line-height, revert)
+	);
+}
+
+/*
+ * THE PLAIN HERO (site-matches-the-zuiddrecht-boards, board Home): the
+ * question large, the form on the band itself with input and button joined,
+ * the popular links under it, the emblem faint at the end of the band. Only
+ * when a placement asks for `variant: plain`; the card variant is untouched.
+ */
+.pq-site .ac-hero.pq-hero--plain {
+	padding-block: 4.5rem 7rem;
+}
+
+.pq-site .ac-hero.pq-hero--plain > .container {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-hero__title {
+	max-inline-size: 45rem;
+	margin: 0;
+	font-size: var(--nldesign-website-hero-title-size, 3.5rem);
+	font-weight: 700;
+	line-height: 1.05;
+	letter-spacing: -0.01em;
+}
+
+/*
+ * The lead under the plain hero's heading (site-hero-shows-its-heading): 20px
+ * on a line of at most 40rem, as the four school boards draw it. Before
+ * this a plain hero gave its lead the body size on one long line.
+ */
+.pq-site .ac-hero.pq-hero--plain .ac-hero__subtitle {
+	max-inline-size: 40rem;
+	margin: 0;
+	font-size: var(--nldesign-website-hero-lead-size, 1.25rem);
+	line-height: 1.6;
+}
+
+.pq-site .ac-hero.pq-hero--plain .pq-hero__search {
+	max-inline-size: 45rem;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__label {
+	margin-block-end: 0.625rem;
+	font-size: 1.125rem;
+	font-weight: 400;
+	color: var(--nldesign-hero-body-color, inherit);
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__search {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__input.utrecht-textbox {
+	flex: 1 1 20rem;
+	min-inline-size: 0;
+	block-size: 3.75rem;
+	box-sizing: border-box;
+	padding-inline: 1.125rem;
+	border: 2px solid var(--nldesign-color-primary-hover, currentcolor);
+	border-inline-end: 0;
+	border-radius: var(--nldesign-website-border-radius, 0) 0 0
+		var(--nldesign-website-border-radius, 0);
+	background: var(--utrecht-document-background-color, Canvas);
+	font-size: 1.1875rem;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__button.utrecht-button {
+	block-size: 3.75rem;
+	padding-inline: 1.875rem;
+	border: 0;
+	border-radius: 0 var(--nldesign-website-border-radius, 0)
+		var(--nldesign-website-border-radius, 0) 0;
+	font-size: 1.1875rem;
+	font-weight: 600;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__search-icon {
+	display: none;
+}
+
+.pq-site .ac-hero.pq-hero--plain .pq-hero__popular {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.125rem;
+	margin: 0;
+	font-size: 1.0625rem;
+	color: var(--nldesign-hero-body-color, inherit);
+}
+
+.pq-site .ac-hero.pq-hero--plain .pq-hero__popular-label {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
+}
+
+.pq-site .ac-hero.pq-hero--plain .pq-hero__popular-link {
+	color: var(--nldesign-color-primary, inherit);
+}
+
+.pq-site .ac-hero.pq-hero--plain::after {
+	inset-block: -60px auto;
+	inset-inline-end: -70px;
+	inline-size: auto;
+	block-size: 620px;
+	aspect-ratio: 1;
+	opacity: var(--nldesign-website-hero-decoration-opacity, 0.1);
+}
+
+@media (max-width: 600px) {
+	.pq-site .ac-hero.pq-hero--plain {
+		padding-block: 2rem 2.5rem;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain > .container {
+		gap: 0.875rem;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-hero__title {
+		font-size: 2rem;
+		line-height: 1.15;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__search {
+		flex-direction: row;
+		flex-wrap: nowrap;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__input.utrecht-textbox,
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__button.utrecht-button {
+		block-size: 3.25rem;
+		font-size: 1.125rem;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__input.utrecht-textbox {
+		flex: 1 1 auto;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain .ac-search-box__button.utrecht-button {
+		padding-inline: 1.125rem;
+	}
+
+	.pq-site .ac-hero.pq-hero--plain::after {
+		display: none;
+	}
+}
+
+/*
+ * THE PLAIN SEARCH (site-matches-the-zuiddrecht-boards, board Zoeken): the
+ * form on the page with input and button joined, the filters in a column on
+ * the left, the results as bordered cards with the title as the link colour,
+ * 44px pagination. Only for `variant: plain`; the reference look is untouched.
+ */
+.pq-site .pq-search--plain {
+	display: flex;
+	flex-direction: column;
+	gap: 1.75rem;
+}
+
+.pq-site .pq-search--plain .ac-search-box {
+	max-inline-size: 47.5rem;
+}
+
+.pq-site .pq-search--plain .ac-search-box__label {
+	position: absolute;
+	inline-size: 1px;
+	block-size: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.pq-site .pq-search--plain .ac-search-box__search {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 0;
+}
+
+.pq-site .pq-search--plain .ac-search-box__input.utrecht-textbox {
+	flex: 1 1 20rem;
+	min-inline-size: 0;
+	block-size: 3.25rem;
+	box-sizing: border-box;
+	padding-inline: 1rem;
+	border: 2px solid var(--utrecht-document-color, currentcolor);
+	border-inline-end: 0;
+	border-radius: var(--nldesign-website-border-radius, 0) 0 0
+		var(--nldesign-website-border-radius, 0);
+	font-size: 1.125rem;
+}
+
+.pq-site .pq-search--plain .ac-search-box__button.utrecht-button {
+	block-size: 3.25rem;
+	padding-inline: 1.625rem;
+	border: 0;
+	border-radius: 0 var(--nldesign-website-border-radius, 0)
+		var(--nldesign-website-border-radius, 0) 0;
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-site .pq-search--plain .ac-search-box__search-icon {
+	display: none;
+}
+
+.pq-site .pq-search--plain .pq-search__status:empty {
+	display: none;
+}
+
+.pq-site .pq-search--plain .pq-search__layout--faceted {
+	grid-template-columns: minmax(16.25rem, 18.75rem) minmax(0, 1fr);
+	gap: 2.5rem;
+}
+
+.pq-site .pq-search--plain .pq-search__facets h2 {
+	margin: 0 0 1.5rem;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-group {
+	margin-block-end: 1.5rem;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-group > legend {
+	margin-block-end: 0.5rem;
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-group input[type='date'] {
+	block-size: 3rem;
+	box-sizing: border-box;
+	padding-inline: 0.75rem;
+	border: 2px solid var(--nldesign-color-border-strong, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 0);
+	font-size: 1.0625rem;
+}
+
+.pq-site .pq-search--plain .pq-search__sort select {
+	block-size: 2.75rem;
+	padding-inline: 0.625rem;
+	border: 2px solid var(--nldesign-color-border-strong, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 0);
+	background: var(--utrecht-document-background-color, Canvas);
+	font-size: 1.0625rem;
+}
+
+.pq-site .pq-search--plain .pq-search__list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.pq-site .pq-search--plain .pq-search__result.ac-card {
+	margin: 0;
+	padding: 1.25rem 1.5rem;
+	border: 1px solid var(--nldesign-color-border-dark, currentcolor);
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	background: var(--utrecht-document-background-color, Canvas);
+	box-shadow: none;
+}
+
+.pq-site .pq-search--plain .pq-search__result-title {
+	font-size: 1.375rem;
+	font-weight: 600;
+	color: var(--nldesign-color-primary, currentcolor);
+	text-decoration: underline;
+}
+
+.pq-site .pq-search--plain .pq-search__meta-item {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, currentcolor)
+	);
+	font-weight: 400;
+}
+
+.pq-site .pq-search--plain .pq-search__more {
+	color: var(--nldesign-color-primary, currentcolor);
+}
+
+.pq-site .pq-search--plain .ams-pagination__button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-inline-size: 2.75rem;
+	block-size: 2.75rem;
+	padding-inline: 0.875rem;
+	border: 1px solid var(--nldesign-color-border-dark, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 0);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.pq-site .pq-search--plain .ams-pagination__button--current {
+	border-color: var(--nldesign-color-primary, currentcolor);
+	background: var(--nldesign-color-primary, CanvasText);
+	color: var(--nldesign-color-primary-text, Canvas);
+}
+
+@media (max-width: 800px) {
+	.pq-site .pq-search--plain .pq-search__layout--faceted {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.pq-site .pq-search--plain .pq-search__layout--faceted .pq-search__facets,
+	.pq-site .pq-search--plain .pq-search__layout--faceted .pq-search__results {
+		grid-column: 1;
+	}
+
+	.pq-site .pq-search--plain .pq-search__layout--faceted .pq-search__facets {
+		grid-row: 2;
+	}
+
+	.pq-site .pq-search--plain .pq-search__layout--faceted .pq-search__results {
+		grid-row: 1;
+	}
+}
+
+/*
+ * THE PAGE, HEADER AND FOOTER COLUMNS ARE THE SET'S CHOICE (zuiddrecht
+ * round 3). The Zuiddrecht boards put the page's content on a 1280px column
+ * with 24px inside it (the hero heading at x 104 on a 1440px screen), and the
+ * header and the footer's first band on a wider 1280px column with nothing
+ * inside it (the logo and the menu's first item at x 80). The vendored sheet
+ * draws a 1200px column with 16px inside it, and the designed header a
+ * 1232px one with the logo 16px in.
+ *
+ *   --nldesign-website-page-max-width     the content column (gutters included)
+ *   --nldesign-website-page-gutter        the room inside it
+ *   --nldesign-website-band-max-width     the column of a page that opens with
+ *                                         a hero, and of the trail
+ *   --nldesign-website-header-max-width   the header and footer column
+ *   --nldesign-website-header-gutter      the room inside that one
+ *
+ * Each falls back to today's measure, so a set that names none of them
+ * renders exactly as before. Only a portal with the designed header, and
+ * only from 1280px up: a narrower screen keeps the vendored 16px.
+ */
+@media screen and (min-width: 1280px) {
+	.pq-site:has(.pq-site__header--designed) .pq-site__main .container {
+		max-width: var(--nldesign-website-page-max-width, 1200px);
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-site__main
+		[data-testid='widget-grid']:has(> .ac-hero)
+		.container,
+	.pq-site:has(.pq-site__header--designed) .container.pq-site__contact-prompt,
+	.pq-site
+		.pq-site__header--designed
+		.ac-header__navigation-breadcrumb
+		.container {
+		max-width: var(
+			--nldesign-website-band-max-width,
+			var(--nldesign-website-page-max-width, 1200px)
+		);
+	}
+
+	.pq-site .pq-site__header--designed .ac-header__navigation-breadcrumb .container,
+	.pq-site:has(.pq-site__header--designed) .container.pq-site__contact-prompt,
+	.pq-site:has(.pq-site__header--designed) .pq-site__main .container {
+		padding-inline: var(
+			--nldesign-website-page-gutter,
+			var(--tilburg-space-column-rat)
+		);
+	}
+}
+
+.pq-site .pq-site__header--designed .ac-header__logo > * {
+	margin-inline-start: var(--nldesign-website-header-gutter, 1rem);
+}
+
+@media screen and (min-width: 1280px) {
+	.pq-site:has(.pq-site__header--designed)
+		.ac-footer
+		.pq-footer__band--content
+		.container {
+		max-width: var(
+			--nldesign-website-header-max-width,
+			var(--nldesign-website-page-max-width, 1200px)
+		);
+		padding-inline: var(
+			--nldesign-website-header-gutter,
+			var(--tilburg-space-column-rat)
+		);
+	}
+}
+
+/*
+ * THE E-MAIL PROMPT ON ONE LINE (board MijnOverzicht): the sentence, the
+ * button to the account page and "Not now" as a link, centred in one row
+ * that wraps on a narrow screen. Only a portal with the designed header;
+ * every other portal keeps the stacked prompt.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-contact-prompt {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-contact-prompt > .utrecht-paragraph {
+	flex: 1 1 360px;
+	margin: 0;
+	font-size: 1.0625rem;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-contact-prompt .pq-e-buttons {
+	align-items: center;
+	gap: 12px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-contact-prompt .utrecht-button {
+	min-block-size: 44px;
+	padding-block: 0;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-contact-prompt
+	.utrecht-button--secondary-action {
+	padding-inline: 14px;
+	/* The vendored sheet colours this button's border and text with
+	   !important (nlds-app.css), so only !important moves them. */
+	border-color: transparent !important;
+	background-color: transparent;
+	color: var(--utrecht-link-color, currentcolor) !important;
+	font-size: inherit;
+	text-decoration: underline;
+}
+
+/*
+ * THE RESIDENT AREA ON THE HEADER'S COLUMN (boards MijnOverzicht, MijnZaken,
+ * Berichten, Zaak): the menu starts under the logo, 40px under the trail
+ * (24px under its own 16px of room), and the page ends 72px above the
+ * footer. A set without the header tokens
+ * keeps the page column.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-account--with-menu {
+	padding-block: 24px 72px;
+}
+
+@media screen and (min-width: 1280px) {
+	.pq-site:has(.pq-site__header--designed)
+		.pq-site__main
+		.container.pq-account--with-menu {
+		max-width: var(
+			--nldesign-website-header-max-width,
+			var(--nldesign-website-page-max-width, 1200px)
+		);
+		padding-inline: var(
+			--nldesign-website-header-gutter,
+			var(--nldesign-website-page-gutter, var(--tilburg-space-column-rat))
+		);
+	}
+}
+
+/* The hero's form: input and button joined, the label 10px above them. */
+.pq-site .ac-hero.pq-hero--plain .ac-search-box .ac-flex,
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__search {
+	gap: 0;
+}
+
+.pq-site .ac-hero.pq-hero--plain .ac-search-box__input.utrecht-textbox {
+	max-inline-size: none;
+}
+
+/* Direct regelen: a 26px heading, 18px tasks. */
+.pq-site:has(.pq-site__header--designed) .nl-quick-tasks__heading {
+	margin-block-end: 12px;
+	font-size: 1.625rem;
+	line-height: 1.2;
+}
+
+.pq-site:has(.pq-site__header--designed) .nl-quick-tasks__label {
+	font-size: 1.125rem;
+}
+
+/* News: a 32px heading, a 28px lead title over an 18px summary. */
+.pq-site:has(.pq-site__header--designed) .nl-news-list__head h2 {
+	font-size: 2rem;
+	line-height: 1.2;
+}
+
+.pq-site:has(.pq-site__header--designed) .nl-news-list__lead-title {
+	font-size: 1.75rem;
+	line-height: 1.2;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.nl-news-list__lead-text
+	.utrecht-paragraph {
+	font-size: 1.125rem;
+	/* The vendored sheet sets a paragraph's line height with !important. */
+	line-height: 1.55 !important;
+}
+
+/* The two cards beside the news: 26px and 22px headings. */
+.pq-site:has(.pq-site__header--designed) .nl-signin-card__heading {
+	font-size: 1.625rem;
+	line-height: 1.2;
+}
+
+.pq-site:has(.pq-site__header--designed) .nl-link-list--card h2,
+.pq-site:has(.pq-site__header--designed) .nl-link-list--tinted h2,
+.pq-site:has(.pq-site__header--designed) .nl-signin-card--outline h2 {
+	font-size: 1.375rem;
+	line-height: 1.2;
+}
+
+/* Bestuur en organisatie: a 32px band heading, 20px column titles. */
+.pq-site:has(.pq-site__header--designed) .nl-link-columns__heading {
+	font-size: 2rem;
+	line-height: 1.2;
+}
+
+.pq-site:has(.pq-site__header--designed) .nl-link-columns__title {
+	font-size: 1.25rem;
+	line-height: 1.2;
+}
+
+/* A link on the page reads as a link: underlined, as on every board. */
+.pq-site:has(.pq-site__header--designed) .pq-site__main .utrecht-link-list__link {
+	text-decoration: underline;
+}
+
+/* The "Let op" strip: its line on the page column, in the header's 16px. */
+.pq-site:has(.pq-site__header--designed) .pq-site__main .nl-banner__text.container {
+	margin-inline: auto;
+	padding-block: 4px;
+	font-size: 1rem;
+	line-height: 1.2 !important;
+}
+
+/*
+ * THE HEADER'S CONTROLS AT 44PX (board Kop): the search box 260px wide, the
+ * way to the own area a 44px button in 600, and once signed in a pill with a
+ * round initials badge, the name in 600 and "Uitloggen" beside it.
+ */
+.pq-site .pq-site__header--designed .pq-header-tools__input.utrecht-textbox {
+	inline-size: 260px;
+	block-size: 44px;
+	min-block-size: 44px;
+	padding-block: 0;
+	padding-inline: 14px 48px;
+}
+
+.pq-site .pq-site__header--designed .pq-header-tools__account.utrecht-button-link {
+	min-block-size: 44px;
+	padding-block: 0;
+	padding-inline: 18px;
+	font-weight: 600;
+}
+
+.pq-site .pq-site__header--designed .pq-header-tools__chip {
+	min-block-size: 44px;
+	padding-block: 0;
+	padding-inline: 6px 16px;
+	border-radius: 22px;
+}
+
+.pq-site .pq-site__header--designed .pq-header-tools__initials {
+	inline-size: 32px;
+	block-size: 32px;
+	border-radius: 50%;
+}
+
+.pq-site .pq-site__header--designed .pq-header-tools__name,
+.pq-site .pq-site__header--designed .pq-header-tools__signout {
+	font-weight: 600;
+}
+
+/* The ticks on the dark sign-in card are white, as the board draws them. */
+.pq-site:has(.pq-site__header--designed)
+	.nl-signin-card--inverse
+	.nl-signin-card__point
+	svg {
+	stroke: currentcolor;
+}
+
+/*
+ * THE FOOTER (board Voet): 56px above and 44px under the columns, the brand
+ * column 380px wide and 72px from three link columns 32px apart, the
+ * sentence in 17px, the button 46px in 600; the bottom line in 14px on the
+ * page column.
+ */
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	section.pq-footer__band--designed.pq-footer__band--content {
+	padding-block: 56px 44px;
+}
+
+@media screen and (min-width: 1025px) {
+	.ac-footer section.pq-footer__band--designed.pq-footer__band .container {
+		grid-template-columns: minmax(0, 420px) repeat(3, minmax(0, 1fr));
+		column-gap: 32px;
+	}
+
+	.pq-site .pq-footer__band--designed .ac-footer__logo {
+		max-inline-size: 380px;
+	}
+}
+
+.pq-site .pq-footer__band--designed .ac-footer__menu-title {
+	margin-block-end: 14px;
+}
+
+.pq-site .pq-footer__band--designed .con-logo-container.footer,
+.pq-site .pq-footer__band--designed .pq-footer__description {
+	margin-block-end: 18px;
+}
+
+.pq-site .pq-footer__band--designed .pq-footer__description {
+	font-size: 1.0625rem;
+}
+
+.pq-site .ac-footer .pq-footer__band--designed .pq-footer__cta.utrecht-button-link {
+	min-block-size: 46px;
+	padding-inline: 18px;
+	font-weight: 600;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	section.pq-footer__band--legal.pq-footer__band {
+	padding-block: 16px;
+	font-size: 0.875rem;
+}
+
+@media screen and (min-width: 1280px) {
+	.pq-site:has(.pq-site__header--designed)
+		.ac-footer
+		.pq-footer__band--legal
+		.container {
+		max-width: var(
+			--nldesign-website-band-max-width,
+			var(--nldesign-website-page-max-width, 1200px)
+		);
+		padding-inline: var(
+			--nldesign-website-page-gutter,
+			var(--tilburg-space-column-rat)
+		);
+	}
+}
+
+/* The band after the news stands about 72px under the column beside it, as on the
+   board. */
+.pq-site:has(.pq-site__header--designed)
+	[data-testid='widget-grid']
+	> .container
+	+ .nl-link-columns {
+	margin-block-start: 52px;
+}
+
+/*
+ * THE TRAIL (board Kop): 15px, the page on screen and the separators muted.
+ */
+.pq-site .pq-site__header--designed .ac-breadcrumb {
+	font-size: 0.9375rem;
+}
+
+.pq-site .pq-site__header--designed .ac-breadcrumb [aria-current='page'],
+.pq-site .pq-site__header--designed .ac-breadcrumb__separator {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
+}
+
+/*
+ * A CONTENT PAGE (board Contentpagina): 30px section headings 12px further
+ * from what is above them, body text in 18px on 1.6, a table in the text
+ * colour, the lookup form's labels in 600 and its controls 48px high, the
+ * button link 52px in 600 without a line under it, the aside's heading 22px.
+ */
+.pq-site:has(.pq-site__header--designed)
+	[data-widget-key='nlHeading']
+	:is(h2, .utrecht-heading-2) {
+	margin-block-start: 12px;
+	font-size: 1.875rem;
+	line-height: 1.2;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	[data-widget-key='nlParagraph']
+	.utrecht-paragraph:not(.utrecht-paragraph--lead) {
+	font-size: 1.125rem;
+	/* The vendored sheet sets a paragraph's line height with !important. */
+	line-height: 1.6 !important;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-site__main .utrecht-table {
+	color: var(--nldesign-color-text, inherit);
+	font-size: 1.0625rem;
+}
+
+.pq-site:has(.pq-site__header--designed) .nl-lookup-form__label {
+	font-size: 1.0625rem;
+	font-weight: 600;
+}
+
+.pq-site:has(.pq-site__header--designed) .nl-lookup-form__input.utrecht-textbox,
+.pq-site:has(.pq-site__header--designed) .nl-lookup-form__button.utrecht-button {
+	block-size: 48px;
+	min-block-size: 48px;
+	font-size: 1.0625rem;
+}
+
+.pq-site:has(.pq-site__header--designed) .nl-lookup-form__button.utrecht-button {
+	padding-block: 0;
+	padding-inline: 22px;
+	font-weight: 600;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	[data-widget-key='nlButtonLink']
+	.utrecht-button {
+	min-block-size: 52px;
+	padding-block: 0;
+	padding-inline: 24px;
+	font-size: 1.125rem;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.pq-site:has(.pq-site__header--designed) .nl-link-list--accent h2 {
+	font-size: 1.375rem;
+	line-height: 1.2;
+}
+
+/*
+ * THE PAGE'S RHYTHM (boards Contentpagina, Zoeken, Publicatie): the title
+ * 40px under the trail and 24px above the first block, and 24px between the
+ * blocks of a page.
+ */
+.pq-site:has(.pq-site__header--designed) [data-testid='page-title'] {
+	margin-block: 24px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-site__main .pq-grid {
+	row-gap: 24px;
+}
+
+/* The publication's aside (board Publicatie): the cards' button 48px in
+   600, their text 17px. */
+.pq-site:has(.pq-site__header--designed)
+	.nl-signin-card--outline
+	.utrecht-button.nl-signin-card__button {
+	min-block-size: 48px;
+	padding-block: 0;
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+/*
+ * THE PLAIN SEARCH (board Zoeken): the input as wide as its form, the
+ * filters under a 24px heading, the period's own labels in 400.
+ */
+.pq-site .pq-search--plain .ac-search-box__input.utrecht-textbox {
+	max-inline-size: none;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-search__facets > h2 {
+	font-size: 1.5rem;
+	line-height: 1.2;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-search__facets
+	fieldset
+	label.utrecht-form-label {
+	font-weight: 400;
+}
+
+/*
+ * THE SIGN-IN PAGE (board Inloggen): 48px under the trail (32px under the
+ * trail's own room), the intro 20px,
+ * each card with its mark and title on one line and the text under both,
+ * 18px text and buttons in 600, the company card's mark a briefcase on the
+ * light ground.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-account:has(.pq-signin) {
+	padding-block-start: 0;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-signin {
+	padding-block: 32px 72px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-signin__title.utrecht-heading-1 {
+	margin-block-end: 12px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-signin__intro.utrecht-paragraph {
+	max-inline-size: 760px;
+	font-size: 1.25rem;
+	line-height: 1.5 !important;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-signin__card-head {
+	display: grid;
+	grid-template-columns: 56px minmax(0, 1fr);
+	align-items: center;
+	gap: 16px 14px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-signin__card-head > div {
+	display: contents;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-signin__card-text.utrecht-paragraph {
+	grid-column: 1 / -1;
+	margin: 0;
+	font-size: 1.125rem;
+	line-height: 1.5 !important;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-signin__button.utrecht-button-link {
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-signin__mark--eherkenning {
+	background-color: var(
+		--nldesign-color-primary-light,
+		var(--tilburg-color-blue-100)
+	);
+	color: var(--nldesign-color-primary-hover, var(--nldesign-color-primary));
+	font-size: 0;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-signin__mark--eherkenning::before {
+	content: '';
+	inline-size: 30px;
+	block-size: 30px;
+	background-color: currentcolor;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h16v12H4zM9 8V5h6v3M4 13h16'/%3E%3C/svg%3E")
+		center / contain no-repeat;
+}
+
+/*
+ * THE RESIDENT MENU (board MijnMenu): group names 14px with 0.04em between
+ * the capitals, in line with the entries; entries 60px rows in 500; the count
+ * a 24px red circle with 13px white figures. Only a portal with the designed
+ * header; the school designs keep theirs.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-account .pq-resident-menu__group {
+	gap: 0;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-account .pq-resident-menu__title {
+	margin-block-end: 6px;
+	padding-inline: 12px;
+	font-size: 0.875rem;
+	letter-spacing: 0.04em;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-account .pq-resident-menu__link {
+	min-block-size: 60px;
+	padding-block: 8px;
+	font-weight: 500;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-account
+	.pq-resident-menu__link--current {
+	font-weight: 700;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-account .pq-resident-menu__badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-inline-size: 24px;
+	block-size: 24px;
+	padding: 0 7px;
+	border-radius: 12px;
+	font-size: 0.8125rem;
+	line-height: 1;
+}
+
+/* A resident page's own title (boards MijnZaken, Berichten): 44px, as the
+   overview's greeting; a record's name keeps the 40px of its heading. */
+.pq-site:has(.pq-site__header--designed) .pq-account__content > h1,
+.pq-site:has(.pq-site__header--designed) .pq-cases > h1 {
+	margin-block-start: 0;
+	font-size: var(--utrecht-heading-1-font-size, 2.75rem);
+}
+
+/*
+ * THE PHONE HEADER (board MobielHome): the logo 36px high with a 44px square
+ * button to the own area beside it, then a 52px bar with "Menu" across and a
+ * search button at its end. The search box itself opens with the menu, as
+ * before. Only a portal with the designed header.
+ */
+@media (max-width: 767px) {
+	.pq-site .pq-site__header.pq-site__header--designed .ac-header__navigation-main {
+		display: grid;
+		grid-template-areas:
+			'logo account'
+			'menu search'
+			'form form';
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		grid-template-rows: 72px auto auto;
+		row-gap: 0;
+		block-size: auto;
+		min-block-size: 0;
+		padding: 0;
+	}
+
+	.pq-site .pq-site__header--designed .ac-header__logo {
+		grid-area: logo;
+		padding: 14px 16px;
+	}
+
+	.pq-site .pq-site__header--designed .ac-header__logo .con-logo-container {
+		block-size: 36px;
+	}
+
+	.pq-site .pq-site__header--designed .ac-header__right-section,
+	.pq-site .pq-site__header--designed .pq-header-tools {
+		display: contents;
+	}
+
+	.pq-site
+		.pq-site__header--designed
+		.pq-header-tools__account.utrecht-button-link {
+		grid-area: account;
+		margin-inline-end: 16px;
+	}
+
+	/* The label stays for a screen reader; the square shows the icon. */
+	.pq-site
+		.pq-site__header--designed
+		.pq-header-tools__account.utrecht-button-link {
+		justify-content: center;
+		inline-size: 44px;
+		padding: 0;
+		font-size: 0;
+	}
+
+	/* Signed in, the phone header carries the person's round initials in the
+	   square's place; inside the own area, where its menu is the way round,
+	   it carries "Uitloggen" instead (board MobielZaak). */
+	.pq-site .pq-site__header--designed .pq-header-tools__chip {
+		grid-area: account;
+		margin-inline-end: 16px;
+	}
+
+	.pq-site .pq-site__header--designed .pq-header-tools__signout {
+		display: none;
+	}
+
+	.pq-site:has(.pq-account--with-menu)
+		.pq-site__header--designed
+		.pq-header-tools__chip {
+		display: none;
+	}
+
+	.pq-site:has(.pq-account--with-menu)
+		.pq-site__header--designed
+		.pq-header-tools__signout {
+		display: inline-flex;
+		grid-area: account;
+		margin-inline-end: 16px;
+		text-decoration: underline;
+	}
+
+	.pq-site .pq-site__header--designed .pq-header-tools__menu {
+		grid-area: menu;
+		gap: 10px;
+		min-block-size: 52px;
+		padding-inline: 16px;
+		border: 0;
+		border-block-start: 1px solid
+			var(--nldesign-color-border, var(--tilburg-line-border-color));
+		border-radius: 0;
+		font-size: 1.125rem;
+	}
+
+	.pq-site .pq-site__header--designed .pq-header-tools__search {
+		display: flex;
+		grid-area: search;
+		align-self: stretch;
+		inline-size: 56px;
+		border-block-start: 1px solid
+			var(--nldesign-color-border, var(--tilburg-line-border-color));
+		border-inline-start: 1px solid
+			var(--nldesign-color-border, var(--tilburg-line-border-color));
+	}
+
+	.pq-site
+		.pq-site__header--designed
+		.pq-header-tools__search:not(.pq-header-tools__search--open)
+		.pq-header-tools__input {
+		position: absolute;
+		inline-size: 1px;
+		block-size: 1px;
+		min-inline-size: 0;
+		padding: 0;
+		border: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+	}
+
+	.pq-site
+		.pq-site__header--designed
+		.pq-header-tools__search:not(.pq-header-tools__search--open)
+		.pq-header-tools__submit {
+		position: static;
+		inline-size: 100%;
+		block-size: 52px;
+	}
+
+	.pq-site .pq-site__header--designed .pq-header-tools__search--open {
+		grid-area: form;
+		inline-size: auto;
+		padding: 8px 16px 12px;
+		border-inline-start: 0;
+	}
+}
+
+/* On a phone the hero keeps its question and its form; the popular links
+   are the "Veel gezocht" list right under it (board MobielHome). */
+@media (max-width: 767px) {
+	.pq-site:has(.pq-site__header--designed)
+		.ac-hero.pq-hero--plain
+		.pq-hero__popular {
+		display: none;
+	}
+}
+
+/* On a phone the "Direct regelen" list ends at its six rows (the way to all
+   subjects is in the menu), and the home page reads tasks, the own area,
+   then the news (board MobielHome). */
+@media (max-width: 767px) {
+	.pq-site:has(.pq-site__header--designed)
+		.nl-quick-tasks--narrow-list
+		.nl-quick-tasks__more {
+		display: none;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-grid:has(> [data-widget-key='nlSignIn']) {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-grid
+		> [data-widget-key='nlSignIn'] {
+		order: 1;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-grid:has(> [data-widget-key='nlSignIn'])
+		> [data-widget-key='nlNewsList'] {
+		order: 2;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-grid:has(> [data-widget-key='nlSignIn'])
+		> [data-widget-key='nlLinkList'] {
+		order: 3;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .nl-signin-card {
+		padding: 24px;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .nl-signin-card__heading {
+		font-size: 1.5rem;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .nl-news-list__head h2 {
+		font-size: 1.625rem;
+	}
+}
+
+/* The news rows: the date in a 150px column (board Home). */
+.pq-site:has(.pq-site__header--designed) .nl-news-list__row-meta {
+	flex-basis: 150px;
+}
+
+/* The sign-in page's notice reads in the page's ink (board Inloggen). */
+.pq-site:has(.pq-site__header--designed) .pq-signin__notice {
+	color: var(--nldesign-color-text, inherit);
+}
+
+/* The one-click demo card (example-resident-demo-login) is not on the board:
+   it takes a row of its own under the two board cards, with its button at
+   the end, so the two cards keep the board's place and size. */
+@media (min-width: 768px) {
+	.pq-site:has(.pq-site__header--designed) .pq-signin__card:has(.pq-signin__demo) {
+		display: grid;
+		grid-column: 1 / -1;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+		align-items: center;
+		gap: 8px 24px;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-signin__card:has(.pq-signin__demo)
+		.pq-signin__button {
+		grid-row: 1;
+		grid-column: 2;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-signin__card:has(.pq-signin__demo)
+		.pq-signin__demo {
+		grid-column: 1 / -1;
+	}
+}
+
+/*
+ * THE CASE TABS (board MijnZaken): 48px tabs 18px in, 17px, a 2px grey line
+ * under the row; the current tab in bold ink with the red bar and no
+ * underline, the other in the link colour in 600.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-cases__tabs {
+	gap: 4px;
+	border-block-end-width: 2px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-cases__tabs .utrecht-button {
+	min-block-size: 48px;
+	padding-block: 0;
+	padding-inline: 18px;
+	font-size: 1.0625rem;
+	font-weight: 600;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-cases__tabs
+	.utrecht-button[aria-selected='true'] {
+	color: var(--nldesign-color-text, inherit) !important;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+/* The e-mail prompt asks on the overview only (board MijnOverzicht); the
+   other pages of the own area start with their title (MijnZaken, Berichten,
+   Zaak). */
+.pq-site:has(.pq-site__header--designed)
+	.pq-account__content:not(:has(.pq-greeting))
+	.pq-contact-prompt {
+	display: none;
+}
+
+/*
+ * THE INBOX AS CARDS (board Berichten): each message a bordered card, an
+ * unread one with the accent bar at its start and a small accent pill; the
+ * subject 20px, the date 15px muted, the text 17px; "Openen" an outlined
+ * 44px button and "Markeren als gelezen" a link. The message's source is in
+ * the subject's own words on the board, so its label steps back.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-inbox {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 0;
+	padding: 20px 24px;
+	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row--unread {
+	box-shadow: inset 4px 0 0
+		var(--thematiq-accent-color, var(--nldesign-color-primary));
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 14px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__unread {
+	padding: 2px 10px;
+	border-radius: 12px;
+	background-color: var(--thematiq-accent-color, var(--nldesign-color-primary));
+	color: var(--nldesign-color-primary-text, Canvas);
+	font-size: 0.875rem;
+	font-weight: 700;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__subject {
+	font-size: 1.25rem;
+	font-weight: 700;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__source {
+	display: none;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__date {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
+	font-size: 0.9375rem;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__body {
+	margin: 0;
+	font-size: 1.0625rem;
+	line-height: 1.55 !important;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox-row__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin: 0;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-row__actions
+	.utrecht-button-link--secondary-action {
+	min-block-size: 44px;
+	padding-block: 0;
+	padding-inline: 18px;
+	font-weight: 600;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-row__actions
+	.utrecht-button--subtle {
+	min-block-size: 44px;
+	padding: 0 12px;
+	border-color: transparent !important;
+	background: transparent;
+	color: var(--utrecht-link-color, currentcolor) !important;
+	font-size: 1.0625rem;
+	font-weight: 600;
+	text-decoration: underline;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-row__actions
+	.utrecht-button--subtle:disabled {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	) !important;
+	text-decoration: none;
+}
+
+/* "Meldingen instellen" stands at the end of the title's line, as a link
+   (board Berichten); opened, the settings unfold in the flow as before. */
+.pq-site:has(.pq-site__header--designed) .pq-account__content:has(.pq-inbox-page) {
+	position: relative;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-page
+	> .pq-notification-settings:not([open])
+	> summary {
+	position: absolute;
+	inset-block-start: 16px;
+	inset-inline-end: 0;
+	color: var(--utrecht-link-color, currentcolor);
+	font-size: 1.0625rem;
+	font-weight: 600;
+	text-decoration: underline;
+	cursor: pointer;
+	list-style: none;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-inbox-page
+	> .pq-notification-settings:not([open])
+	> summary::-webkit-details-marker {
+	display: none;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-inbox__notice:empty {
+	display: none;
+}
+
+/* On a phone the lead news item is one card: the photo across its top, then
+   the date and a 20px title (board MobielHome). */
+@media (max-width: 767px) {
+	.pq-site:has(.pq-site__header--designed) .nl-news-list__lead {
+		flex-direction: column;
+		gap: 0;
+		overflow: hidden;
+		border: 1px solid
+			var(--nldesign-color-border, var(--tilburg-line-border-color));
+		border-radius: var(--nldesign-website-border-radius-large, 6px);
+	}
+
+	.pq-site:has(.pq-site__header--designed) .nl-news-list__photo {
+		flex: none;
+		min-block-size: 150px;
+		border-radius: 0;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .nl-news-list__lead-text {
+		flex: none;
+		gap: 6px;
+		padding: 16px;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .nl-news-list__lead-title {
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.nl-news-list__lead-text
+		.utrecht-paragraph {
+		display: none;
+	}
+}
+
+/*
+ * THE OVERVIEW'S RHYTHM (board MijnOverzicht): 28px between the prompt, the
+ * greeting and each block, 14px between a block's heading and its content.
+ */
+.pq-site:has(.pq-site__header--designed) .pq-account__content > .pq-contact-prompt {
+	margin-block-end: 28px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-contribution-page > * {
+	margin-block-end: 28px;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-tasks-block > h2,
+.pq-site:has(.pq-site__header--designed) .pq-cases-block__head,
+.pq-site:has(.pq-site__header--designed) .pq-inbox-block__head {
+	margin-block-end: 14px;
+}
+
+/*
+ * THE CASE PAGE (boards Zaak and MobielZaak). Only a portal with the
+ * designed header; the record page itself is unchanged elsewhere.
+ */
+
+/* "Nothing to do" is a green notice with a tick, under the case's title. */
+.pq-site:has(.pq-site__header--designed)
+	.pq-record__head
+	~ .pq-tasks-block
+	.pq-empty-state {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 16px 20px;
+	border: 1px solid
+		color-mix(
+			in srgb,
+			var(--nldesign-color-success, currentcolor) 40%,
+			transparent
+		);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	background-color: var(
+		--nldesign-component-status-badge-success-background-color,
+		var(--utrecht-alert-ok-background-color, transparent)
+	);
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-record__head
+	~ .pq-tasks-block
+	.pq-empty-state::before {
+	content: '';
+	flex: none;
+	inline-size: 22px;
+	block-size: 22px;
+	background-color: var(--thematiq-status-success-text, currentcolor);
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E")
+		center / contain no-repeat;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-record__head
+	~ .pq-tasks-block
+	.pq-empty-state__text {
+	font-size: 1.125rem;
+}
+
+/* The section headings of a case: 28px. */
+.pq-site:has(.pq-site__header--designed) .pq-record__head ~ * > h3.utrecht-heading-3,
+.pq-site:has(.pq-site__header--designed)
+	.pq-record__head
+	~ *
+	> .pq-documents-block__head
+	> h3 {
+	font-size: 1.75rem;
+}
+
+/* The steps: a 40px column with the marker and a line down to the next
+   step, blue after a finished one; the title 19px over 16px muted text,
+   the date last in 15px. */
+.pq-site:has(.pq-site__header--designed) .pq-process-steps {
+	margin-block-start: 16px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-process-steps
+	.denhaag-process-steps__step {
+	position: relative;
+	margin: 0;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-process-steps
+	.denhaag-process-steps__step:not(:last-child)::before {
+	content: '';
+	position: absolute;
+	inset-block: 36px 0;
+	inset-inline-start: 16.5px;
+	inline-size: 3px;
+	background-color: var(--nldesign-color-border, var(--tilburg-line-border-color));
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-process-steps
+	.denhaag-process-steps__step:has(.denhaag-step-marker--checked):not(
+		:last-child
+	)::before {
+	background-color: var(--nldesign-color-primary, currentcolor);
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-process-steps .denhaag-step-marker {
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-process-steps
+	.denhaag-process-steps__step-header {
+	align-items: flex-start;
+	gap: 0 20px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-process-steps
+	.denhaag-process-steps__step-heading {
+	margin-block-start: 6px;
+	font-size: 1.1875rem;
+	font-weight: 500;
+	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted));
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-process-steps
+	.denhaag-process-steps__step:has(.denhaag-step-marker--checked)
+	.denhaag-process-steps__step-heading {
+	font-weight: 600;
+	color: var(--nldesign-color-text, inherit);
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-process-steps
+	.denhaag-process-steps__step:has(.denhaag-step-marker--current)
+	.denhaag-process-steps__step-heading {
+	font-weight: 700;
+	color: var(--nldesign-color-text, inherit);
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-process-steps
+	.denhaag-process-steps__step-body {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: -6px 0 0;
+	padding: 0 0 22px 56px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-process-steps
+	.denhaag-process-steps__step-meta {
+	order: 2;
+	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted));
+	font-size: 0.9375rem;
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-process-steps .pq-process-steps__text {
+	margin: 0;
+	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted));
+	font-size: 1rem;
+	line-height: 1.5 !important;
+}
+
+/* Gegevens: the label column as wide as its longest label, 12px rows
+   between lines, labels in 600. */
+.pq-site:has(.pq-site__header--designed) .pq-detail .pq-description-list {
+	border-block-start: 1px solid
+		var(--nldesign-color-border, var(--tilburg-line-border-color));
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-detail .pq-description-list__item {
+	grid-template-columns: 186px minmax(0, 1fr);
+	gap: 24px;
+	padding-block: 12px;
+	border-block-end-color: var(
+		--nldesign-color-border,
+		var(--tilburg-line-border-color)
+	);
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-detail .pq-description-list__key {
+	font-weight: 600;
+}
+
+/* The case's own buttons: 44px, 600 (Terug, Document toevoegen). */
+.pq-site:has(.pq-site__header--designed) .pq-record__head .utrecht-button,
+.pq-site:has(.pq-site__header--designed) .pq-documents-block__head .utrecht-button {
+	min-block-size: 44px;
+	padding-block: 0;
+	padding-inline: 18px;
+	font-size: 1.0625rem;
+}
+
+/*
+ * THE OWN AREA ON A PHONE (board MobielZaak): the bar under the logo is the
+ * own area's menu, "Mijn Zuiddrecht" with its count, in the place of the
+ * site's menu; the trail is one link back to the page above; the case's
+ * title is 30px and its steps are compact.
+ */
+@media (max-width: 767px) {
+	.pq-site:has(.pq-account--with-menu)
+		.pq-site__header--designed
+		:is(.pq-header-tools__menu, .pq-header-tools__search) {
+		visibility: hidden;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-account--with-menu
+		.pq-resident-menu__toggle {
+		position: absolute;
+		inset-block-start: 72px;
+		inset-inline: 0;
+		z-index: 3;
+		display: flex;
+		justify-content: flex-start;
+		inline-size: 100%;
+		max-inline-size: none;
+		gap: 10px;
+		min-block-size: 52px;
+		margin: 0;
+		padding: 0 16px;
+		border: 0;
+		border-block-start: 1px solid
+			var(--nldesign-color-border, var(--tilburg-line-border-color));
+		border-radius: 0;
+		background: var(--utrecht-document-background-color, Canvas);
+		color: var(--nldesign-color-text, inherit) !important;
+		font-size: 1.125rem;
+		font-weight: 600;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-account--with-menu
+		.pq-resident-menu__toggle::before {
+		content: '';
+		flex: none;
+		inline-size: 22px;
+		block-size: 22px;
+		background-color: currentcolor;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M4 7h16M4 12h16M4 17h16'/%3E%3C/svg%3E")
+			center / contain no-repeat;
+		order: -1;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-account--with-menu
+		.pq-resident-menu__toggle
+		.pq-resident-menu__toggle-badge {
+		margin-inline-start: auto;
+		background-color: var(
+			--thematiq-accent-color,
+			var(--nldesign-color-primary)
+		);
+		color: var(--nldesign-color-primary-text, Canvas);
+	}
+
+	/* One link back to the page above. */
+	.pq-site:has(.pq-account--with-menu) .ac-breadcrumb__item {
+		display: none;
+	}
+
+	.pq-site:has(.pq-account--with-menu) .ac-breadcrumb__item:nth-last-child(2) {
+		display: flex;
+	}
+
+	.pq-site:has(.pq-account--with-menu)
+		.ac-breadcrumb__item:nth-last-child(2)
+		.ac-breadcrumb__separator {
+		display: none;
+	}
+
+	.pq-site:has(.pq-account--with-menu)
+		.ac-breadcrumb__item:nth-last-child(2)
+		.utrecht-link {
+		font-size: 1.0625rem;
+		font-weight: 600;
+	}
+
+	.pq-site:has(.pq-account--with-menu)
+		.ac-breadcrumb__item:nth-last-child(2)
+		.utrecht-link::before {
+		content: '‹ ';
+	}
+
+	.pq-site:has(.pq-site__header--designed) .pq-record__head .utrecht-button {
+		display: none;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .pq-record__title {
+		font-size: 1.875rem;
+		line-height: 1.15;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-record__head
+		~ .pq-tasks-block
+		.pq-empty-state {
+		padding: 14px 16px;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-record__head
+		~ .pq-tasks-block
+		.pq-empty-state::before {
+		display: none;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-record__head
+		~ .pq-tasks-block
+		.pq-empty-state__text {
+		font-size: 1.0625rem;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .pq-process-steps .denhaag-step-marker {
+		flex: 0 0 30px;
+		inline-size: 30px;
+		min-inline-size: 30px;
+		block-size: 30px;
+		font-size: 0.875rem;
+	}
+
+	.pq-site:has(.pq-site__header--designed) .pq-account--with-menu {
+		padding-block-start: 0;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-record__head
+		~ *
+		> h3.utrecht-heading-3,
+	.pq-site:has(.pq-site__header--designed)
+		.pq-record__head
+		~ *
+		> .pq-documents-block__head
+		> h3 {
+		font-size: 1.5rem;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-process-steps
+		.denhaag-process-steps__step:not(:last-child)::before {
+		inset-block-start: 30px;
+		inset-inline-start: 13.5px;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-process-steps
+		.denhaag-process-steps__step-header {
+		gap: 0 14px;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-process-steps
+		.denhaag-process-steps__step-heading {
+		margin-block-start: 4px;
+		font-size: 1.0625rem;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-process-steps
+		.denhaag-process-steps__step-body {
+		gap: 2px;
+		margin-block-start: -4px;
+		padding: 0 0 18px 44px;
+	}
+
+	.pq-site:has(.pq-site__header--designed)
+		.pq-process-steps
+		.pq-process-steps__text {
+		font-size: 0.9375rem;
+		line-height: 1.3 !important;
+	}
+}
+
+/* The case's own actions stand on one line: "Bericht sturen" the one primary
+   button, then "Bezwaar maken" and "Klacht indienen" outlined, all 48px. A
+   form one of them opens takes the line under the row. */
+.pq-site:has(.pq-site__header--designed)
+	.pq-contribution-page:has(> .pq-record__head) {
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 12px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-contribution-page:has(> .pq-record__head)
+	> * {
+	flex: 0 0 100%;
+	min-inline-size: 0;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-contribution-page:has(> .pq-record__head)
+	> .pq-action-block {
+	display: contents;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-contribution-page:has(> .pq-record__head)
+	> .pq-action-block
+	.pq-action-button {
+	flex: 0 0 auto;
+	margin: 0 0 28px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-contribution-page:has(> .pq-record__head)
+	> .pq-action-block
+	.pq-action-block__form {
+	flex: 0 0 100%;
+	order: 1;
+	margin-block: 0 28px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-contribution-page:has(> .pq-record__head)
+	> .pq-action-block
+	~ :not(.pq-action-block) {
+	order: 2;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-contribution-page:has(> .pq-record__head)
+	> .pq-action-block
+	.pq-action-button
+	.utrecht-button {
+	min-block-size: 48px;
+	padding-block: 0;
+	padding-inline: 18px;
+	font-size: 1.0625rem;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-contribution-page:has(> .pq-record__head)
+	> .pq-action-block
+	+ .pq-action-block
+	.pq-action-button
+	.utrecht-button {
+	border-color: var(--nldesign-color-primary, currentcolor) !important;
+	background-color: transparent;
+	color: var(--nldesign-color-primary, currentcolor) !important;
+}
+
+/* A case action's form opens under the row of buttons as the board's grey
+   question card: 24px in, 22px heading. */
+.pq-site:has(.pq-site__header--designed) .pq-action-block__form {
+	padding: 24px;
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+	background-color: var(
+		--thematiq-surface-color,
+		var(--nldesign-color-surface, transparent)
+	);
+}
+
+.pq-site:has(.pq-site__header--designed) .pq-action-block__form > h2 {
+	margin-block: 0 12px;
+	font-size: 1.375rem;
 }

@@ -199,6 +199,8 @@
 	"Sent by you": "Door u gestuurd",
 	"There are no documents on this case yet.": "Er staan nog geen documenten bij deze zaak.",
 	"The document could not be opened. Try again later.": "Het document kon niet worden geopend. Probeer het later opnieuw.",
+	"Overview": "Overzicht",
+	"Due by": "Uiterlijk klaar op",
 	"My cases": "Mijn zaken",
 	"Open ({count})": "Lopend ({count})",
 	"Closed ({count})": "Afgerond ({count})",
@@ -256,7 +258,7 @@
 	"Whole company": "Hele bedrijf",
 	"Acting for branch": "Namens vestiging",
 	"That branch could not be chosen.": "Die vestiging kan niet worden gekozen.",
-	"Add an e-mail address so we can tell you when something changes.": "Voeg een e-mailadres toe, dan laten we u weten als er iets verandert.",
+	"Add an e-mail address so we can tell you when something changes.": "Voeg een e-mailadres toe. Dan laten we u weten als er iets verandert.",
 	"Add e-mail address": "E-mailadres toevoegen",
 	"Add phone number": "Telefoonnummer toevoegen",
 	"By e-mail": "Per e-mail",
@@ -267,7 +269,7 @@
 	"Confirm this address first.": "Bevestig dit adres eerst.",
 	"E-mail addresses": "E-mailadressen",
 	"Five addresses are waiting for confirmation. Confirm or remove one first.": "Er wachten vijf adressen op bevestiging. Bevestig of verwijder er eerst een.",
-	"Go to My account": "Naar Mijn account",
+	"Go to My account": "Naar mijn account",
 	"How should we contact you?": "Hoe wilt u dat we contact met u opnemen?",
 	"Make preferred": "Maak voorkeursadres",
 	"My account": "Mijn account",
@@ -394,5 +396,7 @@
 	"{count} new": "{count} nieuw",
 	"{count} open": "{count} open",
 	"One less": "Eén minder",
-	"One more": "Eén meer"
+	"One more": "Eén meer",
+	"Download": "Downloaden",
+	"Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
 }
