@@ -45,7 +45,12 @@ class CollectionListKeys {
 	private const RANGES = ['day', 'week', 'month'];
 
 	/**
-	 * The `limit` and `sort` a collection block keeps.
+	 * The longest block heading kept (collection-block-label).
+	 */
+	private const MAX_LABEL = 120;
+
+	/**
+	 * The `limit`, `sort` and `label` a collection block keeps.
 	 *
 	 * @param array<string, mixed>      $block      The declared block.
 	 * @param array<string, mixed>|null $collection The collection it reads, or null when unknown.
@@ -53,6 +58,7 @@ class CollectionListKeys {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
 	 */
 	public function collectionKeys(array $block, ?array $collection): array {
 		$out = [];
@@ -60,6 +66,13 @@ class CollectionListKeys {
 		$limit = ($block['limit'] ?? null);
 		if (is_int($limit) === true && $limit >= 1 && $limit <= self::MAX_LIMIT) {
 			$out['limit'] = $limit;
+		}
+
+		// The block's own heading ("Latest grades"), which wins over the
+		// collection's label (collection-block-label).
+		$label = ($block['label'] ?? null);
+		if (is_string($label) === true && trim($label) !== '' && mb_strlen(trim($label)) <= self::MAX_LABEL) {
+			$out['label'] = trim($label);
 		}
 
 		$sort = ($block['sort'] ?? null);
