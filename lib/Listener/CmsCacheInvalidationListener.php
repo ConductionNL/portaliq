@@ -83,6 +83,8 @@ class CmsCacheInvalidationListener implements IEventListener {
 	/**
 	 * Handle an OpenRegister object write.
 	 *
+	 * @listener-placement inline cache-drop — removes cache keys, no I/O to a service and no write; deferring it would leave the stale entry readable.
+	 *
 	 * @param Event $event The dispatched event.
 	 *
 	 * @return void

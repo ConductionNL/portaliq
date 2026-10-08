@@ -73,6 +73,13 @@ class CmsReader {
 	private const TTL = 300;
 
 	/**
+	 * Key prefix of the hit and miss counters; no portal slug can begin with it, so a portal's invalidation leaves them alone.
+	 *
+	 * @var string
+	 */
+	private const STATS_PREFIX = '__stats|';
+
+	/**
 	 * The distributed cache.
 	 *
 	 * @var ICache
@@ -104,6 +111,56 @@ class CmsReader {
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
 	}//end __construct()
+
+
+	/**
+	 * Read one cache entry and count whether it was there.
+	 *
+	 * The counts are what tells a cache that never hits from no cache at all.
+	 *
+	 * @param string $key The cache key.
+	 *
+	 * @return mixed The stored value, or null on a miss.
+	 *
+	 * @spec openspec/changes/portal-headless-content-api/tasks.md#task-2
+	 */
+	private function lookup(string $key): mixed {
+		$hit = $this->cache->get($key);
+		$this->count(outcome: $hit === null ? 'misses' : 'hits');
+
+		return $hit;
+	}//end lookup()
+
+
+	/**
+	 * Add one to a cache outcome counter. A lost increment under a race is acceptable for a gauge.
+	 *
+	 * @param string $outcome `hits` or `misses`.
+	 *
+	 * @return void
+	 */
+	private function count(string $outcome): void {
+		try {
+			$this->cache->set(self::STATS_PREFIX . $outcome, ((int)$this->cache->get(self::STATS_PREFIX . $outcome)) + 1, 0);
+		} catch (Throwable $e) {
+			$this->logger->debug('Portaliq: content cache counter failed', ['reason' => $e->getMessage()]);
+		}
+	}//end count()
+
+
+	/**
+	 * How many content reads the cache answered and how many it missed.
+	 *
+	 * @return array{hits: int, misses: int}
+	 *
+	 * @spec openspec/changes/portal-headless-content-api/tasks.md#task-2
+	 */
+	public function cacheStats(): array {
+		return [
+			'hits'   => (int)$this->cache->get(self::STATS_PREFIX . 'hits'),
+			'misses' => (int)$this->cache->get(self::STATS_PREFIX . 'misses'),
+		];
+	}//end cacheStats()
 
 
 	/**
@@ -143,7 +200,7 @@ class CmsReader {
 	 */
 	public function menus(string $portal, string $locale, string $audience): array {
 		$key = $this->cacheKey(portal: $portal, kind: 'menus', selector: '', locale: $locale, audience: $audience);
-		$hit = $this->cache->get($key);
+		$hit = $this->lookup(key: $key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
@@ -171,7 +228,7 @@ class CmsReader {
 	 */
 	public function pages(string $portal, string $locale, string $audience): array {
 		$key = $this->cacheKey(portal: $portal, kind: 'pages', selector: '', locale: $locale, audience: $audience);
-		$hit = $this->cache->get($key);
+		$hit = $this->lookup(key: $key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
@@ -210,7 +267,7 @@ class CmsReader {
 	 */
 	public function page(string $portal, string $route, string $locale, string $audience): ?array {
 		$key = $this->cacheKey(portal: $portal, kind: 'page', selector: $route, locale: $locale, audience: $audience);
-		$hit = $this->cache->get($key);
+		$hit = $this->lookup(key: $key);
 		if ($hit !== null) {
 			$decoded = json_decode($hit, true);
 			if ($decoded === []) {
@@ -347,7 +404,7 @@ class CmsReader {
 	 */
 	public function glossary(string $portal, string $locale, string $audience): array {
 		$key = $this->cacheKey(portal: $portal, kind: 'glossary', selector: '', locale: $locale, audience: $audience);
-		$hit = $this->cache->get($key);
+		$hit = $this->lookup(key: $key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
