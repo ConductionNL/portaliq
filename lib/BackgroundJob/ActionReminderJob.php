@@ -25,11 +25,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use OCA\Portaliq\Service\ActionReminderService;
+use OCA\Portaliq\Service\Plans\PlanEndReminderService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 
 /**
- * Runs the action reminders once a day.
+ * Runs the action reminders and the plan end reminders once a day.
  *
  * @spec openspec/changes/personal-action-list/tasks.md#t04
  */
@@ -41,10 +42,12 @@ class ActionReminderJob extends TimedJob {
 	 *
 	 * @param ITimeFactory          $time      The scheduler's clock.
 	 * @param ActionReminderService $reminders Sends the reminders.
+	 * @param PlanEndReminderService $planReminders Sends the reminders before a plan's end date.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly ActionReminderService $reminders,
+		private readonly PlanEndReminderService $planReminders,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);
@@ -61,5 +64,6 @@ class ActionReminderJob extends TimedJob {
 	 */
 	protected function run($argument): void {
 		$this->reminders->remindDue();
+		$this->planReminders->remindDue();
 	}//end run()
 }//end class

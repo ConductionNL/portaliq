@@ -254,6 +254,7 @@ export default {
 				key: field.field,
 				label: field.label,
 				value: field.text,
+				slot: field.render === 'qr',
 			}))
 		},
 

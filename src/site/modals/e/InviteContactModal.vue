@@ -94,6 +94,7 @@
 </template>
 
 <script>
+import { contactsApi } from '../../../shared/areaApi.js'
 import { inviteProblem } from '../../pages/e/contacts.js'
 
 export default {
@@ -153,7 +154,7 @@ export default {
 		async submit() {
 			this.problem = ''
 			this.busy = true
-			const answer = await this.api.contactAction('invite', {
+			const answer = await contactsApi(this.api).contactAction('invite', {
 				email: this.email.trim(),
 				message: this.message.trim(),
 			})

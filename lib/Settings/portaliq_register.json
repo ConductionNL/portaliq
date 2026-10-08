@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.87.0"
+        "version": "0.88.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.87.0",
+                "version": "0.88.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -47,6 +47,8 @@
                     "portalRevealRequest",
                     "portalMandate",
                     "portalContact",
+                    "portalPlan",
+                    "portalPlanTemplate",
                     "portalInvitation",
                     "portalReferenceLink",
                     "portalAccessRequest",
@@ -85,6 +87,121 @@
             }
         },
         "objects": [
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalPlan",
+                    "slug": "plan-demo-schuldhulp"
+                },
+                "owner": "subject-demo-ada",
+                "participants": [
+                    "subject-demo-bea"
+                ],
+                "title": "Schuldhulp op orde",
+                "goal": "Over drie maanden een overzicht van alle schulden en een vaste afbetaalregeling.",
+                "goalDetail": "We zetten stap voor stap alles op een rij.",
+                "endDate": "2026-10-27",
+                "status": "running",
+                "template": "plan-template-demo-schuldhulp",
+                "note": {
+                    "text": "Eerst de brieven verzamelen.",
+                    "editedBy": "subject-demo-bea",
+                    "editedAt": "2026-10-06T14:02:00+02:00"
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalPlan",
+                    "slug": "plan-demo-werk"
+                },
+                "owner": "subject-demo-bea",
+                "participants": [
+                    "subject-demo-ada"
+                ],
+                "title": "Terug naar werk",
+                "goal": "Binnen zes maanden een passende baan.",
+                "endDate": "2027-03-31",
+                "status": "running"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalPlan",
+                    "slug": "plan-demo-verhuizing"
+                },
+                "owner": "subject-demo-ada",
+                "participants": [],
+                "title": "Verhuizing regelen",
+                "goal": "Alles geregeld voor de verhuizing op 1 november.",
+                "endDate": "2026-09-30",
+                "status": "done",
+                "doneAt": "2026-09-30T12:00:00+02:00"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalPlanTemplate",
+                    "slug": "plan-template-demo-schuldhulp"
+                },
+                "portal": "zuiddrecht",
+                "title": "Schuldhulp op orde",
+                "summary": "Vult het doel in en zet 5 acties klaar.",
+                "goal": "Over drie maanden een overzicht van alle schulden en een vaste afbetaalregeling.",
+                "durationDays": 56,
+                "actions": [
+                    {
+                        "title": "Alle brieven verzamelen",
+                        "kind": "once",
+                        "offsetDays": 7
+                    },
+                    {
+                        "title": "Een overzicht van de schulden maken",
+                        "kind": "once",
+                        "offsetDays": 14
+                    },
+                    {
+                        "title": "Een budgetplan opstellen",
+                        "kind": "once",
+                        "offsetDays": 28
+                    }
+                ],
+                "published": true
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalPlanTemplate",
+                    "slug": "plan-template-demo-werk"
+                },
+                "portal": "zuiddrecht",
+                "title": "Terug naar werk",
+                "summary": "Vult het doel in en zet 3 acties klaar.",
+                "goal": "Binnen zes maanden een passende baan.",
+                "durationDays": 180,
+                "actions": [
+                    {
+                        "title": "Mijn cv bijwerken",
+                        "kind": "once",
+                        "offsetDays": 14
+                    }
+                ],
+                "published": true
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalPlanTemplate",
+                    "slug": "plan-template-demo-concept"
+                },
+                "portal": "zuiddrecht",
+                "title": "Nog in bewerking",
+                "summary": "Een sjabloon dat nog niet klaar is.",
+                "goal": "Nog te bepalen.",
+                "durationDays": 30,
+                "actions": [],
+                "published": false
+            },
             {
                 "@self": {
                     "register": "portaliq",
@@ -2554,7 +2671,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.20.0",
+                "version": "0.21.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -4393,6 +4510,12 @@
                                 }
                             }
                         }
+                    },
+                    "plansEnabled": {
+                        "title": "Shared plans enabled",
+                        "type": "boolean",
+                        "description": "Whether signed-in residents of this portal get the page where they work on plans with their contacts. Off by default. It needs contacts to be on.",
+                        "default": false
                     },
                     "contactsEnabled": {
                         "title": "Contacts enabled",
@@ -7333,6 +7456,192 @@
                         "type": "string",
                         "description": "The tenant the row belongs to, stamped by the portal.",
                         "example": "gemeente-zuiddrecht"
+                    }
+                }
+            },
+            "portalPlan": {
+                "slug": "portalPlan",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "ClipboardCheckOutline",
+                "version": "0.1.0",
+                "title": "Shared plan",
+                "description": "A plan a resident works on with their contacts: a goal, actions, a note and an end date. Every participant sees and changes the goal, the actions and the note; only the owner changes the participants and the end date, marks it done or deletes it. Written by the portal's plan service; never by a resident's own form.",
+                "type": "object",
+                "required": [
+                    "owner",
+                    "title",
+                    "status"
+                ],
+                "properties": {
+                    "owner": {
+                        "title": "Owner",
+                        "type": "string",
+                        "description": "The subject reference of the resident who made the plan.",
+                        "example": "bsn-123456782"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant the plan belongs to, stamped by the portal.",
+                        "example": "gemeente-zuiddrecht"
+                    },
+                    "participants": {
+                        "title": "Participants",
+                        "type": "array",
+                        "description": "The subject references of the people who take part besides the owner. Each is an approved contact of the owner.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "title": {
+                        "title": "Plan title",
+                        "type": "string",
+                        "description": "The name of the plan.",
+                        "example": "Schuldhulp op orde"
+                    },
+                    "goal": {
+                        "title": "Goal",
+                        "type": "string",
+                        "description": "What the plan is to reach.",
+                        "example": "Over drie maanden een overzicht van alle schulden en een vaste afbetaalregeling."
+                    },
+                    "goalDetail": {
+                        "title": "Goal explained",
+                        "type": "string",
+                        "description": "More about the goal."
+                    },
+                    "endDate": {
+                        "title": "End date",
+                        "type": "string",
+                        "description": "The day the plan should be finished.",
+                        "format": "date",
+                        "example": "2026-10-27"
+                    },
+                    "status": {
+                        "title": "Plan status",
+                        "type": "string",
+                        "description": "Whether the plan is running or done. A done plan is read-only.",
+                        "enum": [
+                            "running",
+                            "done"
+                        ],
+                        "default": "running",
+                        "example": "running"
+                    },
+                    "template": {
+                        "title": "Template",
+                        "type": "string",
+                        "description": "The template the plan was started from. Empty for a plan started empty."
+                    },
+                    "note": {
+                        "title": "Shared note",
+                        "type": "object",
+                        "description": "The note every participant can edit: text, who edited it last and when.",
+                        "widget": "json"
+                    },
+                    "doneAt": {
+                        "title": "Done at",
+                        "type": "string",
+                        "description": "When the plan was marked done. A done plan is hidden a year later.",
+                        "format": "date-time"
+                    },
+                    "endReminderSentAt": {
+                        "title": "End reminder sent at",
+                        "type": "string",
+                        "description": "When the reminder before the end date was sent. Cleared when the end date changes, so a new date earns a new reminder.",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "portalPlanTemplate": {
+                "slug": "portalPlanTemplate",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "icon": "ClipboardListOutline",
+                "version": "0.1.0",
+                "title": "Plan template",
+                "description": "A starting point for a plan that the municipality sets up: a goal, the first actions with their day offsets and a duration. Only a published template is offered to residents.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "title"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this template belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "title": {
+                        "title": "Template title",
+                        "type": "string",
+                        "description": "The name shown when a resident chooses where to begin.",
+                        "example": "Schuldhulp op orde"
+                    },
+                    "summary": {
+                        "title": "Template summary",
+                        "type": "string",
+                        "description": "One line under the name: what the template fills in."
+                    },
+                    "goal": {
+                        "title": "Template goal",
+                        "type": "string",
+                        "description": "The goal the plan starts with."
+                    },
+                    "goalDetail": {
+                        "title": "Template goal explained",
+                        "type": "string",
+                        "description": "More about the goal."
+                    },
+                    "durationDays": {
+                        "title": "Duration in days",
+                        "type": "integer",
+                        "description": "How many days after the start the plan ends.",
+                        "default": 56,
+                        "example": 56
+                    },
+                    "actions": {
+                        "title": "Template actions",
+                        "type": "array",
+                        "description": "The actions the plan starts with, each with a title, a kind (once or recurring) and the days after the start it should be done.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "title": "Action title",
+                                    "type": "string",
+                                    "description": "What has to be done."
+                                },
+                                "kind": {
+                                    "title": "Action kind",
+                                    "type": "string",
+                                    "description": "Once, or coming back.",
+                                    "enum": [
+                                        "once",
+                                        "recurring"
+                                    ]
+                                },
+                                "offsetDays": {
+                                    "title": "Days after the start",
+                                    "type": "integer",
+                                    "description": "How many days after the plan starts the action should be done."
+                                }
+                            }
+                        }
+                    },
+                    "published": {
+                        "title": "Published",
+                        "type": "boolean",
+                        "description": "Whether residents are offered this template.",
+                        "default": false
                     }
                 }
             },
@@ -10871,7 +11180,7 @@
             "portalAction": {
                 "slug": "portalAction",
                 "icon": "Check",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Personal action",
                 "authorization": {
                     "read": [
@@ -10955,6 +11264,11 @@
                         "title": "File",
                         "type": "string",
                         "description": "One file kept with the step: an OpenRegister file reference. PDF, JPG or PNG, at most 10 MB."
+                    },
+                    "plan": {
+                        "title": "Plan",
+                        "type": "string",
+                        "description": "The shared plan this action belongs to. An action in a plan is visible to every participant of the plan. Empty for a personal action."
                     },
                     "reminderSentAt": {
                         "title": "Reminder sent at",

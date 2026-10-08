@@ -359,9 +359,9 @@ class ContributionController extends Controller implements PortalProtected {
 		// any case collection can tell a closed case from an open one.
 		$aggregate['cases'] = (new CaseRowMarker())->announce(aggregate: $aggregate);
 		$aggregate = $this->withThemes(aggregate: $aggregate);
-		// The contacts page, when the serving portal switched it on
-		// (own-contacts-and-invitations).
-		$aggregate['contacts'] = ['enabled' => $this->contactsEnabled()];
+		// The pages of the resident's own area the serving portal switched on
+		// (own-contacts-and-invitations, shared-plans-with-a-caseworker).
+		$aggregate['areaPages'] = $this->areaPages();
 
 		return new JSONResponse($aggregate);
 	}//end index()
@@ -391,15 +391,17 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end withThemes()
 
 	/**
-	 * Whether the serving portal offers its residents the contacts page.
+	 * The own-area pages the serving portal switched on, each with the label
+	 * and icon of its menu item.
 	 *
-	 * @return bool True only when the portal record says `contactsEnabled: true`.
+	 * @return array<int, array{special: string, label: string, icon: string}> The pages, in menu order.
 	 *
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
 	 */
-	private function contactsEnabled(): bool {
+	private function areaPages(): array {
 		if ($this->portals === null) {
-			return false;
+			return [];
 		}
 
 		$slug = $this->request->getParam('portal');
@@ -408,8 +410,17 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
-		return ($portal['contactsEnabled'] ?? false) === true;
-	}//end contactsEnabled()
+		$pages  = [];
+		if (($portal['contactsEnabled'] ?? false) === true) {
+			$pages[] = ['special' => 'contacts', 'label' => 'My contacts', 'icon' => 'AccountMultiple'];
+		}
+
+		if (($portal['plansEnabled'] ?? false) === true) {
+			$pages[] = ['special' => 'samenwerken', 'label' => 'Collaborate', 'icon' => 'ClipboardCheckOutline'];
+		}
+
+		return $pages;
+	}//end areaPages()
 
 	/**
 	 * Apply the serving portal's navigation choice for the subject's audience:

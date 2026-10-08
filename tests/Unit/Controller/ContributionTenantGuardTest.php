@@ -91,21 +91,30 @@ class ContributionTenantGuardTest extends TestCase {
 	}//end testASubjectWithAnOrganisationReadsAsBefore()
 
 	/**
-	 * own-contacts-and-invitations: the contacts page is announced only for a portal that switched it on.
+	 * Own-area pages are announced only for a portal that switched them on.
 	 *
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
 	 */
-	public function testTheContactsPageIsAnnouncedOnlyWhenThePortalSwitchedItOn(): void {
-		foreach ([[['contactsEnabled' => true], true], [['contactsEnabled' => 'yes'], false], [[], false]] as [$portal, $expected]) {
+	public function testAreaPagesAreAnnouncedOnlyWhenThePortalSwitchedThemOn(): void {
+		$cases = [
+			[['contactsEnabled' => true], ['contacts']],
+			[['plansEnabled' => true], ['samenwerken']],
+			[['contactsEnabled' => true, 'plansEnabled' => true], ['contacts', 'samenwerken']],
+			[['contactsEnabled' => 'yes', 'plansEnabled' => 1], []],
+			[[], []],
+		];
+		foreach ($cases as [$portal, $expected]) {
 			$resolver = $this->createMock(PortalResolver::class);
 			$resolver->method('resolve')->willReturn($portal);
 			$controller = $this->controller(organisation: 'org-a', schema: 'portalMessage', portals: $resolver);
-			$method = new \ReflectionMethod($controller, 'contactsEnabled');
-			$this->assertSame($expected, $method->invoke($controller));
+			$method = new \ReflectionMethod($controller, 'areaPages');
+			$this->assertSame($expected, array_column($method->invoke($controller), 'special'));
 		}
 
-		$this->assertFalse((new \ReflectionMethod($this->controller(organisation: 'org-a', schema: 'portalMessage'), 'contactsEnabled'))->invoke($this->controller(organisation: 'org-a', schema: 'portalMessage')));
-	}//end testTheContactsPageIsAnnouncedOnlyWhenThePortalSwitchedItOn()
+		$bare = $this->controller(organisation: 'org-a', schema: 'portalMessage');
+		$this->assertSame([], (new \ReflectionMethod($bare, 'areaPages'))->invoke($bare));
+	}//end testAreaPagesAreAnnouncedOnlyWhenThePortalSwitchedThemOn()
 
 	public function testSubjectScopedSchemaUnchanged(): void {
 		$controller = $this->controller(organisation: '', schema: 'pushSubscription');

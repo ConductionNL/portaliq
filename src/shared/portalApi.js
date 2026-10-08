@@ -532,59 +532,30 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
-		 * The resident's own contacts, what waits for an answer, and the
-		 * counts per role (own-contacts-and-invitations).
+		 * One call to the portal api, answered as `{ok, status, json}` (or the
+		 * response itself with `raw`), never thrown. The pages of the resident's
+		 * own area (contacts, plans) build their calls on it in
+		 * src/shared/areaApi.js, which loads with them.
 		 *
-		 * @return {Promise<{incoming: Array<object>, outgoing: Array<object>, contacts: Array<object>, counts: object}|null>} Null when refused.
-		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @param {string} method The verb.
+		 * @param {string} path The path under the api base.
+		 * @param {object|null} [body] The JSON body, or none.
+		 * @param {boolean} [raw] Answer `{ok, status, res}` and leave the body unread.
+		 * @return {Promise<{ok: boolean, status: number, json?: object, res?: Response}>} The answer.
 		 */
-		async fetchContacts() {
+		async request(method, path, body = null, raw = false) {
 			try {
-				return await get('/contacts')
-			} catch {
-				return null
-			}
-		},
-
-		/**
-		 * Do one thing to the contacts: invite, answer, send again, take back,
-		 * remove, or hand back the secret of an invitation link.
-		 *
-		 * @param {'invite'|'respond'|'resend'|'withdraw'|'remove'|'accept'} action What to do.
-		 * @param {object} [args] `email` and `message` to invite, `id` for the rest, `accept` for respond, `token` to accept a link.
-		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome; a refusal names its reason in `error`.
-		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
-		 */
-		async contactAction(action, args = {}) {
-			const id = encodeURIComponent(args.id || '')
-			const calls = {
-				invite: ['POST', '/contacts/invite', { email: args.email, message: args.message }],
-				accept: ['POST', '/contacts/accept-invitation', { token: args.token }],
-				respond: ['POST', `/contacts/${id}/respond`, { accept: args.accept === true }],
-				resend: ['POST', `/contacts/${id}/resend`, {}],
-				withdraw: ['POST', `/contacts/${id}/withdraw`, {}],
-				remove: ['DELETE', `/contacts/${id}`, null],
-			}
-			const call = calls[action]
-			if (!call) {
-				return { ok: false, status: 0, error: 'unknown' }
-			}
-			try {
-				const res = await fetch(`${base}${call[1]}`, {
-					method: call[0],
-					headers: {
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-						...authHeaders(),
-					},
-					...(call[2] === null ? {} : { body: JSON.stringify(call[2]) }),
+				const res = await fetch(`${base}${path}`, {
+					method,
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...authHeaders() },
+					...(body === null ? {} : { body: JSON.stringify(body) }),
 				})
-				const json = await res.json().catch(() => ({}))
-				return { ok: res.ok, status: res.status, error: String(json?.error || '') }
+				if (raw) {
+					return { ok: res.ok, status: res.status, res }
+				}
+				return { ok: res.ok, status: res.status, json: await res.json().catch(() => ({})) }
 			} catch {
-				return { ok: false, status: 0, error: 'network' }
+				return { ok: false, status: 0, json: {} }
 			}
 		},
 

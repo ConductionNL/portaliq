@@ -174,6 +174,7 @@
 
 <script>
 import InviteContactModal from '../../modals/e/InviteContactModal.vue'
+import { contactsApi } from '../../../shared/areaApi.js'
 import { contactsOfRole, initialsOf, ROLE_FILTERS, roleLabel } from './contacts.js'
 import { longDate, readerLocale } from './format.js'
 
@@ -204,6 +205,14 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {object} The contact calls over the portal api.
+		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 */
+		client() {
+			return contactsApi(this.api)
+		},
+
 		/**
 		 * @return {Array<object>} Requests to answer, then invitations sent.
 		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
@@ -268,7 +277,7 @@ export default {
 		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
 		 */
 		async load() {
-			const overview = await this.api.fetchContacts()
+			const overview = await this.client.fetchContacts()
 			if (overview === null) {
 				this.problem = 'That did not work. Try again later.'
 			} else {
@@ -303,7 +312,7 @@ export default {
 		async act(action, row, extra = {}) {
 			this.notice = ''
 			this.problem = ''
-			const answer = await this.api.contactAction(action, { id: row.id, ...extra })
+			const answer = await this.client.contactAction(action, { id: row.id, ...extra })
 			if (!answer.ok) {
 				this.problem = 'That did not work. Try again later.'
 			}

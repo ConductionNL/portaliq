@@ -13,6 +13,8 @@
 //
 // @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
 
+import { contactsApi } from './areaApi.js'
+
 export const CONTACT_INVITATION_KEY = 'portaliq.contactInvitation'
 
 const LINK = /^#contact-invitation=([^&]+)$/
@@ -108,7 +110,7 @@ export async function redeemKeptContactInvitation({ api, session, t, storage }) 
 			claimed: false,
 		}
 	}
-	const answer = await api.contactAction('accept', { token: secret })
+	const answer = await contactsApi(api).contactAction('accept', { token: secret })
 	if (answer.ok || (answer.status >= 400 && answer.status < 500)) {
 		try {
 			storage?.removeItem(CONTACT_INVITATION_KEY)

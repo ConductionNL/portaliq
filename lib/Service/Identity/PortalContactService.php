@@ -318,6 +318,28 @@ class PortalContactService {
 	}//end acceptInvitation()
 
 	/**
+	 * The approved contacts of a resident, each with the other account's
+	 * reference, for choosing who takes part in a plan.
+	 *
+	 * @param string $owner The resident.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<int, array{id: string, ref: string, displayName: string}> The contacts.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t02
+	 */
+	public function approvedContacts(string $owner, string $organisation): array {
+		$out = [];
+		foreach ($this->rowsOf(owner: $owner, organisation: $organisation) as $row) {
+			if ((string)($row['state'] ?? '') === 'approved' && (string)($row['contactRef'] ?? '') !== '') {
+				$out[] = ['id' => $this->idOf(row: $row), 'ref' => (string)$row['contactRef'], 'displayName' => (string)($row['displayName'] ?? '')];
+			}
+		}
+
+		return $out;
+	}//end approvedContacts()
+
+	/**
 	 * The approved contacts' references of a resident, for a message thread.
 	 *
 	 * @param string $owner The resident.

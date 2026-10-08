@@ -55,6 +55,7 @@ export const pages = {
 	__account__: () => import('./AccountPage.vue'),
 	__contacts__: () => import('./ContactsPage.vue'),
 	__theme__: () => import('./ThemePage.vue'),
+	__plans__: () => import('./PlansPage.vue'),
 }
 
 /**

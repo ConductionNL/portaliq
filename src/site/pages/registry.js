@@ -69,6 +69,7 @@ const BUILT_IN = {
 	details: accountPages.__details__,
 	account: accountPages.__account__,
 	contacts: accountPages.__contacts__,
+	samenwerken: accountPages.__plans__,
 	theme: accountPages.__theme__,
 	// Slice d: inbox, my tasks, messages and news.
 	inbox: inboxPages.inbox,
@@ -88,7 +89,7 @@ const loaders = new Map(Object.entries(BUILT_IN))
  * Sections whose page shows its own title as the page's h1, so the shell
  * leaves its heading out and the page has one title, not the same one twice.
  */
-const OWNS_HEADING = new Set(['cases', 'access', 'details', 'contacts', 'account'])
+const OWNS_HEADING = new Set(['cases', 'access', 'details', 'contacts', 'samenwerken', 'account'])
 
 /**
  * Whether the page for an entry titles itself.

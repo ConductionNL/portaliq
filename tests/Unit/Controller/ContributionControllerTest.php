@@ -109,7 +109,7 @@ class ContributionControllerTest extends TestCase {
 		// (portal-inbox-v2 T04) — the default inbox reader stub yields 0 —
 		// and the tasks announcement (portal-task-delivery): with no gateway
 		// wired (this fixture's default), the surface reads disabled.
-		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false], 'cases' => ['enabled' => false, 'closedMarker' => false], 'themes' => [], 'contacts' => ['enabled' => false]]), $response->getData());
+		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false], 'cases' => ['enabled' => false, 'closedMarker' => false], 'themes' => [], 'areaPages' => []]), $response->getData());
 
 	}//end testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject()
 

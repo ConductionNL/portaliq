@@ -12,6 +12,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { contactsApi } from '../src/shared/areaApi.js'
 import {
 	CONTACT_INVITATION_KEY,
 	keepContactInvitation,
@@ -63,13 +64,13 @@ test('the page lists what waits, the contacts with counts, and what a contact se
 	assert.match(html, /Invite someone/)
 	assert.match(html, /Loading/, 'the rows come after the read')
 	const page = await loadSfc(PAGE)
-	const vm = { overview: { incoming: [], outgoing: [], contacts: [], counts: {} }, loading: true, problem: '', api: { fetchContacts: async () => OVERVIEW } }
+	const vm = { overview: { incoming: [], outgoing: [], contacts: [], counts: {} }, loading: true, problem: '', client: { fetchContacts: async () => OVERVIEW } }
 	await page.methods.load.call(vm)
 	assert.equal(vm.loading, false)
 	assert.equal(page.computed.waiting.call(vm).length, 3)
 	assert.equal(page.computed.shown.call({ ...vm, role: 'contact' }).length, 1)
 	assert.equal(page.methods.count.call(vm, 'begeleider'), 1)
-	const refused = { overview: vm.overview, loading: true, problem: '', api: { fetchContacts: async () => null } }
+	const refused = { overview: vm.overview, loading: true, problem: '', client: { fetchContacts: async () => null } }
 	await page.methods.load.call(refused)
 	assert.equal(refused.problem, 'That did not work. Try again later.')
 })
@@ -80,7 +81,7 @@ test('an action asks the api with the row and reads the list again', async () =>
 	const vm = {
 		notice: 'x',
 		problem: '',
-		api: { contactAction: async (action, args) => { calls.push([action, args]); return { ok: action !== 'remove' } } },
+		client: { contactAction: async (action, args) => { calls.push([action, args]); return { ok: action !== 'remove' } } },
 		load: async () => { calls.push(['load']) },
 	}
 	await page.methods.act.call(vm, 'respond', { id: 'r1' }, { accept: true })
@@ -99,12 +100,12 @@ test('the dialog sends the trimmed address and message, and keeps the dialog ope
 		message: ' hello ',
 		problem: '',
 		busy: false,
-		api: { contactAction: async (action, args) => { sent.push([action, args]); return answer } },
+		api: { request: async (method, path, body) => { sent.push([method, path, body]); return { ok: answer.ok, status: answer.status, json: { error: answer.error } } } },
 		$emit: (name) => emitted.push(name),
 	})
 	const refused = make({ ok: false, status: 409, error: 'duplicate' })
 	await modal.methods.submit.call(refused)
-	assert.deepEqual(sent[0], ['invite', { email: 'a@b.nl', message: 'hello' }])
+	assert.deepEqual(sent[0], ['POST', '/contacts/invite', { email: 'a@b.nl', message: 'hello' }])
 	assert.match(refused.problem, /already invited/)
 	assert.deepEqual(emitted, [])
 	await modal.methods.submit.call(make({ ok: true, status: 200, error: '' }))
@@ -121,14 +122,15 @@ test('the api reaches the contact routes with the bearer and the right verbs', a
 	}
 	try {
 		const api = createPortalApi({ apiBase: '/portal/api' }, { getToken: () => 'tok', setToken: () => {} })
-		await api.fetchContacts()
-		await api.contactAction('invite', { email: 'a@b.nl', message: 'hi' })
-		await api.contactAction('respond', { id: 'a b', accept: true })
-		await api.contactAction('resend', { id: '1' })
-		await api.contactAction('withdraw', { id: '1' })
-		await api.contactAction('remove', { id: '1' })
-		await api.contactAction('accept', { token: 'tt' })
-		assert.deepEqual(await api.contactAction('nope'), { ok: false, status: 0, error: 'unknown' })
+		const contacts = contactsApi(api)
+		await contacts.fetchContacts()
+		await contacts.contactAction('invite', { email: 'a@b.nl', message: 'hi' })
+		await contacts.contactAction('respond', { id: 'a b', accept: true })
+		await contacts.contactAction('resend', { id: '1' })
+		await contacts.contactAction('withdraw', { id: '1' })
+		await contacts.contactAction('remove', { id: '1' })
+		await contacts.contactAction('accept', { token: 'tt' })
+		assert.deepEqual(await contacts.contactAction('nope'), { ok: false, status: 0, error: 'unknown' })
 	} finally {
 		delete globalThis.fetch
 	}
@@ -153,15 +155,15 @@ test('the api reaches the contact routes with the bearer and the right verbs', a
 
 test('the menu entry is there only when the portal switched contacts on', () => {
 	const session = { subjectRef: 'a' }
-	const off = shellSections({ session, contributions: { contributions: [] }, threads: [], news: [] })
-	assert.equal(off.contacts, false)
+	const off = shellSections({ session, contributions: { contributions: [], areaPages: [] }, threads: [], news: [] })
+	assert.deepEqual(off.pages, [])
 	assert.equal(buildNav([], t, off).some((e) => e.special === 'contacts'), false)
-	const on = shellSections({ session, contributions: { contributions: [], contacts: { enabled: true } }, threads: [], news: [] })
-	assert.equal(on.contacts, true)
+	const areaPages = [{ special: 'contacts', label: 'My contacts', icon: 'AccountMultiple' }]
+	const on = shellSections({ session, contributions: { contributions: [], areaPages }, threads: [], news: [] })
 	const entry = buildNav([], t, on).find((e) => e.special === 'contacts')
 	assert.equal(entry.key, '__contacts__')
 	assert.equal(entry.label, 'My contacts')
-	assert.equal(shellSections({ session: null, contributions: { contacts: { enabled: true } } }).contacts, false)
+	assert.deepEqual(shellSections({ session: null, contributions: { areaPages } }).pages, [], 'signed out: none')
 })
 
 test('an invitation link is kept across sign-in, handed back once, and forgotten when answered', async () => {
@@ -180,13 +182,13 @@ test('an invitation link is kept across sign-in, handed back once, and forgotten
 	assert.equal(store.has(CONTACT_INVITATION_KEY), true, 'kept until signed in')
 
 	const calls = []
-	const api = { contactAction: async (action, args) => { calls.push([action, args]); return { ok: false, status: 0, error: 'network' } } }
+	const api = { request: async (method, path, body) => { calls.push([method, path, body]); return { ok: false, status: 0, json: {} } } }
 	await redeemKeptContactInvitation({ api, session: { subjectRef: 'a' }, t, storage })
 	assert.equal(store.has(CONTACT_INVITATION_KEY), true, 'a server that could not be reached keeps it')
 
-	api.contactAction = async (action, args) => { calls.push([action, args]); return { ok: true, status: 200, error: '' } }
+	api.request = async (method, path, body) => { calls.push([method, path, body]); return { ok: true, status: 200, json: {} } }
 	const done = await redeemKeptContactInvitation({ api, session: { subjectRef: 'a' }, t, storage })
 	assert.equal(done.claimed, true)
-	assert.deepEqual(calls.at(-1), ['accept', { token: 'abc 123' }])
+	assert.deepEqual(calls.at(-1), ['POST', '/contacts/accept-invitation', { token: 'abc 123' }])
 	assert.equal(store.has(CONTACT_INVITATION_KEY), false)
 })
