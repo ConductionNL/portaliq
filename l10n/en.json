@@ -2233,6 +2233,8 @@
         "The heading over this group of the menu, such as Zaken en taken.": "The heading over this group of the menu, such as Zaken en taken.",
         "Group items": "Group items",
         "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.": "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.",
+        "Left out of the menu": "Left out of the menu",
+        "Items of the own area this portal leaves out of the menu by name, such as cases, tasks or access, when its design has no place for them. The pages stay reachable by their address. Empty leaves nothing out.": "Items of the own area this portal leaves out of the menu by name, such as cases, tasks or access, when its design has no place for them. The pages stay reachable by their address. Empty leaves nothing out.",
         "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).": "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).",
         "On a timetable: the small label over the first item of the day.": "On a timetable: the small label over the first item of the day.",
         "firstLabel": "firstLabel",
@@ -2244,6 +2246,7 @@
         "The subject line of the conversation.": "The subject line of the conversation.",
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "The words that name that record, copied when the thread is started, such as Vera, Groep 7.",
         "With": "With",
+        "You are not allowed to do this. Ask an administrator for access.": "You are not allowed to do this. Ask an administrator for access.",
         "Only on this demo. No password is asked.": "Only on this demo. No password is asked."
     },
     "plurals": "",

@@ -578,8 +578,27 @@
  * face it has, which its tests measure on the menu.
  */
 .pq-site:has(.pq-site__header--designed),
+body:has(.pq-site__header--designed),
 body:has(.pq-site__header--designed) .pq-site__skip {
 	font-family: var(--utrecht-document-font-family, inherit);
+}
+
+/*
+ * AND ITS HEADINGS IN THE SET'S HEADING FACE (designed-site-type).
+ *
+ * Measured on the fresh install of 08 Oct (proof run 2): a heading with an
+ * Utrecht class read the heading face (Red Hat Display, Barlow Semi
+ * Condensed), but a heading without one, such as the hero's title, inherited
+ * the body face (Red Hat Text, Barlow) from the rule above. `body` itself
+ * still computed the vendored Roboto, because the rule above named only the
+ * site root; it now names `body` too.
+ *
+ * `:where()` keeps this at no specificity: any rule that names a heading's
+ * own family (the Utrecht heading levels) still wins; it only replaces what
+ * a heading would otherwise inherit from the body.
+ */
+:where(.pq-site:has(.pq-site__header--designed)) :where(h1, h2, h3, h4, h5, h6) {
+	font-family: var(--utrecht-heading-font-family, inherit);
 }
 
 /*
@@ -1432,10 +1451,20 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	margin-block-start: 24px;
 }
 
+/*
+ * The plain hero's form stands on the band itself (hero-on-the-school-boards):
+ * the vendored sheet paints every search box in its light blue, which drew a
+ * lilac strip behind Esdoornveen's label on a white hero. The label's weight
+ * is the set's: Zuiddrecht draws it regular, the schools semibold.
+ */
+.pq-site .ac-hero.pq-hero--plain .ac-search-box {
+	background: transparent;
+}
+
 .pq-site .ac-hero.pq-hero--plain .ac-search-box__label {
 	margin-block-end: 0.625rem;
-	font-size: 1.125rem;
-	font-weight: 400;
+	font-size: var(--nldesign-website-hero-search-label-font-size, 1.125rem);
+	font-weight: var(--nldesign-website-hero-search-label-font-weight, 400);
 	color: var(--nldesign-hero-body-color, inherit);
 }
 
@@ -1536,6 +1565,80 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 
 	.pq-site .ac-hero.pq-hero--plain::after {
 		display: none;
+	}
+}
+
+/*
+ * THE HERO WITH AN ASIDE (hero-aside): the text in one column and, beside
+ * it, a list in a card (the academy's next course days) or a photo
+ * (Esdoornveen), as the school boards draw their home pages. Without an
+ * aside the main column is no box at all, so every other hero is as before.
+ * Tokens only.
+ */
+.pq-site .ac-hero .pq-hero__main {
+	display: contents;
+}
+
+.pq-site .ac-hero.pq-hero--aside > .container {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
+	gap: 2.5rem 3.5rem;
+	align-items: center;
+}
+
+.pq-site .ac-hero.pq-hero--aside .pq-hero__main {
+	display: flex;
+	flex-direction: column;
+	min-inline-size: 0;
+}
+
+.pq-site .ac-hero.pq-hero--plain.pq-hero--aside .pq-hero__main {
+	gap: 1.5rem;
+}
+
+/* The emblem would sit behind the aside; the aside is the band's picture. */
+.pq-site .ac-hero.pq-hero--aside::after {
+	display: none;
+}
+
+.pq-site .ac-hero .pq-hero__aside-card {
+	padding: 1.5rem 1.75rem 1.25rem;
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	background-color: var(--nldesign-color-background, Canvas);
+	box-shadow: 0 2px 12px
+		var(--nldesign-component-content-card-shadow-color, transparent);
+	color: var(--nldesign-color-text, CanvasText);
+}
+
+.pq-site .ac-hero .pq-hero__photo {
+	box-sizing: border-box;
+	inline-size: 100%;
+	min-block-size: 21rem;
+	margin: 0;
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	object-fit: cover;
+	clip-path: var(--nldesign-hero-image-clip-path, none);
+}
+
+/* A design that marks where a photo goes: a tinted plane with its words. */
+.pq-site .ac-hero .pq-hero__photo--label {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1.5rem;
+	background-color: var(--nldesign-color-primary-light, transparent);
+	color: var(--nldesign-color-primary, inherit);
+	font-size: 0.9375rem;
+	text-align: center;
+}
+
+@media (max-width: 768px) {
+	.pq-site .ac-hero.pq-hero--aside > .container {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.pq-site .ac-hero .pq-hero__photo {
+		min-block-size: 12rem;
 	}
 }
 

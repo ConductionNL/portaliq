@@ -45,7 +45,12 @@ class CollectionListKeys {
 	private const RANGES = ['day', 'week', 'month'];
 
 	/**
-	 * The `limit` and `sort` a collection block keeps.
+	 * The longest block heading kept (collection-block-label).
+	 */
+	private const MAX_LABEL = 120;
+
+	/**
+	 * The `limit`, `sort` and `label` a collection block keeps.
 	 *
 	 * @param array<string, mixed>      $block      The declared block.
 	 * @param array<string, mixed>|null $collection The collection it reads, or null when unknown.
@@ -53,6 +58,7 @@ class CollectionListKeys {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
 	 */
 	public function collectionKeys(array $block, ?array $collection): array {
 		$out = [];
@@ -61,6 +67,10 @@ class CollectionListKeys {
 		if (is_int($limit) === true && $limit >= 1 && $limit <= self::MAX_LIMIT) {
 			$out['limit'] = $limit;
 		}
+
+		// The block's own heading ("Latest grades"), which wins over the
+		// collection's label (collection-block-label).
+		$out += $this->label(block: $block);
 
 		$sort = ($block['sort'] ?? null);
 		if (is_array($sort) === true
@@ -73,6 +83,24 @@ class CollectionListKeys {
 		// The school displays (rows, bars, chips, richer cards), site-school-blocks.
 		return $out + $this->cards(block: $block, collection: $collection) + (new DisplayKeys())->keys(block: $block, collection: $collection);
 	}//end collectionKeys()
+
+	/**
+	 * The block's own heading, trimmed, when it is a short non-blank string.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, string> `['label' => ...]` or [].
+	 *
+	 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
+	 */
+	private function label(array $block): array {
+		$label = ($block['label'] ?? null);
+		if (is_string($label) === false || trim($label) === '' || mb_strlen(trim($label)) > self::MAX_LABEL) {
+			return [];
+		}
+
+		return ['label' => trim($label)];
+	}//end label()
 
 	/**
 	 * `display: cards`, the `titleFields` that name each card, and its

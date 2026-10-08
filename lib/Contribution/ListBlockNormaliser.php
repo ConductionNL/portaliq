@@ -207,6 +207,7 @@ class ListBlockNormaliser {
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/changes/steps-as-bars/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-as-a-row-of-bars
 	 */
 	public function recordBlock(string $type, array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
@@ -221,6 +222,11 @@ class ListBlockNormaliser {
 		if ($type === 'documents') {
 			// The upload button beside the heading (zuiddrecht-resident-pages-match-the-boards).
 			$entry += (new BoardKeys())->documentsKeys(block: $block);
+		}
+
+		// The steps as a row of bars, as the school boards draw them (steps-as-bars).
+		if ($type === 'steps' && ($block['display'] ?? null) === 'bars') {
+			$entry['display'] = 'bars';
 		}
 
 		return $entry;

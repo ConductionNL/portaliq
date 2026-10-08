@@ -1007,6 +1007,8 @@ export default {
 									this.hrefForRoute,
 									this.recordRows,
 									this.site?.residentMenu?.groups,
+									// Items the portal leaves out (resident-menu-leave-out).
+									this.site?.residentMenu?.leaveOut,
 								)
 							: [],
 					menus: headerMenusOf(this.menus),
@@ -1099,6 +1101,8 @@ export default {
 				this.recordRows,
 				// The portal's own groups (zuiddrecht-resident-pages-match-the-boards).
 				this.site?.residentMenu?.groups,
+				// Items the portal leaves out (resident-menu-leave-out).
+				this.site?.residentMenu?.leaveOut,
 			)
 		},
 

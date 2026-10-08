@@ -45,7 +45,7 @@ class PortalShell {
 	 *
 	 * @param PortalRegionResolver $regions      The closed list of regions.
 	 * @param PortalSignInText     $signInText   The sign-in page's text.
-	 * @param PortalResidentMenu   $residentMenu The resident menu's card label and groups.
+	 * @param PortalResidentMenu   $residentMenu The resident menu's card label, groups and left-out items.
 	 */
 	public function __construct(
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),

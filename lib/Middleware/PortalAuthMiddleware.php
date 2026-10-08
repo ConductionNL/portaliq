@@ -49,6 +49,8 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Middleware;
+use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\IL10N;
 use OCP\IRequest;
 use Throwable;
 
@@ -76,11 +78,13 @@ class PortalAuthMiddleware extends Middleware {
 	 * @param PortalContributionRegistry $registry Resolves the anonymous-reachable
 	 *                                             surface
 	 *                                             (portal-page-provisioning).
+	 * @param IL10N $l10n Localises the message of a refused staff action.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly PortalContributionRegistry $registry,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -197,7 +201,18 @@ class PortalAuthMiddleware extends Middleware {
 	}//end anonymousCreateActionMatches()
 
 	/**
-	 * Convert a portal auth failure to a 401 JSON response.
+	 * Convert a portal auth failure to a 401 JSON response, and a refused
+	 * staff action to a 403.
+	 *
+	 * The staff controllers (news, newsletters, activities, events, …) call
+	 * ActionAuthService::requireAction(), which throws OCSForbiddenException.
+	 * They extend the plain Controller, not OCSController, so Nextcloud's
+	 * OCSMiddleware rethrows it and, unhandled, it ends as a 500 page and an
+	 * error-level log line for every signed-in user without the action. This
+	 * maps it to a 403 with the ADR-050 error envelope: a localised
+	 * `message` plus the `forbidden` slug that PollController and
+	 * EmergencyPushController already return as `error`. Portaliq has no
+	 * OCSController, so no OCS envelope is replaced.
 	 *
 	 * @param object $controller The controller being dispatched.
 	 * @param string $methodName The method being invoked.
@@ -205,7 +220,7 @@ class PortalAuthMiddleware extends Middleware {
 	 *
 	 * @return Response
 	 *
-	 * @throws Throwable Re-thrown when it is not a portal auth failure.
+	 * @throws Throwable Re-thrown when it is not a portal auth failure or a refused action.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 *
@@ -218,6 +233,16 @@ class PortalAuthMiddleware extends Middleware {
 
 		if ($exception instanceof PortalReadOnlySessionException) {
 			return new JSONResponse(['error' => 'reference_session_reads_only'], Http::STATUS_FORBIDDEN);
+		}
+
+		if ($exception instanceof OCSForbiddenException) {
+			return new JSONResponse(
+				[
+					'message' => $this->l10n->t('You are not allowed to do this. Ask an administrator for access.'),
+					'error' => 'forbidden',
+				],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		throw $exception;
