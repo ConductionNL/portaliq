@@ -7,7 +7,7 @@ A resident hears about a change on their case in the portal and, if they want, b
 
 ### Requirement: A case app declares which change a resident hears about (REQ-NAP-001)
 
-A contribution's `notifications` list SHALL accept, next to plain rule keys, a rule object naming a `ruleKey`, one of the contribution's own `collection`s and an `on` condition with a `field` that the collection projects and the operator `changed`. Portaliq SHALL drop a rule whose collection is scoped through `scopeClaim` or `via`, or whose field is not projected, and SHALL log it. A plain rule key SHALL be kept only when something can fire it: `message.created`, `status.changed`, the `ruleKey` of a change rule kept in the same list, or a key in the contributing app's own namespace (`<appId>.<key>`). Portaliq SHALL drop any other plain key, a bare key or another app's, and SHALL log it with the app, so a declaration that can never send anything is not silent (#701).
+A contribution's `notifications` list SHALL accept, next to plain rule keys, a rule object naming a `ruleKey`, one of the contribution's own `collection`s and an `on` condition with a `field` that the collection projects and the operator `changed`. Portaliq SHALL drop a rule whose collection is scoped through `scopeClaim` or `via` unless the rule names its `recipients` (REQ-NAP-012), SHALL drop a rule whose field is not projected, and SHALL log it.
 
 #### Scenario: A well-formed rule is kept
 - **GIVEN** a case app declaring a rule on its cases collection for the `status` field
@@ -20,6 +20,12 @@ A contribution's `notifications` list SHALL accept, next to plain rule keys, a r
 - **WHEN** portaliq aggregates the contributions
 - **THEN** the rule is dropped and a warning names the app and the rule
 - @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsAnUnprojectedField
+
+#### Scenario: A rule on a via collection without recipients is dropped
+- **GIVEN** a rule on a collection read through `via` or `scopeClaim` that names no recipients
+- **WHEN** portaliq aggregates the contributions
+- **THEN** the rule is dropped, and the listener does not act on it even when handed it unnormalised
+- @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsARuleOnAViaCollection and ClaimAddressedChangeNoticeTest::testWithoutRecipientsAViaRuleStaysSilent
 
 #### Scenario: A plain key nothing fires is dropped
 - **GIVEN** a supplier app declaring `notifications: ["tenderPublished", "message.created", "dossiq.invoiceDue"]` as app `dossiq`
@@ -126,3 +132,248 @@ The inbox page SHALL offer a "Notification settings" section with one labelled c
 - **WHEN** they open "Notification settings", clear "E-mail" for new messages and save
 - **THEN** the page says "Your choices are saved." and the box stays cleared after a reload
 - e2e: `tests/e2e/inbox-notifications-and-preferences.spec.ts`
+
+### Requirement: A change rule may reach residents by a claim (REQ-NAP-012)
+
+A change rule MAY declare `recipients` with a `field` of the record and a `claim` of the contributing app, as a bare name or as `<app>.<name>` with the contributing app's own id. Portaliq SHALL drop a rule whose claim names another app or whose recipients are malformed. When the rule's field changes, portaliq SHALL find the active portal accounts whose `claims.<app>.<claim>` equals the record's value at `field`, SHALL read the record as each of them through the collection's own scoped read (its `scopeField`, `scopeClaim`, `via`, `filter` and `fields`), and SHALL write the inbox message and dispatch the rule's key only for an account that may read the record. A record without a value at `field` SHALL reach nobody. Delivery SHALL use the same inbox message and dispatch as REQ-NAP-002, so the resident's channel preferences apply unchanged.
+
+#### Scenario: The guardian who booked hears that the teacher acknowledged
+- **GIVEN** a booking whose `guardianRef` is the value of Fatima's claim `claims.learniq.guardianRef`, and a rule on the bookings collection with `recipients` `{"field": "guardianRef", "claim": "guardianRef"}`
+- **WHEN** the teacher moves the booking from `booked` to `acknowledged`
+- **THEN** Fatima's inbox holds one new message about the booking, and the rule's key is dispatched for her account only
+- **AND** an account holding the same value under another app's claim, and a withdrawn account, are not told
+- @e2e exclude Needs a teacher action in learniq and a guardian portal session on one instance; pinned by ClaimAddressedChangeNoticeTest::testTheGuardianWhoseClaimTheRecordHoldsIsTold with OpenRegister's real events, and checked live on the primary-school instance (learniq claim-addressed booking notice)
+
+#### Scenario: Another family's guardian is not told
+- **GIVEN** an account holding the claim value on the record that the collection's scoped read refuses
+- **WHEN** the booking changes
+- **THEN** no message is written and nothing is dispatched
+- @e2e exclude Absence of a message to a second family needs two guardian sessions; pinned by ClaimAddressedChangeNoticeTest::testAnAccountThatMayNotReadTheRecordIsNotTold
+
+#### Scenario: No claim value, no message
+- **GIVEN** a booking without a `guardianRef`
+- **WHEN** it changes
+- **THEN** no account is looked for, no message is written and nothing is dispatched
+- @e2e exclude pinned by ClaimAddressedChangeNoticeTest::testNoClaimValueNoMessage
+
+### Requirement: A change rule may say in its own words what happened (REQ-NAP-013)
+
+A change rule MAY declare `messages`, a map from a new value of its field to a `subject` and a `body`. Each text SHALL be a non-empty string or a map of language code to string, and a `{field}` or `{field|datetime}` placeholder SHALL name a field the collection projects; portaliq SHALL drop a rule that breaks this. The message SHALL be written in the portal's language, else English, else the first text given, with placeholders filled from the record as the resident may read it; `{field|datetime}` SHALL print `d-m-Y H:i`. A new value without an entry SHALL not be reported. A rule without `messages` SHALL keep the generic text of REQ-NAP-002.
+
+#### Scenario: The acknowledgement names the time and the teacher
+- **GIVEN** the bookings rule with a Dutch message for `acknowledged` reading "De leerkracht heeft uw gesprekstijd bevestigd: {startsAt|datetime}, met {teacherName}."
+- **WHEN** the teacher acknowledges the booking for 13 October 2026 at 18:00 with J. de Vries, on a portal whose language is Dutch
+- **THEN** the message body reads "De leerkracht heeft uw gesprekstijd bevestigd: 13-10-2026 18:00, met J. de Vries."
+- @e2e exclude pinned by ClaimAddressedChangeNoticeTest::testTheGuardianWhoseClaimTheRecordHoldsIsTold
+
+#### Scenario: A decline carries the teacher's note
+- **GIVEN** a message for `declined` with `{declineNote}`
+- **WHEN** the teacher declines with the note "Ik ben ziek"
+- **THEN** the message body contains "Ik ben ziek"
+- @e2e exclude pinned by ClaimAddressedChangeNoticeTest::testADeclineCarriesTheTeachersNote
+
+#### Scenario: A value without words is not reported
+- **GIVEN** the same rule, with no message for `cancelled`
+- **WHEN** the booking moves to `cancelled`
+- **THEN** no message is written and nothing is dispatched
+- @e2e exclude pinned by ClaimAddressedChangeNoticeTest::testAValueWithoutAMessageIsNotReported
+
+#### Scenario: A placeholder on an unprojected field drops the rule
+- **GIVEN** a message whose body names a field the collection does not project
+- **WHEN** portaliq aggregates the contributions
+- **THEN** the rule is dropped and the warning names the field
+- @e2e exclude Manifest normalisation; pinned by NotificationRuleNormaliserTest::testDropsAForeignClaimAMalformedRecipientAndAnUnprojectedPlaceholder
+
+### Requirement: A resident can delete their own inbox messages
+
+A resident MUST be able to delete one or several of their own inbox messages. Portaliq's own notices MAY always be deleted; a message in an app's inbox MAY be deleted only when its collection declares `deletable: true`. The server MUST check that the (register, schema) is an inbox the resident may read, MUST check the trust level again, and MUST delete a row only when its scope field holds the resident's own reference alone and its tenant matches. Another resident's message, a message shared with someone else and an unknown id MUST answer the same 404 with nothing deleted. The page MUST ask for confirmation on the page itself before deleting, never with a browser dialog, and MUST say afterwards what was deleted or that a message could not be deleted.
+
+#### Scenario: A parent deletes one message after confirming
+- GIVEN a parent with a notice in Berichten
+- WHEN she presses "Verwijderen" and then "Ja, verwijderen"
+- THEN the notice is gone from her inbox and the page says "Het bericht is verwijderd."
+- @e2e exclude pinned by the node tests in `tests/inbox-delete.spec.mjs` and `ContributionControllerTest::testDeleteMessageRemovesTheResidentsOwnNotice`; the live check on :8090 is in the PR
+
+#### Scenario: Cancel deletes nothing
+- GIVEN the question is on the page
+- WHEN the parent presses "Annuleren"
+- THEN nothing is deleted
+- @e2e exclude pinned by the node test "deleting one message asks first on the page, and Cancel deletes nothing"
+
+#### Scenario: Several messages at once
+- GIVEN three notices
+- WHEN the parent chooses "Alles selecteren", "Geselecteerde verwijderen (3)" and confirms
+- THEN all three are deleted and the unread count follows
+- @e2e exclude pinned by the node test "deleting the selected messages removes them, updates the count and says so"
+
+#### Scenario: Another resident's message is never deleted
+- GIVEN a message id that belongs to another resident, or is shared with one
+- WHEN a parent sends a delete for it
+- THEN the answer is 404 and nothing is deleted
+- @e2e exclude pinned by `PortalObjectWriterDeleteTest::testItNeverDeletesARowThatIsNotTheSubjectsAlone` and `ContributionControllerTest::testDeleteMessageOfAnotherResidentIs404`
+
+#### Scenario: An app's inbox decides
+- GIVEN an app's inbox collection without `deletable: true`
+- WHEN a parent sends a delete for one of its messages
+- THEN the answer is 403 and the page offers no delete for it
+- @e2e exclude pinned by `ContributionControllerTest::testDeleteMessageFromAnAppsInboxNeedsItsConsent` and `PortalInboxReaderTest::testEachRowSaysWhetherTheResidentMayDeleteIt`
+
+### Requirement: Portaliq's own notices reach the resident's inbox (REQ-NAP-009)
+
+The inbox SHALL include the resident's own `portalMessage` notices, whether or
+not a contribution declares an inbox collection over them. They SHALL be read on
+`subjectRef` with the bearer session's own reference, under the same
+organisation rule as every other inbox source, and SHALL show their subject,
+body, date, read state and record link. A notice that a declared inbox
+collection also returns SHALL appear once. Marking such a notice read SHALL
+write only `read`, on the bearer's own notice.
+
+#### Scenario: An answered question reaches the inbox
+- **GIVEN** a resident who asked a question from a dossier
+- **WHEN** the KCC employee posts the answer
+- **THEN** the resident's inbox serves an unread notice linking to the question
+- **AND** after the resident marks it read, the inbox serves it as read
+- e2e: `tests/e2e/woo-journey.spec.ts` J4
+
+#### Scenario: A matched saved search reaches the inbox
+- **GIVEN** a resident with a daily saved search
+- **WHEN** a new publication matches it
+- **THEN** the resident's inbox serves an unread notice linking to the search
+- e2e: `tests/e2e/woo-journey.spec.ts` J6
+
+#### Scenario: Another resident's notice never appears
+- **GIVEN** a notice written for another resident
+- **WHEN** a resident reads their inbox
+- **THEN** that notice is not in it
+- @e2e exclude pinned by PortalInboxReaderTest::testAnotherSubjectsPortalMessageNeverAppears; the per-row check is PortalObjectReader's own
+
+#### Scenario: A contributed inbox still merges
+- **GIVEN** a case app that declares an inbox collection
+- **WHEN** the resident reads their inbox
+- **THEN** its messages and portaliq's own notices are in one list, newest first
+- @e2e exclude pinned by PortalInboxReaderTest::testAResidentSeesTheirOwnPortalMessagesAlongsideAContributedInbox
+
+### Requirement: A receipt, a notification mail and a task notice are written in the portal's language only
+
+The submission receipt (`SubmissionReceiptService`), the notification e-mail and push (`NotificationDispatchJob`) and the delivered task notice and mail (`PortalTaskDeliveryJob`) MUST each be written once, in the language of the resident's portal, chosen by `PortalNoticeLanguage` the same way change notices are (REQ-NAP-010): the portal's first locale, else Dutch. They MUST NOT join two languages with " / " or a blank line. A task notice MUST find the portal through the resident's own portal account.
+
+#### Scenario: The receipt of a portal in English
+- GIVEN the organisation's portal lists `en` as its first locale
+- WHEN a resident sends a form
+- THEN the receipt's subject reads "Confirmation of receipt, reference WMEBV-..." and carries no Dutch line
+- @e2e exclude pinned by `SubmissionReceiptServiceTest::testTheReceiptIsInThePortalsLanguageOnly`
+
+#### Scenario: The notification mail of a portal with no locale
+- GIVEN the organisation's portal names no locale
+- WHEN a notification mail is sent
+- THEN subject and body are Dutch only
+- @e2e exclude pinned by `NotificationDispatchJobTest::testSendsAContentFreeEmailAndLogsASentAttempt` and `::testTheEmailIsInThePortalsLanguageOnly`
+
+#### Scenario: A task notice in the resident's portal language
+- GIVEN the resident's portal account belongs to an organisation whose portal lists `en` first
+- WHEN a task is delivered to their portal inbox
+- THEN the notice is English only
+- @e2e exclude pinned by `PortalTaskDeliveryJobTest::testAnInboxNoticeIsInThePortalsLanguageOnly` and `::testAskMailIsInThePortalsLanguageOnly`
+
+### Requirement: A change notice is written in the portal's language only (REQ-NAP-010)
+
+The inbox message portaliq writes for a declared change rule SHALL be written in
+one language: the first locale of the organisation's portal, or Dutch when the
+portal names none or cannot be read. Its subject and body SHALL NOT hold the same
+text in two languages.
+
+#### Scenario: A portal that publishes in English first
+- **GIVEN** an organisation whose portal has locales `en`, `nl`
+- **WHEN** a handler changes a field a change rule listens to on a resident's case
+- **THEN** the message subject is "Z-2026-1 has been updated" and holds no Dutch
+- @e2e exclude the portal language is per organisation config; pinned by tests/Unit/Listener/PortalRecordChangeListenerTest.php testTheNoticeIsInThePortalsLanguageOnly
+
+#### Scenario: A portal without a language
+- **GIVEN** an organisation whose portal names no locale, or whose portal cannot be read
+- **WHEN** the same change happens
+- **THEN** the message subject is "Z-2026-1 is bijgewerkt" and holds no English
+- @e2e exclude an unreadable portal cannot be staged on a live instance; pinned by tests/Unit/Listener/PortalRecordChangeListenerTest.php testWithoutAPortalLanguageTheNoticeIsDutch
+
+### Requirement: The inbox badge counts the unread messages the inbox shows (REQ-NAP-011)
+
+When the inbox has loaded its rows, on the React portal and on the Vue site, the unread badge SHALL show the number
+of loaded rows not marked read, also when notices arrived after sign-in.
+
+#### Scenario: Notices written after sign-in
+- **GIVEN** a resident signed in with 2 unread messages
+- **AND** a background job writes 6 more notices for them
+- **WHEN** they open the inbox
+- **THEN** the badge says 8
+- @e2e exclude the e2e drives the API, not a renderer; pinned by tests/inbox-unread.spec.mjs (React portal) and tests/site-inbox-pages.spec.mjs (Vue site)
+
+### Requirement: The inbox does not repeat the open link in the text (REQ-NAP-012)
+
+A notice body MAY end with a web address, because the same text is the e-mail. When the Vue site's inbox shows a row
+with an "Open" button, it SHALL NOT show a web address in the body that leads where that button leads (a link into
+the site naming the same record with `#open=` or the same route with `?route=`), nor the words that only introduce
+it. In a list line it SHALL keep the line's title. Every other address SHALL stay as written.
+
+#### Scenario: An answered question
+- **GIVEN** a pipelinq notice "Er is een antwoord op uw vraag "X". Lees het antwoord hier: <site>#open=pipelinq/myQuestions/<id>"
+- **AND** its record link is that question, which a page of the resident shows
+- **WHEN** the resident opens the inbox
+- **THEN** the row reads "Er is een antwoord op uw vraag "X"." and has "Openen"
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+#### Scenario: An address that leads elsewhere
+- **GIVEN** a notice whose address leads to another record or route than its "Open" button
+- **WHEN** the resident opens the inbox
+- **THEN** the body shows the address as written
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+### Requirement: The inbox shows other site addresses as named links (REQ-NAP-013)
+
+Every other http(s) address in a notice body that leads into this site (the page's own origin, under
+`/apps/portaliq/site`) SHALL show in the Vue site's inbox as a link with a name, never as a raw address. In a list
+item ("- Title: <url>", on its own line or after a sentence) the title SHALL be the link, and the mark "- " and ": <url>" SHALL go. After a lead-in ending in a colon, the
+link's name SHALL take the lead-in's place. The name SHALL be "Bekijk de publicatie" for a `?route=/publicatie/<id>`
+address and "Bekijk de link" for any other. An address outside this site SHALL stay plain text. A link with a
+`?route=` SHALL open through the site's own navigation.
+
+#### Scenario: A published decision
+- **GIVEN** the notice "Wij hebben het besluit ... gepubliceerd. Lees het besluit en de openbaar gemaakte documenten hier: <site>?route=/publicatie/<id>"
+- **WHEN** the resident opens the inbox
+- **THEN** the row reads "Wij hebben het besluit ... gepubliceerd." followed by the link "Bekijk de publicatie"
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+#### Scenario: An address outside this site
+- **GIVEN** a notice body with an address on another origin, or outside `/apps/portaliq/site`
+- **WHEN** the resident opens the inbox
+- **THEN** the address shows as plain text and no link is made of it
+- @e2e exclude the text is a pure function of the row; pinned by tests/inbox-open-link.spec.mjs
+
+### Requirement: Another app's notice with a declared rule key MUST be sent by email (REQ-WJE-006)
+
+A `portalMessage` MAY carry `ruleKey`. When a `portalMessage` is created outside
+portaliq's own writes with a `ruleKey`, portaliq SHALL dispatch that rule key
+for the app named before its first dot, for the message's subject. The email
+SHALL go only when that app's contribution declares the rule key and the
+resident allows email. The inbox entry SHALL stand in every case. No Berichtenbox send SHALL be
+queued for it (hydra #730: not in this journey). This holds
+for `pipelinq.question.answered`, `dossiq.wooRequest.published` and
+`opencatalogi.savedSearch.matched`. Implements hydra `woo-citizen-journey`
+"Every answer, decision and alert MUST reach the resident through portaliq's
+notice path".
+
+#### Scenario: An answer to a question
+- **GIVEN** pipelinq declares `pipelinq.question.answered` and a resident with email on
+- **WHEN** pipelinq writes a `portalMessage` for them with that rule key
+- **THEN** the message is in their inbox and an email is queued for `pipelinq.question.answered`
+- test: PHPUnit `tests/Unit/Listener/PortalRecordChangeListenerTest.php` ("foreign message with a declared key")
+
+#### Scenario: A message borrowing another app's key
+- **GIVEN** opencatalogi does not declare `pipelinq.question.answered`
+- **WHEN** a `portalMessage` with that key is written
+- **THEN** the dispatch is asked for app `pipelinq` only, so opencatalogi's contribution never sends it
+- test: PHPUnit `tests/Unit/Listener/PortalRecordChangeListenerTest.php` ("app from the rule key")
+
+#### Scenario: portaliq's own message
+- **GIVEN** portaliq writes a change notice itself
+- **WHEN** the created event arrives
+- **THEN** nothing is dispatched a second time
+- test: PHPUnit `tests/Unit/Listener/PortalRecordChangeListenerTest.php` ("own message not dispatched twice")

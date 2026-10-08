@@ -41,8 +41,8 @@
 			">
 			<div :class="{ 'ac-card__content': !plain }">
 				<CnSiteSearch
-					:label="searchLabel || title || 'Zoeken'"
-					:labelVisible="true"
+					:label="searchFieldLabel"
+					:labelVisible="searchLabelVisible"
 					:placeholder="searchPlaceholder"
 					:submitLabel="searchSubmitLabel"
 					:value="searchValue"
@@ -132,7 +132,7 @@ export default {
 		searchInputId: { type: String, default: 'cn-site-search' },
 		/** Optional background image for the band. */
 		backgroundImage: { type: String, default: '' },
-		/** Paint the heading; `null` paints it only without a search box. */
+		/** Paint the heading; `null` paints it, also beside a search box. */
 		headingVisible: { type: Boolean, default: null },
 		/** `{label, href}` calls to action; at most two render. */
 		actions: { type: Array, default: () => [] },
@@ -177,16 +177,54 @@ export default {
 		},
 
 		/**
-		 * Whether the heading is painted, by `CnSiteHero`'s rule.
+		 * Whether the heading is painted.
+		 *
+		 * `CnSiteHero`'s rule hid the heading and the lead whenever the band
+		 * held a search box, because the box was labelled with the heading. The
+		 * school and municipality designs draw heading, lead and search box
+		 * together, so the heading shows unless an author turns it off.
 		 *
 		 * @return {boolean} True when visible.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+		 * @spec openspec/changes/site-hero-shows-its-heading/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
 		 */
 		showHeading() {
-			return this.headingVisible !== null
-				? this.headingVisible
-				: this.search === false
+			return this.headingVisible !== null ? this.headingVisible : true
+		},
+
+		/**
+		 * The search box's name. The author's label; else, with the heading
+		 * hidden, the heading (the old rule, so the band keeps one name); else
+		 * the button's word, so a visible heading is not read out twice.
+		 *
+		 * @return {string} The label.
+		 *
+		 * @spec openspec/changes/site-hero-shows-its-heading/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
+		 */
+		searchFieldLabel() {
+			if (this.searchLabel !== '') {
+				return this.searchLabel
+			}
+
+			if (this.showHeading === false && this.title !== '') {
+				return this.title
+			}
+
+			return this.searchSubmitLabel || 'Zoeken'
+		},
+
+		/**
+		 * Whether the label shows above the box: when the author wrote one, or
+		 * when it stands in for a hidden heading. A label that only repeats
+		 * the button's word is for screen readers.
+		 *
+		 * @return {boolean} True when visible.
+		 *
+		 * @spec openspec/changes/site-hero-shows-its-heading/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
+		 */
+		searchLabelVisible() {
+			return this.searchLabel !== '' || this.showHeading === false
 		},
 
 		/**
