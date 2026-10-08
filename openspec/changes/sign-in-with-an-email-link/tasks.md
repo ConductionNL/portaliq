@@ -1,9 +1,23 @@
 # Tasks: sign-in-with-an-email-link
 
-- [ ] 0. Security review of design.md's table; stop here until it is signed.
-- [ ] 1. Mode `email-link` in the portal's `authentication.modes`; the role card on the sign-in page.
-- [ ] 2. Token service: hashed single-use token, 15 minutes, spent by the button, not by the GET.
-  - PHPUnit for expiry, single use and the hash
-- [ ] 3. The request endpoint: same answer and timing for unknown addresses, rate limits per address and client.
-- [ ] 4. The mail (portal name, the address, one link); i18n en and nl.
-- [ ] 5. learniq declares the mode on the academy portal once reviewed.
+- [x] 0. Security review of design.md's table (design.md, "Security review (8 Oct)").
+- [ ] 0a. Build after the review is accepted: stop here until Ruben accepts the review.
+- [ ] 1. Mode `email-link` in the portal's `authentication.modes`; the role card on the sign-in page; the mode does not open registration (REQ-IWI-014).
+  - PHPUnit on `PortalWaysInResolver`: `email-link` alone shows no "Create an account"
+- [ ] 2. Schema: `identityType` gains `email`; the account's sign-in address as a field of its own (H1, H2).
+  - Validate a real `email` account payload against the real schema fragment
+- [ ] 3. Eligibility: identity type `email`, `active`, the portal's organisation, no broker identity reference or claims, exactly one match (REQ-IWI-006).
+  - PHPUnit: a DigiD account, a withdrawn account, another organisation and a shared address all get no link
+- [ ] 4. Token service: 48 characters from `ISecureRandom`, SHA-256 with account id, cookie hash and expiry, `hash_equals`, conditional spend, a new link voids older ones, inactive accounts refused at redeem (REQ-IWI-009).
+  - PHPUnit for expiry, single use, two simultaneous redeems, voiding and the hash
+- [ ] 5. The request endpoint: same sentence, one queued job for every accepted request, the job looks up and mails, the address dropped after the run (REQ-IWI-007).
+  - PHPUnit: known and unknown address queue the same job and answer the same
+- [ ] 6. Rate limits: per address hash (3 per hour, counted for unknown too), `AnonRateLimit` plus `UserRateLimit` per client (20 per hour), a per-portal mail cap, redeem with its own limit and `BruteForceProtection` (REQ-IWI-008).
+- [ ] 7. The link page: request cookie, one button in the requesting browser, typed address in another, a page-fetched value on the POST, the portal and masked address shown, fragment removed with `replaceState` first (REQ-IWI-010, REQ-IWI-012).
+- [ ] 8. The session: fresh `jti`, method `email-link`, trust `low` that refresh cannot raise, idle and cap rules, no silent sign-in, no `logoutUrl` (REQ-IWI-011).
+- [ ] 9. Self-service: the sign-in address cannot change in an `email-link` session; a change needs staff or `substantial` and mails the old address (REQ-IWI-011).
+- [ ] 10. Traffic ingest drops fragments from `pageLocation`; session recording skips the link page (REQ-IWI-012).
+- [ ] 11. Logging and audit by account id and address hash, never the token, link or address; the "u bent ingelogd" notice after each sign-in (REQ-IWI-012).
+- [ ] 12. Staff revoke one account's links and sessions (REQ-IWI-013).
+- [ ] 13. The mail (portal name, the address, one link to the portal's own address, ignore line); i18n en and nl.
+- [ ] 14. learniq declares the mode on the academy portal once built and verified.
