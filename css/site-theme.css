@@ -416,11 +416,18 @@
 }
 
 /* The page on screen: bold, with a bar in the accent under it (in the
- * primary for a set without an accent). */
+ * primary for a set without an accent). The section the page sits in is
+ * marked the same way (`aria-current="true"`, site-page-layout): on
+ * "Uw kind afwezig melden" the item "Praktisch" carries the bar. */
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='true'],
 .pq-site .ac-header .ac-c-navigation__link-container[aria-current='page'] {
 	background-color: transparent;
 }
 
+.pq-site
+	.ac-header
+	.ac-c-navigation__link-container[aria-current='true']
+	.ac-c-navigation__label,
 .pq-site
 	.ac-header
 	.ac-c-navigation__link-container[aria-current='page']
@@ -428,6 +435,7 @@
 	font-weight: 700;
 }
 
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='true']::after,
 .pq-site .ac-header .ac-c-navigation__link-container[aria-current='page']::after {
 	content: '';
 	position: absolute;
@@ -603,6 +611,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  * Without them nothing changes: no shift, four pixels, the accent. The bar
  * sits above the line (z-index 2 over the line's 1), so it covers its piece.
  */
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='true']::after,
 .pq-site .ac-header .ac-c-navigation__link-container[aria-current='page']::after {
 	--pq-nav-current-in-line: var(--nldesign-website-nav-current-in-line, 0);
 	inset-block-end: calc(
@@ -869,14 +878,22 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  * THE DESIGNED FOOTER (G-04): brand column first with its button, the
  * contact column, the menus; the bottom band one step darker than the footer.
  */
+/*
+ * EVERY COLUMN ON ONE ROW (site-page-layout). The brand column, then one
+ * column per contact block and menu, however many the portal has: a fixed
+ * three put a fourth menu ("Over deze website") under the logo on desktop.
+ */
 .ac-footer section.pq-footer__band--designed.pq-footer__band .container {
-	grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+	grid-template-columns: minmax(0, 2fr);
+	grid-auto-columns: minmax(0, 1fr);
+	grid-auto-flow: column;
 	column-gap: 48px;
 }
 
 @media screen and (max-width: 1024px) {
 	.ac-footer section.pq-footer__band--designed.pq-footer__band .container {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-auto-flow: row;
 	}
 }
 
@@ -1969,7 +1986,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 
 @media screen and (min-width: 1025px) {
 	.ac-footer section.pq-footer__band--designed.pq-footer__band .container {
-		grid-template-columns: minmax(0, 420px) repeat(3, minmax(0, 1fr));
+		grid-template-columns: minmax(0, 420px);
 		column-gap: 32px;
 	}
 
