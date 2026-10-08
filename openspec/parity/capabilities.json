@@ -521,7 +521,8 @@
 			"overlay": null,
 			"specs": [
 				"adopt-connection-registry",
-				"supplier-portal"
+				"supplier-portal",
+				"portal-broker-envelope-login"
 			]
 		},
 		{
@@ -533,7 +534,8 @@
 			"specs": [
 				"portal-auth-edge-session-hardening",
 				"portal-traffic-analytics",
-				"supplier-portal"
+				"supplier-portal",
+				"portal-session-idle-and-sso"
 			]
 		},
 		{
@@ -558,7 +560,9 @@
 			"specs": [
 				"password-reset-from-the-sign-in-page",
 				"portal-identity-space",
-				"portal-nextcloud-account-login"
+				"portal-nextcloud-account-login",
+				"portal-account-administration",
+				"portal-ways-in"
 			]
 		},
 		{
@@ -567,7 +571,12 @@
 			"title_nl": "Namens een ander handelen met een machtiging",
 			"area": "identity",
 			"overlay": null,
-			"specs": []
+			"specs": [
+				"portal-access-requests",
+				"portal-branch-scope",
+				"portal-identity-and-the-organisations-cases",
+				"portal-visibility-and-the-party-tree"
+			]
 		},
 		{
 			"slug": "your-profile-and-registered-details",
@@ -577,7 +586,8 @@
 			"overlay": null,
 			"specs": [
 				"identity-registered-details",
-				"own-contacts-and-invitations"
+				"own-contacts-and-invitations",
+				"portal-profile"
 			]
 		},
 		{
@@ -588,7 +598,8 @@
 			"overlay": null,
 			"specs": [
 				"life-domain-theme-pages",
-				"site-mijn-omgeving"
+				"site-mijn-omgeving",
+				"portal-my-cases"
 			]
 		},
 		{
@@ -610,7 +621,8 @@
 			"overlay": null,
 			"specs": [
 				"cases-export-own-data-pdf",
-				"site-shared-dossier"
+				"site-shared-dossier",
+				"citizen-case-documents"
 			]
 		},
 		{
@@ -631,7 +643,9 @@
 			"area": "case-actions",
 			"overlay": null,
 			"specs": [
-				"portal-guest-actions"
+				"portal-guest-actions",
+				"citizen-writes-on-their-own-case",
+				"portal-document-signing"
 			]
 		},
 		{
@@ -641,7 +655,9 @@
 			"area": "case-actions",
 			"overlay": null,
 			"specs": [
-				"case-page-objection-and-complaint"
+				"case-page-objection-and-complaint",
+				"citizen-case-withdraw-screen",
+				"withdrawing-your-own-case"
 			]
 		},
 		{
@@ -696,7 +712,8 @@
 			"area": "inbox",
 			"overlay": null,
 			"specs": [
-				"inbox-read-receipt-on-request"
+				"inbox-read-receipt-on-request",
+				"portal-message-box-channel"
 			]
 		},
 		{
@@ -720,7 +737,8 @@
 			"overlay": null,
 			"specs": [
 				"guardian-push-notifications",
-				"mail-templates-admin-screen"
+				"mail-templates-admin-screen",
+				"portal-notifications-and-preferences"
 			]
 		},
 		{
@@ -733,7 +751,8 @@
 				"embedded-intake-form",
 				"form-statements-intro-and-confirmation-mail",
 				"landing-page-provisioning",
-				"supplier-portal"
+				"supplier-portal",
+				"portal-intake-form"
 			]
 		},
 		{
@@ -743,7 +762,8 @@
 			"area": "intake",
 			"overlay": null,
 			"specs": [
-				"intake-report-pages"
+				"intake-report-pages",
+				"report-without-an-account"
 			]
 		},
 		{
@@ -790,7 +810,8 @@
 				"portal-contribution-contract",
 				"portal-contribution-endpoint-actions",
 				"portal-theme-blocks-and-contributed-pages",
-				"portaliq-leaf-integrations"
+				"portaliq-leaf-integrations",
+				"portal-case-type-visibility"
 			]
 		},
 		{
@@ -803,7 +824,9 @@
 				"parent-polls",
 				"portaliq-cms",
 				"retire-the-vendored-woo-bundle",
-				"site-member-voting-record-and-confidential-papers"
+				"site-member-voting-record-and-confidential-papers",
+				"portal-notices",
+				"site-resident-menu"
 			]
 		},
 		{
@@ -863,7 +886,8 @@
 			"specs": [
 				"nldesign-theme-integration",
 				"portal-white-label-runtime-config",
-				"portaliq-cms"
+				"portaliq-cms",
+				"site-chrome"
 			]
 		},
 		{
@@ -934,7 +958,10 @@
 			"specs": [
 				"configuration-initialization",
 				"settings-management",
-				"source-license-headers"
+				"source-license-headers",
+				"admin-ui",
+				"first-time-setup",
+				"example-resident"
 			]
 		},
 		{
@@ -944,7 +971,8 @@
 			"area": "operate",
 			"overlay": null,
 			"specs": [
-				"observability"
+				"observability",
+				"portal-availability"
 			]
 		},
 		{
@@ -971,6 +999,12 @@
 				"portaliq-mcp-adoption"
 			]
 		}
+	],
+	"internalSpecs": [
+		"dashboard-page",
+		"portal-page-provisioning",
+		"scaffold-components",
+		"site-portal-parity"
 	],
 	"providers": [
 		{
@@ -13195,5 +13229,51 @@
 			"feature": "every-app-in-one-portal",
 			"featureConfidence": "medium"
 		}
-	]
+	],
+	"specScreens": {
+		"admin-ui": {
+			"board": [
+				"PtBeheerinstellingen"
+			]
+		},
+		"first-time-setup": {
+			"board": [
+				"PtInstellen"
+			]
+		},
+		"example-resident": {
+			"board": [
+				"PtInloggenDemo"
+			]
+		},
+		"site-chrome": {
+			"board": [
+				"Home",
+				"Inloggen",
+				"PtInloggenDemo"
+			]
+		},
+		"site-resident-menu": {
+			"board": [
+				"MijnOverzicht",
+				"MobielHome"
+			]
+		},
+		"dashboard-page": {
+			"board": null,
+			"reason": "Serves the app shell and its deep links; it has no screen of its own."
+		},
+		"scaffold-components": {
+			"board": null,
+			"reason": "Example components of the app template; nothing a user of portaliq sees."
+		},
+		"portal-page-provisioning": {
+			"board": null,
+			"reason": "A data contract for apps that contribute portal pages; the pages it provisions are drawn on their own boards."
+		},
+		"site-portal-parity": {
+			"board": null,
+			"reason": "Moves the old portal onto the site; every capability it moves is drawn on its own board."
+		}
+	}
 }
