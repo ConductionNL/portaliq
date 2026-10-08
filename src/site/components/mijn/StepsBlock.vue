@@ -17,7 +17,7 @@
 		data-testid="mijn-steps-block">
 		<component
 			:is="`h${level}`"
-			v-if="heading"
+			v-if="heading && !highlight"
 			:id="headingId"
 			class="utrecht-heading-3">
 			{{ heading }}
@@ -34,6 +34,31 @@
 		<EmptyState
 			v-else-if="steps.length === 0"
 			:text="tr('There are no steps to show yet.')" />
+		<!-- The step that matters now as a card (steps-highlight). -->
+		<div
+			v-else-if="highlight"
+			class="pq-steps-highlight"
+			data-testid="mijn-steps-highlight">
+			<template v-if="nowStep">
+				<div class="pq-steps-highlight__text">
+					<p v-if="block.eyebrow" class="pq-steps-highlight__eyebrow">
+						{{ block.eyebrow }}
+					</p>
+					<p class="pq-steps-highlight__title">{{ highlightTitle }}</p>
+					<p v-if="nowStep.description" class="pq-steps-highlight__line">
+						{{ nowStep.description }}
+					</p>
+				</div>
+				<a
+					v-if="block.buttonLabel && route"
+					class="utrecht-button utrecht-button--secondary-action pq-steps-highlight__button"
+					:href="route"
+					data-testid="mijn-steps-highlight-button"
+					@click.prevent="$emit('navigate', route)">
+					{{ block.buttonLabel }}
+				</a>
+			</template>
+		</div>
 		<ProcessSteps
 			v-else
 			:steps="steps"
@@ -50,6 +75,7 @@ import LoadError from './LoadError.vue'
 import ProcessSteps from './ProcessSteps.vue'
 import Skeleton from './Skeleton.vue'
 import { mijnTranslator } from './rows.js'
+import { stepMoment } from './stepMoment.js'
 
 /**
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
@@ -78,7 +104,11 @@ export default {
 		today: { type: Date, default: null },
 		/** An answer to start from, for a test. */
 		initialAnswer: { type: Object, default: null },
+		/** Where the highlight's button goes: the route of the block's page. */
+		route: { type: String, default: '' },
 	},
+
+	emits: ['navigate'],
 
 	data() {
 		return { answer: this.initialAnswer, failed: false }
@@ -129,6 +159,49 @@ export default {
 		 */
 		steps() {
 			return Array.isArray(this.answer?.steps) ? this.answer.steps : []
+		},
+
+		/**
+		 * Whether the block draws only the step that matters now.
+		 *
+		 * @return {boolean} True for `display: highlight`.
+		 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+		 */
+		highlight() {
+			return this.block?.display === 'highlight'
+		},
+
+		/**
+		 * The step that matters now: the current one, else the first that is
+		 * not done; null when every step is done.
+		 *
+		 * @return {object|null} The step.
+		 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+		 */
+		nowStep() {
+			return (
+				this.steps.find((step) => step?.state === 'current')
+				|| this.steps.find((step) => step?.state !== 'done')
+				|| null
+			)
+		},
+
+		/**
+		 * The card's title: the step's name, with its day (and time) when it
+		 * has one ("Tussenbeoordeling op dinsdag 13 oktober, 10.00 uur").
+		 *
+		 * @return {string} The title.
+		 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+		 */
+		highlightTitle() {
+			const step = this.nowStep
+			if (!step) {
+				return ''
+			}
+			const when = stepMoment(step.date, this.locale)
+			return when
+				? this.tr('{label} on {date}', { label: step.label, date: when })
+				: String(step.label || '')
 		},
 	},
 
@@ -186,6 +259,51 @@ export default {
 </script>
 
 <style scoped>
+/* The step that matters now (steps-highlight). Tokens only. */
+.pq-steps-highlight {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem 1.5rem;
+	padding: 1.25rem 1.5rem;
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	background-color: var(
+		--nldesign-color-accent-light,
+		var(--nldesign-color-primary-light, transparent)
+	);
+}
+
+.pq-steps-highlight__text {
+	flex: 1 1 20rem;
+	min-inline-size: 0;
+}
+
+.pq-steps-highlight__eyebrow,
+.pq-steps-highlight__title,
+.pq-steps-highlight__line {
+	margin: 0;
+}
+
+.pq-steps-highlight__eyebrow {
+	margin-block-end: 0.375rem;
+	color: var(--nldesign-color-accent-text, inherit);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.pq-steps-highlight__title {
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.pq-steps-highlight__line {
+	margin-block-start: 0.375rem;
+}
+
 .pq-steps-block {
 	margin-block-end: var(--utrecht-space-block-lg, 1.5rem);
 }

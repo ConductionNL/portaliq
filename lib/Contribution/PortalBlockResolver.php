@@ -258,7 +258,13 @@ class PortalBlockResolver {
 		}
 
 		if (in_array($type, ListBlockNormaliser::RECORD_BLOCKS, true) === true) {
-			return $lists->recordBlock(type: $type, block: $block, collections: $collections);
+			$entry = $lists->recordBlock(type: $type, block: $block, collections: $collections);
+			// The step that matters now as a highlight (steps-highlight).
+			if ($entry !== null && $type === 'steps') {
+				$entry = (new StepsHighlightKeys())->keys(block: $block, pageIds: $this->pageIds) + $entry;
+			}
+
+			return $entry;
 		}
 
 		return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);
