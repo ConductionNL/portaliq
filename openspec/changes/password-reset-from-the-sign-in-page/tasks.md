@@ -1,6 +1,6 @@
 # Tasks: password-reset-from-the-sign-in-page
 
-- [ ] **T01**: `signInRoutes()` returns `lostPasswordUrl` for a portal offering `nextcloud`, built with `IURLGenerator` and a `redirect_url` to the account route; PHPUnit present and absent (REQ-PWR-001)
-- [ ] **T02**: `src/site/components/WaysIn.vue` shows "Wachtwoord vergeten" from `lostPasswordUrl`, per the Inloggen board; strings in Dutch and English (REQ-PWR-001)
-- [ ] **T03**: node test for the link's presence per portal; Playwright: link opens Nextcloud's reset page
-- [ ] **T04**: Live check against the Inloggen board; screenshot in the build PR
+- [x] **T01**: `signInRoutes()` returns `lostPasswordUrl` for a portal offering `nextcloud`, built with `IURLGenerator` and a `redirect_url` to the account route; PHPUnit present and absent (REQ-PWR-001). Built: the address is served by `ContentController::site()` as `lostPasswordUrl` (Nextcloud's login page with `redirect_url` to the account route, `''` without the `nextcloud` mode), `signInRoutes()` in `src/site/lib/authApi.js` puts it on the account route; `ContentControllerTest::testALostPasswordAddressIsServedOnlyWithTheAccountRoute`, `::testADigidOnlyPortalIsServedNoLostPasswordAddress`. Whether Nextcloud's login page shows the reset inline is Nextcloud's choice; the live check (T04) confirms it
+- [x] **T02**: `src/site/components/WaysIn.vue` shows "Wachtwoord vergeten" from `lostPasswordUrl`, per the Inloggen board; strings in Dutch and English (REQ-PWR-001). Built in `chrome/SignInPage.vue` and the plain list in `AccountArea.vue`
+- [ ] **T03**: node test for the link's presence per portal; Playwright: link opens Nextcloud's reset page — node part done (`tests/password-reset-link.spec.mjs`, `check:password-reset-link`); Playwright not run: needs a live instance
+- [ ] **T04**: Live check against the Inloggen board; screenshot in the build PR — not run: needs a live instance

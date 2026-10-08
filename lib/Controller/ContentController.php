@@ -258,6 +258,10 @@ class ContentController extends Controller {
 				// is exactly what the client is about to act on.
 				'traffic' => $this->traffic->resolve(portal: $portal),
 				'collector' => $this->urlGenerator->linkToRouteAbsolute('portaliq.traffic.collect'),
+				// Where "Wachtwoord vergeten" leads: Nextcloud's own login page, with a
+				// way back to the account route. '' unless the portal offers that route
+				// (password-reset-from-the-sign-in-page REQ-PWR-001).
+				'lostPasswordUrl' => $this->lostPasswordUrl(portal: $portal),
 				// Whether a visitor's search also reads the text inside public
 				// documents. On unless the portal switched it off
 				// (portal-federated-search REQ-PFS-CONTENT-001).
@@ -576,4 +580,28 @@ class ContentController extends Controller {
 	}//end notFound()
 
 
+
+	/**
+	 * The address behind "Wachtwoord vergeten", or '' when the portal does not
+	 * offer the Nextcloud account route. Portaliq adds no reset of its own.
+	 *
+	 * @param array<string, mixed> $portal The portal.
+	 *
+	 * @return string The absolute address, or ''.
+	 *
+	 * @spec openspec/changes/password-reset-from-the-sign-in-page/specs/portaliq-cms/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-password-reset-req-pwr-001
+	 */
+	private function lostPasswordUrl(array $portal): string {
+		$modes = ($portal['authentication']['modes'] ?? []);
+		if (is_array($modes) === false || in_array('nextcloud', $modes, true) === false) {
+			return '';
+		}
+
+		$back = $this->urlGenerator->linkToRoute(
+			'portaliq.session.nextcloud',
+			['portal' => (string)($portal['slug'] ?? '')]
+		);
+
+		return $this->urlGenerator->linkToRouteAbsolute('core.login.showLoginForm', ['redirect_url' => $back]);
+	}//end lostPasswordUrl()
 }//end class

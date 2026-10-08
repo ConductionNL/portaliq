@@ -52,6 +52,7 @@
 					:welcomeLabel="t('Welcome')"
 					:demoLabel="t('Only on this demo. No password is asked.')"
 					:introLabel="t('Log in to view your information.')"
+					:lostPasswordLabel="t('Forgot your password?')"
 					:noWayLabel="
 						t('No login method is configured for this organisation yet.')
 					" />
@@ -70,6 +71,13 @@
 								:data-mode="way.mode"
 								data-testid="site-account-signin-route">
 								{{ way.label }}
+							</a>
+							<a
+								v-if="way.lostPasswordUrl"
+								class="utrecht-link pq-account__lost-password"
+								:href="way.lostPasswordUrl"
+								data-testid="site-signin-lost-password">
+								{{ t('Forgot your password?') }}
 							</a>
 						</li>
 					</ul>

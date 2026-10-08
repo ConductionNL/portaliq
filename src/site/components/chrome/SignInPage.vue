@@ -74,6 +74,14 @@
 						data-testid="site-account-signin-route">
 						{{ way.label }}
 					</a>
+					<p v-if="way.lostPasswordUrl" class="pq-signin__hint">
+						<a
+							class="utrecht-link"
+							:href="way.lostPasswordUrl"
+							data-testid="site-signin-lost-password">
+							{{ lostPasswordLabel }}
+						</a>
+					</p>
 					<p v-if="way.card && way.card.hint" class="pq-signin__hint">
 						{{ way.card.hint }}
 					</p>
@@ -175,6 +183,8 @@ export default {
 		},
 
 		introLabel: { type: String, default: 'Log in om uw gegevens te bekijken.' },
+		/** The link to Nextcloud's own password reset. */
+		lostPasswordLabel: { type: String, default: 'Wachtwoord vergeten' },
 		noWayLabel: {
 			type: String,
 			default: 'Er is nog geen manier van inloggen ingesteld.',

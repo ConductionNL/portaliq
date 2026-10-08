@@ -162,7 +162,14 @@ class ContentControllerTest extends TestCase {
 	 */
 	private function urlGenerator(): IURLGenerator {
 		$generator = $this->createMock(IURLGenerator::class);
-		$generator->method('linkToRouteAbsolute')->willReturn('https://portaal.example/index.php/apps/portaliq/api/traffic');
+		$generator->method('linkToRouteAbsolute')->willReturnCallback(
+			static fn (string $route, array $params = []): string => ($route === 'core.login.showLoginForm'
+				? 'https://portaal.example/index.php/login?redirect_url=' . rawurlencode((string)$params['redirect_url'])
+				: 'https://portaal.example/index.php/apps/portaliq/api/traffic')
+		);
+		$generator->method('linkToRoute')->willReturnCallback(
+			static fn (string $route, array $params = []): string => '/index.php/apps/portaliq/portal/api/session/nextcloud?portal=' . $params['portal']
+		);
 
 		return $generator;
 	}//end urlGenerator()
@@ -845,4 +852,33 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertFalse($this->controller()->site()->getData()['searchInsideDocuments']);
 	}//end testAPortalCanSwitchSearchInsideDocumentsOff()
+
+	/**
+	 * REQ-PWR-001: a portal offering the account route is served the address of
+	 * Nextcloud's login page with a way back; one that does not is served none.
+	 *
+	 * @return void
+	 */
+	public function testALostPasswordAddressIsServedOnlyWithTheAccountRoute(): void {
+		$withAccount = $this->portal();
+		$withAccount['authentication'] = ['modes' => ['nextcloud']];
+		$this->resolver->method('resolve')->willReturn($withAccount);
+		$url = $this->controller()->site()->getData()['lostPasswordUrl'];
+		$this->assertStringStartsWith('https://portaal.example/index.php/login?redirect_url=', $url);
+		$this->assertStringContainsString(rawurlencode('session/nextcloud?portal=open-tilburg'), $url);
+	}//end testALostPasswordAddressIsServedOnlyWithTheAccountRoute()
+
+
+	/**
+	 * A DigiD-only portal gets no address.
+	 *
+	 * @return void
+	 */
+	public function testADigidOnlyPortalIsServedNoLostPasswordAddress(): void {
+		$digid = $this->portal();
+		$digid['authentication'] = ['modes' => ['digid']];
+		$this->resolver->method('resolve')->willReturn($digid);
+
+		$this->assertSame('', $this->controller()->site()->getData()['lostPasswordUrl']);
+	}//end testADigidOnlyPortalIsServedNoLostPasswordAddress()
 }//end class

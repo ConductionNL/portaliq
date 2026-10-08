@@ -383,6 +383,11 @@ export function signInRoutes(
 			label: cards[mode]?.button || labels[mode],
 			...(cards[mode] ? { card: cards[mode] } : {}),
 			...(mode === 'nextcloud' && demo ? { demo: true } : {}),
+			// Nextcloud's own reset, reached from the account route's card
+			// (password-reset-from-the-sign-in-page REQ-PWR-001). Never on the demo.
+			...(mode === 'nextcloud' && !demo && site?.lostPasswordUrl
+				? { lostPasswordUrl: String(site.lostPasswordUrl) }
+				: {}),
 			href:
 				mode === 'nextcloud'
 					? demo
