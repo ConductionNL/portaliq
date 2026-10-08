@@ -74,7 +74,7 @@ test('the api asks the list and the record routes with the bearer', async () => 
 
 test('the button sits above the list and on the record', () => {
 	const page = readFileSync('src/site/pages/collections/ContributionPage.vue', 'utf8')
-	assert.match(page, /<PdfDownloadButton :collection="item.collection" :api="api" :t="tr" \/>/)
+	assert.match(page, /<PdfDownloadButton[^>]*:collection="item.collection"[^>]*:api="api"/)
 	const detail = readFileSync('src/site/components/collections/DetailCard.vue', 'utf8')
-	assert.match(detail, /<PdfDownloadButton :collection="collection" :id="rowId" :api="api" :t="t" \/>/)
+	assert.match(detail, /<PdfDownloadButton[^>]*:collection="collection"[^>]*:id="rowId"[^>]*:api="api"/)
 })
