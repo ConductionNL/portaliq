@@ -21,10 +21,11 @@ NL Portal ships a theme page per life domain with tasks, products, "Wat kan ik r
 ## Rows covered
 
 - `cas-life-domain-themes`, `prd-product-actions`, `prd-change-held-product` (decision 101).
+- `dem-rm-my-products` (reopened by decision 105, 8 October 2026): the products half of the board, "Mijn parkeervergunningen" and "Bekijk alle parkeervergunningen".
 
-## Needs a decision
+## Decided: the products a resident holds
 
-The products block needs the products a resident holds. That is `dem-rm-my-products`, decided-no, and the same board draws it. This change only renders products a contribution hands over as a collection; it builds no product register. If `dem-rm-my-products` stays decided-no, T05 and the products block wait.
+Decision 105 (8 October 2026) reopened `dem-rm-my-products`, decided no on 27 September, because the ThemaOverzicht board draws it. The decision keeps the September boundary: portaliq builds no product register. It renders the products a domain app contributes as a collection with `kind: products` (dossiq for parking permits), with their validity, on the theme page and on a full list per theme. The domain app owns the records and their dates.
 
 ## Out of scope
 

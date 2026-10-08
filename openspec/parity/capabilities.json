@@ -3868,12 +3868,14 @@
 				"open-forms": "no resident accounts or signed-in area: residents are not users; the only User model is staff (src/openforms/accounts/models.py:20) and a resident's identity lives on one submission (src/openforms/authentication/models.py:147 AuthInfo); no shared plans [reached on nothing] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "decided-no",
-				"evidence": "grep 'plan'/'goal'/'doel' across lib/Service/Tasks and src/portal: no shared-plan concept; the task model is one-shot ask/complete, not an ongoing collaborative plan",
+				"state": "specified",
+				"evidence": "grep 'plan'/'goal'/'doel' across lib/Service/Tasks and src/site: no shared-plan concept; no portalPlan schema in lib/Settings/portaliq_register.json; the task model is one-shot ask/complete",
 				"reachedOn": "n/a",
 				"owner": "ConductionNL/portaliq",
-				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area. A shared plan with goals is case-domain logic a domain app would own.",
-				"origin": "competitor"
+				"note": "Reopened by decision 105 (8 Oct): the Plannen, Plan and ActieBewerken boards draw shared plans. Was decided no on 2026-09-28 (single competitor, no demand). Specified in shared-plans-with-a-caseworker, which reuses the action table and dialog of personal-action-list inside a plan.",
+				"origin": "competitor",
+				"readOn": "2026-10-08",
+				"change": "shared-plans-with-a-caseworker"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9797,12 +9799,14 @@
 				"open-forms": "no case list or case page: Open Formulieren hands a submission to a registration backend (ZGW, Objects API, StUF-ZDS, e-mail; src/openforms/registrations/contrib/) and reads nothing back for the resident; the Product model (src/openforms/products/models/product.py:13) is a priced product a form sells, not a product a resident holds [reached on nothing] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "decided-no",
-				"evidence": "grep -riE 'product' lib src: only runtime-config, demo data and access-request wording; no product/permit collection in portaliq or in ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php",
+				"state": "specified",
+				"evidence": "grep -riE 'product' lib src: only runtime-config, demo data and access-request wording; no 'kind: products' collection in lib/Contribution and no validity tag in src/site; no contribution hands over held products (ConductionNL/dossiq@971735b03e lib/Portal/PortalContributionProvider.php)",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No 'my products' view; it could only arrive as a sibling's contributed collection and none contributes one. Decided no in the OpenSpec pass 2026-09-27: openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the product data (Open Product) is that app's to contribute.",
-				"origin": "code"
+				"note": "Reopened by decision 105 (8 Oct): the ThemaOverzicht board draws the products a resident holds. Was decided no on 2026-09-27 (openspec/project.md Boundaries: portaliq owns no domain data). The boundary stays: life-domain-theme-pages (REQ-LDT-004) renders the products a domain app contributes as a 'kind: products' collection, with validity, on the theme page and a full list per theme; dossiq contributes the parking permits.",
+				"origin": "code",
+				"readOn": "2026-10-08",
+				"change": "life-domain-theme-pages"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -11552,7 +11556,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
-			"note": "The ActieBewerken board draws the action dialog inside a plan; plans are cmp-tsk-plan (decided-no). The change builds the action list on its own, without plans.",
+			"note": "The ActieBewerken board draws the action dialog inside a plan. This change builds the action list on its own; plans (cmp-tsk-plan, reopened by decision 105 on 8 Oct) are shared-plans-with-a-caseworker, which puts the same table and dialog inside a plan.",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "ActieBewerken"

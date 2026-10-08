@@ -1447,5 +1447,23 @@
 		"change": "2026-09-28-case-actions-sign-a-document",
 		"owner": "ConductionNL/filinq",
 		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-rm-my-products",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Reopened by decision 105 (8 Oct 2026): the ThemaOverzicht board draws the products a resident holds. The 27 Sep boundary stays: portaliq renders the products a domain app contributes as a 'kind: products' collection with their validity (life-domain-theme-pages REQ-LDT-004); dossiq owns the permit records and contributes them.",
+		"change": "life-domain-theme-pages",
+		"owner": "ConductionNL/portaliq",
+		"decidedOn": "2026-10-08"
+	},
+	{
+		"row": "cmp-tsk-plan",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Reopened by decision 105 (8 Oct 2026): the Plannen, Plan and ActieBewerken boards draw shared plans with a goal, actions, notes, file versions and participants. Specified in shared-plans-with-a-caseworker on top of personal-action-list and own-contacts-and-invitations.",
+		"change": "shared-plans-with-a-caseworker",
+		"owner": "ConductionNL/portaliq",
+		"decidedOn": "2026-10-08"
 	}
 ]

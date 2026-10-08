@@ -20,6 +20,22 @@ The block "Wat kan ik regelen" SHALL list the actions tagged with the theme. An 
 - **WHEN** "Bezoekersuren kopen" has `when: {field: "type", op: "eq", value: "bezoekers"}` and the resident holds only a resident permit
 - **THEN** "Bezoekersuren kopen" does not show
 
+### Requirement: A resident sees the products they hold with their validity (REQ-LDT-004)
+
+A theme page SHALL show the rows of every contributed collection with `kind: products` tagged with the theme, as the ThemaOverzicht board draws them: a count line, and per product its title, a tag "Geldig", "Verlopen" or "Gaat in op {datum}" computed from `validFromField` and `validUntilField`, the meta line and "Geldig tot en met {datum}". The page SHALL show at most three products, valid ones first, and link to a full list per theme. A resident MUST only see products the contribution's scope gives them.
+
+#### Scenario: Two parking permits
+- **WHEN** dossiq contributes Sanne's resident permit and visitor permit, both valid until 31 December 2026
+- **THEN** "Mijn parkeervergunningen" reads "2 vergunningen" and both rows show "Geldig" and "Geldig tot en met 31 december 2026"
+
+#### Scenario: An expired permit
+- **WHEN** a permit's `validUntilField` date is 30 September 2026 and today is 8 October 2026
+- **THEN** its row shows "Verlopen" and is listed after the valid ones on "Bekijk alle parkeervergunningen"
+
+#### Scenario: No products
+- **WHEN** no contribution hands over products for the theme
+- **THEN** the products block is not shown
+
 ### Requirement: A resident can change a product they hold (REQ-LDT-003)
 
 A product row SHALL show the update actions its contribution declares for that row. Choosing one SHALL open the action's form with the row's current values and SHALL write through the contribution's write path. After a successful write the products block SHALL show the new value.
