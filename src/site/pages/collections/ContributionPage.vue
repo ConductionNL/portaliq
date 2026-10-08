@@ -326,6 +326,7 @@
 					item.kind === 'calendar' && item.block.display === 'tiles'
 				"
 				:items="calendarOf(item)"
+				:range="item.block.range || ''"
 				:loading="calendarLoading(item)"
 				:label="item.block.label || ''"
 				:level="sectionLevel"
