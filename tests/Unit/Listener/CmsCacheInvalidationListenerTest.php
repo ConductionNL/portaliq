@@ -202,7 +202,7 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 */
 	public function testTheDeclaredCmsSchemasAreTheCachedOnes(): void {
 		$this->assertSame(
-			['portal', 'menu', 'page', 'glossaryTerm', 'media'],
+			['portal', 'menu', 'page', 'glossaryTerm', 'media', 'portalFaq', 'portalFinder'],
 			CmsCacheInvalidationListener::cmsSchemas()
 		);
 	}//end testTheDeclaredCmsSchemasAreTheCachedOnes()

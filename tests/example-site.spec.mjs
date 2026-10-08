@@ -349,7 +349,7 @@ test('the Zuiddrecht site holds what the design shows', () => {
 	)
 	// Counts the installer's own test and the documentation name.
 	assert.equal(site.menus.length, 3)
-	assert.equal(site.pages.length, 35)
+	assert.equal(site.pages.length, 37)
 	assert.equal(site.news.length, 4)
 })
 
@@ -761,5 +761,5 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'rows',
 	])
 	assert.equal(portal.version, '0.19.0')
-	assert.equal(register.info.version, '0.82.0')
+	assert.equal(register.info.version, '0.83.0')
 })

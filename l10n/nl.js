@@ -2563,7 +2563,26 @@ OC.L10N.register(
         "What became of the mail.": "Wat er van de mail is geworden.",
         "When the mail was sent or tried.": "Wanneer de mail is verstuurd of geprobeerd.",
         "Whether this text is sent. Off means the default text is sent.": "Of deze tekst wordt verstuurd. Uit betekent dat de standaardtekst wordt verstuurd.",
-        "Why the mail failed, in a word. Never the text of the mail.": "Waarom de mail mislukte, in een woord. Nooit de tekst van de mail."
+        "Why the mail failed, in a word. Never the text of the mail.": "Waarom de mail mislukte, in een woord. Nooit de tekst van de mail.",
+        "A short text under the heading.": "Een korte tekst onder de kop.",
+        "Answer": "Antwoord",
+        "FAQ entry": "Veelgestelde vraag",
+        "Only published entries are served on the public site.": "Alleen gepubliceerde vragen staan op de openbare site.",
+        "Only published finders are served on the public site.": "Alleen gepubliceerde productzoekers staan op de openbare site.",
+        "Product finder": "Productzoeker",
+        "Products": "Producten",
+        "Questions": "Vragen",
+        "The answer, in markdown. It is shown as text and sanitised like page markdown.": "Het antwoord, in markdown. Het wordt als tekst getoond en gezuiverd zoals de markdown van pagina's.",
+        "The heading of the finder.": "De kop van de productzoeker.",
+        "The portal this entry belongs to.": "Het portaal waartoe deze vraag hoort.",
+        "The portal this finder belongs to.": "Het portaal waartoe deze productzoeker hoort.",
+        "The question as a resident asks it.": "De vraag zoals een inwoner haar stelt.",
+        "The questions, each with the products that an answer rules out.": "De vragen, elk met de producten die een antwoord laat afvallen.",
+        "The routes of the pages this entry is shown on, such as /parkeren. Empty means it shows on the list of all questions only.": "De routes van de pagina's waarop deze vraag staat, zoals /parkeren. Leeg betekent dat de vraag alleen op de lijst met alle vragen staat.",
+        "The routes of the product pages the finder chooses from.": "De routes van de productpagina's waaruit de productzoeker kiest.",
+        "The topic the entry is grouped under on the list of all questions.": "Het onderwerp waaronder de vraag op de lijst met alle vragen staat.",
+        "Topic": "Onderwerp",
+        "Where the entry stands among the others; lower comes first.": "Waar de vraag tussen de andere staat; lager komt eerst."
     },
     "nplurals=2; plural=(n != 1);"
 )

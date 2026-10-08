@@ -1126,6 +1126,32 @@
                             "href": "/mijn",
                             "kind": "primary"
                         }
+                    },
+                    {
+                        "id": "zd-parkeren-04-nlproductfinder-link",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Zelf uitzoeken wat bij u past",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    },
+                    {
+                        "id": "zd-parkeren-05-nlfaqlist",
+                        "widgetKey": "nlFaqList",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Veelgestelde vragen",
+                            "moreLabel": "Alle veelgestelde vragen",
+                            "moreHref": "/veelgestelde-vragen"
+                        }
                     }
                 ]
             }
@@ -2377,6 +2403,52 @@
                                     "href": "/mijn"
                                 }
                             ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/productzoeker",
+            "title": "Productzoeker parkeren",
+            "summary": "Beantwoord een paar vragen en zie welke parkeervergunning bij u past.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-productzoeker-01-nlproductfinder",
+                        "widgetKey": "nlProductFinder",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "finder": ""
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/veelgestelde-vragen",
+            "title": "Veelgestelde vragen",
+            "summary": "De antwoorden op de vragen die inwoners ons het vaakst stellen.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-faq-01-nlfaqlist",
+                        "widgetKey": "nlFaqList",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 6,
+                        "props": {
+                            "all": true
                         }
                     }
                 ]

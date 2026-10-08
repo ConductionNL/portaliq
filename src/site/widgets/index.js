@@ -63,6 +63,8 @@ import { metaOf as paragraphMeta } from './nlParagraph/meta.js'
 import { metaOf as progressBarMeta } from './nlProgressBar/meta.js'
 import { metaOf as progressCircleMeta } from './nlProgressCircle/meta.js'
 import { metaOf as publicDetailMeta } from './nlPublicDetail/meta.js'
+import { metaOf as faqListMeta } from './nlFaqList/meta.js'
+import { metaOf as productFinderMeta } from './nlProductFinder/meta.js'
 import { metaOf as publicTableMeta } from './nlPublicTable/meta.js'
 import { metaOf as quickTasksMeta } from './nlQuickTasks/meta.js'
 import { metaOf as quoteMeta } from './nlQuote/meta.js'
@@ -134,6 +136,8 @@ export const metas = {
 	nlCatalogue: catalogueMeta,
 	nlPublicTable: publicTableMeta,
 	nlPublicDetail: publicDetailMeta,
+	nlFaqList: faqListMeta,
+	nlProductFinder: productFinderMeta,
 }
 
 /**

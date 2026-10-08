@@ -62,4 +62,6 @@ export const loaders = {
 	nlCatalogue: () => import('./nlCatalogue/NlCatalogue.vue'),
 	nlPublicTable: () => import('./nlPublicTable/NlPublicTable.vue'),
 	nlPublicDetail: () => import('./nlPublicDetail/NlPublicDetail.vue'),
+	nlFaqList: () => import('./nlFaqList/NlFaqList.vue'),
+	nlProductFinder: () => import('./nlProductFinder/NlProductFinder.vue'),
 }

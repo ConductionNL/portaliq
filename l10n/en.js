@@ -2500,7 +2500,26 @@ OC.L10N.register(
         "What became of the mail.": "What became of the mail.",
         "When the mail was sent or tried.": "When the mail was sent or tried.",
         "Whether this text is sent. Off means the default text is sent.": "Whether this text is sent. Off means the default text is sent.",
-        "Why the mail failed, in a word. Never the text of the mail.": "Why the mail failed, in a word. Never the text of the mail."
+        "Why the mail failed, in a word. Never the text of the mail.": "Why the mail failed, in a word. Never the text of the mail.",
+        "A short text under the heading.": "A short text under the heading.",
+        "Answer": "Answer",
+        "FAQ entry": "FAQ entry",
+        "Only published entries are served on the public site.": "Only published entries are served on the public site.",
+        "Only published finders are served on the public site.": "Only published finders are served on the public site.",
+        "Product finder": "Product finder",
+        "Products": "Products",
+        "Questions": "Questions",
+        "The answer, in markdown. It is shown as text and sanitised like page markdown.": "The answer, in markdown. It is shown as text and sanitised like page markdown.",
+        "The heading of the finder.": "The heading of the finder.",
+        "The portal this entry belongs to.": "The portal this entry belongs to.",
+        "The portal this finder belongs to.": "The portal this finder belongs to.",
+        "The question as a resident asks it.": "The question as a resident asks it.",
+        "The questions, each with the products that an answer rules out.": "The questions, each with the products that an answer rules out.",
+        "The routes of the pages this entry is shown on, such as /parkeren. Empty means it shows on the list of all questions only.": "The routes of the pages this entry is shown on, such as /parkeren. Empty means it shows on the list of all questions only.",
+        "The routes of the product pages the finder chooses from.": "The routes of the product pages the finder chooses from.",
+        "The topic the entry is grouped under on the list of all questions.": "The topic the entry is grouped under on the list of all questions.",
+        "Topic": "Topic",
+        "Where the entry stands among the others; lower comes first.": "Where the entry stands among the others; lower comes first."
     },
     "nplurals=2; plural=(n != 1);"
 )

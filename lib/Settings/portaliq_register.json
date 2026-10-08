@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.82.0"
+        "version": "0.83.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.82.0",
+                "version": "0.83.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -76,7 +76,9 @@
                     "portalDraft",
                     "portalAction",
                     "portalMailTemplate",
-                    "portalMailLog"
+                    "portalMailLog",
+                    "portalFaq",
+                    "portalFinder"
                 ]
             }
         },
@@ -7987,7 +7989,7 @@
                     }
                 }
             },
-"portalMailTemplate": {
+            "portalMailTemplate": {
                 "slug": "portalMailTemplate",
                 "icon": "EmailEditOutline",
                 "version": "0.1.0",
@@ -8144,7 +8146,173 @@
                     }
                 }
             },
-                        "changeProposal": {
+            "portalFaq": {
+                "slug": "portalFaq",
+                "icon": "HelpCircleOutline",
+                "version": "0.1.0",
+                "title": "FAQ entry",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "description": "One frequently asked question with its answer, written once and shown on every page it belongs to. Only a published entry is served on the public site.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "question",
+                    "answer"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this entry belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "question": {
+                        "title": "Question",
+                        "type": "string",
+                        "description": "The question as a resident asks it.",
+                        "example": "Hoeveel parkeervergunningen kan ik per adres aanvragen?"
+                    },
+                    "answer": {
+                        "title": "Answer",
+                        "type": "string",
+                        "description": "The answer, in markdown. It is shown as text and sanitised like page markdown.",
+                        "example": "Per adres kunt u twee vergunningen aanvragen."
+                    },
+                    "pages": {
+                        "title": "Pages",
+                        "type": "array",
+                        "description": "The routes of the pages this entry is shown on, such as /parkeren. Empty means it shows on the list of all questions only.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "/parkeren"
+                        ]
+                    },
+                    "topic": {
+                        "title": "Topic",
+                        "type": "string",
+                        "description": "The topic the entry is grouped under on the list of all questions.",
+                        "example": "Parkeren en verkeer"
+                    },
+                    "order": {
+                        "title": "Order",
+                        "type": "integer",
+                        "description": "Where the entry stands among the others; lower comes first.",
+                        "default": 0,
+                        "example": 10
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Only published entries are served on the public site.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "default": "draft",
+                        "example": "published"
+                    }
+                }
+            },
+            "portalFinder": {
+                "slug": "portalFinder",
+                "icon": "FileFindOutline",
+                "version": "0.1.0",
+                "title": "Product finder",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "description": "A product finder: yes or no questions that rule out products. The products are the site's own product pages, named by route. Evaluated in the browser; no answer is ever sent or stored.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "title",
+                    "products",
+                    "questions"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this finder belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "The heading of the finder.",
+                        "example": "Welke vergunning past bij u?"
+                    },
+                    "intro": {
+                        "title": "Introduction",
+                        "type": "string",
+                        "description": "A short text under the heading.",
+                        "example": "Beantwoord een paar vragen en zie welke vergunningen bij u passen."
+                    },
+                    "products": {
+                        "title": "Products",
+                        "type": "array",
+                        "description": "The routes of the product pages the finder chooses from.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "/parkeren/bewoners"
+                        ]
+                    },
+                    "questions": {
+                        "title": "Questions",
+                        "type": "array",
+                        "description": "The questions, each with the products that an answer rules out.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "text": {
+                                    "type": "string"
+                                },
+                                "help": {
+                                    "type": "string"
+                                },
+                                "excludesOnYes": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "excludesOnNo": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Only published finders are served on the public site.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "default": "draft",
+                        "example": "published"
+                    }
+                }
+            },
+            "changeProposal": {
                 "slug": "changeProposal",
                 "authorization": {
                     "read": [

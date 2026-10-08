@@ -437,6 +437,83 @@ class ContentController extends Controller {
 
 
 	/**
+	 * The portal's published FAQ entries.
+	 *
+	 * @param string|null $portal Explicit portal slug.
+	 * @param string|null $locale Requested locale.
+	 * @param string|null $page   Only the entries shown on this page route.
+	 * @param string|null $topic  Only the entries of this topic.
+	 *
+	 * @return JSONResponse The entries, or 404.
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
+	public function faq(?string $portal=null, ?string $locale=null, ?string $page=null, ?string $topic=null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
+			return $this->notFound();
+		}
+
+		$refusal = $this->refuseUnlessPermitted(portal: $portal);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->publicJson(
+			payload: [
+				'entries' => $this->reader->faq(
+					portal: (string)$portal['slug'],
+					locale: $this->locale(portal: $portal, requested: $locale),
+					audience: $this->audience(),
+					page: trim((string)$page),
+					topic: trim((string)$topic)
+				),
+			]
+		);
+	}//end faq()
+
+	/**
+	 * One published product finder.
+	 *
+	 * @param string|null $portal Explicit portal slug.
+	 * @param string|null $locale Requested locale.
+	 * @param string|null $finder The finder's id; empty for the first published one.
+	 *
+	 * @return JSONResponse The finder, or 404.
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
+	public function finder(?string $portal=null, ?string $locale=null, ?string $finder=null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
+			return $this->notFound();
+		}
+
+		$refusal = $this->refuseUnlessPermitted(portal: $portal);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$found = $this->reader->finder(
+			portal: (string)$portal['slug'],
+			id: trim((string)$finder),
+			locale: $this->locale(portal: $portal, requested: $locale),
+			audience: $this->audience()
+		);
+		if ($found === null) {
+			return $this->notFound();
+		}
+
+		return $this->publicJson(payload: ['finder' => $found]);
+	}//end finder()
+
+	/**
 	 * The leaf apps' contributed surfaces for the resolved portal.
 	 *
 	 * THIS IS THE BRIDGE, AND IT IS DELIBERATELY ON THE PUBLIC CONTRACT.

@@ -234,6 +234,28 @@
       "visibleIf": {
         "access.admin": true
       }
+    },
+    {
+      "id": "FaqMenu",
+      "label": "Frequently asked questions",
+      "icon": "HelpCircleOutline",
+      "route": "Faq",
+      "section": "settings",
+      "order": 94,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "FindersMenu",
+      "label": "Product finders",
+      "icon": "FileFindOutline",
+      "route": "Finders",
+      "section": "settings",
+      "order": 94,
+      "visibleIf": {
+        "access.admin": true
+      }
     }
   ],
   "pages": [
@@ -2551,6 +2573,68 @@
                 "delivered": "success",
                 "failed": "error",
                 "queued": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "Faq",
+      "route": "/faq",
+      "type": "index",
+      "title": "Frequently asked questions",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalFaq",
+        "_note": "One FAQ entry, written once and shown on every page in `pages` (public-faq-and-product-finder). Only published entries reach the public site.",
+        "columns": [
+          "question",
+          "topic",
+          "pages",
+          "order",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "Finders",
+      "route": "/finders",
+      "type": "index",
+      "title": "Product finders",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalFinder",
+        "_note": "Yes or no questions that rule out the portal's product pages (public-faq-and-product-finder). Evaluated in the visitor's browser; no answer is kept.",
+        "columns": [
+          "title",
+          "portal",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
               }
             }
           }

@@ -49,6 +49,8 @@ import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
 import EmailEditOutline from 'vue-material-design-icons/EmailEditOutline.vue'
 import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
+import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
+import FileFindOutline from 'vue-material-design-icons/FileFindOutline.vue'
 import History from 'vue-material-design-icons/History.vue'
 import Home from 'vue-material-design-icons/Home.vue'
 import Login from 'vue-material-design-icons/Login.vue'
@@ -112,6 +114,8 @@ export default {
 	FormSelect,
 	EmailEditOutline,
 	EmailSearchOutline,
+	HelpCircleOutline,
+	FileFindOutline,
 	History,
 	// The Home page entry of a portal's configuration (portal-home-page, #1183).
 	Home,

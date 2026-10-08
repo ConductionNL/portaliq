@@ -267,6 +267,65 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
+	 * A draft FAQ entry is never served; the rest stand in their order and filter by page.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	public function testAFaqDraftIsNeverServedAndEntriesAreFiltered(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				['question' => 'Tweede?', 'answer' => 'b', 'status' => 'published', 'order' => 20, 'pages' => ['/parkeren'], 'topic' => 'Parkeren'],
+				['question' => 'GEHEIM?', 'answer' => 'x', 'status' => 'draft', 'order' => 1, 'pages' => ['/parkeren']],
+				['question' => 'Eerste?', 'answer' => 'a', 'status' => 'published', 'order' => 10, 'pages' => ['/parkeren', '/afval'], 'topic' => 'Parkeren'],
+				['question' => 'Afval?', 'answer' => 'c', 'status' => 'published', 'order' => 5, 'pages' => ['/afval'], 'topic' => 'Afval'],
+			]
+		);
+
+		$all = $this->reader->faq('open-tilburg', 'nl', 'anonymous');
+		$this->assertSame(['Afval?', 'Eerste?', 'Tweede?'], array_column($all, 'question'));
+		$this->assertStringNotContainsString('GEHEIM', json_encode($all));
+		$this->assertSame(['Eerste?', 'Tweede?'], array_column($this->reader->faq('open-tilburg', 'nl', 'anonymous', '/parkeren'), 'question'));
+		$this->assertSame(['Afval?'], array_column($this->reader->faq('open-tilburg', 'nl', 'anonymous', '', 'Afval'), 'question'));
+	}//end testAFaqDraftIsNeverServedAndEntriesAreFiltered()
+
+
+	/**
+	 * A finder offers only products whose page is published, and keeps the question rules.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	public function testAFinderOffersOnlyPublishedProducts(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				[
+					'id' => 'f1',
+					'title' => 'Welke vergunning?',
+					'status' => 'published',
+					'products' => ['/p/a', '/p/gone'],
+					'questions' => [
+						['id' => 'q1', 'text' => 'Woont u in de binnenstad?', 'excludesOnNo' => ['/p/a']],
+						['id' => 'q2', 'text' => ''],
+					],
+				],
+				['title' => 'Product A', 'route' => '/p/a', 'status' => 'published', 'body' => ['type' => 'markdown']],
+			]
+		);
+
+		$finder = $this->reader->finder('open-tilburg', 'f1', 'nl', 'anonymous');
+		$this->assertSame([['route' => '/p/a', 'title' => 'Product A']], $finder['products']);
+		$this->assertCount(1, $finder['questions']);
+		$this->assertSame(['/p/a'], $finder['questions'][0]['excludesOnNo']);
+		$this->assertNull($this->reader->finder('open-tilburg', 'other', 'nl', 'anonymous'));
+	}//end testAFinderOffersOnlyPublishedProducts()
+
+
+	/**
 	 * An editor's route lookup finds the page behind a route, published or not.
 	 *
 	 * `identify()` is the one read on this class that deliberately does NOT

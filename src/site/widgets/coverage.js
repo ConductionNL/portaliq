@@ -1037,4 +1037,14 @@ export const SITE_COMPOSITIONS = [
 		composes: ['Description List', 'Heading', 'Button', 'Radio Button'],
 		why: 'The page of one course or programme of an app: facts, sections, dates with places and an enrol card.',
 	},
+	{
+		key: 'nlFaqList',
+		composes: ['Accordion', 'Heading', 'Link'],
+		why: 'The portal\'s frequently asked questions, written once and shown on the pages they belong to.',
+	},
+	{
+		key: 'nlProductFinder',
+		composes: ['Heading', 'Button', 'Link List'],
+		why: 'Yes or no questions that rule out the portal\'s products, evaluated in the browser ("Welke vergunning past bij u?").',
+	},
 ]

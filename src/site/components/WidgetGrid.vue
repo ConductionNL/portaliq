@@ -635,6 +635,17 @@ export default {
 				return { ...props, portal: this.portal }
 			}
 
+			// public-faq-and-product-finder: the FAQ reads this portal's entries
+			// for the page on screen; the finder reads this portal's finder.
+			if (widget.widgetKey === 'nlFaqList') {
+				const navigation = this.navigation || {}
+				return { ...props, portal: this.portal, currentRoute: navigation.currentRoute || '' }
+			}
+
+			if (widget.widgetKey === 'nlProductFinder') {
+				return { ...props, portal: this.portal }
+			}
+
 			// The hero hands the portal on to the list beside it, which reads
 			// this portal's catalogue or news (hero-on-the-school-boards).
 			if (widget.widgetKey === 'hero') {

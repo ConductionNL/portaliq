@@ -230,6 +230,10 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		'nlCatalogue',
 		// public-detail-page-for-a-provider-item: date cards and a facts grid.
 		'nlPublicDetail',
+		// public-faq-and-product-finder: the FAQ's group spacing and the
+		// finder's chips, layout and result panel; layout and tokens only.
+		'nlFaqList',
+		'nlProductFinder',
 	]
 
 	for (const { key, source } of components()) {
