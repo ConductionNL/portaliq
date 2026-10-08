@@ -41,7 +41,7 @@ use OCP\IL10N;
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one method per thing a resident does with a plan.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- the permission rules of one plan live together.
  *
- * @spec openspec/changes/shared-plans-with-a-caseworker/specs/shared-plans/spec.md
+ * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
 class PortalPlanService {
 

@@ -17,6 +17,7 @@
 			class="utrecht-textbox"
 			type="email"
 			autocomplete="email"
+			:aria-labelledby="`${id}-label`"
 			:value="modelValue"
 			:aria-invalid="invalid ? 'true' : 'false'"
 			:data-testid="`${testid}-address`"

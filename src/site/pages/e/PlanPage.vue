@@ -60,7 +60,7 @@
 					{{ words.goal }}
 				</h2>
 				<template v-if="editing === 'goal'">
-					<textarea v-model="draft" class="utrecht-textarea" data-testid="plan-goal-input" />
+					<textarea v-model="draft" class="utrecht-textarea" :aria-label="words.goal" data-testid="plan-goal-input" />
 					<button type="button" class="utrecht-button utrecht-button--primary-action" data-testid="plan-goal-save" @click="saveField('goal')">
 						{{ words.save }}
 					</button>
@@ -144,7 +144,7 @@
 					{{ words.notes }}
 				</h2>
 				<template v-if="editing === 'note'">
-					<textarea v-model="draft" class="utrecht-textarea" data-testid="plan-note-input" />
+					<textarea v-model="draft" class="utrecht-textarea" :aria-label="words.notes" data-testid="plan-note-input" />
 					<button type="button" class="utrecht-button utrecht-button--primary-action" data-testid="plan-note-save" @click="saveField('note')">
 						{{ words.save }}
 					</button>

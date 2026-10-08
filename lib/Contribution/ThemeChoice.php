@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Contribution;
  * declare is dropped, and a declared theme with nothing tagged for this
  * resident is not announced, so the menu does not list it.
  *
- * @spec openspec/changes/life-domain-theme-pages/specs/portal-themes/spec.md
+ * @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
  */
 class ThemeChoice {
 

@@ -35,7 +35,7 @@ use PHPUnit\Framework\TestCase;
  * 401 without a session, the outcomes as statuses, only the allowed fields
  * reach the service, and the PDF is refused to a stranger.
  *
- * @spec openspec/changes/shared-plans-with-a-caseworker/specs/shared-plans/spec.md
+ * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
 class PortalPlansControllerTest extends TestCase {
 

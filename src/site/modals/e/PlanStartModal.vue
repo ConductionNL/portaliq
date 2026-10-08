@@ -149,6 +149,13 @@ export default {
 		this.contacts = Array.isArray(overview?.contacts) ? overview.contacts : []
 	},
 
+	/**
+	 * Close the native dialog when the component goes.
+	 *
+	 * @return {void}
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
+	 */
 	beforeUnmount() {
 		if (this.$refs.dialog?.open && typeof this.$refs.dialog.close === 'function') {
 			this.$refs.dialog.close()

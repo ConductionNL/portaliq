@@ -11,7 +11,7 @@
 // Usage:
 //   node --test tests/shared-plans.spec.mjs
 //
-// @spec openspec/changes/shared-plans-with-a-caseworker/specs/shared-plans/spec.md
+// @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

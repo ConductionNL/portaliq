@@ -10,7 +10,7 @@
 // Usage:
 //   node --test tests/life-domain-themes.spec.mjs
 //
-// @spec openspec/changes/life-domain-theme-pages/specs/portal-themes/spec.md
+// @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'

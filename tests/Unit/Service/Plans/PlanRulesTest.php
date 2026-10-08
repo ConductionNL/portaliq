@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The dates and counts of a plan: REQ-SPL-002 and REQ-SPL-004.
  *
- * @spec openspec/changes/shared-plans-with-a-caseworker/specs/shared-plans/spec.md
+ * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
 class PlanRulesTest extends TestCase {
 

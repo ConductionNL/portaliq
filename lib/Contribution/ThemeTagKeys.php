@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Contribution;
  * `when` of an action, each only when it is well formed. A bad value is
  * dropped, never repaired.
  *
- * @spec openspec/changes/life-domain-theme-pages/specs/portal-themes/spec.md
+ * @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
  */
 class ThemeTagKeys {
 

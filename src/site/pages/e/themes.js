@@ -6,7 +6,7 @@
 // and when an action is offered. Imports nothing, so the node specs run it as
 // a plain script.
 //
-// @spec openspec/changes/life-domain-theme-pages/specs/portal-themes/spec.md
+// @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
 
 /** The most products the theme page shows before it links to the full list. */
 export const PRODUCT_LIMIT = 3

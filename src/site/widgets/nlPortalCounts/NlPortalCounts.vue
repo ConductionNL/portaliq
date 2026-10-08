@@ -49,7 +49,7 @@ import '@utrecht/link-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 
 /**
- * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#41
+ * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
 export default {
 	name: 'NlPortalCounts',
@@ -70,7 +70,7 @@ export default {
 	/**
 	 * Read the counts once the widget is on the page.
 	 *
-	 * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#41
+	 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
 	 */
 	async mounted() {
 		const answer = await fetchCounts(this.by, {
@@ -85,7 +85,7 @@ export default {
 		/**
 		 * @param {string} key A string key.
 		 * @return {string} The words in the page language.
-		 * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#41
+		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
 		 */
 		say(key) {
 			return (strings[pageLocale()] || strings.nl)[key]

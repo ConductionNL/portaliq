@@ -48,7 +48,7 @@ use OCP\IRequest;
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one route per thing a resident does with a plan.
  *
- * @spec openspec/changes/shared-plans-with-a-caseworker/specs/shared-plans/spec.md
+ * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
 class PortalPlansController extends Controller implements PortalProtected {
 

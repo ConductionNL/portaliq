@@ -554,7 +554,7 @@ export function searchQuery(state, catalog = '') {
  * @param {object} state The search state.
  * @return {Record<string, Array<string>>} Field to values; empty without locks.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#11
+ * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
 export function lockedFiltersOf(state) {
 	const raw = state && state.lockedFilters
@@ -582,7 +582,7 @@ export function lockedFiltersOf(state) {
  * @param {Record<string, Array<string>>} locked The locked filters.
  * @return {Array<string>} The fields the visitor may filter on.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#11
+ * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
 export function withoutLocked(fields, locked) {
 	return (fields || []).filter((field) => !Object.hasOwn(locked || {}, field))

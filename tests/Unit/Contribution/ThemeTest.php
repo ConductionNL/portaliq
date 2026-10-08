@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
  * life-domain-theme-pages REQ-LDT-001, REQ-LDT-002, REQ-LDT-004: what the
  * normaliser keeps and drops, and what the portal's themes decide.
  *
- * @spec openspec/changes/life-domain-theme-pages/specs/portal-themes/spec.md
+ * @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
  */
 class ThemeTest extends TestCase {
 

@@ -35,7 +35,7 @@ use PHPUnit\Framework\TestCase;
  * scopes a read the way the portal's reader does: an equal value, or a list
  * that contains it.
  *
- * @spec openspec/changes/shared-plans-with-a-caseworker/specs/shared-plans/spec.md
+ * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
 class PortalPlanServiceTest extends TestCase {
 

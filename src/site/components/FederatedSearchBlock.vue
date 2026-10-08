@@ -829,7 +829,7 @@ export default {
 		 *
 		 * @return {Record<string, Array<string>>} The locks.
 		 *
-		 * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#11
+		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
 		 */
 		locked() {
 			return lockedFiltersOf({ lockedFilters: this.lockedFilters })
@@ -840,7 +840,7 @@ export default {
 		 *
 		 * @return {Array<{key: string, label: string}>} The chips.
 		 *
-		 * @spec openspec/changes/home-and-theme-landing-pages/tasks.md#11
+		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
 		 */
 		lockedChips() {
 			return Object.entries(this.locked).flatMap(([field, values]) =>

@@ -32,7 +32,7 @@ use RuntimeException;
 /**
  * REQ-SPL-004: one reminder per end date, to every participant.
  *
- * @spec openspec/changes/shared-plans-with-a-caseworker/specs/shared-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
+ * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
  */
 class PlanEndReminderServiceTest extends TestCase {
 

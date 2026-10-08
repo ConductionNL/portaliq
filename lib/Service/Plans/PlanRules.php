@@ -31,7 +31,7 @@ use DateTimeZone;
  * Pure rules: a template becomes dates, a plan is near its end or not, a done
  * plan stays visible for a year.
  *
- * @spec openspec/changes/shared-plans-with-a-caseworker/specs/shared-plans/spec.md
+ * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
 class PlanRules {
 
