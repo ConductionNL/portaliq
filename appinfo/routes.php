@@ -61,6 +61,12 @@ return [
         ['name' => 'accessRequestAdmin#index', 'url' => '/api/access-requests', 'verb' => 'GET'],
         // Which form a form binding resolves to today, for the admin's Form
         // bindings page (portal-intake-form-as-an-object T03). Admin-only.
+        // The mail templates screen: kinds, preview, test mail, resend
+        // (mail-templates-admin-screen T04). Admin-only.
+        ['name' => 'mailTemplateAdmin#kinds', 'url' => '/api/mail-templates', 'verb' => 'GET'],
+        ['name' => 'mailTemplateAdmin#preview', 'url' => '/api/mail-templates/preview', 'verb' => 'POST'],
+        ['name' => 'mailTemplateAdmin#test', 'url' => '/api/mail-templates/test', 'verb' => 'POST'],
+        ['name' => 'mailTemplateAdmin#resend', 'url' => '/api/mail-log/{id}/resend', 'verb' => 'POST'],
         ['name' => 'formBindingAdmin#preview', 'url' => '/api/form-bindings/preview', 'verb' => 'POST'],
         // A portal's "Case types" page: which case types residents see
         // (operate-show-per-case-type). Admin-only.

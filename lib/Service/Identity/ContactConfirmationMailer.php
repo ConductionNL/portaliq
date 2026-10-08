@@ -24,6 +24,8 @@ namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Contribution\ConfirmationMailKeys;
+use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -58,6 +60,8 @@ class ContactConfirmationMailer {
 	 * @param PortalOrganisationConfigService $organisations Names the organisation.
 	 * @param PortalAccountService          $accounts      Reads the account's address.
 	 * @param LoggerInterface               $logger        Logs a mail that was not sent.
+	 * @param MailTemplateRenderer|null     $renderer      Swaps in a portal's own text.
+	 * @param MailLog|null                  $mailLog       Logs each send, with the address masked.
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
@@ -67,6 +71,8 @@ class ContactConfirmationMailer {
 		private readonly PortalOrganisationConfigService $organisations,
 		private readonly PortalAccountService $accounts,
 		private readonly LoggerInterface $logger,
+		private readonly ?MailTemplateRenderer $renderer=null,
+		private readonly ?MailLog $mailLog=null,
 	) {
 	}//end __construct()
 
@@ -148,15 +154,24 @@ class ContactConfirmationMailer {
 		$link   = $this->deepLinks->forSite(portalSlug: trim((string)($portal['slug'] ?? '')), organisation: $organisation);
 		$l10n   = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
 
+		$subject = $l10n->t('We have received your question');
+		$body    = $l10n->t('Your question has reached %1$s. You find it back under My questions.', [$name]);
+		if ($topic !== '') {
+			$body = $l10n->t('Your question about %1$s has reached %2$s. You find it back under My questions.', [$topic, $name]);
+		}
+
+		$slug = trim((string)($portal['slug'] ?? ''));
+		if ($this->renderer !== null) {
+			$text    = $this->renderer->render(portal: $slug, key: 'contact-confirmation', values: ['portal' => $name, 'topic' => $topic], subject: $subject, body: $body);
+			$subject = $text['subject'];
+			$body    = $text['body'];
+		}
+
 		$mail = $this->mailer->createEMailTemplate('portaliq.contact.confirmation', []);
-		$mail->setSubject($l10n->t('We have received your question'));
+		$mail->setSubject($subject);
 		$mail->addHeader();
 		$mail->addHeading($l10n->t('We have received your question'));
-		if ($topic !== '') {
-			$mail->addBodyText($l10n->t('Your question about %1$s has reached %2$s. You find it back under My questions.', [$topic, $name]));
-		} else {
-			$mail->addBodyText($l10n->t('Your question has reached %1$s. You find it back under My questions.', [$name]));
-		}
+		$mail->addBodyText($body);
 
 		$mail->addBodyButton($l10n->t('Open My questions'), $link);
 		$mail->addFooter();
@@ -165,7 +180,17 @@ class ContactConfirmationMailer {
 		$message->setTo([$email]);
 		$message->useTemplate($mail);
 
-		return count($this->mailer->send($message)) === 0;
+		$sent = (count($this->mailer->send($message)) === 0);
+		if ($this->mailLog !== null) {
+			$status = 'failed';
+			if ($sent === true) {
+				$status = 'delivered';
+			}
+
+			$this->mailLog->record(portal: $slug, templateKey: 'contact-confirmation', email: $email, status: $status);
+		}
+
+		return $sent;
 	}//end send()
 
 	/**

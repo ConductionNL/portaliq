@@ -212,6 +212,28 @@
         "appInstalled": "integriq",
         "access.admin": true
       }
+    },
+    {
+      "id": "MailTemplatesMenu",
+      "label": "Mail templates",
+      "icon": "EmailEditOutline",
+      "route": "MailTemplates",
+      "section": "settings",
+      "order": 97,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "MailLogMenu",
+      "label": "Sent mail",
+      "icon": "EmailSearchOutline",
+      "route": "MailLog",
+      "section": "settings",
+      "order": 97,
+      "visibleIf": {
+        "access.admin": true
+      }
     }
   ],
   "pages": [
@@ -2472,6 +2494,72 @@
         }
       },
       "_note": "adopt-connection-registry (hydra connection-registry D8, hydra#667, #673, #674 and #676). The rows are integriq's `app_connection` objects, synced from lib/Settings/connections.json; integriq works out each status. The app=portaliq preset is the IntegrationsMenu entry's `query` (ADR-097 decision 5), which the index page merges into the fetch as a bare filter key. `showAdd` is false because a row nothing declared has nothing to check (D9). Add integration leaves for integriq's overview through the openIntegriqConnections handler in src/customComponents.js, because a header action's `navigate` only pushes a route inside this app."
+    },
+    {
+      "id": "MailTemplates",
+      "route": "/mail-templates",
+      "type": "index",
+      "title": "Mail templates",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalMailTemplate",
+        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController.",
+        "columns": [
+          "portal",
+          "templateKey",
+          "subject",
+          {
+            "key": "active",
+            "label": "Active",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "true": "success",
+                "false": "warning"
+              }
+            }
+          },
+          "updatedBy"
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "MailLog",
+      "route": "/mail-log",
+      "type": "index",
+      "title": "Sent mail",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalMailLog",
+        "_note": "Every mail the portal sent, kept 90 days, with the address masked (mail-templates-admin-screen). A failed mail is sent again through MailTemplateAdminController::resend.",
+        "showAdd": false,
+        "columns": [
+          "sentAt",
+          "recipientMasked",
+          "templateKey",
+          "caseRef",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "delivered": "success",
+                "failed": "error",
+                "queued": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
     }
   ],
   "walkthrough": {

@@ -35,6 +35,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -154,6 +156,8 @@ class PortalIdentityMailer {
 	 * @param PortalResolver $portals Finds the organisation's portal when the caller has none.
 	 * @param PortalOrganisationConfigService $organisations The tenant's name when no portal names it.
 	 * @param LoggerInterface $logger Records a failed send, never the secret.
+	 * @param MailTemplateRenderer|null $renderer Swaps in a portal's own text (mail-templates-admin-screen).
+	 * @param MailLog|null $mailLog Logs each send, with the address masked.
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
@@ -162,6 +166,8 @@ class PortalIdentityMailer {
 		private readonly PortalResolver $portals,
 		private readonly PortalOrganisationConfigService $organisations,
 		private readonly LoggerInterface $logger,
+		private readonly ?MailTemplateRenderer $renderer=null,
+		private readonly ?MailLog $mailLog=null,
 	) {
 	}//end __construct()
 
@@ -199,10 +205,18 @@ class PortalIdentityMailer {
 			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
 
 			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $template, []);
-			$mail->setSubject($l10n->t($keys['subject'], [$name]));
+			$text = $this->textOf(
+				template: $template,
+				portalSlug: trim((string)($portal['slug'] ?? '')),
+				values: ['portal' => $name, 'link' => $link],
+				subject: $l10n->t($keys['subject'], [$name]),
+				intro: $l10n->t($keys['intro'], [$name])
+			);
+
+			$mail->setSubject($text['subject']);
 			$mail->addHeader();
 			$mail->addHeading($l10n->t($keys['heading']));
-			$mail->addBodyText($l10n->t($keys['intro'], [$name]));
+			$mail->addBodyText($text['body']);
 			$mail->addBodyButton($l10n->t($keys['button']), $link);
 			$mail->addBodyText($this->closing(l10n: $l10n));
 			$mail->addFooter();
@@ -215,16 +229,74 @@ class PortalIdentityMailer {
 			// The exception's own message is left out on purpose: a transport
 			// error may quote the recipient or the body back.
 			$this->logger->warning('Portaliq: identity mail not sent', ['template' => $template, 'exception' => get_class($failure)]);
+			$this->logSend(template: $template, email: $email, portal: $portal, status: 'failed', reason: 'exception');
 			return false;
 		}
 
 		if (count($failed) > 0) {
 			$this->logger->warning('Portaliq: identity mail refused by the mail server', ['template' => $template]);
+			$this->logSend(template: $template, email: $email, portal: $portal, status: 'failed', reason: 'refused');
 			return false;
 		}
 
+		$this->logSend(template: $template, email: $email, portal: $portal, status: 'delivered', reason: '');
+
 		return true;
 	}//end send()
+
+	/**
+	 * The subject and text to send: the portal's own when it has one.
+	 *
+	 * @param string                $template   The template key.
+	 * @param string                $portalSlug The portal slug.
+	 * @param array<string, string> $values     The variables' values.
+	 * @param string                $subject    The default subject.
+	 * @param string                $intro      The default text.
+	 *
+	 * @return array{subject: string, body: string}
+	 *
+	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 */
+	private function textOf(string $template, string $portalSlug, array $values, string $subject, string $intro): array {
+		if ($this->renderer === null) {
+			return ['subject' => $subject, 'body' => $intro];
+		}
+
+		$rendered = $this->renderer->render(portal: $portalSlug, key: $template, values: $values, subject: $subject, body: $intro);
+
+		return ['subject' => $rendered['subject'], 'body' => $rendered['body']];
+	}//end textOf()
+
+	/**
+	 * Log one send; never a reason to fail the mail.
+	 *
+	 * @param string                    $template The template key.
+	 * @param string                    $email    The recipient.
+	 * @param array<string, mixed>|null $portal   The portal.
+	 * @param string                    $status   `delivered` or `failed`.
+	 * @param string                    $reason   A word for a failure, or ''.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 */
+	private function logSend(string $template, string $email, ?array $portal, string $status, string $reason): void {
+		if ($this->mailLog === null) {
+			return;
+		}
+
+		try {
+			$this->mailLog->record(
+				portal: trim((string)($portal['slug'] ?? '')),
+				templateKey: $template,
+				email: $email,
+				status: $status,
+				failureReason: $reason
+			);
+		} catch (Throwable) {
+			// The log is a convenience; the mail has gone either way.
+		}
+	}//end logSend()
 
 	/**
 	 * The page a template's link opens. Every link opens the site: the ways

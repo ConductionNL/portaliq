@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.81.0"
+        "version": "0.82.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.81.0",
+                "version": "0.82.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -74,7 +74,9 @@
                     "media",
                     "portalNotice",
                     "portalDraft",
-                    "portalAction"
+                    "portalAction",
+                    "portalMailTemplate",
+                    "portalMailLog"
                 ]
             }
         },
@@ -7985,7 +7987,164 @@
                     }
                 }
             },
-            "changeProposal": {
+"portalMailTemplate": {
+                "slug": "portalMailTemplate",
+                "icon": "EmailEditOutline",
+                "version": "0.1.0",
+                "title": "Mail template",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "The text of one kind of mail a portal sends, replacing the default text for that portal only. One row per portal and template key. The mail names the kind of change and links to the case: no variable carries a field value of a record. Removing the row brings the default text back.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "templateKey",
+                    "subject",
+                    "body"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this text belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "templateKey": {
+                        "title": "Kind of mail",
+                        "type": "string",
+                        "description": "The kind of mail this text replaces, such as invitation or form-confirmation.",
+                        "example": "invitation"
+                    },
+                    "subject": {
+                        "title": "Subject line",
+                        "type": "string",
+                        "description": "The subject line. It may contain the variables the kind of mail declares, written like {portal}.",
+                        "example": "U bent uitgenodigd voor het portaal van {portal}"
+                    },
+                    "body": {
+                        "title": "Text",
+                        "type": "string",
+                        "description": "The text of the mail. It may contain the variables the kind of mail declares. It is sent as plain text with the link, never as HTML.",
+                        "example": "Open de link en log in. Daarna ziet u wat {portal} met u deelt."
+                    },
+                    "active": {
+                        "title": "Active",
+                        "type": "boolean",
+                        "description": "Whether this text is sent. Off means the default text is sent.",
+                        "default": true,
+                        "example": true
+                    },
+                    "updatedBy": {
+                        "title": "Changed by",
+                        "type": "string",
+                        "description": "The administrator who last saved this text.",
+                        "example": "admin"
+                    }
+                }
+            },
+            "portalMailLog": {
+                "slug": "portalMailLog",
+                "icon": "EmailSearchOutline",
+                "version": "0.1.0",
+                "title": "Mail log",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One mail the portal sent: when, to whom (masked), which kind of mail, for which case and what became of it. Kept 90 days, then removed by a daily job. The full address and the text of the mail are never stored here.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "templateKey",
+                    "status",
+                    "sentAt"
+                ],
+                "properties": {
+                    "kind": {
+                        "title": "Record kind",
+                        "type": "string",
+                        "description": "Always `mail`. It lets the daily job read every row of the log in one scoped read.",
+                        "example": "mail"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal the mail was sent for.",
+                        "example": "open-tilburg"
+                    },
+                    "templateKey": {
+                        "title": "Kind of mail",
+                        "type": "string",
+                        "description": "The kind of mail.",
+                        "example": "invitation"
+                    },
+                    "recipientMasked": {
+                        "title": "Recipient",
+                        "type": "string",
+                        "description": "The address with its middle hidden, such as s***@example.nl.",
+                        "example": "s***@example.nl"
+                    },
+                    "recipientHash": {
+                        "title": "Recipient hash",
+                        "type": "string",
+                        "description": "A one-way hash of the address, to tell two mails to the same address apart without keeping it.",
+                        "example": ""
+                    },
+                    "subjectRef": {
+                        "title": "Account",
+                        "type": "string",
+                        "description": "The portal account the mail went to, so a failed mail can be sent again to the account's current address. Empty for a mail to someone without an account.",
+                        "example": ""
+                    },
+                    "caseRef": {
+                        "title": "Case",
+                        "type": "string",
+                        "description": "The reference of the case or request the mail is about, when there is one.",
+                        "example": "AANVRAAG-7"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "What became of the mail.",
+                        "enum": [
+                            "queued",
+                            "delivered",
+                            "failed"
+                        ],
+                        "example": "delivered"
+                    },
+                    "failureReason": {
+                        "title": "Reason it failed",
+                        "type": "string",
+                        "description": "Why the mail failed, in a word. Never the text of the mail.",
+                        "example": ""
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "description": "When the mail was sent or tried.",
+                        "format": "date-time",
+                        "example": "2026-10-08T09:14:00+00:00"
+                    },
+                    "retryOf": {
+                        "title": "Sent again from",
+                        "type": "string",
+                        "description": "The log row of the failed mail this one sends again.",
+                        "example": ""
+                    }
+                }
+            },
+                        "changeProposal": {
                 "slug": "changeProposal",
                 "authorization": {
                     "read": [
