@@ -243,6 +243,7 @@ import {
 	plainFieldErrors,
 	summaryEntries,
 } from './forms/fields.js'
+import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
 import stepFlow from './forms/stepFlow.js'
 import { stepHeading } from './forms/steps.js'
 
@@ -430,13 +431,16 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		shownFields() {
+			const shown = this.fields.filter((field) =>
+				this.isShownField(field.name),
+			)
 			if (!this.hasSteps) {
-				return this.fields
+				return shown
 			}
 			if (this.onReview) {
 				return []
 			}
-			return this.fields.filter((field) =>
+			return shown.filter((field) =>
 				this.currentStep.fields.includes(field.name),
 			)
 		},
@@ -498,7 +502,7 @@ export default {
 					index,
 					title: step.title,
 					rows: step.fields
-						.filter((name) => byName[name])
+						.filter((name) => byName[name] && this.isShownField(name))
 						.map((name) => ({
 							field: name,
 							label: byName[name].label || name,
@@ -611,7 +615,11 @@ export default {
 		 */
 		async submit() {
 			this.sendFailed = false
-			const wrong = this.checkFields(this.fields.map((field) => field.name))
+			const wrong = this.checkFields(
+				this.fields
+					.filter((field) => this.isShownField(field.name))
+					.map((field) => field.name),
+			)
 			if (Object.keys(wrong).length > 0) {
 				this.showErrors(wrong)
 				return
@@ -672,12 +680,20 @@ export default {
 		},
 
 		/**
-		 * Every field of a published form shows; conditions arrive with #1071.
+		 * Whether a field shows: its `visibleWhen`, a local condition over the
+		 * answers so far, decides. The server repeats the same check on submit.
 		 *
-		 * @return {boolean} True.
+		 * @param {string} name The field's name.
+		 * @return {boolean} True to show it.
+		 *
+		 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-fields-condition-decides-whether-the-resident-sees-it-req-icq-001
 		 */
-		isShownField() {
-			return true
+		isShownField(name) {
+			const field = this.fields.find((entry) => entry.name === name)
+			if (!field || !field.visibleWhen) {
+				return true
+			}
+			return evaluateVisibleWhenLocal(field.visibleWhen, this.values)
 		},
 
 		/**
