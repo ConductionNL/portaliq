@@ -402,5 +402,10 @@
 	"Save and continue later": "Opslaan en later verdergaan",
 	"Your answers are saved until {date}. You can continue later.": "Uw antwoorden zijn bewaard tot {date}. U kunt later verdergaan.",
 	"Your answers could not be saved.": "Uw antwoorden konden niet worden bewaard.",
-	"Forgot your password?": "Wachtwoord vergeten"
+	"Forgot your password?": "Wachtwoord vergeten",
+	"About: {value}": "Over: {value}",
+	"All": "Alles",
+	"Unread ({count})": "Ongelezen ({count})",
+	"Mark all as read": "Alles als gelezen markeren",
+	"Filter messages": "Berichten filteren"
 }

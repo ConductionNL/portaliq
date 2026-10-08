@@ -147,6 +147,11 @@ export default {
 			'Uw taak is ingediend. Dank u wel.',
 		'Your teacher marks this question.': 'Je docent kijkt deze vraag na.',
 		'Your test is handed in.': 'Je toets is ingeleverd.',
+		'About: {value}': 'Over: {value}',
+		'All': 'Alles',
+		'Unread ({count})': 'Ongelezen ({count})',
+		'Mark all as read': 'Alles als gelezen markeren',
+		'Filter messages': 'Berichten filteren',
 	},
 	en: {
 		'A file is required for this task.': 'A file is required for this task.',
@@ -285,5 +290,10 @@ export default {
 			'Your task has been submitted. Thank you.',
 		'Your teacher marks this question.': 'Your teacher marks this question.',
 		'Your test is handed in.': 'Your test is handed in.',
+		'About: {value}': 'About: {value}',
+		'All': 'All',
+		'Unread ({count})': 'Unread ({count})',
+		'Mark all as read': 'Mark all as read',
+		'Filter messages': 'Filter messages',
 	},
 }
