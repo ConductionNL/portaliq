@@ -108,15 +108,24 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+		 */
 		words() {
 			return WORDS[pageLocale(this.locale)] || WORDS.nl
 		},
 
+		/**
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+		 */
 		chosen() {
 			return Array.isArray(this.modelValue) ? this.modelValue : []
 		},
 	},
 
+	/**
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
 	mounted() {
 		if (this.initialPeople === null) {
 			this.load()

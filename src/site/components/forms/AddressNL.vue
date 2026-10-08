@@ -163,12 +163,18 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+		 */
 		block() {
 			return typeof this.modelValue === 'object' && this.modelValue
 				? { ...emptyAddress(), ...this.modelValue }
 				: emptyAddress()
 		},
 
+		/**
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+		 */
 		words() {
 			return WORDS[pageLocale(this.locale)] || WORDS.nl
 		},

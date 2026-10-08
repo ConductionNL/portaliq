@@ -334,6 +334,7 @@ test('site: a mandated case carries its label, a group too large is refused, and
 		caseId: 'z-9',
 		mandateId: 'mandate-1',
 		collection: { register: 'dossiq', schema: 'case' },
+		loadTasks() {},
 		api: {
 			fetchCitizenCase: async (c, id, mandate) => {
 				read.push([id, mandate])

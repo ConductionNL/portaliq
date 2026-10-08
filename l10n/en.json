@@ -2377,7 +2377,19 @@
         "A KvK number has 8 digits.": "A KvK number has 8 digits.",
         "A branch number has 12 digits.": "A branch number has 12 digits.",
         "Fill in the postcode, the house number, the street and the town.": "Fill in the postcode, the house number, the street and the town.",
-        "Choose the people from the list we found.": "Choose the people from the list we found."
+        "Choose the people from the list we found.": "Choose the people from the list we found.",
+        "Button label": "Button label",
+        "Case field": "Case field",
+        "Expected decision": "Expected decision",
+        "Latest decision day": "Latest decision day",
+        "Next step per status": "Next step per status",
+        "On a tasks collection: the field with the reference of the case a task belongs to. The case page lists the open tasks whose value equals its case. Without it, no task shows on a case page.": "On a tasks collection: the field with the reference of the case a task belongs to. The case page lists the open tasks whose value equals its case. Without it, no task shows on a case page.",
+        "The day the organisation plans to decide. Written by the case app. The case page shows it as Verwacht besluit, only when set.": "The day the organisation plans to decide. Written by the case app. The case page shows it as Verwacht besluit, only when set.",
+        "The last day the law allows for the decision. Written by the case app. The case page shows it as Uiterlijk klaar op, and the case card takes it as its due day.": "The last day the law allows for the decision. Written by the case app. The case page shows it as Uiterlijk klaar op, and the case card takes it as its due day.",
+        "The task type, the site route or the action id, by kind.": "The task type, the site route or the action id, by kind.",
+        "The words on the button.": "The words on the button.",
+        "What the current status step offers the resident, keyed by the status value. Each entry has a `label` (the button words), a `kind` (`task`, `page` or `action`) and a `target`: the task type to open, a site route, or the id of an action the case declares. A status without an entry shows no button.": "What the current status step offers the resident, keyed by the status value. Each entry has a `label` (the button words), a `kind` (`task`, `page` or `action`) and a `target`: the task type to open, a site route, or the id of an action the case declares. A status without an entry shows no button.",
+        "Where the button leads: to a task, to a page or to one of the case's actions.": "Where the button leads: to a task, to a page or to one of the case's actions."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

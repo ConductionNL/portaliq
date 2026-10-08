@@ -420,6 +420,9 @@ export default {
 
 	computed: {
 		/** The portal api base the address lookup asks. */
+		/**
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+		 */
 		apiBase() {
 			return authBaseFrom(resolveApiBase())
 		},

@@ -2429,7 +2429,19 @@ OC.L10N.register(
         "A KvK number has 8 digits.": "Een KvK-nummer heeft 8 cijfers.",
         "A branch number has 12 digits.": "Een vestigingsnummer heeft 12 cijfers.",
         "Fill in the postcode, the house number, the street and the town.": "Vul de postcode, het huisnummer, de straat en de plaats in.",
-        "Choose the people from the list we found.": "Kies de personen uit de lijst die wij vonden."
+        "Choose the people from the list we found.": "Kies de personen uit de lijst die wij vonden.",
+        "Button label": "Tekst op de knop",
+        "Case field": "Zaakveld",
+        "Expected decision": "Verwacht besluit",
+        "Latest decision day": "Uiterlijk klaar op",
+        "Next step per status": "Volgende stap per status",
+        "On a tasks collection: the field with the reference of the case a task belongs to. The case page lists the open tasks whose value equals its case. Without it, no task shows on a case page.": "Bij een takenverzameling: het veld met het zaaknummer waar een taak bij hoort. De zaakpagina toont de open taken waarvan de waarde gelijk is aan de zaak. Zonder dit veld toont geen taak op een zaakpagina.",
+        "The day the organisation plans to decide. Written by the case app. The case page shows it as Verwacht besluit, only when set.": "De dag waarop de organisatie wil beslissen. Geschreven door de zaakapp. De zaakpagina toont hem als Verwacht besluit, alleen als hij is ingevuld.",
+        "The last day the law allows for the decision. Written by the case app. The case page shows it as Uiterlijk klaar op, and the case card takes it as its due day.": "De laatste dag die de wet toestaat voor het besluit. Geschreven door de zaakapp. De zaakpagina toont hem als Uiterlijk klaar op en de zaakkaart neemt hem als einddag.",
+        "The task type, the site route or the action id, by kind.": "Het taaktype, de siteroute of het actie-id, naargelang de soort.",
+        "The words on the button.": "De tekst op de knop.",
+        "What the current status step offers the resident, keyed by the status value. Each entry has a `label` (the button words), a `kind` (`task`, `page` or `action`) and a `target`: the task type to open, a site route, or the id of an action the case declares. A status without an entry shows no button.": "Wat de huidige statusstap de inwoner aanbiedt, per statuswaarde. Elk onderdeel heeft een `label` (de tekst op de knop), een `kind` (`task`, `page` of `action`) en een `target`: het taaktype dat opent, een siteroute of het id van een actie van de zaak. Een status zonder onderdeel toont geen knop.",
+        "Where the button leads: to a task, to a page or to one of the case's actions.": "Waar de knop heen leidt: naar een taak, een pagina of een actie van de zaak."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -129,10 +129,16 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 */
 		words() {
 			return STRINGS[pageLocale(this.locale)] || STRINGS.nl
 		},
 
+		/**
+		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 */
 		api() {
 			if (this.apiOverride) {
 				return this.apiOverride
@@ -151,11 +157,17 @@ export default {
 			)
 		},
 
+		/**
+		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 */
 		questionsHref() {
 			return this.questionsRoute
 		},
 	},
 
+	/**
+	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+	 */
 	mounted() {
 		if (this.signedIn) {
 			this.load()

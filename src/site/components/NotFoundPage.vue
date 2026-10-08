@@ -113,6 +113,9 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+		 */
 		view() {
 			return notFoundView({
 				contactRoute: this.contactRoute,

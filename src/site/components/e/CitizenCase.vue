@@ -394,6 +394,9 @@ export default {
 		},
 
 		/** The open tasks whose `caseField` names this case. */
+		/**
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
 		openTasks() {
 			return tasksOfCase(this.taskReads, [
 				this.caseRow.reference,
@@ -402,6 +405,9 @@ export default {
 			])
 		},
 
+		/**
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
 		bannerText() {
 			return bannerSentence(
 				this.openTasks,
@@ -411,10 +417,16 @@ export default {
 			)
 		},
 
+		/**
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
 		dateRows() {
 			return decisionDateRows(this.caseRow, this.t, readerLocale(this.locale))
 		},
 
+		/**
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
 		nextStep() {
 			return nextStepView(
 				this.writableSet.status,

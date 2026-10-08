@@ -57,6 +57,8 @@ class DutchFormats {
 	 * @param string $format The format name.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
 	 */
 	public function knows(string $format): bool {
 		return in_array($format, self::FORMATS, true);

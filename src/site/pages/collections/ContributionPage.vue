@@ -670,6 +670,9 @@ export default {
 		},
 
 		/** The collections whose rows are tasks of a case (they declare `caseField`). */
+		/**
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
 		caseTaskCollections() {
 			return (this.currentContribution?.collections || []).filter(
 				(collection) => typeof collection?.caseField === 'string',

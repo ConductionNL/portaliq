@@ -130,6 +130,10 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @return JSONResponse `{street, town}` or 404.
 	 *
 	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+	 *
+	 * @no-admin-idor-exempt Postcode and house number are public address data from the
+	 * BAG, not a tenant's object: the lookup answers street and town for any caller and
+	 * touches no account, case or organisation record. It is rate limited per client.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
