@@ -581,9 +581,10 @@ export default {
 			if (
 				widget.widgetKey === 'nlNewsList'
 				|| widget.widgetKey === 'nlNewsArticle'
+				|| widget.widgetKey === 'nlPublicDetail'
 			) {
 				const news = { ...props, portal: this.portal, routeParam: this.routeParam }
-				if (widget.widgetKey !== 'nlNewsArticle') {
+				if (widget.widgetKey === 'nlNewsList') {
 					return news
 				}
 				// The article's event card asks a visitor who is not signed in to

@@ -226,7 +226,7 @@ test('the grid hands the host data to the new widgets after the authored props',
 	)
 	assert.match(
 		source,
-		/'nlNewsArticle'\s*\)\s*\{\s*const news = \{ \.\.\.props, portal: this\.portal, routeParam: this\.routeParam \}/,
+		/'nlPublicDetail'\s*\)\s*\{\s*const news = \{ \.\.\.props, portal: this\.portal, routeParam: this\.routeParam \}/,
 	)
 
 	assert.match(

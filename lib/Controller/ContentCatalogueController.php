@@ -192,6 +192,43 @@ class ContentCatalogueController extends Controller {
 	}//end kinds()
 
 	/**
+	 * The page of one item of an app's public index: the item with the facts,
+	 * sections, dates and documents the app projects for it. Anonymous, gated
+	 * like the catalogue, and the shared 404 for an unknown slug or an item the
+	 * index does not return.
+	 *
+	 * @param string|null $portal The portal slug; else resolved from the request.
+	 * @param string      $app    The app whose index holds the item.
+	 * @param string      $kind   The item's type in the index.
+	 * @param string      $slug   The item's slug.
+	 *
+	 * @return JSONResponse `{item, detail}`, or 401 / 403 / 404.
+	 *
+	 * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-2
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function detail(?string $portal = null, string $app = '', string $kind = '', string $slug = ''): JSONResponse {
+		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($resolved === null) {
+			return $this->notFound();
+		}
+
+		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$found = $this->catalogue->detailFor(portal: (string)$resolved['slug'], appId: $app, kind: $kind, slug: $slug);
+		if ($found === null) {
+			return $this->notFound();
+		}
+
+		return $this->publicJson(payload: $found);
+	}//end detail()
+
+	/**
 	 * Resolve the filter value `visitor`: for a signed-in person it becomes
 	 * that person's own value from the app; for an anonymous one the value is
 	 * removed, and a filter left with no value narrows nothing.

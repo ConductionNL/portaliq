@@ -1032,4 +1032,9 @@ export const SITE_COMPOSITIONS = [
 		composes: ['Table'],
 		why: 'One kind of an app\'s public index as a table ("Toetsrooster 4 havo").',
 	},
+	{
+		key: 'nlPublicDetail',
+		composes: ['Description List', 'Heading', 'Button', 'Radio Button'],
+		why: 'The page of one course or programme of an app: facts, sections, dates with places and an enrol card.',
+	},
 ]

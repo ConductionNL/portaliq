@@ -127,6 +127,8 @@ return [
         ['name' => 'contentCatalogue#index', 'url' => '/api/content/catalogue', 'verb' => 'GET'],
         // The kinds an app's public index declares, for the editor's block forms (editor-blocks-read-public-app-data).
         ['name' => 'contentCatalogue#kinds', 'url' => '/api/content/catalogue/kinds', 'verb' => 'GET'],
+        // One item of an app's public index on a page of its own (public-detail-page-for-a-provider-item).
+        ['name' => 'contentCatalogue#detail', 'url' => '/api/content/catalogue/detail', 'verb' => 'GET'],
         [
             'name' => 'content#page',
             'url' => '/api/content/page/{route}',

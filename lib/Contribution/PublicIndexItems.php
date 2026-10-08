@@ -11,7 +11,7 @@
  * visitor as it came:
  *
  *     {id, type, kind, title, summary?, date?, endDate?, dateLabel?, meta?[],
- *      facets?{label: value}, category?, cells?{column: text}, note?,
+ *      facets?{label: value}, category?, cells?{column: text}, slug?, note?,
  *      noteTone?, href?, badge?}
  *
  * `type` is a machine key the page filters on (`course`, `programme`,
@@ -151,6 +151,12 @@ class PublicIndexItems {
 	 * @return array<string, mixed>
 	 */
 	private function withText(array $item, array $entry): array {
+		// The address part of the item's detail page: a plain slug, else none.
+		$slug = ($entry['slug'] ?? null);
+		if (is_string($slug) === true && preg_match('/^[a-z0-9][a-z0-9-]{0,99}$/', $slug) === 1) {
+			$item['slug'] = $slug;
+		}
+
 		// One category and the cells of a table row (editor-blocks-read-public-app-data).
 		$category = $this->short(value: ($entry['category'] ?? null));
 		if ($category !== null) {
