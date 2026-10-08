@@ -70,10 +70,7 @@ class CollectionListKeys {
 
 		// The block's own heading ("Latest grades"), which wins over the
 		// collection's label (collection-block-label).
-		$label = ($block['label'] ?? null);
-		if (is_string($label) === true && trim($label) !== '' && mb_strlen(trim($label)) <= self::MAX_LABEL) {
-			$out['label'] = trim($label);
-		}
+		$out += $this->label(block: $block);
 
 		$sort = ($block['sort'] ?? null);
 		if (is_array($sort) === true
@@ -86,6 +83,24 @@ class CollectionListKeys {
 		// The school displays (rows, bars, chips, richer cards), site-school-blocks.
 		return $out + $this->cards(block: $block, collection: $collection) + (new DisplayKeys())->keys(block: $block, collection: $collection);
 	}//end collectionKeys()
+
+	/**
+	 * The block's own heading, trimmed, when it is a short non-blank string.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, string> `['label' => ...]` or [].
+	 *
+	 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
+	 */
+	private function label(array $block): array {
+		$label = ($block['label'] ?? null);
+		if (is_string($label) === false || trim($label) === '' || mb_strlen(trim($label)) > self::MAX_LABEL) {
+			return [];
+		}
+
+		return ['label' => trim($label)];
+	}//end label()
 
 	/**
 	 * `display: cards`, the `titleFields` that name each card, and its
