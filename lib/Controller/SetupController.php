@@ -239,21 +239,16 @@ class SetupController extends Controller {
 	}//end runAction()
 
 	/**
-	 * Import the dataset a card's Load button posted as `dataset`, or the
-	 * stored pick when nothing is posted.
+	 * The dataset this load is for: the one a card posted, else the stored
+	 * pick; the legacy install action always means the shipped dataset.
 	 *
-	 * @param string $actionId The action that asked, which decides whether an
-	 *                         unanswered choice is refused or means the shipped set.
+	 * @param string $actionId The action that asked.
 	 *
-	 * Reports the FAILURE rather than a quiet success: an operator who asked for
-	 * demo data and got none must be told, which is why DemoDataService::install()
-	 * throws instead of returning an empty result.
-	 *
-	 * @return JSONResponse `{ success, message }`.
+	 * @return string|JSONResponse The dataset id, or the refusal of a posted value.
 	 *
 	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
 	 */
-	private function loadDataset(string $actionId): JSONResponse {
+	private function pickedDataset(string $actionId): string|JSONResponse {
 		$picked = $this->appConfig->getValueString(Application::APP_ID, self::DATASET_KEY, '');
 
 		// The card's Load button names its dataset in the body. An older wizard
@@ -278,6 +273,30 @@ class SetupController extends Controller {
 		// choice step's own run action honours the choice.
 		if ($actionId === 'install-demo-data') {
 			$picked = DemoDataService::DEMO_DATASET;
+		}
+
+		return $picked;
+	}//end pickedDataset()
+
+	/**
+	 * Import the dataset a card's Load button posted as `dataset`, or the
+	 * stored pick when nothing is posted.
+	 *
+	 * @param string $actionId The action that asked, which decides whether an
+	 *                         unanswered choice is refused or means the shipped set.
+	 *
+	 * Reports the FAILURE rather than a quiet success: an operator who asked for
+	 * demo data and got none must be told, which is why DemoDataService::install()
+	 * throws instead of returning an empty result.
+	 *
+	 * @return JSONResponse `{ success, message }`.
+	 *
+	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 */
+	private function loadDataset(string $actionId): JSONResponse {
+		$picked = $this->pickedDataset(actionId: $actionId);
+		if ($picked instanceof JSONResponse) {
+			return $picked;
 		}
 
 		// 🔴 NO SILENT DEFAULT. Importing here because the operator clicked Run

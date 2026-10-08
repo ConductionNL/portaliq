@@ -482,6 +482,82 @@
 }
 
 /*
+ * A MELDING IS A CARD, AND A LINK IS A TARGET YOU CAN HIT, ON ANY SET
+ * (site-content-blocks-styled).
+ *
+ * The Utrecht alert reads its padding and every background from
+ * `--utrecht-alert-*` tokens that no shipped set declares, so the proof of
+ * 06 Oct showed every melding ("Online melden", "Liever bellen?") as text
+ * flush against a coloured line. Each value below reads the Utrecht token
+ * first, so a set that names the role keeps it, then the set's own tint for
+ * that kind, and ends in a keyword, never a literal colour.
+ *
+ * A table and a link list draw their designed shapes through the opt-in
+ * displays (`display: boxed`, `card`, `accent`; site-matches-the-zuiddrecht-
+ * boards), so nothing here changes them.
+ */
+.pq-site .utrecht-alert {
+	box-sizing: border-box;
+	padding-block: var(--utrecht-alert-padding-block-start, 24px)
+		var(--utrecht-alert-padding-block-end, 24px);
+	padding-inline: var(--utrecht-alert-padding-inline-start, 24px)
+		var(--utrecht-alert-padding-inline-end, 24px);
+}
+
+/* Two meldingen side by side in the grid are one height, as cards are. */
+.pq-site .pq-grid__cell > .utrecht-alert {
+	block-size: 100%;
+}
+
+.pq-site .utrecht-alert--info {
+	background-color: var(
+		--utrecht-alert-info-background-color,
+		var(--nldesign-color-primary-light, transparent)
+	);
+}
+
+.pq-site .utrecht-alert--ok {
+	background-color: var(
+		--utrecht-alert-ok-background-color,
+		var(--nldesign-component-status-badge-success-background-color, transparent)
+	);
+}
+
+.pq-site .utrecht-alert--warning {
+	background-color: var(
+		--utrecht-alert-warning-background-color,
+		var(--nldesign-component-status-badge-warning-background-color, transparent)
+	);
+}
+
+.pq-site .utrecht-alert--error {
+	background-color: var(
+		--utrecht-alert-error-background-color,
+		var(--nldesign-component-status-badge-error-background-color, transparent)
+	);
+}
+
+.pq-site .utrecht-alert__content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--utrecht-alert-message-row-gap, 12px);
+}
+
+.pq-site .utrecht-alert__content > * {
+	margin: 0;
+}
+
+/*
+ * A link in a list is a target of at least 24px high (WCAG 2.2, 2.5.8). The
+ * proof measured 19px lines; the row gap above passes axe through its spacing
+ * rule, this keeps the target itself big enough when a set sets the gap to 0.
+ */
+.pq-site .utrecht-link-list__link {
+	align-items: center;
+	min-block-size: var(--utrecht-link-list-link-min-block-size, 24px);
+}
+
+/*
  * THE DESIGNED SITE READS IN THE SET'S OWN FAMILY (example-site-zuiddrecht).
  *
  * The vendored sheet sets the page's family on `body` as a literal, so every
@@ -1313,8 +1389,30 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	letter-spacing: -0.01em;
 }
 
+/*
+ * The lead under the plain hero's heading (site-hero-shows-its-heading): 20px
+ * on a line of at most 40rem, as the four school boards draw it. Before
+ * this a plain hero gave its lead the body size on one long line.
+ */
+.pq-site .ac-hero.pq-hero--plain .ac-hero__subtitle {
+	max-inline-size: 40rem;
+	margin: 0;
+	font-size: var(--nldesign-website-hero-lead-size, 1.25rem);
+	line-height: 1.6;
+}
+
 .pq-site .ac-hero.pq-hero--plain .pq-hero__search {
 	max-inline-size: 45rem;
+}
+
+/*
+ * A visible heading or lead above the search card keeps its distance
+ * (site-hero-shows-its-heading). Until the heading showed beside a search box
+ * the card was always the first thing in the band, so nothing set this gap.
+ */
+.pq-site .ac-hero .ac-hero__title:not(.sr-only) + .ac-card,
+.pq-site .ac-hero .ac-hero__subtitle:not(.sr-only) + .ac-card {
+	margin-block-start: 24px;
 }
 
 .pq-site .ac-hero.pq-hero--plain .ac-search-box__label {
