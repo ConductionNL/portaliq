@@ -124,7 +124,7 @@
 			<!-- `/mijn` itself: the resident's home, loaded on demand
 			     (site-mijn-omgeving-components REQ-SMO-007, design D4). -->
 			<template v-else-if="isHome">
-				<PageHelp :text="sectionHelpText" />
+				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
 				<component
 					:is="homeComponent"
 					v-if="homeComponent"
@@ -148,7 +148,7 @@
 					data-testid="site-account-title">
 					{{ entry.label }}
 				</h1>
-				<PageHelp :text="sectionHelpText" />
+				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
 				<p v-if="pageLoading" class="utrecht-paragraph" role="status">
 					{{ t('Loading…') }}
 				</p>
@@ -170,7 +170,6 @@
 <script>
 import { defineAsyncComponent, markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
-import PageHelp from './PageHelp.vue'
 import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
 import { ACTING_FOR_SELF } from '../../shared/myCases.js'
@@ -215,7 +214,7 @@ export default {
 	name: 'AccountArea',
 
 	components: {
-		PageHelp,
+		PageHelp: defineAsyncComponent(() => import('./PageHelp.vue')),
 		// Loaded only while the resident acts for someone else.
 		ActingForBar: defineAsyncComponent(() => import('./mijn/ActingForBar.vue')),
 		// Loaded only on a portal that writes its sign-in cards.

@@ -21,6 +21,14 @@ globalThis.window = {
 	localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
 }
 
+// The help control loads on demand: let it arrive before looking for it.
+async function settle(form) {
+	for (let i = 0; i < 5; i++) {
+		await new Promise((resolve) => setTimeout(resolve, 20))
+		await form.flush()
+	}
+}
+
 const PORTAL = {
 	intro: 'Komt u er niet uit? Wij helpen u graag.',
 	phone: '14 020',
@@ -58,6 +66,7 @@ test('help halfway the request shows the details, and the typed text is still th
 	const form = await mountSfc(FORM, { fields, portalHelp: PORTAL, title: 'Woo-verzoek indienen' })
 
 	await form.fire(form.find('form-field-request'), 'input', { value: 'Alle stukken over de brug' })
+	await settle(form)
 	await form.fire(form.find('form-help-open'), 'click')
 
 	assert.match(form.textOf(form.find('form-help-phone')), /14 020/)
@@ -74,6 +83,7 @@ test('help halfway the request shows the details, and the typed text is still th
 
 test('a form with its own phone line shows it and the portal\'s other details', async () => {
 	const form = await mountSfc(FORM, { fields, portalHelp: PORTAL, formHelp: { phone: '14 021' } })
+	await settle(form)
 	await form.fire(form.find('form-help-open'), 'click')
 
 	assert.match(form.textOf(form.find('form-help-phone')), /14 021/)
@@ -83,6 +93,7 @@ test('a form with its own phone line shows it and the portal\'s other details', 
 
 test('neither portal nor form has details: no "Hulp nodig?"', async () => {
 	const form = await mountSfc(FORM, { fields })
+	await settle(form)
 	assert.equal(form.find('form-help-open'), null)
 	assert.equal(form.find('form-help'), null)
 })

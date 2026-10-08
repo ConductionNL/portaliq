@@ -628,7 +628,7 @@ const SharedDossierPage = defineAsyncComponent(
 
 // The guest page for a signed link (identity-guest-page-for-signed-links),
 // loaded only when the address carries one.
-import PageHelp from './components/PageHelp.vue'
+const PageHelp = defineAsyncComponent(() => import('./components/PageHelp.vue'))
 
 const GuestActionPage = defineAsyncComponent(
 	() => import('./pages/GuestActionPage.vue'),
