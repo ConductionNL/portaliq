@@ -1077,6 +1077,41 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Download the resident's own list, or one record, as a PDF. The server
+		 * reads exactly what the screen reads and renders it through OpenRegister;
+		 * the file is saved client-side through a Blob URL, as downloadFile().
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema, id, label }`.
+		 * @param {string} [id] The record id; none exports the whole list.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }` (400: the list is too long).
+		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t06
+		 */
+		async downloadPdf(collection, id) {
+			const path = id === undefined ? 'export.pdf' : `${encodeURIComponent(id)}/export.pdf`
+			const url = `${base}${col(collection.register, collection.schema)}/${path}?collection=${encodeURIComponent(collection.id)}`
+			try {
+				const res = await fetch(url, { headers: { ...authHeaders() } })
+				if (!res.ok) {
+					return { ok: false, status: res.status }
+				}
+				const blob = await res.blob()
+				const objectUrl = window.URL.createObjectURL(blob)
+				const link = document.createElement('a')
+				link.href = objectUrl
+				link.download = `${(collection.label || 'export').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`
+				document.body.appendChild(link)
+				link.click()
+				setTimeout(() => {
+					link.remove()
+					window.URL.revokeObjectURL(objectUrl)
+				}, 10000)
+				return { ok: true }
+			} catch {
+				return { ok: false, status: 0 }
+			}
+		},
+
+		/**
 		 * Open one document the case screen listed. Only the entry id travels:
 		 * the server looks it up again among what this case lists, so the
 		 * browser never learns where a file lives (cases-documents-on-the-case,

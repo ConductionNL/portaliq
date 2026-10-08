@@ -131,7 +131,8 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 			documentId: $documentId
 		);
 		if ($result === CollectionDocuments::REFUSED) {
-			return new JSONResponse(['error' => 'paper_unavailable', 'message' => $this->l10n->t('The paper cannot be opened right now')], Http::STATUS_SERVICE_UNAVAILABLE);
+			$message = $this->l10n->t('The paper cannot be opened right now');
+			return new JSONResponse(['error' => 'paper_unavailable', 'message' => $message], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
 		if (is_string($result) === true) {

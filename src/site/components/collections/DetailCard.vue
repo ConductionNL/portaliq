@@ -31,6 +31,9 @@
 		     REQ-SMO-005, design D2). -->
 		<DescriptionList :items="facts" itemTestid="detail-card-field" />
 
+		<!-- The record as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
+		<PdfDownloadButton :id="rowId" :collection="collection" :api="api" :t="t" />
+
 		<div
 			v-if="collection.filesUpload === true && api"
 			class="pq-detail__upload"
@@ -116,6 +119,7 @@
 <script>
 import DescriptionList from '../mijn/DescriptionList.vue'
 import ItemList from './ItemList.vue'
+import PdfDownloadButton from './PdfDownloadButton.vue'
 import SlotHost from './SlotHost.vue'
 import TimelineList from './TimelineList.vue'
 import { rowNotice } from '../../../shared/rowAction.js'
@@ -142,7 +146,7 @@ let uploadCounter = 0
 export default {
 	name: 'DetailCard',
 
-	components: { DescriptionList, ItemList, SlotHost, TimelineList },
+	components: { DescriptionList, ItemList, PdfDownloadButton, SlotHost, TimelineList },
 
 	props: {
 		/** The collection: `detail`, `columns`, `filesUpload`, `filesDownload`, `itemList`, `timeline`. */

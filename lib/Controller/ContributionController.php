@@ -54,6 +54,7 @@ use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Contribution\PageChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
@@ -64,6 +65,7 @@ use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
+use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
@@ -175,6 +177,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                     Absent leaves the navigation as the aggregate has it.
 	 * @param ContactConfirmationMailer|null $confirmation Mails the resident that a question arrived, after
 	 *                                                     a create whose action asks for it; fail-safe.
+	 * @param PortalPdfExport|null $pdf Renders a list or a record the resident can see as a PDF through
+	 *                                  OpenRegister (cases-export-own-data-pdf). Absent offers no export.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -200,6 +204,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?CaseTypeNames $typeNames = null,
 		private readonly ?PortalResolver $portals = null,
 		private readonly ?ContactConfirmationMailer $confirmation = null,
+		private readonly ?PortalPdfExport $pdf = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -340,6 +345,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$aggregate = $this->registry->aggregateFor($subject);
 		$aggregate = $this->withPortalNavigation(aggregate: $aggregate);
+		$aggregate = $this->withExportAvailability(aggregate: $aggregate);
 		$aggregate['unreadCount'] = $this->inboxReader->unreadCount(subject: $subject, aggregate: $aggregate);
 		// Announce the "Mijn taken" surface (portal-task-delivery) for
 		// AUTHENTICATED subjects only — the anonymous aggregate above never
@@ -651,6 +657,29 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		$objects = $this->screenRows(subject: $subject, match: $match, register: $register, schema: $schema);
+
+		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
+	}//end collection()
+
+	/**
+	 * The rows a collection's screen shows this subject: the scoped read, then
+	 * the branch, the waiting-row, the hidden-case-type, the user-name and the
+	 * case-type-name passes. The list, and the PDF of the list, both read here,
+	 * so the file can hold nothing the screen does not.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $match The subject's own collection.
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 *
+	 * @return array<int, mixed> The rows.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 */
+	private function screenRows(array $subject, array $match, string $register, string $schema): array {
+		$collection = $match['collection'];
+
 		$objects = $this->reader->readCollection(
 			register: $register,
 			schema: $schema,
@@ -696,8 +725,8 @@ class ContributionController extends Controller implements PortalProtected {
 		// (site-mijn-omgeving-components REQ-SMO-030).
 		$objects = ($this->typeNames?->stampRows(rows: $objects, collection: $collection) ?? $objects);
 
-		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
-	}//end collection()
+		return $objects;
+	}//end screenRows()
 
 
 	/**
@@ -788,6 +817,44 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		// Null = not the subject's OR does not exist, or a case of a type the serving
+		// portal hides: a single 404, no oracle (operate-show-per-case-type REQ-OSC-002).
+		$object = $this->screenRow(subject: $subject, match: $match, register: $register, schema: $schema, id: $id);
+		if ($object === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		// Opt-in only, and only after ownership is already proven above — the
+		// listing itself never widens which ROWS are visible, only what a row
+		// the subject already owns additionally shows.
+		if (($collection['filesDownload'] ?? false) === true) {
+			$object['_files'] = $this->fileReader->listFiles(register: $register, schema: $schema, id: $id);
+		}
+
+		$object = $this->userNames->row(row: $object, collection: $collection);
+
+		return new JSONResponse(['object' => $object]);
+	}//end object()
+
+	/**
+	 * The one row this subject may see under an id: the scoped read, then the
+	 * waiting-row, branch and hidden-case-type passes. A foreign, missing,
+	 * waiting, other-branch or hidden row is null. The record, and the PDF of
+	 * the record, both read here.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $match The subject's own collection.
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 * @param string $id The object id (never trusted).
+	 *
+	 * @return array<string, mixed>|null The row.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 */
+	private function screenRow(array $subject, array $match, string $register, string $schema, string $id): ?array {
+		$collection = $match['collection'];
+
 		$object = $this->reader->readObject(
 			register: $register,
 			schema: $schema,
@@ -803,29 +870,17 @@ class ContributionController extends Controller implements PortalProtected {
 			filter: (array)($collection['filter'] ?? [])
 		);
 
-		// Null = not the subject's OR does not exist — a single 404, no oracle.
-		// A case of a type the serving portal hides answers the same 404
-		// (operate-show-per-case-type REQ-OSC-002).
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($object === null
 			|| (new VisibleFromGate())->rows(rows: [$object], collection: $collection) === []
 			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
 			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
 		) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+			return null;
 		}
 
-		// Opt-in only, and only after ownership is already proven above — the
-		// listing itself never widens which ROWS are visible, only what a row
-		// the subject already owns additionally shows.
-		if (($collection['filesDownload'] ?? false) === true) {
-			$object['_files'] = $this->fileReader->listFiles(register: $register, schema: $schema, id: $id);
-		}
-
-		$object = $this->userNames->row(row: $object, collection: $collection);
-
-		return new JSONResponse(['object' => $object]);
-	}//end object()
+		return $object;
+	}//end screenRow()
 
 	/**
 	 * Attach an uploaded file to an object the subject owns (the file-upload
@@ -1796,4 +1851,167 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
 	}//end isForwardableAction()
+
+	/**
+	 * Report `exportPdf` on a collection only when OpenRegister's rows renderer is there,
+	 * so the button is never shown for an export that can only answer 503.
+	 *
+	 * @param array<string, mixed> $aggregate The subject's aggregate.
+	 *
+	 * @return array<string, mixed> The aggregate.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t01
+	 */
+	private function withExportAvailability(array $aggregate): array {
+		if ($this->pdf?->available() === true) {
+			return $aggregate;
+		}
+
+		foreach ((array)($aggregate['contributions'] ?? []) as $i => $contribution) {
+			foreach ((array)($contribution['collections'] ?? []) as $j => $collection) {
+				if (is_array($collection) === true && array_key_exists('exportPdf', $collection) === true) {
+					$aggregate['contributions'][$i]['collections'][$j]['exportPdf'] = false;
+				}
+			}
+		}
+
+		return $aggregate;
+	}//end withExportAvailability()
+
+	/**
+	 * Download the subject's own list as a PDF: the same authorisation and the same
+	 * scoped read as `collection()`, projected to the columns the screen shows.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 *
+	 * @return Response The PDF, or 401 / 403 / 404 / 400 / 502 / 503.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function exportCollectionPdf(string $register, string $schema): Response {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+		if (($collection['exportPdf'] ?? false) !== true) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$columns = ($this->pdf?->listColumns(collection: $collection) ?? []);
+		$rows    = $this->screenRows(subject: $subject, match: $match, register: $register, schema: $schema);
+
+		return $this->pdfResponse(
+			subject: $subject,
+			collection: $collection,
+			columns: $columns,
+			rows: $rows,
+			target: ['register' => $register, 'schema' => $schema, 'id' => (string)($collection['id'] ?? '')]
+		);
+	}//end exportCollectionPdf()
+
+	/**
+	 * Download one of the subject's own records as a PDF: the same authorisation and
+	 * scoped read as `object()`. A foreign or missing record is one 404.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 * @param string $id The object id (never trusted; ownership re-checked server-side).
+	 *
+	 * @return Response The PDF, or 401 / 403 / 404 / 400 / 502 / 503.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function exportObjectPdf(string $register, string $schema, string $id): Response {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+		$object     = null;
+		if (($collection['exportPdf'] ?? false) === true) {
+			$object = $this->screenRow(subject: $subject, match: $match, register: $register, schema: $schema, id: $id);
+		}
+
+		if ($object === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $this->pdfResponse(
+			subject: $subject,
+			collection: $collection,
+			columns: ($this->pdf?->recordColumns(collection: $collection) ?? []),
+			rows: [$this->userNames->row(row: $object, collection: $collection)],
+			target: ['register' => $register, 'schema' => $schema, 'id' => $id]
+		);
+	}//end exportObjectPdf()
+
+	/**
+	 * Render the rows and answer with the file, or with the reason there is none.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $collection The collection.
+	 * @param array<int, array<string, mixed>> $columns The columns.
+	 * @param array<int, mixed> $rows The rows the screen shows.
+	 * @param array{register: string, schema: string, id: string} $target What the audit entry names.
+	 *
+	 * @return Response The PDF, or 400 (too long) / 502 / 503.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t05
+	 */
+	private function pdfResponse(array $subject, array $collection, array $columns, array $rows, array $target): Response {
+		if ($this->pdf === null || $this->pdf->available() === false) {
+			return new JSONResponse(['error' => 'pdf_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		$title = $this->pdf->title(
+			label: (string)($collection['label'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			date: gmdate('Y-m-d')
+		);
+		$bytes = $this->pdf->render(
+			title: $title,
+			columns: array_map(static fn (array $c): array => ['key' => $c['key'], 'label' => $c['label']], $columns),
+			rows: $this->pdf->textRows(columns: $columns, rows: array_values(array_filter($rows, 'is_array')))
+		);
+		if ($bytes === PortalPdfExport::TOO_LARGE) {
+			return new JSONResponse(['error' => 'too_large'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($bytes === null) {
+			return new JSONResponse(['error' => 'pdf_failed'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		$this->auditHook->download(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			register: $target['register'],
+			schema: $target['schema'],
+			id: $target['id']
+		);
+
+		return new PdfDownloadResponse(bytes: $bytes, name: (string)($collection['label'] ?? 'export'));
+	}//end pdfResponse()
 }//end class

@@ -86,4 +86,22 @@ class CollectionConfigNormaliserTest extends TestCase {
 			$this->assertArrayNotHasKey($key, $other);
 		}
 	}//end testOnlyACasesCollectionKeepsItsProgressKeys()
+
+	/**
+	 * cases-export-own-data-pdf REQ-OPX-001: only an explicit true opts a
+	 * collection into the PDF export; anything else is false.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t01
+	 */
+	public function testExportPdfIsBoolean(): void {
+		$this->assertTrue($this->collection(['exportPdf' => true])['exportPdf']);
+		$this->assertTrue($this->collection(['exportPdf' => 'true'])['exportPdf']);
+		foreach ([false, 'yes', 1, 'false', null, []] as $declared) {
+			$this->assertFalse($this->collection(['exportPdf' => $declared])['exportPdf'], json_encode($declared));
+		}
+
+		$this->assertArrayNotHasKey('exportPdf', $this->collection([]), 'a collection that says nothing offers nothing');
+	}//end testExportPdfIsBoolean()
 }//end class

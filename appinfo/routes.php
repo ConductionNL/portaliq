@@ -408,6 +408,10 @@ return [
         // re-verification (portal-scoped-crud, ADR-062 Phase 1; closes #16).
         // Registered before the /portal/{path} SPA catch-all; the {id} segment
         // makes these distinct from the collection-level routes above.
+        // cases-export-own-data-pdf: a list or one record the resident can see, as a PDF.
+        // The list route is registered first: its `export.pdf` would otherwise read as an {id}.
+        ['name' => 'contribution#exportCollectionPdf', 'url' => '/portal/api/collections/{register}/{schema}/export.pdf', 'verb' => 'GET'],
+        ['name' => 'contribution#exportObjectPdf', 'url' => '/portal/api/collections/{register}/{schema}/{id}/export.pdf', 'verb' => 'GET'],
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
         // site-member-voting-record-and-confidential-papers: the papers of one object, on any collection that declares `documents`.
         ['name' => 'portalCollectionDocuments#list', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents', 'verb' => 'GET'],
