@@ -41,6 +41,8 @@ use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
 use OCA\Portaliq\Service\Intake\PortalFamilyMembers;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\Intake\PortalFormCalculator;
+use OCA\Portaliq\Service\Intake\PortalFormDecision;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
 use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
 use OCA\Portaliq\Service\PortalResolver;
@@ -82,6 +84,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalFamilyMembers|null $family Lists and re-checks the resident's family from the BRP.
 	 * @param FormStatements|null $statements Resolves and checks the statements a form asks.
 	 * @param FormConfirmationMailer|null $confirmationMail Mails the resident the reference and a summary.
+	 * @param PortalFormCalculator|null $calculator Works out the form's calculated fields again on submit.
+	 * @param PortalFormDecision|null $decision Asks the rule engine for the decisions a form's steps declare.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -97,6 +101,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly ?PortalFamilyMembers $family = null,
 		private readonly ?FormStatements $statements = null,
 		private readonly ?FormConfirmationMailer $confirmationMail = null,
+		private readonly ?PortalFormCalculator $calculator = null,
+		private readonly ?PortalFormDecision $decision = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -191,6 +197,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		);
 
 		$render['statements'] = $this->askedStatements(render: $render, site: $site);
+		$render['steps']      = $this->stepsForTheBrowser(steps: (array)($render['steps'] ?? []));
 
 		if (($render['settings']['challenge'] ?? false) === true) {
 			$render['challenge'] = $this->challenge->issue(site: $site, surface: 'form');
@@ -275,6 +282,16 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['errors' => $familyErrors], Http::STATUS_BAD_REQUEST);
 		}
 
+		// A calculated value is worked out again here and a decision is asked of the
+		// rule engine again, whatever the browser sent (form-flow-repeating-groups-
+		// calculations-and-decisions REQ-FFL-002, REQ-FFL-003).
+		$worked = $this->workedOut(render: $render, answers: $validated['answers']);
+		if ($worked === null) {
+			return new JSONResponse(['error' => 'decision_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		$validated['answers'] = $worked['answers'];
+
 		// The statements the form asks are accepted before anything is
 		// recorded, and each accepted one is recorded with the version of its
 		// text (form-statements-intro-and-confirmation-mail REQ-FCI-002).
@@ -302,7 +319,9 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			answers: $validated['answers'],
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			origin: (string)$this->request->getHeader('Origin'),
-			statements: $checked['record']
+			statements: $checked['record'],
+			computed: $worked['computed'],
+			decisions: $worked['decisions']
 		);
 		if ($accepted === null) {
 			return new JSONResponse(['error' => 'not_accepted'], Http::STATUS_SERVICE_UNAVAILABLE);
@@ -318,6 +337,139 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			'mailedTo' => $mailedTo,
 		]);
 	}//end submit()
+
+	/**
+	 * Decide one step at the step change: ask the rule engine on the server and
+	 * answer with the outcome, the field it fills and the step it opens. The
+	 * rule and its table never reach the browser.
+	 *
+	 * @param string $route The form page.
+	 * @param string $step The id of the step that declares the decision.
+	 * @param array<string, mixed> $answers The answers so far.
+	 * @param string $portal The portal's slug; empty resolves it from the host.
+	 *
+	 * @return JSONResponse `{outcome, output, nextStep}`, 503 when the engine does not answer, or 404.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function decide(string $route, string $step, array $answers = [], string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
+		if ($site === null) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: $route);
+		if ($binding === null) {
+			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$render  = $this->bindings->render(binding: $binding);
+		$refusal = $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $this->subject());
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$declared = null;
+		foreach ((array)($render['steps'] ?? []) as $candidate) {
+			if (($candidate['id'] ?? null) === $step && is_array($candidate['decision'] ?? null) === true) {
+				$declared = $candidate['decision'];
+			}
+		}
+
+		if ($declared === null || $this->decision === null) {
+			return new JSONResponse(['error' => 'step_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$names = array_map(static fn (array $field): string => (string)($field['name'] ?? ''), (array)($render['fields'] ?? []));
+		$known = array_intersect_key($answers, array_flip($names));
+		if ($this->calculator !== null) {
+			$known = $this->calculator->apply(fields: (array)($render['fields'] ?? []), answers: $known)['answers'];
+		}
+
+		$decided = $this->decision->decide(decision: $declared, answers: $known);
+		if ($decided['status'] === PortalFormDecision::UNAVAILABLE) {
+			return new JSONResponse(['error' => 'decision_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new JSONResponse(['outcome' => $decided['outcome'], 'output' => $decided['output'], 'nextStep' => $decided['nextStep']]);
+	}//end decide()
+
+	/**
+	 * The steps as the browser may see them: a decision is reduced to the fact
+	 * that the step decides, so the rule, its inputs and its outcomes stay here.
+	 *
+	 * @param array<int, array<string, mixed>> $steps The form's steps.
+	 *
+	 * @return array<int, array<string, mixed>> The steps for the browser.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 */
+	private function stepsForTheBrowser(array $steps): array {
+		foreach ($steps as $index => $step) {
+			if (is_array($step) === true && array_key_exists('decision', $step) === true) {
+				unset($steps[$index]['decision']);
+				$steps[$index]['decides'] = true;
+			}
+		}
+
+		return $steps;
+	}//end stepsForTheBrowser()
+
+	/**
+	 * Work out the calculated fields and the decided ones for a submission.
+	 *
+	 * @param array<string, mixed> $render What render() returned for the form.
+	 * @param array<string, mixed> $answers The validated answers.
+	 *
+	 * @return array{answers: array<string, mixed>, computed: array<int, string>, decisions: array<string, string>}|null
+	 *         Null when a decision the form declares could not be asked.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 */
+	private function workedOut(array $render, array $answers): ?array {
+		$fields   = (array)($render['fields'] ?? []);
+		$computed = [];
+		if ($this->calculator !== null) {
+			$first    = $this->calculator->apply(fields: $fields, answers: $answers);
+			$answers  = $first['answers'];
+			$computed = $first['computed'];
+		}
+
+		$decisions = [];
+		foreach ((array)($render['steps'] ?? []) as $step) {
+			if (is_array($step['decision'] ?? null) === false) {
+				continue;
+			}
+
+			if ($this->decision === null) {
+				return null;
+			}
+
+			$decided = $this->decision->decide(decision: $step['decision'], answers: $answers);
+			if ($decided['status'] === PortalFormDecision::UNAVAILABLE) {
+				return null;
+			}
+
+			if ($decided['status'] === PortalFormDecision::DECIDED) {
+				$answers[$decided['output']]   = $decided['outcome'];
+				$decisions[(string)$step['id']] = $decided['outcome'];
+				$computed[]                    = $decided['output'];
+			}
+		}//end foreach
+
+		if ($decisions !== [] && $this->calculator !== null) {
+			// A calculation may read a decided field.
+			$again    = $this->calculator->apply(fields: $fields, answers: $answers);
+			$answers  = $again['answers'];
+			$computed = array_merge($computed, $again['computed']);
+		}
+
+		return ['answers' => $answers, 'computed' => array_values(array_unique($computed)), 'decisions' => $decisions];
+	}//end workedOut()
 
 	/**
 	 * The resident's partner and children to choose from, DigiD only.

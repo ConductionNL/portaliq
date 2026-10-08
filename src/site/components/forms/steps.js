@@ -45,6 +45,7 @@ export function flowSteps(steps, titles) {
 			: {}),
 		fields: step.fields.filter((field) => typeof field === 'string'),
 		review: false,
+		...(step.decides === true ? { decides: true } : {}),
 	}))
 	const review = list.find((step) => step.review === true)
 	out.push({
@@ -210,4 +211,16 @@ export function retentionDate(iso, locale) {
 		month: 'long',
 		year: 'numeric',
 	})
+}
+
+/**
+ * The place of the step with an id in the flow, or -1.
+ *
+ * @param {Array<object>} flow The steps walked through.
+ * @param {string} id The step id.
+ * @return {number} The index, or -1 when the flow has no such step.
+ * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
+ */
+export function stepIndexById(flow, id) {
+	return (Array.isArray(flow) ? flow : []).findIndex((step) => step.id === id && step.review !== true)
 }

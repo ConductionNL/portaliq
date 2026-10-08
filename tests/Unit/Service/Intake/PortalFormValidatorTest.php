@@ -319,6 +319,79 @@ class PortalFormValidatorTest extends TestCase {
 	}//end testAnUnknownFormatIsLeftAlone()
 
 	/**
+	 * form-flow-repeating-groups-calculations-and-decisions REQ-FFL-001: a group
+	 * is a list whose count fits repeat.min and repeat.max.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 */
+	public function testAGroupMustHoldBetweenMinAndMaxItems(): void {
+		$group = ['name' => 'bewoners', 'type' => 'group', 'repeat' => ['min' => 2, 'max' => 3], 'fields' => [['name' => 'naam', 'required' => true]]];
+		$item  = static fn (string $name): array => ['naam' => $name];
+
+		$tooFew = $this->validator()->validate(fields: [$group], answers: ['bewoners' => [$item('Ans')]]);
+		$this->assertFalse($tooFew['valid']);
+		$this->assertSame('Add at least %s.', $tooFew['errors']['bewoners']);
+
+		$none = $this->validator()->validate(fields: [$group], answers: []);
+		$this->assertArrayHasKey('bewoners', $none['errors'], 'no items at all is below the minimum');
+
+		$tooMany = $this->validator()->validate(fields: [$group], answers: ['bewoners' => [$item('a'), $item('b'), $item('c'), $item('d')]]);
+		$this->assertSame('You can add at most %s.', $tooMany['errors']['bewoners']);
+
+		$fine = $this->validator()->validate(fields: [$group], answers: ['bewoners' => [$item('Ans'), $item('Piet')]]);
+		$this->assertTrue($fine['valid']);
+		$this->assertSame([['naam' => 'Ans'], ['naam' => 'Piet']], $fine['answers']['bewoners']);
+
+	}//end testAGroupMustHoldBetweenMinAndMaxItems()
+
+	/**
+	 * REQ-FFL-001: the server names the item and the field, and keeps only the
+	 * sub-fields the group declares.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 */
+	public function testTheServerChecksEachItemAndNamesItAndTheField(): void {
+		$group = ['name' => 'bewoners', 'type' => 'group', 'repeat' => ['min' => 1], 'fields' => [['name' => 'naam', 'required' => true], ['name' => 'huisnummer']]];
+
+		$result = $this->validator()->validate(
+			fields: [$group],
+			answers: ['bewoners' => [['naam' => 'Ans', 'huisnummer' => '14', 'bsn' => '111222333'], ['naam' => ' ']]]
+		);
+
+		$this->assertFalse($result['valid']);
+		$this->assertSame(['bewoners[1].naam'], array_keys($result['errors']));
+
+		$ok = $this->validator()->validate(fields: [$group], answers: ['bewoners' => [['naam' => 'Ans', 'huisnummer' => '14', 'bsn' => '111222333']]]);
+		$this->assertSame([['naam' => 'Ans', 'huisnummer' => '14']], $ok['answers']['bewoners'], 'an invented sub-field is not kept');
+
+		$notAList = $this->validator()->validate(fields: [$group], answers: ['bewoners' => 'Ans']);
+		$this->assertSame('This answer must be a list.', $notAList['errors']['bewoners']);
+
+		$optional = $this->validator()->validate(fields: [['name' => 'extra', 'type' => 'group', 'fields' => [['name' => 'x']]]], answers: []);
+		$this->assertTrue($optional['valid'], 'a group without a minimum may stay empty');
+
+	}//end testTheServerChecksEachItemAndNamesItAndTheField()
+
+	/**
+	 * REQ-FFL-002: a calculated or decided field is never taken from the browser,
+	 * and being absent from the submission is not a missing answer.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 */
+	public function testACalculatedFieldIsNeverTakenFromTheBrowser(): void {
+		$fields = [
+			['name' => 'einddatum', 'required' => true, 'calculate' => ['op' => 'addDays', 'args' => ['x', 1]]],
+			['name' => 'soort', 'required' => true, 'computed' => true],
+		];
+
+		$result = $this->validator()->validate(fields: $fields, answers: ['einddatum' => '2030-01-01', 'soort' => 'gehackt']);
+
+		$this->assertTrue($result['valid']);
+		$this->assertSame([], $result['answers']);
+
+	}//end testACalculatedFieldIsNeverTakenFromTheBrowser()
+
+	/**
 	 * The validator with a translator that answers the text it was given.
 	 *
 	 * @return PortalFormValidator

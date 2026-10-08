@@ -272,6 +272,8 @@ class PortalIntakeControllerTest extends TestCase {
 		?\OCA\Portaliq\Service\Intake\PortalFamilyMembers $family = null,
 		?\OCA\Portaliq\Service\Intake\FormStatements $statements = null,
 		?\OCA\Portaliq\Service\Intake\FormConfirmationMailer $mailer = null,
+		?\OCA\Portaliq\Service\Intake\PortalFormCalculator $calculator = null,
+		?\OCA\Portaliq\Service\Intake\PortalFormDecision $decision = null,
 	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -310,7 +312,9 @@ class PortalIntakeControllerTest extends TestCase {
 			$addresses,
 			$family,
 			$statements,
-			$mailer
+			$mailer,
+			$calculator,
+			$decision
 		);
 	}//end controller()
 
@@ -492,6 +496,137 @@ class PortalIntakeControllerTest extends TestCase {
 
 		$this->assertSame('', $data['mailedTo']);
 	}//end testNoMailGoesWhenTheFormDoesNotAskForOne()
+
+	/**
+	 * A form with a start date, a calculated end date, a decided kind of permit
+	 * and a step that decides.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function flowForm(): array {
+		return [
+			'kind' => 'hosted',
+			'resolvesToNoForm' => false,
+			'fields' => [
+				['name' => 'startdatum', 'type' => 'date', 'required' => true],
+				['name' => 'einddatum', 'type' => 'date', 'required' => true, 'calculate' => ['op' => 'addDays', 'args' => ['startdatum', 365]]],
+				['name' => 'soortVergunning', 'type' => 'string', 'computed' => true],
+			],
+			'steps' => [
+				['id' => 'start', 'title' => 'Start', 'fields' => ['startdatum', 'einddatum']],
+				['id' => 'route', 'title' => 'Route', 'fields' => ['soortVergunning'], 'decision' => [
+					'rule' => 'parkeren-soort-vergunning', 'inputs' => ['woonplaats' => 'adres.plaats'], 'output' => 'soortVergunning',
+					'nextStep' => ['bedrijf' => 'start'],
+				]],
+			],
+			'settings' => ['challenge' => false, 'confirmationText' => ''],
+		];
+	}//end flowForm()
+
+	/**
+	 * A decision double: answers the outcome the test sets, or is down.
+	 *
+	 * @param string|null $outcome The outcome, or null for an engine that does not answer.
+	 *
+	 * @return \OCA\Portaliq\Service\Intake\PortalFormDecision
+	 */
+	private function decisionAnswering(?string $outcome): \OCA\Portaliq\Service\Intake\PortalFormDecision {
+		$decision = $this->createMock(\OCA\Portaliq\Service\Intake\PortalFormDecision::class);
+		$decision->method('decide')->willReturn(
+			$outcome === null
+				? ['status' => 'unavailable', 'outcome' => '', 'output' => 'soortVergunning', 'nextStep' => '']
+				: ['status' => 'decided', 'outcome' => $outcome, 'output' => 'soortVergunning', 'nextStep' => 'start']
+		);
+
+		return $decision;
+	}//end decisionAnswering()
+
+	/**
+	 * REQ-FFL-002: a value the browser sent for a calculated field is replaced
+	 * by the server's own result before anything is recorded.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 */
+	public function testATamperedCalculatedValueIsReplacedBeforeItIsStored(): void {
+		$controller = $this->controller(
+			render: $this->flowForm(),
+			calculator: new \OCA\Portaliq\Service\Intake\PortalFormCalculator(),
+			decision: $this->decisionAnswering('bedrijf')
+		);
+		$stored = [];
+		$this->doubles['queue']->method('accept')->willReturnCallback(
+			function (string $portal, string $route, array $answers, string $subjectRef = '', string $origin = '', array $statements = [], array $computed = [], array $decisions = []) use (&$stored): array {
+				$stored = compact('answers', 'computed', 'decisions');
+				return ['reference' => 'AANVRAAG-ABC123', 'state' => 'queued'];
+			}
+		);
+
+		$controller->submit(route: 'parkeren', answers: ['startdatum' => '2026-11-01', 'einddatum' => '2030-01-01', 'soortVergunning' => 'gehackt']);
+
+		$this->assertSame('2027-11-01', $stored['answers']['einddatum']);
+		$this->assertSame('bedrijf', $stored['answers']['soortVergunning']);
+		$this->assertSame(['einddatum', 'soortVergunning'], $stored['computed']);
+		$this->assertSame(['route' => 'bedrijf'], $stored['decisions']);
+
+	}//end testATamperedCalculatedValueIsReplacedBeforeItIsStored()
+
+	/**
+	 * REQ-FFL-003: a rule engine that does not answer on submit records nothing.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 */
+	public function testASubmissionWhoseDecisionCannotBeAskedIsNotRecorded(): void {
+		$controller = $this->controller(
+			render: $this->flowForm(),
+			calculator: new \OCA\Portaliq\Service\Intake\PortalFormCalculator(),
+			decision: $this->decisionAnswering(null)
+		);
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit(route: 'parkeren', answers: ['startdatum' => '2026-11-01']);
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame(['error' => 'decision_unavailable'], $response->getData());
+
+	}//end testASubmissionWhoseDecisionCannotBeAskedIsNotRecorded()
+
+	/**
+	 * REQ-FFL-003: the decide route answers outcome, field and next step, and
+	 * the form the browser gets carries no rule.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 */
+	public function testTheDecideRouteAnswersTheOutcomeAndTheRuleStaysOnTheServer(): void {
+		$controller = $this->controller(
+			render: $this->flowForm(),
+			calculator: new \OCA\Portaliq\Service\Intake\PortalFormCalculator(),
+			decision: $this->decisionAnswering('bedrijf')
+		);
+
+		$decided = $controller->decide(route: 'parkeren', step: 'route', answers: ['adres' => ['plaats' => 'Zuiddrecht']]);
+		$this->assertSame(['outcome' => 'bedrijf', 'output' => 'soortVergunning', 'nextStep' => 'start'], $decided->getData());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->decide(route: 'parkeren', step: 'start', answers: [])->getStatus(), 'a step without a decision decides nothing');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->decide(route: 'parkeren', step: 'nope', answers: [])->getStatus());
+
+		$this->doubles['prefill']->method('forSubject')->willReturn([]);
+		$form = json_encode($controller->form(route: 'parkeren')->getData());
+		$this->assertStringNotContainsString('parkeren-soort-vergunning', $form);
+		$this->assertStringNotContainsString('woonplaats', $form);
+		$this->assertStringContainsString('"decides":true', $form);
+
+	}//end testTheDecideRouteAnswersTheOutcomeAndTheRuleStaysOnTheServer()
+
+	/**
+	 * REQ-FFL-003: an engine that is down is a 503 the form can retry, with no answer lost.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 */
+	public function testTheDecideRouteIsUnavailableWhenTheEngineIsDown(): void {
+		$controller = $this->controller(render: $this->flowForm(), decision: $this->decisionAnswering(null));
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $controller->decide(route: 'parkeren', step: 'route', answers: [])->getStatus());
+
+	}//end testTheDecideRouteIsUnavailableWhenTheEngineIsDown()
 
 	/**
 	 * A double of one class, limited to the methods it really has.

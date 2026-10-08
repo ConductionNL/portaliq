@@ -132,8 +132,31 @@ class FormStepsNormaliser {
 			$kept[] = ['id' => self::LOOSE_STEP, 'title' => '', 'fields' => $loose];
 		}
 
-		return array_merge($kept, array_slice($reviews, 0, 1));
+		$all = array_merge($kept, array_slice($reviews, 0, 1));
+
+		return $this->withKnownTargets(steps: $all);
 	}//end steps()
+
+	/**
+	 * Keep a decision's `nextStep` entries only where they name a step the form has.
+	 *
+	 * @param array<int, array<string, mixed>> $steps The kept steps.
+	 *
+	 * @return array<int, array<string, mixed>> The steps.
+	 */
+	private function withKnownTargets(array $steps): array {
+		$ids = array_column($steps, 'id');
+		foreach ($steps as $index => $step) {
+			if (isset($step['decision']) === true) {
+				$steps[$index]['decision']['nextStep'] = array_filter(
+					$step['decision']['nextStep'],
+					static fn (string $target): bool => in_array($target, $ids, true)
+				);
+			}
+		}
+
+		return $steps;
+	}//end withKnownTargets()
 
 	/**
 	 * An action's draft declaration: `{ retentionDays }` clamped to 1 to 90.
@@ -219,8 +242,60 @@ class FormStepsNormaliser {
 			$clean['review'] = true;
 		}
 
+		$decision = $this->decision(decision: ($step['decision'] ?? null), known: $known);
+		if ($decision !== null && $review === false) {
+			$clean['decision'] = $decision;
+		}
+
 		return $clean;
 	}//end step()
+
+	/**
+	 * A step's decision: a rule, the inputs it reads, the field its outcome
+	 * fills and the step each outcome opens. Anything malformed drops the
+	 * whole decision, so a half-declared rule never runs.
+	 *
+	 * @param mixed $decision The declared decision.
+	 * @param array<int, string> $known The known field names.
+	 *
+	 * @return array<string, mixed>|null The decision, or null to drop it.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 */
+	private function decision(mixed $decision, array $known): ?array {
+		if (is_array($decision) === false) {
+			return null;
+		}
+
+		$token  = '/^[A-Za-z][A-Za-z0-9_.-]{0,127}$/';
+		$rule   = ($decision['rule'] ?? null);
+		$output = ($decision['output'] ?? null);
+		if (is_string($rule) === false || preg_match($token, $rule) !== 1) {
+			return null;
+		}
+
+		if (is_string($output) === false || in_array($output, $known, true) === false) {
+			return null;
+		}
+
+		$inputs = [];
+		foreach ((array)($decision['inputs'] ?? []) as $name => $path) {
+			if (is_string($name) === false || preg_match($token, $name) !== 1 || is_string($path) === false || preg_match($token, $path) !== 1) {
+				return null;
+			}
+
+			$inputs[$name] = $path;
+		}
+
+		$next = [];
+		foreach ((array)($decision['nextStep'] ?? []) as $outcome => $stepId) {
+			if (is_string($stepId) === true && preg_match($token, $stepId) === 1) {
+				$next[(string)$outcome] = $stepId;
+			}
+		}
+
+		return ['rule' => $rule, 'inputs' => $inputs, 'output' => $output, 'nextStep' => $next];
+	}//end decision()
 
 	/**
 	 * Whether a step's fields can be kept: a review names none, any other

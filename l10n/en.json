@@ -2462,7 +2462,14 @@
         "Sending reference": "Sending reference",
         "The moment the resident first opened the message. Written once, and only when a read receipt was requested.": "The moment the resident first opened the message. Written once, and only when a read receipt was requested.",
         "Whether the sender asked to see when this message was opened. Set by the sending app. Opening the message never changes it, and the resident is told it was asked.": "Whether the sender asked to see when this message was opened. Set by the sending app. Opening the message never changes it, and the resident is told it was asked.",
-        "The sender sees when you opened this message.": "The sender sees when you opened this message."
+        "The sender sees when you opened this message.": "The sender sees when you opened this message.",
+        "Calculated and decided fields": "Calculated and decided fields",
+        "Decisions": "Decisions",
+        "The names of the fields the portal worked out or a decision filled, as against answers the resident typed. Delivery marks them computed.": "The names of the fields the portal worked out or a decision filled, as against answers the resident typed. Delivery marks them computed.",
+        "The outcome the rule engine gave for each decided step, by step id, asked again when the form was sent.": "The outcome the rule engine gave for each decided step, by step id, asked again when the form was sent.",
+        "Add at least %s.": "Add at least %s.",
+        "You can add at most %s.": "You can add at most %s.",
+        "This answer must be a list.": "This answer must be a list."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

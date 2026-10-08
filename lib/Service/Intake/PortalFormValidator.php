@@ -88,6 +88,23 @@ class PortalFormValidator {
 				continue;
 			}
 
+			// A calculated or decided field is the server's to fill, never the browser's
+			// (form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002).
+			if (isset($field['calculate']) === true || ($field['computed'] ?? false) === true) {
+				unset($shown[$name]);
+				continue;
+			}
+
+			if ((string)($field['type'] ?? '') === 'group') {
+				$group = $this->group(field: $field, name: $name, value: ($answers[$name] ?? null));
+				$errors = array_merge($errors, $group['errors']);
+				if ($group['items'] !== null) {
+					$accepted[$name] = $group['items'];
+				}
+
+				continue;
+			}
+
 			$value = ($answers[$name] ?? null);
 			if ($this->wasAnswered(value: $value) === false) {
 				if (($field['required'] ?? false) === true) {
@@ -108,6 +125,68 @@ class PortalFormValidator {
 
 		return ['valid' => ($errors === []), 'errors' => $errors, 'answers' => $accepted];
 	}//end validate()
+
+	/**
+	 * Validate a repeating group: a list whose count fits `repeat.min` and
+	 * `repeat.max` and whose items each fit the group's sub-fields.
+	 *
+	 * An item error is keyed `name[index].field` (the first item is 0), so the
+	 * summary can name the item and the field.
+	 *
+	 * @param array<string, mixed> $field The group's declaration.
+	 * @param string $name The group's name.
+	 * @param mixed $value What the browser sent for it.
+	 *
+	 * @return array{errors: array<string, string>, items: array<int, array<string, mixed>>|null}
+	 *         The errors, and the accepted items, or null when none are kept.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 */
+	private function group(array $field, string $name, mixed $value): array {
+		$repeat = (array)($field['repeat'] ?? []);
+		$min    = (int)($repeat['min'] ?? 0);
+		if (($field['required'] ?? false) === true) {
+			$min = max($min, 1);
+		}
+
+		$max    = (int)($repeat['max'] ?? 0);
+		$items  = [];
+		if (is_array($value) === true && array_is_list($value) === true) {
+			$items = $value;
+		} elseif ($this->wasAnswered(value: $value) === true) {
+			return ['errors' => [$name => $this->l10n->t('This answer must be a list.')], 'items' => null];
+		}
+
+		if (count($items) < $min) {
+			return ['errors' => [$name => $this->l10n->t('Add at least %s.', [(string)$min])], 'items' => null];
+		}
+
+		if ($max > 0 && count($items) > $max) {
+			return ['errors' => [$name => $this->l10n->t('You can add at most %s.', [(string)$max])], 'items' => null];
+		}
+
+		$errors   = [];
+		$accepted = [];
+		foreach ($items as $index => $item) {
+			if (is_array($item) === false) {
+				$errors[$name.'['.$index.']'] = $this->l10n->t('This answer is required.');
+				continue;
+			}
+
+			$checked = $this->validate(fields: (array)($field['fields'] ?? []), answers: $item);
+			foreach ($checked['errors'] as $key => $message) {
+				$errors[$name.'['.$index.'].'.$key] = $message;
+			}
+
+			$accepted[] = $checked['answers'];
+		}
+
+		if ($accepted === []) {
+			return ['errors' => $errors, 'items' => null];
+		}
+
+		return ['errors' => $errors, 'items' => $accepted];
+	}//end group()
 
 	/**
 	 * Whether the visitor answered this field at all.

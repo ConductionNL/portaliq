@@ -189,6 +189,9 @@ export const DUTCH = Object.freeze({
 	whatNow: 'Wat gebeurt er nu?',
 	print: 'Deze pagina printen',
 	statementRequired: 'Vink deze verklaring aan voordat u verstuurt.',
+	decisionDown: 'Er is een storing bij een koppeling. Uw antwoorden zijn bewaard.',
+	retry: 'Opnieuw proberen',
+	notCalculated: 'Nog niet te berekenen',
 })
 
 /**

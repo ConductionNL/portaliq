@@ -86,12 +86,14 @@ class PortalFormBindingResolver {
 	 * @param PortalReferenceLists|null $lists Fills a field's `options.referenceList`. Absent
 	 *                                         leaves such a field with no options, which
 	 *                                         closes it.
+	 * @param PortalFormCalculator $calculator Knows which `calculate` operations the server can repeat.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
 		private readonly ?PortalReferenceLists $lists = null,
+		private readonly PortalFormCalculator $calculator = new PortalFormCalculator(),
 	) {
 	}//end __construct()
 
@@ -311,6 +313,18 @@ class PortalFormBindingResolver {
 				'kind' => self::KIND_HOSTED,
 				'resolvesToNoForm' => true,
 				'reason' => 'unsupportedCondition',
+				'fields' => [],
+				'settings' => $settings,
+			];
+		}
+
+		if ($this->calculator->knowsEveryOperation(fields: $fields) === false) {
+			// The server could not work the value out again on submit, so the
+			// form does not open (form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002).
+			return [
+				'kind' => self::KIND_HOSTED,
+				'resolvesToNoForm' => true,
+				'reason' => 'unsupportedCalculation',
 				'fields' => [],
 				'settings' => $settings,
 			];

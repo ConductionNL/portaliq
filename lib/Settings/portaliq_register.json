@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.79.0"
+        "version": "0.80.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.79.0",
+                "version": "0.80.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -7790,7 +7790,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Intake Submission",
                 "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
                 "type": "object",
@@ -7906,6 +7906,20 @@
                                 }
                             }
                         }
+                    },
+                    "computed": {
+                        "title": "Calculated and decided fields",
+                        "type": "array",
+                        "description": "The names of the fields the portal worked out or a decision filled, as against answers the resident typed. Delivery marks them computed.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "decisions": {
+                        "title": "Decisions",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The outcome the rule engine gave for each decided step, by step id, asked again when the form was sent."
                     },
                     "confirmationMailState": {
                         "title": "Confirmation mail state",

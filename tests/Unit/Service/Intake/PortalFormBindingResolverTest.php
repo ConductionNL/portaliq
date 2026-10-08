@@ -430,6 +430,35 @@ class PortalFormBindingResolverTest extends TestCase {
 	}//end testNonLocalConditionResolvesToNoForm()
 
 	/**
+	 * form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002: a form
+	 * with a calculation the server cannot repeat opens no form.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 */
+	public function testAnUnknownCalculationResolvesToNoForm(): void {
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'start', 'order' => 1],
+			['name' => 'end', 'order' => 2, 'calculate' => ['op' => 'power', 'args' => ['start', 2]]],
+		]);
+
+		$render = $this->resolver()->render(binding: $this->binding());
+
+		$this->assertTrue($render['resolvesToNoForm']);
+		$this->assertSame('unsupportedCalculation', $render['reason']);
+		$this->assertSame([], $render['fields']);
+
+		$this->setUp();
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'start', 'order' => 1],
+			['name' => 'end', 'order' => 2, 'calculate' => ['op' => 'addDays', 'args' => ['start', 365]]],
+		]);
+		$this->assertFalse($this->resolver()->render(binding: $this->binding())['resolvesToNoForm']);
+
+	}//end testAnUnknownCalculationResolvesToNoForm()
+
+	/**
 	 * A resolver whose portal gemeente-x hides the case type verhuizing.
 	 *
 	 * @return PortalFormBindingResolver

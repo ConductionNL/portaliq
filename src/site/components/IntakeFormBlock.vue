@@ -168,8 +168,22 @@
 				:error="errors[field.name] || ''"
 				:group="isDate(field)"
 				:errorTestid="`intake-field-error-${field.name}`">
+				<RepeatingGroup
+					v-if="field.type === 'group'"
+					:id="elementId(field)"
+					v-model="values[field.name]"
+					:field="field"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`" />
+				<output
+					v-else-if="isComputedField(field)"
+					:id="elementId(field)"
+					class="utrecht-paragraph pq-intake-form__output"
+					:data-testid="`intake-field-${field.name}`">
+					{{ computedText(field) }}
+				</output>
 				<AddressNL
-					v-if="field.type === 'addressNL'"
+					v-else-if="field.type === 'addressNL'"
 					:id="elementId(field)"
 					v-model="values[field.name]"
 					:houseLetter="field.houseLetter === true"
@@ -269,6 +283,22 @@
 			</div>
 
 			<p
+				v-if="decisionDown"
+				class="utrecht-paragraph pq-intake-form__error"
+				role="alert"
+				data-testid="intake-form-decision-down">
+				{{ text.decisionDown }}
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--subtle"
+					:disabled="deciding"
+					data-testid="intake-form-decision-retry"
+					@click="nextStep">
+					{{ text.retry }}
+				</button>
+			</p>
+
+			<p
 				v-if="sendFailed"
 				class="utrecht-paragraph pq-intake-form__error"
 				data-testid="intake-form-error"
@@ -288,17 +318,20 @@ import FamilyMembers from './forms/FamilyMembers.vue'
 import FieldShell from './forms/FieldShell.vue'
 import FormIntro from './forms/FormIntro.vue'
 import FormProgress from './forms/FormProgress.vue'
+import RepeatingGroup from './forms/RepeatingGroup.vue'
 import ReviewList from './forms/ReviewList.vue'
 import StatementsBlock from './forms/StatementsBlock.vue'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import {
 	bindingRouteFrom,
+	decideStep as decideStepOnServer,
 	initialValues,
 	loadForm,
 	submitIntake,
 } from '../lib/intakeApi.js'
 import { addressLine, addressProblem } from './forms/address.js'
+import { calculatedValues } from './forms/calculate.js'
 import { confirmationView, introView, missingStatements } from './forms/confirmation.js'
 import {
 	DUTCH,
@@ -306,6 +339,7 @@ import {
 	plainFieldErrors,
 	summaryEntries,
 } from './forms/fields.js'
+import { groupCountErrors, itemLines } from './forms/group.js'
 import stepFlow from './forms/stepFlow.js'
 import { stepHeading } from './forms/steps.js'
 
@@ -344,6 +378,7 @@ export default {
 		ErrorSummary,
 		FieldShell,
 		FormProgress,
+		RepeatingGroup,
 		ReviewList,
 	},
 
@@ -469,6 +504,18 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The values of the calculated fields, worked out from the answers so far.
+		 * For display only: the server works them out again on submit.
+		 *
+		 * @return {Record<string, number|string>} The value per calculated field.
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 */
+		calculated() {
+			return calculatedValues(this.fields, this.values)
+		},
+
 		/**
 		 * The statements show on the review step, or at the end of a one-page form.
 		 *
@@ -667,6 +714,23 @@ export default {
 
 	watch: {
 		/**
+		 * Keep the calculated fields' values in step with the answers, so the
+		 * review shows them.
+		 *
+		 * @param {Record<string, number|string>} now The calculated values.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 */
+		calculated(now) {
+			for (const field of this.fields) {
+				if (field.calculate) {
+					this.values[field.name] = Object.hasOwn(now, field.name) ? String(now[field.name]) : ''
+				}
+			}
+		},
+
+		/**
 		 * Load the other form when the catalogue link changes under the page.
 		 *
 		 * @return {void}
@@ -851,6 +915,7 @@ export default {
 			const asked = this.fields.filter((field) => names.includes(field.name))
 			const addresses = asked.filter((field) => field.type === 'addressNL')
 			const errors = this.checkPlainFields(names)
+			Object.assign(errors, groupCountErrors(asked, this.values))
 			for (const field of addresses) {
 				const block = this.values[field.name]
 				const problem = addressProblem(block)
@@ -882,6 +947,7 @@ export default {
 			return plainFieldErrors(
 				this.fields
 					.filter((field) => names.includes(field.name))
+					.filter((field) => field.type !== 'group' && !this.isComputedField(field))
 					.map((field) => ({
 						name: field.name,
 						label: field.label || field.name,
@@ -909,6 +975,14 @@ export default {
 			if (field.type === 'familyMembers') {
 				return (this.values[field.name] || []).length + ''
 			}
+			if (field.type === 'group') {
+				return (this.values[field.name] || [])
+					.map((item) => {
+						const lines = itemLines(field, item)
+						return [lines.first, lines.rest].filter(Boolean).join(', ')
+					})
+					.join('; ')
+			}
 			const value = String(this.values[field.name] ?? '')
 			const option = (Array.isArray(field.options) ? field.options : []).find(
 				(entry) => String(entry?.value ?? entry) === value,
@@ -925,6 +999,55 @@ export default {
 				}).format(new Date(year, month - 1, day))
 			}
 			return value
+		},
+
+		/**
+		 * Whether the server fills a field: a calculation or a decision's output.
+		 *
+		 * @param {object} field The field.
+		 * @return {boolean} True for a read-only, computed line.
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 */
+		isComputedField(field) {
+			return Boolean(field.calculate) || field.computed === true
+		},
+
+		/**
+		 * What a computed line says: its value, or that it cannot be worked out yet.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The text.
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 */
+		computedText(field) {
+			const text = this.answerText(field)
+			return text === '' ? this.text.notCalculated : text
+		},
+
+		/**
+		 * Ask the server to decide a step that decides, and keep the outcome in
+		 * the field the decision fills. A throw means the rule engine is down.
+		 *
+		 * @param {object} step The step.
+		 * @return {Promise<{nextStep: string}>} The decision.
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
+		 */
+		async decideStep(step) {
+			const decided = await decideStepOnServer(
+				authBaseFrom(resolveApiBase()),
+				this.bindingRoute,
+				step.id,
+				this.values,
+				this.portal,
+				adoptSessionToken(),
+			)
+			if (decided.output !== '' && decided.outcome !== '') {
+				this.values[decided.output] = decided.outcome
+			}
+			return decided
 		},
 
 		/**

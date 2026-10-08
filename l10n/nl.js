@@ -2514,7 +2514,14 @@ OC.L10N.register(
         "Sending reference": "Kenmerk van de verzending",
         "The moment the resident first opened the message. Written once, and only when a read receipt was requested.": "Het moment waarop de inwoner het bericht voor het eerst opende. Eén keer geschreven, en alleen als een leesbevestiging is gevraagd.",
         "Whether the sender asked to see when this message was opened. Set by the sending app. Opening the message never changes it, and the resident is told it was asked.": "Of de afzender wil zien wanneer dit bericht is geopend. Ingesteld door de verzendende app. Het openen van het bericht verandert dit niet en de inwoner wordt verteld dat het is gevraagd.",
-        "The sender sees when you opened this message.": "De afzender ziet wanneer u dit bericht hebt geopend."
+        "The sender sees when you opened this message.": "De afzender ziet wanneer u dit bericht hebt geopend.",
+        "Calculated and decided fields": "Berekende en bepaalde velden",
+        "Decisions": "Beslissingen",
+        "The names of the fields the portal worked out or a decision filled, as against answers the resident typed. Delivery marks them computed.": "De namen van de velden die het portaal heeft berekend of die een beslissing heeft gevuld, tegenover antwoorden die de inwoner typte. Bij het afleveren staan ze als berekend gemarkeerd.",
+        "The outcome the rule engine gave for each decided step, by step id, asked again when the form was sent.": "De uitkomst die de regelmotor gaf per beslissende stap, op stap-id, opnieuw gevraagd bij het versturen van het formulier.",
+        "Add at least %s.": "Voeg minstens %s toe.",
+        "You can add at most %s.": "U kunt hoogstens %s toevoegen.",
+        "This answer must be a list.": "Dit antwoord moet een lijst zijn."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -89,6 +89,8 @@ class PortalIntakeQueue {
 	 * @param string $subjectRef The portal identity, or '' when anonymous.
 	 * @param string $origin The framing origin, or '' on the portal itself.
 	 * @param array<int, array<string, string>> $statements The statements accepted, with text version and time.
+	 * @param array<int, string> $computed The names of the fields the portal worked out or a decision filled.
+	 * @param array<string, string> $decisions The outcome of each decided step, by step id.
 	 *
 	 * @return array{reference: string, state: string}|null Null when the
 	 *         submission could not be recorded, in which case nothing is
@@ -96,7 +98,16 @@ class PortalIntakeQueue {
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 */
-	public function accept(string $portal, string $route, array $answers, string $subjectRef = '', string $origin = '', array $statements = []): ?array {
+	public function accept(
+		string $portal,
+		string $route,
+		array $answers,
+		string $subjectRef = '',
+		string $origin = '',
+		array $statements = [],
+		array $computed = [],
+		array $decisions = [],
+	): ?array {
 		if ($portal === '') {
 			return null;
 		}
@@ -114,6 +125,15 @@ class PortalIntakeQueue {
 		];
 		if ($statements !== []) {
 			$data['statements'] = $statements;
+		}
+
+		// The fields the portal worked out or a decision filled, so delivery can say so.
+		if ($computed !== []) {
+			$data['computed'] = array_values($computed);
+		}
+
+		if ($decisions !== []) {
+			$data['decisions'] = $decisions;
 		}
 
 		$created = $this->writer->createObject(

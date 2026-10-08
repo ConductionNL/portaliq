@@ -224,7 +224,7 @@ export function initialValues(fields, prefill) {
 			prefill && Object.hasOwn(prefill, name) ? prefill[name] : undefined
 		if (own !== undefined && own !== null && own !== '') {
 			values[name] = String(own)
-		} else if (field.type === 'familyMembers') {
+		} else if (field.type === 'familyMembers' || field.type === 'group') {
 			values[name] = []
 		} else if (field.type === 'addressNL') {
 			values[name] = {
@@ -471,5 +471,45 @@ export async function fetchFamily(base, token, sameAddressOnly, fetchImpl) {
 		return Array.isArray(body?.members) ? body.members : null
 	} catch {
 		return null
+	}
+}
+
+/**
+ * Ask the server to decide a step: the rule engine runs there, and the answer
+ * is the outcome, the field it fills and the step it opens. A 503 is the engine
+ * being down, which the form shows with "Opnieuw proberen" and keeps its answers.
+ *
+ * @param {string} base The portal API base.
+ * @param {string} route The binding route of the form.
+ * @param {string} step The id of the step that decides.
+ * @param {object} answers The answers so far.
+ * @param {string} portal The portal slug.
+ * @param {string} token The bearer, or ''.
+ * @param {Function|null} [fetchImpl] The fetch to use.
+ * @return {Promise<{outcome: string, output: string, nextStep: string}>} The decision.
+ * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
+ */
+export async function decideStep(base, route, step, answers, portal, token, fetchImpl = null) {
+	const body = { route, step, answers: answers || {} }
+	if (portal) {
+		body.portal = portal
+	}
+
+	const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/decide'), {
+		method: 'POST',
+		headers: headersFor(token, true),
+		body: JSON.stringify(body),
+	})
+	const parsed = await response.json().catch(() => ({}))
+	if (!response.ok) {
+		const error = new Error(`intake decide ${response.status}`)
+		error.status = response.status
+		throw error
+	}
+
+	return {
+		outcome: String(parsed.outcome || ''),
+		output: String(parsed.output || ''),
+		nextStep: String(parsed.nextStep || ''),
 	}
 }
