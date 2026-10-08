@@ -40,6 +40,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\CrossRefConfigNormaliser;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\JSONResponse;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -59,6 +61,28 @@ class PortalCrossRefGuard {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * The 403 answer for a body whose cross reference does not resolve, or
+	 * null when every declared reference resolves.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 * @param array<string, mixed> $data The body about to be written.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $app The contributing app.
+	 *
+	 * @return JSONResponse|null The refusal, or null to go on.
+	 *
+	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+	 */
+	public function refusal(array $action, array $data, array $subject, string $app): ?JSONResponse {
+		$refused = $this->refusedField(action: $action, data: $data, subject: $subject, app: $app);
+		if ($refused === '') {
+			return null;
+		}
+
+		return new JSONResponse(['error' => 'cross_ref_refused', 'field' => $refused], Http::STATUS_FORBIDDEN);
+	}//end refusal()
 
 	/**
 	 * The first declared reference this body fails on, or an empty string.

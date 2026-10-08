@@ -76,6 +76,49 @@ class PortalBindingPreviewTest extends TestCase {
 	}//end testABindingThatResolvesToNoneSaysSo()
 
 	/**
+	 * operate-show-per-case-type: a binding for a case type the portal hides
+	 * opens no form, and the administrator is told that is why.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testAHiddenCaseTypeIsNamedAsTheReason(): void {
+		$preview = $this->previewAnswering(
+			render: ['kind' => 'hosted', 'resolvesToNoForm' => true, 'reason' => 'hiddenCaseType']
+		);
+
+		$described = $preview->describe(binding: ['formName' => 'Handhavingsverzoek']);
+
+		$this->assertSame(PortalBindingPreview::RESOLVES_TO_NONE, $described['state']);
+		$this->assertSame(PortalBindingPreview::REASON_HIDDEN_CASE_TYPE, $described['reason']);
+		$this->assertStringContainsString('does not show its case type', $described['message']);
+	}//end testAHiddenCaseTypeIsNamedAsTheReason()
+
+	/**
+	 * REQ-ICQ-003: the administrator reads why a form with a condition the
+	 * portal cannot check opens nothing, and what to change.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
+	 */
+	public function testAnUnsupportedConditionIsNamedAsTheReason(): void {
+		$preview = $this->previewAnswering(
+			render: ['kind' => 'hosted', 'resolvesToNoForm' => true, 'reason' => 'unsupportedCondition']
+		);
+
+		$described = $preview->describe(binding: ['formName' => 'Verhuizing']);
+
+		$this->assertSame(PortalBindingPreview::RESOLVES_TO_NONE, $described['state']);
+		$this->assertSame(PortalBindingPreview::REASON_UNSUPPORTED_CONDITION, $described['reason']);
+		$this->assertSame(
+			'This form uses a condition the portal cannot check. Change it to a condition on another answer.',
+			$described['message']
+		);
+	}//end testAnUnsupportedConditionIsNamedAsTheReason()
+
+	/**
 	 * 🔴 AND IT INVENTS NO NAME. A stale or configured-but-unresolved name
 	 * tells an administrator the binding is working.
 	 *

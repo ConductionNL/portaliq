@@ -117,6 +117,27 @@ class PortalCaseAccessGuard {
 			return false;
 		}
 
+		return $this->mayRead(register: $register, schema: $schema, id: $id);
+	}//end mayAct()
+
+	/**
+	 * Whether the signed-in user may read one record. OpenRegister judges the
+	 * read with RBAC and multitenancy on, as the session's user, which is why
+	 * no user is passed. Proposing a change needs this and no gated action.
+	 *
+	 * @param string $register The register the record lives in.
+	 * @param string $schema   The schema the record lives in.
+	 * @param string $id       The record.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 */
+	public function mayRead(string $register, string $schema, string $id): bool {
+		if ($register === '' || $schema === '' || $id === '') {
+			return false;
+		}
+
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return false;
@@ -135,7 +156,7 @@ class PortalCaseAccessGuard {
 		}
 
 		return is_array($rows) === true && $rows !== [];
-	}//end mayAct()
+	}//end mayRead()
 
 	/**
 	 * OpenRegister's object service, or null when it is not installed.

@@ -63,8 +63,8 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
 SPDX-License-Identifier = "EUPL-1.2"
 
-# `.jsx` and `.mjs` were missing here, which is why the nine React-portal
-# sources under src/portal/ and docs/scripts/validate-ai-baseline.mjs counted
+# `.jsx` and `.mjs` were missing here, which is why the nine sources of the
+# since retired React portal and docs/scripts/validate-ai-baseline.mjs counted
 # as unlicensed: this file lists extensions rather than using a blanket, so an
 # extension that is not listed falls through entirely.
 [[annotations]]

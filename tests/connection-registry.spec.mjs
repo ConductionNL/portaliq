@@ -103,7 +103,9 @@ describe('the Integrations page declaration', () => {
 		assert.deepEqual(menu.query, { app: 'portaliq' })
 		assert.equal(menu.section, 'settings')
 		assert.equal(menu.permission, 'admin')
-		assert.deepEqual(menu.visibleIf, { appInstalled: 'integriq' })
+		// `access.admin` is the role gate every settings entry carries since
+		// admin-menu-follows-roles (see admin-menu-access.spec.mjs).
+		assert.deepEqual(menu.visibleIf, { appInstalled: 'integriq', 'access.admin': true })
 	})
 
 	it('names only formatters the library ships and handlers that exist, and wires the handler into the app', () => {

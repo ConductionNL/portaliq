@@ -49,6 +49,24 @@ class PortalReferenceLinkServiceTest extends TestCase {
 
 	}//end testAVergunningRefusesTheReferenceRouteAndIssuesNoLink()
 
+	/**
+	 * portaliq#796: the link row records the case collection it opens, and
+	 * following it hands the session minter that collection and the link id.
+	 *
+	 * @return void
+	 */
+	public function testAFollowedLinkNamesTheCaseCollectionAndItsOwnId(): void {
+		$service = $this->service();
+		$issued = $service->issue(caseType: $this->melding(), caseReference: 'Z-2026-0042', email: 'anna@example.nl', organisation: 'gemeente-x', caseRegister: 'dossiq', caseSchema: 'case');
+
+		$redeemed = $service->redeem(token: $issued['token']);
+
+		$this->assertSame('dossiq', $redeemed['register']);
+		$this->assertSame('case', $redeemed['schema']);
+		$this->assertSame($this->storedRows('portalReferenceLink')[0]['uuid'], $redeemed['linkId']);
+
+	}//end testAFollowedLinkNamesTheCaseCollectionAndItsOwnId()
+
 	public function testAMeldingIsReachedOnTheLinkWithNoAccount(): void {
 		$service = $this->service();
 		$issued = $service->issue(caseType: $this->melding(), caseReference: 'ZAAK-1', email: 'ans@example.org', organisation: 'gemeente-x');

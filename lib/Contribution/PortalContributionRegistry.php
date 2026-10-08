@@ -98,6 +98,7 @@ class PortalContributionRegistry {
 	 * @return array<string, mixed> `{ audience, organisation, contributions[] }`.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-a-malformed-row-condition-must-be-dropped-with-a-warning-req-urc-002
 	 */
 	public function aggregateFor(array $subject): array {
 		$audience = (string)($subject['audience'] ?? '');
@@ -118,7 +119,7 @@ class PortalContributionRegistry {
 			}
 
 			try {
-				$contribution = $provider->getContribution($subject);
+				$contribution = $this->locator->contributionOf(provider: $provider, subject: $subject);
 			} catch (Throwable $e) {
 				$this->logger->error('Portaliq: contribution provider failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 				continue;
@@ -142,8 +143,25 @@ class PortalContributionRegistry {
 				$this->logger->error('Portaliq: manifest normalisation failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 			}
 
-			$contributions[] = $filtered;
+			// A row action's `rowWhen` (update-row-action-condition): an
+			// unknown operator or a malformed update condition is dropped and
+			// logged with the app that declared it.
+			$filtered = (new RowWhenNormaliser())->normaliseContribution(
+				contribution: $filtered,
+				appId: (string)$appId,
+				logger: $this->logger
+			);
+
+			$contributions[] = (new NotificationRuleNormaliser())->normaliseContribution(
+				contribution: $filtered,
+				appId: (string)$appId,
+				logger: $this->logger
+			);
 		}//end foreach
+
+		// Actions that attach to another app's collection (woo-journey-entry-
+		// points D3) resolve across contributions, so only once all are in.
+		$contributions = (new AttachedActionResolver())->resolve(contributions: $contributions);
 
 		return [
 			'audience' => $audience,
@@ -217,7 +235,7 @@ class PortalContributionRegistry {
 	 */
 	private function anonymousContributionsFor(object $provider, string $appId, string $audience): array {
 		try {
-			$contribution = $provider->getContribution(['audience' => $audience]);
+			$contribution = $this->locator->contributionOf(provider: $provider, subject: ['audience' => $audience]);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: contribution provider failed (anonymous aggregation)',
@@ -408,6 +426,29 @@ class PortalContributionRegistry {
 
 		return $contribution;
 	}//end filterByTrust()
+
+	/**
+	 * Every audience an installed app's provider serves.
+	 *
+	 * The change-rule index asks each of these for its contributions without
+	 * a signed-in subject: an OpenRegister save can come from a handler or a
+	 * job, and the question is whether any app wants a resident told.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+	 */
+	public function servedAudiences(): array {
+		$audiences = [];
+		foreach ($this->appManager->getInstalledApps() as $appId) {
+			$provider = $this->resolveProvider(appId: (string)$appId);
+			if ($provider !== null) {
+				$audiences = array_merge($audiences, $this->providerAudiences(provider: $provider));
+			}
+		}
+
+		return array_values(array_unique($audiences));
+	}//end servedAudiences()
 
 	/**
 	 * Resolve one app's contribution provider, or null when it ships none.

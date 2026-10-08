@@ -68,6 +68,10 @@ export function adoptSessionToken() {
 		return ''
 	}
 
+	// The React portal's bearer leaves localStorage on the first read,
+	// whichever bearer this tab ends up with (REQ-SRP-002).
+	const legacy = adoptLegacyToken()
+
 	const hash = String(window.location.hash || '')
 	const match = hash.match(/[#&]token=([^&]+)/)
 	if (match) {
@@ -85,9 +89,106 @@ export function adoptSessionToken() {
 	}
 
 	try {
-		return window.sessionStorage.getItem(TOKEN_KEY) || ''
+		return window.sessionStorage.getItem(TOKEN_KEY) || legacy
+	} catch {
+		return legacy
+	}
+}
+
+/**
+ * Where the retired React portal kept its bearer: localStorage, for every tab.
+ */
+export const LEGACY_TOKEN_KEY = 'portaliq_token'
+
+/**
+ * Take the bearer the React portal left in localStorage, once
+ * (site-reaches-portal-parity REQ-SRP-002).
+ *
+ * A resident who signed in on `/portal` before it moved to the site still has
+ * a valid bearer under the old key. Ignoring it would sign them out in
+ * silence; keeping both stores would leave a bearer in localStorage that
+ * outlives every tab. So it moves: into this tab's store, and out of
+ * localStorage, whether or not it still works. A bearer that has expired then
+ * reads as signed out, and the sign-in screen says what to do.
+ *
+ * @return {string} The adopted bearer, or ''.
+ *
+ * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-site-must-adopt-and-keep-one-bearer-for-the-resident-req-srp-002
+ */
+export function adoptLegacyToken() {
+	let legacy
+	try {
+		legacy = window.localStorage.getItem(LEGACY_TOKEN_KEY) || ''
+		if (legacy) {
+			window.localStorage.removeItem(LEGACY_TOKEN_KEY)
+		}
 	} catch {
 		return ''
+	}
+
+	if (legacy) {
+		try {
+			// A bearer this tab already holds is newer than the old one.
+			if (!window.sessionStorage.getItem(TOKEN_KEY)) {
+				window.sessionStorage.setItem(TOKEN_KEY, legacy)
+			}
+		} catch {
+			// No session storage: the bearer lasts this page view.
+		}
+	}
+
+	return legacy
+}
+
+/**
+ * The one sentence a failed sign-in shows, whatever the reason
+ * (signin-integriq-broker-login REQ-BEL-006). The edge sends no reason, so the
+ * page cannot tell a prober which check failed.
+ */
+export const SIGNIN_FAILED_MESSAGE =
+	'Inloggen is niet gelukt. Probeer het opnieuw of kies een andere manier.'
+
+/**
+ * Whether the edge sent the browser back from a failed sign-in, read from the
+ * `#signin=failed` fragment and removed from the URL, like `#token=`.
+ *
+ * @return {boolean}
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
+ */
+export function takeSigninFailed() {
+	if (typeof window === 'undefined') {
+		return false
+	}
+
+	if (String(window.location.hash || '') !== '#signin=failed') {
+		return false
+	}
+
+	window.history.replaceState(
+		null,
+		'',
+		window.location.pathname + window.location.search,
+	)
+	return true
+}
+
+/**
+ * Keep a bearer for this tab: the one a dev login or a refresh minted. An
+ * empty value forgets the stored one.
+ *
+ * @param {string|null} token The bearer.
+ * @return {void}
+ * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ */
+export function storeSessionToken(token) {
+	try {
+		if (token) {
+			window.sessionStorage.setItem(TOKEN_KEY, token)
+		} else {
+			window.sessionStorage.removeItem(TOKEN_KEY)
+		}
+	} catch {
+		// No storage: the bearer lasts this page view.
 	}
 }
 
@@ -141,6 +242,65 @@ export async function fetchSession(authBase) {
 }
 
 /**
+ * Rotate this tab's bearer (signin-session-idle-warning-and-sso T06). The
+ * site keeps its bearer in sessionStorage; the rotated one replaces it. A
+ * refusal (revoked, expired, past the cap) resolves null and changes nothing.
+ *
+ * @param {string} authBase The auth edge base.
+ * @return {Promise<object|null>} The answer (token and session times), or null.
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+ */
+export async function refreshSession(authBase) {
+	try {
+		const token = adoptSessionToken()
+		if (!token) {
+			return null
+		}
+		const response = await fetch(`${authBase}/session/refresh`, {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+			credentials: 'include',
+		})
+		if (!response.ok) {
+			return null
+		}
+		const body = await response.json()
+		if (!body || !body.token) {
+			return null
+		}
+		try {
+			window.sessionStorage.setItem(TOKEN_KEY, body.token)
+		} catch {
+			// No storage: the page keeps the old bearer until it expires.
+		}
+		return body
+	} catch {
+		return null
+	}
+}
+
+/**
+ * The Dutch sign-in labels, for a caller that brings no translator.
+ *
+ * @param {string} key The English source string.
+ * @param {object} [vars] Placeholder values.
+ * @return {string} The Dutch label.
+ */
+function dutchLabel(key, vars = {}) {
+	const nl = {
+		'Log in with your account': 'Inloggen met uw account',
+		'Log in': 'Inloggen',
+		'Log in with {provider}': 'Inloggen met {provider}',
+	}
+	return (nl[key] || key).replace(/\{(\w+)\}/g, (_, name) =>
+		String(vars[name] ?? ''),
+	)
+}
+
+/**
  * The sign-in routes a portal offers, derived from its declared modes.
  *
  * `public` is not a sign-in route — it is the absence of one. A portal that
@@ -150,20 +310,38 @@ export async function fetchSession(authBase) {
  *
  * @param {object} site     The portal record from /api/content/site.
  * @param {string} authBase The auth edge base.
- * @return {Array<{mode: string, label: string, href: string}>} The routes.
+ * @param {(key: string, vars?: object) => string} [t] The site translator;
+ *        without one the labels are the Dutch the site always showed.
+ * @param {string} [exampleResident] The example resident the one-click demo
+ *        sign-in offers on this portal (the shell's `signin.exampleResident`),
+ *        or ''. With one, the `nextcloud` way links to that route instead of
+ *        the account form and is marked `demo` (example-resident-demo-login).
+ * @param {string} [residentWayIn] The way in the example resident's install
+ *        added while the demo switch is off (`signin.exampleResidentWayIn`),
+ *        or ''. That way is left out, so a demo card shows only on a portal
+ *        that switched the demo on.
+ * @return {Array<{mode: string, label: string, card?: object, href: string, demo?: boolean}>} The routes.
+ * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+ * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  */
-export function signInRoutes(site, authBase) {
+export function signInRoutes(
+	site,
+	authBase,
+	t = dutchLabel,
+	exampleResident = '',
+	residentWayIn = '',
+) {
 	const modes = Array.isArray(site?.authentication?.modes)
 		? site.authentication.modes
 		: []
 
 	const labels = {
-		nextcloud: 'Inloggen met uw account',
-		local: 'Inloggen',
-		oidc: 'Inloggen',
-		digid: 'Inloggen met DigiD',
-		eherkenning: 'Inloggen met eHerkenning',
-		eidas: 'Inloggen met eIDAS',
+		nextcloud: t('Log in with your account'),
+		local: t('Log in'),
+		oidc: t('Log in'),
+		digid: t('Log in with {provider}', { provider: 'DigiD' }),
+		eherkenning: t('Log in with {provider}', { provider: 'eHerkenning' }),
+		eidas: t('Log in with {provider}', { provider: 'eIDAS' }),
 	}
 
 	// THE PORTAL SLUG TRAVELS WITH THE LINK, and leaving it off is not a
@@ -181,16 +359,37 @@ export function signInRoutes(site, authBase) {
 			: ''
 	const query = [scope, returnTo].filter(Boolean).join('&')
 
+	// A MODE IS NOT A PROVIDER. The auth edge knows the providers digid,
+	// eherkenning, eidas and generic. `local` and `oidc` are portal modes that
+	// both sign in through the organisation's generic OIDC broker, so a link
+	// carrying `provider=oidc` was refused whatever the organisation had
+	// configured (#802).
+	const providers = { local: 'generic', oidc: 'generic' }
+
+	// The card a portal wrote for a way in (site-chrome-follows-the-design):
+	// who it is for, what it opens, the button's text and a hint. A way in
+	// without one keeps the standard label and no card text.
+	const cards = site?.authentication?.modeLabels || {}
+	const demo = typeof exampleResident === 'string' && exampleResident !== ''
+	const demoQuery = [`id=${encodeURIComponent(exampleResident)}`, scope, returnTo]
+		.filter(Boolean)
+		.join('&')
+
 	return modes
 		.filter((mode) => mode !== 'public' && Object.hasOwn(labels, mode))
+		.filter((mode) => residentWayIn === '' || mode !== residentWayIn)
 		.map((mode) => ({
 			mode,
-			label: labels[mode],
+			label: cards[mode]?.button || labels[mode],
+			...(cards[mode] ? { card: cards[mode] } : {}),
+			...(mode === 'nextcloud' && demo ? { demo: true } : {}),
 			href:
 				mode === 'nextcloud'
-					? `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
+					? demo
+						? `${authBase}/session/example-resident?${demoQuery}`
+						: `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
 					: `${authBase}/session/oidc/start?provider=${encodeURIComponent(
-							mode === 'local' ? 'generic' : mode,
+							providers[mode] || mode,
 						)}${query ? `&${query}` : ''}`,
 		}))
 }

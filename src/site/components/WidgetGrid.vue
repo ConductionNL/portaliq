@@ -42,7 +42,7 @@
 						class="pq-grid__cell"
 						:data-testid="`widget-${widget.id || widget.widgetKey}`"
 						:data-widget-key="widget.widgetKey"
-						:style="cellStyle(widget)">
+						:style="cellStyle(widget, run.rowOffset)">
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
@@ -70,7 +70,11 @@
 <script>
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
+import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
+import { withoutStyling } from '../lib/blockProps.js'
+import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
+import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
 
 /**
  * LOADED ON DEMAND, and that is a budget decision rather than a style one.
@@ -117,6 +121,18 @@ const ContributionsBlock = defineAsyncComponent(
 )
 
 /**
+ * On demand as well: the three intake blocks live on the request pages only
+ * (portal-intake-form-as-an-object, T09), and the first-load budget applies.
+ */
+const IntakeCatalogueBlock = defineAsyncComponent(
+	() => import('./IntakeCatalogueBlock.vue'),
+)
+const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
+const IntakeStatusBlock = defineAsyncComponent(
+	() => import('./IntakeStatusBlock.vue'),
+)
+
+/**
  * The widget keys this renderer will mount at a PUBLIC origin, mapped to the
  * component that renders each.
  *
@@ -156,8 +172,39 @@ const ContributionsBlock = defineAsyncComponent(
  * through Portaliq's own anonymous contribution-create endpoint and is
  * described by this app's `form` schema, not the design system.
  */
+/**
+ * On demand as well: the menu block is placed on the pages of portals that
+ * want a side menu (site-navigation-block), and the first-load budget applies.
+ */
+const SiteNavigationBlock = defineAsyncComponent(
+	() => import('./SiteNavigationBlock.vue'),
+)
+
+/**
+ * THE NL DESIGN SYSTEM WIDGETS, one chunk each
+ * (site-nlds-widget-palette REQ-SNW-011).
+ *
+ * Spread below under their own `nl`-prefixed keys, so the gate stays one
+ * structure: a widget renders publicly if and only if it is in this map. The
+ * loaders come from `src/site/widgets/index.js`, which is the only place a
+ * widget is registered, and each import keeps its component and its CSS
+ * package out of the site entry.
+ *
+ * @type {Record<string, object>}
+ */
+const nldsWidgets = Object.fromEntries(
+	Object.entries(siteWidgetLoaders).map(([key, loader]) => [
+		key,
+		defineAsyncComponent(loader),
+	]),
+)
+
 const PUBLIC_WIDGETS = {
 	markdown: MarkdownBlock,
+	// site-navigation-block: the portal's own navigation, which the shell
+	// derives from the public menus and the signed-in navigation and hands
+	// over as `navigation`; the block fetches nothing.
+	siteNavigation: SiteNavigationBlock,
 	contributions: ContributionsBlock,
 	// `federatedSearch` stays owned here rather than coming from the shared
 	// registry, because what it is allowed to query is this app's decision.
@@ -176,7 +223,18 @@ const PUBLIC_WIDGETS = {
 	// fields/submitLabel/consentText arrive as authored props rather than a
 	// second fetch.
 	form: FormBlock,
+	// portal-intake-form-as-an-object: the citizen's entry point. They call
+	// this app's own intake endpoints, which apply the binding's sign-in level
+	// and validate before anything is recorded; nothing here decides access.
+	intakeCatalogue: IntakeCatalogueBlock,
+	intakeForm: IntakeFormBlock,
+	intakeStatus: IntakeStatusBlock,
+	...nldsWidgets,
 	...siteBlockRegistry,
+	// After the spread, under the library's own key: `siteBlockIsBand('hero')`
+	// still answers true, and the band keeps CnSiteHero's props while gaining
+	// an eyebrow and capped calls to action (REQ-PTB-006, eed4c3b).
+	hero: HeroBlock,
 }
 
 /**
@@ -266,6 +324,39 @@ export default {
 			type: String,
 			default: '',
 		},
+
+		/**
+		 * Whether the shell holds a portal session. Handed to the search and
+		 * publication blocks AFTER their authored props, so a page cannot
+		 * switch the save actions on (woo-journey-entry-points D1).
+		 */
+		signedIn: {
+			type: Boolean,
+			default: false,
+		},
+
+		/**
+		 * The menu block's data: `{groups, currentRoute, label, toggleLabel}`,
+		 * derived by the host from the menus and the signed-in navigation
+		 * (src/site/lib/siteNavigation.js). Supplied by the host for the same
+		 * reason the glossary rows are.
+		 */
+		navigation: {
+			type: Object,
+			default: () => ({}),
+		},
+
+		/**
+		 * The portal's sign-in routes, `{mode, label, href}` as the shell
+		 * derives them from `authentication.modes` (authApi.js
+		 * signInRoutes). Handed to `nlSignIn` AFTER its authored props, so a
+		 * page words the card but cannot add or change a way in
+		 * (site-school-blocks).
+		 */
+		signInRoutes: {
+			type: Array,
+			default: () => [],
+		},
 	},
 
 	// `search` comes from the shared hero block, which renders a search box and
@@ -287,27 +378,15 @@ export default {
 		 * Order is preserved exactly as authored — a band does not float to the
 		 * top, it splits the page where the author put it.
 		 *
-		 * @return {Array} Alternating `{band: true, widget}` / `{band: false, widgets}` entries.
+		 * Each run carries its `rowOffset`, so a run below a band does not
+		 * reserve rows for it (REQ-PTB-006).
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @return {Array} Alternating `{band: true, widget}` / `{band: false, widgets, rowOffset}` entries.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
 		 */
 		runs() {
-			const out = []
-			for (const widget of this.widgets) {
-				if (this.isBand(widget.widgetKey)) {
-					out.push({ band: true, widget })
-					continue
-				}
-
-				const last = out[out.length - 1]
-				if (last && last.band === false) {
-					last.widgets.push(widget)
-				} else {
-					out.push({ band: false, widgets: [widget] })
-				}
-			}
-
-			return out
+			return runsFor(this.widgets, (key, widget) => this.isBand(key, widget))
 		},
 	},
 
@@ -319,13 +398,17 @@ export default {
 		 * upstream arrives with its layout contract instead of needing this app
 		 * to learn about it separately.
 		 *
+		 * This app's own bands (ownBand) are answered here as well.
+		 *
 		 * @param {string} key The registry key.
+		 * @param {object} [widget] The placement, for a band that is one on request.
 		 * @return {boolean} True when it must not be wrapped in a grid cell.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-link-columns-draw-a-heading-over-columns-of-links-on-a-band
 		 */
-		isBand(key) {
-			return siteBlockIsBand(key)
+		isBand(key, widget) {
+			return siteBlockIsBand(key) || ownBand(key, widget)
 		},
 
 		/**
@@ -351,13 +434,30 @@ export default {
 		 * @param {object} widget The placement.
 		 * @return {object} The component props.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-only-explicitly-public-widgets-must-render-at-a-public-origin
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
+		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
 		 */
 		propsFor(widget) {
-			const props = widget.props || {}
+			// `style` and `class` never reach a block (REQ-PTB-007).
+			const props = withoutStyling(widget.props)
 
 			if (widget.widgetKey === 'markdown') {
 				return { source: props.markdown || '' }
+			}
+
+			// The menu block: the host supplies the groups and the route on
+			// screen, after the authored props, so a placement can rename the
+			// landmark but cannot change where the links lead
+			// (site-navigation-block).
+			if (widget.widgetKey === 'siteNavigation') {
+				const navigation = this.navigation || {}
+				return {
+					label: navigation.label,
+					toggleLabel: navigation.toggleLabel,
+					...props,
+					groups: navigation.groups || [],
+					currentRoute: navigation.currentRoute || '/',
+				}
 			}
 
 			// THE GLOSSARY'S ROWS ARE DATA, NOT PAGE CONFIGURATION.
@@ -391,7 +491,20 @@ export default {
 			// must not be overridable from page configuration, or a placement
 			// could pin the page to one publication regardless of its URL.
 			if (widget.widgetKey === 'publicationDetail') {
-				return { ...props, subjectId: this.routeParam }
+				// Inline rather than `withSignedIn()` from residentActions.js:
+				// importing that module here would pull all of it into the
+				// visitor's first-load entry (webpack.site.js budget).
+				return {
+					...props,
+					subjectId: this.routeParam,
+					signedIn: this.signedIn === true,
+				}
+			}
+
+			// The search block learns the signed-in state the same way
+			// (woo-journey-entry-points D1).
+			if (widget.widgetKey === 'federatedSearch') {
+				return { ...props, signedIn: this.signedIn === true }
 			}
 
 			// SAME RULE, FOURTH SUBJECT. Which portal a form's UTM capture is
@@ -401,6 +514,52 @@ export default {
 			// see LandingPageProvisioningService::buildBody()).
 			if (widget.widgetKey === 'form') {
 				return { ...props, portal: this.portal }
+			}
+
+			// SAME RULE, FIFTH SUBJECT. The intake blocks ask this portal's
+			// endpoints, so the host names the portal; the form block also
+			// takes the catalogue link's segment from the route. Both come
+			// after the authored props so a placement cannot point elsewhere.
+			if (widget.widgetKey === 'intakeForm') {
+				return { ...props, portal: this.portal, routeParam: this.routeParam }
+			}
+
+			if (
+				widget.widgetKey === 'intakeCatalogue'
+				|| widget.widgetKey === 'intakeStatus'
+			) {
+				return { ...props, portal: this.portal }
+			}
+
+			// site-school-blocks: the news widgets read this portal's public
+			// news, and the article takes its item from the route; the sign-in
+			// card gets the portal's own ways in. All after the authored props.
+			if (
+				widget.widgetKey === 'nlNewsList'
+				|| widget.widgetKey === 'nlNewsArticle'
+			) {
+				return { ...props, portal: this.portal, routeParam: this.routeParam }
+			}
+
+			// portal-public-catalogue: the catalogue and a dated list that
+			// fills itself from it read THIS portal's catalogue.
+			if (
+				widget.widgetKey === 'nlCatalogue'
+				|| widget.widgetKey === 'nlEventList'
+			) {
+				return { ...props, portal: this.portal }
+			}
+
+			if (widget.widgetKey === 'nlSignIn') {
+				return {
+					...props,
+					signedIn: this.signedIn === true,
+					ways: this.signInRoutes.map((r) => ({
+						id: r.mode,
+						label: r.label,
+						href: r.href,
+					})),
+				}
 			}
 
 			return props
@@ -419,35 +578,16 @@ export default {
 		},
 
 		/**
-		 * Place one widget on the 12-column grid.
+		 * Place one widget on the 12-column grid, re-based onto its run.
 		 *
-		 * The geometry is the manifest's, not a portal variant: 12 columns,
-		 * `gridX`/`gridY` zero-based, `gridWidth`/`gridHeight` spans. A page
-		 * authored in OpenBuild's Page Designer therefore lands in the same
-		 * cells here.
-		 *
-		 * `gridX + gridWidth > 12` is clamped rather than thrown on. The
-		 * manifest validator already rejects it at author time with the
-		 * canonical message; at render time on a public page, clamping shows
-		 * the content and a throw shows nothing.
-		 *
-		 * @param {object} widget The placement.
+		 * @param {object} widget    The placement.
+		 * @param {number} rowOffset The run's first authored row.
 		 * @return {object} The style bindings.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
 		 */
-		cellStyle(widget) {
-			const x = Math.max(0, Math.min(11, Number(widget.gridX) || 0))
-			const width = Math.max(
-				1,
-				Math.min(12 - x, Number(widget.gridWidth) || 12),
-			)
-			const height = Math.max(1, Number(widget.gridHeight) || 1)
-
-			return {
-				gridColumn: `${x + 1} / span ${width}`,
-				gridRow: `${(Number(widget.gridY) || 0) + 1} / span ${height}`,
-			}
+		cellStyle(widget, rowOffset) {
+			return cellStyle(widget, rowOffset)
 		},
 	},
 }

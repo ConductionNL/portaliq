@@ -1,0 +1,192 @@
+// SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+// SPDX-License-Identifier: EUPL-1.2
+//
+// The words of the mijn omgeving components, in Dutch and English. Keys are
+// the English source text. They live here, beside the components that load on
+// demand, and not in src/shared/i18n: that catalogue sits in the site's entry,
+// which has almost no room left under its budget.
+//
+// Residents read the "u" form. No em-dashes.
+//
+// Imports nothing, so tests/mijn-components.spec.mjs reads it as node.
+//
+// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+
+export default {
+	nl: {
+		// calendar-timetable-display
+		'Choose a day': 'Kies een dag',
+		'Nothing on the timetable this day.':
+			'Op deze dag staat niets op het rooster.',
+		'Break, {minutes} minutes': 'Pauze, {minutes} minuten',
+		Cancelled: 'Vervalt',
+		'1 lesson': '1 lesuur',
+		'{count} lessons': '{count} lesuren',
+		'1 change': '1 wijziging',
+		'{count} changes': '{count} wijzigingen',
+		'done at {time}': 'uit om {time} uur',
+		// site-school-blocks
+		Open: 'Openen',
+		'Nothing here yet.': 'Hier staat nog niets.',
+		'Good morning': 'Goedemorgen',
+		'Good afternoon': 'Goedemiddag',
+		'Good evening': 'Goedenavond',
+		'Good morning, {name}': 'Goedemorgen, {name}',
+		'Good afternoon, {name}': 'Goedemiddag, {name}',
+		'Good evening, {name}': 'Goedenavond, {name}',
+		'of {total} {unit}': 'van {total} {unit}',
+		'below the pass mark': 'onvoldoende',
+		Average: 'Gemiddeld',
+		'Before {date}': 'Voor {date}',
+		'{count} days left': 'Nog {count} dagen',
+		'1 day left': 'Nog 1 dag',
+		'Due today': 'Vandaag',
+		Overdue: 'Verlopen',
+		New: 'Nieuw',
+		Loading: 'Bezig met laden',
+		'You have nothing to do right now.': 'U hoeft nu niets te doen.',
+		'You have no messages yet.': 'U heeft nog geen berichten.',
+		'All messages': 'Alle berichten',
+		'Your messages could not be loaded.':
+			'Uw berichten konden niet worden geladen.',
+		'Today at {time}': 'Vandaag om {time} uur',
+		'{date} at {time}': '{date} om {time} uur',
+		'Try again': 'Opnieuw proberen',
+		'Your tasks could not be loaded.': 'Uw taken konden niet worden geladen.',
+		'Your conversations could not be loaded.':
+			'Uw gesprekken konden niet worden geladen.',
+		'Your cases could not be loaded.': 'Uw zaken konden niet worden geladen.',
+		'What you still have to do could not be loaded.':
+			'Wat u nog moet doen kon niet worden geladen.',
+		'Where your case stands could not be loaded.':
+			'Waar uw zaak staat kon niet worden geladen.',
+		'You have no running cases.': 'U heeft geen lopende zaken.',
+		'You have no cases yet.': 'U heeft nog geen zaken.',
+		'There are no steps to show yet.': 'Er zijn nog geen stappen om te tonen.',
+		'All cases': 'Alle zaken',
+		'Case {reference}': 'Zaak {reference}',
+		'Step {current} of {total}': 'Stap {current} van {total}',
+		'Answer by {date}': 'Antwoord uiterlijk {date}',
+		'ready by {date}': 'klaar uiterlijk {date}',
+		'no later than {date}': 'uiterlijk {date}',
+		today: 'vandaag',
+		yesterday: 'gisteren',
+		'Add a document': 'Document toevoegen',
+		'{name} has been added to your case.': '{name} is toegevoegd aan uw zaak.',
+		'The document could not be added. Try again.':
+			'Het document kon niet worden toegevoegd. Probeer het opnieuw.',
+		Done: 'Gereed',
+		'Current step': 'Huidige stap',
+		'Still to come': 'Nog niet begonnen',
+		Closed: 'Afgerond',
+		'Welcome, {name}': 'Welkom, {name}',
+		Welcome: 'Welkom',
+		'What you still have to do': 'Dit moet u nog doen',
+		'Running cases': 'Lopende zaken',
+		'New messages': 'Nieuwe berichten',
+		'Choose for whom': 'Kies voor wie',
+		'From you': 'Van u',
+		'From the municipality': 'Van de gemeente',
+		Documents: 'Documenten',
+		'What happened': 'Wat er is gebeurd',
+		'The documents could not be loaded.':
+			'De documenten konden niet worden geladen.',
+		'What happened could not be loaded.':
+			'Wat er is gebeurd kon niet worden geladen.',
+		'There are no documents on this case yet.':
+			'Er staan nog geen documenten bij deze zaak.',
+		'Nothing has happened yet.': 'Er is nog niets gebeurd.',
+		'The document could not be opened. Try again.':
+			'Het document kon niet worden geopend. Probeer het opnieuw.',
+		'On whose behalf you act': 'Namens wie u werkt',
+		'You are now acting for {party}': 'U regelt nu zaken voor {party}',
+		'Switch to yourself': 'Wissel naar uzelf',
+		'{value} of {total} {label}': '{value} van {total} {label}',
+	},
+	en: {
+		// calendar-timetable-display
+		'Choose a day': 'Choose a day',
+		'Nothing on the timetable this day.': 'Nothing on the timetable this day.',
+		'Break, {minutes} minutes': 'Break, {minutes} minutes',
+		Cancelled: 'Cancelled',
+		'1 lesson': '1 lesson',
+		'{count} lessons': '{count} lessons',
+		'1 change': '1 change',
+		'{count} changes': '{count} changes',
+		'done at {time}': 'done at {time}',
+		// site-school-blocks
+		Open: 'Open',
+		'Nothing here yet.': 'Nothing here yet.',
+		'Good morning': 'Good morning',
+		'Good afternoon': 'Good afternoon',
+		'Good evening': 'Good evening',
+		'Good morning, {name}': 'Good morning, {name}',
+		'Good afternoon, {name}': 'Good afternoon, {name}',
+		'Good evening, {name}': 'Good evening, {name}',
+		'of {total} {unit}': 'of {total} {unit}',
+		'below the pass mark': 'below the pass mark',
+		Average: 'Average',
+		'Before {date}': 'Before {date}',
+		'{count} days left': '{count} days left',
+		'1 day left': '1 day left',
+		'Due today': 'Due today',
+		Overdue: 'Overdue',
+		New: 'New',
+		Loading: 'Loading',
+		'You have nothing to do right now.': 'You have nothing to do right now.',
+		'You have no messages yet.': 'You have no messages yet.',
+		'All messages': 'All messages',
+		'Your messages could not be loaded.': 'Your messages could not be loaded.',
+		'Today at {time}': 'Today at {time}',
+		'{date} at {time}': '{date} at {time}',
+		'Try again': 'Try again',
+		'Your tasks could not be loaded.': 'Your tasks could not be loaded.',
+		'Your conversations could not be loaded.':
+			'Your conversations could not be loaded.',
+		'Your cases could not be loaded.': 'Your cases could not be loaded.',
+		'What you still have to do could not be loaded.':
+			'What you still have to do could not be loaded.',
+		'Where your case stands could not be loaded.':
+			'Where your case stands could not be loaded.',
+		'You have no running cases.': 'You have no running cases.',
+		'You have no cases yet.': 'You have no cases yet.',
+		'There are no steps to show yet.': 'There are no steps to show yet.',
+		'All cases': 'All cases',
+		'Case {reference}': 'Case {reference}',
+		'Step {current} of {total}': 'Step {current} of {total}',
+		'Answer by {date}': 'Answer by {date}',
+		'ready by {date}': 'ready by {date}',
+		'no later than {date}': 'no later than {date}',
+		today: 'today',
+		yesterday: 'yesterday',
+		'Add a document': 'Add a document',
+		'{name} has been added to your case.': '{name} has been added to your case.',
+		'The document could not be added. Try again.':
+			'The document could not be added. Try again.',
+		Done: 'Done',
+		'Current step': 'Current step',
+		'Still to come': 'Still to come',
+		Closed: 'Closed',
+		'Welcome, {name}': 'Welcome, {name}',
+		Welcome: 'Welcome',
+		'What you still have to do': 'What you still have to do',
+		'Running cases': 'Running cases',
+		'New messages': 'New messages',
+		'Choose for whom': 'Choose for whom',
+		'From you': 'From you',
+		'From the municipality': 'From the municipality',
+		Documents: 'Documents',
+		'What happened': 'What happened',
+		'The documents could not be loaded.': 'The documents could not be loaded.',
+		'What happened could not be loaded.': 'What happened could not be loaded.',
+		'There are no documents on this case yet.':
+			'There are no documents on this case yet.',
+		'Nothing has happened yet.': 'Nothing has happened yet.',
+		'The document could not be opened. Try again.':
+			'The document could not be opened. Try again.',
+		'On whose behalf you act': 'On whose behalf you act',
+		'You are now acting for {party}': 'You are now acting for {party}',
+		'Switch to yourself': 'Switch to yourself',
+		'{value} of {total} {label}': '{value} of {total} {label}',
+	},
+}

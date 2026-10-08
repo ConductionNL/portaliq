@@ -32,6 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Contribution\CaseStatusLabelField;
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
+
 /**
  * Merges every `kind: cases` collection into the subject's own case list.
  *
@@ -64,10 +67,17 @@ class PortalCaseListReader {
 	 *                                                     subject's own cases
 	 *                                                     never depend on the
 	 *                                                     mandate record.
+	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
+	 * @param CaseTypeNames|null $typeNames Names each row's case type
+	 *                                      (site-mijn-omgeving-components
+	 *                                      REQ-SMO-030); without it rows
+	 *                                      carry no name.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?Identity\PortalMandateService $mandates = null,
+		private readonly PortalBranchScope $branches = new PortalBranchScope(),
+		private readonly ?CaseTypeNames $typeNames = null,
 	) {
 	}//end __construct()
 
@@ -76,12 +86,15 @@ class PortalCaseListReader {
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed> $aggregate The subject's aggregated manifest.
+	 * @param array<int, string> $hiddenCaseTypes The case type ids the serving
+	 *                                            portal does not show.
 	 *
 	 * @return array<int, array<string, mixed>> The merged case rows.
 	 *
 	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
-	public function listCases(array $subject, array $aggregate): array {
+	public function listCases(array $subject, array $aggregate, array $hiddenCaseTypes = []): array {
 		$rows = [];
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			if (is_array($contribution) === false) {
@@ -104,6 +117,11 @@ class PortalCaseListReader {
 				}
 
 				foreach ($this->readCases(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
+					$caseType = $this->typeOf(row: $row, collection: $collection);
+					if (in_array($caseType, $hiddenCaseTypes, true) === true) {
+						continue;
+					}
+
 					$row['_source'] = [
 						'appId' => $appId,
 						'label' => $label,
@@ -111,16 +129,20 @@ class PortalCaseListReader {
 						'schema' => (string)($collection['schema'] ?? ''),
 						'collection' => (string)($collection['id'] ?? ''),
 					];
+					$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
+					$row = (new CaseStatusLabelField())->stamp(row: $row, collection: $collection);
+					$row = ($this->typeNames?->stamp(row: $row, collection: $collection, typeId: $caseType) ?? $row);
 
 					$rows[] = $row;
 				}
 			}//end foreach
 		}//end foreach
 
+		$marker = new CaseRowMarker();
 		usort(
 			$rows,
-			static function (array $first, array $second): int {
-				return strcmp((string)($second['created'] ?? $second['startedAt'] ?? ''), (string)($first['created'] ?? $first['startedAt'] ?? ''));
+			static function (array $first, array $second) use ($marker): int {
+				return strcmp($marker->dateOf(row: $second), $marker->dateOf(row: $first));
 			}
 		);
 
@@ -140,12 +162,15 @@ class PortalCaseListReader {
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed> $aggregate The subject's aggregated manifest.
 	 * @param array<int, array<string, mixed>> $mandates The live mandates.
+	 * @param array<int, string> $hiddenCaseTypes The case type ids the serving
+	 *                                            portal does not show.
 	 *
 	 * @return array<int, array<string, mixed>> The mandated case rows.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
-	public function listMandatedCases(array $subject, array $aggregate, array $mandates): array {
+	public function listMandatedCases(array $subject, array $aggregate, array $mandates, array $hiddenCaseTypes = []): array {
 		if ($this->mandates === null || $mandates === []) {
 			// No mandate recorded is the closed default: none of the
 			// organisation's cases, not all of them.
@@ -161,12 +186,37 @@ class PortalCaseListReader {
 			$rows = array_merge($rows, $this->mandatedRowsOfContribution(
 				subject: $subject,
 				contribution: $contribution,
-				mandates: $mandates
+				mandates: $mandates,
+				hidden: $hiddenCaseTypes
 			));
 		}
 
 		return $rows;
 	}//end listMandatedCases()
+
+	/**
+	 * The case type id of a row, from the collection's `caseTypeField`: a
+	 * plain id, or a reference object carrying `id` or `uuid`.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 * @param array<string, mixed> $collection The declared `cases` collection.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	private function typeOf(array $row, array $collection): string {
+		$value = ($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
+		if (is_array($value) === true) {
+			$value = ($value['id'] ?? $value['uuid'] ?? '');
+		}
+
+		if (is_scalar($value) === false) {
+			return '';
+		}
+
+		return (string)$value;
+	}//end typeOf()
 
 	/**
 	 * The mandated rows one contributing app's case collections yield.
@@ -178,12 +228,13 @@ class PortalCaseListReader {
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed> $contribution One app's contribution.
 	 * @param array<int, array<string, mixed>> $mandates The live mandates.
+	 * @param array<int, string> $hidden The case type ids the serving portal hides.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	private function mandatedRowsOfContribution(array $subject, array $contribution, array $mandates): array {
+	private function mandatedRowsOfContribution(array $subject, array $contribution, array $mandates, array $hidden): array {
 		$appId = (string)($contribution['app'] ?? '');
 		$label = (string)($contribution['label'] ?? $appId);
 
@@ -202,13 +253,18 @@ class PortalCaseListReader {
 			}
 
 			foreach ($mandates as $mandate) {
-				$rows = array_merge($rows, $this->mandatedRowsOfMandate(
+				$mandated = $this->mandatedRowsOfMandate(
 					subject: $subject,
 					collection: $collection,
 					appId: $appId,
 					label: $label,
 					mandate: $mandate
-				));
+				);
+				foreach ($mandated as $row) {
+					if (in_array($this->typeOf(row: $row, collection: $collection), $hidden, true) === false) {
+						$rows[] = $row;
+					}
+				}
 			}
 		}
 
@@ -308,7 +364,7 @@ class PortalCaseListReader {
 	): array {
 		$rows = [];
 		foreach ($partyRows as $row) {
-			$caseType = (string)($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
+			$caseType = $this->typeOf(row: $row, collection: $collection);
 			if ($this->mandates?->covers(mandate: $mandate, caseType: $caseType) !== true) {
 				// A mandate narrower than the organisation lists only what it
 				// names.
@@ -328,6 +384,9 @@ class PortalCaseListReader {
 				'schema' => (string)($collection['schema'] ?? ''),
 				'collection' => (string)($collection['id'] ?? ''),
 			];
+			$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
+			$row = (new CaseStatusLabelField())->stamp(row: $row, collection: $collection);
+			$row = ($this->typeNames?->stamp(row: $row, collection: $collection, typeId: $caseType) ?? $row);
 			$row['_mandate'] = $described;
 			// The case is the subsidiary's, and says so: it is never presented
 			// as the parent's own (REQ-PTV-005).
@@ -418,7 +477,7 @@ class PortalCaseListReader {
 			return [];
 		}
 
-		return $this->reader->readCollection(
+		$rows = $this->reader->readCollection(
 			register: (string)($collection['register'] ?? ''),
 			schema: (string)($collection['schema'] ?? ''),
 			scopeField: $scopeField,
@@ -432,5 +491,8 @@ class PortalCaseListReader {
 			fields: ($collection['fields'] ?? null),
 			filter: (array)($collection['filter'] ?? [])
 		);
+
+		// Change signin-eherkenning-branch D2: a branch session sees its branch only.
+		return $this->branches->rows(subject: $subject, collection: $collection, rows: $rows);
 	}//end readCases()
 }//end class

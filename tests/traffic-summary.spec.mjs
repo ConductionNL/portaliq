@@ -147,13 +147,17 @@ describe('summarise', () => {
 		assert.deepEqual(summary.series.visitors, [1, 0, 2])
 	})
 
-	it('merges pages and transitions across days and ranks them', () => {
+	it('merges pages across days and ranks them', () => {
 		const summary = summarise(records, dates)
 		assert.deepEqual(summary.pages, [
 			{ path: '/', views: 4, entrances: 3, exits: 2 },
 			{ path: '/woo', views: 2, entrances: 1, exits: 2 },
 		])
-		assert.deepEqual(summary.transitions, [{ from: '/', to: '/woo', count: 2 }])
+		// The records still carry `transitions` (the page detail's incoming and
+		// outgoing traffic read them server-side), but no widget reads a summed
+		// copy since the path explorer replaced the Journeys table, so the
+		// summary no longer builds one.
+		assert.equal(summary.transitions, undefined)
 	})
 
 	it('groups referrers by channel with the busiest hosts', () => {

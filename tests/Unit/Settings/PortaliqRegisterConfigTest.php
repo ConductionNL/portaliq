@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Settings;
 
+use OCA\Portaliq\Service\Identity\ContactAddressBook;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
+use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -119,10 +122,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// session recording (portal-traffic-experiments); `heat_click` and
 		// `heat_scroll` join the enum, the daily record gains `experiments`
 		// and `heatmaps`, and the recording schema arrives, admin-readable
-		// like the raw events. Additive. 0.22.0 (portalCaseType 0.1.0 new,
-		// portalCase 0.1.0 new): the demo case and its type, so what a citizen
-		// may write on their own case is demonstrable without a case app
-		// installed (what-the-citizen-may-write-on-their-own-case). Both are
+		// like the raw events. Additive. 0.22.0 (portalAuditEntry 0.2.0,
+		// portalCaseType 0.1.0 new, portalCase 0.1.0 new): `complete` joins
+		// the audit verb enum — a seam-confirmed portal-task completion is
+		// audited like a create (WOO-569); hardValidation would otherwise
+		// refuse the write silently. And the demo case and its type arrive,
+		// so what a citizen may write on their own case is demonstrable
+		// without a case app installed
+		// (what-the-citizen-may-write-on-their-own-case). Both are
 		// authenticated-read only, like every other portal-facing schema:
 		// what may be WRITTEN is decided by the case type, through portaliq,
 		// never by a grant on the schema. 0.23.0 (portalPage 0.3.0): the
@@ -149,6 +156,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// already taken by the schema-binding fix: a change that shares a
 		// version with one already imported never re-imports, and the field
 		// would have stayed missing.
+		// 0.27.0 (portalTrafficDaily 0.6.0): each row of `pages` gains
+		// `sessions`, `visitors`, `engagedSessions`, `referrers` and
+		// `outbound` (portal-page-traffic), and `path` is the in-site route.
+		// Additive: a row written before them simply lacks them, and the
+		// page endpoint reads the absence as "not counted", never zero.
+		// Written as 0.26.0 on its branch; development took 0.26.0 first for
+		// portalAuditEntry (below), so this change moved to 0.27.0 or it
+		// would never re-import on an instance already at 0.26.0.
 		// The `portal` SCHEMA version deliberately stays at 0.6.0. An earlier
 		// draft of this comment said 0.7.0 and the assertion below said 0.6.0;
 		// the assertion was right. ImportHandler treats a schema's version as
@@ -163,22 +178,252 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// carrying `widget: "json"` (authorizationConfiguration, rateLimit,
 		// quota), so OpenRegister demonstrably persists the key rather than
 		// dropping it on save.
+		// 0.26.0 (portalAuditEntry 0.2.0): `complete` joins the audit verb
+		// enum. Described under 0.22.0 above, where this branch first wrote
+		// it; development reached 0.24.0 and then 0.25.0 first, so it is
+		// re-parented here.
+		// The bump is the point, not bookkeeping: OpenRegister re-imports a
+		// register only when `info.version` moves, so leaving this at 0.25.0
+		// would ship the enum to a clean install and to nobody else --
+		// exactly the silent non-upgrade the 0.24.0 and 0.25.0 notes above
+		// describe.
+		// Additive.
+		// 0.28.0 (portalAccount 0.9.0): `notificationChannels` joins the
+		// schema (notification-preferences-per-role) -- shipped on its own
+		// branch with the schema property added but NO version bump anywhere,
+		// which is exactly the silent-non-upgrade failure mode this test
+		// exists to catch: an instance already on any prior version would
+		// never have picked the property up. Caught and fixed at merge time,
+		// moved to 0.28.0 because development had already taken 0.27.0 for
+		// portalTrafficDaily's per-page rows (above) by the time this merged.
+		// Additive.
+		// 0.27.0 (portalPoll/portalPollResponse): written as 0.27.0 on its own
+		// branch, added `portalPoll`/`portalPollResponse` (parent-polls,
+		// learniq round-1 finding 9.9) and listed both in
+		// `components.registers.portaliq.schemas`. Development took 0.27.0
+		// first for portalTrafficDaily's per-page `pages` rows (a parallel
+		// branch, same race the 0.26.0 note above describes), so THIS change
+		// moved to 0.28.0 on merge, and then to 0.29.0 because development
+		// took 0.28.0 for portalAccount's `notificationChannels` (above) first.
+		// It would never re-import on an instance already at 0.28.0 otherwise.
+		// Additive; no content conflict with either change, only the version
+		// number.
+		// 0.30.0 (newsItem/newsletter/guardianAudienceFixture): added on the
+		// news-and-newsletter-authoring branch with NO version bump (it still
+		// read 0.27.0), so an instance already on 0.29.0 would never import
+		// the three schemas. Bumped past development's 0.29.0 at merge time.
+		// Additive.
+		// 0.31.0 (schoolEvent/eventRsvp/eventSignup): added on the
+		// events-and-signups branch with NO version bump (it still read
+		// 0.27.0). That branch also carried its own copy of
+		// guardianAudienceFixture; development's (0.30.0, news) copy is the
+		// one kept. Bumped past development's 0.30.0 at merge time. Additive.
+		// 0.32.0 (messageThread/guardianMessage/groupStaffFixture): added on the
+		// guardian-direct-messages branch with NO version bump (it still read
+		// 0.27.0); its own guardianAudienceFixture copy was a subset of
+		// development's, which is kept. Bumped past development's 0.31.0 at
+		// merge time. Additive.
+		// 0.33.0 (pushSubscription/notificationQuietHours/pendingPush): added on the
+		// push-notifications-quiet-hours branch with NO version bump (it still
+		// read 0.27.0); its own guardianAudienceFixture copy was a subset of
+		// development's, which is kept. Bumped past development's 0.32.0 at
+		// merge time. Additive.
+		// 0.33.1: no schema change; bumped past development's 0.33.0 when the assignment-portal-file-upload branch landed.
+		// 0.34.0 (activityOffer/activitySignup/activityAttendance): term-long
+		// activities with places, a waiting list and attendance per session
+		// (extracurricular-activity-offer). Sign-ups and attendance hold
+		// children's data, so their read rule is `admin` only. Additive.
+		// 0.35.0 (activityOffer 0.2.0, activitySignup 0.2.0): an activity can
+		// require a guardian's consent to a stated text, kept on the sign-up as
+		// agreed, and say photos are taken (activity-parental-consent). Additive.
+		// 0.35.1: no schema change; bumped past development's 0.35.0 when the portal-take-assessment branch landed.
+		// 0.35.2: no schema change; bumped past development's 0.35.1 when the contribution-pay-screen branch landed.
+		// 0.35.3 (activityOffer 0.2.1, activitySignup 0.2.1): descriptions only;
+		// portaliq, not shillinq, writes `paymentRequestRef` from the raise
+		// answer (activity-offer-contract-fix). The branch read 0.35.2, which
+		// development had already taken; bumped past it at merge time.
+		// 0.36.0 (portalAccount 0.10.0, guardianMessage 0.2.0): a guardian picks
+		// the language school messages are shown in (`messageLanguage`), and a
+		// message keeps its AI translations with their provenance next to the
+		// original body (`translations`) (translated-message-notice, D24). Additive.
+		// 0.36.1 (portalCaseType 0.2.0): the report declaration names an optional
+		// `handlerGroup`, the group whose members may read, answer and ask about
+		// a report beside the custodian group (portaliq#799). Additive.
+		// 0.36.2 (portalReporterContact 0.2.0): what a reporter gave is readable
+		// by `admin` only, not by every signed-in user; portaliq reads it only
+		// inside an allowed reveal, with RBAC off (portaliq#800).
+		// 0.37.0 (newsItem 0.2.0): a news item keeps its AI translations with
+		// their provenance next to the original body (`translations`), the
+		// same shape a guardianMessage keeps (news-item-translation, D24). Additive.
+		// 0.37.1 (newsItem 0.2.1): a translation entry also carries the title,
+		// translated with the body under the same notice
+		// (news-title-and-newsletter-translation). Description only.
+		// 0.38.0 (newsletter 0.2.0): a newsletter keeps the AI translations of
+		// its own title (`translations`), in the shape a newsItem keeps
+		// (newsletter-title-translation). Additive.
+		// 0.39.0 (portalMessage 0.5.0, portalNotification 0.2.0, portalAccount
+		// 0.11.0): a message names the record it is about (`recordLink`), a
+		// notification attempt can be a `push`, and an account keeps its
+		// per-kind notice choices (`notificationPreferences`)
+		// (inbox-notifications-and-preferences). Additive.
+		// 0.40.0 (portal 0.7.0): a portal lists the case types it does not
+		// show to residents (`hiddenCaseTypes`) (operate-show-per-case-type).
+		// Additive; empty shows every case type, as before.
+		// 0.41.0 (portalAvailabilityDaily 0.1.0, portalAvailabilityOutage
+		// 0.1.0): each published portal's availability per day and its
+		// outages, read by administrators only (operate-availability-report).
+		// Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.25.0', self::$register['info']['version']);
-		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
+		// 0.42.0 (portalNotification 0.3.0, portalAccount 0.12.0): the
+		// government message box channel (inbox-berichtenbox-channel). The
+		// channel enum gains `messageBox`, the status enum `delivered`, `read`
+		// and `simulated`; `externalMessageId`, `recordLink` and `refusalCode`
+		// are new; the account's preferences describe `messageBox.enabled`.
+		// Additive.
+		// 0.43.0 (page 0.4.0): a page's search-engine fields `seoTitle`,
+		// `seoDescription`, `seoNoindex` and `seoImage`
+		// (site-page-seo-history-and-media). Additive.
+		// 0.44.0 (media 0.1.0): a portal's media library
+		// (site-page-seo-history-and-media T06). New schema, additive.
+		// 0.45.0 (portalOidcState 0.2.0): a state row names its login `route`,
+		// and `codeVerifier` is no longer required, because an integriq broker
+		// row has none (signin-integriq-broker-login T03). Additive.
+		// 0.47.0 (portalNotice 0.1.0): a portal's maintenance and warning
+		// notices (operate-maintenance-notice T01). New schema, additive.
+		// 0.46.0 (portal 0.8.0): the portal's shell, `headerVariant`,
+		// `authentication.register` and `registerLabel`, `footer` and
+		// `regions` (portal-theme-blocks-and-contributed-pages tasks 4-7);
+		// page 0.5.0: `body.clearedRegions` and `draftBody.clearedRegions`.
+		// Additive.
+		// 0.48.0: `portalAuditEntry` leaves the register; the portal's proof
+		// records live in OpenRegister's audit trail
+		// (consume-or-audit-trail-proof-records). The repair step
+		// MovePortalAuditEntries moves the existing records.
+		// 0.49.0 (page 0.6.0): a page's place in the portal's page tree,
+		// `parent` and `order` (portal-in-place-editing A3). Additive.
+		// 0.50.0 (portalOidcState 0.3.0): the optional `silent` flag of a
+		// silent sign-in (signin-session-idle-warning-and-sso T07). Additive.
+		// 0.51.0 (portal 0.9.0): the optional `registeredDetails` form
+		// bindings of the "My details" section (identity-registered-details
+		// T06). Additive.
+		// 0.53.0 (portalAccount 0.13.0; 0.52.0 is taken by the woo-journey PR #983): `contactAddresses`, `contactChannel`
+		// and `pendingEmailMode` (identity-profile-page T02). Additive; an
+		// account from before reads as channel `portal` with its `email` as
+		// the one preferred address.
+		// 0.54.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
+		// another app writes, so it is also sent by email
+		// (woo-journey-entry-points T07). Additive.
+		// 0.57.0 (portalPage 0.5.0): the wave 6 block keys.
+		// 0.56.1 (portalPage 0.4.1): `records` is one type, as OpenRegister's
+		// importer requires (EveryRegisterPropertyFitsTheImporterTest).
+		// 0.56.0 (portalPage 0.4.0): a page record may declare what the
+		// resolvers accept (site-mijn-omgeving-components, PortalPageSchemaTest).
+		// 0.55.0 (portalAccount 0.14.0): `activationTokenHash` and
+		// `activationExpiresAt`, the activation link of a self-registration
+		// (identity-ways-in-screens T03). Additive.
+		// 0.58.0 (newsItem 0.3.0): `publishedAt`, the moment staff published
+		// the item, stamped by NewsController::publish and back-filled by the
+		// repair step BackfillNewsPublishedAt (news-publish-date). Additive.
+		// 0.59.0 (portalFormBinding 0.2.0, portalIntakeSubmission 0.2.0):
+		// `deliverTo` routes a Woo-request form to opencatalogi's intake, and
+		// a submission keeps the `externalReference` and `dueAt` that intake
+		// armed (woo-request-intake-through-opencatalogi). Additive.
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
+		// 0.60.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
+		// the one-time secret of a waiting account's invitation, and
+		// `claimAttempts` with `claimAttemptsSince`, the wrong secrets an
+		// account offered (invitation-secret-joins-the-signed-in-account).
+		// Additive.
+		// 0.61.0 (portalAccount 0.16.0): `claimCodeHash`, the short code of an
+		// invitation letter (invitation-code-from-a-letter). Additive.
+		// 0.62.0 (portalAccount 0.17.0): the five `claim*` fields are readable
+		// and writable by administrators only (security review M4).
+		// 0.63.0 (newsItem 0.4.0): `public`, `portal` and `audienceLabel`, so
+		// staff can put an item on one portal's public website
+		// (site-school-blocks). Additive; an item from before is not public.
+		// 0.64.0 (portalPage 0.6.0): the school display keys, the greeting
+		// block and `visibleFromField` (site-school-blocks wave 2). Additive.
+		// 0.65.0 (portal 0.10.0): `headerSearch`, `accountLabel`, `footer.cta`,
+		// `footer.contact`, `authentication.modeLabels` and
+		// `authentication.signInPage` (site-chrome-follows-the-design). Additive.
+		// 0.66.0 (portal 0.11.0): `residentMenu.cardLabel`
+		// (resident-menu-badges-and-cards). Additive.
+		// 0.67.0 (portalPage 0.7.0): the timetable keys (calendar-timetable-display, #1212)
+		// 0.68.0 (messageThread 0.2.0): record, subject and contact copies (site-messages-per-record)
+		// 0.69.0 (portal 0.12.0): `residentMenu.groups` and `myCases.display`
+		// (zuiddrecht-resident-pages-match-the-boards). Additive.
+		$this->assertSame('0.69.0', self::$register['info']['version']);
+		$this->assertSame('0.69.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
+		$this->assertSame('integer', self::$register['components']['schemas']['portalAccount']['properties']['claimAttempts']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimAttemptsSince']['format']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['newsItem']['version']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['newsItem']['properties']['public']['type']);
+		$this->assertFalse(self::$register['components']['schemas']['newsItem']['properties']['public']['default']);
+		$this->assertSame('string', self::$register['components']['schemas']['newsItem']['properties']['portal']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
+		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['page']['properties']['seoNoindex']['type']);
+		foreach (['portalAvailabilityDaily', 'portalAvailabilityOutage'] as $availability) {
+			$this->assertSame('0.1.0', self::$register['components']['schemas'][$availability]['version']);
+			$this->assertSame(['admin'], self::$register['components']['schemas'][$availability]['authorization']['read']);
+			$this->assertContains($availability, self::$register['components']['registers']['portaliq']['schemas']);
+		}
+		$this->assertSame(['site-error', 'timeout', 'health-degraded', 'no-check'], self::$register['components']['schemas']['portalAvailabilityOutage']['properties']['cause']['enum']);
+		$this->assertSame('array', self::$register['components']['schemas']['portal']['properties']['hiddenCaseTypes']['type']);
+		$this->assertSame(['typeId'], self::$register['components']['schemas']['portal']['properties']['hiddenCaseTypes']['items']['required']);
+		$this->assertSame('object', self::$register['components']['schemas']['portalMessage']['properties']['recordLink']['type']);
+		$this->assertSame('object', self::$register['components']['schemas']['portalAccount']['properties']['notificationPreferences']['type']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['newsletter']['version']);
+		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsletter']['properties']);
+		$this->assertSame('array', self::$register['components']['schemas']['newsletter']['properties']['translations']['type']);
+		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsletter']['properties']['translations']['description']);
+		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsItem']['properties']['translations']['description']);
+		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsItem']['properties']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalReporterContact']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCaseType']['version']);
+		$this->assertArrayHasKey('handlerGroup', self::$register['components']['schemas']['portalCaseType']['properties']['portalReportDeclaration']['properties']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['guardianMessage']['version']);
+		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['guardianMessage']['properties']);
+		$this->assertArrayHasKey('messageLanguage', self::$register['components']['schemas']['portalAccount']['properties']);
+		$this->assertSame('0.2.1', self::$register['components']['schemas']['activityOffer']['version']);
+		$this->assertSame('0.2.1', self::$register['components']['schemas']['activitySignup']['version']);
+		$this->assertSame('0.1.0', self::$register['components']['schemas']['activityAttendance']['version']);
+		$this->assertArrayHasKey('consent', self::$register['components']['schemas']['activitySignup']['properties']);
+
+		$this->assertSame(['admin'], self::$register['components']['schemas']['activitySignup']['authorization']['read']);
+		$this->assertSame(['admin'], self::$register['components']['schemas']['activityAttendance']['authorization']['read']);
+		$this->assertArrayNotHasKey('fee', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
+		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.12.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
+		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()
@@ -319,8 +564,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 			['accountRef', 'ruleKey', 'channel', 'status', 'attempts', 'lastAttemptAt'],
 			$notification['required']
 		);
-		$this->assertSame(['email'], $notification['properties']['channel']['enum']);
-		$this->assertSame(['sent', 'failed'], $notification['properties']['status']['enum']);
+		$this->assertSame(['email', 'push', 'messageBox'], $notification['properties']['channel']['enum']);
+		$this->assertSame(['sent', 'failed', 'delivered', 'read', 'simulated'], $notification['properties']['status']['enum']);
 
 		$account = $schemas['portalAccount'];
 		$this->assertSame('boolean', $account['properties']['needsAlternativeContact']['type']);
@@ -345,9 +590,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$state = $schemas['portalOidcState'];
 		$this->assertNeverPublic('portalOidcState');
 		$this->assertSame(
-			['state', 'nonce', 'codeVerifier', 'org', 'provider', 'expiresAt'],
+			['state', 'nonce', 'org', 'provider', 'expiresAt'],
 			$state['required']
 		);
+		$this->assertSame('0.3.0', $state['version']);
+		$this->assertSame(['oidc', 'broker'], $state['properties']['route']['enum']);
 
 		$account = $schemas['portalAccount'];
 		$this->assertSame(
@@ -389,6 +636,287 @@ class PortaliqRegisterConfigTest extends TestCase {
 	}//end testSeedAccountsUsePlaceholdersAndProveBothClaimStates()
 
 	/**
+	 * Every value the message box channel writes into a `portalNotification`
+	 * fits the schema, checked with a JSON Schema validator against the real
+	 * fragment (inbox-berichtenbox-channel, REQ-MBC-003): the row a send
+	 * writes, and each status integriq can report back. And the schema holds
+	 * no property that could carry the recipient.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 */
+	/**
+	 * identity-profile-page T02 (REQ-IPP-003, REQ-IPP-004): the account rows
+	 * PortalContactAddressService and confirmEmail() write fit the real
+	 * portalAccount fragment, validated with Opis; an account from before
+	 * reads with contact channel `portal`.
+	 *
+	 * @return void
+	 */
+	public function testTheAccountCarriesAddressesAndAContactChannel(): void {
+		$schema = self::$register['components']['schemas']['portalAccount'];
+		$this->assertSame('portal', $schema['properties']['contactChannel']['default']);
+		$this->assertSame(['portal', 'email', 'phone', 'post'], $schema['properties']['contactChannel']['enum']);
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
+
+		$book = new ContactAddressBook();
+		$entries = $book->add(entries: $book->entries(['email' => 'a@example.nl']), kind: 'email', value: 'b@example.nl')['entries'];
+		$entries = $book->add(entries: $entries, kind: 'phone', value: '+31612345678')['entries'];
+		$row = [
+			'audience' => 'citizen',
+			'subjectRef' => 'subject-1',
+			'organisation' => 'gemeente-x',
+			'email' => 'a@example.nl',
+			'contactAddresses' => $entries,
+			'contactChannel' => 'post',
+			'verifiedEmail' => true,
+		] + (new ContactAddressValues())->pendingFields(email: 'b@example.nl', token: 'secret-1', mode: 'add');
+		$result = (new Validator())->validate(json_decode((string)json_encode($row), false), $jsonSchema);
+		$this->assertTrue($result->isValid(), 'the written account fits the schema');
+
+		$confirmed = ['contactAddresses' => $book->confirm(entries: $entries, email: 'b@example.nl', mode: 'add'), 'email' => 'a@example.nl', 'pendingEmail' => '', 'pendingEmailTokenHash' => ''] + $row;
+		$this->assertTrue((new Validator())->validate(json_decode((string)json_encode($confirmed), false), $jsonSchema)->isValid(), 'the confirmed account fits the schema');
+
+		$this->assertFalse((new Validator())->validate(json_decode((string)json_encode(['contactChannel' => 'pigeon'] + $row), false), $jsonSchema)->isValid(), 'an unknown channel is refused');
+		$wrongKind = $row;
+		$wrongKind['contactAddresses'][] = ['kind' => 'fax', 'value' => '0201234567', 'confirmed' => false, 'preferred' => false];
+		$this->assertFalse((new Validator())->validate(json_decode((string)json_encode($wrongKind), false), $jsonSchema)->isValid(), 'an unknown kind is refused');
+
+	}//end testTheAccountCarriesAddressesAndAContactChannel()
+
+	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
+		$schema = self::$register['components']['schemas']['portalNotification'];
+		$this->assertSame('0.3.0', $schema['version']);
+		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
+
+		$row = [
+			'accountRef' => 'account-1',
+			'organisation' => 'venray',
+			'ruleKey' => 'message.created',
+			'appId' => 'dossiq',
+			'channel' => 'messageBox',
+			'status' => 'sent',
+			'attempts' => 0,
+			'lastAttemptAt' => '2026-09-29T10:00:00+00:00',
+			'externalMessageId' => 'b1e2c3d4-0000-4000-8000-000000000001',
+			'recordLink' => ['app' => 'dossiq', 'collection' => 'berichten', 'id' => 'bericht-1'],
+		];
+		foreach (['sent', 'failed', 'delivered', 'read', 'simulated'] as $status) {
+			$result = (new Validator())->validate(json_decode((string)json_encode(['status' => $status] + $row), false), $jsonSchema);
+			$this->assertTrue($result->isValid(), "status {$status} fits the schema");
+		}
+
+		$refused = ['status' => 'failed', 'refusalCode' => 'not_installed'] + $row;
+		unset($refused['externalMessageId']);
+		$result = (new Validator())->validate(json_decode((string)json_encode($refused), false), $jsonSchema);
+		$this->assertTrue($result->isValid(), 'a refusal fits the schema');
+
+		$result = (new Validator())->validate(json_decode((string)json_encode(['channel' => 'postcard'] + $row), false), $jsonSchema);
+		$this->assertFalse($result->isValid(), 'the channel enum still refuses an unknown channel');
+
+		foreach (array_keys($schema['properties']) as $property) {
+			$this->assertDoesNotMatchRegularExpression('/recipient|bsn|identity/i', $property, 'no property can carry the recipient');
+		}
+
+	}//end testTheMessageBoxRowsFitThePortalNotificationSchema()
+
+	/**
+	 * site-page-seo-history-and-media T06 (REQ-SPH-004): a media item names its
+	 * portal, kind and status, validated with the real schema fragment. The
+	 * alternative-text rule for an image is portaliq's own
+	 * (MediaRulesTest): OpenRegister keeps no conditional schema rule.
+	 *
+	 * @return void
+	 */
+	public function testAMediaItemNamesItsPortalKindAndStatus(): void {
+		$schema = self::$register['components']['schemas']['media'];
+		$this->assertSame('0.1.0', $schema['version']);
+		$this->assertContains('media', self::$register['components']['registers']['portaliq']['schemas']);
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
+
+		$valid = static fn (array $item): bool => (new Validator())->validate(json_decode((string)json_encode($item), false), $jsonSchema)->isValid();
+
+		$this->assertTrue($valid(['portal' => 'gemeente', 'title' => 'Stadhuis', 'kind' => 'image', 'status' => 'published', 'alt' => 'Het stadhuis aan de Markt']));
+		$this->assertTrue($valid(['portal' => 'gemeente', 'title' => 'Reglement', 'kind' => 'file', 'status' => 'draft']));
+		$this->assertFalse($valid(['portal' => 'gemeente', 'title' => 'X', 'kind' => 'video', 'status' => 'draft']), 'the kind is image or file');
+		$this->assertFalse($valid(['title' => 'X', 'kind' => 'file', 'status' => 'draft']), 'an item belongs to a portal');
+		$this->assertArrayNotHasKey('if', $schema, 'OpenRegister would drop a conditional rule on import');
+
+		$groups = array_map(static fn ($rule) => is_array($rule) ? ($rule['group'] ?? null) : $rule, $schema['authorization']['read']);
+		$this->assertNotContains('public', $groups, 'the public reach an item through the content API, never through OpenRegister');
+	}//end testAMediaItemNamesItsPortalKindAndStatus()
+
+
+	/**
+	 * operate-maintenance-notice T01 (REQ-OMN-001, REQ-OMN-003): a notice has
+	 * a required end, a level, the surfaces it shows on and a status,
+	 * validated with the real schema fragment. The public never read it
+	 * through OpenRegister: only the active notices reach them, from
+	 * portaliq's own endpoints.
+	 *
+	 * @return void
+	 */
+	public function testANoticeNeedsAnEndAndNamesWhereItShows(): void {
+		$schema = self::$register['components']['schemas']['portalNotice'];
+		$this->assertSame('0.1.0', $schema['version']);
+		$this->assertContains('portalNotice', self::$register['components']['registers']['portaliq']['schemas']);
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
+
+		$valid = static fn (array $notice): bool => (new Validator())->validate(json_decode((string)json_encode($notice), false), $jsonSchema)->isValid();
+		$notice = [
+			'portal'   => 'gemeente',
+			'message'  => 'Saturday from 22:00 to 02:00 you cannot submit requests.',
+			'level'    => 'warning',
+			'startsAt' => '2026-10-03T10:00:00+02:00',
+			'endsAt'   => '2026-10-04T02:00:00+02:00',
+			'surfaces' => ['site', 'portal'],
+			'status'   => 'published',
+		];
+
+		$this->assertTrue($valid($notice));
+		$this->assertTrue($valid($notice + ['linkLabel' => 'Meer over het onderhoud', 'linkUrl' => 'https://www.example.nl/onderhoud']));
+		$this->assertFalse($valid(array_diff_key($notice, ['endsAt' => true])), 'no notice without an end');
+		$this->assertFalse($valid(['surfaces' => ['intranet']] + $notice), 'a notice shows on the site or the portal');
+		$this->assertFalse($valid(['surfaces' => []] + $notice), 'a notice shows somewhere');
+		$this->assertFalse($valid(['level' => 'critical'] + $notice), 'information or a warning');
+		$this->assertFalse($valid(['message' => str_repeat('x', 281)] + $notice), 'at most 280 characters');
+		$this->assertFalse($valid(['linkUrl' => 'http://www.example.nl'] + $notice), 'only an https link');
+
+		$groups = array_map(static fn ($rule) => is_array($rule) ? ($rule['group'] ?? null) : $rule, $schema['authorization']['read']);
+		$this->assertNotContains('public', $groups, 'the public reach only the active notices, through portaliq');
+	}//end testANoticeNeedsAnEndAndNamesWhereItShows()
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-004: the portal
+	 * declares its header shape and register destination, validated with the
+	 * real schema fragment. An undeclared field would be accepted, echoed and
+	 * not stored (045b168), so each one is a schema property.
+	 *
+	 * @return void
+	 */
+	public function testThePortalDeclaresItsHeaderShapeAndRegisterPage(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid(['title' => 'Docs', 'slug' => 'docs', 'headerVariant' => 'single', 'authentication' => ['modes' => ['digid'], 'register' => '/registreren', 'registerLabel' => 'Account maken']]));
+		$this->assertFalse($valid(['title' => 'Docs', 'slug' => 'docs', 'headerVariant' => 'triple']), 'the header shape is double or single');
+		$this->assertNotEmpty($schema['properties']['headerVariant']['description']);
+		$this->assertNotEmpty($schema['properties']['authentication']['properties']['register']['description']);
+	}//end testThePortalDeclaresItsHeaderShapeAndRegisterPage()
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-005: the footer the
+	 * content API projects is a schema property, validated with the real
+	 * fragment.
+	 *
+	 * @return void
+	 */
+	public function testThePortalDeclaresItsFooter(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid(['title' => 'Docs', 'footer' => [
+			'description' => 'Eén loket',
+			'colophon'    => 'Gemeente Voorbeeld',
+			'socials'     => [['label' => 'Mastodon', 'href' => 'https://social.example', 'icon' => 'mastodon']],
+			'legalLinks'  => [['label' => 'Privacy', 'href' => '/privacy']],
+			'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example']],
+		]]));
+		$this->assertFalse($valid(['title' => 'Docs', 'footer' => ['socials' => 'https://social.example']]), 'socials is a list');
+		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges', 'cta', 'contact'], array_keys($schema['properties']['footer']['properties']));
+	}//end testThePortalDeclaresItsFooter()
+
+	/**
+	 * site-chrome-follows-the-design: the keys the learniq lane writes for a
+	 * school portal validate against the real portal schema, and a wrong
+	 * shape does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 */
+	public function testThePortalDeclaresItsChrome(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid([
+			'title'          => 'Mijn Wilgenboom',
+			'headerSearch'   => ['label' => 'Zoeken op de website', 'route' => '/zoeken'],
+			'accountLabel'   => 'Mijn Wilgenboom',
+			'footer'         => [
+				'cta'     => ['label' => 'Contact en schooltijden', 'href' => '/contact'],
+				'contact' => ['title' => 'Contact', 'lines' => [['text' => 'Wilgenlaan 12, Zuiddrecht'], ['text' => 'E-mail', 'href' => 'mailto:info@example.org']]],
+			],
+			'authentication' => [
+				'modes'      => ['public', 'digid'],
+				'modeLabels' => ['digid' => ['title' => 'Ouder of verzorger', 'text' => 'Met de DigiD-app', 'button' => 'Inloggen met DigiD']],
+				'signInPage' => ['title' => 'Inloggen bij Mijn Wilgenboom', 'notice' => ['text' => 'Logt u voor het eerst in?'], 'panel' => ['title' => 'Alles over school', 'items' => [['title' => 'Afwezig melden']]]],
+			],
+		]));
+		$this->assertFalse($valid(['title' => 'X', 'headerSearch' => 'ja']), 'the search box is an object');
+		$this->assertFalse($valid(['title' => 'X', 'footer' => ['contact' => ['lines' => 'Wilgenlaan 12']]]), 'contact lines are a list');
+	}//end testThePortalDeclaresItsChrome()
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-009: a portal fills
+	 * regions and a page empties them, validated with the real fragments.
+	 *
+	 * @return void
+	 */
+	public function testThePortalFillsRegionsAndAPageEmptiesThem(): void {
+		$portal = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $portal);
+
+		$this->assertTrue($valid(['title' => 'Docs', 'regions' => ['hero' => [['widgetKey' => 'hero', 'props' => ['title' => 'Welkom']]], 'footer' => []]]));
+		$this->assertFalse($valid(['title' => 'Docs', 'regions' => ['hero' => [['props' => ['title' => 'Welkom']]]]]), 'a region widget names its widget key');
+		$this->assertSame(['header', 'hero', 'main', 'aside', 'footer'], array_keys($portal['properties']['regions']['properties']));
+
+		$page = self::$register['components']['schemas']['page'];
+		foreach (['body', 'draftBody'] as $body) {
+			$fragment = json_decode((string)json_encode($page['properties'][$body]), false);
+			$check    = static fn (array $value): bool => (new Validator())->validate(json_decode((string)json_encode($value), false), $fragment)->isValid();
+			$this->assertTrue($check(['type' => 'grid', 'widgets' => [], 'clearedRegions' => ['hero', 'aside']]), $body);
+			$this->assertFalse($check(['type' => 'grid', 'widgets' => [], 'clearedRegions' => ['sidebar']]), $body.' clears known regions only');
+		}
+	}//end testThePortalFillsRegionsAndAPageEmptiesThem()
+
+	/**
+	 * identity-registered-details T06: a portal names the two form bindings of
+	 * its "My details" section, validated with the real fragment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-resident-can-ask-for-a-correction-req-ird-004
+	 */
+	public function testThePortalNamesTheFormsOfMyDetails(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid(['title' => 'Mijn gemeente', 'registeredDetails' => [
+			'correctionFormBinding'           => 'binding-correction',
+			'addressInvestigationFormBinding' => 'binding-address',
+		]]));
+		$this->assertTrue($valid(['title' => 'Mijn gemeente', 'registeredDetails' => ['correctionFormBinding' => 'binding-correction']]), 'each link is optional');
+		$this->assertFalse($valid(['title' => 'Mijn gemeente', 'registeredDetails' => ['correctionFormBinding' => ['id' => 'x']]]), 'a binding is named by its id');
+		$this->assertFalse($valid(['title' => 'Mijn gemeente', 'registeredDetails' => ['brpUrl' => 'https://brp.example']]), 'the portal holds no source of its own');
+	}//end testThePortalNamesTheFormsOfMyDetails()
+
+	/**
+	 * A validator for portal records against the real schema fragment.
+	 *
+	 * @param array $schema The portal schema.
+	 *
+	 * @return \Closure(array): bool
+	 */
+	private function portalValidator(array $schema): \Closure {
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'properties' => $schema['properties']]), false);
+
+		return static fn (array $portal): bool => (new Validator())->validate(json_decode((string)json_encode($portal), false), $jsonSchema)->isValid();
+	}//end portalValidator()
+
+	/**
 	 * The public surface, pinned BY NAME.
 	 *
 	 * This is the list that decides what an anonymous visitor can read once
@@ -406,6 +934,45 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * consume-or-audit-trail-proof-records T04: the portal keeps no proof
+	 * record schema of its own, and no demo row names one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T04
+	 */
+	public function testNoProofRecordSchemaIsLeft(): void {
+		$this->assertArrayNotHasKey('portalAuditEntry', self::$register['components']['schemas']);
+		$this->assertNotContains('portalAuditEntry', self::$register['components']['registers']['portaliq']['schemas']);
+		$mock = (string)file_get_contents(__DIR__ . '/../../../lib/Settings/portaliq_mock_register.json');
+		$this->assertStringNotContainsString('portalAuditEntry', $mock);
+		$seed = (string)file_get_contents(__DIR__ . '/../../e2e/ci-seed.sh');
+		$this->assertStringNotContainsString('portalAuditEntry', $seed);
+	}//end testNoProofRecordSchemaIsLeft()
+
+	/**
+	 * consume-or-audit-trail-proof-records T04: nothing in lib/ names the
+	 * retired schema but the repair step that moves its records.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T04
+	 */
+	public function testNothingInLibNamesTheOldProofRecordButTheMove(): void {
+		$lib = realpath(__DIR__ . '/../../../lib');
+		$naming = [];
+		$files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($lib, \FilesystemIterator::SKIP_DOTS));
+		foreach ($files as $file) {
+			if (str_contains((string)file_get_contents($file->getPathname()), 'portalAuditEntry') === true) {
+				$naming[] = substr($file->getPathname(), strlen($lib) + 1);
+			}
+		}
+
+		sort($naming);
+		$this->assertSame(['Repair/MovePortalAuditEntries.php'], $naming);
+	}//end testNothingInLibNamesTheOldProofRecordButTheMove()
+
 	public function testExactlyThreeSchemasAreReadableByAnonymousVisitors(): void {
 		$schemas = self::$register['components']['schemas'];
 
@@ -544,4 +1111,20 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 	}//end testIdentityAndSessionSchemasCarryNoMcpDialect()
 
+	/**
+	 * Security review M4: the invitation fields are readable only by
+	 * administrators, through OpenRegister's property authorization. An
+	 * ordinary signed-in Nextcloud user (the schema's `authenticated` read)
+	 * gets the account without them.
+	 *
+	 * @return void
+	 */
+	public function testTheInvitationFieldsAreReadableByAdministratorsOnly(): void {
+		$account = self::$register['components']['schemas']['portalAccount'];
+		$this->assertSame(['authenticated'], $account['authorization']['read'], 'The object read the property rule narrows.');
+		foreach (['claimTokenHash', 'claimCodeHash', 'claimExpiresAt', 'claimAttempts', 'claimAttemptsSince'] as $field) {
+			$this->assertSame(['read' => ['admin'], 'update' => ['admin']], $account['properties'][$field]['authorization'] ?? null, $field);
+		}
+
+	}//end testTheInvitationFieldsAreReadableByAdministratorsOnly()
 }//end class

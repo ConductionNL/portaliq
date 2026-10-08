@@ -25,8 +25,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\AdminMenuAccess;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\AppFramework\Services\IInitialState;
 use OCP\IRequest;
 
 /**
@@ -36,11 +38,17 @@ class DashboardController extends Controller {
 	/**
 	 * Constructor for the DashboardController.
 	 *
-	 * @param IRequest $request The request object
+	 * @param IRequest             $request      The request object
+	 * @param AdminMenuAccess|null $access       Which pages the signed-in user may use.
+	 * @param IInitialState|null   $initialState Hands those flags to the app.
 	 *
 	 * @return void
 	 */
-	public function __construct(IRequest $request) {
+	public function __construct(
+		IRequest $request,
+		private readonly ?AdminMenuAccess $access=null,
+		private readonly ?IInitialState $initialState=null,
+	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
@@ -53,8 +61,16 @@ class DashboardController extends Controller {
 	 * @return TemplateResponse
 	 *
 	 * @spec openspec/specs/dashboard-page/spec.md#REQ-DASH-001
+	 * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
 	 */
 	public function page(): TemplateResponse {
+		// The app menu shows only the pages this user's role may use
+		// (admin-menu-follows-roles). Without the flags the app shows the
+		// pages every signed-in user may use, never more.
+		if ($this->access !== null && $this->initialState !== null) {
+			$this->initialState->provideInitialState('access', $this->access->forCurrentUser());
+		}
+
 		return new TemplateResponse(Application::APP_ID, 'index');
 	}//end page()
 

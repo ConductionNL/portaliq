@@ -20,10 +20,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Cms\MediaLibraryReader;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\ICache;
 use OCP\ICacheFactory;
+use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -83,7 +86,8 @@ class CmsReaderTest extends TestCase {
 			$this->container,
 			$factory,
 			$this->createMock(LoggerInterface::class),
-			$context
+			$context,
+			new MediaReferences($this->createMock(IURLGenerator::class), $this->createMock(MediaLibraryReader::class))
 		);
 	}//end setUp()
 
@@ -468,6 +472,48 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
+	 * site-page-seo-history-and-media REQ-SPH-001: the flat seo fields are
+	 * served as one `seo` object, and a page without them serves empty ones.
+	 *
+	 * @return void
+	 */
+	public function testThePagesSearchFieldsAreServedAsOneObject(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Afval',
+					'route' => '/afval',
+					'seoTitle' => 'Afval en recycling',
+					'seoDescription' => 'Wanneer de container wordt geleegd.',
+					'seoNoindex' => true,
+					'seoImage' => 'https://example.nl/afval.jpg',
+					'body' => ['type' => 'markdown', 'markdown' => ''],
+				],
+			]
+		);
+
+		$page = $this->reader->page(portal: 'open-tilburg', route: '/afval', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(
+			['title' => 'Afval en recycling', 'description' => 'Wanneer de container wordt geleegd.', 'noindex' => true, 'image' => 'https://example.nl/afval.jpg'],
+			$page['seo']
+		);
+	}//end testThePagesSearchFieldsAreServedAsOneObject()
+
+	/**
+	 * A page without search fields serves empty ones, never absent ones.
+	 *
+	 * @return void
+	 */
+	public function testAPageWithoutSearchFieldsServesEmptyOnes(): void {
+		$this->withRows([['title' => 'Kaal', 'route' => '/kaal', 'body' => ['type' => 'markdown', 'markdown' => '']]]);
+
+		$page = $this->reader->page(portal: 'open-tilburg', route: '/kaal', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(['title' => '', 'description' => '', 'noindex' => false, 'image' => ''], $page['seo']);
+	}//end testAPageWithoutSearchFieldsServesEmptyOnes()
+
+	/**
 	 * A markdown page is returned as source, not converted.
 	 *
 	 * @return void
@@ -556,6 +602,67 @@ class CmsReaderTest extends TestCase {
 
 		$this->assertSame(['a', 'b', 'c'], array_column($page['body']['widgets'], 'id'));
 	}//end testGridWidgetsAreOrderedByRowThenColumn()
+
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-008 and REQ-PTB-009:
+	 * the page body serves its widgets grouped by region beside the flat
+	 * list, reports a slot that names no region, carries the regions it
+	 * clears, and still never projects `draftBody`.
+	 *
+	 * @return void
+	 */
+	public function testAPageServesItsRegionsBesideItsWidgets(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Home',
+					'route' => '/',
+					'body' => [
+						'type' => 'grid',
+						'clearedRegions' => ['aside', 'nowhere'],
+						'widgets' => [
+							['id' => 'hero', 'widgetKey' => 'hero', 'slot' => 'hero', 'gridY' => 0],
+							['id' => 'intro', 'widgetKey' => 'markdown', 'slot' => 'body', 'gridY' => 1],
+							['id' => 'typo', 'widgetKey' => 'markdown', 'slot' => 'heder', 'gridY' => 2],
+						],
+					],
+					'draftBody' => ['type' => 'grid', 'widgets' => [['id' => 'secret', 'widgetKey' => 'markdown']]],
+				],
+			]
+		);
+
+		$page = $this->reader->page(portal: 'open-tilburg', route: '/', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(['hero', 'intro', 'typo'], array_column($page['body']['widgets'], 'id'), 'body.widgets is unchanged');
+		$this->assertSame(['hero', 'main'], array_keys($page['body']['regions']));
+		$this->assertSame(['intro'], array_column($page['body']['regions']['main'], 'id'));
+		$this->assertSame(['heder'], $page['body']['unknownRegions']);
+		$this->assertSame(['aside'], $page['body']['clearedRegions']);
+		$this->assertArrayNotHasKey('draftBody', $page);
+		$this->assertStringNotContainsString('secret', (string)json_encode($page));
+	}//end testAPageServesItsRegionsBesideItsWidgets()
+
+	/**
+	 * A grid page without widgets serves `regions` as an empty JSON object,
+	 * and a markdown page still carries the regions it clears.
+	 *
+	 * @return void
+	 */
+	public function testEmptyRegionsStayAnObject(): void {
+		$this->withRows(
+			[
+				['title' => 'Leeg', 'route' => '/leeg', 'body' => ['type' => 'grid', 'widgets' => []]],
+				['title' => 'Tekst', 'route' => '/tekst', 'body' => ['type' => 'markdown', 'markdown' => 'x', 'clearedRegions' => ['hero']]],
+			]
+		);
+
+		$grid = $this->reader->page(portal: 'open-tilburg', route: '/leeg', locale: 'nl', audience: 'anonymous');
+		$this->assertSame('{}', json_encode($grid['body']['regions']));
+
+		$markdown = $this->reader->page(portal: 'open-tilburg', route: '/tekst', locale: 'nl', audience: 'anonymous');
+		$this->assertSame(['hero'], $markdown['body']['clearedRegions']);
+	}//end testEmptyRegionsStayAnObject()
 
 
 	/**

@@ -410,6 +410,96 @@ class PortalContributionRegistryTest extends TestCase {
 	}//end testProviderStillResolvesWhenTheAppDeclaresNoNamespace()
 
 	/**
+	 * The aggregate resolves attached actions (woo-journey-entry-points D3):
+	 * an action with `attachTo` lands on the collection it names.
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 */
+	public function testTheAggregateResolvesAttachedActions(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['client'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'collections' => [['id' => 'dossiers', 'register' => 'portaliq', 'schema' => 'collection', 'scopeField' => 'owner']],
+					'actions' => [[
+						'id' => 'ask',
+						'label' => 'Stel een vraag',
+						'endpoint' => '/apps/portaliq/api/health',
+						'method' => 'POST',
+						'rowField' => 'collectionId',
+						'attachTo' => ['app' => 'portaliq', 'schema' => 'collection'],
+					]],
+				];
+			}
+		};
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->anyContainer($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$result = $registry->aggregateFor(['audience' => 'client', 'organisation' => 'org-1', 'trust' => 'low']);
+		$this->assertSame(
+			[['app' => 'portaliq', 'id' => 'ask', 'label' => 'Stel een vraag']],
+			$result['contributions'][0]['collections'][0]['attachedActions'] ?? null
+		);
+	}//end testTheAggregateResolvesAttachedActions()
+
+	/**
+	 * A malformed row condition is dropped from the aggregate, and logged with
+	 * the app (update-row-action-condition REQ-URC-002).
+	 *
+	 * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-a-malformed-row-condition-must-be-dropped-with-a-warning-req-urc-002
+	 */
+	public function testAMalformedRowConditionIsDroppedFromTheAggregate(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['parent'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'collections' => [['id' => 'times', 'register' => 'portaliq', 'schema' => 'collection', 'scopeField' => 'owner', 'rowActions' => ['cancel', 'withdraw']]],
+					'actions' => [
+						[
+							'id' => 'cancel',
+							'type' => 'update',
+							'schema' => 'collection',
+							'fields' => ['lifecycle'],
+							'set' => ['lifecycle' => 'cancelled'],
+							'rowWhen' => ['field' => 'lifecycle', 'in' => []],
+						],
+						[
+							'id' => 'withdraw',
+							'type' => 'update',
+							'schema' => 'collection',
+							'fields' => ['lifecycle'],
+							'set' => ['lifecycle' => 'withdrawn'],
+							'rowWhen' => ['field' => 'lifecycle', 'in' => ['booked']],
+						],
+					],
+				];
+			}
+		};
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')
+			->with('Portaliq: row condition dropped', $this->callback(static fn (array $context): bool => $context['app'] === 'portaliq'));
+
+		$registry = new PortalContributionRegistry($this->appManager(['portaliq']), $this->anyContainer($provider), $logger);
+
+		$actions = $registry->aggregateFor(['audience' => 'parent', 'organisation' => 'org-1', 'trust' => 'low'])['contributions'][0]['actions'];
+		$this->assertArrayNotHasKey('rowWhen', $actions[0]);
+		$this->assertSame(['field' => 'lifecycle', 'in' => ['booked']], $actions[1]['rowWhen']);
+	}//end testAMalformedRowConditionIsDroppedFromTheAggregate()
+
+	/**
 	 * @param array<int, string>    $installed  App ids `getInstalledApps()` reports.
 	 * @param array<string, string> $namespaces App id => `info.xml` `<namespace>`.
 	 */

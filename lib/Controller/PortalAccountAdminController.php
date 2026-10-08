@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\AppFramework\Controller;
@@ -58,6 +59,7 @@ class PortalAccountAdminController extends Controller {
 	 * @param ActionAuthService $actionAuth Decides whether this clerk may.
 	 * @param IUserSession $userSession The staff user making the request.
 	 * @param PortalInvitationService $invitations Invitations into the portal.
+	 * @param PortalIdentityMailer $mailer Mails the invitation to its address.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -65,6 +67,7 @@ class PortalAccountAdminController extends Controller {
 		private readonly ActionAuthService $actionAuth,
 		private readonly IUserSession $userSession,
 		private readonly PortalInvitationService $invitations,
+		private readonly PortalIdentityMailer $mailer,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -171,9 +174,11 @@ class PortalAccountAdminController extends Controller {
 	 * @param string $organisation The tenant inviting.
 	 * @param string $audience The audience the account will carry.
 	 *
-	 * @return JSONResponse The invitation's secret, for the mail, or a refusal.
+	 * @return JSONResponse That it was sent and until when, or a refusal.
+	 *                      Never the secret: that is in the mail only.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 	 */
 	#[NoAdminRequired]
 	public function invite(string $email, string $organisation, string $audience = 'client'): JSONResponse {
@@ -198,7 +203,22 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($invited);
+		// A secret shown to a clerk is a secret a clerk could use, and the
+		// mail is what proves the address. So it goes to the invited address
+		// and the answer carries only the state and the expiry.
+		$sent = $this->mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_INVITATION,
+			email: $email,
+			secret: (string)$invited['token'],
+			organisation: $organisation
+		);
+		if ($sent === false) {
+			// Nobody holds the secret now, so this invitation admits nobody
+			// and runs out on its own. The clerk sends a new one.
+			return new JSONResponse(['error' => 'mail_not_sent'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new JSONResponse(['state' => 'sent', 'expiresAt' => $invited['expiresAt']]);
 	}//end invite()
 
 	/**
@@ -227,4 +247,99 @@ class PortalAccountAdminController extends Controller {
 		// list is scoped on the session's uid, not on a parameter.
 		return new JSONResponse(['invitations' => $this->invitations->sentBy(invitedBy: $user->getUID(), organisation: $organisation)]);
 	}//end invitations()
+
+	/**
+	 * Withdraw an invitation that was not accepted.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 *
+	 * @return JSONResponse `{state: revoked}`, or a refusal.
+	 *
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-see-and-withdraw-invitations-req-isa-002
+	 */
+	#[NoAdminRequired]
+	public function revokeInvitation(string $id, string $organisation = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$outcome = $this->invitations->revoke(id: $id, organisation: $organisation);
+		if ($outcome !== '') {
+			return new JSONResponse(['error' => $outcome], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['state' => 'revoked']);
+	}//end revokeInvitation()
+
+	/**
+	 * Approve a self-registration that waits for a decision.
+	 *
+	 * @param string $subjectRef The account.
+	 *
+	 * @return JSONResponse `{status: active}`, or `not_pending`.
+	 *
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
+	 */
+	#[NoAdminRequired]
+	public function approve(string $subjectRef): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		if ($this->accounts->approvePending(subjectRef: $subjectRef) === false) {
+			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['status' => PortalAccountService::STATUS_ACTIVE]);
+	}//end approve()
+
+	/**
+	 * Refuse a self-registration, with the reason on the row.
+	 *
+	 * @param string $subjectRef The account.
+	 * @param string $reason Why it is refused.
+	 *
+	 * @return JSONResponse `{status: void}`, or a refusal.
+	 *
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
+	 */
+	#[NoAdminRequired]
+	public function refuse(string $subjectRef, string $reason = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		if ($reason === '') {
+			return new JSONResponse(['error' => 'reason_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($this->accounts->voidPending(subjectRef: $subjectRef, reason: $reason, voidedBy: $user->getUID()) === false) {
+			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
+	}//end refuse()
+
 }//end class

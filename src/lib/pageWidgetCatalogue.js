@@ -25,8 +25,13 @@ import {
 	registerBuiltinDashboardWidgets,
 } from '@conduction/nextcloud-vue'
 import FederatedSearchBlock from '../site/components/FederatedSearchBlock.vue'
+import IntakeCatalogueBlock from '../site/components/IntakeCatalogueBlock.vue'
+import IntakeFormBlock from '../site/components/IntakeFormBlock.vue'
+import IntakeStatusBlock from '../site/components/IntakeStatusBlock.vue'
 import PublicationDetailBlock from '../site/components/PublicationDetailBlock.vue'
 import { publicWidgetFor, publicWidgetKeys } from '../site/components/WidgetGrid.vue'
+import { metas as siteWidgetMetas } from '../site/widgets/index.js'
+import { humanise, widgetLabel } from './widgetLabels.js'
 
 /**
  * FORCE THE SHARED CATALOGUE TO EXIST BEFORE IT IS READ.
@@ -42,27 +47,6 @@ import { publicWidgetFor, publicWidgetKeys } from '../site/components/WidgetGrid
  * call does nothing, the IMPORT is the point.
  */
 registerBuiltinDashboardWidgets()
-
-/**
- * Human labels for the public blocks, in the language the portal is authored
- * in. A key with no entry here falls back to the key itself rather than to
- * nothing: an unlabelled but placeable widget beats a widget that is missing.
- *
- * @type {Record<string, string>}
- */
-const PUBLIC_LABELS = {
-	markdown: 'Tekst (markdown)',
-	hero: 'Hero',
-	search: 'Zoekbalk',
-	section: 'Sectie',
-	cardGrid: 'Kaartenraster',
-	card: 'Kaart',
-	emptyState: 'Lege staat',
-	glossary: 'Begrippenlijst',
-	contributions: 'Bijdragen',
-	federatedSearch: 'Federatief zoeken',
-	publicationDetail: 'Publicatiedetail',
-}
 
 /**
  * Sensible first geometry per key, on the shared 12-column grid.
@@ -82,6 +66,9 @@ const DEFAULT_SIZES = {
 	federatedSearch: { gridWidth: 12, gridHeight: 6 },
 	publicationDetail: { gridWidth: 12, gridHeight: 6 },
 	contributions: { gridWidth: 12, gridHeight: 4 },
+	intakeCatalogue: { gridWidth: 12, gridHeight: 5 },
+	intakeForm: { gridWidth: 8, gridHeight: 6 },
+	intakeStatus: { gridWidth: 6, gridHeight: 3 },
 	card: { gridWidth: 4, gridHeight: 3 },
 	emptyState: { gridWidth: 6, gridHeight: 3 },
 	markdown: { gridWidth: 6, gridHeight: 4 },
@@ -102,6 +89,9 @@ const HOST_SUPPLIED = {
 	glossary: ['terms'],
 	contributions: ['contributions'],
 	publicationDetail: ['subjectId'],
+	intakeCatalogue: ['portal'],
+	intakeForm: ['portal', 'routeParam'],
+	intakeStatus: ['portal'],
 }
 
 /**
@@ -118,8 +108,11 @@ const FIELD_OVERRIDES = {
 	markdown: [
 		{
 			name: 'markdown',
-			kind: 'text',
-			label: 'Markdown',
+			// Its own kind: the designer shows a toolbar over the textarea, so
+			// an editor shapes the text without typing markdown, and the label
+			// reads "Tekst" (MarkdownField.vue).
+			kind: 'markdown',
+			label: 'Text',
 		},
 	],
 }
@@ -138,6 +131,9 @@ const FIELD_OVERRIDES = {
 const LAZY_ON_THE_SITE = {
 	federatedSearch: FederatedSearchBlock,
 	publicationDetail: PublicationDetailBlock,
+	intakeCatalogue: IntakeCatalogueBlock,
+	intakeForm: IntakeFormBlock,
+	intakeStatus: IntakeStatusBlock,
 }
 
 /**
@@ -194,21 +190,6 @@ function kindFor(name, definition) {
 }
 
 /**
- * Humanise a camelCase prop or widget key for a label.
- *
- * @param {string} name The name.
- * @return {string} The label.
- */
-function humanise(name) {
-	const spaced = String(name)
-		.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-		.replace(/[-_]+/g, ' ')
-		.trim()
-
-	return spaced.charAt(0).toUpperCase() + spaced.slice(1)
-}
-
-/**
  * The full catalogue the palette offers.
  *
  * Public entries come first: they are the ones that will actually render on a
@@ -220,12 +201,34 @@ function humanise(name) {
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
  */
 export function widgetCatalogue() {
-	const entries = publicWidgetKeys().map((key) => ({
-		key,
-		label: PUBLIC_LABELS[key] || humanise(key),
-		publicSafe: true,
-		reason: '',
-	}))
+	const entries = publicWidgetKeys().map((key) => {
+		// A widget that describes itself is read from its own meta: the label
+		// an editor sees, the group it sits under and the words they may search
+		// for are the widget's to state, not this file's to guess
+		// (site-nlds-widget-palette design D3).
+		const meta = siteWidgetMetas[key]
+		if (meta) {
+			return {
+				key,
+				label: meta.label,
+				publicSafe: true,
+				reason: '',
+				group: meta.group,
+				nlds: meta.nlds,
+				synonyms: meta.synonyms,
+			}
+		}
+
+		return {
+			key,
+			label: widgetLabel(key, dashboardWidgetRegistry),
+			publicSafe: true,
+			reason: '',
+			group: '',
+			nlds: '',
+			synonyms: [],
+		}
+	})
 
 	const known = new Set(entries.map((entry) => entry.key))
 	for (const key of Object.keys(dashboardWidgetRegistry)) {
@@ -235,9 +238,12 @@ export function widgetCatalogue() {
 
 		entries.push({
 			key,
-			label: dashboardWidgetRegistry[key]?.displayName || humanise(key),
+			label: widgetLabel(key, dashboardWidgetRegistry),
 			publicSafe: false,
-			reason: 'Deze widget wordt niet getoond op een openbare pagina — bezoekers zien een lege plek.',
+			reason: 'Deze widget wordt niet getoond op een openbare pagina. Bezoekers zien een lege plek.',
+			group: '',
+			nlds: '',
+			synonyms: [],
 		})
 	}
 
@@ -253,6 +259,15 @@ export function widgetCatalogue() {
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
  */
 export function fieldsFor(key) {
+	// A meta states its fields, so nothing is introspected for a widget that
+	// describes itself. Introspection stays for the widgets that were here
+	// first: it reads what a component ACCEPTS, which is not the same question
+	// as what an author should be asked, and that is why new widgets answer it
+	// themselves.
+	if (siteWidgetMetas[key]) {
+		return siteWidgetMetas[key].fields
+	}
+
 	if (FIELD_OVERRIDES[key]) {
 		return FIELD_OVERRIDES[key]
 	}
@@ -285,6 +300,10 @@ export function fieldsFor(key) {
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
  */
 export function defaultSizeFor(key) {
+	if (siteWidgetMetas[key]) {
+		return siteWidgetMetas[key].defaultSize
+	}
+
 	return DEFAULT_SIZES[key] || { gridWidth: 6, gridHeight: 4 }
 }
 

@@ -21,11 +21,13 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\TrafficReportController;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficExport;
+use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
+use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -50,7 +52,7 @@ class TrafficReportControllerTest extends TestCase {
 			]
 		);
 
-		return new TrafficReportController('portaliq', $this->createMock(IRequest::class), $store, new TrafficExport());
+		return new TrafficReportController('portaliq', $this->createMock(IRequest::class), $store, new TrafficExport(), new TrafficReportNumbers());
 	}//end controller()
 
 
@@ -143,4 +145,87 @@ class TrafficReportControllerTest extends TestCase {
 		$this->assertEmpty($method->getAttributes(NoAdminRequired::class));
 		$this->assertNotEmpty($method->getAttributes(NoCSRFRequired::class));
 	}//end testTheExportStaysAdminOnly()
+
+	/**
+	 * The summary folds the "all visits" records of the last 30 days
+	 * when no period is given.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryFoldsTheLastThirtyDaysByDefault(): void {
+		$asked = [];
+		$store = $this->createMock(TrafficEventStore::class);
+		$store->method('dailyBetween')->willReturnCallback(
+			static function (string $portal, string $from, string $to, string $segment = '') use (&$asked): array {
+				$asked = ['portal' => $portal, 'from' => $from, 'to' => $to, 'segment' => $segment];
+
+				return [
+					['portal' => $portal, 'date' => $from, 'pageViews' => 10, 'sessions' => 4, 'visitors' => 3, 'engagedSessions' => 2],
+					['portal' => $portal, 'date' => $to, 'pageViews' => 5, 'sessions' => 2, 'visitors' => 2, 'engagedSessions' => 1],
+				];
+			}
+		);
+		$controller = new TrafficReportController('portaliq', $this->createMock(IRequest::class), $store, new TrafficExport(), new TrafficReportNumbers());
+
+		$response = $controller->summary(portal: 'open-tilburg');
+
+		$this->assertInstanceOf(JSONResponse::class, $response);
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$today = gmdate('Y-m-d');
+		$this->assertSame(['portal' => 'open-tilburg', 'from' => gmdate('Y-m-d', strtotime($today.' -29 days')), 'to' => $today, 'segment' => ''], $asked);
+		$data = $response->getData();
+		$this->assertSame(30, $data['days']);
+		$this->assertSame(15, $data['pageViews']);
+		$this->assertSame(6, $data['sessions']);
+		$this->assertSame(5, $data['visitors']);
+		$this->assertSame(3, $data['engagedSessions']);
+	}//end testTheSummaryFoldsTheLastThirtyDaysByDefault()
+
+
+	/**
+	 * A seven-day period starts six days before today.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryHonoursTheChosenPeriod(): void {
+		$data = $this->controller()->summary(portal: 'open-tilburg', days: '7')->getData();
+
+		$this->assertSame(7, $data['days']);
+		$this->assertSame(gmdate('Y-m-d', strtotime(gmdate('Y-m-d').' -6 days')), $data['from']);
+	}//end testTheSummaryHonoursTheChosenPeriod()
+
+
+	/**
+	 * A malformed slug or an unknown period is refused with a reason.
+	 *
+	 * @return void
+	 */
+	public function testABadSummaryRequestIsRefusedWithAReason(): void {
+		$cases = [
+			['', '30', 'missing-portal'],
+			['open tilburg', '30', 'missing-portal'],
+			['open-tilburg', '12', 'invalid-period'],
+			['open-tilburg', '30.0', 'invalid-period'],
+		];
+		foreach ($cases as [$portal, $days, $reason]) {
+			$response = $this->controller()->summary(portal: $portal, days: $days);
+			$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus(), $portal.'/'.$days);
+			$this->assertSame(['error' => $reason], $response->getData(), $portal.'/'.$days);
+		}
+	}//end testABadSummaryRequestIsRefusedWithAReason()
+
+
+	/**
+	 * The summary is admin-only like the export, and keeps CSRF: the cards
+	 * fetch it with the request token, so it needs no exemption.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryStaysAdminOnly(): void {
+		$method = (new ReflectionClass(TrafficReportController::class))->getMethod('summary');
+
+		$this->assertEmpty($method->getAttributes(PublicPage::class));
+		$this->assertEmpty($method->getAttributes(NoAdminRequired::class));
+		$this->assertEmpty($method->getAttributes(NoCSRFRequired::class));
+	}//end testTheSummaryStaysAdminOnly()
 }//end class

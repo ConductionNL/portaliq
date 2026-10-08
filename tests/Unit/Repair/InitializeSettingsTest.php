@@ -199,6 +199,38 @@ class InitializeSettingsTest extends TestCase {
 	}//end testAThrowingImportIsCaughtLoggedAndDoesNotAbortTheRepairPass()
 
 	/**
+	 * #91: the failure is logged with the Throwable ITSELF under `exception`,
+	 * not its message string. Nextcloud's logger (PSR-3 convention) only
+	 * records class, file, line and stack trace when it is handed the object;
+	 * a bare message string loses every one of those, which is exactly what an
+	 * operator needs to find the broken bundled configuration.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingImportLogsTheThrowableInstanceNotItsMessage(): void {
+		$thrown = new \RuntimeException('malformed bundled configuration');
+
+		$settingsService = $this->createMock(SettingsService::class);
+		$settingsService->method('isOpenRegisterAvailable')->willReturn(true);
+		$settingsService->method('loadConfiguration')->willThrowException($thrown);
+
+		$logged = null;
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('error')
+			->willReturnCallback(
+				static function (string $message, array $context) use (&$logged): void {
+					$logged = ($context['exception'] ?? null);
+				}
+			);
+
+		$this->repairWith($settingsService, $logger)->run($this->repairOutput());
+
+		$this->assertSame($thrown, $logged, 'the logger must receive the Throwable instance, not a string');
+
+	}//end testAThrowingImportLogsTheThrowableInstanceNotItsMessage()
+
+	/**
 	 * An IConfig whose signing secret is already set, so `ensureSigningSecret()`
 	 * is a no-op and does not colour the assertions of the tests above.
 	 */

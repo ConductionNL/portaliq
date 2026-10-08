@@ -194,4 +194,33 @@ class OidcClaimMapperServiceTest extends TestCase {
 
 	}//end testProviderLabelsListsAllFourPresets()
 
+	// -- branch (signin-eherkenning-branch REQ-SEB-001) -------------------------
+
+	public function testABranchClaimOfTwelveDigitsIsMapped(): void {
+		$config = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's', 'claimMap' => ['branch' => 'urn:etoegang:1.9:ServiceRestriction:Vestigingsnr']]);
+		$mapped = $this->mapper->mapClaims(['sub' => 'kvk-1', 'urn:etoegang:1.9:ServiceRestriction:Vestigingsnr' => '000012345678'], $config);
+
+		$this->assertSame('000012345678', $mapped['branch']);
+
+	}//end testABranchClaimOfTwelveDigitsIsMapped()
+
+	public function testAMalformedBranchIsDroppedAndTheLoginGoesOn(): void {
+		$config = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's', 'claimMap' => ['branch' => 'vestiging']]);
+
+		foreach (['12345', '00001234567X', '0000123456789', ['000012345678']] as $bad) {
+			$mapped = $this->mapper->mapClaims(['sub' => 'kvk-1', 'vestiging' => $bad], $config);
+			$this->assertNotNull($mapped, 'a bad branch never refuses the login');
+			$this->assertSame('', $mapped['branch']);
+		}
+
+	}//end testAMalformedBranchIsDroppedAndTheLoginGoesOn()
+
+	public function testNoBranchClaimConfiguredMapsNone(): void {
+		$config = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's']);
+		$mapped = $this->mapper->mapClaims(['sub' => 'kvk-1', 'branch' => '000012345678'], $config);
+
+		$this->assertSame('', $mapped['branch'], 'the preset names no branch claim, so none is read');
+
+	}//end testNoBranchClaimConfiguredMapsNone()
+
 }//end class

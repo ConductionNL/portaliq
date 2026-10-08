@@ -39,19 +39,33 @@ declare(strict_types=1);
 namespace OCA\Portaliq\AppInfo;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
+use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
+use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
+use OCA\Portaliq\Listener\MediaWriteGuardListener;
+use OCA\Portaliq\Listener\NoticeWriteGuardListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
+use OCA\Portaliq\Listener\PortalAccountInvitationListener;
 use OCA\Portaliq\Listener\PortalAccountProvisionListener;
+use OCA\Portaliq\Listener\PortalDigitalPostDeliveredListener;
+use OCA\Portaliq\Listener\PortalRecordChangeListener;
+use OCA\Portaliq\Listener\RegisterProposalLeavesListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
+use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
+use OCA\Portaliq\Service\Messaging\InAppMessagingLeaf;
+use OCA\Portaliq\Service\Notifications\LoggingPushSender;
+use OCA\Portaliq\Service\Notifications\PushSenderInterface;
 use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCP\AppFramework\App;
@@ -132,13 +146,8 @@ class Application extends App implements IBootstrap {
 		// PortalContributionRegistry — so no per-provider registration is needed
 		// here; the DI container constructs each app's provider by reflection.
 
-		// Drop cached public content when a CMS object is written (ADR-086 §9).
-		// The read cache holds NEGATIVE results too, so without this a route
-		// keeps 404ing for the rest of the TTL after its page is created — the
-		// editor sees a broken site and is right.
-		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
-			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
-		}
+		$this->registerCmsListeners(context: $context);
+		$this->registerRecordChangeListener(context: $context);
 
 		// Landing-page-provisioning (ADR-041, contribution-landing-page-action):
 		// a same-instance cross-app command letting a contributing app ask
@@ -153,6 +162,7 @@ class Application extends App implements IBootstrap {
 		// because another app never calls into portaliq's controllers.
 		$context->registerEventListener(PortalAccountProvisionRequestedEvent::class, PortalAccountProvisionListener::class);
 		$context->registerEventListener(PortalAccountClaimRequestedEvent::class, PortalAccountClaimListener::class);
+		$context->registerEventListener(PortalAccountInvitationRequestedEvent::class, PortalAccountInvitationListener::class);
 
 		// Traffic analytics (portal-traffic-visitors-and-geo): where a
 		// visitor's address turns into a region. The offline MMDB lookup is
@@ -162,10 +172,97 @@ class Application extends App implements IBootstrap {
 		// (the settings provider `none` makes this resolver answer null too).
 		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
 
+		// Guardian-direct-messages: InAppMessagingLeaf is the FIRST
+		// implementation of the messaging-leaf interface, backed by this
+		// app's own OpenRegister schemas. When OpenRegister's planned
+		// guardian-participant-messaging-leaf ships, a second
+		// implementation can be aliased here instead, with no controller
+		// change (design.md "Messaging leaf interface").
+		$context->registerServiceAlias(GuardianMessagingLeafInterface::class, InAppMessagingLeaf::class);
+		// Push-notifications-quiet-hours: LoggingPushSender is the FIRST
+		// implementation of the push transport seam (a real Web Push
+		// implementation needs VAPID key provisioning, an admin-settings
+		// concern for a follow-up change — design.md "Messaging leaf
+		// interface"). Alias here so a real transport can be swapped in
+		// with no caller change.
+		$context->registerServiceAlias(PushSenderInterface::class, LoggingPushSender::class);
+
 		// Traffic reports and alerts (portal-traffic-reporting) reach a
 		// user as an in-app notification beside the mail; this renders it.
 		$context->registerNotifierService(Notifier::class);
+
+		// The store plane (ADR-080, ADR-114 Decision 4). The manifest's
+		// `type: "store"` page calls /api/store/items; appinfo/routes.php declares
+		// the engine's two store routes, and they resolve to
+		// Controller\StoreController — a class this app does NOT ship.
+		// StorePlaneRegistrar binds that name to OpenRegister's
+		// GenericStoreController: the one AppHost binding this app takes, since
+		// it wires everything else by hand (WOO-559). Without it the SPA
+		// catch-all answered the store page's JSON call with HTML 200.
+		(new StorePlaneRegistrar())->register($context);
 	}//end register()
+
+	/**
+	 * The CMS content listeners.
+	 *
+	 * Drop cached public content when a CMS object is written (ADR-086 §9).
+	 * The read cache holds NEGATIVE results too, so without this a route keeps
+	 * 404ing for the rest of the TTL after its page is created: the editor
+	 * sees a broken site and is right.
+	 *
+	 * The media library's write rules (site-page-seo-history-and-media T06,
+	 * T09): an image needs alternative text, and an item a published page uses
+	 * is not deleted. OpenRegister honours a stopped pre-write event by
+	 * refusing the write with its message.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+	 */
+	private function registerCmsListeners(IRegistrationContext $context): void {
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
+			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
+		}
+
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
+			$context->registerEventListener($event, MediaWriteGuardListener::class);
+		}
+
+		// A notice ends after it starts (operate-maintenance-notice REQ-OMN-003).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, NoticeWriteGuardListener::class);
+		}
+	}//end registerCmsListeners()
+
+
+	/**
+	 * Tell a resident when a record they follow changes, or when a case app
+	 * writes to their inbox (inbox-notifications-and-preferences). The
+	 * listener's first check is a lookup built once per request, and it never
+	 * fails the save it listens to.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+	 */
+	private function registerRecordChangeListener(IRegistrationContext $context): void {
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class] as $event) {
+			$context->registerEventListener($event, PortalRecordChangeListener::class);
+		}
+
+		// Integriq's report on a message box letter (inbox-berichtenbox-channel).
+		// Named by string: without integriq nothing dispatches it.
+		$context->registerEventListener(PortalDigitalPostDeliveredListener::EVENT, PortalDigitalPostDeliveredListener::class);
+
+		// The change-proposal queue as two OpenRegister leaves
+		// (change-proposal-queue). Named by string: without OpenRegister
+		// nothing collects leaves.
+		$context->registerEventListener(RegisterProposalLeavesListener::EVENT, RegisterProposalLeavesListener::class);
+	}//end registerRecordChangeListener()
 
 	/**
 	 * Boot the application.

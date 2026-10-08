@@ -20,6 +20,7 @@ namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 
 use OCA\Portaliq\BackgroundJob\TrafficAggregationJob;
 use OCA\Portaliq\Service\TrafficAggregationService;
+use OCA\Portaliq\Service\TrafficBackfillService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -101,4 +102,37 @@ class TrafficAggregationJobTest extends TestCase {
 
 		$this->runJob($this->job($service, $logger));
 	}//end testAFailureIsLoggedNotThrown()
+
+
+	/**
+	 * After the aggregation the job asks for the one-time back-fill
+	 * (portal-page-traffic), and a failing back-fill is logged, not thrown,
+	 * and never stops the aggregation.
+	 *
+	 * @return void
+	 */
+	public function testTheBackfillRunsAfterTheAggregationAndCannotBreakIt(): void {
+		$order = [];
+		$service = $this->createMock(TrafficAggregationService::class);
+		$service->method('run')->willReturnCallback(
+			static function () use (&$order): array {
+				$order[] = 'run';
+
+				return ['portals' => 0, 'days' => 0, 'purged' => 0, 'recordingsPurged' => 0];
+			}
+		);
+		$backfill = $this->createMock(TrafficBackfillService::class);
+		$backfill->method('runOnce')->willReturnCallback(
+			static function () use (&$order): int {
+				$order[] = 'backfill';
+				throw new RuntimeException('store down');
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('error')->with($this->stringContains('back-fill failed'));
+
+		$this->runJob(new TrafficAggregationJob($this->createMock(ITimeFactory::class), $service, $logger, $backfill));
+
+		$this->assertSame(['run', 'backfill'], $order);
+	}//end testTheBackfillRunsAfterTheAggregationAndCannotBreakIt()
 }//end class

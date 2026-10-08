@@ -32,6 +32,8 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
+use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -48,6 +50,13 @@ use OCP\IRequest;
  * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
  */
 class MyCasesController extends Controller implements PortalProtected {
+	/**
+	 * The `mandate` value that means "acting for yourself": your own cases,
+	 * no mandate spent, while the mandates you hold are still named
+	 * (cases-my-cases-page REQ-CMC-004). Without any value the first mandate
+	 * held is the active one, as before.
+	 */
+	public const ACTING_FOR_SELF = MandatedCaseReader::ACTING_FOR_SELF;
 
 	/**
 	 * Constructor.
@@ -58,6 +67,10 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * @param PortalCaseListReader $cases Merges every case collection.
 	 * @param PortalMandateService $mandates The mandates the identity holds.
 	 * @param PortalPartyTreeResolver $tree Resolves how far a mandate reaches.
+	 * @param CaseTypeVisibility|null $caseTypes The case types the serving
+	 *                                           portal hides
+	 *                                           (operate-show-per-case-type).
+	 *                                           Absent hides nothing.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -66,6 +79,7 @@ class MyCasesController extends Controller implements PortalProtected {
 		private readonly PortalCaseListReader $cases,
 		private readonly PortalMandateService $mandates,
 		private readonly PortalPartyTreeResolver $tree,
+		private readonly ?CaseTypeVisibility $caseTypes = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -76,6 +90,8 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * @return JSONResponse The case list, or 401 without a session.
 	 *
 	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -89,7 +105,10 @@ class MyCasesController extends Controller implements PortalProtected {
 		}
 
 		$aggregate = $this->registry->aggregateFor($subject);
-		$rows = $this->cases->listCases(subject: $subject, aggregate: $aggregate);
+		// The case types the portal this request is served from does not show
+		// (operate-show-per-case-type REQ-OSC-002).
+		$hidden = ($this->caseTypes?->hiddenForRequest(request: $this->request, subject: $subject) ?? []);
+		$rows = $this->cases->listCases(subject: $subject, aggregate: $aggregate, hiddenCaseTypes: $hidden);
 
 		// The organisation half (REQ-PIOC-002, REQ-PIOC-008): the mandates the
 		// identity holds, the one it is acting under, and that one's cases.
@@ -97,7 +116,10 @@ class MyCasesController extends Controller implements PortalProtected {
 		// falling back to one that is.
 		$held = $this->mandates->mandatesFor(subjectRef: (string)($subject['subjectRef'] ?? ''), organisation: (string)($subject['organisation'] ?? ''));
 		$requested = (string)$this->request->getParam('mandate', '');
-		$active = $this->mandates->activeMandate(mandates: $held, mandateId: $requested);
+		$active = null;
+		if ($requested !== self::ACTING_FOR_SELF) {
+			$active = $this->mandates->activeMandate(mandates: $held, mandateId: $requested);
+		}
 
 		$describedActive = null;
 		if ($active !== null) {
@@ -121,7 +143,7 @@ class MyCasesController extends Controller implements PortalProtected {
 			$active['_entities'] = $scope['entities'];
 			$rows = $this->merge(
 				rows: $rows,
-				extra: $this->cases->listMandatedCases(subject: $subject, aggregate: $aggregate, mandates: [$active])
+				extra: $this->cases->listMandatedCases(subject: $subject, aggregate: $aggregate, mandates: [$active], hiddenCaseTypes: $hidden)
 			);
 
 			$describedActive = $this->mandates->describe(mandate: $active);

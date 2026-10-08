@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -156,6 +157,173 @@ class PortalAccountProvisionTest extends TestCase {
 
 	}//end testAnAddressNeverClaimsAnAccountProvisionedOnAnIdentityReference()
 
+	/**
+	 * portal-invitation-joins-the-signed-in-account: a guardian who signed in
+	 * before the school invited her gets the invitation's claims on the
+	 * account she already has, at her next sign-in with the same verified
+	 * address, and the waiting account is withdrawn.
+	 *
+	 * @return void
+	 */
+	public function testAnInvitationAfterASignInJoinsTheAccountThatSignedIn(): void {
+		$service = $this->service();
+
+		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
+		$waiting  = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true);
+		$this->assertTrue($service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7'));
+
+		$login = $service->findOrCreate(
+			identityType: 'digid',
+			identityRef: 'bsn-G',
+			organisation: 'gemeente-x',
+			audience: 'parent',
+			verifiedEmail: 'g@example.org'
+		);
+
+		$this->assertSame($signedIn['subjectRef'], $login['subjectRef']);
+		$this->assertSame(['learniq' => ['guardianRef' => 'guardian-7']], $this->rowBySubjectRef($signedIn['subjectRef'])['claims']);
+		$this->assertSame('void', $this->rowBySubjectRef($waiting['subjectRef'])['status']);
+		$this->assertNotSame('', (string)$this->rowBySubjectRef($waiting['subjectRef'])['voidReason']);
+
+	}//end testAnInvitationAfterASignInJoinsTheAccountThatSignedIn()
+
+	/**
+	 * Only the trust REQ-PIS-002 already gives is used: a waiting account
+	 * whose address nobody verified, a sign-in without a verified address, a
+	 * waiting account on an identity reference, and one in another
+	 * organisation are all left alone.
+	 *
+	 * @return void
+	 */
+	public function testAJoinNeedsAVerifiedAddressOnBothSidesAndTheSameOrganisation(): void {
+		$service = $this->service();
+
+		$signedIn   = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
+		$unverified = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'u@example.org', verifiedEmail: false);
+		$service->claim(subjectRef: $unverified['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-u');
+		$onIdentity = $service->provision(audience: 'parent', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-OTHER', email: 'i@example.org', verifiedEmail: true);
+		$service->claim(subjectRef: $onIdentity['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-i');
+		$elsewhere = $service->provision(audience: 'parent', organisation: 'gemeente-y', email: 'e@example.org', verifiedEmail: true);
+		$service->claim(subjectRef: $elsewhere['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-e');
+		$noAddress = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'n@example.org', verifiedEmail: true);
+
+		foreach (['u@example.org', 'i@example.org', 'e@example.org'] as $address) {
+			$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: $address);
+		}
+
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
+
+		$this->assertArrayNotHasKey('claims', $this->rowBySubjectRef($signedIn['subjectRef']));
+		foreach ([$unverified, $onIdentity, $elsewhere, $noAddress] as $account) {
+			$this->assertSame('pending', $this->rowBySubjectRef($account['subjectRef'])['status']);
+		}
+
+	}//end testAJoinNeedsAVerifiedAddressOnBothSidesAndTheSameOrganisation()
+
+	/**
+	 * Security review M1: a waiting account that carries a claim the
+	 * signed-in account holds with another value is not joined. The account
+	 * keeps what it has and the waiting account stays pending for its real
+	 * holder; nothing is dropped in silence.
+	 *
+	 * @return void
+	 */
+	public function testAJoinNeverOverwritesAClaimTheAccountAlreadyHolds(): void {
+		$service = $this->service();
+
+		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
+		$service->claim(subjectRef: $signedIn['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-1');
+		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true);
+		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-2');
+		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'dossiq', claimName: 'linkedRequesterId', value: 'requester-9');
+
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: 'g@example.org');
+
+		$this->assertSame(['learniq' => ['guardianRef' => 'guardian-1']], $this->rowBySubjectRef($signedIn['subjectRef'])['claims']);
+		$this->assertSame('pending', $this->rowBySubjectRef($waiting['subjectRef'])['status']);
+
+	}//end testAJoinNeverOverwritesAClaimTheAccountAlreadyHolds()
+
+	/**
+	 * Security review M3: a sign-in of another audience in the same
+	 * organisation (a supplier) never takes over a parent's waiting account,
+	 * even with the same verified address.
+	 *
+	 * @return void
+	 */
+	public function testASignInOfAnotherAudienceJoinsNothing(): void {
+		$service = $this->service();
+
+		// The supplier signed in before; the join (not the activation of
+		// REQ-PIS-002, which is not this change's) is what is under test.
+		$supplier = $service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-1', organisation: 'gemeente-x', audience: 'supplier');
+		$waiting  = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true);
+		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7');
+		$service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-1', organisation: 'gemeente-x', audience: 'supplier', verifiedEmail: 'g@example.org');
+
+		$this->assertArrayNotHasKey('learniq', (array)($this->rowBySubjectRef($supplier['subjectRef'])['claims'] ?? []));
+		$this->assertSame('pending', $this->rowBySubjectRef($waiting['subjectRef'])['status']);
+
+	}//end testASignInOfAnotherAudienceJoinsNothing()
+
+	/**
+	 * 🔴 The join carries the invited address, and the portal stops asking
+	 * for one.
+	 *
+	 * Live finding: the banner "Add an e-mail address" stood on every page
+	 * for a guardian who HAD been invited by e-mail. The join took the
+	 * waiting account's claims and withdrew the row the address lived on, so
+	 * her own account had none, `needsContactPrompt()` was true forever and
+	 * notifications had nowhere to go either.
+	 *
+	 * @return void
+	 */
+	public function testTheJoinCarriesTheInvitedAddressSoThePortalStopsAskingForOne(): void {
+		$service = $this->service();
+		$values  = new ContactAddressValues();
+
+		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
+		$this->assertTrue($values->needsContactPrompt(account: $this->rowBySubjectRef($signedIn['subjectRef'])), 'with no address the portal does ask');
+
+		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'guardian@example.org', verifiedEmail: true);
+		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7');
+
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: 'guardian@example.org');
+
+		$row = $this->rowBySubjectRef($signedIn['subjectRef']);
+		$this->assertSame('guardian@example.org', $row['email'], 'the address the invitation carried is hers now');
+		$this->assertTrue($row['verifiedEmail'], 'and it is verified, which is what matched it');
+		$this->assertFalse($values->needsContactPrompt(account: $row), 'so the portal does not ask her for one');
+		$this->assertSame('void', $this->rowBySubjectRef($waiting['subjectRef'])['status']);
+
+	}//end testTheJoinCarriesTheInvitedAddressSoThePortalStopsAskingForOne()
+
+	/**
+	 * An address of her own is kept: the join never writes over it.
+	 *
+	 * @return void
+	 */
+	public function testTheJoinKeepsAnAddressTheAccountAlreadyHas(): void {
+		$service = $this->service();
+
+		$signedIn = $service->provision(
+			audience: 'parent',
+			organisation: 'gemeente-x',
+			identityType: 'digid',
+			identityRef: 'bsn-H',
+			email: 'hers@example.org'
+		);
+		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'invited@example.org', verifiedEmail: true);
+		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-8');
+
+		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-H', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: 'invited@example.org');
+
+		$row = $this->rowBySubjectRef($signedIn['subjectRef']);
+		$this->assertSame('hers@example.org', $row['email']);
+		$this->assertSame(['learniq' => ['guardianRef' => 'guardian-8']], $row['claims'], 'the claims still arrive');
+
+	}//end testTheJoinKeepsAnAddressTheAccountAlreadyHas()
+
 	public function testAClaimIsWrittenUnderTheDispatchingAppsOwnId(): void {
 		$service = $this->service();
 
@@ -198,6 +366,27 @@ class PortalAccountProvisionTest extends TestCase {
 		$this->assertFalse($service->voidPending(subjectRef: $account['subjectRef'], reason: ''));
 
 	}//end testAnActiveAccountCannotBeVoided()
+
+	/**
+	 * identity-staff-account-screens T03 (REQ-ISA-004): a pending
+	 * self-registration is approved into an active account; an account a
+	 * clerk provisioned, or an active one, is not.
+	 *
+	 * @return void
+	 */
+	public function testAPendingSelfRegistrationIsApprovedAndNothingElseIs(): void {
+		$service = $this->service();
+		$registered = $service->provision(audience: 'client', organisation: 'gemeente-x', email: 'ans@example.org', provisionedBy: 'self-registration');
+		$byClerk = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-clerk', provisionedBy: 'clerk-anna');
+
+		$this->assertTrue($service->approvePending(subjectRef: $registered['subjectRef']));
+		$this->assertSame('active', $this->rowBySubjectRef($registered['subjectRef'])['status']);
+		$this->assertFalse($service->approvePending(subjectRef: $registered['subjectRef']), 'an active account is not pending');
+		$this->assertFalse($service->approvePending(subjectRef: $byClerk['subjectRef']), 'a clerk-provisioned account activates on its own first sign-in');
+		$this->assertSame('pending', $this->rowBySubjectRef($byClerk['subjectRef'])['status']);
+		$this->assertFalse($service->approvePending(subjectRef: 'nobody'));
+
+	}//end testAPendingSelfRegistrationIsApprovedAndNothingElseIs()
 
 	/**
 	 * The row in the store, when there is exactly one.

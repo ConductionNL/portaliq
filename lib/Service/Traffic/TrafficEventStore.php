@@ -53,6 +53,9 @@ use Throwable;
  * portal-traffic-reporting added put it one over the threshold, and a
  * second store would be a second place for the raw-versus-ordinary
  * write decision.
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- the bounded read the
+ * path explorer needs (portal-traffic-path-explorer) is the eleventh
+ * entry point, and it pages through the same helper as the other reads.
  */
 class TrafficEventStore {
 
@@ -234,6 +237,50 @@ class TrafficEventStore {
 	}
 
 	/**
+	 * A portal's raw events in a window, oldest first, read no further than
+	 * a limit, and saying when the limit stopped the read
+	 * (portal-traffic-path-explorer).
+	 *
+	 * `eventsBetween()` stops at MAX_ROWS without a word, which is right
+	 * for a job that recomputes one day but wrong for a reader who must be
+	 * told the picture is partial. One more row than the limit is asked
+	 * for, so "exactly the limit" and "more than the limit" differ.
+	 *
+	 * The rows are LEAN: OpenRegister's `@self` block and every empty field
+	 * are dropped as each page arrives. Measured on 2026-09-23, a full row
+	 * held about 8.5 KB in PHP; the path explorer holds a day of them at a
+	 * time and reads none of that metadata.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $from   Inclusive lower bound, ISO 8601.
+	 * @param string $to     Exclusive upper bound, ISO 8601.
+	 * @param int    $limit  The most events wanted.
+	 *
+	 * @return array{events: array<int, array<string, mixed>>, truncated: bool} The events, and whether more existed.
+	 *
+	 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
+	 */
+	public function eventsForPaths(string $portal, string $from, string $to, int $limit): array {
+		if ($limit <= 0) {
+			return ['events' => [], 'truncated' => true];
+		}
+
+		$rows = $this->findAll(
+			schema: self::EVENT_SCHEMA,
+			filters: ['portal' => $portal, 'occurredAt' => ['gte' => $from, 'lt' => $to]],
+			limit: $limit + 1,
+			order: ['occurredAt' => 'ASC'],
+			shape: $this->lean(...)
+		);
+
+		if (count($rows) > $limit) {
+			return ['events' => array_slice($rows, 0, $limit), 'truncated' => true];
+		}
+
+		return ['events' => $rows, 'truncated' => false];
+	}
+
+	/**
 	 * Every raw event received since a moment, across portals.
 	 *
 	 * Used to find which portal-days the aggregation must recompute.
@@ -402,10 +449,11 @@ class TrafficEventStore {
 	 * @param array<string, mixed> $filters The filters.
 	 * @param int                  $limit   The most rows wanted.
 	 * @param array<string, string> $order  Sort, field => ASC|DESC.
+	 * @param ?\Closure             $shape  Reshapes each row as it arrives, or null to keep it.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function findAll(string $schema, array $filters, int $limit, array $order = []): array {
+	private function findAll(string $schema, array $filters, int $limit, array $order = [], ?\Closure $shape = null): array {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
@@ -416,7 +464,7 @@ class TrafficEventStore {
 				return [];
 			}
 
-			return $this->pages(objectService: $objectService, schema: $schema, filters: $filters, limit: $limit, order: $order);
+			return $this->pages(objectService: $objectService, schema: $schema, filters: $filters, limit: $limit, order: $order, shape: $shape);
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: traffic read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 
@@ -432,10 +480,11 @@ class TrafficEventStore {
 	 * @param array<string, mixed>  $filters       The filters.
 	 * @param int                   $limit         The most rows wanted.
 	 * @param array<string, string> $order         Sort, field => ASC|DESC.
+	 * @param ?\Closure             $shape         Reshapes each row as it arrives, or null to keep it.
 	 *
 	 * @return array<int, array<string, mixed>> The rows, as arrays.
 	 */
-	private function pages(object $objectService, string $schema, array $filters, int $limit, array $order): array {
+	private function pages(object $objectService, string $schema, array $filters, int $limit, array $order, ?\Closure $shape = null): array {
 		$out = [];
 		for ($offset = 0; $offset < $limit; $offset += self::PAGE) {
 			$config = ['filters' => $filters, 'limit' => min(self::PAGE, $limit - $offset), 'offset' => $offset];
@@ -454,7 +503,12 @@ class TrafficEventStore {
 			}
 
 			foreach ($rows as $row) {
-				$out[] = $this->row(row: $row);
+				$shaped = $this->row(row: $row);
+				if ($shape !== null) {
+					$shaped = $shape($shaped);
+				}
+
+				$out[] = $shaped;
 			}
 
 			if (count($rows) < self::PAGE) {
@@ -483,6 +537,19 @@ class TrafficEventStore {
 		}
 
 		return [];
+	}
+
+	/**
+	 * A row without `@self` and without its empty fields.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<string, mixed> The lean row.
+	 */
+	private function lean(array $row): array {
+		unset($row['@self']);
+
+		return array_filter($row, static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
 	}
 
 	/**

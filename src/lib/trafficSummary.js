@@ -184,7 +184,7 @@ export function warnedSwitches(portal) {
  *
  * @param {Array<object>} records The `portalTrafficDaily` objects, any order.
  * @param {Array<string>} dates   The dates of the range, oldest first.
- * @return {{totals: object, series: object, days: number, visitors: object, breakdowns: object, pages: Array<object>, transitions: Array<object>, sources: Array<object>, searches: Array<object>, goals: Array<object>, conversionRate: number, funnels: Array<object>, forms: Array<object>, notFound: Array<object>, errors: Array<object>, customDimensions: object, experiments: Array<object>, heatmaps: Array<object>, hasData: boolean}} The summary.
+ * @return {{totals: object, series: object, days: number, visitors: object, breakdowns: object, pages: Array<object>, sources: Array<object>, searches: Array<object>, goals: Array<object>, conversionRate: number, funnels: Array<object>, forms: Array<object>, notFound: Array<object>, errors: Array<object>, customDimensions: object, experiments: Array<object>, heatmaps: Array<object>, hasData: boolean}} The summary.
  */
 export function summarise(records, dates) {
 	const byDate = {}
@@ -197,7 +197,6 @@ export function summarise(records, dates) {
 	const totals = { pageViews: 0, sessions: 0, visitors: 0, engagedSessions: 0 }
 	const series = { dates, pageViews: [], sessions: [], visitors: [] }
 	const pages = {}
-	const transitions = {}
 	const channels = {}
 	// New versus returning, and accounts, are only known where a day's
 	// record carries a number. A null is "not available", and one day of
@@ -270,17 +269,6 @@ export function summarise(records, dates) {
 			pages[path] = row
 		})
 
-		list(record.transitions).forEach((edge) => {
-			const key = String(edge.from || '') + ' ' + String(edge.to || '')
-			const row = transitions[key] || {
-				from: String(edge.from || ''),
-				to: String(edge.to || ''),
-				count: 0,
-			}
-			row.count += num(edge.count)
-			transitions[key] = row
-		})
-
 		foldOutcomes(outcomes, record, sessions)
 
 		list(record.referrers).forEach((referrer) => {
@@ -313,7 +301,6 @@ export function summarise(records, dates) {
 		visitors,
 		breakdowns: ranked,
 		pages: rank(Object.values(pages), 'views'),
-		transitions: rank(Object.values(transitions), 'count'),
 		sources: rank(Object.values(channels), 'count').map((row) => ({
 			channel: row.channel,
 			count: row.count,

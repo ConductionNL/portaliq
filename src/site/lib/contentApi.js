@@ -15,6 +15,7 @@
  */
 
 import { loadState } from '@nextcloud/initial-state'
+import { adoptSessionToken } from './authApi.js'
 
 /**
  * The runtime configuration for this deployment.
@@ -107,11 +108,19 @@ export function resolveApiBase() {
  * make "this site does not exist" render identically to "this site has no
  * content" — the caller could not tell a broken deployment from an empty one.
  *
+ * A `fresh` read goes to the server even when the browser holds a cached
+ * copy, and refreshes that copy (`cache: 'reload'`). The site asks for one
+ * after an editor published or left edit mode: a page is served
+ * `public, max-age=300` to a reader without a resident bearer, so an ordinary
+ * read answered from the cache with the page as it was before.
+ *
  * @param {string} path  Endpoint path, e.g. '/menus'.
  * @param {object} query Query parameters.
+ * @param {{fresh?: boolean}} [options] `fresh` to go past the browser cache.
  * @return {Promise<object>} The parsed body.
+ * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
  */
-async function get(path, query = {}) {
+async function get(path, query = {}, options = {}) {
 	const url = new URL(resolveApiBase() + path, window.location.origin)
 	for (const [key, value] of Object.entries(query)) {
 		if (value !== undefined && value !== null && value !== '') {
@@ -119,9 +128,20 @@ async function get(path, query = {}) {
 		}
 	}
 
-	const response = await fetch(url.toString(), {
-		headers: { Accept: 'application/json' },
-	})
+	// A portal that declares a sign-in mode answers its content only to a
+	// session (ContentController), so the resident's bearer goes along when
+	// this tab holds one. A public portal ignores it.
+	const headers = { Accept: 'application/json' }
+	const token = adoptSessionToken()
+	if (token) {
+		headers.Authorization = `Bearer ${token}`
+	}
+
+	const init = { headers }
+	if (options.fresh === true) {
+		init.cache = 'reload'
+	}
+	const response = await fetch(url.toString(), init)
 
 	if (!response.ok) {
 		const error = new Error(`content api ${response.status} for ${path}`)
@@ -168,9 +188,13 @@ export async function fetchGlossary(portal) {
 /**
  * @param {string} route  The in-site route.
  * @param {string} [portal] Explicit portal slug.
+ * @param {{fresh?: boolean}} [options] `fresh` to go past the browser cache.
  * @return {Promise<object>} One published page by route.
+ * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
  */
-export const fetchPage = (route, portal) => get('/page', { route, portal })
+export function fetchPage(route, portal, options = {}) {
+	return get('/page', { route, portal }, options)
+}
 
 /**
  * The leaf apps' contributed surfaces for this portal (ADR-046).

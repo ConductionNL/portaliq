@@ -68,6 +68,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use DateTimeImmutable;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -88,6 +89,8 @@ use Throwable;
  * splitting the file would scatter one security boundary across classes.
  */
 class PortalObjectReader {
+	use PortalScopeMatch;
+
 	/**
 	 * OpenRegister's object service, resolved lazily.
 	 */
@@ -113,11 +116,13 @@ class PortalObjectReader {
 	 *                                        declared `fields` whitelist. Runs
 	 *                                        AFTER verification, so it never
 	 *                                        decides which rows return.
+	 * @param PortalFilteredRows $filteredRows The via outer query and the declared-filter check.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly PortalFieldProjector $projector,
+		private readonly PortalFilteredRows $filteredRows=new PortalFilteredRows(new \Psr\Log\NullLogger()),
 	) {
 	}//end __construct()
 
@@ -211,7 +216,8 @@ class PortalObjectReader {
 				via: $via,
 				scopeValue: $scopeValue,
 				organisation: $organisation,
-				limit: $limit
+				limit: $limit,
+				filter: $filter
 			);
 			return $this->projector->projectRows(rows: $joined, fields: $fields);
 		}
@@ -311,6 +317,7 @@ class PortalObjectReader {
 	 * @param mixed $via Optional one-hop join declaration (array), fail-closed on anything else.
 	 * @param string $audience The subject's audience (portalAccount lookup filter).
 	 * @param mixed $fields Optional projection whitelist (array of property names); null = full row.
+	 * @param array<string, mixed> $filter The collection's declared filter; a row outside it is null.
 	 *
 	 * @return array<string, mixed>|null The subject's object, or null (→ 404).
 	 *
@@ -333,6 +340,7 @@ class PortalObjectReader {
 		mixed $via = null,
 		string $audience = '',
 		mixed $fields = null,
+		array $filter = [],
 	): ?array {
 		if ($id === '') {
 			return null;
@@ -365,6 +373,7 @@ class PortalObjectReader {
 		}
 
 		$row = $this->fetchById(objectService: $objectService, register: $register, schema: $schema, id: $id);
+		$row = $this->withinFilter(row: $row, filter: $filter, scopeField: $scopeField);
 		if ($row === null) {
 			return null;
 		}
@@ -399,6 +408,61 @@ class PortalObjectReader {
 	}//end readObject()
 
 	/**
+	 * The row when it satisfies the collection's declared filter, else null:
+	 * a row the list would never show is not shown by id either.
+	 *
+	 * @param array<string, mixed>|null $row The fetched row.
+	 * @param array<string, mixed> $filter The declared filter.
+	 * @param string $scopeField The collection's scope field.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T2
+	 */
+	private function withinFilter(?array $row, array $filter, string $scopeField): ?array {
+		if ($row === null || $this->filteredRows->matchesFilter(row: $row, filter: $filter, scopeField: $scopeField) === false) {
+			return null;
+		}
+
+		return $row;
+	}//end withinFilter()
+
+
+	/**
+	 * Read one row as the signed-in Nextcloud user, with OpenRegister's own
+	 * authorization ON: the schema's `authorization.read` rule is judged
+	 * against the user's groups. Every other read here runs for a portal
+	 * subject, who is no Nextcloud user, and so runs with RBAC off. A staff
+	 * surface whose caller IS a Nextcloud user reads through this instead
+	 * (portaliq#799), so a schema an organisation narrowed stays narrowed on
+	 * portaliq's own routes too.
+	 *
+	 * No subject scope and no projection apply: the caller gates who may read
+	 * the row before or after, as its own permission check. A refusal, an
+	 * OpenRegister error and a missing row are the same null.
+	 *
+	 * @param string $register The OpenRegister register slug/id.
+	 * @param string $schema The schema slug.
+	 * @param string $id The object id/uuid.
+	 *
+	 * @return array<string, mixed>|null The row, or null.
+	 *
+	 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md
+	 */
+	public function readObjectAsUser(string $register, string $schema, string $id): ?array {
+		if ($id === '') {
+			return null;
+		}
+
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		return $this->fetchById(objectService: $objectService, register: $register, schema: $schema, id: $id, rbac: true);
+	}//end readObjectAsUser()
+
+	/**
 	 * Fetch a single OpenRegister row by id/uuid (best-effort query-side
 	 * filter — the per-row ownership check in readObject is the boundary). The
 	 * id is matched in-memory against the row's identifier candidates so it
@@ -408,21 +472,28 @@ class PortalObjectReader {
 	 * @param string $register The register slug/id.
 	 * @param string $schema The schema slug.
 	 * @param string $id The client-supplied id/uuid.
+	 * @param bool $rbac Whether OpenRegister judges the read against the
+	 *                   signed-in user's rights (readObjectAsUser only).
 	 *
 	 * @return array<string, mixed>|null The normalised row, or null.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- handed to OpenRegister's
+	 * own `_rbac` flag unchanged; readObject() and readObjectAsUser() are the
+	 * named entry points.
 	 */
-	private function fetchById(object $objectService, string $register, string $schema, string $id): ?array {
+	private function fetchById(object $objectService, string $register, string $schema, string $id, bool $rbac = false): ?array {
 		// OR only honours DATA-property filters, so findAll(filters:['id'=>…])
 		// does NOT select by identifier — fetch by id directly with find().
-		// RBAC/tenant off; the caller re-verifies ownership via verifyScope.
+		// Tenant off. RBAC off for a portal subject, whose ownership the caller
+		// re-verifies via verifyScope; on for a staff read (readObjectAsUser).
 		try {
 			$entity = $objectService->find(
 				id: $id,
 				register: $register,
 				schema: $schema,
-				_rbac: false,
+				_rbac: $rbac,
 				_multitenancy: false
 			);
 		} catch (Throwable $e) {
@@ -515,7 +586,7 @@ class PortalObjectReader {
 	 *
 	 * @return string|null The scope value, or null when a declared claim is absent.
 	 *
-	 * @spec openspec/changes/portal-status-transitions/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-29-portal-status-transitions/tasks.md#T2
 	 */
 	public function resolveScopeValue(string $scopeClaim, string $contributingApp, array $subject): ?string {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
@@ -699,11 +770,16 @@ class PortalObjectReader {
 	 * @param string $scopeValue The subject's scoping value.
 	 * @param string $organisation The subject's tenant (may be empty).
 	 * @param int $limit Maximum target rows to return.
+	 * @param array<string, mixed> $filter The collection's declared narrowing filter.
 	 *
 	 * @return array<int, array<string, mixed>> The verified target rows.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
 	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters map
+	 * 1:1 onto the declarative collection fields, identical to readCollection.
 	 */
 	private function readViaCollection(
 		object $objectService,
@@ -714,6 +790,7 @@ class PortalObjectReader {
 		string $scopeValue,
 		string $organisation,
 		int $limit,
+		array $filter=[],
 	): array {
 		if ($this->isValidVia(via: $via) === false) {
 			$this->logger->warning('Portaliq: invalid via declaration — failing closed to zero rows', ['register' => $register, 'schema' => $schema]);
@@ -732,24 +809,34 @@ class PortalObjectReader {
 			return [];
 		}
 
+		// The via is validated, so `match` is absent, 'id', or 'scopeField'.
+		$match = (string)($via['match'] ?? 'id');
+
 		try {
 			$objectService->setRegister(register: $register);
 			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];
 		}
 
-		if (is_array($rows) === false) {
+		$rows = $this->filteredRows->outerRows(
+			objectService: $objectService,
+			schema: $schema,
+			scopeField: $scopeField,
+			targets: $targets,
+			match: $match,
+			limit: $limit,
+			filter: $filter
+		);
+		if ($rows === null) {
 			return [];
 		}
 
-		// The via is validated, so `match` is absent, 'id', or 'scopeField'.
-		$match = (string)($via['match'] ?? 'id');
-
 		return $this->filterTargetRows(rows: $rows, targets: $targets, organisation: $organisation, match: $match, scopeField: $scopeField);
 	}//end readViaCollection()
+
+
 
 	/**
 	 * Run the join pre-pass and collect the verified target references: query
@@ -763,6 +850,8 @@ class PortalObjectReader {
 	 * @param string $organisation The subject's tenant (may be empty).
 	 *
 	 * @return array<string, true> Verified target ids as a lookup set.
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
 	 */
 	private function verifiedJoinTargets(object $objectService, array $via, string $scopeValue, string $organisation): array {
 		$joinScopeField = (string)$via['scopeField'];
@@ -792,6 +881,8 @@ class PortalObjectReader {
 		}
 
 		$targets = [];
+		$liveRows = new ViaJoinRowFilter();
+		$now = new DateTimeImmutable();
 		foreach ($joinRows as $joinRow) {
 			$row = $this->normalise(row: $joinRow);
 			if ($row === null) {
@@ -803,6 +894,12 @@ class PortalObjectReader {
 			}
 
 			if ($this->organisationMatches(row: $row, organisation: $organisation) === false) {
+				continue;
+			}
+
+			// A withdrawn, terminated, revoked or expired join row grants
+			// nothing (site-mijn-omgeving-components REQ-SMO-023).
+			if ($liveRows->grants(row: $row, via: $via, now: $now) === false) {
 				continue;
 			}
 
@@ -936,6 +1033,7 @@ class PortalObjectReader {
 	 * @return bool
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
 	 */
 	private function isValidVia(mixed $via): bool {
 		if (is_array($via) === false) {
@@ -958,7 +1056,8 @@ class PortalObjectReader {
 			return false;
 		}
 
-		return true;
+		// The live-row members (REQ-SMO-023): malformed fails the whole via.
+		return (new ViaJoinRowFilter())->isValid(via: $via);
 	}//end isValidVia()
 
 	/**
@@ -1037,8 +1136,12 @@ class PortalObjectReader {
 	}//end rowIds()
 
 	/**
-	 * The per-row tenant check shared by every portal read path: enforced only
-	 * when both the subject and the row carry an organisation.
+	 * The per-row tenant check for a read that is ALSO scoped to the subject:
+	 * enforced only when both the subject and the row carry an organisation.
+	 * A schema without an organisation (e.g. procest supplierTender) is scoped
+	 * by the subject reference alone, which is globally unique, so its rows
+	 * pass here after the subject check already held them to the subject.
+	 * A read WITHOUT a subject scope must use tenantMatches() instead.
 	 *
 	 * @param array<string, mixed> $row The normalised row.
 	 * @param string $organisation The expected tenant (empty = skip).
@@ -1051,9 +1154,33 @@ class PortalObjectReader {
 	}//end organisationMatches()
 
 	/**
+	 * The per-row tenant check for a read WITHOUT a subject scope that names a
+	 * tenant, such as the polls for an audience and organisation. The tenant
+	 * is its only boundary, so it fails closed: a row without an organisation
+	 * belongs to no tenant and is dropped, instead of passing for every one
+	 * (portaliq#801, operate-portals-per-organisation D2). A read that names
+	 * no tenant is a system lookup by id or secret and is left as it was.
+	 *
+	 * @param array<string, mixed> $row The normalised row.
+	 * @param string $organisation The tenant the read names (empty = none named).
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md
+	 */
+	private function tenantMatches(array $row, string $organisation): bool {
+		if ($organisation === '') {
+			return true;
+		}
+
+		return (string)($row['organisation'] ?? '') === $organisation;
+	}//end tenantMatches()
+
+	/**
 	 * Re-check every row against the subject ref (and organisation, when known).
-	 * Any row that does not carry the exact subject ref — or belongs to a
-	 * different tenant — is dropped, so a mis-scoped OR result never leaks.
+	 * Any row whose scope field is not the exact subject ref, or a list that
+	 * contains it, is dropped, and so is a row from a different tenant, so a
+	 * mis-scoped OR result never leaks.
 	 *
 	 * @param array<int, mixed> $rows The raw rows from OpenRegister.
 	 * @param string $scopeField The scope field to check.
@@ -1061,6 +1188,8 @@ class PortalObjectReader {
 	 * @param string $organisation The expected tenant (empty = skip).
 	 *
 	 * @return array<int, array<string, mixed>> The verified rows.
+	 *
+	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
 	 */
 	private function verifyScope(array $rows, string $scopeField, string $subjectRef, string $organisation = ''): array {
 		$verified = [];
@@ -1070,14 +1199,23 @@ class PortalObjectReader {
 				continue;
 			}
 
-			if ($scopeField !== '' && (string)($normalised[$scopeField] ?? '') !== $subjectRef) {
+			// One rule for single values and lists (portal-scope-list-membership):
+			// an equal value, or a list that contains it. Every other shape and
+			// an empty scoping value drop the row.
+			if ($scopeField !== '' && $this->scopeMatches(stored: ($normalised[$scopeField] ?? null), scopeValue: $subjectRef) === false) {
 				continue;
 			}
 
-			// Only enforce tenant isolation when the row actually carries an
-			// organisation; schemas without one (e.g. procest supplierTender) are
-			// scoped by the subject reference alone, which is globally unique.
-			if ($this->organisationMatches(row: $normalised, organisation: $organisation) === false) {
+			// With a subject scope, tenant isolation applies only when the row
+			// carries an organisation; schemas without one are scoped by the
+			// subject reference alone, which is globally unique. Without a
+			// subject scope the tenant is the only boundary, and it fails closed.
+			$tenantHolds = $this->organisationMatches(row: $normalised, organisation: $organisation);
+			if ($scopeField === '') {
+				$tenantHolds = $this->tenantMatches(row: $normalised, organisation: $organisation);
+			}
+
+			if ($tenantHolds === false) {
 				continue;
 			}
 

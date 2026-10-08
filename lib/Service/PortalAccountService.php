@@ -32,6 +32,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Service\Identity\WaitingAccountJoin;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -68,6 +69,11 @@ class PortalAccountService {
 	public const STATUS_VOID = 'void';
 
 	/**
+	 * The `provisionedBy` of an account a stranger created through self-registration.
+	 */
+	public const SELF_REGISTRATION = 'self-registration';
+
+	/**
 	 * The lazily built read half, see lookup().
 	 *
 	 * @var PortalAccountLookup|null
@@ -98,6 +104,14 @@ class PortalAccountService {
 	 * uses `$subjectRefOverride` (a validated-claim value) when supplied, or
 	 * mints a fresh cryptographically random one otherwise.
 	 *
+	 * The same holds for the audience: an existing account's OWN stored
+	 * audience wins over the `$audience` the sign-in route proposes (a
+	 * provider preset or an organisation's claim map). An app that invited
+	 * the person as, say, an `employer` wrote that audience on the account;
+	 * the eHerkenning preset's `supplier` must not replace it, or the
+	 * session would name an audience no account and no provider answers to.
+	 * Only a NEW account takes the proposed audience.
+	 *
 	 * @param string $identityType One of the register's identityType enum.
 	 * @param string $identityRef The IdP's pseudonymous identity reference.
 	 * @param string $organisation The tenant slug.
@@ -108,13 +122,15 @@ class PortalAccountService {
 	 *                              verified, used only to claim a pending
 	 *                              account (empty = no second pass).
 	 *
-	 * @return array{subjectRef: string, isNew: bool}|null Null when OpenRegister
+	 * @return array{subjectRef: string, isNew: bool, audience: string}|null Null when OpenRegister
 	 *                                                     is unavailable or the
 	 *                                                     write failed (fail closed
 	 *                                                     — the caller mints no session).
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
+	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
 	 */
 	public function findOrCreate(
 		string $identityType,
@@ -128,20 +144,18 @@ class PortalAccountService {
 			return null;
 		}
 
-		$existing = $this->lookup()->byIdentity(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
-		if ($existing === null && $verifiedEmail !== '') {
-			// REQ-PIS-002 second pass, and only a second pass: an account
-			// provisioned on an identity reference is matched on that
-			// reference or not at all, so a broker that volunteers somebody
-			// else's address can never reach it. Only an email-only pending
-			// account, whose address was verified out of band, is claimable
-			// this way.
-			$existing = $this->lookup()->pendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
-		}
-
+		$existing = $this->existingFor(
+			identityType: $identityType,
+			identityRef: $identityRef,
+			organisation: $organisation,
+			verifiedEmail: $verifiedEmail
+		);
 		if ($existing !== null) {
 			$this->activate(existing: $existing, identityType: $identityType, identityRef: $identityRef);
-			return ['subjectRef' => (string)($existing['subjectRef'] ?? ''), 'isNew' => false];
+			// The stored audience first, the proposed one when none is stored.
+			$audiences = array_filter([trim((string)($existing['audience'] ?? '')), $audience], static fn (string $value): bool => $value !== '');
+
+			return ['subjectRef' => (string)($existing['subjectRef'] ?? ''), 'isNew' => false, 'audience' => (string)reset($audiences)];
 		}
 
 		$subjectRef = ($subjectRefOverride ?? $this->mintSubjectRef());
@@ -169,7 +183,7 @@ class PortalAccountService {
 			return null;
 		}
 
-		return ['subjectRef' => $subjectRef, 'isNew' => true];
+		return ['subjectRef' => $subjectRef, 'isNew' => true, 'audience' => $audience];
 	}//end findOrCreate()
 
 	/**
@@ -232,7 +246,7 @@ class PortalAccountService {
 		string $provisionedBy = '',
 		string $displayName = '',
 	): ?array {
-		if ($audience === '' || $organisation === '') {
+		if (in_array('', [$audience, $organisation], true) === true) {
 			return null;
 		}
 
@@ -260,16 +274,23 @@ class PortalAccountService {
 			return null;
 		}
 
+		// An address-only account (a self-registration, an invitation) has no
+		// identity yet, and `identityType` is an enum: an empty string is no
+		// member of it, so the register would refuse the row. The two fields
+		// are left out until the sign-in that matches the account fills them.
+		$identity = [];
+		if ($hasIdentity === true) {
+			$identity = ['identityType' => $identityType, 'identityRef' => $identityRef];
+		}
+
 		$created = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
 			organisation: $organisation,
-			data: [
+			data: $identity + [
 				'audience' => $audience,
-				'identityType' => $identityType,
-				'identityRef' => $identityRef,
 				'subjectRef' => $subjectRef,
 				'organisation' => $organisation,
 				'displayName' => $displayName,
@@ -383,6 +404,45 @@ class PortalAccountService {
 
 
 	/**
+	 * Approve a self-registration that waits for a decision (REQ-ISA-004).
+	 *
+	 * Only a pending account the registrant created is approved here: a
+	 * pending account a clerk provisioned becomes active on its owner's first
+	 * sign-in, not by a second clerk's click. `verifiedEmail` stays as the
+	 * registrant left it.
+	 *
+	 * @param string $subjectRef The account.
+	 *
+	 * @return bool True when the account is now active.
+	 *
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
+	 */
+	public function approvePending(string $subjectRef): bool {
+		$account = $this->findBySubjectRef(subjectRef: $subjectRef);
+		if ($account === null
+			|| ($account['status'] ?? '') !== self::STATUS_PENDING
+			|| ($account['provisionedBy'] ?? '') !== self::SELF_REGISTRATION
+		) {
+			return false;
+		}
+
+		$uuid = $this->lookup()->identifierOf(row: $account);
+		if ($uuid === null) {
+			return false;
+		}
+
+		return $this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			id: $uuid,
+			data: ['status' => self::STATUS_ACTIVE]
+		) !== null;
+	}//end approvePending()
+
+	/**
 	 * Activate the matched account and stamp the login (REQ-PIS-002).
 	 *
 	 * A pending account becomes active on the login that matched it, keeping
@@ -485,6 +545,45 @@ class PortalAccountService {
 
 		return $this->lookup()->pendingByVerifiedEmail(email: $email, organisation: $organisation);
 	}//end accountAlreadyProvisioned()
+
+	/**
+	 * The account a sign-in matches, or null for a new one.
+	 *
+	 * First on the identity reference. A person who signed in before an app
+	 * provisioned a waiting account for their verified address would never
+	 * reach that account, so its claims join the account found here
+	 * (portal-invitation-joins-the-signed-in-account). Then, and only then,
+	 * on the verified address (REQ-PIS-002 second pass): an account
+	 * provisioned on an identity reference is matched on that reference or
+	 * not at all, so a broker that volunteers somebody else's address can
+	 * never reach it. Only an email-only pending account, whose address was
+	 * verified out of band, is claimable this way.
+	 *
+	 * @param string $identityType The identity type.
+	 * @param string $identityRef The identity reference.
+	 * @param string $organisation The tenant slug.
+	 * @param string $verifiedEmail An address the broker says it verified, or ''.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-first-login-matches-the-pending-account-req-pis-002
+	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 */
+	private function existingFor(string $identityType, string $identityRef, string $organisation, string $verifiedEmail): ?array {
+		$existing = $this->lookup()->byIdentity(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
+		if ($existing === null) {
+			// An empty address finds nothing here.
+			return $this->lookup()->pendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
+		}
+
+		(new WaitingAccountJoin(lookup: $this->lookup(), writer: $this->writer))->join(
+			account: $existing,
+			verifiedEmail: $verifiedEmail,
+			organisation: $organisation
+		);
+
+		return $existing;
+	}//end existingFor()
 
 	/**
 	 * The read half of the account space.

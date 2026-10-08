@@ -36,17 +36,40 @@
  *
  * - Collections: `columns` (`[{field, label?, render?}]`, render ∈ text|date|
  *   datetime|badge|currency|boolean|link), `detail` (`{layout: card|timeline,
- *   fields?[]}`), `defaultSort` (`{field, direction: asc|desc}`), `defaultFilters`.
+ *   fields?[]}`), `defaultSort` (`{field, direction: asc|desc}`), `defaultFilters`,
+ *   `timeline` (`{label?, provider}`: `provider` names a public method on this
+ *   provider taking one object id and returning that object's history; the
+ *   portal calls it only after the subject's scoped read of the object
+ *   succeeded, and renders the entries as returned, so the provider decides
+ *   what is public. A name that is not a plain identifier, or names a
+ *   contract method, drops the key; portaliq#723), and on a `kind: inbox`
+ *   collection `messageBox` (`{recipientProvider}`: a public method on this
+ *   provider taking one message id and returning the recipient identity for
+ *   the government message box, or null to keep the message in the portal;
+ *   return null for a letter the app sends there itself. Held to the timeline
+ *   rule; portaliq passes the value to integriq and keeps it nowhere;
+ *   inbox-berichtenbox-channel), and on a case collection `documents`
+ *   (`{label?, provider}`: a public method on this provider taking one case
+ *   id and returning the documents a resident may see on it, each
+ *   `{id, title, kind: decision|document, date, file: {register, schema, id,
+ *   fileId}, mimeType?, size?}`; the file reference never leaves the server,
+ *   and a download is looked up again in the method's answer; held to the
+ *   timeline rule; cases-documents-on-the-case), and `fieldConfigs`
+ *   (per-field `{label?, valueLabels?}`: how a field the detail card shows
+ *   reads, also when it is no column; a column's own wins).
  * - Actions: `fieldConfigs` (per-whitelisted-field `{label?, visible?, required?,
  *   disabled?, size?, placeholder?, help?}` — a config for a non-whitelisted field
  *   is dropped), `optionsProviders` (per-field `{type: static, options[]}` or
  *   `{type: collection, register, schema, labelField, valueField}` — a collection
  *   dropdown is populated through the SUBJECT-SCOPED collection endpoint, so it can
  *   only offer values the subject may already read), `submitLabel`, `successMessage`.
- * - Contributions: `pages` (`[{id, label?, icon?, blocks[]}]`) composing typed
+ * - Contributions: `pages` (`[{id, label?, icon?, group?, blocks[]}]`) composing typed
  *   blocks (`collection`/`action`/`detail`/`richText`/`cta`) whose references
  *   resolve within the SAME contribution; absent → one default page per listable
- *   collection is synthesised (v2 rendering preserved).
+ *   collection is synthesised (v2 rendering preserved). A page's `group` is a
+ *   short label in the reader's language; pages of any app with the same group
+ *   share one heading in the site's resident menu, and a page without one sits
+ *   under its app's name.
  *
  * portal-page-provisioning adds one further optional, duck-typed field, on
  * BOTH collections and actions:

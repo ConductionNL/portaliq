@@ -137,6 +137,39 @@ class RevealService {
 	}//end isCustodian()
 
 	/**
+	 * Whether this user may handle this case type's reports: read one, write
+	 * on its thread and ask for a reveal. A member of the declared
+	 * `handlerGroup` may, and so may a custodian. When no handler group is
+	 * declared only the custodian group may. Being signed in, or being an
+	 * instance administrator, is not enough (intake-report-pages D5,
+	 * portaliq#799).
+	 *
+	 * @param IUser $user The user.
+	 * @param array<string, mixed> $caseType The case type carrying the declaration.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md
+	 */
+	public function mayHandle(IUser $user, array $caseType): bool {
+		if ($this->isCustodian(user: $user, caseType: $caseType) === true) {
+			return true;
+		}
+
+		$declaration = ($caseType[ReportTermsService::DECLARATION] ?? null);
+		if (is_array($declaration) === false) {
+			return false;
+		}
+
+		$group = (string)($declaration['handlerGroup'] ?? '');
+		if ($group === '') {
+			return false;
+		}
+
+		return $this->groupManager->isInGroup($user->getUID(), $group);
+	}//end mayHandle()
+
+	/**
 	 * Answer a request: allow it and show what the reporter gave, or refuse it.
 	 *
 	 * @param array<string, mixed> $request The pending request.

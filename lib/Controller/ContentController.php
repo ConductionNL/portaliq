@@ -30,6 +30,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
@@ -41,6 +42,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -63,11 +65,17 @@ use Psr\Log\LoggerInterface;
  * every re-check calls it statically so the ordering can never fork. Same
  * reasoning, and the same suppression, as ContributionController.
  *
- * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- ten parameters, of which
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- eleven parameters, of which
  * `$appName` and `$request` are Nextcloud's own `Controller` contract and
- * cannot be dropped or grouped. The class injects eight collaborators of its
+ * cannot be dropped or grouped. The class injects nine collaborators of its
  * own, under the threshold; folding them into a parameter object would hide
  * the dependencies from the container rather than remove them.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- 13, one over the bound,
+ * since the site record carries the portal's running notices
+ * (operate-maintenance-notice). Each collaborator is one read the public
+ * content API answers; moving the notice read behind another collaborator
+ * would hide the coupling, not remove it.
  */
 class ContentController extends Controller {
 
@@ -85,6 +93,8 @@ class ContentController extends Controller {
 	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
 	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
+	 * @param PortalNoticeReader         $notices      The notices running on the site now.
+	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
 	 *
 	 * @return void
 	 */
@@ -99,6 +109,8 @@ class ContentController extends Controller {
 		private readonly PortalSessionService $session,
 		private readonly TrafficConfigResolver $traffic,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly PortalNoticeReader $notices,
+		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -205,6 +217,7 @@ class ContentController extends Controller {
 	 * @return JSONResponse The site, or 404.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -214,8 +227,6 @@ class ContentController extends Controller {
 		if ($portal === null) {
 			return $this->notFound();
 		}
-
-		$auth = (array)($portal['authentication'] ?? []);
 
 		return $this->publicJson(
 			payload: [
@@ -233,7 +244,13 @@ class ContentController extends Controller {
 				// The MODES are public — a visitor has to know how to sign in.
 				// Provider secrets are not here and never will be; they live in
 				// the credential broker.
-				'authentication' => ['modes' => array_values((array)($auth['modes'] ?? ['public']))],
+				// The shell: the public part of `authentication` (modes, and a
+				// declared register destination), the header's shape, the
+				// footer on named keys and the portal's regions
+				// (portal-theme-blocks-and-contributed-pages REQ-PTB-004,
+				// REQ-PTB-005, REQ-PTB-009). Provider secrets never leave the
+				// record; they live in the credential broker.
+				...$this->reader->shell(portal: $portal),
 				// The resolved measurement configuration, defaults filled in,
 				// so the client sends only what the portal asked for; and the
 				// absolute collector URL, so a statically built site on its
@@ -241,6 +258,11 @@ class ContentController extends Controller {
 				// is exactly what the client is about to act on.
 				'traffic' => $this->traffic->resolve(portal: $portal),
 				'collector' => $this->urlGenerator->linkToRouteAbsolute('portaliq.traffic.collect'),
+				// Maintenance and warning notices running now
+				// (operate-maintenance-notice). This answer is cached for up
+				// to five minutes, so each carries its end and the client
+				// drops it once that has passed.
+				'notices' => $this->notices->active(portal: (string)($portal['slug'] ?? ''), surface: 'site'),
 			]
 		);
 	}//end site()
@@ -511,13 +533,21 @@ class ContentController extends Controller {
 	 * cannot pool it across visitors — that leak would happen at the edge,
 	 * where this installation's logs would never show it.
 	 *
+	 * A signed-in Nextcloud user (an editor reading the site) gets the
+	 * anonymous body, but never a cacheable one: served `public, max-age=300`,
+	 * the editor's own tab showed the page as it was before they published,
+	 * for five minutes (found on :8080, 02 Oct 2026). Anonymous visitors stay
+	 * cacheable.
+	 *
 	 * @param array $payload The response body.
 	 *
 	 * @return JSONResponse The response.
+	 *
+	 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
 	 */
 	private function publicJson(array $payload): JSONResponse {
 		$response = new JSONResponse($payload);
-		if ($this->audience() === 'anonymous') {
+		if ($this->audience() === 'anonymous' && $this->userSession->getUser() === null) {
 			$response->addHeader('Cache-Control', 'public, max-age=300, must-revalidate');
 
 			return $response;
