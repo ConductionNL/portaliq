@@ -47,6 +47,7 @@ export const ACCOUNT_ROUTE = '/mijn'
  * @param {boolean} [enabled.access] Signed in with the contributions loaded.
  * @param {boolean} [enabled.cases] `cases.enabled` on the aggregate.
  * @param {boolean} [enabled.contacts] `contacts.enabled` on the aggregate.
+ * @param {Array<object>} [enabled.themes] The life domains with something for this resident.
  * @return {Array<object>} `{key, label, icon, page?, contribution?, special?}` entries.
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
@@ -113,6 +114,15 @@ export function buildNav(contributions, t, enabled = {}) {
 			special: 'contacts',
 		})
 	}
+	for (const theme of enabled.themes || []) {
+		nav.push({
+			key: `__theme__:${theme.slug}`,
+			label: theme.title,
+			icon: 'Tag',
+			special: `thema/${theme.slug}`,
+			theme,
+		})
+	}
 	if (enabled.access === true) {
 		nav.push({
 			key: NAV_KEYS.access,
@@ -147,7 +157,7 @@ export function buildNav(contributions, t, enabled = {}) {
  * @param {object|null} state.contributions The contributions aggregate, or null.
  * @param {Array|null} state.threads The message threads.
  * @param {Array|null} state.news The news feed.
- * @return {{tasks: boolean, messages: boolean, news: boolean, access: boolean, cases: boolean, contacts: boolean}}
+ * @return {{tasks: boolean, messages: boolean, news: boolean, access: boolean, cases: boolean, contacts: boolean, themes: Array<object>}}
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function shellSections({ session, contributions, threads, news }) {
@@ -158,6 +168,7 @@ export function shellSections({ session, contributions, threads, news }) {
 		access: Boolean(session && contributions),
 		cases: contributions?.cases?.enabled === true,
 		contacts: Boolean(session && contributions?.contacts?.enabled === true),
+		themes: Array.isArray(contributions?.themes) ? contributions.themes : [],
 	}
 }
 

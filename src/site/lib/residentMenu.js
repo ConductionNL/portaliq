@@ -250,8 +250,18 @@ export function residentMenuGroups(
 		)
 	}
 
+	// The life domains the portal groups the resident's items by (life-domain-theme-pages).
+	const themeGroup = {
+		key: 'themes',
+		title: t('Themes'),
+		items: entries
+			.filter((entry) => entry.theme)
+			.map((entry) => named(itemFor(entry, t, unread, hrefFor, recordRows), entry.key)),
+	}
+
 	const groups = [
 		sectionGroup('cases', t('Cases and tasks'), CASE_SECTIONS),
+		themeGroup,
 		...appGroups,
 		...recordGroups,
 		sectionGroup('messages', t('Messages and news'), MESSAGE_SECTIONS),

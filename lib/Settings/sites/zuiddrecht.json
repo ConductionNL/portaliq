@@ -113,7 +113,15 @@
                     }
                 ]
             }
-        }
+        },
+        "themes": [
+            {
+                "slug": "parkeren",
+                "title": "Parkeren",
+                "intro": "Uw parkeervergunningen, wat u nog moet doen en wat u kunt regelen, op één plek.",
+                "productsLabel": "parkeervergunningen"
+            }
+        ]
     },
     "menus": [
         {

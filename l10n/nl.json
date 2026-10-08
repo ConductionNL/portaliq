@@ -2678,7 +2678,16 @@
         "Your code to check your e-mail address": "Uw code om uw e-mailadres te controleren",
         "Your code is %1$s. It works for 15 minutes.": "Uw code is %1$s. De code is 15 minuten geldig.",
         "Check your e-mail address": "Controleer uw e-mailadres",
-        "Did you not ask for this code? Then you can ignore this mail.": "Heeft u deze code niet aangevraagd? Dan kunt u deze mail negeren."
+        "Did you not ask for this code? Then you can ignore this mail.": "Heeft u deze code niet aangevraagd? Dan kunt u deze mail negeren.",
+        "Products label": "Naam van de producten",
+        "The life domains this portal groups a resident's items by, such as parking or income. Each has a slug, a title, an intro and the word for the products held in it.": "De levensgebieden waarop dit portaal de zaken van een inwoner groepeert, zoals parkeren of inkomen. Elk heeft een slug, een titel, een inleiding en het woord voor de producten die erbij horen.",
+        "The name of the theme in the resident menu and as the heading of its page.": "De naam van het thema in het menu van de inwoner en als kop van de themapagina.",
+        "The sentence under the heading of the theme page.": "De zin onder de kop van de themapagina.",
+        "The slug a contribution tags its collections and actions with. Lower case letters, digits and hyphens.": "De slug waarmee een bijdrage haar collecties en acties markeert. Kleine letters, cijfers en streepjes.",
+        "Theme intro": "Inleiding van het thema",
+        "Theme slug": "Slug van het thema",
+        "Theme title": "Titel van het thema",
+        "What the products held in this theme are called, for example parkeervergunningen.": "Hoe de producten in dit thema heten, bijvoorbeeld parkeervergunningen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -153,6 +153,8 @@ class ActionConfigNormaliser {
 			// (site-multi-step-forms REQ-SMF-020, -021, -022).
 			$action = $this->form->flow(action: $action, whitelist: $whitelist);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
+			// The life domain an action belongs to, and when it is offered (life-domain-theme-pages).
+			$action = (new ThemeTagKeys())->action(action: $action);
 			// The citizen write declaration (what-the-citizen-may-write-on-their-
 			// own-case). An absent normaliser drops the key, which closes the
 			// surface rather than opening it.

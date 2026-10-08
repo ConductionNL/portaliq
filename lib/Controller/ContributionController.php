@@ -53,6 +53,7 @@ use OCA\Portaliq\Contribution\CreateActionMatcher;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
@@ -357,12 +358,37 @@ class ContributionController extends Controller implements PortalProtected {
 		// Announce "My cases" (cases-my-cases-page REQ-CMC-001) and whether
 		// any case collection can tell a closed case from an open one.
 		$aggregate['cases'] = (new CaseRowMarker())->announce(aggregate: $aggregate);
+		$aggregate = $this->withThemes(aggregate: $aggregate);
 		// The contacts page, when the serving portal switched it on
 		// (own-contacts-and-invitations).
 		$aggregate['contacts'] = ['enabled' => $this->contactsEnabled()];
 
 		return new JSONResponse($aggregate);
 	}//end index()
+
+	/**
+	 * The portal's life domains with something for this resident
+	 * (life-domain-theme-pages): tags the portal does not declare are dropped.
+	 *
+	 * @param array<string, mixed> $aggregate The subject's aggregate.
+	 *
+	 * @return array<string, mixed> The aggregate with `themes`.
+	 *
+	 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t02
+	 */
+	private function withThemes(array $aggregate): array {
+		$declared = [];
+		if ($this->portals !== null) {
+			$slug = $this->request->getParam('portal');
+			if (is_string($slug) === false) {
+				$slug = null;
+			}
+
+			$declared = ($this->portals->resolve(request: $this->request, portalSlug: $slug)['themes'] ?? []);
+		}
+
+		return (new ThemeChoice())->arrange(aggregate: $aggregate, themes: $declared);
+	}//end withThemes()
 
 	/**
 	 * Whether the serving portal offers its residents the contacts page.

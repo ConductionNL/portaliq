@@ -1,12 +1,12 @@
 # Tasks: life-domain-theme-pages
 
-- [ ] **T01**: `lib/Settings/portaliq_register.json`: `portal.themes` (list of `{slug, title, intro, productsLabel}`), portal 0.13.0; import and grep for `PARTIAL IMPORT` (REQ-LDT-001)
-- [ ] **T02**: Contribution normaliser keeps `theme` on collections and actions when the portal declares it, and `kind: products` with `validUntilField` and `metaFields`; PHPUnit keep and drop (REQ-LDT-001)
-- [ ] **T03**: `src/site/pages/e/ThemePage.vue` per the ThemaOverzicht board: tasks, actions and products blocks; empty text; route `/mijn/thema/{slug}` (REQ-LDT-001)
-- [ ] **T04**: Resident menu group "Thema's" listing themes with content (`src/site/components/SiteMenu.vue`) (REQ-LDT-001)
-- [ ] **T05**: Products block per the ThemaOverzicht board: count line, title, computed tag (Geldig, Verlopen, Gaat in op), meta line, "Geldig tot en met", at most three rows, row update actions through the existing action form; normaliser keeps `titleField`, `validFromField`, `validUntilField`, `metaFields`, `countLabel` on a `kind: products` collection; PHPUnit keep and drop; node test for the tag (REQ-LDT-003, REQ-LDT-004). Decided by decision 105 (8 Oct).
-- [ ] **T05b**: `/mijn/thema/{slug}/producten`, the full list per theme, expired last (REQ-LDT-004)
-- [ ] **T06**: `when` conditions on theme actions evaluated against the resident's products (REQ-LDT-002)
-- [ ] **T07**: node test `tests/life-domain-themes.spec.mjs` for gathering, empty themes, `when` and the update
-- [ ] **T08**: Zuiddrecht example site declares Parkeren; ask dossiq in its tracker to tag its permit collection and actions
+- [x] **T01**: `lib/Settings/portaliq_register.json`: `portal.themes` (list of `{slug, title, intro, productsLabel}`), portal 0.13.0; import and grep for `PARTIAL IMPORT` (REQ-LDT-001) — portal 0.20.0 (0.13.0 was taken); import not run: needs a live instance
+- [x] **T02**: Contribution normaliser keeps `theme` on collections and actions when the portal declares it, and `kind: products` with `validUntilField` and `metaFields`; PHPUnit keep and drop (REQ-LDT-001) — a slug check on the collection and the action, the product keys on `kind: products`, and the portal-level drop of an undeclared tag in `ThemeChoice` (the normaliser does not know the portal)
+- [x] **T03**: `src/site/pages/e/ThemePage.vue` per the ThemaOverzicht board: tasks, actions and products blocks; empty text; route `/mijn/thema/{slug}` (REQ-LDT-001) — the heading is the shell's; the page is lazy and registered as the `theme` page. "Bekijk alle taken" opens Mijn taken unfiltered. Board comparison is T09
+- [x] **T04**: Resident menu group "Thema's" listing themes with content (`src/site/components/SiteMenu.vue`) (REQ-LDT-001) — the group "Thema's" is built in `src/site/lib/residentMenu.js`, not `SiteMenu.vue`; the server announces only themes with a tagged collection or action for the resident (it does not read the rows)
+- [x] **T05**: Products block per the ThemaOverzicht board: count line, title, computed tag (Geldig, Verlopen, Gaat in op), meta line, "Geldig tot en met", at most three rows, row update actions through the existing action form; normaliser keeps `titleField`, `validFromField`, `validUntilField`, `metaFields`, `countLabel` on a `kind: products` collection; PHPUnit keep and drop; node test for the tag (REQ-LDT-003, REQ-LDT-004). Decided by decision 105 (8 Oct). — the update form is the action's own fields with the row's values, written with `updateObject`
+- [ ] **T05b**: `/mijn/thema/{slug}/producten`, the full list per theme, expired last (REQ-LDT-004) — open: the full list is a toggle inside the theme page, not its own route
+- [x] **T06**: `when` conditions on theme actions evaluated against the resident's products (REQ-LDT-002) — `when` is `{field, op: eq|neq|in, value}` on an action, evaluated against the rows of the collection with the same register and schema
+- [x] **T07**: node test `tests/life-domain-themes.spec.mjs` for gathering, empty themes, `when` and the update
+- [ ] **T08**: Zuiddrecht example site declares Parkeren; ask dossiq in its tracker to tag its permit collection and actions — open: the Zuiddrecht site declares Parkeren; asking dossiq to tag its permit collection is not possible from this repository
 - [ ] **T09**: Live check against the ThemaOverzicht board; screenshots in the build PR

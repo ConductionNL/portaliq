@@ -2615,7 +2615,16 @@
         "Your code to check your e-mail address": "Your code to check your e-mail address",
         "Your code is %1$s. It works for 15 minutes.": "Your code is %1$s. It works for 15 minutes.",
         "Check your e-mail address": "Check your e-mail address",
-        "Did you not ask for this code? Then you can ignore this mail.": "Did you not ask for this code? Then you can ignore this mail."
+        "Did you not ask for this code? Then you can ignore this mail.": "Did you not ask for this code? Then you can ignore this mail.",
+        "Products label": "Products label",
+        "The life domains this portal groups a resident's items by, such as parking or income. Each has a slug, a title, an intro and the word for the products held in it.": "The life domains this portal groups a resident's items by, such as parking or income. Each has a slug, a title, an intro and the word for the products held in it.",
+        "The name of the theme in the resident menu and as the heading of its page.": "The name of the theme in the resident menu and as the heading of its page.",
+        "The sentence under the heading of the theme page.": "The sentence under the heading of the theme page.",
+        "The slug a contribution tags its collections and actions with. Lower case letters, digits and hyphens.": "The slug a contribution tags its collections and actions with. Lower case letters, digits and hyphens.",
+        "Theme intro": "Theme intro",
+        "Theme slug": "Theme slug",
+        "Theme title": "Theme title",
+        "What the products held in this theme are called, for example parkeervergunningen.": "What the products held in this theme are called, for example parkeervergunningen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

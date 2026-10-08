@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.86.0"
+        "version": "0.87.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.86.0",
+                "version": "0.87.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2554,7 +2554,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.19.0",
+                "version": "0.20.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -4360,6 +4360,36 @@
                                 "description": "Page routes the assistant does not read or link to.",
                                 "items": {
                                     "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "themes": {
+                        "title": "Themes",
+                        "type": "array",
+                        "description": "The life domains this portal groups a resident's items by, such as parking or income. Each has a slug, a title, an intro and the word for the products held in it.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "slug": {
+                                    "title": "Theme slug",
+                                    "type": "string",
+                                    "description": "The slug a contribution tags its collections and actions with. Lower case letters, digits and hyphens."
+                                },
+                                "title": {
+                                    "title": "Theme title",
+                                    "type": "string",
+                                    "description": "The name of the theme in the resident menu and as the heading of its page."
+                                },
+                                "intro": {
+                                    "title": "Theme intro",
+                                    "type": "string",
+                                    "description": "The sentence under the heading of the theme page."
+                                },
+                                "productsLabel": {
+                                    "title": "Products label",
+                                    "type": "string",
+                                    "description": "What the products held in this theme are called, for example parkeervergunningen."
                                 }
                             }
                         }

@@ -94,6 +94,8 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseDefaults(collection: $collection);
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
+			// The life domain a collection belongs to, and a product's validity (life-domain-theme-pages).
+			$collection = (new ThemeTagKeys())->collection(collection: $collection);
 			// Steps, answer date and whose turn, on a cases collection only
 			// (site-mijn-omgeving-components REQ-SMO-022).
 			$collection = (new StepsProviderMethod())->normalise(collection: $collection);

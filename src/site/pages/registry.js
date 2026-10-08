@@ -69,6 +69,7 @@ const BUILT_IN = {
 	details: accountPages.__details__,
 	account: accountPages.__account__,
 	contacts: accountPages.__contacts__,
+	theme: accountPages.__theme__,
 	// Slice d: inbox, my tasks, messages and news.
 	inbox: inboxPages.inbox,
 	tasks: inboxPages.tasks,
@@ -135,7 +136,7 @@ export function sitePageKeys(entry) {
 	if (!entry) {
 		return []
 	}
-	return [entry.key, entry.special || CONTRIBUTION_PAGE].filter(Boolean)
+	return [entry.key, entry.theme ? 'theme' : '', entry.special || CONTRIBUTION_PAGE].filter(Boolean)
 }
 
 /**
