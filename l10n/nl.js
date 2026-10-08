@@ -2582,7 +2582,17 @@ OC.L10N.register(
         "The routes of the product pages the finder chooses from.": "De routes van de productpagina's waaruit de productzoeker kiest.",
         "The topic the entry is grouped under on the list of all questions.": "Het onderwerp waaronder de vraag op de lijst met alle vragen staat.",
         "Topic": "Onderwerp",
-        "Where the entry stands among the others; lower comes first.": "Waar de vraag tussen de andere staat; lager komt eerst."
+        "Where the entry stands among the others; lower comes first.": "Waar de vraag tussen de andere staat; lager komt eerst.",
+        "Draft widgets": "Concept-widgets",
+        "Only a published block is shown on a page.": "Alleen een gepubliceerd blok wordt op een pagina getoond.",
+        "Shared block": "Gedeeld blok",
+        "The name editors pick the block by.": "De naam waarmee redacteuren het blok kiezen.",
+        "The organisation that owns the block. Only portals of this organisation show it.": "De organisatie die het blok beheert. Alleen portalen van deze organisatie tonen het.",
+        "The published widgets, on the same 12-column grid as a page.": "De gepubliceerde widgets, op hetzelfde raster van 12 kolommen als een pagina.",
+        "The unpublished work on the widgets; publishing copies it into the widgets.": "Het onafgeronde werk aan de widgets; publiceren kopieert het naar de widgets.",
+        "What the block is for, for the editors who place it.": "Waar het blok voor dient, voor de redacteuren die het plaatsen.",
+        "Choose a shared block": "Kies een gedeeld blok",
+        "Shared blocks": "Gedeelde blokken"
     },
     "nplurals=2; plural=(n != 1);"
 )

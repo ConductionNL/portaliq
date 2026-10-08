@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.83.0"
+        "version": "0.84.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.83.0",
+                "version": "0.84.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -78,7 +78,8 @@
                     "portalMailTemplate",
                     "portalMailLog",
                     "portalFaq",
-                    "portalFinder"
+                    "portalFinder",
+                    "sharedBlock"
                 ]
             }
         },
@@ -8309,6 +8310,124 @@
                         ],
                         "default": "draft",
                         "example": "published"
+                    }
+                }
+            },
+            "sharedBlock": {
+                "slug": "sharedBlock",
+                "icon": "ViewDashboardOutline",
+                "version": "0.1.0",
+                "title": "Shared block",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "description": "A named block of widgets that belongs to one organisation and to no portal. A page places it by its id and the content API expands the placement when the page is read, so one edit shows on every portal of the organisation that places it. A block never renders on a portal of another organisation.",
+                "type": "object",
+                "required": [
+                    "title",
+                    "organisation"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "The name editors pick the block by.",
+                        "example": "Contact and opening hours"
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "description": "What the block is for, for the editors who place it.",
+                        "example": "Address and opening hours of the town hall."
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The organisation that owns the block. Only portals of this organisation show it.",
+                        "example": "gemeente-voorbeeld"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Only a published block is shown on a page.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "default": "draft",
+                        "example": "published"
+                    },
+                    "widgets": {
+                        "title": "Widgets",
+                        "type": "array",
+                        "description": "The published widgets, on the same 12-column grid as a page.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "widgetKey": {
+                                    "type": "string"
+                                },
+                                "slot": {
+                                    "type": "string"
+                                },
+                                "gridX": {
+                                    "type": "integer"
+                                },
+                                "gridY": {
+                                    "type": "integer"
+                                },
+                                "gridWidth": {
+                                    "type": "integer"
+                                },
+                                "gridHeight": {
+                                    "type": "integer"
+                                },
+                                "props": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "draftWidgets": {
+                        "title": "Draft widgets",
+                        "type": "array",
+                        "description": "The unpublished work on the widgets; publishing copies it into the widgets.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "widgetKey": {
+                                    "type": "string"
+                                },
+                                "slot": {
+                                    "type": "string"
+                                },
+                                "gridX": {
+                                    "type": "integer"
+                                },
+                                "gridY": {
+                                    "type": "integer"
+                                },
+                                "gridWidth": {
+                                    "type": "integer"
+                                },
+                                "gridHeight": {
+                                    "type": "integer"
+                                },
+                                "props": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "example": []
                     }
                 }
             },

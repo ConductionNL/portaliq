@@ -162,7 +162,13 @@ class ContactConfirmationMailer {
 
 		$slug = trim((string)($portal['slug'] ?? ''));
 		if ($this->renderer !== null) {
-			$text    = $this->renderer->render(portal: $slug, key: 'contact-confirmation', values: ['portal' => $name, 'topic' => $topic], subject: $subject, body: $body);
+			$text    = $this->renderer->render(
+				portal: $slug,
+				key: 'contact-confirmation',
+				values: ['portal' => $name, 'topic' => $topic],
+				subject: $subject,
+				body: $body
+			);
 			$subject = $text['subject'];
 			$body    = $text['body'];
 		}

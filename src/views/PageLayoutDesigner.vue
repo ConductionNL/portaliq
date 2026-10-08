@@ -98,12 +98,14 @@
 					{{ t('portaliq', 'Publish') }}
 				</NcButton>
 				<NcButton
+					v-if="!isBlock"
 					data-testid="designer-media"
 					:disabled="state.loading"
 					@click="mediaOpen = true">
 					{{ t('portaliq', 'Media') }}
 				</NcButton>
 				<NcButton
+					v-if="!isBlock"
 					data-testid="designer-history"
 					:disabled="state.loading"
 					@click="historyOpen = true">
@@ -158,7 +160,11 @@
 			<NcLoadingIcon :size="32" />
 		</div>
 
-		<PageGridEditor v-else v-model:paletteOpen="paletteOpen" :editor="editor" />
+		<PageGridEditor
+			v-else
+			v-model:paletteOpen="paletteOpen"
+			:editor="editor"
+			:loadBlocks="loadBlocks" />
 
 		<MediaPickerDialog
 			v-model:open="mediaOpen"
@@ -180,7 +186,7 @@ import { reactive } from 'vue'
 import MediaPickerDialog from '../dialogs/MediaPickerDialog.vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
 import PageGridEditor from '../editor/PageGridEditor.vue'
-import { createPageEditor, createPageSaver } from '../editor/index.js'
+import { blockToPage, createPageEditor, createPageSaver, pageToBlock } from '../editor/index.js'
 import { withMedia } from '../lib/mediaLibrary.js'
 import { pageSiteUrl } from '../lib/pageSiteUrl.js'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
@@ -216,6 +222,16 @@ export default {
 		 */
 		pageId() {
 			return String(this.$route?.params?.id || '')
+		},
+
+		/**
+		 * Whether this is a shared block (site-shared-page-blocks) rather than a page.
+		 *
+		 * @return {boolean} True on the shared block layout route.
+		 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t05
+		 */
+		isBlock() {
+			return this.$route?.name === 'SharedBlockLayout'
 		},
 
 		/**
@@ -263,15 +279,44 @@ export default {
 		 */
 		makeEditor() {
 			const pageId = String(this.$route?.params?.id || '')
+			const isBlock = this.$route?.name === 'SharedBlockLayout'
+			const schema = isBlock ? 'sharedBlock' : 'page'
 			const saver = createPageSaver({
-				get: (url) => axios.get(url),
-				put: (url, payload, config) => axios.put(url, payload, config),
+				// A shared block is edited as a page: translate at the edge.
+				get: isBlock
+					? async (url) => {
+						const response = await axios.get(url)
+						return { ...response, data: blockToPage(response.data) }
+					}
+					: (url) => axios.get(url),
+				put: isBlock
+					? (url, payload, config) => axios.put(url, pageToBlock(payload), config)
+					: (url, payload, config) => axios.put(url, payload, config),
 				url: (id) =>
 					generateUrl(
-						`/apps/openregister/api/objects/portaliq/page/${encodeURIComponent(id)}`,
+						`/apps/openregister/api/objects/portaliq/${schema}/${encodeURIComponent(id)}`,
 					),
 			})
 			return createPageEditor({ saver, pageId, t, reactive, defaultSizeFor })
+		},
+
+		/**
+		 * The published shared blocks an author can place.
+		 *
+		 * @return {Promise<Array<{id: string, title: string}>>} The blocks.
+		 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t05
+		 */
+		async loadBlocks() {
+			const { data } = await axios.get(
+				generateUrl('/apps/openregister/api/objects/portaliq/sharedBlock'),
+				{ params: { status: 'published', _limit: 100 } },
+			)
+			return (data?.results || [])
+				.map((row) => ({
+					id: String(row['@self']?.id || row.id || ''),
+					title: String(row.title || ''),
+				}))
+				.filter((block) => block.id !== '')
 		},
 
 		/**

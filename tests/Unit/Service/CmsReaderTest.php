@@ -326,6 +326,97 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
+	 * A block of the serving organisation expands into the placement; the placement keeps its cell.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	public function testSharedBlockExpandsForTheSameOrganisation(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-voorbeeld'));
+
+		$page = $this->reader->page('inwoners', '/', 'nl', 'anonymous', 'gemeente-voorbeeld');
+		$placement = $page['body']['widgets'][0];
+
+		$this->assertSame('sharedBlock', $placement['widgetKey']);
+		$this->assertSame(['gridX' => 0, 'gridY' => 0, 'gridWidth' => 6, 'gridHeight' => 2], [
+			'gridX' => $placement['gridX'], 'gridY' => $placement['gridY'], 'gridWidth' => $placement['gridWidth'], 'gridHeight' => $placement['gridHeight'],
+		]);
+		$this->assertFalse($placement['props']['unavailable']);
+		$this->assertCount(1, $placement['props']['widgets'], 'the nested placement inside the block is dropped');
+		$this->assertSame('Open van negen tot vijf', $placement['props']['widgets'][0]['props']['markdown']);
+	}//end testSharedBlockExpandsForTheSameOrganisation()
+
+
+	/**
+	 * Another organisation's block expands to nothing, exactly as a block that is not there.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	public function testForeignBlockExpandsToNothing(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-voorbeeld'));
+		$foreign = $this->reader->page('noord', '/', 'nl', 'anonymous', 'gemeente-noord')['body']['widgets'][0]['props'];
+
+		$this->withRows(array_slice($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-noord'), 0, 1));
+		$missing = $this->reader->page('noord', '/', 'nl', 'anonymous', 'gemeente-noord')['body']['widgets'][0]['props'];
+
+		$this->assertSame(['block' => 'blk-1', 'widgets' => [], 'unavailable' => true], $foreign);
+		$this->assertSame($missing, $foreign, 'a foreign block and a missing one answer the same');
+	}//end testForeignBlockExpandsToNothing()
+
+
+	/**
+	 * An unpublished block expands to nothing, and so does a read with no organisation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	public function testUnpublishedBlockExpandsToNothing(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows($this->pageAndBlockRows(status: 'draft', organisation: 'gemeente-voorbeeld'));
+		$draft = $this->reader->page('inwoners', '/', 'nl', 'anonymous', 'gemeente-voorbeeld')['body']['widgets'][0]['props'];
+		$this->assertTrue($draft['unavailable']);
+		$this->assertSame([], $draft['widgets']);
+		$this->assertStringNotContainsString('Open van negen', json_encode($draft));
+
+		$this->withRows($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-voorbeeld'));
+		$this->assertTrue($this->reader->page('inwoners', '/', 'nl', 'anonymous')['body']['widgets'][0]['props']['unavailable']);
+	}//end testUnpublishedBlockExpandsToNothing()
+
+
+	/**
+	 * A page placing one block, then the block.
+	 *
+	 * @param string $status       The block's status.
+	 * @param string $organisation The block's organisation.
+	 *
+	 * @return array The rows.
+	 */
+	private function pageAndBlockRows(string $status, string $organisation): array {
+		return [
+			[
+				'title' => 'Home', 'route' => '/', 'status' => 'published',
+				'body' => ['type' => 'grid', 'widgets' => [
+					['id' => 'w1', 'widgetKey' => 'sharedBlock', 'gridX' => 0, 'gridY' => 0, 'gridWidth' => 6, 'gridHeight' => 2, 'props' => ['block' => 'blk-1']],
+				]],
+			],
+			[
+				'id' => 'blk-1', 'title' => 'Contact', 'status' => $status, 'organisation' => $organisation,
+				'widgets' => [
+					['id' => 'b1', 'widgetKey' => 'markdown', 'gridX' => 0, 'gridY' => 0, 'gridWidth' => 12, 'gridHeight' => 2, 'props' => ['markdown' => 'Open van negen tot vijf']],
+					['id' => 'b2', 'widgetKey' => 'sharedBlock', 'gridX' => 0, 'gridY' => 2, 'gridWidth' => 12, 'gridHeight' => 2, 'props' => ['block' => 'blk-1']],
+				],
+			],
+		];
+	}//end pageAndBlockRows()
+
+
+	/**
 	 * An editor's route lookup finds the page behind a route, published or not.
 	 *
 	 * `identify()` is the one read on this class that deliberately does NOT

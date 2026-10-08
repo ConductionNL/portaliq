@@ -187,6 +187,11 @@ const SiteNavigationBlock = defineAsyncComponent(
 )
 
 /**
+ * On demand too (site-shared-page-blocks): the nested grid of a shared block.
+ */
+const SharedBlock = defineAsyncComponent(() => import('./SharedBlock.vue'))
+
+/**
  * THE NL DESIGN SYSTEM WIDGETS, one chunk each
  * (site-nlds-widget-palette REQ-SNW-011).
  *
@@ -211,6 +216,9 @@ const PUBLIC_WIDGETS = {
 	// derives from the public menus and the signed-in navigation and hands
 	// over as `navigation`; the block fetches nothing.
 	siteNavigation: SiteNavigationBlock,
+	// site-shared-page-blocks: the content API puts the block's widgets in the
+	// placement; the block draws them as a nested grid. Lazy, like the menu.
+	sharedBlock: SharedBlock,
 	contributions: ContributionsBlock,
 	// `federatedSearch` stays owned here rather than coming from the shared
 	// registry, because what it is allowed to query is this app's decision.
@@ -633,6 +641,11 @@ export default {
 				|| widget.widgetKey === 'nlPublicTable'
 			) {
 				return { ...props, portal: this.portal }
+			}
+
+			// site-shared-page-blocks: the nested grid gets the page's own props.
+			if (widget.widgetKey === 'sharedBlock') {
+				return { ...props, host: { ...this.$props, widgets: undefined } }
 			}
 
 			// public-faq-and-product-finder: the FAQ reads this portal's entries

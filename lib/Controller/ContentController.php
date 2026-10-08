@@ -388,7 +388,8 @@ class ContentController extends Controller {
 			portal: (string)$portal['slug'],
 			route: $normalised,
 			locale: $this->locale(portal: $portal, requested: $locale),
-			audience: $this->audience()
+			audience: $this->audience(),
+			organisation: (string)($portal['organisation'] ?? '')
 		);
 
 		if ($page === null) {

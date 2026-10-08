@@ -40,6 +40,7 @@
  */
 
 export { createEditHistory, HISTORY_LIMIT, historyIntent } from './editHistory.js'
+export { blockToPage, pageToBlock } from './blockSaver.js'
 export { cellOf, cellStyleOf } from './geometry.js'
 export {
 	addWidget,

@@ -2530,7 +2530,17 @@
         "The routes of the product pages the finder chooses from.": "The routes of the product pages the finder chooses from.",
         "The topic the entry is grouped under on the list of all questions.": "The topic the entry is grouped under on the list of all questions.",
         "Topic": "Topic",
-        "Where the entry stands among the others; lower comes first.": "Where the entry stands among the others; lower comes first."
+        "Where the entry stands among the others; lower comes first.": "Where the entry stands among the others; lower comes first.",
+        "Draft widgets": "Draft widgets",
+        "Only a published block is shown on a page.": "Only a published block is shown on a page.",
+        "Shared block": "Shared block",
+        "The name editors pick the block by.": "The name editors pick the block by.",
+        "The organisation that owns the block. Only portals of this organisation show it.": "The organisation that owns the block. Only portals of this organisation show it.",
+        "The published widgets, on the same 12-column grid as a page.": "The published widgets, on the same 12-column grid as a page.",
+        "The unpublished work on the widgets; publishing copies it into the widgets.": "The unpublished work on the widgets; publishing copies it into the widgets.",
+        "What the block is for, for the editors who place it.": "What the block is for, for the editors who place it.",
+        "Choose a shared block": "Choose a shared block",
+        "Shared blocks": "Shared blocks"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

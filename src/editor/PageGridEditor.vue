@@ -211,6 +211,23 @@
 								:data-testid="`designer-field-${field.name}`"
 								:value="fieldValue(field)"
 								@input="onFieldInput(field, $event.target.value)" />
+							<select
+								v-else-if="field.kind === 'block' && blocks.length > 0"
+								:id="`field-${field.name}`"
+								class="page-grid-editor__input"
+								:data-testid="`designer-field-${field.name}`"
+								:value="fieldValue(field)"
+								@change="onFieldInput(field, $event.target.value)">
+								<option value="">
+									{{ t('portaliq', 'Choose a shared block') }}
+								</option>
+								<option
+									v-for="block in blocks"
+									:key="block.id"
+									:value="block.id">
+									{{ block.title }}
+								</option>
+							</select>
 							<input
 								v-else-if="field.kind === 'boolean'"
 								:id="`field-${field.name}`"
@@ -314,6 +331,18 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
+		/**
+		 * Lists the published shared blocks an author can place:
+		 * `() => Promise<Array<{id, title}>>`. Without it the shared block
+		 * field is a text input for the block's id.
+		 *
+		 * @type {Function|null}
+		 */
+		loadBlocks: {
+			type: Function,
+			default: null,
+		},
 	},
 
 	emits: ['update:paletteOpen'],
@@ -330,6 +359,15 @@ export default {
 			 * @type {boolean}
 			 */
 			dropping: false,
+
+			/**
+			 * The shared blocks an author can place, as `{id, title}`; empty
+			 * until read, and when the host cannot list them (the field is then
+			 * a plain text input for the block's id).
+			 *
+			 * @type {Array<{id: string, title: string}>}
+			 */
+			blocks: [],
 		}
 	},
 
@@ -417,8 +455,15 @@ export default {
 		},
 	},
 
-	mounted() {
+	async mounted() {
 		window.addEventListener('keydown', this.onKeydown)
+		if (this.loadBlocks) {
+			try {
+				this.blocks = await this.loadBlocks()
+			} catch {
+				this.blocks = []
+			}
+		}
 	},
 
 	beforeUnmount() {

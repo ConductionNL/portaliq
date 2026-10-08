@@ -265,13 +265,23 @@ class CmsReader {
 	 * @param string $route    The in-site route.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
+	 * @param string $organisation The serving portal's organisation, for shared blocks; '' leaves them unexpanded.
 	 *
 	 * @return array|null The page, or null when there is no published page there.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
 	 */
-	public function page(string $portal, string $route, string $locale, string $audience): ?array {
-		$key = $this->cacheKey(portal: $portal, kind: 'page', selector: $route, locale: $locale, audience: $audience);
+	public function page(string $portal, string $route, string $locale, string $audience, string $organisation=''): ?array {
+		// The organisation is part of the key: a placed shared block expands for
+		// the organisation it is read for, and a read without one must not
+		// hand its unexpanded page to a read with one.
+		$selector = $route;
+		if ($organisation !== '') {
+			$selector = $route . '#org=' . $organisation;
+		}
+
+		$key = $this->cacheKey(portal: $portal, kind: 'page', selector: $selector, locale: $locale, audience: $audience);
 		$hit = $this->lookup(key: $key);
 		if ($hit !== null) {
 			$decoded = json_decode($hit, true);
@@ -290,7 +300,7 @@ class CmsReader {
 		$page = null;
 		foreach ($rows as $row) {
 			if ((string)($row['route'] ?? '') === $route) {
-				$page = $this->shapePage(row: $row);
+				$page = $this->shapePage(row: $row, organisation: $organisation);
 				break;
 			}
 		}
@@ -699,11 +709,12 @@ class CmsReader {
 	/**
 	 * Shape a stored page row for the API.
 	 *
-	 * @param array $row The stored page.
+	 * @param array  $row          The stored page.
+	 * @param string $organisation The serving portal's organisation, for shared blocks.
 	 *
 	 * @return array The API shape.
 	 */
-	private function shapePage(array $row): array {
+	private function shapePage(array $row, string $organisation=''): array {
 		$body   = (array)($row['body'] ?? []);
 		$type   = (string)($body['type'] ?? 'markdown');
 		$portal = (string)($row['portal'] ?? '');
@@ -731,8 +742,36 @@ class CmsReader {
 			return $shaped;
 		}
 
+		$widgets = $this->expandSharedBlocks(widgets: $this->shapeWidgets(raw: (array)($body['widgets'] ?? [])), organisation: $organisation);
+
+		usort(
+			$widgets,
+			static fn ($a, $b) => [$a['gridY'], $a['gridX']] <=> [$b['gridY'], $b['gridX']]
+		);
+
+		$shaped['body']['widgets'] = $widgets;
+
+		// The same widgets grouped by region, beside the flat list the
+		// Docusaurus plugin reads (REQ-PTB-008). A slot that names no region
+		// is reported, not dropped silently. An empty map stays an object.
+		$grouped = $this->regions->group(widgets: $widgets);
+		$shaped['body']['regions']        = $this->regions->forJson(regions: $grouped['regions']);
+		$shaped['body']['unknownRegions'] = $grouped['unknownRegions'];
+
+		return $shaped;
+	}//end shapePage()
+
+
+	/**
+	 * Shape stored widget entries to the API shape, in grid order.
+	 *
+	 * @param array $raw The stored entries.
+	 *
+	 * @return array The entries.
+	 */
+	private function shapeWidgets(array $raw): array {
 		$widgets = [];
-		foreach ((array)($body['widgets'] ?? []) as $widget) {
+		foreach ($raw as $widget) {
 			if (is_array($widget) === false) {
 				continue;
 			}
@@ -754,29 +793,87 @@ class CmsReader {
 			static fn ($a, $b) => [$a['gridY'], $a['gridX']] <=> [$b['gridY'], $b['gridX']]
 		);
 
-		$shaped['body']['widgets'] = $widgets;
+		return $widgets;
+	}//end shapeWidgets()
 
-		// The same widgets grouped by region, beside the flat list the
-		// Docusaurus plugin reads (REQ-PTB-008). A slot that names no region
-		// is reported, not dropped silently. An empty map stays an object.
-		$grouped = $this->regions->group(widgets: $widgets);
-		$shaped['body']['regions']        = $this->regions->forJson(regions: $grouped['regions']);
-		$shaped['body']['unknownRegions'] = $grouped['unknownRegions'];
+	/**
+	 * Put the widgets of each placed shared block into the placement.
+	 *
+	 * A block expands only when it is published and belongs to the serving
+	 * portal's organisation. A foreign, unpublished or missing block all
+	 * answer the same way, with no widgets and `unavailable`, so the answer is
+	 * not an existence oracle for another organisation's blocks. A placement
+	 * inside a block is not expanded again.
+	 *
+	 * @param array  $widgets      The shaped page widgets.
+	 * @param string $organisation The serving portal's organisation.
+	 *
+	 * @return array The widgets, placements expanded.
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	private function expandSharedBlocks(array $widgets, string $organisation): array {
+		$blocks = null;
+		foreach ($widgets as $index => $widget) {
+			if ($widget['widgetKey'] !== 'sharedBlock') {
+				continue;
+			}
 
-		return $shaped;
-	}//end shapePage()
+			if ($blocks === null) {
+				$blocks = $this->publishedBlocks(organisation: $organisation);
+			}
 
+			$id  = trim((string)($widget['props']['block'] ?? ''));
+			$row = ($blocks[$id] ?? null);
+
+			$widgets[$index]['props'] = ['block' => $id, 'widgets' => [], 'unavailable' => true];
+			if ($row !== null) {
+				$inner = array_values(
+					array_filter(
+						$this->shapeWidgets(raw: (array)($row['widgets'] ?? [])),
+						static fn (array $inner): bool => $inner['widgetKey'] !== 'sharedBlock'
+					)
+				);
+				$widgets[$index]['props'] = ['block' => $id, 'widgets' => $inner, 'unavailable' => false];
+			}
+		}
+
+		return $widgets;
+	}//end expandSharedBlocks()
+
+	/**
+	 * The published shared blocks of an organisation, by id.
+	 *
+	 * @param string $organisation The organisation.
+	 *
+	 * @return array<string, array> Empty for no organisation.
+	 */
+	private function publishedBlocks(string $organisation): array {
+		if ($organisation === '') {
+			return [];
+		}
+
+		$blocks = [];
+		foreach ($this->query(schema: 'sharedBlock', filters: ['organisation' => $organisation, 'status' => 'published']) as $row) {
+			$id = $this->rowId(row: $row);
+			if ($id !== null && ($row['status'] ?? '') === 'published' && (string)($row['organisation'] ?? '') === $organisation) {
+				$blocks[$id] = $row;
+			}
+		}
+
+		return $blocks;
+	}//end publishedBlocks()
 
 	/**
 	 * Query one CMS schema with the given property filters.
 	 *
 	 * @param string $schema  The schema slug.
-	 * @param array  $filters The property filters, always including `portal`.
+	 * @param array  $filters The property filters, always including `portal` (or `organisation`, for a shared block).
 	 *
 	 * @return array The rows, as plain arrays.
 	 */
 	private function query(string $schema, array $filters): array {
-		if (($filters['portal'] ?? '') === '') {
+		if (($filters['portal'] ?? '') === '' && ($filters['organisation'] ?? '') === '') {
 			// Refusing here rather than returning everything: an unscoped read
 			// would silently serve one site's content under another's domain,
 			// and the response would look entirely normal.

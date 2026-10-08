@@ -32,6 +32,7 @@ const PUBLIC_LABELS = {
 	contactForm: 'Vraagformulier',
 	assistant: 'Vraag het de assistent',
 	publicRecords: 'Openbare overzichten',
+	sharedBlock: 'Gedeeld blok',
 }
 
 /**

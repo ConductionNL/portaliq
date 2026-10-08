@@ -157,7 +157,7 @@ class PageEditorServiceTest extends TestCase {
 			 * @return object|null The schema double.
 			 */
 			public function findByApplicationAndSlug(string $slug, string $application): ?object {
-				if (in_array($slug, ['page', 'media', 'menu', 'portalNotice'], true) === false || $application !== 'portaliq') {
+				if (in_array($slug, ['page', 'media', 'menu', 'portalNotice', 'sharedBlock'], true) === false || $application !== 'portaliq') {
 					return null;
 				}
 
@@ -395,6 +395,22 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertSame(['redacteuren'], $this->writtenBySlug['portalNotice']['update'] ?? null);
 		$this->assertSame(['redacteuren'], $this->writtenBySlug['portalNotice']['delete'] ?? null);
 	}//end testEditorGroupsReachNotices()
+
+
+	/**
+	 * The groups that may edit pages may edit shared blocks, and nobody else.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t07
+	 */
+	public function testEditorGroupsGovernSharedBlocks(): void {
+		$this->service(isAdmin: true)->setEditorGroups(['communicatie']);
+
+		foreach (['create', 'update', 'delete'] as $action) {
+			$this->assertSame(['communicatie'], $this->writtenBySlug['sharedBlock'][$action] ?? null);
+		}
+	}//end testEditorGroupsGovernSharedBlocks()
 
 
 	/**

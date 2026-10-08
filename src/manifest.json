@@ -256,6 +256,17 @@
       "visibleIf": {
         "access.admin": true
       }
+    },
+    {
+      "id": "SharedBlocksMenu",
+      "label": "Shared blocks",
+      "icon": "ViewDashboardOutline",
+      "route": "SharedBlocks",
+      "section": "settings",
+      "order": 93,
+      "visibleIf": {
+        "access.admin": true
+      }
     }
   ],
   "pages": [
@@ -2644,6 +2655,53 @@
           "showMetadata": true
         }
       }
+    },
+    {
+      "id": "SharedBlocks",
+      "route": "/shared-blocks",
+      "type": "index",
+      "title": "Shared blocks",
+      "config": {
+        "register": "portaliq",
+        "schema": "sharedBlock",
+        "_note": "Blocks of widgets that belong to one organisation and are placed on pages by id (site-shared-page-blocks). Only a published block is shown, and only on portals of its organisation. The `open-layout` action opens the page designer on the block.",
+        "columns": [
+          "title",
+          "organisation",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "actions": [
+          {
+            "id": "open-layout",
+            "label": "Layout",
+            "icon": "ViewDashboardOutline",
+            "type": "open-page",
+            "target": "SharedBlockLayout"
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "SharedBlockLayout",
+      "route": "/shared-blocks/:id/layout",
+      "type": "custom",
+      "title": "Shared block layout",
+      "component": "PageLayoutDesigner",
+      "_note": "The page designer on a shared block: it saves `draftWidgets` and publishes into `widgets` (src/editor/blockSaver.js)."
     }
   ],
   "walkthrough": {
