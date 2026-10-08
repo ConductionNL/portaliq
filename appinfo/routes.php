@@ -423,6 +423,15 @@ return [
         // collection's scope first; the proven id is stamped under the
         // action's rowField and forwarded. Before the /portal/{path} catch-all.
         ['name' => 'portalRowAction#forward', 'url' => '/portal/api/collections/{register}/{schema}/{id}/actions/{actionId}', 'verb' => 'POST'],
+        // Who may act for the represented party, and the mandates a holder keeps (site-mandates-the-represented-manage).
+        ['name' => 'mandate#given', 'url' => '/portal/api/mandates/given', 'verb' => 'GET'],
+        ['name' => 'mandate#invite', 'url' => '/portal/api/mandates/invitations', 'verb' => 'POST'],
+        ['name' => 'mandate#accept', 'url' => '/portal/api/mandates/invitations/accept', 'verb' => 'POST'],
+        ['name' => 'mandate#revokeInvitation', 'url' => '/portal/api/mandates/invitations/{id}', 'verb' => 'DELETE'],
+        ['name' => 'mandate#revoke', 'url' => '/portal/api/mandates/{id}/revoke', 'verb' => 'POST'],
+        ['name' => 'mandate#expiry', 'url' => '/portal/api/mandates/{id}/expiry', 'verb' => 'PUT'],
+        ['name' => 'mandate#held', 'url' => '/portal/api/mandates/held', 'verb' => 'GET'],
+        ['name' => 'mandate#stop', 'url' => '/portal/api/mandates/held/{id}/stop', 'verb' => 'POST'],
         // Stream a file attached to an owned object (portal-document-download,
         // the read-side counterpart of uploadFile). Ownership re-verified via
         // the scoped reader BEFORE the file is resolved; the collection must

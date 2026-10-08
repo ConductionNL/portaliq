@@ -2400,7 +2400,22 @@ OC.L10N.register(
         "What has to be done.": "Wat er gedaan moet worden.",
         "When the reminder before the end date was sent. Set once per end date, so the reminder is sent once.": "Wanneer de herinnering voor de einddatum is verstuurd. Eén keer per einddatum ingesteld, zodat de herinnering één keer wordt verstuurd.",
         "Where the step stands.": "Hoe ver de stap is.",
-        "The organisation whose portal the resident uses. Stamped by portaliq.": "De organisatie van het portaal dat de inwoner gebruikt. Wordt door portaliq ingevuld."
+        "The organisation whose portal the resident uses. Stamped by portaliq.": "De organisatie van het portaal dat de inwoner gebruikt. Wordt door portaliq ingevuld.",
+        "A short text about what the holder may do.": "Een korte tekst over wat de houder mag doen.",
+        "Ended at": "Beëindigd op",
+        "Ended by": "Beëindigd door",
+        "For an invitation to act for a party: the party, typed (kvk: or subject:).": "Bij een uitnodiging om namens een partij te handelen: de partij, met type (kvk: of subject:).",
+        "For an invitation to act for a party: what the mandate will grant when it is accepted.": "Bij een uitnodiging om namens een partij te handelen: wat de machtiging geeft zodra die wordt aanvaard.",
+        "Held by": "In handen van",
+        "Invitation": "Uitnodiging",
+        "Mandate terms": "Voorwaarden van de machtiging",
+        "The case types in scope. Empty means all cases.": "De zaaktypen waarvoor de machtiging geldt. Leeg betekent alle zaken.",
+        "The invitation whose acceptance wrote this mandate.": "De uitnodiging waarvan het aanvaarden deze machtiging heeft vastgelegd.",
+        "The last day the mandate grants anything, as a day. Empty means no end.": "De laatste dag waarop de machtiging iets geeft, als dag. Leeg betekent geen einddatum.",
+        "The subject reference of whoever ended it.": "De onderwerpverwijzing van wie de machtiging heeft beëindigd.",
+        "Valid until": "Geldig tot en met",
+        "When it was ended.": "Wanneer de machtiging is beëindigd.",
+        "Who holds the mandate, typed: kvk: and eight digits for a company, or subject: and a reference for a person. Empty means the account in subjectRef.": "Wie de machtiging heeft, met type: kvk: en acht cijfers voor een bedrijf, of subject: en een verwijzing voor een persoon. Leeg betekent het account in subjectRef."
     },
     "nplurals=2; plural=(n != 1);"
 )

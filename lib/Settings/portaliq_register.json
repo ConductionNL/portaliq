@@ -7005,7 +7005,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Mandate",
                 "description": "What a portal identity may act for on behalf of an organisation (portal-identity-and-the-organisations-cases REQ-PIOC-002). No mandate recorded means no organisation case is visible: the empty default is the closed one. Owned by portaliq's auth edge; never publicly readable.",
                 "type": "object",
@@ -7088,6 +7088,31 @@
                         "format": "date-time",
                         "description": "When it stops granting anything. Empty means it does not expire.",
                         "example": "2027-09-18T09:00:00+00:00"
+                    },
+                    "holder": {
+                        "title": "Held by",
+                        "type": "string",
+                        "example": "kvk:12345678",
+                        "description": "Who holds the mandate, typed: kvk: and eight digits for a company, or subject: and a reference for a person. Empty means the account in subjectRef."
+                    },
+                    "revokedBy": {
+                        "title": "Ended by",
+                        "type": "string",
+                        "example": "subject-1",
+                        "description": "The subject reference of whoever ended it."
+                    },
+                    "revokedAt": {
+                        "title": "Ended at",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-10-08T12:00:00+00:00",
+                        "description": "When it was ended."
+                    },
+                    "invitationId": {
+                        "title": "Invitation",
+                        "type": "string",
+                        "example": "inv-1",
+                        "description": "The invitation whose acceptance wrote this mandate."
                     }
                 }
             },
@@ -7099,7 +7124,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Invitation",
                 "description": "An address invited into the portal (REQ-PIOC-003). The link's secret is stored hashed, never in the clear, and the state the sender sees is on this row.",
                 "type": "object",
@@ -7165,6 +7190,38 @@
                         "format": "date-time",
                         "description": "When it stops admitting anybody.",
                         "example": "2026-09-25T09:00:00+00:00"
+                    },
+                    "onBehalfOf": {
+                        "title": "On behalf of",
+                        "type": "string",
+                        "example": "kvk:12345678",
+                        "description": "For an invitation to act for a party: the party, typed (kvk: or subject:)."
+                    },
+                    "mandate": {
+                        "title": "Mandate terms",
+                        "type": "object",
+                        "description": "For an invitation to act for a party: what the mandate will grant when it is accepted.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "caseTypes": {
+                                "title": "Case types",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "The case types in scope. Empty means all cases."
+                            },
+                            "label": {
+                                "title": "Label",
+                                "type": "string",
+                                "description": "A short text about what the holder may do."
+                            },
+                            "expiresAt": {
+                                "title": "Valid until",
+                                "type": "string",
+                                "description": "The last day the mandate grants anything, as a day. Empty means no end."
+                            }
+                        }
                     },
                     "subjectRef": {
                         "title": "Subject reference",

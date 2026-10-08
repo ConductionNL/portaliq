@@ -240,4 +240,52 @@ class PortalMandateServiceTest extends TestCase {
 			);
 		}
 	}//end testTheDescriptionReportsTheReachThatWasDecided()
+
+	/**
+	 * An old untyped mandate and a typed one name the same party, and the case
+	 * providers still get the party without its type.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t1
+	 *
+	 * @return void
+	 */
+	public function testAnUntypedKvkNumberReadsAsKvk(): void {
+		$service = new PortalMandateService($this->fakeReader());
+
+		foreach (['87654321', 'kvk:87654321'] as $stored) {
+			$described = $service->describe(['onBehalfOf' => $stored]);
+			$this->assertSame('87654321', $described['onBehalfOf']);
+			$this->assertSame('kvk:87654321', $described['party']);
+		}
+
+		$person = $service->describe(['onBehalfOf' => 'H-Bakker-ref']);
+		$this->assertSame('subject:H-Bakker-ref', $person['party']);
+		$this->assertSame('H-Bakker-ref', $person['onBehalfOf']);
+		$this->assertSame('subject:x', $service->describe(['onBehalfOf' => 'subject:x'])['party']);
+	}//end testAnUntypedKvkNumberReadsAsKvk()
+
+	/**
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t2b
+	 */
+	public function testACompanyMandateReachesEverySignInForThatKvk(): void {
+		$this->seedRow('portalMandate', ['subjectRef' => 'clerk-1', 'holder' => 'kvk:55555555', 'organisation' => 'gemeente-x', 'onBehalfOf' => 'kvk:12345678', 'status' => 'active']);
+		$service = new PortalMandateService($this->fakeReader());
+
+		$this->assertCount(1, $service->mandatesFor('clerk-2', 'gemeente-x', null, ['subject:clerk-2', 'kvk:55555555']), 'another employee of the company carries it');
+		$this->assertCount(1, $service->mandatesFor('clerk-1', 'gemeente-x', null, ['kvk:55555555']), 'and the accepting account is listed once');
+		$this->assertSame([], $service->mandatesFor('clerk-2', 'gemeente-x'), 'without the company number nothing is carried');
+		$this->assertSame([], $service->mandatesFor('clerk-2', 'gemeente-x', null, ['kvk:99999999']), 'another company does not carry it');
+		$this->assertSame([], $service->mandatesFor('clerk-2', 'gemeente-y', null, ['kvk:55555555']), 'nor in another tenant');
+	}//end testACompanyMandateReachesEverySignInForThatKvk()
+
+	/**
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t2b
+	 */
+	public function testAMandateWithoutHolderIsHeldByItsSubject(): void {
+		$this->seedRow('portalMandate', ['subjectRef' => 'linda', 'organisation' => 'gemeente-x', 'onBehalfOf' => '87654321', 'status' => 'active']);
+		$service = new PortalMandateService($this->fakeReader());
+
+		$this->assertCount(1, $service->mandatesFor('linda', 'gemeente-x'));
+		$this->assertSame([], $service->mandatesFor('mark', 'gemeente-x', null, ['subject:linda']), 'only a kvk holder is read beyond the account itself');
+	}//end testAMandateWithoutHolderIsHeldByItsSubject()
 }//end class
