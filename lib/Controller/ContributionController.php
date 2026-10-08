@@ -248,7 +248,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param string $subjectRef The resolved ownership scope value.
 	 * @param string $organisation The subject's organisation.
 	 * @param string $id The object id (never trusted; ownership re-checked in the writer).
-	 * @param array<string, mixed> $data The literal fields to write.
+	 * @param array<string, mixed>|\Closure $data The literal fields to write, or a closure that returns them from the verified row.
 	 * @param string $context Short label naming the caller, for the log line only.
 	 *
 	 * @return array<string, mixed>|JSONResponse The updated object, or the response to return.
@@ -260,7 +260,7 @@ class ContributionController extends Controller implements PortalProtected {
 		string $subjectRef,
 		string $organisation,
 		string $id,
-		array $data,
+		array|\Closure $data,
 		string $context,
 	): array|JSONResponse {
 		try {
@@ -477,10 +477,10 @@ class ContributionController extends Controller implements PortalProtected {
 		// own read date, messageFields.readAt) is the only field this
 		// endpoint can ever change.
 		$fields = new InboxMessageFields();
-		$payload = $fields->readPayload(
-			collection: $fields->normalise(collection: $collection),
-			now: gmdate(format: 'Y-m-d\TH:i:s\Z')
-		);
+		$normalised = $fields->normalise(collection: $collection);
+		$now = gmdate(format: 'Y-m-d\TH:i:s\Z');
+		// Decided from the row the writer has just proven the subject's own.
+		$payload = static fn (array $row): array => $fields->readPayload(collection: $normalised, now: $now, row: $row);
 		$updated = $this->writeScoped(
 			register: $register,
 			schema: $schema,

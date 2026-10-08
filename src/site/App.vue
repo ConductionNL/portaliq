@@ -309,10 +309,10 @@
 						<NotFoundPage
 							v-else-if="error && error.status === 404"
 							:path="route"
-							:contactRoute="contactRoute"
-							:pages="notFoundPages"
-							:hasResidentArea="hasResidentArea"
-							:residentLabel="site.accountLabel || ''"
+							:site="site"
+							:portalSlug="portalSlug"
+							:locale="chosenLocale"
+							:hasWaysIn="signInRoutes.length > 0"
 							:searchEnabled="headerSearch.enabled"
 							:hrefForRoute="hrefForRoute"
 							:t="t"
@@ -550,7 +550,6 @@ import {
 	fetchGlossary,
 	fetchMenus,
 	fetchPage,
-	fetchPages,
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
@@ -559,7 +558,6 @@ import { createIdleTracker } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
 import { languageEntries, requestedLocale } from './lib/languageNav.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
-import { contactRouteOf } from './lib/notFound.js'
 import { blocksOwnHeading } from './lib/pageHeading.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
@@ -754,8 +752,6 @@ export default {
 			sharedDossierTitle: '',
 			loading: true,
 			error: null,
-			// The published pages, read once when a route is not found, so the page can tell whether the portal has a contact page.
-			notFoundPages: null,
 			// The editing context for the route on screen, or null for every
 			// visitor who may not edit — which is almost all of them.
 			editing: null,
@@ -997,31 +993,6 @@ export default {
 		 */
 		searchRoute() {
 			return this.headerSearch.route
-		},
-
-		/**
-		 * The route a lost visitor reports a broken link to.
-		 *
-		 * @return {string} The portal's contact route, `/contact` by default.
-		 *
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
-		 */
-		contactRoute() {
-			return contactRouteOf(this.site)
-		},
-
-		/**
-		 * Whether the portal has a resident area to point a lost visitor to.
-		 *
-		 * @return {boolean}
-		 *
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
-		 */
-		hasResidentArea() {
-			return (
-				String(this.site?.accountLabel || '') !== ''
-				|| this.signInRoutes.length > 0
-			)
 		},
 
 		/**
@@ -2133,9 +2104,6 @@ export default {
 				// unpublished page are answered identically by the API on
 				// purpose, and both belong on screen as "not found".
 				this.error = error
-				if (this.isNotFound(error) === true) {
-					this.loadNotFoundPages()
-				}
 			} finally {
 				this.loading = false
 			}
@@ -2406,29 +2374,6 @@ export default {
 			}
 
 			return url.toString()
-		},
-
-		/**
-		 * Read the published pages for the not-found page. A failed read
-		 * leaves them unknown, which hides the contact link: the page never
-		 * points at a route it could not confirm.
-		 *
-		 * @return {Promise<void>} Resolves when read.
-		 *
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
-		 */
-		async loadNotFoundPages() {
-			if (this.notFoundPages !== null) {
-				return
-			}
-			try {
-				this.notFoundPages = await fetchPages(
-					this.portalSlug,
-					this.chosenLocale,
-				)
-			} catch {
-				this.notFoundPages = null
-			}
 		},
 
 		go(link) {

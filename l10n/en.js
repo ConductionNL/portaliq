@@ -2442,7 +2442,16 @@ OC.L10N.register(
         "Pages the assistant leaves out": "Pages the assistant leaves out",
         "The assistant on the public site. It answers from this portal's published pages, glossary and publications only. Off unless enabled is true, and it needs hermiq.": "The assistant on the public site. It answers from this portal's published pages, glossary and publications only. Off unless enabled is true, and it needs hermiq.",
         "Whether the assistant widget is offered and answers. Off by default.": "Whether the assistant widget is offered and answers. Off by default.",
-        "The paper cannot be opened right now": "The paper cannot be opened right now"
+        "The paper cannot be opened right now": "The paper cannot be opened right now",
+        "Recipient": "Recipient",
+        "Read on": "Read on",
+        "Sending": "Sending",
+        "An id the sending app chooses, shared by every copy of one sending, so the readers of one letter can be listed together.": "An id the sending app chooses, shared by every copy of one sending, so the readers of one letter can be listed together.",
+        "Read receipt requested": "Read receipt requested",
+        "Sending reference": "Sending reference",
+        "The moment the resident first opened the message. Written once, and only when a read receipt was requested.": "The moment the resident first opened the message. Written once, and only when a read receipt was requested.",
+        "Whether the sender asked to see when this message was opened. Set by the sending app. Opening the message never changes it, and the resident is told it was asked.": "Whether the sender asked to see when this message was opened. Set by the sending app. Opening the message never changes it, and the resident is told it was asked.",
+        "The sender sees when you opened this message.": "The sender sees when you opened this message."
     },
     "nplurals=2; plural=(n != 1);"
 )

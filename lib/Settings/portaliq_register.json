@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.78.0"
+        "version": "0.79.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.78.0",
+                "version": "0.79.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1193,7 +1193,7 @@
                     ]
                 },
                 "icon": "EmailOutline",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "configuration": {
                     "linkedTypes": [
                         "talk"
@@ -1320,6 +1320,26 @@
                         "type": "string",
                         "description": "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.",
                         "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                    },
+                    "readReceiptRequested": {
+                        "title": "Read receipt requested",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the sender asked to see when this message was opened. Set by the sending app. Opening the message never changes it, and the resident is told it was asked.",
+                        "example": false
+                    },
+                    "readAt": {
+                        "title": "Read at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The moment the resident first opened the message. Written once, and only when a read receipt was requested.",
+                        "example": "2026-10-08T09:14:00+00:00"
+                    },
+                    "sendingRef": {
+                        "title": "Sending reference",
+                        "type": "string",
+                        "description": "An id the sending app chooses, shared by every copy of one sending, so the readers of one letter can be listed together.",
+                        "example": "brief-groep-5b-2026-10-07"
                     }
                 }
             },

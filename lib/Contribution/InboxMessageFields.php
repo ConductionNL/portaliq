@@ -45,7 +45,7 @@ class InboxMessageFields {
 	 * `readAt` is the one exception: the row gets `read`, true when the
 	 * named field holds a value.
 	 */
-	public const KEYS = ['subject', 'body', 'receivedAt', 'readAt', 'attachments'];
+	public const KEYS = ['subject', 'body', 'receivedAt', 'readAt', 'attachments', 'readReceiptRequested'];
 
 	/**
 	 * The extra message fields a collection names at its top level, and the
@@ -227,21 +227,51 @@ class InboxMessageFields {
 	}//end applyExtra()
 
 	/**
-	 * The field mark-read writes on a message of this collection, and its value.
+	 * The literal payload of a mark-read.
 	 *
-	 * @param array<string, mixed> $collection The normalised collection.
+	 * Never the request body: the client cannot write a field through this
+	 * path. Rules:
+	 *  1. An app's inbox that names `messageFields.readAt` gets the current
+	 *     time in that field, unless it already holds a value (the first
+	 *     moment stays).
+	 *  2. Portaliq's own message with `readReceiptRequested` and no `readAt`
+	 *     gets `read: true` and the current time in `readAt`.
+	 *  3. Any other message gets `read: true` only. The moment of opening is
+	 *     personal data and is kept only when the sender asked.
+	 *
+	 * @param array<string, mixed> $collection The normalised inbox collection.
 	 * @param string               $now        The current time, ISO 8601.
+	 * @param array<string, mixed> $row        The stored message, as the owner reads it.
 	 *
-	 * @return array<string, mixed> One field: the named `readAt` set to now, else `read: true`.
+	 * @return array<string, mixed> The fields to write; empty when nothing changes.
 	 *
-	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
 	 */
-	public function readPayload(array $collection, string $now): array {
+	public function readPayload(array $collection, string $now, array $row=[]): array {
 		$field = ($collection['messageFields']['readAt'] ?? null);
 		if (is_string($field) === true && $field !== '') {
+			if ($this->filled(value: ($row[$field] ?? null)) === true) {
+				return [];
+			}
+
 			return [$field => $now];
+		}
+
+		if (($row['readReceiptRequested'] ?? false) === true && $this->filled(value: ($row['readAt'] ?? null)) === false) {
+			return ['read' => true, 'readAt' => $now];
 		}
 
 		return ['read' => true];
 	}//end readPayload()
+
+	/**
+	 * Whether a stored value is set.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return bool
+	 */
+	private function filled(mixed $value): bool {
+		return $value !== null && $value !== '' && $value !== false;
+	}//end filled()
 }//end class

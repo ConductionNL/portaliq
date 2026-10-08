@@ -14,7 +14,8 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { contactRouteOf, hasPage, notFoundView } from '../src/site/lib/notFound.js'
+import { contactRouteOf } from '../src/site/lib/notFound.js'
+import { hasPage, notFoundView } from '../src/site/lib/notFoundView.js'
 import { t } from './support/page-instance.mjs'
 import { renderSfc } from './support/render-sfc.mjs'
 
@@ -75,10 +76,8 @@ test('a portal without a contact page shows no contact link and no report senten
 test('site: the page renders the code, the heading, the links and the search box', async () => {
 	const html = await renderSfc(PAGE, {
 		path: '/parkeren-vergunning',
-		contactRoute: '/contact',
-		pages: PAGES,
-		hasResidentArea: true,
-		residentLabel: 'Mijn Zuiddrecht',
+		site: { accountLabel: 'Mijn Zuiddrecht' },
+		initialPages: PAGES,
 		searchEnabled: true,
 		t,
 	})
@@ -92,12 +91,21 @@ test('site: the page renders the code, the heading, the links and the search box
 	}
 	assert.match(html, /data-testid="not-found-report"/)
 
-	const bare = await renderSfc(PAGE, { path: '/x', pages: [{ route: '/' }], t })
+	const bare = await renderSfc(PAGE, { path: '/x', initialPages: [{ route: '/' }], t })
 	assert.doesNotMatch(bare, /not-found-search|not-found-contact|not-found-report/)
 })
 
 test('draft and missing look the same: the page takes no word that says which', async () => {
-	const draft = await renderSfc(PAGE, { path: '/concept', pages: PAGES, t })
-	const missing = await renderSfc(PAGE, { path: '/concept', pages: PAGES, t })
+	const draft = await renderSfc(PAGE, { path: '/concept', initialPages: PAGES, t })
+	const missing = await renderSfc(PAGE, { path: '/concept', initialPages: PAGES, t })
 	assert.equal(draft, missing)
+})
+
+test('pages that cannot be read leave the contact link out', async () => {
+	const { loadSfc } = await import('./support/render-sfc.mjs')
+	const screen = await loadSfc(PAGE)
+	const vm = { portalSlug: 'zuiddrecht', locale: 'nl', pages: PAGES }
+	delete globalThis.window
+	await screen.methods.loadPages.call(vm)
+	assert.equal(vm.pages, null)
 })

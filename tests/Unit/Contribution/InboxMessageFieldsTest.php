@@ -219,4 +219,55 @@ class InboxMessageFieldsTest extends TestCase {
 		$this->assertArrayNotHasKey('action', $row, 'an empty label is not a button');
 		$this->assertNotNull(InboxMessageFields::sameSiteAction(action: ['label' => 'Open', 'href' => '#open=a/b/c']));
 	}//end testAnActionOutsideThePortalIsNotServed()
-}//end class
+
+	/**
+	 * inbox-read-receipt-on-request T02: an app's inbox may name the field
+	 * that says a receipt was asked.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t02
+	 */
+	public function testKeepsTheReceiptRequestKey(): void {
+		$out = (new InboxMessageFields())->normalise(['kind' => 'inbox', 'messageFields' => ['readReceiptRequested' => 'wantsReceipt', 'bad' => 'x']]);
+
+		$this->assertSame(['readReceiptRequested' => 'wantsReceipt'], $out['messageFields']);
+		$row = (new InboxMessageFields())->apply(['wantsReceipt' => true], $out);
+		$this->assertTrue($row['readReceiptRequested']);
+	}//end testKeepsTheReceiptRequestKey()
+
+	/**
+	 * T03: without a request only `read` is written, never a moment.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testNoRequestWritesNoMoment(): void {
+		$fields = new InboxMessageFields();
+
+		$this->assertSame(['read' => true], $fields->readPayload([], '2026-10-08T09:14:00Z', ['readReceiptRequested' => false]));
+		$this->assertSame(['read' => true], $fields->readPayload([], '2026-10-08T09:14:00Z', []));
+	}//end testNoRequestWritesNoMoment()
+
+	/**
+	 * T03: the first open writes the moment, a later one keeps it.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testFirstOpenWritesTheMomentAndALaterOneKeepsIt(): void {
+		$fields = new InboxMessageFields();
+
+		$this->assertSame(['read' => true, 'readAt' => '2026-10-08T09:14:00Z'], $fields->readPayload([], '2026-10-08T09:14:00Z', ['readReceiptRequested' => true]));
+		$this->assertSame(['read' => true], $fields->readPayload([], '2026-10-08T11:02:00Z', ['readReceiptRequested' => true, 'readAt' => '2026-10-08T09:14:00Z']));
+	}//end testFirstOpenWritesTheMomentAndALaterOneKeepsIt()
+
+	/**
+	 * T03: an app inbox writes its own read date once.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testAppInboxKeepsAnExistingReadAt(): void {
+		$fields     = new InboxMessageFields();
+		$collection = ['messageFields' => ['readAt' => 'readByRecipientAt']];
+
+		$this->assertSame(['readByRecipientAt' => 'NOW'], $fields->readPayload($collection, 'NOW', []));
+		$this->assertSame([], $fields->readPayload($collection, 'LATER', ['readByRecipientAt' => 'NOW']));
+	}//end testAppInboxKeepsAnExistingReadAt()
+}

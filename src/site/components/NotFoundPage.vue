@@ -74,7 +74,9 @@
 </template>
 
 <script>
-import { notFoundView } from '../lib/notFound.js'
+import { fetchPages } from '../lib/contentApi.js'
+import { contactRouteOf } from '../lib/notFound.js'
+import { notFoundView } from '../lib/notFoundView.js'
 
 import '@utrecht/button-css/dist/index.css'
 import '@utrecht/form-label-css/dist/index.css'
@@ -90,14 +92,16 @@ export default {
 	props: {
 		/** The route that was asked for, kept for the traffic collector. */
 		path: { type: String, default: '' },
-		/** The portal's contact route. */
-		contactRoute: { type: String, default: '/contact' },
-		/** The portal's published page summaries, or null while they load. */
-		pages: { type: Array, default: null },
-		/** Whether the portal has a resident area. */
-		hasResidentArea: { type: Boolean, default: false },
-		/** The resident area's name. */
-		residentLabel: { type: String, default: '' },
+		/** The public site record: its contact route and the name of its resident area. */
+		site: { type: Object, default: () => ({}) },
+		/** The portal's slug, for reading its published pages. */
+		portalSlug: { type: String, default: '' },
+		/** The language the visitor chose. */
+		locale: { type: String, default: '' },
+		/** Whether the portal offers a way to sign in. */
+		hasWaysIn: { type: Boolean, default: false },
+		/** The published pages, already read (test seam). */
+		initialPages: { type: Array, default: null },
 		/** Whether the portal has search. */
 		searchEnabled: { type: Boolean, default: false },
 		/** The address of an in-site route, so a link opens in a new tab. */
@@ -109,7 +113,7 @@ export default {
 	emits: ['navigate', 'search'],
 
 	data() {
-		return { term: '' }
+		return { term: '', pages: this.initialPages }
 	},
 
 	computed: {
@@ -118,17 +122,39 @@ export default {
 		 */
 		view() {
 			return notFoundView({
-				contactRoute: this.contactRoute,
+				contactRoute: contactRouteOf(this.site),
 				pages: this.pages,
-				hasResidentArea: this.hasResidentArea,
-				residentLabel: this.residentLabel,
+				hasResidentArea: String(this.site.accountLabel || '') !== '' || this.hasWaysIn,
+				residentLabel: String(this.site.accountLabel || ''),
 				searchEnabled: this.searchEnabled,
 				t: this.t,
 			})
 		},
 	},
 
+	mounted() {
+		if (this.initialPages === null) {
+			this.loadPages()
+		}
+	},
+
 	methods: {
+		/**
+		 * Read the published pages once. A failed read leaves them unknown,
+		 * which hides the contact link: the page never points at a route it
+		 * could not confirm.
+		 *
+		 * @return {Promise<void>} Resolves when read.
+		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+		 */
+		async loadPages() {
+			try {
+				this.pages = await fetchPages(this.portalSlug || undefined, this.locale || undefined)
+			} catch {
+				this.pages = null
+			}
+		},
+
 		/**
 		 * @param {string} route An in-site route.
 		 * @return {string} Its address.

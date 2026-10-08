@@ -2516,7 +2516,16 @@
         "Pages the assistant leaves out": "Pagina's die de assistent overslaat",
         "The assistant on the public site. It answers from this portal's published pages, glossary and publications only. Off unless enabled is true, and it needs hermiq.": "De assistent op de openbare site. Hij antwoordt alleen uit de gepubliceerde pagina's, de begrippenlijst en de publicaties van dit portaal. Uit, tenzij enabled op true staat, en hij heeft hermiq nodig.",
         "Whether the assistant widget is offered and answers. Off by default.": "Of de assistent wordt aangeboden en antwoordt. Standaard uit.",
-        "The paper cannot be opened right now": "Het stuk kan nu niet worden geopend"
+        "The paper cannot be opened right now": "Het stuk kan nu niet worden geopend",
+        "Recipient": "Ontvanger",
+        "Read on": "Gelezen op",
+        "Sending": "Verzending",
+        "An id the sending app chooses, shared by every copy of one sending, so the readers of one letter can be listed together.": "Een id dat de verzendende app kiest, gedeeld door elke kopie van één verzending, zodat de lezers van één brief samen kunnen worden getoond.",
+        "Read receipt requested": "Leesbevestiging gevraagd",
+        "Sending reference": "Kenmerk van de verzending",
+        "The moment the resident first opened the message. Written once, and only when a read receipt was requested.": "Het moment waarop de inwoner het bericht voor het eerst opende. Eén keer geschreven, en alleen als een leesbevestiging is gevraagd.",
+        "Whether the sender asked to see when this message was opened. Set by the sending app. Opening the message never changes it, and the resident is told it was asked.": "Of de afzender wil zien wanneer dit bericht is geopend. Ingesteld door de verzendende app. Het openen van het bericht verandert dit niet en de inwoner wordt verteld dat het is gevraagd.",
+        "The sender sees when you opened this message.": "De afzender ziet wanneer u dit bericht hebt geopend."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

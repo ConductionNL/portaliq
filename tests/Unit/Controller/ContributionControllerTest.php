@@ -1907,7 +1907,10 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('updateObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$received) {
+				if ($data instanceof \Closure) {
+					$data = $data([]);
+				}
 				$received = ['id' => $id, 'subjectRef' => $subjectRef, 'organisation' => $organisation, 'data' => $data];
 				return ['id' => $id, 'subject' => 'Hallo', 'read' => true];
 			}
@@ -1933,6 +1936,56 @@ class ContributionControllerTest extends TestCase {
 	 *
 	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
 	 */
+	/**
+	 * inbox-read-receipt-on-request T03: a second open keeps the first moment.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testMarkReadKeepsTheFirstReadMoment(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage']]);
+		$payloads = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$payloads) {
+				$payloads[] = $data;
+				return ['id' => $id];
+			}
+		);
+
+		$this->controller(aggregate: $aggregate, writer: $writer)->markRead('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertInstanceOf(\Closure::class, $payloads[0]);
+		$first = $payloads[0](['readReceiptRequested' => true]);
+		$this->assertSame(['read', 'readAt'], array_keys($first));
+		$this->assertSame(['read' => true], $payloads[0](['readReceiptRequested' => true, 'readAt' => '2026-10-08T09:14:00Z']));
+		$this->assertSame(['read' => true], $payloads[0](['readReceiptRequested' => false]));
+	}//end testMarkReadKeepsTheFirstReadMoment()
+
+	/**
+	 * T03: whatever the request body says, only the read fields are written;
+	 * the resident cannot withdraw the request or move the moment.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testMarkReadNeverWritesTheReceiptRequest(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage']]);
+		$payload = null;
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$payload) {
+				$payload = $data;
+				return ['id' => $id];
+			}
+		);
+
+		$this->controller(aggregate: $aggregate, writer: $writer, params: ['readReceiptRequested' => false, 'readAt' => '1999-01-01', 'sendingRef' => 'x'])
+			->markRead('portaliq', 'portalMessage', 'm-1');
+
+		$written = $payload(['readReceiptRequested' => true, 'sendingRef' => 'brief-1']);
+		$this->assertSame(['read', 'readAt'], array_keys($written));
+		$this->assertNotSame('1999-01-01', $written['readAt']);
+	}//end testMarkReadNeverWritesTheReceiptRequest()
+
 	public function testMarkReadWritesTheDeclaredReadAtField(): void {
 		$aggregate = $this->aggregate(
 			collections: [
@@ -1950,7 +2003,10 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('updateObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$received) {
+				if ($data instanceof \Closure) {
+					$data = $data([]);
+				}
 				$received = ['scopeField' => $scopeField, 'data' => $data];
 				return ['id' => $id];
 			}
@@ -2031,7 +2087,10 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->expects($this->once())->method('updateObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$received) {
+				if ($data instanceof \Closure) {
+					$data = $data([]);
+				}
 				$received = [$register, $schema, $scopeField, $subjectRef, $organisation, $id, $data];
 				return ['id' => $id, 'read' => true];
 			}

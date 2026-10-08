@@ -216,6 +216,15 @@
 						{{ delivery(message) }}
 					</p>
 
+					<!-- The sender asked to see when this opens; the resident is told
+					     before they open it (inbox-read-receipt-on-request). -->
+					<p
+						v-if="message.readReceiptRequested === true"
+						class="utrecht-paragraph pq-inbox-row__receipt"
+						data-testid="inbox-row-receipt-notice">
+						{{ tr('The sender sees when you opened this message.') }}
+					</p>
+
 					<div class="pq-inbox-row__actions">
 						<!-- A real link (a new tab, a bookmark); a plain click keeps
 						     the record for the page it opens, as an e-mail link does. -->

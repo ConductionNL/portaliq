@@ -1160,7 +1160,10 @@
         "schema": "portalMessage",
         "columns": [
           "subject",
-          "subjectRef",
+          {
+            "key": "subjectRef",
+            "label": "Recipient"
+          },
           {
             "key": "read",
             "label": "Read",
@@ -1171,6 +1174,14 @@
                 "true": "success"
               }
             }
+          },
+          {
+            "key": "readAt",
+            "label": "Read on"
+          },
+          {
+            "key": "sendingRef",
+            "label": "Sending"
           },
           "receivedAt"
         ],

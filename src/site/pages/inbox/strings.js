@@ -44,6 +44,7 @@ export default {
 		'Legal effect': 'Rechtsgevolg',
 		'Loading…': 'Laden…',
 		'Mark as read': 'Markeren als gelezen',
+		'The sender sees when you opened this message.': 'De afzender ziet wanneer u dit bericht hebt geopend.',
 		'Maximum file size: {size} MB.': 'Maximale bestandsgrootte: {size} MB.',
 		Messages: 'Berichten',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -187,6 +188,7 @@ export default {
 		'Legal effect': 'Legal effect',
 		'Loading…': 'Loading…',
 		'Mark as read': 'Mark as read',
+		'The sender sees when you opened this message.': 'The sender sees when you opened this message.',
 		'Maximum file size: {size} MB.': 'Maximum file size: {size} MB.',
 		Messages: 'Messages',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
