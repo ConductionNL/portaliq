@@ -49,6 +49,7 @@ use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
+use OCA\Portaliq\Listener\GlossaryRelationGuardListener;
 use OCA\Portaliq\Listener\MediaWriteGuardListener;
 use OCA\Portaliq\Listener\NoticeWriteGuardListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
@@ -228,6 +229,11 @@ class Application extends App implements IBootstrap {
 
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
 			$context->registerEventListener($event, MediaWriteGuardListener::class);
+		}
+
+		// A glossary term relates only to terms of its own portal (portal-cms-content-model).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, GlossaryRelationGuardListener::class);
 		}
 
 		// A notice ends after it starts (operate-maintenance-notice REQ-OMN-003).

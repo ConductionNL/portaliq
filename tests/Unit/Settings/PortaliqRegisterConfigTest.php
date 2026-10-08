@@ -359,11 +359,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.69.0 (portal 0.12.0): `residentMenu.groups` and `myCases.display`
 		// (zuiddrecht-resident-pages-match-the-boards). Additive.
 		// 0.70.0 (portal 0.13.0): `residentMenu.leaveOut` (resident-menu-leave-out). Additive.
+		// 0.73.0 (menu 0.1.1): a sub-item that declares its own `items` is rejected (portal-cms-content-model). Tightens, loses no deployed shape.
 		// 0.72.0 (portal 0.15.0): `tokens` (portal-theme-blocks-and-contributed-pages). Additive.
 		// 0.71.0 (portal 0.14.0): `searchInsideDocuments` (portal-federated-search) and the
 		// `portalDraft` schema (site-multi-step-forms). Additive.
-		$this->assertSame('0.72.0', self::$register['info']['version']);
-		$this->assertSame('0.72.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.73.0', self::$register['info']['version']);
+		$this->assertSame('0.73.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);

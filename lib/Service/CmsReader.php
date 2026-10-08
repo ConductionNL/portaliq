@@ -286,14 +286,14 @@ class CmsReader {
 	 * edit; this read bypasses RBAC like every other read here.
 	 *
 	 * @param string $portal The portal slug.
-	 * @param string $schema `page` or `menu`.
+	 * @param string $schema `page`, `menu` or `glossaryTerm`.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
 	 */
 	public function rowsForCheck(string $portal, string $schema): array {
-		if (in_array($schema, ['page', 'menu'], true) === false) {
+		if (in_array($schema, ['page', 'menu', 'glossaryTerm'], true) === false) {
 			return [];
 		}
 

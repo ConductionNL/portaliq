@@ -109,6 +109,7 @@
             <step>OCA\Portaliq\Repair\RenameDutchColumns</step>
             <step>OCA\Portaliq\Repair\MovePortalAuditEntries</step>
             <step>OCA\Portaliq\Repair\BackfillNewsPublishedAt</step>
+            <step>OCA\Portaliq\Repair\BackfillCmsPortalReference</step>
         </post-migration>
         <install>
             <step>OCA\Portaliq\Repair\InitializeSettings</step>

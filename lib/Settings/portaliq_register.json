@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.72.0"
+        "version": "0.73.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.72.0",
+                "version": "0.73.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -4254,7 +4254,7 @@
             "menu": {
                 "slug": "menu",
                 "icon": "Menu",
-                "version": "0.1.0",
+                "version": "0.1.1",
                 "title": "Menu",
                 "authorization": {
                     "read": [
@@ -4347,6 +4347,9 @@
                                     "description": "One level of sub-items. A sub-item MUST NOT declare its own `items` — three-level nesting is rejected.",
                                     "items": {
                                         "type": "object",
+                                        "not": {
+                                            "required": ["items"]
+                                        },
                                         "properties": {
                                             "order": {
                                                 "title": "Order",
