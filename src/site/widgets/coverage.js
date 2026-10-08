@@ -1027,4 +1027,9 @@ export const SITE_COMPOSITIONS = [
 		],
 		why: 'The portal\'s public catalogue: search, facets, results and pages ("Cursusaanbod", "Opleidingen").',
 	},
+	{
+		key: 'nlPublicTable',
+		composes: ['Table'],
+		why: 'One kind of an app\'s public index as a table ("Toetsrooster 4 havo").',
+	},
 ]

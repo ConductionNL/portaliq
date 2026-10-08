@@ -125,6 +125,8 @@ return [
         ['name' => 'contentNews#show', 'url' => '/api/content/news/{id}', 'verb' => 'GET'],
         // A portal's public catalogue: its news and every app's public index (portal-public-catalogue).
         ['name' => 'contentCatalogue#index', 'url' => '/api/content/catalogue', 'verb' => 'GET'],
+        // The kinds an app's public index declares, for the editor's block forms (editor-blocks-read-public-app-data).
+        ['name' => 'contentCatalogue#kinds', 'url' => '/api/content/catalogue/kinds', 'verb' => 'GET'],
         [
             'name' => 'content#page',
             'url' => '/api/content/page/{route}',

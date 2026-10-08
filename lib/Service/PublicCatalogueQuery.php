@@ -75,10 +75,17 @@ class PublicCatalogueQuery {
 		$filters = $this->filters(declared: ($params['filters'] ?? []));
 		$today   = (string)($params['today'] ?? gmdate('Y-m-d'));
 
+		$app        = (string)($params['app'] ?? '');
+		$categories = array_values(array_filter((array)($params['categories'] ?? []), 'is_string'));
+		$range      = (string)($params['range'] ?? '');
+
 		$base = array_values(
 			array_filter(
 				$items,
 				fn (array $item): bool => ($types === [] || in_array($item['type'] ?? '', $types, true) === true)
+					&& ($app === '' || str_starts_with((string)($item['id'] ?? ''), $app . ':') === true)
+					&& ($categories === [] || in_array((string)($item['category'] ?? ''), $categories, true) === true)
+					&& ($range !== 'schoolYear' || $this->inSchoolYear(item: $item, today: $today) === true)
 					&& $this->matches(item: $item, words: $words)
 					&& (($params['upcoming'] ?? false) !== true || $this->isUpcoming(item: $item, today: $today))
 			)
@@ -149,6 +156,32 @@ class PublicCatalogueQuery {
 
 		return true;
 	}//end matches()
+
+	/**
+	 * Whether the item's day falls in the school year that holds today
+	 * (1 August to 31 July).
+	 *
+	 * @param array<string, mixed> $item  The item.
+	 * @param string               $today Today, `Y-m-d`.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-2
+	 */
+	private function inSchoolYear(array $item, string $today): bool {
+		$day = substr((string)($item['date'] ?? ''), 0, 10);
+		if ($day === '' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $today) !== 1) {
+			return false;
+		}
+
+		$year  = (int)substr($today, 0, 4);
+		$start = ($year - 1);
+		if ((int)substr($today, 5, 2) >= 8) {
+			$start = $year;
+		}
+
+		return $day >= sprintf('%04d-08-01', $start) && $day <= sprintf('%04d-07-31', ($start + 1));
+	}//end inSchoolYear()
 
 	/**
 	 * Whether an item's (end) date is today or later; an item without a date

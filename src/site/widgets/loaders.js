@@ -60,4 +60,5 @@ export const loaders = {
 	nlLinkColumns: () => import('./nlLinkColumns/NlLinkColumns.vue'),
 	nlLookupForm: () => import('./nlLookupForm/NlLookupForm.vue'),
 	nlCatalogue: () => import('./nlCatalogue/NlCatalogue.vue'),
+	nlPublicTable: () => import('./nlPublicTable/NlPublicTable.vue'),
 }

@@ -55,6 +55,11 @@ class ContentCatalogueController extends Controller {
 	private const MAX_QUERY = 200;
 
 	/**
+	 * The filter value an editor sets for "the visitor's own".
+	 */
+	private const VISITOR = 'visitor';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string               $appName   The app name.
@@ -84,6 +89,9 @@ class ContentCatalogueController extends Controller {
 	 * @param int         $page     The page, from 1.
 	 * @param int         $limit    Results per page, at most 50.
 	 * @param string      $upcoming `1` for only the items whose date is today or later.
+	 * @param string      $app        Only items of this app's index ('' for all).
+	 * @param string      $categories Comma-separated categories ('' for all).
+	 * @param string      $range      `schoolYear` for only the school year that holds today.
 	 *
 	 * @return JSONResponse `{items, total, page, pages, facets}`, or 401 / 403 / 404.
 	 *
@@ -101,6 +109,9 @@ class ContentCatalogueController extends Controller {
 		int $page = 1,
 		int $limit = 10,
 		string $upcoming = '',
+		string $app = '',
+		string $categories = '',
+		string $range = '',
 	): JSONResponse {
 		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
 		if ($resolved === null) {
@@ -112,6 +123,11 @@ class ContentCatalogueController extends Controller {
 			return $refusal;
 		}
 
+		$appKey = '';
+		if (preg_match('/^[a-z][a-z0-9_]{0,63}$/', $app) === 1) {
+			$appKey = $app;
+		}
+
 		$chosen = json_decode($filters, true);
 		if (is_array($chosen) === false) {
 			$chosen = [];
@@ -119,6 +135,12 @@ class ContentCatalogueController extends Controller {
 
 		if (in_array($sort, PublicCatalogueQuery::SORTS, true) === false) {
 			$sort = 'relevance';
+		}
+
+		$chosen   = $this->withVisitorValues(portal: (string)$resolved['slug'], app: $appKey, filters: $chosen);
+		$rangeKey = '';
+		if ($range === 'schoolYear') {
+			$rangeKey = $range;
 		}
 
 		$result = (new PublicCatalogueQuery())->run(
@@ -131,12 +153,86 @@ class ContentCatalogueController extends Controller {
 				'page'     => $page,
 				'limit'    => $limit,
 				'upcoming' => ($upcoming === '1'),
+				'app'      => $appKey,
+				'categories' => array_values(array_filter(array_map('trim', explode(',', $categories)), static fn (string $category): bool => $category !== '')),
+				'range'    => $rangeKey,
 				'today'    => date('Y-m-d'),
 			]
 		);
 
 		return $this->publicJson(payload: $result);
 	}//end index()
+
+	/**
+	 * What each app declares its public index kinds can be narrowed by and
+	 * drawn as (categories, filters, columns), for the editor's block forms.
+	 * Gated like the catalogue itself.
+	 *
+	 * @param string|null $portal The portal slug; else resolved from the request.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function kinds(?string $portal = null): JSONResponse {
+		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($resolved === null) {
+			return $this->notFound();
+		}
+
+		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->publicJson(payload: ['kinds' => $this->catalogue->kindsFor(portal: (string)$resolved['slug'])]);
+	}//end kinds()
+
+	/**
+	 * Resolve the filter value `visitor`: for a signed-in person it becomes
+	 * that person's own value from the app; for an anonymous one the value is
+	 * removed, and a filter left with no value narrows nothing.
+	 *
+	 * @param string                           $portal  The portal slug.
+	 * @param string                           $app     The app whose index is read.
+	 * @param array<string, array<int,string>> $filters The chosen filters.
+	 *
+	 * @return array<string, mixed> The filters with `visitor` resolved.
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-3
+	 */
+	private function withVisitorValues(string $portal, string $app, array $filters): array {
+		$subject  = null;
+		$resolved = null;
+		foreach ($filters as $label => $values) {
+			$values = array_values(array_filter((array)$values, 'is_string'));
+			if (in_array(self::VISITOR, $values, true) === false) {
+				continue;
+			}
+
+			$values = array_values(array_filter($values, static fn (string $value): bool => $value !== self::VISITOR));
+			if ($resolved === null) {
+				$subject  = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+				$resolved = [];
+				if ($subject !== null && $app !== '') {
+					$resolved = $this->catalogue->visitorValuesFor(portal: $portal, appId: $app, subject: $subject);
+				}
+			}
+
+			$values = array_merge($values, ($resolved[$label] ?? []));
+			if ($values === []) {
+				unset($filters[$label]);
+				continue;
+			}
+
+			$filters[$label] = array_values(array_unique($values));
+		}//end foreach
+
+		return $filters;
+	}//end withVisitorValues()
 
 	/**
 	 * Null when the portal is public or the session meets its trust; else

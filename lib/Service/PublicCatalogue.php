@@ -33,6 +33,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\PublicIndexItems;
+use OCA\Portaliq\Contribution\PublicIndexKinds;
 use OCP\App\IAppManager;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
@@ -169,4 +170,69 @@ class PublicCatalogue {
 		return $out;
 	}//end appItems()
 
+	/**
+	 * What each installed app declares its public index kinds can be narrowed
+	 * by and drawn as. Not cached: it is read only when an editor opens the
+	 * palette.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<int, array<string, mixed>> The kinds.
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-1
+	 */
+	public function kindsFor(string $portal): array {
+		$out   = [];
+		$shape = new PublicIndexKinds();
+		foreach ($this->apps->getInstalledApps() as $appId) {
+			$provider = $this->locator->locate(appId: (string)$appId);
+			if ($provider === null || method_exists($provider, PublicIndexKinds::METHOD) === false) {
+				continue;
+			}
+
+			try {
+				$answer = $provider->{PublicIndexKinds::METHOD}($portal);
+			} catch (Throwable $e) {
+				$this->logger->warning('Portaliq: public index kinds failed', ['app' => (string)$appId, 'reason' => $e->getMessage()]);
+				continue;
+			}
+
+			$out = array_merge($out, $shape->kinds(appId: (string)$appId, answer: $answer));
+		}
+
+		return $out;
+	}//end kindsFor()
+
+	/**
+	 * The filter values the signed-in person resolves to in one app: the
+	 * value `visitor` of a table filter. An app that cannot say answers
+	 * nothing, and the filter stays empty.
+	 *
+	 * @param string               $portal  The portal slug.
+	 * @param string               $appId   The app whose index is read.
+	 * @param array<string, mixed> $subject The signed-in subject.
+	 *
+	 * @return array<string, array<int, string>> Filter label to values.
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-3
+	 */
+	public function visitorValuesFor(string $portal, string $appId, array $subject): array {
+		if (in_array($appId, $this->apps->getInstalledApps(), true) === false) {
+			return [];
+		}
+
+		$provider = $this->locator->locate(appId: $appId);
+		if ($provider === null || method_exists($provider, PublicIndexKinds::VISITOR_METHOD) === false) {
+			return [];
+		}
+
+		try {
+			$answer = $provider->{PublicIndexKinds::VISITOR_METHOD}($portal, $subject);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: public index visitor failed', ['app' => $appId, 'reason' => $e->getMessage()]);
+			return [];
+		}
+
+		return (new PublicIndexKinds())->visitorValues(answer: $answer);
+	}//end visitorValuesFor()
 }//end class

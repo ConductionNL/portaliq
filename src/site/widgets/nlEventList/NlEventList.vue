@@ -84,7 +84,7 @@
 import DateTile from '../../components/mijn/DateTile.vue'
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
 import { fetchCatalogue } from '../../lib/publicCatalogue.js'
-import { eventItemsOf } from '../nlCatalogue/catalogue.js'
+import { eventItemsOf, sourceQuery } from '../nlCatalogue/catalogue.js'
 import { eventRows } from './events.js'
 
 import '@utrecht/heading-3-css/dist/index.css'
@@ -187,6 +187,17 @@ export default {
 		 * @spec openspec/changes/portal-public-catalogue/specs/portaliq-cms/spec.md#requirement-a-dated-list-may-fill-itself-from-the-catalogue
 		 */
 		async loadSource() {
+			// An app's own index: its kind, categories and a limit or range.
+			const own = sourceQuery(this.source)
+			if (own !== null) {
+				try {
+					const page = await fetchCatalogue(this.portal, { ...own, upcoming: this.source?.range !== 'schoolYear' })
+					this.fetched = eventItemsOf(page.items)
+				} catch {
+					this.fetched = null
+				}
+				return
+			}
 			const types = Array.isArray(this.source?.types)
 				? this.source.types.filter((type) => typeof type === 'string')
 				: []

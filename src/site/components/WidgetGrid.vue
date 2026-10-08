@@ -590,6 +590,7 @@ export default {
 			if (
 				widget.widgetKey === 'nlCatalogue'
 				|| widget.widgetKey === 'nlEventList'
+				|| widget.widgetKey === 'nlPublicTable'
 			) {
 				return { ...props, portal: this.portal }
 			}

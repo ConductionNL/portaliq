@@ -11,7 +11,8 @@
  * visitor as it came:
  *
  *     {id, type, kind, title, summary?, date?, endDate?, dateLabel?, meta?[],
- *      facets?{label: value}, note?, noteTone?, href?, badge?}
+ *      facets?{label: value}, category?, cells?{column: text}, note?,
+ *      noteTone?, href?, badge?}
  *
  * `type` is a machine key the page filters on (`course`, `programme`,
  * `event`); `kind` is the word a visitor reads ("Cursus"). `href` is a path
@@ -66,6 +67,11 @@ class PublicIndexItems {
 	 * The most meta lines and facets one item carries.
 	 */
 	private const MAX_PARTS = 6;
+
+	/**
+	 * The most cells one row may carry.
+	 */
+	private const MAX_CELLS = 12;
 
 	/**
 	 * The tones a note may have.
@@ -145,6 +151,17 @@ class PublicIndexItems {
 	 * @return array<string, mixed>
 	 */
 	private function withText(array $item, array $entry): array {
+		// One category and the cells of a table row (editor-blocks-read-public-app-data).
+		$category = $this->short(value: ($entry['category'] ?? null));
+		if ($category !== null) {
+			$item['category'] = $category;
+		}
+
+		$cells = $this->cells(declared: ($entry['cells'] ?? null));
+		if ($cells !== []) {
+			$item['cells'] = $cells;
+		}
+
 		$summary = $this->text(value: ($entry['summary'] ?? null), max: self::MAX_SUMMARY);
 		if ($summary !== null) {
 			$item['summary'] = $summary;
@@ -243,6 +260,32 @@ class PublicIndexItems {
 
 		return $item;
 	}//end withLink()
+
+	/**
+	 * The cells of a table row: a column key and its text. A key that is not
+	 * a plain word, or a value that is not text, is dropped.
+	 *
+	 * @param mixed $declared The entry's cells.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-1
+	 */
+	private function cells(mixed $declared): array {
+		if (is_array($declared) === false) {
+			return [];
+		}
+
+		$out = [];
+		foreach ($declared as $key => $value) {
+			$text = $this->short(value: $value);
+			if (is_string($key) === true && preg_match('/^[a-z][A-Za-z0-9]{0,29}$/', $key) === 1 && $text !== null && count($out) < self::MAX_CELLS) {
+				$out[$key] = $text;
+			}
+		}
+
+		return $out;
+	}//end cells()
 
 	/**
 	 * The values of a list that are short one-line strings.
