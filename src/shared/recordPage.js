@@ -134,7 +134,12 @@ export function withLookups(rows, lookups, store, record) {
 			lookup,
 			record,
 		)) {
-			const key = String(row?.[lookup.matchField] ?? '')
+			// `matchField: "id"` is the row's id, wherever the envelope keeps
+			// it (lookup-by-row-field).
+			const key = String(
+				(lookup.matchField === 'id' ? idOf(row) : row?.[lookup.matchField])
+					?? '',
+			)
 			if (key !== '' && !index.has(key)) {
 				index.set(key, row[lookup.valueField])
 			}
@@ -144,7 +149,11 @@ export function withLookups(rows, lookups, store, record) {
 	return rows.map((row) => {
 		const out = { ...row }
 		lookups.forEach((lookup, i) => {
-			const raw = indexes[i].get(idOf(row))
+			// Keyed on the row's id, or on one of its fields (lookup-by-row-field).
+			const key = lookup.rowField
+				? String(row?.[lookup.rowField] ?? '')
+				: idOf(row)
+			const raw = key === '' ? undefined : indexes[i].get(key)
 			const labelled =
 				raw !== undefined && raw !== null && lookup.values
 					? lookup.values[String(raw)]
