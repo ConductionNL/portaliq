@@ -104,6 +104,15 @@
 							@click.stop="rowAction(action, row)">
 							{{ action.label || action.id }}
 						</button>
+						<!-- Where an action is not offered on this row, the reason the
+						     contribution gives (case-actions-row-inputs-and-conditions). -->
+						<span
+							v-for="reason in reasonsFor(row)"
+							:key="reason.id"
+							class="pq-collection-table__reason"
+							data-testid="collection-table-reason">
+							{{ reason.text }}
+						</span>
 					</td>
 				</tr>
 			</tbody>
@@ -112,6 +121,7 @@
 </template>
 
 <script>
+import { unavailableReason } from '../../../shared/rowAction.js'
 import {
 	badgeModifier,
 	deriveColumns,
@@ -220,6 +230,19 @@ export default {
 			return this.actions.filter(
 				(action) => !this.offers || this.offers(action, row),
 			)
+		},
+
+		reasonsFor(row) {
+			const out = []
+			for (const action of this.actions) {
+				if (this.offers && !this.offers(action, row)) {
+					const text = unavailableReason(action, row)
+					if (text !== '') {
+						out.push({ id: action.id, text })
+					}
+				}
+			}
+			return out
 		},
 
 		select(row) {

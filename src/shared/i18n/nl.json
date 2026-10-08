@@ -407,5 +407,6 @@
 	"All": "Alles",
 	"Unread ({count})": "Ongelezen ({count})",
 	"Mark all as read": "Alles als gelezen markeren",
-	"Filter messages": "Berichten filteren"
+	"Filter messages": "Berichten filteren",
+	"This field is required.": "Dit veld is verplicht."
 }
