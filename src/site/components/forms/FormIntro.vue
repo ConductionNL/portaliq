@@ -76,10 +76,18 @@ export default {
 	emits: ['start'],
 
 	computed: {
+		/**
+		 * @return {object} The intro as a lead and blocks.
+		 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+		 */
 		view() {
 			return introView(this.intro) || { lead: '', blocks: [] }
 		},
 
+		/**
+		 * @return {object} The words in the page language.
+		 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+		 */
 		words() {
 			return WORDS[pageLocale(this.locale)] || WORDS.nl
 		},

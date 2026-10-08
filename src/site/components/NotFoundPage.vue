@@ -160,6 +160,11 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the portal's pages when none were handed in.
+	 *
+	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t05
+	 */
 	mounted() {
 		if (this.initialPages === null) {
 			this.loadPages()

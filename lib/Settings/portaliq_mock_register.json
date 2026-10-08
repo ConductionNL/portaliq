@@ -3512,6 +3512,333 @@
         "kind": "recurring",
         "status": "done",
         "endDate": "2026-09-30"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFaq",
+          "slug": "portalfaq-portalfaq-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "question": "Voorbeeld Question 1",
+        "answer": "Voorbeeld Answer 1",
+        "pages": [
+          "Voorbeeld Pages 1"
+        ],
+        "topic": "Voorbeeld Topic 1",
+        "order": 0,
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFaq",
+          "slug": "portalfaq-portalfaq-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "question": "Voorbeeld Question 2",
+        "answer": "Voorbeeld Answer 2",
+        "pages": [
+          "Voorbeeld Pages 2"
+        ],
+        "topic": "Voorbeeld Topic 2",
+        "order": 0,
+        "status": "published"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFaq",
+          "slug": "portalfaq-portalfaq-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "question": "Voorbeeld Question 3",
+        "answer": "Voorbeeld Answer 3",
+        "pages": [
+          "Voorbeeld Pages 3"
+        ],
+        "topic": "Voorbeeld Topic 3",
+        "order": 0,
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFinder",
+          "slug": "portalfinder-voorbeeld-title-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "title": "Voorbeeld Title 1",
+        "products": [
+          "Voorbeeld Products 1"
+        ],
+        "questions": [
+          {
+            "id": "Voorbeeld Id 1",
+            "text": "Voorbeeld Text 1",
+            "help": "Voorbeeld Help 1",
+            "excludesOnYes": [
+              "Voorbeeld Excludesonyes 1"
+            ],
+            "excludesOnNo": [
+              "Voorbeeld Excludesonno 1"
+            ]
+          }
+        ],
+        "intro": "Voorbeeld Intro 1",
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFinder",
+          "slug": "portalfinder-voorbeeld-title-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "title": "Voorbeeld Title 2",
+        "products": [
+          "Voorbeeld Products 2"
+        ],
+        "questions": [
+          {
+            "id": "Voorbeeld Id 2",
+            "text": "Voorbeeld Text 2",
+            "help": "Voorbeeld Help 2",
+            "excludesOnYes": [
+              "Voorbeeld Excludesonyes 2"
+            ],
+            "excludesOnNo": [
+              "Voorbeeld Excludesonno 2"
+            ]
+          }
+        ],
+        "intro": "Voorbeeld Intro 2",
+        "status": "published"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFinder",
+          "slug": "portalfinder-voorbeeld-title-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "title": "Voorbeeld Title 3",
+        "products": [
+          "Voorbeeld Products 3"
+        ],
+        "questions": [
+          {
+            "id": "Voorbeeld Id 3",
+            "text": "Voorbeeld Text 3",
+            "help": "Voorbeeld Help 3",
+            "excludesOnYes": [
+              "Voorbeeld Excludesonyes 3"
+            ],
+            "excludesOnNo": [
+              "Voorbeeld Excludesonno 3"
+            ]
+          }
+        ],
+        "intro": "Voorbeeld Intro 3",
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailLog",
+          "slug": "portalmaillog-portalmaillog-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "templateKey": "Voorbeeld Templatekey 1",
+        "status": "queued",
+        "sentAt": "2026-03-01T09:00:00+00:00",
+        "kind": "Voorbeeld Kind 1",
+        "recipientMasked": "Voorbeeld Recipientmasked 1",
+        "recipientHash": "Voorbeeld Recipienthash 1",
+        "subjectRef": "Voorbeeld Subjectref 1",
+        "caseRef": "Voorbeeld Caseref 1",
+        "failureReason": "Voorbeeld Failurereason 1",
+        "retryOf": "Voorbeeld Retryof 1"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailLog",
+          "slug": "portalmaillog-portalmaillog-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "templateKey": "Voorbeeld Templatekey 2",
+        "status": "delivered",
+        "sentAt": "2026-03-02T09:00:00+00:00",
+        "kind": "Voorbeeld Kind 2",
+        "recipientMasked": "Voorbeeld Recipientmasked 2",
+        "recipientHash": "Voorbeeld Recipienthash 2",
+        "subjectRef": "Voorbeeld Subjectref 2",
+        "caseRef": "Voorbeeld Caseref 2",
+        "failureReason": "Voorbeeld Failurereason 2",
+        "retryOf": "Voorbeeld Retryof 2"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailLog",
+          "slug": "portalmaillog-portalmaillog-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "templateKey": "Voorbeeld Templatekey 3",
+        "status": "failed",
+        "sentAt": "2026-03-03T09:00:00+00:00",
+        "kind": "Voorbeeld Kind 3",
+        "recipientMasked": "Voorbeeld Recipientmasked 3",
+        "recipientHash": "Voorbeeld Recipienthash 3",
+        "subjectRef": "Voorbeeld Subjectref 3",
+        "caseRef": "Voorbeeld Caseref 3",
+        "failureReason": "Voorbeeld Failurereason 3",
+        "retryOf": "Voorbeeld Retryof 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailTemplate",
+          "slug": "portalmailtemplate-portalmailtemplate-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "templateKey": "Voorbeeld Templatekey 1",
+        "subject": "Voorbeeld Subject 1",
+        "body": "Voorbeeld Body 1",
+        "active": true,
+        "updatedBy": "Voorbeeld Updatedby 1"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailTemplate",
+          "slug": "portalmailtemplate-portalmailtemplate-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "templateKey": "Voorbeeld Templatekey 2",
+        "subject": "Voorbeeld Subject 2",
+        "body": "Voorbeeld Body 2",
+        "active": true,
+        "updatedBy": "Voorbeeld Updatedby 2"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailTemplate",
+          "slug": "portalmailtemplate-portalmailtemplate-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "templateKey": "Voorbeeld Templatekey 3",
+        "subject": "Voorbeeld Subject 3",
+        "body": "Voorbeeld Body 3",
+        "active": true,
+        "updatedBy": "Voorbeeld Updatedby 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "sharedBlock",
+          "slug": "sharedblock-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "organisation": "Voorbeeld Organisation 1",
+        "description": "Voorbeeld Description 1",
+        "status": "draft",
+        "widgets": [
+          {
+            "id": "Voorbeeld Id 1",
+            "widgetKey": "Voorbeeld Widgetkey 1",
+            "slot": "Voorbeeld Slot 1",
+            "gridX": 1,
+            "gridY": 1,
+            "gridWidth": 1,
+            "gridHeight": 1,
+            "props": {}
+          }
+        ],
+        "draftWidgets": [
+          {
+            "id": "Voorbeeld Id 1",
+            "widgetKey": "Voorbeeld Widgetkey 1",
+            "slot": "Voorbeeld Slot 1",
+            "gridX": 1,
+            "gridY": 1,
+            "gridWidth": 1,
+            "gridHeight": 1,
+            "props": {}
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "sharedBlock",
+          "slug": "sharedblock-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "organisation": "Voorbeeld Organisation 2",
+        "description": "Voorbeeld Description 2",
+        "status": "published",
+        "widgets": [
+          {
+            "id": "Voorbeeld Id 2",
+            "widgetKey": "Voorbeeld Widgetkey 2",
+            "slot": "Voorbeeld Slot 2",
+            "gridX": 2,
+            "gridY": 2,
+            "gridWidth": 2,
+            "gridHeight": 2,
+            "props": {}
+          }
+        ],
+        "draftWidgets": [
+          {
+            "id": "Voorbeeld Id 2",
+            "widgetKey": "Voorbeeld Widgetkey 2",
+            "slot": "Voorbeeld Slot 2",
+            "gridX": 2,
+            "gridY": 2,
+            "gridWidth": 2,
+            "gridHeight": 2,
+            "props": {}
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "sharedBlock",
+          "slug": "sharedblock-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "organisation": "Voorbeeld Organisation 3",
+        "description": "Voorbeeld Description 3",
+        "status": "draft",
+        "widgets": [
+          {
+            "id": "Voorbeeld Id 3",
+            "widgetKey": "Voorbeeld Widgetkey 3",
+            "slot": "Voorbeeld Slot 3",
+            "gridX": 3,
+            "gridY": 3,
+            "gridWidth": 3,
+            "gridHeight": 3,
+            "props": {}
+          }
+        ],
+        "draftWidgets": [
+          {
+            "id": "Voorbeeld Id 3",
+            "widgetKey": "Voorbeeld Widgetkey 3",
+            "slot": "Voorbeeld Slot 3",
+            "gridX": 3,
+            "gridY": 3,
+            "gridWidth": 3,
+            "gridHeight": 3,
+            "props": {}
+          }
+        ]
       }
     ]
   }

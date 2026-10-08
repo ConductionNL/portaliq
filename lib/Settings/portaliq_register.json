@@ -1031,8 +1031,12 @@
                         "description": "SHA-256 of the one-time secret in the invitation mail of a waiting account. Emptied when the secret is redeemed. Readable by administrators only.",
                         "example": "9f86d0…",
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "claimCodeHash": {
@@ -1041,8 +1045,12 @@
                         "description": "HMAC-SHA256 of the one-time code in the invitation letter of a waiting account, keyed with a key derived from the instance secret. Emptied when the code is redeemed. Readable by administrators only.",
                         "example": "9f86d0…",
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "claimExpiresAt": {
@@ -1052,8 +1060,12 @@
                         "description": "When the invitation of a waiting account stops working.",
                         "example": "2026-10-12T09:00:00+00:00",
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "claimAttempts": {
@@ -1062,8 +1074,12 @@
                         "description": "How many wrong invitation secrets this account offered inside the running hour. Five lock the redeem route for the account.",
                         "example": 0,
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "claimAttemptsSince": {
@@ -1073,8 +1089,12 @@
                         "description": "When the first wrong invitation secret of the running hour was offered.",
                         "example": "2026-10-05T09:00:00+00:00",
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "pendingEmailMode": {
@@ -4581,7 +4601,9 @@
                                     "items": {
                                         "type": "object",
                                         "not": {
-                                            "required": ["items"]
+                                            "required": [
+                                                "items"
+                                            ]
                                         },
                                         "properties": {
                                             "order": {
@@ -8431,22 +8453,32 @@
                             "type": "object",
                             "properties": {
                                 "id": {
-                                    "type": "string"
+                                    "title": "Question id",
+                                    "type": "string",
+                                    "description": "A short key for the question, unique within the finder."
                                 },
                                 "text": {
-                                    "type": "string"
+                                    "title": "Question",
+                                    "type": "string",
+                                    "description": "The yes or no question as the resident reads it."
                                 },
                                 "help": {
-                                    "type": "string"
+                                    "title": "Help text",
+                                    "type": "string",
+                                    "description": "A line of help under the question; may contain a link."
                                 },
                                 "excludesOnYes": {
+                                    "title": "Ruled out on yes",
                                     "type": "array",
+                                    "description": "The product routes an answer of yes rules out.",
                                     "items": {
                                         "type": "string"
                                     }
                                 },
                                 "excludesOnNo": {
+                                    "title": "Ruled out on no",
                                     "type": "array",
+                                    "description": "The product routes an answer of no rules out.",
                                     "items": {
                                         "type": "string"
                                     }
@@ -8522,28 +8554,44 @@
                             "type": "object",
                             "properties": {
                                 "id": {
-                                    "type": "string"
+                                    "title": "Widget id",
+                                    "type": "string",
+                                    "description": "The widget's id, unique within the grid."
                                 },
                                 "widgetKey": {
-                                    "type": "string"
+                                    "title": "Widget",
+                                    "type": "string",
+                                    "description": "The kind of widget, such as markdown."
                                 },
                                 "slot": {
-                                    "type": "string"
+                                    "title": "Region",
+                                    "type": "string",
+                                    "description": "The page region the widget is in."
                                 },
                                 "gridX": {
-                                    "type": "integer"
+                                    "title": "Column",
+                                    "type": "integer",
+                                    "description": "The column the widget starts in, from 0."
                                 },
                                 "gridY": {
-                                    "type": "integer"
+                                    "title": "Row",
+                                    "type": "integer",
+                                    "description": "The row the widget starts in, from 0."
                                 },
                                 "gridWidth": {
-                                    "type": "integer"
+                                    "title": "Width",
+                                    "type": "integer",
+                                    "description": "How many of the 12 columns the widget covers."
                                 },
                                 "gridHeight": {
-                                    "type": "integer"
+                                    "title": "Height",
+                                    "type": "integer",
+                                    "description": "How many rows the widget covers."
                                 },
                                 "props": {
-                                    "type": "object"
+                                    "title": "Settings",
+                                    "type": "object",
+                                    "description": "The widget's own settings."
                                 }
                             }
                         },
@@ -8557,28 +8605,44 @@
                             "type": "object",
                             "properties": {
                                 "id": {
-                                    "type": "string"
+                                    "title": "Widget id",
+                                    "type": "string",
+                                    "description": "The widget's id, unique within the grid."
                                 },
                                 "widgetKey": {
-                                    "type": "string"
+                                    "title": "Widget",
+                                    "type": "string",
+                                    "description": "The kind of widget, such as markdown."
                                 },
                                 "slot": {
-                                    "type": "string"
+                                    "title": "Region",
+                                    "type": "string",
+                                    "description": "The page region the widget is in."
                                 },
                                 "gridX": {
-                                    "type": "integer"
+                                    "title": "Column",
+                                    "type": "integer",
+                                    "description": "The column the widget starts in, from 0."
                                 },
                                 "gridY": {
-                                    "type": "integer"
+                                    "title": "Row",
+                                    "type": "integer",
+                                    "description": "The row the widget starts in, from 0."
                                 },
                                 "gridWidth": {
-                                    "type": "integer"
+                                    "title": "Width",
+                                    "type": "integer",
+                                    "description": "How many of the 12 columns the widget covers."
                                 },
                                 "gridHeight": {
-                                    "type": "integer"
+                                    "title": "Height",
+                                    "type": "integer",
+                                    "description": "How many rows the widget covers."
                                 },
                                 "props": {
-                                    "type": "object"
+                                    "title": "Settings",
+                                    "type": "object",
+                                    "description": "The widget's own settings."
                                 }
                             }
                         },
@@ -9551,8 +9615,16 @@
                     "rsvpBy": {
                         "title": "Who may answer",
                         "type": "array",
-                        "items": {"type": "string", "enum": ["guardian", "learner"]},
-                        "example": ["guardian"],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "guardian",
+                                "learner"
+                            ]
+                        },
+                        "example": [
+                            "guardian"
+                        ],
                         "description": "Who may answer for a child: guardian, learner, or both. Without it only a guardian answers."
                     },
                     "askSeats": {

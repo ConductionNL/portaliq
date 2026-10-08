@@ -59,6 +59,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use Throwable;
 
 /**
  * Renders the intake form, takes the submission and reports on it.
@@ -697,7 +698,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		$slug       = (string)($site['slug'] ?? '');
-		$submission = $this->queue->find(reference: $reference, portal: $slug);
+		$submission = $this->findSubmission(reference: $reference, portal: $slug);
 		$owner = (string)($submission['subjectRef'] ?? '');
 		if ($submission === null || $owner === '' || $owner !== (string)($subject['subjectRef'] ?? '')) {
 			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
@@ -747,6 +748,24 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	}//end pay()
 
 	/**
+	 * A submission by its reference, or null when it is not there or cannot be read.
+	 *
+	 * @param string $reference The submission's reference.
+	 * @param string $portal    The portal's slug.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	private function findSubmission(string $reference, string $portal): ?array {
+		try {
+			return $this->queue->find(reference: $reference, portal: $portal);
+		} catch (Throwable) {
+			return null;
+		}
+	}//end findSubmission()
+
+	/**
 	 * The payment state of a submission, or null when none was started.
 	 *
 	 * @param string $reference The submission's reference.
@@ -757,7 +776,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t05
 	 */
 	private function paymentOf(string $reference, string $portal): ?array {
-		$submission = $this->queue->find(reference: $reference, portal: $portal);
+		$submission = $this->findSubmission(reference: $reference, portal: $portal);
 		$intentId   = trim((string)($submission['paymentIntentId'] ?? ''));
 		if ($intentId === '' || $this->intents === null || $this->fees === null) {
 			return null;

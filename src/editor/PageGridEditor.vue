@@ -455,6 +455,11 @@ export default {
 		},
 	},
 
+	/**
+	 * Listen for keys, and list the shared blocks an author can place.
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t05
+	 */
 	async mounted() {
 		window.addEventListener('keydown', this.onKeydown)
 		if (this.loadBlocks) {

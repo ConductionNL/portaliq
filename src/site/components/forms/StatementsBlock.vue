@@ -67,6 +67,10 @@ export default {
 	emits: ['update:modelValue'],
 
 	computed: {
+		/**
+		 * @return {object} The words in the page language.
+		 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+		 */
 		words() {
 			return WORDS[pageLocale(this.locale)] || WORDS.nl
 		},
