@@ -50,7 +50,7 @@ class CollectionListKeys {
 	private const MAX_LABEL = 120;
 
 	/**
-	 * The `limit`, `sort` and `label` a collection block keeps.
+	 * The `limit`, `sort`, `label` and `skip` a collection block keeps.
 	 *
 	 * @param array<string, mixed>      $block      The declared block.
 	 * @param array<string, mixed>|null $collection The collection it reads, or null when unknown.
@@ -71,6 +71,8 @@ class CollectionListKeys {
 		// The block's own heading ("Latest grades"), which wins over the
 		// collection's label (collection-block-label).
 		$out += $this->label(block: $block);
+		// Rows to leave out at the start (collection-skip).
+		$out += $this->skip(block: $block);
 
 		$sort = ($block['sort'] ?? null);
 		if (is_array($sort) === true
@@ -83,6 +85,25 @@ class CollectionListKeys {
 		// The school displays (rows, bars, chips, richer cards), site-school-blocks.
 		return $out + $this->cards(block: $block, collection: $collection) + (new DisplayKeys())->keys(block: $block, collection: $collection);
 	}//end collectionKeys()
+
+	/**
+	 * How many rows to leave out at the start, after the order and before
+	 * the limit: a whole number from 1 to the largest limit, else nothing.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, int> `['skip' => n]` or [].
+	 *
+	 * @spec openspec/changes/collection-skip/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
+	 */
+	private function skip(array $block): array {
+		$skip = ($block['skip'] ?? null);
+		if (is_int($skip) === false || $skip < 1 || $skip > self::MAX_LIMIT) {
+			return [];
+		}
+
+		return ['skip' => $skip];
+	}//end skip()
 
 	/**
 	 * The block's own heading, trimmed, when it is a short non-blank string.

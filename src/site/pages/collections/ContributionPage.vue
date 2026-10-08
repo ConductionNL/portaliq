@@ -492,6 +492,7 @@ import {
 import {
 	itemsInRange,
 	listOrder,
+	skipRows,
 	sortRows,
 	windowRows,
 } from '../../../shared/listWindow.js'
@@ -1235,7 +1236,8 @@ export default {
 			const sort = listOrder(item.block, item.collection)
 			if (this.expanded[item.index]) {
 				return {
-					rows: sortRows(this.rowsOf(item), sort),
+					// Without the rows a highlight already shows (collection-skip).
+					rows: skipRows(sortRows(this.rowsOf(item), sort), item.block),
 					more: false,
 				}
 			}
