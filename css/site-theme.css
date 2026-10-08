@@ -1329,6 +1329,16 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	max-inline-size: 45rem;
 }
 
+/*
+ * A visible heading or lead above the search card keeps its distance
+ * (site-hero-shows-its-heading). Until the heading showed beside a search box
+ * the card was always the first thing in the band, so nothing set this gap.
+ */
+.pq-site .ac-hero .ac-hero__title:not(.sr-only) + .ac-card,
+.pq-site .ac-hero .ac-hero__subtitle:not(.sr-only) + .ac-card {
+	margin-block-start: 24px;
+}
+
 .pq-site .ac-hero.pq-hero--plain .ac-search-box__label {
 	margin-block-end: 0.625rem;
 	font-size: 1.125rem;
