@@ -1389,8 +1389,30 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	letter-spacing: -0.01em;
 }
 
+/*
+ * The lead under the plain hero's heading (site-hero-shows-its-heading): 20px
+ * on a line of at most 40rem, as the four school boards draw it. Before
+ * this a plain hero gave its lead the body size on one long line.
+ */
+.pq-site .ac-hero.pq-hero--plain .ac-hero__subtitle {
+	max-inline-size: 40rem;
+	margin: 0;
+	font-size: var(--nldesign-website-hero-lead-size, 1.25rem);
+	line-height: 1.6;
+}
+
 .pq-site .ac-hero.pq-hero--plain .pq-hero__search {
 	max-inline-size: 45rem;
+}
+
+/*
+ * A visible heading or lead above the search card keeps its distance
+ * (site-hero-shows-its-heading). Until the heading showed beside a search box
+ * the card was always the first thing in the band, so nothing set this gap.
+ */
+.pq-site .ac-hero .ac-hero__title:not(.sr-only) + .ac-card,
+.pq-site .ac-hero .ac-hero__subtitle:not(.sr-only) + .ac-card {
+	margin-block-start: 24px;
 }
 
 .pq-site .ac-hero.pq-hero--plain .ac-search-box__label {
