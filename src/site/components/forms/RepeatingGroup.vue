@@ -296,6 +296,8 @@ export default {
 		 *
 		 * @param {number} cardIndex The card to focus.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		close(cardIndex) {
 			this.editing = null

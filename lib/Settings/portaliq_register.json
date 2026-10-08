@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.84.0"
+        "version": "0.85.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.84.0",
+                "version": "0.85.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -46,6 +46,7 @@
                     "portalReporterContact",
                     "portalRevealRequest",
                     "portalMandate",
+                    "portalContact",
                     "portalInvitation",
                     "portalReferenceLink",
                     "portalAccessRequest",
@@ -84,6 +85,48 @@
             }
         },
         "objects": [
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalContact",
+                    "slug": "contact-demo-ada"
+                },
+                "owner": "subject-demo-ada",
+                "contactRef": "subject-demo-bea",
+                "role": "contact",
+                "displayName": "Bea Jansen",
+                "line": "Buurvrouw",
+                "state": "approved"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalContact",
+                    "slug": "contact-demo-bea"
+                },
+                "owner": "subject-demo-bea",
+                "contactRef": "subject-demo-ada",
+                "role": "contact",
+                "displayName": "Ada de Vries",
+                "line": "Buurvrouw",
+                "state": "approved"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalContact",
+                    "slug": "contact-demo-uitgenodigd"
+                },
+                "owner": "subject-demo-ada",
+                "contactRef": "",
+                "role": "contact",
+                "displayName": "cor@example.nl",
+                "state": "invited",
+                "email": "cor@example.nl",
+                "message": "Kom je ook?",
+                "sentAt": "2026-10-01T10:00:00+02:00",
+                "expiresAt": "2026-10-15T10:00:00+02:00"
+            },
             {
                 "@self": {
                     "register": "portaliq",
@@ -4301,6 +4344,12 @@
                             }
                         }
                     },
+                    "contactsEnabled": {
+                        "title": "Contacts enabled",
+                        "type": "boolean",
+                        "description": "Whether signed-in residents of this portal get the page with their own contacts and can invite people. Off by default.",
+                        "default": false
+                    },
                     "searchInsideDocuments": {
                         "title": "Search inside documents",
                         "type": "boolean",
@@ -7126,6 +7175,112 @@
                         "format": "date",
                         "description": "The last day the law allows for the decision. Written by the case app. The case page shows it as Uiterlijk klaar op, and the case card takes it as its due day.",
                         "example": "2026-11-01"
+                    }
+                }
+            },
+            "portalContact": {
+                "slug": "portalContact",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountMultiple",
+                "version": "0.1.0",
+                "title": "Portal contact",
+                "description": "One side of a link between two people who work together in the portal. A link is two rows, one held by each side, so each reads only its own. A person becomes a contact after both sides approve. A contact sees a name and the messages sent to them, never cases or personal data. Written by the portal's contact service; never by a resident's own form.",
+                "type": "object",
+                "required": [
+                    "owner",
+                    "state"
+                ],
+                "properties": {
+                    "owner": {
+                        "title": "Owner",
+                        "type": "string",
+                        "description": "The subject reference of the resident who holds this row. The portal reads and writes a row only for its owner.",
+                        "example": "bsn-123456782"
+                    },
+                    "contactRef": {
+                        "title": "Contact",
+                        "type": "string",
+                        "description": "The subject reference of the other account. Empty while the invitation waits for someone without an account.",
+                        "example": "bsn-987654321"
+                    },
+                    "role": {
+                        "title": "Role",
+                        "type": "string",
+                        "enum": [
+                            "begeleider",
+                            "contact",
+                            "organisatie"
+                        ],
+                        "description": "How the contact is shown. A begeleider is written by the case or plan app, never by the resident; a resident adds contacts.",
+                        "default": "contact",
+                        "example": "contact"
+                    },
+                    "displayName": {
+                        "title": "Name",
+                        "type": "string",
+                        "description": "The other person's name as the owner sees it.",
+                        "example": "Ahmed Bakker"
+                    },
+                    "line": {
+                        "title": "Line",
+                        "type": "string",
+                        "description": "The organisation or relation shown under the name.",
+                        "example": "Schuldhulpverlening"
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "requested",
+                            "invited",
+                            "approved",
+                            "declined",
+                            "withdrawn"
+                        ],
+                        "description": "requested: the other side asked and waits for the owner. invited: the owner asked and waits for the other side. approved: both agreed. declined and withdrawn end the link.",
+                        "example": "approved"
+                    },
+                    "email": {
+                        "title": "E-mail address",
+                        "type": "string",
+                        "description": "The address an invitation was sent to. Only on an invitation to someone without an account.",
+                        "example": "j.devries@example.nl"
+                    },
+                    "message": {
+                        "title": "Message",
+                        "type": "string",
+                        "description": "The short message the owner wrote with the invitation.",
+                        "example": "Kijk je mee met mijn plan?"
+                    },
+                    "tokenHash": {
+                        "title": "Token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret in the invitation link. The secret is in the mail and nowhere else.",
+                        "example": "9f86d0"
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the invitation or request was sent or sent again.",
+                        "example": "2026-10-08T10:00:00Z"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the invitation link stops working: 14 days after it was sent.",
+                        "example": "2026-10-22T10:00:00Z"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant the row belongs to, stamped by the portal.",
+                        "example": "gemeente-zuiddrecht"
                     }
                 }
             },

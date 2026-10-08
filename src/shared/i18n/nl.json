@@ -408,5 +408,7 @@
 	"Unread ({count})": "Ongelezen ({count})",
 	"Mark all as read": "Alles als gelezen markeren",
 	"Filter messages": "Berichten filteren",
-	"This field is required.": "Dit veld is verplicht."
+	"This field is required.": "Dit veld is verplicht.",
+	"My contacts": "Mijn contacten",
+	"You are now connected with the person who invited you.": "U bent nu verbonden met de persoon die u heeft uitgenodigd."
 }

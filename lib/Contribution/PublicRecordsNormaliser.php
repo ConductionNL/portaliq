@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-member-voting-record-and-confidential-papers/specs/portal-voting-record/spec.md
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/specs/site-council-records/spec.md
  */
 
 declare(strict_types=1);

@@ -16,6 +16,7 @@ import Account from 'vue-material-design-icons/Account.vue'
 import AccountBoxOutline from 'vue-material-design-icons/AccountBoxOutline.vue'
 import AccountKey from 'vue-material-design-icons/AccountKey.vue'
 import AccountLock from 'vue-material-design-icons/AccountLock.vue'
+import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
 import AccountPlus from 'vue-material-design-icons/AccountPlus.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
@@ -82,6 +83,7 @@ export default {
 	AccountBoxOutline,
 	AccountKey,
 	AccountLock,
+	AccountMultiple,
 	AccountPlus,
 	AlertCircleOutline,
 	BellOutline,

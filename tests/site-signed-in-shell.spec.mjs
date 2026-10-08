@@ -83,10 +83,10 @@ test('the navigation leads with my cases, keeps the inbox and account last, and 
 
 test('the shell sections follow what the answers announce', () => {
 	assert.deepEqual(shellSections({ session: null, contributions: null, threads: null, news: null }), {
-		tasks: false, messages: false, news: false, access: false, cases: false,
+		tasks: false, messages: false, news: false, access: false, cases: false, contacts: false,
 	})
 	assert.deepEqual(shellSections({ session: {}, contributions: CONTRIBUTIONS, threads: [{ id: 't' }], news: [{ id: 'n' }] }), {
-		tasks: true, messages: true, news: true, access: true, cases: true,
+		tasks: true, messages: true, news: true, access: true, cases: true, contacts: false,
 	})
 	// Without any page or section there is no inbox either.
 	assert.deepEqual(buildNav([], identity, {}), [])

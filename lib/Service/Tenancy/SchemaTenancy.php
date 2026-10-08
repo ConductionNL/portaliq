@@ -66,6 +66,7 @@ final class SchemaTenancy {
 		'portalAccessRequest'     => ['scope' => self::ORGANISATION],
 		'portalPoll'              => ['scope' => self::ORGANISATION],
 		'portalAction'            => ['scope' => self::ORGANISATION],
+		'portalContact'           => ['scope' => self::ORGANISATION],
 		'menu'                    => ['scope' => self::PORTAL],
 		'page'                    => ['scope' => self::PORTAL],
 		'glossaryTerm'            => ['scope' => self::PORTAL],

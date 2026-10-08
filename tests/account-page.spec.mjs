@@ -425,6 +425,7 @@ test('site: the slice exports its pages by the React section keys, each a lazy c
 		'__access__',
 		'__account__',
 		'__cases__',
+		'__contacts__',
 		'__details__',
 	])
 	const index = readFileSync(

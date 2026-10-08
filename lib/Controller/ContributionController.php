@@ -357,9 +357,33 @@ class ContributionController extends Controller implements PortalProtected {
 		// Announce "My cases" (cases-my-cases-page REQ-CMC-001) and whether
 		// any case collection can tell a closed case from an open one.
 		$aggregate['cases'] = (new CaseRowMarker())->announce(aggregate: $aggregate);
+		// The contacts page, when the serving portal switched it on
+		// (own-contacts-and-invitations).
+		$aggregate['contacts'] = ['enabled' => $this->contactsEnabled()];
 
 		return new JSONResponse($aggregate);
 	}//end index()
+
+	/**
+	 * Whether the serving portal offers its residents the contacts page.
+	 *
+	 * @return bool True only when the portal record says `contactsEnabled: true`.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 */
+	private function contactsEnabled(): bool {
+		if ($this->portals === null) {
+			return false;
+		}
+
+		$slug = $this->request->getParam('portal');
+		if (is_string($slug) === false) {
+			$slug = null;
+		}
+
+		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		return ($portal['contactsEnabled'] ?? false) === true;
+	}//end contactsEnabled()
 
 	/**
 	 * Apply the serving portal's navigation choice for the subject's audience:

@@ -16,6 +16,7 @@ use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -39,7 +40,7 @@ class ContributionTenantGuardTest extends TestCase {
 
 	private MockObject $reader;
 
-	private function controller(string $organisation, string $schema): ContributionController {
+	private function controller(string $organisation, string $schema, ?PortalResolver $portals=null): ContributionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer t');
 		$request->method('getParam')->willReturn('');
@@ -66,7 +67,8 @@ class ContributionTenantGuardTest extends TestCase {
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			portals: $portals
 		);
 	}
 
@@ -87,6 +89,23 @@ class ContributionTenantGuardTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $controller->object('portaliq', 'portalMessage', 'x')->getStatus());
 
 	}//end testASubjectWithAnOrganisationReadsAsBefore()
+
+	/**
+	 * own-contacts-and-invitations: the contacts page is announced only for a portal that switched it on.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 */
+	public function testTheContactsPageIsAnnouncedOnlyWhenThePortalSwitchedItOn(): void {
+		foreach ([[['contactsEnabled' => true], true], [['contactsEnabled' => 'yes'], false], [[], false]] as [$portal, $expected]) {
+			$resolver = $this->createMock(PortalResolver::class);
+			$resolver->method('resolve')->willReturn($portal);
+			$controller = $this->controller(organisation: 'org-a', schema: 'portalMessage', portals: $resolver);
+			$method = new \ReflectionMethod($controller, 'contactsEnabled');
+			$this->assertSame($expected, $method->invoke($controller));
+		}
+
+		$this->assertFalse((new \ReflectionMethod($this->controller(organisation: 'org-a', schema: 'portalMessage'), 'contactsEnabled'))->invoke($this->controller(organisation: 'org-a', schema: 'portalMessage')));
+	}//end testTheContactsPageIsAnnouncedOnlyWhenThePortalSwitchedItOn()
 
 	public function testSubjectScopedSchemaUnchanged(): void {
 		$controller = $this->controller(organisation: '', schema: 'pushSubscription');
