@@ -58,6 +58,9 @@ class CalendarSourceNormaliser {
 			$out['kind'] = $source['kind'];
 		}
 
+		// The timetable keys (calendar-timetable-display): note, status, cancelled.
+		$out = array_merge($out, (new TimetableKeys())->sourceKeys(declared: $source));
+
 		$only = $this->only(declared: ($source['only'] ?? null));
 		if ($only !== null) {
 			$out['only'] = $only;

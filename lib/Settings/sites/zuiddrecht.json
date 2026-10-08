@@ -47,6 +47,40 @@
             "route": "/zoeken"
         },
         "accountLabel": "Mijn Zuiddrecht",
+        "residentMenu": {
+            "groups": [
+                {
+                    "title": "Mijn Zuiddrecht",
+                    "items": [
+                        "overview",
+                        "inbox"
+                    ]
+                },
+                {
+                    "title": "Zaken en taken",
+                    "items": [
+                        "cases",
+                        "tasks"
+                    ]
+                },
+                {
+                    "title": "Vragen en meldingen",
+                    "items": [
+                        "portaliq:meldingen"
+                    ]
+                },
+                {
+                    "title": "Uw gegevens",
+                    "items": [
+                        "details",
+                        "account"
+                    ]
+                }
+            ]
+        },
+        "myCases": {
+            "display": "rows"
+        },
         "footer": {
             "description": "Heeft u een vraag? Bel of mail ons. We helpen u graag.",
             "colophon": "Gemeente Zuiddrecht is een voorbeeldgemeente. Deze website laat zien hoe portaliq en Nextcloud samen werken.",
@@ -183,9 +217,13 @@
                         "gridWidth": 12,
                         "gridHeight": 1,
                         "props": {
-                            "kind": "warning",
-                            "closable": true,
-                            "text": "Let op: zaterdag 10 oktober is het stadskantoor open van 9.00 tot 13.00 uur."
+                            "kind": "notice",
+                            "band": true,
+                            "closable": false,
+                            "lead": "Let op",
+                            "text": "Zaterdag 10 oktober is het stadskantoor open van 9.00 tot 13.00 uur.",
+                            "linkLabel": "Bekijk de openingstijden",
+                            "linkHref": "/contact"
                         }
                     },
                     {
@@ -200,7 +238,27 @@
                             "search": true,
                             "searchLabel": "Zoek op onderwerp, bijvoorbeeld paspoort of afval",
                             "searchSubmitLabel": "Zoeken",
-                            "headingVisible": true
+                            "headingVisible": true,
+                            "variant": "plain",
+                            "popularLabel": "Veel gezocht:",
+                            "popularLinks": [
+                                {
+                                    "label": "Paspoort verlengen",
+                                    "href": "/paspoort-en-id-kaart"
+                                },
+                                {
+                                    "label": "Grof afval",
+                                    "href": "/afval"
+                                },
+                                {
+                                    "label": "Verhuizing doorgeven",
+                                    "href": "/verhuizing-doorgeven"
+                                },
+                                {
+                                    "label": "Uittreksel",
+                                    "href": "/paspoort-en-id-kaart"
+                                }
+                            ]
                         }
                     },
                     {
@@ -212,52 +270,64 @@
                         "gridHeight": 3,
                         "props": {
                             "heading": "Direct regelen",
-                            "columns": 4,
+                            "columns": 3,
                             "overlap": true,
                             "items": [
                                 {
                                     "label": "Paspoort en ID-kaart",
                                     "href": "/paspoort-en-id-kaart",
-                                    "icon": "card"
+                                    "icon": "card",
+                                    "iconPath": "M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM12 8.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM8.5 17h7"
                                 },
                                 {
                                     "label": "Afvalkalender",
                                     "href": "/afval",
-                                    "icon": "calendar"
+                                    "icon": "calendar",
+                                    "iconPath": "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"
                                 },
                                 {
                                     "label": "Parkeervergunning",
                                     "href": "/parkeren",
-                                    "icon": "document"
+                                    "icon": "document",
+                                    "iconPath": "M5 3h14v18H5zM10 17V7h3a3 3 0 0 1 0 6h-3"
                                 },
                                 {
                                     "label": "Verhuizing doorgeven",
                                     "href": "/verhuizing-doorgeven",
-                                    "icon": "home"
+                                    "icon": "home",
+                                    "iconPath": "M3 11l9-7 9 7M5 10v10h14V10M10 20v-5h4v5"
                                 },
                                 {
                                     "label": "Melding openbare ruimte",
                                     "href": "/melding-openbare-ruimte",
-                                    "icon": "alert"
+                                    "icon": "alert",
+                                    "iconPath": "M12 3a6 6 0 0 1 6 6c0 5-6 12-6 12S6 14 6 9a6 6 0 0 1 6-6zM12 7v3M12 12.5v.5"
                                 },
                                 {
                                     "label": "Afspraak maken",
                                     "href": "/afspraak-maken",
-                                    "icon": "clock"
+                                    "icon": "clock",
+                                    "iconPath": "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"
                                 },
                                 {
                                     "label": "Woo-publicaties",
                                     "href": "/zoeken",
-                                    "icon": "bookLines"
+                                    "icon": "bookLines",
+                                    "iconPath": "M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7"
                                 },
                                 {
                                     "label": "Belastingen betalen",
                                     "href": "/belastingen",
-                                    "icon": "documentGrade"
+                                    "icon": "documentGrade",
+                                    "iconPath": "M4 6h16v12H4zM4 10h16M8 15h3"
                                 }
                             ],
                             "moreLabel": "Alle onderwerpen van A tot Z",
-                            "moreHref": "/onderwerpen"
+                            "moreHref": "/onderwerpen",
+                            "iconStyle": "plain",
+                            "narrow": "list",
+                            "narrowHeading": "Veel gezocht",
+                            "narrowLimit": 6
                         }
                     },
                     {
@@ -266,7 +336,7 @@
                         "gridX": 0,
                         "gridY": 9,
                         "gridWidth": 7,
-                        "gridHeight": 6,
+                        "gridHeight": 3,
                         "props": {
                             "heading": "Nieuws",
                             "limit": 4,
@@ -274,7 +344,8 @@
                             "showAudience": false,
                             "moreLabel": "Al het nieuws",
                             "moreHref": "/nieuwsoverzicht",
-                            "articleRoute": "/nieuws"
+                            "articleRoute": "/nieuws",
+                            "leadPlaceholder": "[foto: fietspad Lindelaan]"
                         }
                     },
                     {
@@ -283,7 +354,7 @@
                         "gridX": 8,
                         "gridY": 9,
                         "gridWidth": 4,
-                        "gridHeight": 4,
+                        "gridHeight": 1,
                         "props": {
                             "heading": "Mijn Zuiddrecht",
                             "display": "card",
@@ -293,110 +364,89 @@
                                 "Lees berichten van de gemeente",
                                 "Bewaar documenten in een eigen dossier"
                             ],
-                            "buttonLabel": "Inloggen bij Mijn Zuiddrecht"
+                            "buttonLabel": "Inloggen met DigiD"
                         }
                     },
                     {
                         "id": "zd-home-06-nllinklist",
                         "widgetKey": "nlLinkList",
                         "gridX": 8,
-                        "gridY": 14,
+                        "gridY": 10,
                         "gridWidth": 4,
-                        "gridHeight": 2,
+                        "gridHeight": 1,
                         "props": {
                             "heading": "Openbare informatie",
+                            "intro": "Besluiten, rapporten en antwoorden op Woo-verzoeken.",
+                            "display": "card",
                             "links": [
                                 {
                                     "label": "Zoeken in Woo-publicaties",
-                                    "href": "/zoeken",
-                                    "description": "Besluiten, rapporten en antwoorden op Woo-verzoeken."
+                                    "href": "/zoeken"
                                 }
                             ]
                         }
                     },
                     {
-                        "id": "zd-home-07-nlheading",
-                        "widgetKey": "nlHeading",
+                        "id": "zd-home-07-nllinkcolumns",
+                        "widgetKey": "nlLinkColumns",
                         "gridX": 0,
                         "gridY": 18,
                         "gridWidth": 12,
-                        "gridHeight": 1,
+                        "gridHeight": 4,
                         "props": {
-                            "text": "Bestuur en organisatie",
-                            "level": 2
-                        }
-                    },
-                    {
-                        "id": "zd-home-08-nllinklist",
-                        "widgetKey": "nlLinkList",
-                        "gridX": 0,
-                        "gridY": 19,
-                        "gridWidth": 4,
-                        "gridHeight": 3,
-                        "props": {
-                            "heading": "Gemeenteraad",
-                            "links": [
+                            "heading": "Bestuur en organisatie",
+                            "tone": "surface",
+                            "columns": [
                                 {
-                                    "label": "Vergaderingen en stukken",
-                                    "href": "/bestuur/vergaderingen"
+                                    "title": "Gemeenteraad",
+                                    "links": [
+                                        {
+                                            "label": "Vergaderingen en stukken",
+                                            "href": "/bestuur/vergaderingen"
+                                        },
+                                        {
+                                            "label": "Raadsleden",
+                                            "href": "/bestuur/raadsleden"
+                                        },
+                                        {
+                                            "label": "Inspreken bij de raad",
+                                            "href": "/bestuur/inspreken"
+                                        }
+                                    ]
                                 },
                                 {
-                                    "label": "Raadsleden",
-                                    "href": "/bestuur/raadsleden"
+                                    "title": "College",
+                                    "links": [
+                                        {
+                                            "label": "Burgemeester en wethouders",
+                                            "href": "/bestuur/college"
+                                        },
+                                        {
+                                            "label": "Besluiten van het college",
+                                            "href": "/bestuur/collegebesluiten"
+                                        },
+                                        {
+                                            "label": "Coalitieakkoord",
+                                            "href": "/bestuur/coalitieakkoord"
+                                        }
+                                    ]
                                 },
                                 {
-                                    "label": "Inspreken bij de raad",
-                                    "href": "/bestuur/inspreken"
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "id": "zd-home-09-nllinklist",
-                        "widgetKey": "nlLinkList",
-                        "gridX": 4,
-                        "gridY": 19,
-                        "gridWidth": 4,
-                        "gridHeight": 3,
-                        "props": {
-                            "heading": "College",
-                            "links": [
-                                {
-                                    "label": "Burgemeester en wethouders",
-                                    "href": "/bestuur/college"
-                                },
-                                {
-                                    "label": "Besluiten van het college",
-                                    "href": "/bestuur/collegebesluiten"
-                                },
-                                {
-                                    "label": "Coalitieakkoord",
-                                    "href": "/bestuur/coalitieakkoord"
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "id": "zd-home-10-nllinklist",
-                        "widgetKey": "nlLinkList",
-                        "gridX": 8,
-                        "gridY": 19,
-                        "gridWidth": 4,
-                        "gridHeight": 3,
-                        "props": {
-                            "heading": "Organisatie",
-                            "links": [
-                                {
-                                    "label": "Werken bij Zuiddrecht",
-                                    "href": "/werken-bij-zuiddrecht"
-                                },
-                                {
-                                    "label": "Inkoop en aanbesteding",
-                                    "href": "/bestuur/inkoop"
-                                },
-                                {
-                                    "label": "Klacht over de gemeente",
-                                    "href": "/klacht"
+                                    "title": "Organisatie",
+                                    "links": [
+                                        {
+                                            "label": "Werken bij Zuiddrecht",
+                                            "href": "/werken-bij-zuiddrecht"
+                                        },
+                                        {
+                                            "label": "Inkoop en aanbesteding",
+                                            "href": "/bestuur/inkoop"
+                                        },
+                                        {
+                                            "label": "Klacht over de gemeente",
+                                            "href": "/klacht"
+                                        }
+                                    ]
                                 }
                             ]
                         }
@@ -421,7 +471,35 @@
                         "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Wij halen uw afval om de week op. Op de afvalkalender ziet u welke container wanneer aan de straat moet."
+                            "text": "Wij halen uw afval om de week op. Op de afvalkalender ziet u welke container wanneer aan de straat moet.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-afval-01b-nllookupform",
+                        "widgetKey": "nlLookupForm",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 7,
+                        "gridHeight": 1,
+                        "props": {
+                            "fields": [
+                                {
+                                    "name": "postcode",
+                                    "label": "Postcode",
+                                    "value": "3311 AB",
+                                    "width": "10rem",
+                                    "autocomplete": "postal-code"
+                                },
+                                {
+                                    "name": "huisnummer",
+                                    "label": "Huisnummer",
+                                    "value": "12",
+                                    "width": "7.5rem"
+                                }
+                            ],
+                            "buttonLabel": "Toon mijn afvalkalender",
+                            "href": "/afval"
                         }
                     },
                     {
@@ -450,7 +528,8 @@
                                     "label": "Zwerfafval melden",
                                     "href": "/melding-openbare-ruimte"
                                 }
-                            ]
+                            ],
+                            "display": "accent"
                         }
                     },
                     {
@@ -500,14 +579,16 @@
                                     "Restafval",
                                     "Om de week"
                                 ]
-                            ]
+                            ],
+                            "display": "boxed",
+                            "captionVisible": false
                         }
                     },
                     {
                         "id": "zd-afval-05-nlheading",
                         "widgetKey": "nlHeading",
                         "gridX": 0,
-                        "gridY": 7,
+                        "gridY": 6,
                         "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
@@ -519,7 +600,7 @@
                         "id": "zd-afval-06-nlparagraph",
                         "widgetKey": "nlParagraph",
                         "gridX": 0,
-                        "gridY": 8,
+                        "gridY": 7,
                         "gridWidth": 7,
                         "gridHeight": 1,
                         "props": {
@@ -530,13 +611,14 @@
                         "id": "zd-afval-07-nlbuttonlink",
                         "widgetKey": "nlButtonLink",
                         "gridX": 0,
-                        "gridY": 9,
+                        "gridY": 8,
                         "gridWidth": 4,
                         "gridHeight": 1,
                         "props": {
                             "label": "Grof afval laten ophalen",
                             "href": "/mijn",
-                            "kind": "primary"
+                            "kind": "primary",
+                            "icon": "chevron"
                         }
                     }
                 ]
@@ -2039,7 +2121,8 @@
                         "gridWidth": 12,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Zoek in besluiten, rapporten en antwoorden op verzoeken volgens de Wet open overheid (Woo)."
+                            "text": "Wij maken informatie openbaar volgens de Wet open overheid (Woo). Zoek in besluiten, rapporten en antwoorden op Woo-verzoeken.",
+                            "lead": true
                         }
                     },
                     {
@@ -2050,7 +2133,15 @@
                         "gridWidth": 12,
                         "gridHeight": 8,
                         "props": {
-                            "placeholder": "Bijvoorbeeld: fietspad"
+                            "variant": "plain",
+                            "inputLabel": "Zoekterm",
+                            "placeholder": "Bijvoorbeeld: fietspad",
+                            "submitLabel": "Zoeken",
+                            "facetLabel": "Filters",
+                            "periodLabel": "Periode",
+                            "periodFromLabel": "Vanaf",
+                            "periodToLabel": "Tot en met",
+                            "sortLabel": "Sorteren"
                         }
                     }
                 ]
@@ -2070,10 +2161,45 @@
                         "widgetKey": "publicationDetail",
                         "gridX": 0,
                         "gridY": 0,
-                        "gridWidth": 12,
+                        "gridWidth": 8,
                         "gridHeight": 8,
                         "props": {
-                            "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            "endpoint": "/index.php/apps/opencatalogi/api/federation/publications",
+                            "variant": "cards"
+                        }
+                    },
+                    {
+                        "id": "zd-publicatie-02-nlsignin",
+                        "widgetKey": "nlSignIn",
+                        "gridX": 8,
+                        "gridY": 0,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Bewaren of volgen",
+                            "display": "card",
+                            "tone": "outline",
+                            "intro": "Log in om deze publicatie in uw eigen dossier te bewaren.",
+                            "buttonLabel": "Inloggen en bewaren"
+                        }
+                    },
+                    {
+                        "id": "zd-publicatie-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 3,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Zelf iets opvragen?",
+                            "intro": "Staat wat u zoekt er niet bij? Dien dan een Woo-verzoek in.",
+                            "display": "tinted",
+                            "links": [
+                                {
+                                    "label": "Woo-verzoek indienen",
+                                    "href": "/mijn"
+                                }
+                            ]
                         }
                     }
                 ]

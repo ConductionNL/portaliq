@@ -10,44 +10,45 @@
 	which column a cell belongs to, and a short row is padded rather than
 	drawn: cells sliding under the wrong header is a wrong table, not an untidy
 	one.
-
-	Utrecht's container scrolls sideways on a narrow screen, so a wide table
-	never pushes the page past the edge of a phone.
 -->
 <template>
-	<div class="utrecht-table-container">
-		<table class="utrecht-table" data-testid="nl-table">
-			<caption v-if="caption" class="utrecht-table__caption">
-				{{
-					caption
-				}}
-			</caption>
-			<thead v-if="safeColumns.length" class="utrecht-table__header">
-				<tr class="utrecht-table__row">
-					<th
-						v-for="column in safeColumns"
-						:key="column"
-						class="utrecht-table__header-cell"
-						scope="col">
-						{{ column }}
-					</th>
-				</tr>
-			</thead>
-			<tbody class="utrecht-table__body">
-				<tr
-					v-for="(row, index) in safeRows"
-					:key="index"
-					class="utrecht-table__row">
-					<td
-						v-for="(cell, cellIndex) in row"
-						:key="`${index}-${cellIndex}`"
-						class="utrecht-table__cell">
-						{{ cell }}
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
+	<table
+		class="utrecht-table"
+		:class="{ 'nl-table--boxed': display === 'boxed' }"
+		data-testid="nl-table">
+		<caption
+			v-if="caption"
+			class="utrecht-table__caption"
+			:class="{ 'nl-table__caption--hidden': !captionVisible }">
+			{{
+				caption
+			}}
+		</caption>
+		<thead v-if="safeColumns.length" class="utrecht-table__header">
+			<tr class="utrecht-table__row">
+				<th
+					v-for="column in safeColumns"
+					:key="column"
+					class="utrecht-table__header-cell"
+					scope="col">
+					{{ column }}
+				</th>
+			</tr>
+		</thead>
+		<tbody class="utrecht-table__body">
+			<tr
+				v-for="(row, index) in safeRows"
+				:key="index"
+				class="utrecht-table__row">
+				<td
+					v-for="(cell, cellIndex) in row"
+					:key="`${index}-${cellIndex}`"
+					class="utrecht-table__cell">
+					{{ cell }}
+				</td>
+			</tr>
+		</tbody>
+	</table>
 </template>
 
 <script>
@@ -63,6 +64,10 @@ export default {
 		columns: { type: Array, default: () => [] },
 		/** The rows, each a list of cells. */
 		rows: { type: Array, default: () => [] },
+		/** `plain` or `boxed` (a bordered, rounded box with a tinted header row). */
+		display: { type: String, default: 'plain' },
+		/** Show the caption; off keeps it for screen readers only. */
+		captionVisible: { type: Boolean, default: true },
 	},
 
 	computed: {
@@ -97,3 +102,45 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/* The boxed display (Zuiddrecht board Contentpagina). Tokens only. */
+.nl-table--boxed {
+	border: 1px solid
+		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
+	border-radius: var(
+		--nldesign-website-border-radius-large,
+		var(--utrecht-border-radius-md, 0.75rem)
+	);
+	border-spacing: 0;
+	overflow: hidden;
+}
+
+.nl-table--boxed .utrecht-table__header-cell {
+	--nl-surface: var(
+		--nldesign-component-content-surface-background-color,
+		transparent
+	);
+	background: var(--nldesign-color-surface, var(--nl-surface));
+}
+
+.nl-table--boxed .utrecht-table__header-cell,
+.nl-table--boxed .utrecht-table__cell {
+	padding: 0.75rem 1rem;
+	border-block-end: 0;
+}
+
+.nl-table--boxed .utrecht-table__body .utrecht-table__cell {
+	border-block-start: 1px solid
+		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
+}
+
+.nl-table__caption--hidden {
+	position: absolute;
+	inline-size: 1px;
+	block-size: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+</style>

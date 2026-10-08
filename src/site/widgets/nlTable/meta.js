@@ -20,6 +20,8 @@ export const metaOf = {
 		{ name: 'caption', kind: 'string', label: 'Wat de tabel toont' },
 		{ name: 'columns', kind: 'json', label: 'Kolomkoppen' },
 		{ name: 'rows', kind: 'json', label: 'Rijen' },
+		{ name: 'display', kind: 'string', label: 'Weergave: plain of boxed' },
+		{ name: 'captionVisible', kind: 'boolean', label: 'Onderschrift tonen' },
 	],
 	defaultSize: { gridWidth: 12, gridHeight: 4 },
 	scope: 'public',

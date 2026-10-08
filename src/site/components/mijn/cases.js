@@ -132,10 +132,16 @@ export function turnSentence(row, collection) {
  * @param {string} context.locale The page language.
  * @param {Date} context.today Today.
  * @param {Array<object>|null} [context.steps] The case's steps, when read.
- * @return {object} `{title, typeName, status, reference, due, turn, position, closed}`.
+ * @param {Array<string>} [context.yourTurn] The turn values at which the resident must act (the board card's tag).
+ * @return {object} `{title, typeName, status, reference, number, due, dueDay, readyBy, turn, yourTurn, position, closed}`.
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
  */
-export function caseCard(row, collection, { tr, locale, today, steps = null }) {
+export function caseCard(
+	row,
+	collection,
+	{ tr, locale, today, steps = null, yourTurn = [] },
+) {
 	const title = caseTitle(row)
 	const reference = ['reference', 'identifier']
 		.map((field) => row?.[field])
@@ -146,13 +152,23 @@ export function caseCard(row, collection, { tr, locale, today, steps = null }) {
 	const dueField = collection?.dueField
 	const dueDay = dueField ? dayInWords(row?.[dueField], today, locale) : ''
 	const position = stepPosition(steps)
+	const turnValue = collection?.turnField ? row?.[collection.turnField] : undefined
 	return {
 		title,
 		typeName: typeof row?._caseTypeName === 'string' ? row._caseTypeName : '',
 		status: caseStatus(row),
 		reference: reference ? tr('Case {reference}', { reference }) : '',
+		// The bare number for the board card, where "Zaak" is not repeated.
+		number: reference || '',
 		due: dueDay ? tr('Answer by {date}', { date: dueDay }) : '',
+		dueDay,
+		readyBy: dueDay ? tr('ready by {date}', { date: dueDay }) : '',
 		turn: turnSentence(row, collection),
+		yourTurn:
+			Array.isArray(yourTurn)
+			&& turnValue !== undefined
+			&& turnValue !== null
+			&& yourTurn.map(String).includes(String(turnValue)),
 		position: position
 			? { ...position, text: tr('Step {current} of {total}', position) }
 			: null,

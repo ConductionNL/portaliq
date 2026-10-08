@@ -83,7 +83,9 @@ class SchoolBlockKeys {
 			$out['subtitleFields'] = $fields;
 		}
 
-		return $out;
+		// The card's tone and the due day in its line
+		// (zuiddrecht-resident-pages-match-the-boards).
+		return $out + (new BoardKeys())->highlightKeys(block: $block);
 	}//end tasksKeys()
 
 	/**

@@ -487,3 +487,24 @@ test('site: every string slice e uses is in strings.js in both languages, withou
 		}
 	}
 })
+
+test('the e-mail prompt brings its own alert look, so it is styled outside /mijn too', () => {
+	// The Utrecht alert CSS used to arrive with another `/mijn` component, so
+	// above the public home page the prompt stood unstyled: a transparent
+	// ground and a black border.
+	const prompt = readFileSync(
+		join(ROOT, 'src', 'site', 'components', 'e', 'ContactPrompt.vue'),
+		'utf8',
+	)
+	assert.match(prompt, /class="pq-contact-prompt utrecht-alert"/)
+	assert.match(prompt, /^import '@utrecht\/alert-css\/dist\/index\.css'$/m)
+
+	// Outside `/mijn` the prompt's container is a flex child of `.pq-site`,
+	// where auto margins stop the stretch: it gets the full container width.
+	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
+	assert.match(
+		app,
+		/v-if="session && contactPrompt && !accountRoute"\s+class="container pq-site__contact-prompt"/,
+	)
+	assert.match(app, /\.pq-site__contact-prompt \{[^}]*width: 100%;/)
+})

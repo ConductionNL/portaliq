@@ -215,6 +215,19 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		'nlNewsList',
 		'nlNewsArticle',
 		'nlEventList',
+		// site-matches-the-zuiddrecht-boards. The drawn options the boards
+		// ask for and Utrecht's CSS does not carry: a link list as a card or
+		// under an accent line, a boxed table, a chevron in a button link, and
+		// the two compositions (link columns on a band, the lookup form).
+		// Layout and theme tokens only, as above.
+		'nlLinkList',
+		'nlTable',
+		'nlButtonLink',
+		'nlLinkColumns',
+		'nlLookupForm',
+		// portal-public-catalogue: a composition too (search, facets, cards,
+		// pages); layout and theme tokens only.
+		'nlCatalogue',
 	]
 
 	for (const { key, source } of components()) {

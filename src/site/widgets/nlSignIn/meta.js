@@ -24,7 +24,7 @@ export const metaOf = {
 		{ name: 'points', kind: 'json', label: 'Punten op de kaart' },
 		{ name: 'buttonLabel', kind: 'string', label: 'Tekst op de knop' },
 		{ name: 'note', kind: 'string', label: 'Regel onder de knop' },
-		{ name: 'tone', kind: 'string', label: 'Kleur: inverse of light' },
+		{ name: 'tone', kind: 'string', label: 'Kleur: inverse, light of outline' },
 	],
 	defaultSize: { gridWidth: 4, gridHeight: 2 },
 	scope: 'public',

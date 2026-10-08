@@ -144,7 +144,9 @@
 			above the page heading (see AccountArea's `prompt` slot below);
 			here it stands above any other page.
 		-->
-		<div v-if="session && contactPrompt && !accountRoute" class="container">
+		<div
+			v-if="session && contactPrompt && !accountRoute"
+			class="container pq-site__contact-prompt">
 			<ContactPrompt
 				:t="t"
 				:navigate="goSection"
@@ -568,6 +570,7 @@ import {
 	headerSearchOf,
 	headerVariantOf,
 	legalLinksOf,
+	menuLabelFor,
 	registerRouteOf,
 } from './lib/shellData.js'
 import {
@@ -826,6 +829,12 @@ export default {
 				if (isLast === true && this.page && this.page.title) {
 					label = this.page.title
 				}
+				// The header menu's own words for a route it names, so the trail
+				// reads like the menu ("Home › Afval"), on every crumb.
+				const fromMenu = menuLabelFor(this.menus, route)
+				if (fromMenu !== '') {
+					label = fromMenu
+				}
 
 				crumbs.push({ route, label, href: this.hrefForRoute(route) })
 			})
@@ -956,6 +965,7 @@ export default {
 									this.unreadCount,
 									this.hrefForRoute,
 									this.recordRows,
+									this.site?.residentMenu?.groups,
 								)
 							: [],
 					menus: headerMenusOf(this.menus),
@@ -1046,6 +1056,8 @@ export default {
 				this.unreadCount,
 				this.hrefForRoute,
 				this.recordRows,
+				// The portal's own groups (zuiddrecht-resident-pages-match-the-boards).
+				this.site?.residentMenu?.groups,
 			)
 		},
 
@@ -1320,7 +1332,15 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		signInRoutes() {
-			return signInRoutes(this.site, authBaseFrom(resolveApiBase()), this.t)
+			return signInRoutes(
+				this.site,
+				authBaseFrom(resolveApiBase()),
+				this.t,
+				// One click on a demo for the example resident (example-resident-demo-login).
+				this.signinConfig.exampleResident || '',
+				// Its way in stays out while the demo switch is off.
+				this.signinConfig.exampleResidentWayIn || '',
+			)
 		},
 
 		/**
@@ -2342,6 +2362,19 @@ body.layout-base .pq-site {
 	align-items: start;
 }
 
+/*
+ * The e-mail prompt above a page outside `/mijn`. Its container is a direct
+ * child of the column-flex `.pq-site`, where the container's auto side margins
+ * stop the stretch every other container gets inside `<main>`: it shrank to
+ * its text and stood off-centre. Full width up to the container's own
+ * maximum, and a step down from the navigation, as in the account column.
+ */
+.pq-site__contact-prompt {
+	box-sizing: border-box;
+	width: 100%;
+	padding-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
 .pq-site__layout--side-menu .container {
 	max-width: none;
 	margin-inline: 0;
@@ -2429,7 +2462,10 @@ body.layout-base .pq-site {
 		var(--nldesign-color-text, #1a1a1a)
 	);
 	--pq-border-color: var(--nldesign-color-border, #d0d0d0);
-	--pq-muted-color: var(--nldesign-color-text-muted, #6b6b6b);
+	--pq-muted-color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #6b6b6b)
+	);
 	--pq-link-color: var(
 		--nldesign-color-link,
 		var(--nldesign-color-primary, #0b5cab)

@@ -71,6 +71,8 @@ class PortalShell {
 			'headerSearch'   => $this->headerSearch(portal: $portal),
 			'accountLabel'   => $this->text(value: ($portal['accountLabel'] ?? '')),
 			'residentMenu'   => $this->residentMenu(portal: $portal),
+			// How Mijn zaken draws its list (zuiddrecht-resident-pages-match-the-boards).
+			'myCases'        => $this->myCases(portal: $portal),
 			'footer'         => $this->footer(portal: $portal),
 			'regions'        => $this->publicRegions(portal: $portal),
 		];
@@ -81,23 +83,69 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, string> `{cardLabel?}`.
+	 * @return array<string, mixed> `{cardLabel?, groups?}`.
 	 *
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
+	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
 	 */
 	private function residentMenu(array $portal): array {
-		$menu  = $portal['residentMenu'] ?? [];
-		$label = '';
-		if (is_array($menu) === true) {
-			$label = $this->text(value: ($menu['cardLabel'] ?? ''));
-		}
-
-		if ($label === '') {
+		$menu = $portal['residentMenu'] ?? [];
+		if (is_array($menu) === false) {
 			return [];
 		}
 
-		return ['cardLabel' => $label];
+		$out   = [];
+		$label = $this->text(value: ($menu['cardLabel'] ?? ''));
+		if ($label !== '') {
+			$out['cardLabel'] = $label;
+		}
+
+		// The portal's own groups (zuiddrecht-resident-pages-match-the-boards):
+		// each a title and its items by name, at most 12 groups of 20.
+		$groups = [];
+		foreach (array_slice((array)($menu['groups'] ?? []), 0, 12) as $group) {
+			if (is_array($group) === false) {
+				continue;
+			}
+
+			$items = [];
+			foreach (array_slice((array)($group['items'] ?? []), 0, 20) as $item) {
+				if (is_string($item) === true && preg_match('/^[a-z0-9][a-z0-9:_-]{0,79}$/i', $item) === 1) {
+					$items[] = $item;
+				}
+			}
+
+			$title = $this->text(value: ($group['title'] ?? ''));
+			if ($items !== [] && $title !== '') {
+				$groups[] = ['title' => $title, 'items' => $items];
+			}
+		}
+
+		if ($groups !== []) {
+			$out['groups'] = $groups;
+		}
+
+		return $out;
 	}//end residentMenu()
+
+	/**
+	 * How Mijn zaken draws its list: `{display: rows}` when the portal says
+	 * so, else [] (zuiddrecht-resident-pages-match-the-boards).
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+	 */
+	private function myCases(array $portal): array {
+		$cases = $portal['myCases'] ?? [];
+		if (is_array($cases) === true && ($cases['display'] ?? null) === 'rows') {
+			return ['display' => 'rows'];
+		}
+
+		return [];
+	}//end myCases()
 
 	/**
 	 * The search box in the header: whether it shows (a declared box shows

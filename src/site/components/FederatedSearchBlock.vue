@@ -4,7 +4,10 @@
   -->
 
 <template>
-	<section class="pq-search" data-testid="federated-search">
+	<section
+		class="pq-search"
+		:class="{ 'pq-search--plain': variant === 'plain' }"
+		data-testid="federated-search">
 		<!--
 			OPTIONAL, and empty by default.
 
@@ -497,6 +500,17 @@ export default {
 		submitLabel: {
 			type: String,
 			default: 'Zoeken',
+		},
+
+		/**
+		 * `reference` (the opencatalogi.nl card look) or `plain`: the form on
+		 * the page with input and button joined, the filters in a column on
+		 * the left whether or not the API returned buckets, bordered result
+		 * cards (site-matches-the-zuiddrecht-boards, board Zoeken).
+		 */
+		variant: {
+			type: String,
+			default: 'reference',
 		},
 
 		/** Heading above the facet column. */
@@ -1342,13 +1356,19 @@ export default {
 }
 
 .pq-search__source {
-	color: var(--nldesign-color-text-muted, #65757b);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #65757b)
+	);
 	font-size: 0.875rem;
 	margin: 0;
 }
 
 .pq-search__facet-count {
-	color: var(--nldesign-color-text-muted, #65757b);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #65757b)
+	);
 }
 
 /* A filter group: the fieldset carries the legend for assistive tech and no

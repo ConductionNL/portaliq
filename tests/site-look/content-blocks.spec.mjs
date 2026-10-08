@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// content-blocks.spec.mjs: a table, a melding and a link list look like the
-// design on any set (site-content-blocks-styled).
+// content-blocks.spec.mjs: a melding is a card and a link list is a named
+// landmark with targets you can hit, on any set (site-content-blocks-styled).
 //
-// The Utrecht components read every measure from tokens that no shipped set
+// The Utrecht alert reads every measure from tokens that no shipped set
 // declares. These tests read `css/site-theme.css` for the rules that supply
-// them from the set's own `--nldesign-*` tokens, and render the two widgets
+// them from the set's own `--nldesign-*` tokens, and render the link list,
 // whose markup changed. Removing a rule, giving it a literal colour, or
-// putting the table back without its scroll container fails a test.
+// putting back an unnamed landmark fails a test.
 //
 // Usage:
 //   node --test tests/site-look/content-blocks.spec.mjs
@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { loadSfc, renderSfc } from '../support/render-sfc.mjs'
+import { loadSfc } from '../support/render-sfc.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const css = readFileSync(join(ROOT, 'css/site-theme.css'), 'utf8').replace(
@@ -45,34 +45,6 @@ function rule(selector) {
 }
 
 const LITERAL_COLOUR = /#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(/i
-
-test('a table has a frame, a tinted header row and its caption as a heading', () => {
-	const frame = rule('.pq-site .utrecht-table')
-	assert.match(
-		frame,
-		/--utrecht-table-border-color, var\(--nldesign-color-border, currentcolor\)/,
-	)
-	assert.match(
-		frame,
-		/border-radius: var\(--nldesign-website-border-radius-large, 0\)/,
-	)
-
-	assert.match(
-		rule('.pq-site .utrecht-table__header-cell'),
-		/--utrecht-table-header-background-color, var\(--nldesign-color-background-hover, transparent\)/,
-	)
-
-	const caption = rule('.pq-site .utrecht-table__caption')
-	assert.match(
-		caption,
-		/--utrecht-table-caption-font-size, var\(--utrecht-heading-3-font-size/,
-	)
-	assert.match(
-		caption,
-		/--utrecht-table-caption-font-weight, var\(--utrecht-heading-3-font-weight, 700\)/,
-	)
-	assert.match(caption, /caption-side: top/)
-})
 
 test('a melding is a card with room inside and the tint of its kind', () => {
 	assert.match(
@@ -108,26 +80,10 @@ test('a link in a list is a target of at least 24px', () => {
 })
 
 test('the new rules hold no literal colour', () => {
-	const start = css.indexOf('.pq-site .utrecht-table {')
+	const start = css.indexOf('.pq-site .utrecht-alert {')
 	const end = css.indexOf('.pq-site .utrecht-link-list__link {')
 	assert.ok(start > 0 && end > start)
 	assert.doesNotMatch(css.slice(start, end), LITERAL_COLOUR)
-})
-
-test('a wide table scrolls inside its own container', async () => {
-	const html = await renderSfc('src/site/widgets/nlTable/NlTable.vue', {
-		caption: 'Wat meldt u hoe?',
-		columns: ['Wat is er', 'Wanneer'],
-		rows: [['Ziek', 'Voor 8.30 uur']],
-	})
-	assert.match(
-		html,
-		/^<div class="utrecht-table-container"><table class="utrecht-table"/,
-	)
-	assert.match(
-		html,
-		/<caption class="utrecht-table__caption">Wat meldt u hoe\?<\/caption>/,
-	)
 })
 
 test('a link list with a heading is a landmark named by it, with an id of its own', async () => {
@@ -159,5 +115,4 @@ test('a link list with a heading is a landmark named by it, with an id of its ow
 		/<div class="utrecht-link-list-nav" data-testid="nl-link-list">/,
 		'a list without a heading is no landmark',
 	)
-	assert.match(html, /class="utrecht-link-list utrecht-link-list--html-ul"/)
 })

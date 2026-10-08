@@ -137,3 +137,44 @@ and SHALL NOT translate or rewrite the label it is given.
 - **WHEN** the case is rendered
 - **THEN** the text shown is the label from the contribution, unchanged
 - @e2e exclude Identity of the rendered string with the contribution payload; covered by PHPUnit
+
+### Requirement: A case that has ended offers nothing and explains nothing
+
+A case has ended when it carries `withdrawnAt`, or when the `closedField` its collection declares holds a value. The writable set of an ended case MUST say `ended: true`. It MUST close the amendment window, the document window and every field, each with the sentence "This case is not open for changes from the portal.". The withdrawal MUST be closed. The case screen MUST show the case's status, answers and withdrawal, and MUST NOT show a sentence about a closed window, a closed withdrawal or a field that cannot change. A running case MUST keep the case type's own sentences.
+
+#### Scenario: A withdrawn Woo request does not invite more
+- GIVEN a resident withdrew their Woo request in the portal
+- WHEN they open it again
+- THEN the screen shows "Ingetrokken op" with the date and the status
+- AND it does not show "Wilt u iets aanvullen?" or "Stuur ons een bericht"
+- @e2e exclude pinned by `CitizenWritableSetResolverTest::testAWithdrawnCaseHasEndedAndInvitesNothing` and the node test "site: an ended case shows its state, never an invitation to add to it"; the live check on :8090 is in the PR
+
+#### Scenario: A case closed by staff takes nothing more
+- GIVEN the collection declares `closedField: isFinalStatus` and the case's status is final
+- WHEN the resident opens the case or sends a change
+- THEN nothing is writable, the change is refused with the neutral sentence, and no withdrawal is offered
+- @e2e exclude pinned by `CitizenCaseControllerTest::testACaseItsCollectionMarksClosedHasEnded`
+
+#### Scenario: A running case keeps its sentences
+- GIVEN a running case whose amendment window has closed
+- WHEN the resident opens it
+- THEN the screen shows the case type's sentence for the closed window
+- @e2e exclude pinned by `CitizenWritableSetResolverTest::testARunningCaseKeepsTheCaseTypesSentences`
+
+### Requirement: The case screen receives only the fields its collection declares
+
+The server MUST project the case it returns from the case screen's read, its amendment and its withdrawal to the `fields` the contribution's collection on the case's register and schema declares. It MUST add only what the screen works with: the action's `fields`, the fields the writable set names, the status field and `withdrawnAt` and `withdrawalReason`. It MUST keep the identifiers and reduce `@self` to its `id`. The writable set and the withdrawal MUST still be resolved from the full row on the server. A collection that declares no `fields` MUST pass the row whole, as its list does. A malformed declaration MUST project to the identifiers only.
+
+#### Scenario: A resident's browser never receives a staff field
+- GIVEN dossiq's `mijnZaken` collection declares `fields` without `assignee`
+- AND a resident's own Woo request has an assignee
+- WHEN the resident opens the case, amends it or withdraws it
+- THEN the case in each answer has no `assignee`, no `qualityScore` and no `portalWrites`
+- AND the writable set is the same as before
+- @e2e exclude pinned by `CitizenCaseControllerTest::testTheCaseScreenReceivesOnlyTheDeclaredFields`, `::testAWithdrawnCaseComesBackWithoutTheStaffFields` and `::testAnAmendedCaseComesBackWithoutTheStaffFields`; the live check on the dossiq Woo flow is in the PR
+
+#### Scenario: A malformed declaration fails narrow
+- GIVEN the collection declares `fields: "title"`
+- WHEN the resident opens the case
+- THEN the case carries only `id` and `@self`
+- @e2e exclude pinned by `CitizenCaseControllerTest::testAMalformedDeclarationShowsOnlyTheIdentifiers`

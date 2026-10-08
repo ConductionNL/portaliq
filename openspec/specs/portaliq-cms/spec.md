@@ -512,7 +512,6 @@ so it SHALL NOT be reachable without an administrator's session.
 - **AND** its type resolves in the component registry, and the address it reads matches the route the app declares
 - @e2e exclude asserted in tests/portal-home-page.spec.mjs, which compares the widget's address against appinfo/routes.php; a widget registered but never placed is the defect this scenario exists to catch, and it is visible in the manifest, not in a browser
 
-
 ### Requirement: An activity MUST be able to require a guardian's consent, recorded on the sign-up
 
 `activityOffer` SHALL carry `consentRequired` (boolean) and `consentStatement`
@@ -776,6 +775,167 @@ refusal of the charge SHALL be 400 `invalid_charge`; any other failure SHALL be
 - **GIVEN** an activity with `paymentRequested: false`, or an instance without shillinq
 - **WHEN** staff raise
 - **THEN** the answer SHALL be 422 `payment_not_requested`, or 503 `shillinq_unavailable`, and no sign-up SHALL change
+
+### Requirement: Newsletter and emergency recipients come from the school app
+
+When the newsletter preflight, the newsletter send check or the emergency push resolve which guardians a target reaches, the result MUST include every active portal account of the `parent` audience whose audience, read from the school app through `LeafGuardianAudienceReader`, matches the target by the same rule the news feed uses. Guardians with an interim `guardianAudienceFixture` row MUST still be matched on that row, and MUST NOT be resolved a second time through the school app. Pending and void accounts MUST NOT be counted.
+
+#### Scenario: The preflight counts a real guardian of the group
+- GIVEN learniq declares `guardianAudience` and a guardian with an active portal account has a child in group 7
+- AND no fixture row exists for that guardian
+- WHEN staff runs the preflight for a newsletter targeted at group 7
+- THEN the recipient count includes that guardian
+- @e2e exclude backend enumeration contract, pinned by `GuardianAudienceFixtureReaderTest::testGuardiansMatchingAddsTheGuardiansTheSchoolAppResolves`; no staff screen shows the preflight in this change
+
+#### Scenario: An emergency push reaches a real guardian of the school
+- GIVEN the same guardian
+- WHEN staff sends an emergency push targeted at the child's school
+- THEN the push is delivered to that guardian and counted in `recipientCount`
+- @e2e exclude the push controller only forwards `guardiansMatching()`, pinned by `EmergencyPushControllerTest`; the enumeration by `GuardianAudienceFixtureReaderTest`
+
+#### Scenario: A fixture guardian is matched on the fixture only
+- GIVEN a guardian with a fixture row in group 5 whose school app audience says group 7
+- WHEN staff targets group 7
+- THEN that guardian is not counted
+- @e2e exclude precedence rule, pinned by `GuardianAudienceFixtureReaderTest::testAFixtureRowIsNeverResolvedAgainThroughTheSchoolApp`
+
+### Requirement: A guardian's news audience comes from the school app
+
+A contribution serving the `parent` audience MAY declare `guardianAudience` with `children` (a collection id whose rows are the guardian's children), `schoolField` (the child field naming the school) and `groups` (`{collection, field}` naming the children's groups). When the interim fixture holds no row for a guardian, the guardian's audience MUST be read from those collections through the subject-scoped collection reader, with the guardian's own scope claim and via join. A fixture row MUST still take precedence.
+
+#### Scenario: A school-wide news item reaches a guardian of the school
+- GIVEN learniq declares `guardianAudience` and a guardian's child belongs to school S
+- AND a teacher publishes a news item targeted at school S
+- WHEN the guardian opens the news page in the portal
+- THEN the item is listed
+- @e2e learniq `tests/e2e/po-parent-flows.spec.ts`
+
+#### Scenario: A guardian of another school does not see it
+- GIVEN a guardian whose children belong to another school
+- WHEN they open the news page
+- THEN the item is not listed
+- @e2e exclude matching rule unchanged, covered by PHPUnit `NewsAudienceMatcherTest`; the audience source is covered by `LeafGuardianAudienceReaderTest`
+
+### Requirement: A news item carries the moment it was published
+
+Publishing a news item MUST set `publishedAt` to the server's current time, never to a value from the request. Taking it back MUST clear `publishedAt`. The guardian's news feed and the record page's news block MUST sort newest first on `publishedAt`, then `@self.published`, then `@self.created`. On upgrade, every published item without `publishedAt` MUST get its creation moment. The staff News list MUST show the date, and a guardian's news item MUST say "Gepubliceerd op" with the date.
+
+#### Scenario: A draft published today is today's news
+- GIVEN a draft written in August and an item published last week
+- WHEN staff publish the draft today
+- THEN the draft carries today's `publishedAt` and the parent's feed lists it first
+- @e2e exclude pinned by `NewsControllerTest::testPublishStampsTheMomentAndTakeBackClearsIt`, `NewsFeedReaderTest::testFeedSortsOnThePublishMomentFirst` and the node test "a draft written long ago and published today is the newest news"; the live check on :8090 is in the PR
+
+#### Scenario: Taking an item back clears the moment
+- GIVEN a published item
+- WHEN staff take it back
+- THEN it is a draft without `publishedAt`
+- @e2e exclude pinned by `NewsControllerTest::testPublishStampsTheMomentAndTakeBackClearsIt`
+
+#### Scenario: Existing news keeps its order
+- GIVEN items published before this change, without `publishedAt`
+- WHEN the app upgrades
+- THEN each gets its creation moment, and a second run changes nothing
+- @e2e exclude pinned by `BackfillNewsPublishedAtTest`
+
+#### Scenario: The parent sees when an item went out
+- GIVEN a published item with `publishedAt` 2026-10-03
+- WHEN the parent opens Nieuws
+- THEN the item says "Gepubliceerd op 3-10-2026"
+- @e2e exclude pinned by the node test "a news item says when it was published, and nothing while it has no date"
+
+### Requirement: The header must never name a person by a number
+
+The site header MUST name a signed-in resident by their portal account's display name. A display name equal to the subject reference or to the account's identity number, or made of digits only (a BSN, a KvK number), MUST NOT be served by the session endpoint nor shown by the site: the line then reads "Ingelogd" ("Logged in"). Which name an account carries is set by provisioning or the broker, not by this rule.
+
+#### Scenario: A BSN stored as the display name
+- GIVEN a portal account whose `displayName` is `999993653`, its identity number
+- WHEN the resident signs in on the site
+- THEN the session's `displayName` is empty and the header reads "Ingelogd"
+- @e2e exclude pinned by `SessionControllerTest::testIndexNamesThePersonNeverTheReference` and `tests/site-signed-in-shell.spec.mjs` ("the header says who is signed in")
+
+### Requirement: The header must name the signed-in person, never their reference
+
+The session endpoint MUST answer the portal account's display name as `displayName`, and MUST answer `''` when the account has none or when the value equals the subject reference. The site header MUST show "Logged in as {name}" with that name, and "Logged in" when no name is known. The header MUST NOT show the subject reference.
+
+#### Scenario: A parent with a name on her account
+- GIVEN Fatima Hulstkamp's portal account carries the display name "Fatima Hulstkamp"
+- WHEN she signs in on the Dutch parent portal
+- THEN the header reads "Ingelogd als Fatima Hulstkamp"
+- @e2e exclude pinned by `tests/site-signed-in-shell.spec.mjs` and `SessionControllerTest::testIndexNamesThePersonNeverTheReference`; live-checked on the primary-school instance
+
+#### Scenario: An account without a name
+- GIVEN a portal account without a display name
+- WHEN its holder signs in
+- THEN the header reads "Ingelogd" and shows no reference
+- @e2e exclude pinned by `tests/site-signed-in-shell.spec.mjs`
+
+### Requirement: A menu block must show the portal's navigation in groups
+
+The site MUST offer a public `siteNavigation` block that renders one vertical list in groups: for a signed-in resident their own items, in the same groups as the menu beside `/mijn`, then each header menu under its title. The block MUST be a navigation landmark with an accessible name, MUST give each group a heading, MUST mark the current page with `aria-current="page"`, and MUST collapse its groups behind a button with `aria-expanded` at phone width. The shell MUST supply the groups; a placement MUST NOT be able to change where the links lead.
+
+#### Scenario: A parent scans the side menu
+- GIVEN the `wilgenboom` portal carries the block in its side region
+- AND Fatima Hulstkamp is signed in and reads one of the school's information pages
+- WHEN the page renders
+- THEN the menu shows her own items in the groups of the menu beside `/mijn`, and the site's pages under the menu title
+- AND the page on screen is marked as the current page
+- @e2e exclude pinned by `tests/site-navigation.spec.mjs` (groups and rendered block); live-checked on the primary-school instance
+
+#### Scenario: A phone
+- GIVEN the same page at phone width
+- WHEN it renders
+- THEN the groups are folded behind a "Menu" button that reports whether it is expanded
+- @e2e exclude pinned by `tests/site-navigation.spec.mjs` (the button and its `aria-controls`); live-checked at 390px on the primary-school instance
+
+### Requirement: A page with a menu block must leave the header menu out
+
+When the CMS page on screen carries a `siteNavigation` block in its side region or its main grid, the header MUST NOT render its menu, and MUST keep the logo, the language, the account controls and sign-out. When the side region holds the block, it MUST render as a column before and to the left of the content, and above the content at phone width. The portal's side region MUST apply to every CMS page that does not state its own. The signed-in area (`/mijn`) MUST keep its own resident menu and MUST NOT show the block's column as well.
+
+#### Scenario: The header without its menu
+- GIVEN a page with the block in its side region
+- WHEN it renders
+- THEN the header shows no menu links and still shows "Ingelogd als ..." and the sign-out button
+- @e2e exclude pinned by `tests/site-navigation.spec.mjs` (header rendered with and without its menu); live-checked on the primary-school instance
+
+### Requirement: Staff write, change and publish news on a News screen
+
+Portaliq's Nextcloud app MUST offer a News page where a signed-in staff member sees every news item with its audience and status, writes a new one, changes one and publishes it or takes it back. The audience MUST be chosen as the whole school or one or more groups. Every write MUST go through the staff authoring routes (`POST /api/news`, `PUT /api/news/{id}`, `PUT /api/news/{id}/publish`, `PUT /api/news/{id}/unpublish`), which keep `NewsController`'s staff guard; the screen MUST NOT write news through the object API.
+
+#### Scenario: A teacher writes news for the whole school and publishes it
+- GIVEN a teacher signed in to Nextcloud at a school whose school app declares `guardianAudience`
+- WHEN they open News, write a title and text, choose the whole school and save
+- THEN the item is listed as a draft for the whole school
+- AND when they publish it, a guardian of that school reads it in the portal
+- @e2e exclude live-checked on the primary-school instance (see the PR); the screen's calls and wiring are pinned by `tests/news-authoring.spec.mjs`, the routes by `NewsControllerTest`
+
+#### Scenario: A change keeps everything the server owns
+- GIVEN a published news item with read receipts
+- WHEN staff change its text and audience
+- THEN the title, text and audience change and the status, author and read receipts stay as they were
+- @e2e exclude backend contract, pinned by `NewsControllerTest::testUpdateChangesTheTextAndAudienceOnly`
+
+#### Scenario: A save without an audience is refused
+- GIVEN staff choose "one or more groups" and pick none
+- WHEN they save
+- THEN the screen names what is missing and nothing is written
+- @e2e exclude pinned by `tests/news-authoring.spec.mjs` ("a form names what is missing") and `NewsControllerTest`
+
+### Requirement: The school and group choices come from the school app
+
+`GET /api/news/audiences` MUST return the schools and groups a staff member can choose, each `{id, label}`. For every contribution that declares `guardianAudience`, the groups MUST come from `groups.options` (`{register?, schema}`) when declared, else from the `$ref` the groups field carries in its collection's schema; the schools likewise from `schoolOptions`, else from the `$ref` of `schoolField` on the children's schema. The option objects MUST be read as the signed-in staff member with OpenRegister's access rules on. When no source resolves, the list MUST be empty and the screen MUST ask for a reference instead.
+
+#### Scenario: The groups follow the field reference
+- GIVEN learniq's `enrolment.cohortId` carries `$ref: Cohort`
+- WHEN a teacher opens the News dialog
+- THEN the groups they may read are offered by name
+- @e2e exclude pinned by `NewsAudienceOptionsTest::testGroupsFollowTheFieldReference`
+
+#### Scenario: No source means a reference field
+- GIVEN the school app declares no school source and the school field has no `$ref`
+- WHEN a teacher chooses the whole school
+- THEN the dialog asks for the school's reference
+- @e2e exclude pinned by `NewsAudienceOptionsTest::testGroupsFollowTheFieldReference` (empty schools) and the dialog's fallback field
 
 ## Notes
 

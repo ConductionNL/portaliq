@@ -6,6 +6,17 @@ kind: code
 
 ## Summary
 
+Give the public portal a search block over OpenCatalogi's federated publication endpoint, and, for Woo row 6.2, let it reach the text inside documents with each content hit linking to the document's own page.
+
+- Rows: 6.2 "Search reaches the text inside documents, not only their metadata" (not statutory), through Task 4.
+- Wave: 2.
+- Depends on: `opencatalogi/add-document-content-search` (no issue; https://github.com/ConductionNL/opencatalogi/tree/development/openspec/changes/add-document-content-search), which D11 requires to be amended first, and `portaliq/publication-detail-page-complete` (https://github.com/ConductionNL/portaliq/issues/1220) for the document page a hit links to.
+- Decision: D11 (2026-10-05), documents are search hits of their own and resolve to the document's public page.
+
+Build rules: openspec/woo-build-rules.md
+
+## Overview
+
 Give the public portal a search page that queries **OpenCatalogi's federated
 publication endpoint**, so a visitor searches every catalogue this instance
 federates with, not just the rows this instance owns.
@@ -76,3 +87,20 @@ registration reverted. That is the number a visitor pays.
 - `portaliq` — one public block, its pure helpers and their test
 - `nldesign` — none (the Rotterdam token set that styles it ships separately)
 - `opencatalogi` — none; this consumes an endpoint that already exists
+
+## Amendment, 2026-10-05: Woo capability programme, wave 2
+
+Row 6.2 of the Woo capability register, "Search reaches the text inside documents, not only their
+metadata", rated partial (production), is added to this change. It implements Ruben's decision **D11**:
+a content hit resolves to the document's own public page, which `publication-detail-page-complete`
+builds (row 6.19). Re-checked on `development` at ca591037: this change is open (Task 3's e2e box), so
+the amendment adds REQ-PFS-CONTENT-001 and Task 4 and changes nothing already written.
+
+**Why.** opencatalogi's `add-document-content-search` (6 of 8 on `development` at 35999c29) adds an
+opt-in `_content=true` that widens matching to the extracted text of documents. The portal's search
+block never sends it, so a visitor's search stays on metadata.
+
+**Dependencies.** Open, opencatalogi, outside the plan: `add-document-content-search`. D11 requires it
+to be amended first, because it returns content hits as rows of the `document` schema that
+`attachments-are-files` retired. Planned, portaliq, wave 2: `publication-detail-page-complete` for the
+document page a hit links to. Without opencatalogi nothing is searched at all, as today.

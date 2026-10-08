@@ -17,9 +17,23 @@
 		:aria-labelledby="label ? headingId : undefined"
 		:data-collection="block.collection"
 		data-testid="mijn-cases-block">
+		<!-- With `showAll` the link to every case stands beside the heading
+		     (zuiddrecht-resident-pages-match-the-boards). -->
+		<div v-if="label && showAllLink" class="pq-cases-block__head">
+			<component :is="`h${level}`" :id="headingId" class="utrecht-heading-3">
+				{{ label }}
+			</component>
+			<a
+				class="utrecht-link pq-cases-block__all"
+				:href="allHref"
+				data-testid="mijn-cases-all"
+				@click="openAll"
+				>{{ tr('All cases') }}</a
+			>
+		</div>
 		<component
 			:is="`h${level}`"
-			v-if="label"
+			v-else-if="label"
 			:id="headingId"
 			class="utrecht-heading-3">
 			{{ label }}
@@ -43,15 +57,20 @@
 				)
 			" />
 		<template v-else>
-			<ul class="pq-cases-block__list">
+			<ul
+				class="pq-cases-block__list"
+				:class="{ 'pq-cases-block__list--compact': compact }">
 				<CaseCard
 					v-for="entry in entries"
 					:key="entry.id"
 					:card="entry.card"
 					:route="entry.route"
+					:display="compact ? 'compact' : ''"
 					@open="open(entry)" />
 			</ul>
-			<p v-if="shown.more && allRoute" class="utrecht-paragraph">
+			<p
+				v-if="shown.more && allRoute && !showAllLink"
+				class="utrecht-paragraph">
 				<a class="utrecht-link" :href="allHref" @click="openAll">{{
 					tr('All cases')
 				}}</a>
@@ -150,6 +169,25 @@ export default {
 		},
 
 		/**
+		 * @return {boolean} Whether the block draws the board card.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		compact() {
+			return this.block?.display === 'compact'
+		},
+
+		/**
+		 * Whether "Alle zaken" stands beside the heading: the block says
+		 * `showAll` and the collection has a page.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		showAllLink() {
+			return this.block?.showAll === true && this.allRoute !== ''
+		},
+
+		/**
 		 * The cards, each with the route of the page that shows the case.
 		 *
 		 * @return {Array<object>}
@@ -168,6 +206,7 @@ export default {
 						locale: this.locale,
 						today: this.today || new Date(),
 						steps: this.steps[id]?.steps || null,
+						yourTurn: this.block?.yourTurn || [],
 					}),
 				}
 			})
@@ -285,5 +324,27 @@ export default {
 	gap: var(--utrecht-space-block-lg, 1.5rem) var(--utrecht-space-inline-md, 1rem);
 	margin: 0;
 	padding: 0;
+}
+
+/* The board: cards from 300px, 16px apart, and the link beside the heading. */
+.pq-cases-block__list--compact {
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18.75rem), 1fr));
+	gap: 1rem;
+}
+
+.pq-cases-block__head {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 0.5rem;
+}
+
+.pq-cases-block__head > * {
+	margin: 0;
+}
+
+.pq-cases-block__all {
+	font-weight: 600;
 }
 </style>

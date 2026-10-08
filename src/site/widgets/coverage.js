@@ -1006,4 +1006,25 @@ export const SITE_COMPOSITIONS = [
 		composes: ['Link List', 'Card as Link'],
 		why: 'A dated list with date tiles or date labels ("Agenda", "Deze maand").',
 	},
+	{
+		key: 'nlLinkColumns',
+		composes: ['Heading', 'Link List'],
+		why: 'A heading over columns of links on a band of its own ("Bestuur en organisatie").',
+	},
+	{
+		key: 'nlLookupForm',
+		composes: ['Form Field', 'Button'],
+		why: 'A few fields in one row and a button that opens a page with the answers in its address ("Toon mijn afvalkalender").',
+	},
+	{
+		key: 'nlCatalogue',
+		composes: [
+			'Text Input',
+			'Checkbox Group',
+			'Select',
+			'Card as Link',
+			'Page Number Navigation',
+		],
+		why: 'The portal\'s public catalogue: search, facets, results and pages ("Cursusaanbod", "Opleidingen").',
+	},
 ]
