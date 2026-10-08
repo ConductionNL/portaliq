@@ -204,6 +204,23 @@ class PortalPageControllerTest extends TestCase {
 
 
 	/**
+	 * REQ-PTB-002: a themed portal's token overrides reach the template as
+	 * filtered CSS; an unthemed portal gets none, whatever it declares.
+	 *
+	 * @return void
+	 */
+	public function testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly(): void {
+		$tokens = ['--nldesign-header-link-color' => '#f36c21', '--evil-x' => 'red', '--nldesign-bad' => 'url(x)'];
+
+		$themed = $this->controller(orgSlug: '', portal: ['theme' => 'vng', 'tokens' => $tokens], themeStylesheet: 'themes/vng');
+		$this->assertSame(':root{--nldesign-header-link-color:#f36c21}', $themed->site()->getParams()['themeTokenCss']);
+
+		$unthemed = $this->controller(orgSlug: '', portal: ['theme' => 'vng', 'tokens' => $tokens], themeStylesheet: null);
+		$this->assertSame('', $unthemed->site()->getParams()['themeTokenCss']);
+	}//end testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly()
+
+
+	/**
 	 * site-links-the-theme-bridge: a themed portal gets the bridge, an
 	 * unthemed one does not, although the theme app ships it in both cases.
 	 * The bridge carries fallbacks; linked without a set it would restyle a

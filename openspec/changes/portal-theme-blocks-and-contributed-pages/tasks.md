@@ -24,8 +24,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN both demo portals WHEN computed styles of header, cards, footer and headings are compared with the baseline THEN nothing differs
   - GIVEN `npm run build:site` WHEN it finishes THEN the entrypoint is reported and stays under 400 KiB
 - Reference: 076bd6e
-- [ ] Implement
-- [ ] Test
+- [ ] Implement — not run: needs the shell baseline capture (`tests/shell-snapshot.mjs` lives on the unmerged reference branch) and a browser to compare computed styles
+- [ ] Test — not run: needs a browser
 
 ### Task 2: Link the theme layers and add a token-only site stylesheet
 
@@ -36,8 +36,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN a rendered portal WHEN only `--utrecht-document-background-color` changes THEN all painted surfaces change, including `.pq-site`'s scoped style
   - GIVEN `css/site-theme.css` WHEN stylelint runs THEN `color-no-hex` and `color-named: never` pass
 - Reference: 03fdd5f, 93a0ecd, 46d7e9f, fd37778
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [ ] Test — partly: `css/site-theme.css` holds no hex or named colour and stylelint now enforces it (`stylelint.config.js` override, `npm run stylelint`); the computed-style scenario (only `--utrecht-document-background-color` changes) is not run: needs a browser
 
 ### Task 3: Portal token overrides and theme inheritance
 
@@ -48,8 +48,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN a child set, its parent and a two-set cycle WHEN the chain resolves THEN the parent is first and the cycle yields each set once
   - GIVEN `portal.tokens` WHEN the register is imported THEN the schema declares it with a description
 - Reference: c06adac, 46d7e9f
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test (`PortalTokenCssTest`, `PortalThemeResolverTest::testAParentIsLinkedBeforeItsChild`, `::testACycleLinksEachSetOnceAndAChainStopsAtFourHops`, `PortalPageControllerTest::testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly`, `PortaliqRegisterConfigTest`; `lib/Service/PortalTokenCss.php`, `parentStylesheetsFor()`, `templates/site.php`; register 0.72.0)
 
 ### Task 4: The header block
 
@@ -123,8 +123,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN an entry without a page WHEN rendered THEN it is plain text
   - GIVEN an unknown page WHEN opened THEN the 404 state renders
 - Reference: 547fb33
-- [ ] Implement
-- [ ] Test
+- [ ] Implement — not run in this batch: left for a later pass
+- [ ] Test — not run in this batch
 
 ### Task 10: Contributed actions, anonymous ownership and the AA check
 
@@ -135,8 +135,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN a browser with an admin Nextcloud cookie WHEN it submits the same form THEN `_owner` is not `admin`; the OpenRegister version guard is tested both ways
   - GIVEN `npm run check:surfaces` WHEN it runs on both demo portals at 1440px and 390px THEN it self-tests, then reports zero contrast failures, one `h1` per page, no skipped level and no overflow
 - Reference: 4200fd7, a485fad, f1b4294, 9901229
-- [ ] Implement
-- [ ] Test
+- [ ] Implement — not run in this batch: left for a later pass
+- [ ] Test — not run in this batch
 
 ## Verification
 

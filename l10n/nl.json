@@ -2344,7 +2344,9 @@
         "Choose which groups may do each action. Administrators always may.": "Kies welke groepen elke actie mogen uitvoeren. Beheerders mogen altijd.",
         "Only administrators": "Alleen beheerders",
         "The actions could not be loaded.": "De acties konden niet worden geladen.",
-        "Saving the actions failed. The grants are unchanged.": "Het opslaan van de acties is mislukt. De rechten zijn ongewijzigd."
+        "Saving the actions failed. The grants are unchanged.": "Het opslaan van de acties is mislukt. De rechten zijn ongewijzigd.",
+        "Token overrides": "Tokenoverschrijvingen",
+        "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped.": "Ontwerptokens die dit portaal bovenop zijn thema instelt, als tokennaam naar waarde. Een naam moet beginnen met --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- of --c-. Een waarde mag alleen de tekens bevatten die een tokenwaarde nodig heeft, en een waarde met url(, expression, javascript:, data:, @import of een backslash wordt weggelaten."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

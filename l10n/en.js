@@ -2270,7 +2270,9 @@ OC.L10N.register(
         "Choose which groups may do each action. Administrators always may.": "Choose which groups may do each action. Administrators always may.",
         "Only administrators": "Only administrators",
         "The actions could not be loaded.": "The actions could not be loaded.",
-        "Saving the actions failed. The grants are unchanged.": "Saving the actions failed. The grants are unchanged."
+        "Saving the actions failed. The grants are unchanged.": "Saving the actions failed. The grants are unchanged.",
+        "Token overrides": "Token overrides",
+        "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped.": "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped."
     },
     "nplurals=2; plural=(n != 1);"
 )

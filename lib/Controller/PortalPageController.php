@@ -50,6 +50,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\PortalTokenCss;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\AppFramework\Controller;
@@ -264,6 +265,10 @@ class PortalPageController extends Controller {
 				// `/api/content/site` — so this resolves no content the
 				// contract withholds; it only decides which stylesheet tag to emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
+				// The sets it extends, parent first, and the portal's own token
+				// overrides (portal-theme-blocks-and-contributed-pages REQ-PTB-002, REQ-PTB-003).
+				'themeParents' => $this->siteThemeParents(),
+				'themeTokenCss' => $this->siteThemeTokenCss(),
 				'themeLogoUrl' => $this->siteThemeLogoUrl(),
 				'themeAppSheets' => $this->siteThemeAppSheets(),
 				// The NLDS token set this app ships for the serving portal's
@@ -552,6 +557,57 @@ class PortalPageController extends Controller {
 			theme: (string)($portal['theme'] ?? '')
 		);
 	}//end siteThemeStylesheet()
+
+
+	/**
+	 * The stylesheets of the sets the serving portal's theme extends, parent first.
+	 *
+	 * @return array<int, string> Paths relative to the theme app's `css/`.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-theme-that-extends-another-must-load-its-parent-first-req-ptb-003
+	 */
+	private function siteThemeParents(): array {
+		$portal = $this->servingPortalOrNull();
+		if ($portal === null || $this->siteThemeStylesheet() === '') {
+			return [];
+		}
+
+		return $this->themeResolver->parentStylesheetsFor(theme: (string)($portal['theme'] ?? ''));
+	}//end siteThemeParents()
+
+
+	/**
+	 * The serving portal's own token overrides as a `:root` block, or ''.
+	 *
+	 * @return string The CSS.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-portal-must-be-able-to-override-its-themes-tokens-safely-req-ptb-002
+	 */
+	private function siteThemeTokenCss(): string {
+		$portal = $this->servingPortalOrNull();
+		if ($portal === null || $this->siteThemeStylesheet() === '') {
+			return '';
+		}
+
+		return (new PortalTokenCss())->css(tokens: ($portal['tokens'] ?? null));
+	}//end siteThemeTokenCss()
+
+
+	/**
+	 * The portal this request is served from, or null.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function servingPortalOrNull(): ?array {
+		try {
+			return $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: $this->requestedPortalSlug()
+			);
+		} catch (\Throwable) {
+			return null;
+		}
+	}//end servingPortalOrNull()
 
 
 	/**

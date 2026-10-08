@@ -740,4 +740,56 @@ class PortalThemeResolverTest extends TestCase {
 	}//end testALogoVariantNeedsItsFileAndAResolvedSet()
 
 
+
+	/**
+	 * REQ-PTB-003: a child loads after its parent; the theme itself is not in the list.
+	 *
+	 * @return void
+	 */
+	public function testAParentIsLinkedBeforeItsChild(): void {
+		file_put_contents($this->themeRoot . '/css/tokens/lasuite.css', ':root{}');
+		file_put_contents($this->themeRoot . '/css/tokens/frankendesk.css', ':root{}');
+		file_put_contents(
+			$this->themeRoot . '/token-sets.json',
+			(string)json_encode([
+				['id' => 'lasuite'],
+				['id' => 'frankendesk', 'extends' => 'lasuite'],
+				['id' => 'vng'],
+			])
+		);
+
+		$this->assertSame(['tokens/lasuite'], $this->resolver()->parentStylesheetsFor('frankendesk'));
+		$this->assertSame([], $this->resolver()->parentStylesheetsFor('vng'));
+	}//end testAParentIsLinkedBeforeItsChild()
+
+
+	/**
+	 * REQ-PTB-003: two sets that extend each other link each once, and a long
+	 * chain stops after four hops.
+	 *
+	 * @return void
+	 */
+	public function testACycleLinksEachSetOnceAndAChainStopsAtFourHops(): void {
+		foreach (['a', 'b', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5'] as $id) {
+			file_put_contents($this->themeRoot . '/css/tokens/' . $id . '.css', ':root{}');
+		}
+
+		file_put_contents(
+			$this->themeRoot . '/token-sets.json',
+			(string)json_encode([
+				['id' => 'a', 'extends' => 'b'],
+				['id' => 'b', 'extends' => 'a'],
+				['id' => 'c0', 'extends' => 'c1'],
+				['id' => 'c1', 'extends' => 'c2'],
+				['id' => 'c2', 'extends' => 'c3'],
+				['id' => 'c3', 'extends' => 'c4'],
+				['id' => 'c4', 'extends' => 'c5'],
+				['id' => 'c5'],
+			])
+		);
+
+		$this->assertSame(['tokens/b'], $this->resolver()->parentStylesheetsFor('a'));
+		$this->assertSame(['tokens/c4', 'tokens/c3', 'tokens/c2', 'tokens/c1'], $this->resolver()->parentStylesheetsFor('c0'));
+	}//end testACycleLinksEachSetOnceAndAChainStopsAtFourHops()
+
 }//end class

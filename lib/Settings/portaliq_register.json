@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.71.0"
+        "version": "0.72.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.71.0",
+                "version": "0.72.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2449,7 +2449,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.14.0",
+                "version": "0.15.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -4172,6 +4172,17 @@
                         },
                         "default": [],
                         "example": []
+                    },
+                    "tokens": {
+                        "title": "Token overrides",
+                        "type": "object",
+                        "description": "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped.",
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "example": {
+                            "--nldesign-header-link-color": "#f36c21"
+                        }
                     },
                     "searchInsideDocuments": {
                         "title": "Search inside documents",
