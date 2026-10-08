@@ -555,6 +555,7 @@ import {
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
+import { languageEntries, requestedLocale } from './lib/languageNav.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { blocksOwnHeading } from './lib/pageHeading.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
@@ -720,6 +721,10 @@ export default {
 			// A mailed way in (`#activate=`, `#invitation=`, `#reference=`).
 			wayInLink: hasWayInLink(window.location),
 			site: {},
+			// The language the visitor chose with the language switch
+			// (`?lang=`), sent on every content read. '' asks for the
+			// portal's default.
+			chosenLocale: requestedLocale(window.location.search),
 			menus: [],
 			glossary: [],
 			contributions: [],
@@ -929,8 +934,30 @@ export default {
 				portal: this.site.slug || '',
 				signedIn: this.session !== null,
 				navigation: this.navigation,
+				languages: this.languages,
 				// The portal's sign-in ways, for the nlSignIn block (lane L2, G-13).
 				signInRoutes: this.signInRoutes,
+			}
+		},
+
+		/**
+		 * The language switch's data: the portal's own locales as links to
+		 * this page in each, and the one in effect. The content API answered
+		 * both on `/site` (ContentController::site), so nothing here invents
+		 * a language.
+		 *
+		 * @return {{locales: Array<object>, current: string}} The switch's props.
+		 *
+		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+		 */
+		languages() {
+			return {
+				locales: languageEntries(
+					this.site.locales,
+					this.hrefForRoute(this.route),
+				),
+
+				current: this.site.locale || '',
 			}
 		},
 
@@ -1476,9 +1503,15 @@ export default {
 		async loadSite() {
 			try {
 				const [site, menus, glossary] = await Promise.all([
-					fetchSite(this.portalSlug),
-					this.unlessSignInNeeded(fetchMenus(this.portalSlug), []),
-					this.unlessSignInNeeded(fetchGlossary(this.portalSlug), []),
+					fetchSite(this.portalSlug, this.chosenLocale),
+					this.unlessSignInNeeded(
+						fetchMenus(this.portalSlug, this.chosenLocale),
+						[],
+					),
+					this.unlessSignInNeeded(
+						fetchGlossary(this.portalSlug, this.chosenLocale),
+						[],
+					),
 				])
 				this.site = site
 				this.menus = menus
@@ -2009,7 +2042,10 @@ export default {
 			this.error = null
 			this.routeParam = ''
 			try {
-				this.page = await fetchPage(route, this.portalSlug, { fresh })
+				this.page = await fetchPage(route, this.portalSlug, {
+					fresh,
+					locale: this.chosenLocale,
+				})
 			} catch (error) {
 				// A ROUTE CAN ADDRESS A THING RATHER THAN A PAGE.
 				//
@@ -2029,6 +2065,7 @@ export default {
 					try {
 						this.page = await fetchPage(parent, this.portalSlug, {
 							fresh,
+							locale: this.chosenLocale,
 						})
 						this.routeParam = route.slice(parent.length + 1)
 						this.loading = false
@@ -2095,6 +2132,7 @@ export default {
 			try {
 				this.page = await fetchPage(this.route, this.portalSlug, {
 					fresh: true,
+					locale: this.chosenLocale,
 				})
 			} catch {
 				// Leaving edit mode reads the page again anyway; a failed
@@ -2252,10 +2290,16 @@ export default {
 			// instance with several portals, an address without it opens
 			// another portal, or none, after a reload or in a new tab.
 			const portal = url.searchParams.get('portal')
+			// The chosen language stays as well (`?lang=`), so the next page
+			// opens in the language the visitor picked.
+			const lang = url.searchParams.get('lang')
 			url.search = ''
 			url.hash = ''
 			if (portal) {
 				url.searchParams.set('portal', portal)
+			}
+			if (lang) {
+				url.searchParams.set('lang', lang)
 			}
 			url.searchParams.set('route', this.searchRoute)
 			if (term) {
@@ -2298,10 +2342,16 @@ export default {
 			// instance with several portals, an address without it opens
 			// another portal, or none, after a reload or in a new tab.
 			const portal = url.searchParams.get('portal')
+			// The chosen language stays as well (`?lang=`), so the next page
+			// opens in the language the visitor picked.
+			const lang = url.searchParams.get('lang')
 			url.search = ''
 			url.hash = ''
 			if (portal) {
 				url.searchParams.set('portal', portal)
+			}
+			if (lang) {
+				url.searchParams.set('lang', lang)
 			}
 			if (route && route !== '/') {
 				url.searchParams.set('route', route)

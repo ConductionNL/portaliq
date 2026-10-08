@@ -347,6 +347,18 @@ export default {
 		},
 
 		/**
+		 * The language switch's data: `{locales, current}`, where `locales`
+		 * are the portal's own, as `{locale, label, href}` entries
+		 * (src/site/lib/languageNav.js). Supplied by the host for the same
+		 * reason the glossary rows are: a placement must not offer a
+		 * language the portal does not have.
+		 */
+		languages: {
+			type: Object,
+			default: () => ({}),
+		},
+
+		/**
 		 * The portal's sign-in routes, `{mode, label, href}` as the shell
 		 * derives them from `authentication.modes` (authApi.js
 		 * signInRoutes). Handed to `nlSignIn` AFTER its authored props, so a
@@ -435,6 +447,7 @@ export default {
 		 * @return {object} The component props.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
+		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
 		 */
 		propsFor(widget) {
@@ -529,6 +542,23 @@ export default {
 				|| widget.widgetKey === 'intakeStatus'
 			) {
 				return { ...props, portal: this.portal }
+			}
+
+			// SAME RULE, SIXTH SUBJECT. The languages on offer are the
+			// PORTAL's, so the host supplies them after the authored props: a
+			// placement can rename the landmark but cannot add a language
+			// (design D1 row 52). Without this branch the switch kept its
+			// empty default and never rendered.
+			if (widget.widgetKey === 'nlLanguageNav') {
+				const languages = this.languages || {}
+				return {
+					...props,
+					locales: Array.isArray(languages.locales)
+						? languages.locales
+						: [],
+
+					current: languages.current || '',
+				}
 			}
 
 			// site-school-blocks: the news widgets read this portal's public
