@@ -717,7 +717,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Inloggen"
+				"board": [
+					"Inloggen",
+					"NcLogin"
+				]
 			}
 		},
 		{
@@ -1034,7 +1037,8 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
 					"MijnZaken",
-					"Machtigingen"
+					"Machtigingen",
+					"Machtigen"
 				]
 			}
 		},
@@ -1603,7 +1607,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Machtigingen"
+				"board": [
+					"Machtigingen",
+					"PtToegangsverzoeken"
+				]
 			}
 		},
 		{
@@ -1638,7 +1645,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Machtigingen"
+				"board": [
+					"Machtigingen",
+					"PtToegangsverzoeken"
+				]
 			}
 		},
 		{
@@ -2068,7 +2078,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MijnZaken"
+				"board": [
+					"MijnZaken",
+					"MijnZakenTabel"
+				]
 			}
 		},
 		{
@@ -2358,7 +2371,11 @@
 			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MijnZaken"
+				"board": [
+					"MijnZaken",
+					"MijnZakenTabel",
+					"ZaakAfgerond"
+				]
 			}
 		},
 		{
@@ -2532,7 +2549,11 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Uitkeringen"
+			}
 		},
 		{
 			"id": "cmp-cas-tax",
@@ -2595,8 +2616,11 @@
 			"featureConfidence": "medium",
 			"note": "Owners: ConductionNL/shillinq holds the payment logic; ConductionNL/portaliq forwards the action and renders it.",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (a pay action is drawn on no board; shillinq owns the payment)"
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Betalen",
+					"BetalingResultaat"
+				]
 			}
 		},
 		{
@@ -3210,7 +3234,8 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
 					"MijnTaken",
-					"MijnOverzicht"
+					"MijnOverzicht",
+					"MijnTakenTabel"
 				]
 			}
 		},
@@ -3246,7 +3271,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MijnTaken"
+				"board": [
+					"MijnTaken",
+					"TaakAfronden"
+				]
 			}
 		},
 		{
@@ -3281,7 +3309,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MijnTaken"
+				"board": [
+					"MijnTaken",
+					"TaakAfronden"
+				]
 			}
 		},
 		{
@@ -3316,7 +3347,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MijnTaken"
+				"board": [
+					"MijnTaken",
+					"TaakAfronden"
+				]
 			}
 		},
 		{
@@ -3526,7 +3560,15 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"AfspraakMaken",
+					"AfspraakBevestiging",
+					"MijnAfspraken"
+				]
+			}
 		},
 		{
 			"id": "cmp-tsk-questionnaire",
@@ -3584,7 +3626,15 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"ActieBewerken",
+					"Plan",
+					"Plannen"
+				]
+			}
 		},
 		{
 			"id": "inb-view-unified",
@@ -3653,7 +3703,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Berichten"
+				"board": [
+					"Berichten",
+					"BerichtDetail"
+				]
 			}
 		},
 		{
@@ -3723,7 +3776,10 @@
 			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Berichten"
+				"board": [
+					"Berichten",
+					"BerichtDetail"
+				]
 			}
 		},
 		{
@@ -3901,7 +3957,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Berichten"
+				"board": [
+					"Berichten",
+					"Gesprek"
+				]
 			}
 		},
 		{
@@ -4148,7 +4207,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "BerichtDetail"
+			}
 		},
 		{
 			"id": "cmp-inb-contact-history",
@@ -4212,7 +4275,18 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MeldingIndienen"
+				"board": [
+					"MeldingIndienen",
+					"FormulierStart",
+					"FormulierVelden",
+					"FormulierFouten",
+					"FormulierVerwerken",
+					"FormulierNietBeschikbaar",
+					"FormulierGezinsleden",
+					"WooVerzoek",
+					"WooVerzoekControleren",
+					"PtFormulierInstellingen"
+				]
 			}
 		},
 		{
@@ -4247,7 +4321,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MeldingIndienen"
+				"board": [
+					"MeldingIndienen",
+					"PtFormulierInstellingen"
+				]
 			}
 		},
 		{
@@ -4356,7 +4433,9 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
 					"Home",
-					"PtAanvraagformulieren"
+					"PtAanvraagformulieren",
+					"PtProduct",
+					"PtProducten"
 				]
 			}
 		},
@@ -4427,7 +4506,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "WooVerzoekGegevens"
+				"board": [
+					"WooVerzoekGegevens",
+					"FormulierInloggen"
+				]
 			}
 		},
 		{
@@ -4644,7 +4726,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MeldingIndienen"
+				"board": [
+					"MeldingIndienen",
+					"FormulierGezinsleden"
+				]
 			}
 		},
 		{
@@ -4679,7 +4764,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "WooVerzoekGegevens"
+				"board": [
+					"WooVerzoekGegevens",
+					"FormulierInloggen"
+				]
 			}
 		},
 		{
@@ -4713,8 +4801,11 @@
 			"feature": null,
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (no board draws a saved draft)"
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"FormulierOpslaan",
+					"FormulierHervatten"
+				]
 			}
 		},
 		{
@@ -4748,8 +4839,11 @@
 			"feature": null,
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (no board draws a pay step)"
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Betalen",
+					"BetalingResultaat"
+				]
 			}
 		},
 		{
@@ -4786,7 +4880,8 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
 					"WooVerzoekVerstuurd",
-					"PtInzending"
+					"PtInzending",
+					"PtInzendingen"
 				]
 			}
 		},
@@ -4818,7 +4913,11 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "FormulierKaart"
+			}
 		},
 		{
 			"id": "cmp-int-objection",
@@ -4888,7 +4987,11 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Home"
+				"board": [
+					"Home",
+					"PtProduct",
+					"PtProducten"
+				]
 			}
 		},
 		{
@@ -5135,8 +5238,8 @@
 			"feature": "contribution-manifest-v3",
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "backend: no screen of its own"
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtZaaktypeWeergave"
 			}
 		},
 		{
@@ -5387,7 +5490,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Begrippen"
+				"board": [
+					"Begrippen",
+					"PtBegrippen"
+				]
 			}
 		},
 		{
@@ -8132,7 +8238,11 @@
 			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "PtInzending"
+				"board": [
+					"PtInzending",
+					"PtBeheerdersrechten",
+					"PtInzendingen"
+				]
 			}
 		},
 		{
@@ -8274,8 +8384,8 @@
 			"feature": null,
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (role settings)"
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtBeheerdersrechten"
 			}
 		},
 		{
@@ -8485,8 +8595,8 @@
 			"feature": null,
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "not designed yet on the Zuiddrecht canvas (role settings)"
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtBeheerdersrechten"
 			}
 		},
 		{
@@ -8523,7 +8633,8 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
 					"PtInzending",
-					"PtAccount"
+					"PtAccount",
+					"PtBeheerdersrechten"
 				]
 			}
 		},
@@ -8672,7 +8783,8 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
 					"Zaak",
-					"Berichten"
+					"Berichten",
+					"Gesprek"
 				]
 			}
 		},
@@ -8756,7 +8868,8 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
 					"DocumentOndertekenen",
-					"MijnTaken"
+					"MijnTaken",
+					"MedeOndertekenen"
 				]
 			}
 		},
@@ -8911,7 +9024,10 @@
 			"originNote": "TenderNed 402189 Gemeente Alkmaar Common Ground Platform: 'Aan kunnen geven welke workflows standaard getoond worden op MijnAlkmaar en welke niet' (nota van inlichtingen)",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "PtPortalInstellingen"
+				"board": [
+					"PtPortalInstellingen",
+					"PtZaaktypeWeergave"
+				]
 			}
 		},
 		{
@@ -9131,7 +9247,11 @@
 			"featureConfidence": "low",
 			"origin": "roadmap",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/product-management/roadmap.md#L21",
-			"originNote": "NL Portal roadmap milestone 'Open Product en Open Klant'"
+			"originNote": "NL Portal roadmap milestone 'Open Product en Open Klant'",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "ThemaOverzicht"
+			}
 		},
 		{
 			"id": "dem-cl-upload-virus-scan",
@@ -9501,7 +9621,10 @@
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/release-notes/3.0.x/backend-libraries/3.0.0.md#L10",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Zaak"
+				"board": [
+					"Zaak",
+					"ZaakAfgerond"
+				]
 			}
 		},
 		{
@@ -9573,7 +9696,8 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
 					"Home",
-					"PtMededelingen"
+					"PtMededelingen",
+					"PtMededelingenActies"
 				]
 			}
 		},
@@ -9612,7 +9736,10 @@
 			"originNote": "i18n strings",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MijnGegevens"
+				"board": [
+					"MijnGegevens",
+					"MijnAdres"
+				]
 			}
 		},
 		{
