@@ -38,7 +38,7 @@ import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 // @nextcloud/auth, which reads browser storage when it loads. A plain node has
 // no window, so a storage stub stands in (the build swaps those packages for a
 // stub; see webpack.site.js).
-const memory = () => {
+function memory () {
 	const items = new Map()
 	return {
 		getItem: (key) => (items.has(key) ? items.get(key) : null),

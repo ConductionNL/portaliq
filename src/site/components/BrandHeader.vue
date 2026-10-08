@@ -196,8 +196,8 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import NoTranslate from './NoTranslate.vue'
-import { markAround } from '../lib/markAround.js'
 import SiteMenu from './SiteMenu.vue'
+import { markAround } from '../lib/markAround.js'
 
 /**
  * The portal's header block (`brandHeader`).
@@ -287,6 +287,7 @@ export default {
 			).trim()
 			return markAround(this.sessionLabel, name)
 		},
+
 		/**
 		 * Whether the navigation shares the masthead's row.
 		 *
