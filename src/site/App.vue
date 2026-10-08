@@ -363,6 +363,7 @@
 						<article
 							v-else-if="page"
 							:class="bodyIsGrid ? null : 'utrecht-article'"
+							:lang="contentLocale"
 							data-testid="site-page">
 							<!--
 						THE RENDERER'S OWN TITLE HEADING IS A FALLBACK, not a
@@ -655,6 +656,18 @@ export default {
 		SiteEditButton,
 		SiteNotices,
 		WidgetGrid,
+	},
+
+	/**
+	 * The language the page's content is written in, for the blocks that
+	 * format a date inside it (site-dates-in-content-language). A function,
+	 * so a block reads the current page's language after a navigation.
+	 *
+	 * @return {{siteContentLocale: () => string}} The provided values.
+	 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
+	 */
+	provide() {
+		return { siteContentLocale: () => this.contentLocale }
 	},
 
 	props: {
@@ -1087,6 +1100,22 @@ export default {
 				runtimeConfig().portalNotices,
 				this.session !== null,
 			)
+		},
+
+		/**
+		 * The language the page's content is written in: the page record's
+		 * own `locale`, else the site's. A Dutch page on a portal that also
+		 * serves English stays Dutch for an English browser, so its dates read
+		 * "2 oktober", not "2 October" (site-dates-in-content-language). Also
+		 * the page's `lang`, so a screen reader reads the content in its own
+		 * language (WCAG 3.1.2).
+		 *
+		 * @return {string} A two-letter language.
+		 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
+		 */
+		contentLocale() {
+			const own = String(this.page?.locale || '').trim()
+			return own !== '' ? own.slice(0, 2).toLowerCase() : this.locale
 		},
 
 		/**
