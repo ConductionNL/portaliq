@@ -512,6 +512,466 @@
 			"name_nl": "Inrichten, draaien en beheren"
 		}
 	],
+	"features": [
+		{
+			"slug": "sign-in-with-digid-and-eherkenning",
+			"title": "Sign in with DigiD, eHerkenning and eIDAS",
+			"title_nl": "Inloggen met DigiD, eHerkenning en eIDAS",
+			"area": "signin",
+			"overlay": null,
+			"specs": [
+				"adopt-connection-registry",
+				"supplier-portal"
+			]
+		},
+		{
+			"slug": "sessions-that-stay-safe",
+			"title": "Sessions that stay safe and sign you out on time",
+			"title_nl": "Sessies die veilig blijven en op tijd uitloggen",
+			"area": "signin",
+			"overlay": null,
+			"specs": [
+				"portal-auth-edge-session-hardening",
+				"portal-traffic-analytics",
+				"supplier-portal"
+			]
+		},
+		{
+			"slug": "assurance-levels",
+			"title": "Assurance levels per page and action",
+			"title_nl": "Betrouwbaarheidsniveaus per pagina en actie",
+			"area": "signin",
+			"overlay": null,
+			"specs": [
+				"portal-contribution-contract",
+				"portal-scoping-and-auth",
+				"portaliq-cms",
+				"site-member-voting-record-and-confidential-papers"
+			]
+		},
+		{
+			"slug": "portal-accounts-and-ways-in",
+			"title": "Portal accounts and ways in",
+			"title_nl": "Portaalaccounts en manieren om binnen te komen",
+			"area": "identity",
+			"overlay": null,
+			"specs": [
+				"password-reset-from-the-sign-in-page",
+				"portal-identity-space",
+				"portal-nextcloud-account-login"
+			]
+		},
+		{
+			"slug": "acting-for-someone-else",
+			"title": "Acting for someone else with a mandate",
+			"title_nl": "Namens een ander handelen met een machtiging",
+			"area": "identity",
+			"overlay": null,
+			"specs": []
+		},
+		{
+			"slug": "your-profile-and-registered-details",
+			"title": "Your profile and registered details",
+			"title_nl": "Je profiel en geregistreerde gegevens",
+			"area": "identity",
+			"overlay": null,
+			"specs": [
+				"identity-registered-details",
+				"own-contacts-and-invitations"
+			]
+		},
+		{
+			"slug": "my-cases-overview",
+			"title": "One overview of all your cases",
+			"title_nl": "Een overzicht van al je zaken",
+			"area": "cases",
+			"overlay": null,
+			"specs": [
+				"life-domain-theme-pages",
+				"site-mijn-omgeving"
+			]
+		},
+		{
+			"slug": "the-case-page",
+			"title": "The case page with status and next steps",
+			"title_nl": "De zaakpagina met status en volgende stappen",
+			"area": "cases",
+			"overlay": null,
+			"specs": [
+				"case-page-tasks-decision-dates-and-next-step",
+				"case-timeline"
+			]
+		},
+		{
+			"slug": "documents-on-your-case",
+			"title": "Documents on your case",
+			"title_nl": "Documenten bij je zaak",
+			"area": "cases",
+			"overlay": null,
+			"specs": [
+				"cases-export-own-data-pdf",
+				"site-shared-dossier"
+			]
+		},
+		{
+			"slug": "products-taxes-and-payments",
+			"title": "Products, permits, taxes and payments",
+			"title_nl": "Producten, vergunningen, belastingen en betalingen",
+			"area": "cases",
+			"overlay": null,
+			"specs": [
+				"intake-pay-on-submit",
+				"life-domain-theme-pages"
+			]
+		},
+		{
+			"slug": "act-on-your-own-case",
+			"title": "Correct and act on your own case",
+			"title_nl": "Je eigen zaak aanvullen en erop handelen",
+			"area": "case-actions",
+			"overlay": null,
+			"specs": [
+				"portal-guest-actions"
+			]
+		},
+		{
+			"slug": "withdraw-object-and-complain",
+			"title": "Withdraw, object and complain",
+			"title_nl": "Intrekken, bezwaar maken en klagen",
+			"area": "case-actions",
+			"overlay": null,
+			"specs": [
+				"case-page-objection-and-complaint"
+			]
+		},
+		{
+			"slug": "change-proposals",
+			"title": "Change proposals reviewed by staff",
+			"title_nl": "Wijzigingsvoorstellen die medewerkers beoordelen",
+			"area": "case-actions",
+			"overlay": null,
+			"specs": [
+				"change-proposal-queue"
+			]
+		},
+		{
+			"slug": "tasks-for-residents-and-partners",
+			"title": "Tasks for residents and partners",
+			"title_nl": "Taken voor inwoners en ketenpartners",
+			"area": "tasks",
+			"overlay": null,
+			"specs": [
+				"partner-tasks-in-the-portal",
+				"personal-action-list",
+				"portal-task-delivery",
+				"shared-plans-with-a-caseworker",
+				"supplier-portal"
+			]
+		},
+		{
+			"slug": "find-the-right-service",
+			"title": "Find the right service",
+			"title_nl": "De juiste dienst vinden",
+			"area": "intake",
+			"overlay": null,
+			"specs": [
+				"public-faq-and-product-finder"
+			]
+		},
+		{
+			"slug": "contact-the-organisation",
+			"title": "Contact the organisation",
+			"title_nl": "Contact opnemen met de organisatie",
+			"area": "site",
+			"overlay": null,
+			"specs": [
+				"contact-page-question-form-and-not-found",
+				"portaliq-cms"
+			]
+		},
+		{
+			"slug": "one-inbox",
+			"title": "One inbox for every message",
+			"title_nl": "Een berichtenbox voor elk bericht",
+			"area": "inbox",
+			"overlay": null,
+			"specs": [
+				"inbox-read-receipt-on-request"
+			]
+		},
+		{
+			"slug": "conversations-with-the-organisation",
+			"title": "Conversations with the organisation",
+			"title_nl": "Gesprekken met de organisatie",
+			"area": "inbox",
+			"overlay": null,
+			"specs": [
+				"guardian-direct-messaging",
+				"guardian-message-translation",
+				"inbox-reply-with-attachments",
+				"portaliq-leaf-integrations"
+			]
+		},
+		{
+			"slug": "notifications",
+			"title": "Notifications by e-mail, text message and push",
+			"title_nl": "Meldingen per e-mail, sms en push",
+			"area": "inbox",
+			"overlay": null,
+			"specs": [
+				"guardian-push-notifications",
+				"mail-templates-admin-screen"
+			]
+		},
+		{
+			"slug": "submit-a-request",
+			"title": "Submit a request through the portal",
+			"title_nl": "Een aanvraag indienen via het portaal",
+			"area": "intake",
+			"overlay": null,
+			"specs": [
+				"embedded-intake-form",
+				"form-statements-intro-and-confirmation-mail",
+				"landing-page-provisioning",
+				"supplier-portal"
+			]
+		},
+		{
+			"slug": "anonymous-reports",
+			"title": "Anonymous reports with a custodian who may reveal them",
+			"title_nl": "Anonieme meldingen met een vertrouwenspersoon die mag onthullen",
+			"area": "intake",
+			"overlay": null,
+			"specs": [
+				"intake-report-pages"
+			]
+		},
+		{
+			"slug": "smart-forms",
+			"title": "Smart forms with logic, lookups and checks",
+			"title_nl": "Slimme formulieren met logica, opzoekingen en controles",
+			"area": "intake",
+			"overlay": null,
+			"specs": [
+				"data-lookups-and-checks-in-forms",
+				"form-flow-repeating-groups-calculations-and-decisions",
+				"help-texts-and-form-help",
+				"intake-conditional-questions-and-drafts",
+				"site-multi-step-forms"
+			]
+		},
+		{
+			"slug": "identity-in-forms",
+			"title": "Signing and verifying identity in forms",
+			"title_nl": "Ondertekenen en identiteit vaststellen in formulieren",
+			"area": "intake",
+			"overlay": null,
+			"specs": [
+				"resident-identity-in-forms"
+			]
+		},
+		{
+			"slug": "form-submissions-management",
+			"title": "Form availability, registration and retention",
+			"title_nl": "Beschikbaarheid, registratie en bewaartermijn van formulieren",
+			"area": "operate",
+			"overlay": null,
+			"specs": [
+				"form-governance-availability-retention-and-routing"
+			]
+		},
+		{
+			"slug": "every-app-in-one-portal",
+			"title": "Every app's services in one portal",
+			"title_nl": "De diensten van elke app in een portaal",
+			"area": "contributions",
+			"overlay": null,
+			"specs": [
+				"portal-contribution-contract",
+				"portal-contribution-endpoint-actions",
+				"portal-theme-blocks-and-contributed-pages",
+				"portaliq-leaf-integrations"
+			]
+		},
+		{
+			"slug": "website-pages-and-menus",
+			"title": "Public website pages and menus",
+			"title_nl": "Pagina's en menu's van de publieke website",
+			"area": "site",
+			"overlay": null,
+			"specs": [
+				"parent-polls",
+				"portaliq-cms",
+				"retire-the-vendored-woo-bundle",
+				"site-member-voting-record-and-confidential-papers"
+			]
+		},
+		{
+			"slug": "page-editing-and-publishing",
+			"title": "Page editing and publishing",
+			"title_nl": "Pagina's bewerken en publiceren",
+			"area": "site",
+			"overlay": null,
+			"specs": [
+				"portal-in-place-editing",
+				"portal-page-designer",
+				"site-page-seo-history-and-media",
+				"site-shared-page-blocks"
+			]
+		},
+		{
+			"slug": "landing-pages",
+			"title": "Landing pages with a lead form",
+			"title_nl": "Landingspagina's met een leadformulier",
+			"area": "site",
+			"overlay": null,
+			"specs": [
+				"contribution-landing-page-action",
+				"landing-page-provisioning"
+			]
+		},
+		{
+			"slug": "findable-by-search-engines",
+			"title": "Findable by search engines",
+			"title_nl": "Vindbaar in zoekmachines",
+			"area": "site",
+			"overlay": null,
+			"specs": [
+				"site-page-seo-history-and-media"
+			]
+		},
+		{
+			"slug": "site-search",
+			"title": "Search the site and its publications",
+			"title_nl": "Zoeken op de site en in publicaties",
+			"area": "search",
+			"overlay": null,
+			"specs": [
+				"portal-federated-search",
+				"portal-public-search",
+				"search-assistant-from-public-content",
+				"search-sort-by-relevance",
+				"search-suggestions-while-typing"
+			]
+		},
+		{
+			"slug": "house-style-per-portal",
+			"title": "House style and white label per portal",
+			"title_nl": "Huisstijl en white label per portaal",
+			"area": "theming",
+			"overlay": null,
+			"specs": [
+				"nldesign-theme-integration",
+				"portal-white-label-runtime-config",
+				"portaliq-cms"
+			]
+		},
+		{
+			"slug": "languages-and-plain-language",
+			"title": "Languages and plain language",
+			"title_nl": "Talen en begrijpelijke taal",
+			"area": "theming",
+			"overlay": null,
+			"specs": [
+				"help-texts-and-form-help",
+				"personal-data-left-untranslated",
+				"portal-spa-i18n-locale-support"
+			]
+		},
+		{
+			"slug": "accessible-on-every-device",
+			"title": "Accessible on every device",
+			"title_nl": "Toegankelijk op elk apparaat",
+			"area": "theming",
+			"overlay": null,
+			"specs": [
+				"parent-pwa-installability",
+				"portaliq-cms"
+			]
+		},
+		{
+			"slug": "privacy-friendly-measurement",
+			"title": "Privacy-friendly visitor measurement",
+			"title_nl": "Privacyvriendelijk bezoek meten",
+			"area": "analytics",
+			"overlay": null,
+			"specs": [
+				"portal-traffic-analytics",
+				"portal-traffic-reporting",
+				"portal-traffic-visitors-and-geo"
+			]
+		},
+		{
+			"slug": "traffic-dashboards-and-reports",
+			"title": "Traffic dashboards and reports",
+			"title_nl": "Dashboards en rapportages over bezoek",
+			"area": "analytics",
+			"overlay": null,
+			"specs": [
+				"portal-page-traffic",
+				"portal-traffic-analytics",
+				"portal-traffic-kpi-cards",
+				"portal-traffic-reporting"
+			]
+		},
+		{
+			"slug": "goals-funnels-and-experiments",
+			"title": "Goals, funnels and experiments",
+			"title_nl": "Doelen, trechters en experimenten",
+			"area": "analytics",
+			"overlay": null,
+			"specs": [
+				"portal-traffic-experiments",
+				"portal-traffic-outcomes"
+			]
+		},
+		{
+			"slug": "setup-and-settings",
+			"title": "Install, set up and configure",
+			"title_nl": "Installeren, inrichten en configureren",
+			"area": "operate",
+			"overlay": null,
+			"specs": [
+				"configuration-initialization",
+				"settings-management",
+				"source-license-headers"
+			]
+		},
+		{
+			"slug": "monitoring-and-audit-trail",
+			"title": "Monitoring, availability and audit trail",
+			"title_nl": "Monitoring, beschikbaarheid en audittrail",
+			"area": "operate",
+			"overlay": null,
+			"specs": [
+				"observability"
+			]
+		},
+		{
+			"slug": "portals-per-organisation-and-roles",
+			"title": "Portals per organisation, with roles",
+			"title_nl": "Portalen per organisatie, met rollen",
+			"area": "operate",
+			"overlay": null,
+			"specs": [
+				"operate-portals-per-organisation",
+				"operate-roles-for-content-and-actions"
+			]
+		},
+		{
+			"slug": "integrations-and-apis",
+			"title": "Integrations, APIs and AI agents",
+			"title_nl": "Koppelingen, API's en AI-agents",
+			"area": "operate",
+			"overlay": null,
+			"specs": [
+				"adopt-connection-registry",
+				"portal-headless-content-api",
+				"portal-traffic-analytics",
+				"portaliq-mcp-adoption"
+			]
+		}
+	],
 	"providers": [
 		{
 			"key": "portaliq",
@@ -606,7 +1066,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-oidc-broker-login",
+			"feature": "sign-in-with-digid-and-eherkenning",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -647,7 +1107,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-oidc-broker-login",
+			"feature": "sign-in-with-digid-and-eherkenning",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -687,7 +1147,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-oidc-broker-login",
+			"feature": "sign-in-with-digid-and-eherkenning",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -727,7 +1187,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-oidc-broker-login",
+			"feature": "sign-in-with-digid-and-eherkenning",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -764,8 +1224,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "supplier-portal",
-			"featureConfidence": "high",
+			"feature": "sign-in-with-digid-and-eherkenning",
+			"featureConfidence": "medium",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own (development only)"
@@ -802,7 +1262,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-auth-edge",
+			"feature": "portal-accounts-and-ways-in",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -842,7 +1302,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-auth-edge",
+			"feature": "sessions-that-stay-safe",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -879,7 +1339,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-session-hardening-v2",
+			"feature": "sessions-that-stay-safe",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -916,7 +1376,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-auth-edge-session-hardening",
+			"feature": "sessions-that-stay-safe",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -953,8 +1413,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "medium",
+			"feature": "sign-in-with-digid-and-eherkenning",
+			"featureConfidence": "high",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own"
@@ -990,8 +1450,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "medium",
+			"feature": "sign-in-with-digid-and-eherkenning",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtPortalInstellingen"
@@ -1027,8 +1487,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "adopt-connection-registry",
-			"featureConfidence": "medium",
+			"feature": "sign-in-with-digid-and-eherkenning",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtDashboard"
@@ -1064,8 +1524,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
-			"featureConfidence": "low",
+			"feature": "sessions-that-stay-safe",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtSessies"
@@ -1101,7 +1561,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "assurance-levels",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1138,7 +1598,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
+			"feature": "acting-for-someone-else",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1179,7 +1639,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "medium",
+			"feature": "sessions-that-stay-safe",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtPortalInstellingen"
@@ -1216,7 +1677,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-oidc-broker-login",
+			"feature": "sign-in-with-digid-and-eherkenning",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1253,8 +1714,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
-			"featureConfidence": "medium",
+			"feature": "assurance-levels",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Inloggen"
@@ -1292,7 +1753,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-oidc-broker-login",
+			"feature": "assurance-levels",
 			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1330,6 +1791,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-07",
 			"note": "Decision 83 (7 Oct 2026): portaliq owns the public page for decidiq pub-14; decidiq contributes the record list (decidiq/portal-voting-record-and-confidential-papers). NotuBiz, iBabs and GO show this on their public council sites (decidiq matrix).",
+			"feature": "website-pages-and-menus",
 			"screen": {
 				"board": null,
 				"reason": "not designed yet: no board draws a public voting record page; the change composes it from Contentpagina and Publicatie with the figures of DcPersoon's Stemgedrag tab"
@@ -1366,8 +1828,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-scoping-and-auth",
-			"featureConfidence": "medium",
+			"feature": "assurance-levels",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -1406,7 +1868,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-space",
+			"feature": "portal-accounts-and-ways-in",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1443,7 +1905,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
+			"feature": "portal-accounts-and-ways-in",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1480,7 +1942,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
+			"feature": "portal-accounts-and-ways-in",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1517,7 +1979,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-space",
+			"feature": "portal-accounts-and-ways-in",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1554,7 +2016,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-space",
+			"feature": "portal-accounts-and-ways-in",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1594,8 +2056,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-space",
-			"featureConfidence": "medium",
+			"feature": "portal-accounts-and-ways-in",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtAccountUitgeven"
@@ -1631,8 +2093,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-space",
-			"featureConfidence": "medium",
+			"feature": "portal-accounts-and-ways-in",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtAccount"
@@ -1668,7 +2130,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
+			"feature": "your-profile-and-registered-details",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1705,7 +2167,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
+			"feature": "your-profile-and-registered-details",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -1742,8 +2204,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "high",
+			"feature": "acting-for-someone-else",
+			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -1782,8 +2244,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "high",
+			"feature": "acting-for-someone-else",
+			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -1822,8 +2284,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "medium",
+			"feature": "portal-accounts-and-ways-in",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtPortalInstellingen"
@@ -1859,8 +2321,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-space",
-			"featureConfidence": "medium",
+			"feature": "portal-accounts-and-ways-in",
+			"featureConfidence": "high",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own"
@@ -1897,8 +2359,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "low",
+			"feature": "acting-for-someone-else",
+			"featureConfidence": "high",
 			"screen": {
 				"board": null,
 				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
@@ -1935,8 +2397,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "medium",
+			"feature": "portal-accounts-and-ways-in",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -1976,7 +2438,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-visibility-follows-the-party-tree",
+			"feature": "acting-for-someone-else",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2017,7 +2479,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-space",
+			"feature": "portal-accounts-and-ways-in",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2057,6 +2519,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "your-profile-and-registered-details",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2093,7 +2556,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "medium",
+			"feature": "your-profile-and-registered-details",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "MijnGegevens"
@@ -2129,6 +2593,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "your-profile-and-registered-details",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2165,6 +2630,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "your-profile-and-registered-details",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2201,7 +2667,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
+			"feature": "my-cases-overview",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2239,7 +2705,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-space",
+			"feature": "my-cases-overview",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2279,7 +2745,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-scoped-crud",
+			"feature": "the-case-page",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2319,7 +2785,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "what-the-citizen-may-write-on-their-own-case",
+			"feature": "the-case-page",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2359,7 +2825,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "what-the-citizen-may-write-on-their-own-case",
+			"feature": "documents-on-your-case",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2396,7 +2862,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-document-download",
+			"feature": "documents-on-your-case",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2434,7 +2900,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-space",
+			"feature": "acting-for-someone-else",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2471,7 +2937,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-task-delivery",
+			"feature": "notifications",
 			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2512,6 +2978,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "my-cases-overview",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2549,7 +3016,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "medium",
+			"feature": "my-cases-overview",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -2597,6 +3065,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "the-case-page",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2637,6 +3106,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "documents-on-your-case",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2674,7 +3144,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "medium",
+			"feature": "documents-on-your-case",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Zaak"
@@ -2709,6 +3180,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "products-taxes-and-payments",
 			"featureConfidence": "high"
 		},
 		{
@@ -2740,6 +3212,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "products-taxes-and-payments",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2775,6 +3248,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "products-taxes-and-payments",
 			"featureConfidence": "high"
 		},
 		{
@@ -2807,8 +3281,8 @@
 			},
 			"provider": "shillinq",
 			"providerHow": "read-from-code",
-			"feature": "sal-customer-portal",
-			"featureConfidence": "medium",
+			"feature": "products-taxes-and-payments",
+			"featureConfidence": "high",
 			"note": "Owners: ConductionNL/shillinq holds the payment logic; ConductionNL/portaliq forwards the action and renders it.",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2847,6 +3321,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "products-taxes-and-payments",
 			"featureConfidence": "high"
 		},
 		{
@@ -2878,6 +3353,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "products-taxes-and-payments",
 			"featureConfidence": "high"
 		},
 		{
@@ -2910,7 +3386,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "what-the-citizen-may-write-on-their-own-case",
+			"feature": "act-on-your-own-case",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2947,7 +3423,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "what-the-citizen-may-write-on-their-own-case",
+			"feature": "documents-on-your-case",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -2984,7 +3460,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "withdrawing-your-own-case-from-the-portal",
+			"feature": "withdraw-object-and-complain",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3026,7 +3502,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "withdrawing-your-own-case-from-the-portal",
+			"feature": "withdraw-object-and-complain",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3066,7 +3542,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "what-the-citizen-may-write-on-their-own-case",
+			"feature": "act-on-your-own-case",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -3110,7 +3586,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "change-proposal-queue",
+			"feature": "change-proposals",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3148,7 +3624,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "change-proposal-queue",
+			"feature": "change-proposals",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3192,7 +3668,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "change-proposal-queue",
+			"feature": "change-proposals",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3230,7 +3706,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "change-proposal-queue",
+			"feature": "change-proposals",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3267,7 +3743,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
+			"feature": "act-on-your-own-case",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3304,7 +3780,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-status-transitions",
+			"feature": "act-on-your-own-case",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3341,7 +3817,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-scoped-crud",
+			"feature": "documents-on-your-case",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3378,8 +3854,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contract-v2",
-			"featureConfidence": "high",
+			"feature": "act-on-your-own-case",
+			"featureConfidence": "medium",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own (the button is drawn by whatever page declares it)"
@@ -3417,7 +3893,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "change-proposal-queue",
+			"feature": "change-proposals",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3457,7 +3933,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-task-delivery",
+			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3498,7 +3974,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-task-delivery",
+			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3538,7 +4014,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-task-delivery",
+			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3578,7 +4054,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-task-delivery",
+			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3618,7 +4094,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
+			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3658,7 +4134,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-task-delivery",
+			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3695,8 +4171,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "supplier-portal",
-			"featureConfidence": "medium",
+			"feature": "tasks-for-residents-and-partners",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "MijnTaken"
@@ -3733,7 +4209,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "partner-tasks-in-the-portal",
+			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -3771,7 +4247,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "partner-tasks-in-the-portal",
+			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3807,7 +4283,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high",
+			"feature": "contact-the-organisation",
+			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -3846,6 +4323,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
+			"feature": "find-the-right-service",
 			"featureConfidence": "high"
 		},
 		{
@@ -3879,7 +4357,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"featureConfidence": "high",
+			"feature": "tasks-for-residents-and-partners",
+			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -3919,7 +4398,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
+			"feature": "one-inbox",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3956,7 +4435,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
+			"feature": "one-inbox",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -3996,7 +4475,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
+			"feature": "one-inbox",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4033,8 +4512,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "wmebv-submission-receipts",
-			"featureConfidence": "medium",
+			"feature": "one-inbox",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -4073,7 +4552,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
+			"feature": "one-inbox",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4110,7 +4589,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
+			"feature": "one-inbox",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4147,7 +4626,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-leaf-integrations",
+			"feature": "conversations-with-the-organisation",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4187,7 +4666,7 @@
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
+			"feature": "conversations-with-the-organisation",
 			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4224,7 +4703,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-leaf-integrations",
+			"feature": "conversations-with-the-organisation",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4264,7 +4743,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "conversations-with-the-organisation",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4300,7 +4779,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-notifications-dispatch",
+			"feature": "notifications",
 			"featureConfidence": "high"
 		},
 		{
@@ -4334,7 +4813,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-notifications-dispatch",
+			"feature": "notifications",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4371,7 +4850,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
+			"feature": "one-inbox",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4407,6 +4886,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-07",
 			"note": "Owed to planninq col-read-receipts (WebUntis Mitteilungen asks for Lesebestaetigungen). Extends cmp-inb-read-receipt, which only shows a read flag.",
+			"feature": "one-inbox",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -4452,7 +4932,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "notifications",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4491,7 +4971,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "one-inbox",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4527,7 +5007,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "one-inbox",
 			"featureConfidence": "high"
 		},
 		{
@@ -4560,7 +5040,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "supplier-portal",
+			"feature": "submit-a-request",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4608,7 +5088,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "landing-page-provisioning",
+			"feature": "submit-a-request",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4649,7 +5129,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "embedded-intake-form",
+			"feature": "submit-a-request",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -4687,8 +5167,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "embedded-intake-form",
-			"featureConfidence": "medium",
+			"feature": "submit-a-request",
+			"featureConfidence": "high",
 			"screen": {
 				"board": null,
 				"reason": "not designed yet on the Zuiddrecht canvas (the form embedded on another site)"
@@ -4724,7 +5204,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-intake-form-as-an-object",
+			"feature": "find-the-right-service",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4766,7 +5246,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-intake-form-as-an-object",
+			"feature": "submit-a-request",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4803,7 +5283,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-intake-form-as-an-object",
+			"feature": "submit-a-request",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4843,7 +5323,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "landing-page-provisioning",
+			"feature": "landing-pages",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4880,7 +5360,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "a-report-without-an-account-and-a-custodian-who-may-reveal-it",
+			"feature": "anonymous-reports",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4917,7 +5397,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "a-report-without-an-account-and-a-custodian-who-may-reveal-it",
+			"feature": "anonymous-reports",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4957,7 +5437,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "a-report-without-an-account-and-a-custodian-who-may-reveal-it",
+			"feature": "anonymous-reports",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -4995,7 +5475,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "a-report-without-an-account-and-a-custodian-who-may-reveal-it",
+			"feature": "anonymous-reports",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5035,7 +5515,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "smart-forms",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5075,7 +5555,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-intake-form-as-an-object",
+			"feature": "submit-a-request",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5115,7 +5595,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "smart-forms",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5155,8 +5635,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
-			"featureConfidence": "high",
+			"feature": "products-taxes-and-payments",
+			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -5195,7 +5675,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "wmebv-submission-receipts",
+			"feature": "submit-a-request",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5235,7 +5715,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "submit-a-request",
 			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5273,8 +5753,8 @@
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
-			"feature": null,
-			"featureConfidence": "medium",
+			"feature": "withdraw-object-and-complain",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Zaak"
@@ -5310,7 +5790,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-intake-form-as-an-object",
+			"feature": "find-the-right-service",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5351,7 +5831,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -5388,7 +5868,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -5425,8 +5905,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
-			"featureConfidence": "high",
+			"feature": "assurance-levels",
+			"featureConfidence": "medium",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own"
@@ -5462,7 +5942,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-leaf-integrations",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -5499,7 +5979,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5539,7 +6019,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5576,7 +6056,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5613,8 +6093,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
-			"featureConfidence": "medium",
+			"feature": "every-app-in-one-portal",
+			"featureConfidence": "high",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own"
@@ -5650,7 +6130,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-endpoint-actions",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -5689,7 +6169,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-create-cross-refs",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -5726,7 +6206,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "what-the-citizen-may-write-on-their-own-case",
+			"feature": "documents-on-your-case",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5764,7 +6244,7 @@
 			},
 			"provider": "stackiq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -5801,7 +6281,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5841,7 +6321,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5881,8 +6361,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-theme-blocks-and-contributed-pages",
-			"featureConfidence": "high",
+			"feature": "every-app-in-one-portal",
+			"featureConfidence": "medium",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Home"
@@ -5918,7 +6398,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5959,7 +6439,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -5996,7 +6476,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -6033,7 +6513,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-page-designer",
+			"feature": "page-editing-and-publishing",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6071,8 +6551,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-landing-page-action",
-			"featureConfidence": "medium",
+			"feature": "landing-pages",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtPortal"
@@ -6108,7 +6588,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "landing-page-provisioning",
+			"feature": "landing-pages",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6145,7 +6625,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "retire-the-vendored-woo-bundle",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6185,7 +6665,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-page-designer",
+			"feature": "page-editing-and-publishing",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6221,7 +6701,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "page-editing-and-publishing",
 			"featureConfidence": "high"
 		},
 		{
@@ -6253,7 +6733,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "page-editing-and-publishing",
 			"featureConfidence": "high"
 		},
 		{
@@ -6286,8 +6766,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
-			"featureConfidence": "medium",
+			"feature": "page-editing-and-publishing",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtPaginaZoekmachines"
@@ -6323,7 +6803,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6360,7 +6840,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "page-editing-and-publishing",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6400,7 +6880,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "findable-by-search-engines",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6436,8 +6916,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
-			"featureConfidence": "medium"
+			"feature": "website-pages-and-menus",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "cmp-site-headless",
@@ -6469,8 +6949,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-headless-content-api",
-			"featureConfidence": "high",
+			"feature": "integrations-and-apis",
+			"featureConfidence": "medium",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own (an API for another frontend)"
@@ -6513,7 +6993,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6553,7 +7033,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high"
 		},
 		{
@@ -6585,8 +7065,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-federated-search",
-			"featureConfidence": "high"
+			"feature": "site-search",
+			"featureConfidence": "medium"
 		},
 		{
 			"id": "sib-opencatalogi-fed-portal",
@@ -6618,7 +7098,7 @@
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
-			"feature": "portal-federated-search",
+			"feature": "site-search",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6655,7 +7135,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6695,7 +7175,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6735,7 +7215,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-federated-search",
+			"feature": "site-search",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6772,7 +7252,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-federated-search",
+			"feature": "site-search",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6809,8 +7289,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-public-search",
-			"featureConfidence": "medium",
+			"feature": "site-search",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -6849,8 +7329,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-public-search",
-			"featureConfidence": "medium",
+			"feature": "site-search",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Publicatie"
@@ -6886,7 +7366,7 @@
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
-			"feature": "portal-federated-search",
+			"feature": "site-search",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6923,7 +7403,7 @@
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
-			"feature": "portal-federated-search",
+			"feature": "site-search",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6960,7 +7440,7 @@
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
-			"feature": "portal-federated-search",
+			"feature": "site-search",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -6997,7 +7477,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "house-style-per-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7037,7 +7517,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "nldesign-theme-integration",
+			"feature": "house-style-per-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -7074,8 +7554,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
-			"featureConfidence": "medium",
+			"feature": "house-style-per-portal",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -7114,7 +7594,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-white-label-runtime-config",
+			"feature": "house-style-per-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7151,7 +7631,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-spa-i18n-locale-support",
+			"feature": "languages-and-plain-language",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7188,7 +7668,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "languages-and-plain-language",
 			"featureConfidence": "high"
 		},
 		{
@@ -7221,7 +7701,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-spa-nl-design-system-styling",
+			"feature": "accessible-on-every-device",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7261,7 +7741,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-spa-nl-design-system-styling",
+			"feature": "house-style-per-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -7298,7 +7778,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-spa-i18n-locale-support",
+			"feature": "languages-and-plain-language",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7341,7 +7821,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "accessible-on-every-device",
 			"featureConfidence": "high"
 		},
 		{
@@ -7373,8 +7853,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
-			"featureConfidence": "medium"
+			"feature": "languages-and-plain-language",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "sib-opencatalogi-pub-house-style",
@@ -7406,7 +7886,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "nldesign-theme-integration",
+			"feature": "house-style-per-portal",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7443,7 +7923,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-cms",
+			"feature": "accessible-on-every-device",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7480,7 +7960,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -7517,8 +7997,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
-			"featureConfidence": "medium",
+			"feature": "privacy-friendly-measurement",
+			"featureConfidence": "high",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own"
@@ -7554,7 +8034,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -7591,7 +8071,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-reporting",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7628,7 +8108,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-experiments",
+			"feature": "goals-funnels-and-experiments",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7665,7 +8145,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-experiments",
+			"feature": "goals-funnels-and-experiments",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -7702,7 +8182,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-reporting",
+			"feature": "traffic-dashboards-and-reports",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7739,7 +8219,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7776,7 +8256,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -7813,7 +8293,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-reporting",
+			"feature": "traffic-dashboards-and-reports",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7850,7 +8330,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-visitors-and-geo",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -7887,7 +8367,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-visitors-and-geo",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -7924,7 +8404,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-reporting",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -7961,7 +8441,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
+			"feature": "traffic-dashboards-and-reports",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8001,7 +8481,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-outcomes",
+			"feature": "goals-funnels-and-experiments",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8038,7 +8518,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-outcomes",
+			"feature": "goals-funnels-and-experiments",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8075,7 +8555,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-outcomes",
+			"feature": "goals-funnels-and-experiments",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8115,8 +8595,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-outcomes",
-			"featureConfidence": "medium",
+			"feature": "goals-funnels-and-experiments",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtVerkeer"
@@ -8152,7 +8632,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-outcomes",
+			"feature": "goals-funnels-and-experiments",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8189,7 +8669,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-experiments",
+			"feature": "goals-funnels-and-experiments",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8226,7 +8706,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "landing-page-provisioning",
+			"feature": "landing-pages",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8263,7 +8743,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -8300,7 +8780,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8337,7 +8817,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-experiments",
+			"feature": "goals-funnels-and-experiments",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8377,7 +8857,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8414,7 +8894,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-traffic-analytics",
+			"feature": "privacy-friendly-measurement",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8453,7 +8933,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "goals-funnels-and-experiments",
 			"featureConfidence": "high"
 		},
 		{
@@ -8486,7 +8966,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "configuration-initialization",
+			"feature": "setup-and-settings",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -8523,7 +9003,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "settings-management",
+			"feature": "setup-and-settings",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -8560,7 +9040,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "settings-management",
+			"feature": "setup-and-settings",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -8597,7 +9077,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "configuration-initialization",
+			"feature": "setup-and-settings",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -8634,7 +9114,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "configuration-initialization",
+			"feature": "setup-and-settings",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -8671,8 +9151,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "observability",
-			"featureConfidence": "medium",
+			"feature": "monitoring-and-audit-trail",
+			"featureConfidence": "high",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own"
@@ -8708,7 +9188,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "observability",
+			"feature": "monitoring-and-audit-trail",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -8745,8 +9225,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
-			"featureConfidence": "medium",
+			"feature": "monitoring-and-audit-trail",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -8786,7 +9266,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "integrations-and-apis",
 			"featureConfidence": "high",
 			"note": "Owners: ConductionNL/portaliq does the health reporting; ConductionNL/integriq owns the connection management UI.",
 			"screen": {
@@ -8824,7 +9304,7 @@
 			},
 			"provider": "openregister",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "setup-and-settings",
 			"featureConfidence": "high",
 			"note": "Owners: ConductionNL/openregister is the engine; ConductionNL/portaliq aliases the routes and declares the manifest page.",
 			"screen": {
@@ -8863,7 +9343,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "setup-and-settings",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -8900,7 +9380,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "portals-per-organisation-and-roles",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8937,7 +9417,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-page-designer",
+			"feature": "page-editing-and-publishing",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -8974,8 +9454,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
-			"featureConfidence": "medium",
+			"feature": "portals-per-organisation-and-roles",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtPortals"
@@ -9011,7 +9491,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portaliq-mcp-adoption",
+			"feature": "integrations-and-apis",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -9049,7 +9529,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "integrations-and-apis",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -9086,8 +9566,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
-			"featureConfidence": "medium",
+			"feature": "portals-per-organisation-and-roles",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtPortals"
@@ -9123,7 +9603,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "portals-per-organisation-and-roles",
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -9160,8 +9640,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
-			"featureConfidence": "medium",
+			"feature": "monitoring-and-audit-trail",
+			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -9201,7 +9681,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
+			"feature": "portals-per-organisation-and-roles",
 			"featureConfidence": "high",
 			"screen": {
 				"board": null,
@@ -9238,8 +9718,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": null,
-			"featureConfidence": "high",
+			"feature": "setup-and-settings",
+			"featureConfidence": "medium",
 			"screen": {
 				"board": null,
 				"reason": "backend: no screen of its own (licence)"
@@ -9275,8 +9755,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-notifications-dispatch",
-			"featureConfidence": "medium",
+			"feature": "notifications",
+			"featureConfidence": "high",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/397282",
 			"originNote": "TenderNed 397282 Gemeente Molenlanden, requirement 'Het portaal geeft bij een wijziging een notificatie aan zowel de klant als aan de behandelaar'; also 415380 Sudwest-Fryslan 'statuswijziging ... kenbaar in het klantportaal'",
@@ -9315,8 +9795,8 @@
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
-			"featureConfidence": "medium",
+			"feature": "conversations-with-the-organisation",
+			"featureConfidence": "high",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/397282",
 			"originNote": "TenderNed 397282 Gemeente Molenlanden: 'Via het portaal gevoerde communicatie wordt door de Oplossing automatisch toegevoegd aan de zaak'",
@@ -9360,8 +9840,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
-			"featureConfidence": "medium",
+			"feature": "one-inbox",
+			"featureConfidence": "high",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/407031",
 			"originNote": "TenderNed 407031 Gemeente Gulpen-Wittem: 'beschikking kenbaar ... via het inwonerportaal, via de mail, via de MijnOverheid Berichtenbox'; 415380 Sudwest-Fryslan: 'koppeling met de Berichtenbox Overheid'",
@@ -9404,8 +9884,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "what-the-citizen-may-write-on-their-own-case",
-			"featureConfidence": "low",
+			"feature": "act-on-your-own-case",
+			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/409958",
 			"originNote": "TenderNed 409958 GR Sociaal (schuldhulpverlening): 'Client kan documenten ... digitaal ondertekenen in het inwonerportaal via DigiD, of ValidSign'",
@@ -9449,7 +9929,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-task-delivery",
+			"feature": "tasks-for-residents-and-partners",
 			"featureConfidence": "high",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/409958",
@@ -9489,8 +9969,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-scoped-crud",
-			"featureConfidence": "medium",
+			"feature": "acting-for-someone-else",
+			"featureConfidence": "high",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/409958",
 			"originNote": "TenderNed 409958: 'In het geval van een gezamenlijk dossier moet de partner in het inwonerportaal kunnen inloggen zijn/haar eigen DigiD'",
@@ -9529,8 +10009,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-document-download",
-			"featureConfidence": "medium",
+			"feature": "documents-on-your-case",
+			"featureConfidence": "high",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/409958",
 			"originNote": "TenderNed 409958: 'Client kan via het inwonerportaal verschillende gegevens (bv afschriften betalingsverkeer, of budgetplan) exporteren in PDF'",
@@ -9570,7 +10050,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "medium",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/402189",
@@ -9614,8 +10094,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "observability",
-			"featureConfidence": "medium",
+			"feature": "monitoring-and-audit-trail",
+			"featureConfidence": "high",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415380",
 			"originNote": "TenderNed 415380 Sudwest-Fryslan: 'De leverancier kan inzicht geven (gedetailleerde meetgegevens/rapportages over de afgelopen 12 maanden) m.b.t. de beschikbaarheid ... klantenportaal'",
@@ -9654,8 +10134,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-spa-nl-design-system-styling",
-			"featureConfidence": "medium",
+			"feature": "accessible-on-every-device",
+			"featureConfidence": "high",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/410320",
 			"originNote": "TenderNed 410320 Regio Gooi en Vechtstreek, Eis 257: 'Het klantportaal voldoet aan de WCAG 2.2 eisen'; 415380: 'voldoet aan de meest recente WCAG'",
@@ -9694,8 +10174,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
-			"featureConfidence": "medium",
+			"feature": "the-case-page",
+			"featureConfidence": "high",
 			"origin": "featureRequest",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/issues/2726",
 			"originNote": "open-inwoner issue #2726 'Contactmomenten toevoegen aan een zaak detailpagina' (enhancement, owner: dimpact, opened 2026-07-23)",
@@ -9733,8 +10213,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "adopt-connection-registry",
-			"featureConfidence": "medium",
+			"feature": "integrations-and-apis",
+			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/product-management/roadmap.md#L9",
 			"originNote": "NL Portal roadmap milestone 'ZGW configuratie via UI'"
@@ -9769,7 +10249,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "nldesign-theme-integration",
+			"feature": "house-style-per-portal",
 			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/product-management/roadmap.md#L13",
@@ -9810,8 +10290,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
-			"featureConfidence": "low",
+			"feature": "products-taxes-and-payments",
+			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/product-management/roadmap.md#L21",
 			"originNote": "NL Portal roadmap milestone 'Open Product en Open Klant'",
@@ -9849,7 +10329,7 @@
 			},
 			"provider": "nextcloud",
 			"providerHow": "read-from-code",
-			"feature": "portal-scoped-crud",
+			"feature": "documents-on-your-case",
 			"featureConfidence": "medium",
 			"origin": "changelog",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/CHANGELOG.rst#L449"
@@ -9884,7 +10364,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-session-hardening-v2",
+			"feature": "sessions-that-stay-safe",
 			"featureConfidence": "high",
 			"origin": "competitor",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/src/open_inwoner/extended_sessions/tests/test_views.py#L17",
@@ -9925,8 +10405,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-oidc-broker-login",
-			"featureConfidence": "high",
+			"feature": "acting-for-someone-else",
+			"featureConfidence": "medium",
 			"origin": "changelog",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/CHANGELOG.rst#L1155",
 			"screen": {
@@ -9964,7 +10444,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
+			"feature": "your-profile-and-registered-details",
 			"featureConfidence": "high",
 			"origin": "changelog",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/CHANGELOG.rst#L149",
@@ -10002,8 +10482,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
-			"featureConfidence": "low",
+			"feature": "products-taxes-and-payments",
+			"featureConfidence": "high",
 			"origin": "changelog",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/CHANGELOG.rst#L217"
 		},
@@ -10036,8 +10516,8 @@
 			},
 			"provider": "nextcloud",
 			"providerHow": "read-from-code",
-			"feature": "portal-auth-edge",
-			"featureConfidence": "medium",
+			"feature": "portal-accounts-and-ways-in",
+			"featureConfidence": "high",
 			"origin": "competitor",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/src/open_inwoner/accounts/tests/test_auth_2fa_sms.py#L58",
 			"originNote": "test name"
@@ -10071,8 +10551,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-notifications-dispatch",
-			"featureConfidence": "low",
+			"feature": "notifications",
+			"featureConfidence": "high",
 			"origin": "competitor",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/src/open_inwoner/laposta/tests/test_forms.py#L63",
 			"originNote": "test name"
@@ -10107,8 +10587,8 @@
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
-			"featureConfidence": "medium",
+			"feature": "conversations-with-the-organisation",
+			"featureConfidence": "high",
 			"origin": "competitor",
 			"originUrl": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/src/open_inwoner/cms/cases/tests/test_contactform.py#L421",
 			"originNote": "test name",
@@ -10136,6 +10616,7 @@
 				"change": "case-page-objection-and-complaint"
 			},
 			"source": "spec-round-2026-10-07",
+			"feature": "withdraw-object-and-complain",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Zaak"
@@ -10164,6 +10645,7 @@
 				"spec": "openspec/specs/portal-guest-actions"
 			},
 			"source": "spec-round-2026-10-07",
+			"feature": "act-on-your-own-case",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "GastActie"
@@ -10204,8 +10686,8 @@
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
-			"featureConfidence": "medium",
+			"feature": "the-case-page",
+			"featureConfidence": "high",
 			"origin": "changelog",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/release-notes/3.0.x/backend-libraries/3.0.0.md#L10",
 			"screen": {
@@ -10245,8 +10727,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
-			"featureConfidence": "medium",
+			"feature": "site-search",
+			"featureConfidence": "high",
 			"origin": "competitor",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/frontend/packages/localization/src/i18n/messages/nl-nl.ts#L275",
 			"originNote": "i18n strings"
@@ -10281,7 +10763,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-page-designer",
+			"feature": "website-pages-and-menus",
 			"featureConfidence": "medium",
 			"origin": "changelog",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/documentation/release-notes/3.0.x/app/3.0.3_3.0.2-1.md#L17",
@@ -10324,8 +10806,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "low",
+			"feature": "your-profile-and-registered-details",
+			"featureConfidence": "high",
 			"origin": "competitor",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/frontend/packages/localization/src/i18n/messages/nl-nl.ts#L165",
 			"originNote": "i18n strings",
@@ -10367,8 +10849,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "medium",
+			"feature": "your-profile-and-registered-details",
+			"featureConfidence": "high",
 			"origin": "competitor",
 			"originUrl": "https://github.com/nl-portal/nl-portal/blob/3.1.1/frontend/packages/localization/src/i18n/messages/nl-nl.ts#L237",
 			"originNote": "i18n strings",
@@ -10406,8 +10888,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "contribution-manifest-v3",
-			"featureConfidence": "low",
+			"feature": "the-case-page",
+			"featureConfidence": "high",
 			"origin": "changelog",
 			"originUrl": "https://gitlab.com/xxllnc/zaakgericht/zaken/start/-/merge_requests/3807"
 		},
@@ -10440,8 +10922,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
-			"featureConfidence": "low",
+			"feature": "every-app-in-one-portal",
+			"featureConfidence": "medium",
 			"origin": "changelog",
 			"originUrl": "https://gitlab.com/xxllnc/zaakgericht/zaken/start/-/merge_requests/3765"
 		},
@@ -10474,8 +10956,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
-			"featureConfidence": "low",
+			"feature": "every-app-in-one-portal",
+			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://www.logius.nl/actueel/wijziging-mijnoverheid-mijnzaken-vervangt-lopende-zaken"
 		},
@@ -10508,8 +10990,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
-			"featureConfidence": "low",
+			"feature": "one-inbox",
+			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://www.logius.nl/onze-dienstverlening/interactie/federatief-berichten-stelsel/hoe-werkt-het"
 		},
@@ -10542,7 +11024,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-notifications-dispatch",
+			"feature": "notifications",
 			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://www.logius.nl/onze-dienstverlening/interactie/federatief-berichten-stelsel/hoe-werkt-het"
@@ -10576,7 +11058,7 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "portal-inbox-v2",
+			"feature": "one-inbox",
 			"featureConfidence": "high",
 			"origin": "changelog",
 			"originUrl": "https://www.logius.nl/diensten/mijnoverheid/update/release-informatie-mijnoverheid/Berichtenbox-app-Release-2.6"
@@ -10599,6 +11081,7 @@
 				"spec": "openspec/specs/guardian-direct-messaging"
 			},
 			"source": "spec-round-2026-10-07",
+			"feature": "conversations-with-the-organisation",
 			"screen": {
 				"board": null,
 				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
@@ -10627,6 +11110,7 @@
 				"spec": "openspec/specs/guardian-message-translation"
 			},
 			"source": "spec-round-2026-10-07",
+			"feature": "conversations-with-the-organisation",
 			"screen": {
 				"board": null,
 				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
@@ -10655,6 +11139,7 @@
 				"spec": "openspec/specs/guardian-push-notifications"
 			},
 			"source": "spec-round-2026-10-07",
+			"feature": "notifications",
 			"screen": {
 				"board": null,
 				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
@@ -10694,8 +11179,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "site-cms",
-			"featureConfidence": "medium",
+			"feature": "findable-by-search-engines",
+			"featureConfidence": "high",
 			"origin": "changelog",
 			"originUrl": "https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/working-with-search-pages/controlling-search-page-seo"
 		},
@@ -10728,8 +11213,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "ops-mcp",
-			"featureConfidence": "medium",
+			"feature": "integrations-and-apis",
+			"featureConfidence": "high",
 			"origin": "changelog",
 			"originUrl": "https://learn.liferay.com/w/dxp/ai/masking-sensitive-data-in-mcp-server-responses"
 		},
@@ -10762,8 +11247,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "traffic-analytics",
-			"featureConfidence": "medium",
+			"feature": "privacy-friendly-measurement",
+			"featureConfidence": "high",
 			"origin": "changelog",
 			"originUrl": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/managing-user-data/managing-privacy-settings"
 		},
@@ -10785,6 +11270,7 @@
 				"spec": "openspec/specs/portal-page-traffic"
 			},
 			"source": "spec-round-2026-10-07",
+			"feature": "traffic-dashboards-and-reports",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtPaginaVerkeer"
@@ -10813,6 +11299,7 @@
 				"spec": "openspec/specs/portal-traffic-kpi-cards"
 			},
 			"source": "spec-round-2026-10-07",
+			"feature": "traffic-dashboards-and-reports",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -10856,8 +11343,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "site-cms",
-			"featureConfidence": "medium",
+			"feature": "site-search",
+			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://www.liferay.com/roadmap",
 			"screen": {
@@ -10895,8 +11382,8 @@
 			},
 			"provider": "thematiq",
 			"providerHow": "read-from-code",
-			"feature": "portal-theming",
-			"featureConfidence": "medium",
+			"feature": "page-editing-and-publishing",
+			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://www.liferay.com/roadmap",
 			"screen": {
@@ -10933,8 +11420,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "federated-search",
-			"featureConfidence": "medium",
+			"feature": "site-search",
+			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://www.liferay.com/roadmap"
 		},
@@ -10967,8 +11454,8 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"feature": "site-cms",
-			"featureConfidence": "medium",
+			"feature": "findable-by-search-engines",
+			"featureConfidence": "high",
 			"origin": "roadmap",
 			"originUrl": "https://www.liferay.com/roadmap"
 		},
@@ -10990,6 +11477,7 @@
 				"spec": "openspec/specs/parent-polls"
 			},
 			"source": "spec-round-2026-10-07",
+			"feature": "website-pages-and-menus",
 			"screen": {
 				"board": null,
 				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
@@ -11018,6 +11506,7 @@
 				"spec": "openspec/specs/parent-pwa-installability"
 			},
 			"source": "spec-round-2026-10-07",
+			"feature": "accessible-on-every-device",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -11060,6 +11549,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "my-cases-overview",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "MijnOverzicht"
@@ -11094,6 +11584,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "the-case-page",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -11132,6 +11623,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "The Zaak board draws one date ('Uiterlijk klaar op 1 november 2026') and the banner sentence; the change adds the planned date beside it.",
+			"feature": "the-case-page",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Zaak"
@@ -11166,6 +11658,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "the-case-page",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Zaak"
@@ -11200,6 +11693,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "my-cases-overview",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "ThemaOverzicht"
@@ -11234,6 +11728,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "products-taxes-and-payments",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -11272,6 +11767,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Needs the products a resident holds, which is dem-rm-my-products (decided-no) and is drawn on the same ThemaOverzicht board. The change renders products a contribution hands over; it builds no product register.",
+			"feature": "products-taxes-and-payments",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "ThemaOverzicht"
@@ -11306,6 +11802,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "contact-the-organisation",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -11343,6 +11840,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "site-search",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Zoeken"
@@ -11377,6 +11875,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "find-the-right-service",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -11414,6 +11913,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "find-the-right-service",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -11451,6 +11951,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "languages-and-plain-language",
 			"screen": {
 				"board": null,
 				"reason": "on the design session's missing-boards list (for-design/portaliq-missing-boards.md)"
@@ -11485,6 +11986,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "notifications",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtMailsjablonen"
@@ -11519,6 +12021,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "your-profile-and-registered-details",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -11557,6 +12060,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "The ActieBewerken board draws the action dialog inside a plan. This change builds the action list on its own; plans (cmp-tsk-plan, reopened by decision 105 on 8 Oct) are shared-plans-with-a-caseworker, which puts the same table and dialog inside a plan.",
+			"feature": "tasks-for-residents-and-partners",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "ActieBewerken"
@@ -11591,6 +12095,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "portal-accounts-and-ways-in",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Inloggen"
@@ -11625,6 +12130,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "languages-and-plain-language",
 			"screen": {
 				"board": null,
 				"reason": "no screen of its own: a markup attribute on the name and personal data the boards already draw (MijnOverzicht, MijnGegevens, the header menu); nothing for a designer to draw"
@@ -11659,6 +12165,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "contact-the-organisation",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "NietGevonden"
@@ -11694,6 +12201,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "The example page is simpler than the Contact board (no message channel, no own-case pointer, no report link); contact-page-question-form-and-not-found brings the example page to the board.",
+			"feature": "contact-the-organisation",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "Contact"
@@ -11728,6 +12236,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "smart-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "FormulierHulp"
@@ -11762,6 +12271,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "documents-on-your-case",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "GedeeldDossier"
@@ -11797,6 +12307,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Partial for a portal editor: the form is designed in buildiq, not in portaliq, and bound to a portal route on PtAanvraagformulieren; drag-and-drop reorder in CnFormBuilder is open (nextcloud-vue#279).",
+			"feature": "smart-forms",
 			"screen": {
 				"canvas": "QAAxpcsFKBCvDUGbQbwtCa",
 				"board": "BqFormulierOntwerper"
@@ -11832,6 +12343,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "site-multi-step-forms stays open for its draft tasks (T8, T8b), which belong to cmp-int-save-resume, not to this row.",
+			"feature": "smart-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -11871,6 +12383,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Authoring the group is buildiq's (form-subtable-children, nextcloud-vue/form-child-records-table).",
+			"feature": "smart-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "FormulierKaart"
@@ -11906,6 +12419,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Authoring the expression is buildiq's (form-calculation, forms-live-values-and-checks).",
+			"feature": "smart-forms",
 			"screen": {
 				"board": null,
 				"reason": "not drawn yet; on for-design/portaliq-missing-boards.md"
@@ -11941,6 +12455,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Needs buildiq's rule engine to offer a server call a sibling app can make (CROSS).",
+			"feature": "smart-forms",
 			"screen": {
 				"board": null,
 				"reason": "the resident sees only the outcome (a filled line or the next step); the table is authored on buildiq's BqBeslistabel (canvas part 2)"
@@ -11975,6 +12490,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "form-submissions-management",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -12012,6 +12528,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "submit-a-request",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -12050,6 +12567,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "buildiq form-confirmation (built) writes a confirmation text on the form; the portal shows it as confirmationText.",
+			"feature": "submit-a-request",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -12089,6 +12607,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "buildiq form-address-lookup is decided-no on its side; the portal reads OpenRegister's BAG register itself.",
+			"feature": "smart-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "FormulierVelden"
@@ -12123,6 +12642,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "smart-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "FormulierVelden"
@@ -12158,6 +12678,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Authoring the field type is buildiq's (form-signature, forms-signature-audio-and-location). dem-tnd-sign-in-portal, signing a prepared document, is a different row.",
+			"feature": "identity-in-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "FormulierKaart"
@@ -12192,6 +12713,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "identity-in-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "FormulierVelden"
@@ -12227,6 +12749,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Authoring is buildiq's (data-choice-lists, data-field-types-and-choice-lists); the lists live in OpenRegister.",
+			"feature": "smart-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "FormulierVelden"
@@ -12261,6 +12784,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "smart-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "FormulierGezinsleden"
@@ -12296,6 +12820,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Needs integriq to offer a server call a sibling app can make with inputs (CROSS).",
+			"feature": "smart-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -12333,6 +12858,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "identity-in-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -12372,6 +12898,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Needs integriq's broker to offer a Yivi route (CROSS).",
+			"feature": "identity-in-forms",
 			"screen": {
 				"board": null,
 				"reason": "not drawn yet; on for-design/portaliq-missing-boards.md"
@@ -12406,6 +12933,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "identity-in-forms",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -12444,6 +12972,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "External targets go through integriq (CROSS).",
+			"feature": "form-submissions-management",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtFormulierInstellingen"
@@ -12478,6 +13007,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "form-submissions-management",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
@@ -12517,6 +13047,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Deletion runs through OpenRegister (ADR-022); anonymising is portaliq's.",
+			"feature": "form-submissions-management",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtFormulierInstellingen"
@@ -12551,6 +13082,7 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
+			"feature": "form-submissions-management",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "PtInzendingen"
@@ -12586,6 +13118,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Partial for a portal editor: the form moves with buildiq's export, the portal binding that opens it does not.",
+			"feature": "form-submissions-management",
 			"screen": {
 				"canvas": "QAAxpcsFKBCvDUGbQbwtCa",
 				"board": "BqExport"
@@ -12621,6 +13154,7 @@
 			"providerHow": "read-from-code",
 			"source": "spec-round-2026-10-08",
 			"note": "Taking the price from the catalogue changes intake-pay-on-submit's rule that the portal holds no price: needs Ruben's call (see the change's proposal).",
+			"feature": "smart-forms",
 			"screen": {
 				"board": null,
 				"reason": "the resident's variant choice is not drawn yet (PtProduct draws the Kosten block an editor fills); on for-design/portaliq-missing-boards.md"
@@ -12658,7 +13192,7 @@
 			},
 			"provider": "decidiq",
 			"providerHow": "read-from-code",
-			"feature": "portal-contribution-contract",
+			"feature": "every-app-in-one-portal",
 			"featureConfidence": "medium"
 		}
 	]
