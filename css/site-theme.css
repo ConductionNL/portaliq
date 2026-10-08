@@ -885,6 +885,36 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	color: var(--nldesign-hero-body-color, var(--utrecht-document-inverse-color));
 }
 
+/*
+ * THE HERO'S TYPE (site-hero-and-notice-band). Every design, the four schools
+ * and Zuiddrecht alike, sets the hero heading at 56px over at most about
+ * thirteen words' width, so it breaks over two lines, with a 20px lead under
+ * it. The vendored sheet gave both the body size, so the proof of 06 Oct
+ * showed the heading small and on one line and the lead as one long line.
+ *
+ * A set may name its own measures; without them the heading scales from 32px
+ * on a phone to 56px on a desktop.
+ */
+.pq-site .ac-hero .ac-hero__title {
+	max-inline-size: var(--nldesign-hero-title-max-inline-size, 13em);
+	margin-block: 0 var(--nldesign-hero-title-margin-block-end, 22px);
+	font-size: var(
+		--nldesign-hero-title-font-size,
+		clamp(2rem, 1rem + 3.4vw, 3.5rem)
+	);
+	font-weight: var(--nldesign-hero-title-font-weight, 700);
+	line-height: var(--nldesign-hero-title-line-height, 1.08);
+	letter-spacing: var(--nldesign-hero-title-letter-spacing, -0.02em);
+	overflow-wrap: break-word;
+}
+
+.pq-site .ac-hero .ac-hero__subtitle {
+	max-inline-size: var(--nldesign-hero-subtitle-max-inline-size, 32em);
+	margin-block: 0;
+	font-size: var(--nldesign-hero-subtitle-font-size, 1.25rem);
+	line-height: var(--nldesign-hero-subtitle-line-height, 1.6);
+}
+
 .pq-site .ac-hero .pq-hero__action {
 	border-radius: var(--nldesign-website-border-radius, 0);
 }
