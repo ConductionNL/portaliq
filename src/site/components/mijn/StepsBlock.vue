@@ -37,6 +37,7 @@
 		<ProcessSteps
 			v-else
 			:steps="steps"
+			:display="block.display === 'bars' ? 'bars' : 'list'"
 			:tr="tr"
 			:locale="locale"
 			:today="today" />

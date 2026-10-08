@@ -217,6 +217,25 @@ class PortalBlockResolverTest extends TestCase {
 	}//end testAStepsBlockStaysOnlyOnItsRecordPage()
 
 	/**
+	 * A steps block may draw as a row of bars; any other display is left out
+	 * (steps-as-bars).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/steps-as-bars/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-as-a-row-of-bars
+	 */
+	public function testAStepsBlockMayDrawAsBars(): void {
+		$this->assertSame(
+			[['type' => 'steps', 'collection' => 'zaken', 'display' => 'bars']],
+			$this->blocks(blocks: [['type' => 'steps', 'collection' => 'zaken', 'display' => 'bars']], record: 'zaken')
+		);
+		$this->assertSame(
+			[['type' => 'steps', 'collection' => 'zaken']],
+			$this->blocks(blocks: [['type' => 'steps', 'collection' => 'zaken', 'display' => 'carousel']], record: 'zaken')
+		);
+	}//end testAStepsBlockMayDrawAsBars()
+
+	/**
 	 * A documents and a timeline block read their collection's provider of
 	 * the same name, and stay only on that collection's record page
 	 * (site-mijn-omgeving-components REQ-SMO-021, wave 4).
