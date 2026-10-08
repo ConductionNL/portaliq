@@ -87,7 +87,7 @@ test('host props win', () => {
 	)
 	assert.match(
 		grid,
-		/widgetKey === 'federatedSearch'[\s\S]{0,120}\{ \.\.\.props, signedIn: this\.signedIn === true \}/,
+		/widgetKey === 'federatedSearch'[\s\S]{0,120}\{\s*\.\.\.props,\s*signedIn: this\.signedIn === true,/,
 	)
 	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
 	assert.match(app, /signedIn: this\.session !== null/)

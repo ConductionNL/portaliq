@@ -31,8 +31,8 @@
 			<p
 				class="utrecht-paragraph pq-case-value"
 				:data-testid="`case-value-${field}`">
-				<NoTranslate v-if="untranslated" :value="text" />
-				<template v-else>{{ text }}</template>
+				{{ untranslated ? '' : text
+				}}<NoTranslate v-if="untranslated" :value="text" />
 			</p>
 			<p
 				v-if="!quiet"

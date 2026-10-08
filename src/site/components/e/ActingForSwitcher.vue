@@ -29,7 +29,7 @@
 				:key="option.id"
 				:value="option.id"
 				:selected="option.id === current"
-				translate="no">
+				:translate="option.id === 'self' ? null : 'no'">
 				{{ option.label }}
 			</option>
 		</select>
