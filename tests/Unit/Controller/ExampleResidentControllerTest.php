@@ -273,4 +273,59 @@ class ExampleResidentControllerTest extends TestCase {
 			$this->assertTrue(condition: $response->isThrottled(), message: $case);
 		}
 	}//end testTheOneClickSignInRefusesAPortalThatDoesNotOfferTheNextcloudMode()
+
+
+	/**
+	 * A portal lookup that throws is no door: a throttled 404, nothing minted.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	public function testTheOneClickSignInRefusesWhenThePortalCannotBeRead(): void {
+		$parts   = $this->demoParts(switch: 'yes');
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->never())->method('issueSession');
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals->method('resolve')->willThrowException(new \RuntimeException('register unavailable'));
+
+		$response = $this->controller(
+			session: $session,
+			config: $parts['config'],
+			accounts: $parts['accounts'],
+			portals: $portals,
+			exampleResidents: $parts['record'],
+			exampleCatalogue: $parts['catalogue']
+		)->signIn(id: 'zuiddrecht', portal: 'zuiddrecht');
+
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		$this->assertTrue(condition: $response->isThrottled());
+	}//end testTheOneClickSignInRefusesWhenThePortalCannotBeRead()
+
+
+	/**
+	 * When no session can be issued, the answer is a 503, not a redirect
+	 * without a bearer.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	public function testTheOneClickSignInAnswers503WhenNoSessionCanBeIssued(): void {
+		$parts   = $this->demoParts(switch: 'yes');
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->method('issueSession')->willReturn(null);
+
+		$response = $this->controller(
+			session: $session,
+			config: $parts['config'],
+			accounts: $parts['accounts'],
+			portals: $parts['portals'],
+			exampleResidents: $parts['record'],
+			exampleCatalogue: $parts['catalogue']
+		)->signIn(id: 'zuiddrecht', portal: 'zuiddrecht');
+
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'not_configured'], actual: $response->getData());
+	}//end testTheOneClickSignInAnswers503WhenNoSessionCanBeIssued()
 }//end class
