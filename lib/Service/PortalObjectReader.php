@@ -69,6 +69,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -251,7 +252,7 @@ class PortalObjectReader {
 			return [];
 		}
 
-		$verified = $this->verifyScope(rows: $rows, scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation);
+		$verified = $this->verifyScope(rows: $rows, scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation, schema: $schema);
 
 		// Field projection runs AFTER per-row verification, BEFORE returning —
 		// it shapes what a verified row shows, never which rows return.
@@ -399,7 +400,7 @@ class PortalObjectReader {
 
 		// Direct scope: run the fetched row through the SAME per-row ownership
 		// check every portal read uses. A foreign-owned row is dropped here.
-		$verified = $this->verifyScope(rows: [$row], scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation);
+		$verified = $this->verifyScope(rows: [$row], scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation, schema: $schema);
 		if (count($verified) === 0) {
 			return null;
 		}
@@ -737,7 +738,13 @@ class PortalObjectReader {
 			return null;
 		}
 
-		$accounts = $this->verifyScope(rows: $rows, scopeField: 'subjectRef', subjectRef: $subjectRef, organisation: $organisation);
+		$accounts = $this->verifyScope(
+			rows: $rows,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			schema: 'portalAccount'
+		);
 		if (count($accounts) === 0) {
 			return null;
 		}
@@ -1145,11 +1152,18 @@ class PortalObjectReader {
 	 *
 	 * @param array<string, mixed> $row The normalised row.
 	 * @param string $organisation The expected tenant (empty = skip).
+	 * @param string $schema The schema read, when known; an organisation-scoped one refuses a missing tenant value.
 	 *
 	 * @return bool
 	 */
-	private function organisationMatches(array $row, string $organisation): bool {
+	private function organisationMatches(array $row, string $organisation, string $schema=''): bool {
 		$rowOrganisation = (string)($row['organisation'] ?? '');
+		// A schema declared organisation-scoped refuses a missing tenant value on either
+		// side instead of passing it (operate-portals-per-organisation REQ-OPO-002).
+		if ($schema !== '' && SchemaTenancy::isOrganisationScoped(schema: $schema) === true) {
+			return $organisation !== '' && $rowOrganisation === $organisation;
+		}
+
 		return $organisation === '' || $rowOrganisation === '' || $rowOrganisation === $organisation;
 	}//end organisationMatches()
 
@@ -1186,12 +1200,13 @@ class PortalObjectReader {
 	 * @param string $scopeField The scope field to check.
 	 * @param string $subjectRef The expected subject reference.
 	 * @param string $organisation The expected tenant (empty = skip).
+	 * @param string $schema The schema read, when known; an organisation-scoped one refuses a missing tenant value.
 	 *
 	 * @return array<int, array<string, mixed>> The verified rows.
 	 *
 	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
 	 */
-	private function verifyScope(array $rows, string $scopeField, string $subjectRef, string $organisation = ''): array {
+	private function verifyScope(array $rows, string $scopeField, string $subjectRef, string $organisation = '', string $schema = ''): array {
 		$verified = [];
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
@@ -1210,7 +1225,7 @@ class PortalObjectReader {
 			// carries an organisation; schemas without one are scoped by the
 			// subject reference alone, which is globally unique. Without a
 			// subject scope the tenant is the only boundary, and it fails closed.
-			$tenantHolds = $this->organisationMatches(row: $normalised, organisation: $organisation);
+			$tenantHolds = $this->organisationMatches(row: $normalised, organisation: $organisation, schema: $schema);
 			if ($scopeField === '') {
 				$tenantHolds = $this->tenantMatches(row: $normalised, organisation: $organisation);
 			}

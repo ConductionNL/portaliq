@@ -49,7 +49,7 @@ class PortalDomainVerifier {
 
 	private const SCHEMA = 'portal';
 
-	private const PREFIX = '_portaliq-verify.';
+	public const PREFIX = '_portaliq-verify.';
 
 	/**
 	 * The TXT lookup: a record name in, the record values out.
