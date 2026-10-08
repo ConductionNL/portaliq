@@ -11762,6 +11762,865 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": "GedeeldDossier"
 			}
+		},
+		{
+			"id": "int-form-designer",
+			"area": "intake",
+			"name": "Design a form in a drag-and-drop builder from a library of field types, without code.",
+			"portaliq": "partial",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: forms are built in the Open Forms admin with its form builder (src/openforms/forms/models/form.py:80, @open-formulieren/formio-builder) [reached on the Open Forms admin, not the portal's own CMS] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/forms/models/form.py:80 Form with steps (src/openforms/api/v2_urls.py:41); the builder is @open-formulieren/formio-builder (package.json:34); about 30 field types registered in src/openforms/formio/components/vanilla.py and custom.py [reached on the form designer in the Open Forms admin] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "built",
+				"evidence": "portaliq renders forms designed in buildiq (lib/Service/Intake/PortalFormBindingResolver.php header: an editor adds a field in buildiq and sees it on the portal) and binds them to a route on the Request forms page; the designer is nextcloud-vue CnFormBuilder (src/components/CnFormBuilder/CnFormBuilder.vue:152), an MVP without drag-and-drop reorder (nextcloud-vue#279)",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/buildiq",
+				"spec": "buildiq/openspec/specs/openbuild-page-designer"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Partial for a portal editor: the form is designed in buildiq, not in portaliq, and bound to a portal route on PtAanvraagformulieren; drag-and-drop reorder in CnFormBuilder is open (nextcloud-vue#279).",
+			"screen": {
+				"canvas": "QAAxpcsFKBCvDUGbQbwtCa",
+				"board": "BqFormulierOntwerper"
+			}
+		},
+		{
+			"id": "int-multi-step-review",
+			"area": "intake",
+			"name": "Fill in a long form in steps with a progress indicator, and check a summary of every answer before submitting.",
+			"portaliq": "yes",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: steps with a progress indicator and a summary before sending (sdk:src/routes/form.tsx:36, :48) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "sdk:src/routes/form.tsx:36 stap/:step, :48 overzicht (summary), :70 bevestiging; src/openforms/forms/models/form.py:196 show_progress_indicator, :203 show_summary_progress [reached on any multi-step form] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/site/components/IntakeFormBlock.vue:77 FormProgress, :115 ReviewList, :246 stepFlow; steps passed by PortalFormBindingResolver (site-multi-step-forms T5 to T7b done)",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "site-multi-step-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "site-multi-step-forms stays open for its draft tasks (T8, T8b), which belong to cmp-int-save-resume, not to this row.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"WooVerzoekGegevens",
+					"WooVerzoekControleren",
+					"FormulierVelden"
+				]
+			}
+		},
+		{
+			"id": "int-repeating-group",
+			"area": "intake",
+			"name": "Add the same group of questions several times, such as one block per child or per vehicle.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: the editgrid repeating group (src/openforms/formio/components/vanilla.py:1147) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/formio/components/vanilla.py:1147 editgrid; partners (custom.py:857) and children (custom.py:1032) as prefilled repeating groups [reached on a form step with a repeating group] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no group or repeat field type in src/site/components/forms (fields.js) or lib/Service/Intake/PortalFormValidator.php",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-flow-repeating-groups-calculations-and-decisions"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Authoring the group is buildiq's (form-subtable-children, nextcloud-vue/form-child-records-table).",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "FormulierKaart"
+			}
+		},
+		{
+			"id": "int-calculated-value",
+			"area": "intake",
+			"name": "Calculate a value while the form is filled in, such as the fee or an end date, and use it later in the form.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: logic rules set user-defined variables (src/openforms/forms/models/form_variable.py:246) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/forms/models/logic.py:21 FormLogic actions set variables (src/openforms/forms/models/form_variable.py:246 user-defined variables); src/openforms/forms/models/form.py:138 price_variable_key takes the price from a variable [reached on a form with logic rules that set variables] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "visibleWhen conditions only (lib/Service/Intake/VisibleWhenLocal.php); no computed field value",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-flow-repeating-groups-calculations-and-decisions"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Authoring the expression is buildiq's (form-calculation, forms-live-values-and-checks).",
+			"screen": {
+				"board": null,
+				"reason": "not drawn yet; on for-design/portaliq-missing-boards.md"
+			}
+		},
+		{
+			"id": "int-decision-table-logic",
+			"area": "intake",
+			"name": "Let a decision table (DMN) decide an answer or a route inside a form.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: DMN evaluation from logic rules (src/openforms/dmn/contrib/camunda/plugin.py:56) [reached on product form page, with Camunda configured] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/dmn/contrib/camunda/plugin.py:56 camunda7 DMN evaluation from logic rules; roadmap #6733 'Support DMN price rules' (Release 4.1) [reached on a logic rule that evaluates a DMN table, with a Camunda 7 engine configured] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no rule-engine call in lib/Service/Intake; buildiq's business rules engine (logic-decision-table, built) runs on records and is not called from a portal form",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-flow-repeating-groups-calculations-and-decisions"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Needs buildiq's rule engine to offer a server call a sibling app can make (CROSS).",
+			"screen": {
+				"board": null,
+				"reason": "the resident sees only the outcome (a filled line or the next step); the table is authored on buildiq's BqBeslistabel (canvas part 2)"
+			}
+		},
+		{
+			"id": "int-form-schedule-limit",
+			"area": "intake",
+			"name": "Open and close a form at set times, and stop it after a maximum number of submissions.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: activation dates and a submission limit per form (src/openforms/forms/models/form.py:321, :153) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/forms/models/form.py:321 activate_on, :327 deactivate_on, :153 submission_limit, :161 submission_counter [reached on a form with activation dates or a submission limit] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "a binding is published or draft (lib/Service/Intake/PortalFormBindingResolver.php:124); no dates or limit on portalFormBinding",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-governance-availability-retention-and-routing"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"FormulierNietBeschikbaar",
+					"PtFormulierInstellingen"
+				]
+			}
+		},
+		{
+			"id": "int-statement-consent",
+			"area": "intake",
+			"name": "Ask for privacy consent and a statement of truth before submitting, as required checkboxes the organisation configures.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: privacy consent and statement of truth checkboxes (src/openforms/forms/models/form.py:230, :239) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/forms/models/form.py:230 ask_privacy_consent, :239 ask_statement_of_truth; sdk:src/components/StatementCheckboxes [reached on the summary step of a form] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no consent or statement checkbox in src/site/components/forms (ReviewList.vue lists answers only)",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-statements-intro-and-confirmation-mail"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"WooVerzoekControleren",
+					"PtFormulierInstellingen"
+				]
+			}
+		},
+		{
+			"id": "int-form-intro-and-confirmation",
+			"area": "intake",
+			"name": "Show an introduction page before a form and a configurable confirmation page and e-mail after it, with the answers and the reference filled in.",
+			"portaliq": "partial",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: introduction page, confirmation page and confirmation e-mail per form (src/openforms/forms/models/form.py:291, :170, :223) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/forms/models/form.py:291 introduction_page_content, :170 submission_confirmation_template, :223 send_confirmation_email; src/openforms/emails/models.py:39 ConfirmationEmailTemplate per form [reached on a form with an introduction page and confirmation e-mail set] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "a confirmation text on the page (lib/Controller/PortalIntakeController.php:235 confirmationText) and the confirmation step of site-multi-step-forms; no introduction page and no confirmation e-mail with the answers",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-statements-intro-and-confirmation-mail"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "buildiq form-confirmation (built) writes a confirmation text on the form; the portal shows it as confirmationText.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"FormulierStart",
+					"WooVerzoekVerstuurd",
+					"PtFormulierInstellingen"
+				]
+			}
+		},
+		{
+			"id": "int-address-lookup",
+			"area": "intake",
+			"name": "Fill in street and town automatically from postcode and house number (BAG).",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: the addressNL component with BAG lookup (src/openforms/formio/components/custom.py:681) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/formio/components/custom.py:681 addressNL and :344 postcode; BAG lookup in src/openforms/contrib/kadaster/ (src/openforms/config/checks.py:57 address lookup plugins) [reached on an addressNL field with the BAG plugin configured] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "a binding flag addressLookup exists (lib/Settings/portaliq_register.json:7206) and travels in the render payload (lib/Service/Intake/PortalFormBindingResolver.php:252), but nothing in src/site reads it",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "data-lookups-and-checks-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "buildiq form-address-lookup is decided-no on its side; the portal reads OpenRegister's BAG register itself.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "FormulierVelden"
+			}
+		},
+		{
+			"id": "int-dutch-field-checks",
+			"area": "intake",
+			"name": "Check Dutch formats as they are typed: BSN (elfproef), IBAN, licence plate, Dutch and international phone numbers, KvK and branch numbers.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: bsn, iban, licence plate and phone number checks (src/openforms/formio/components/custom.py:514, :1112, :1149) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/formio/components/custom.py:514 bsn, :1112 iban, :1149 licenseplate; src/openforms/validations/validators/formats.py:40 phonenumber-international, :69 phonenumber-nl; src/openforms/contrib/kvk/validators [reached on a form field of one of these types] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "PortalFormValidator checks types only (lib/Service/Intake/PortalFormValidator.php:143 checkValue, typeError)",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "data-lookups-and-checks-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "FormulierVelden"
+			}
+		},
+		{
+			"id": "int-signature-field",
+			"area": "intake",
+			"name": "Sign a form by drawing a signature.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: the signature component (src/openforms/formio/components/vanilla.py:997) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/formio/components/vanilla.py:997 signature [reached on a form with a signature field] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no signature field in src/site/components/forms; the signature in lib/Controller/PortalIntakeController.php:163 is the instance's own nonce signature",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "resident-identity-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Authoring the field type is buildiq's (form-signature, forms-signature-audio-and-location). dem-tnd-sign-in-portal, signing a prepared document, is a different row.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "FormulierKaart"
+			}
+		},
+		{
+			"id": "int-email-verification",
+			"area": "intake",
+			"name": "Confirm an e-mail address in a form with a one-time code before the form can be submitted.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: e-mail verification with a code (src/openforms/submissions/models/email_verification.py:35) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/submissions/models/email_verification.py:35 EmailVerification, src/openforms/submissions/api/views.py:93 EmailVerificationCreateView, validated in src/openforms/formio/components/vanilla.py:170 [reached on an e-mail field with verification required] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "src/formFields/EmailField.vue is a plain field; id-update-own-details confirms a changed account address, not a form answer",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "resident-identity-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "FormulierVelden"
+			}
+		},
+		{
+			"id": "int-reference-lists",
+			"area": "intake",
+			"name": "Offer choice lists that come from a central reference list, maintained once for every form.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: choice options from the Referentielijsten API (src/openforms/contrib/reference_lists/client.py) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/contrib/reference_lists/client.py (Referentielijsten API) [reached on a choice field whose options come from a reference list service] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "field options are inline on the form only; no reference list source in lib/Service/Intake",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "data-lookups-and-checks-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Authoring is buildiq's (data-choice-lists, data-field-types-and-choice-lists); the lists live in OpenRegister.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "FormulierVelden"
+			}
+		},
+		{
+			"id": "int-family-prefill",
+			"area": "intake",
+			"name": "Prefill your partner and children from the BRP, and choose which of them the request is about.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: family members from the BRP (src/openforms/prefill/contrib/family_members/plugin.py:63) [reached on product form page, signed in with DigiD] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/prefill/contrib/family_members/plugin.py:63; components partners (custom.py:857), children (custom.py:1032), npFamilyMembers (custom.py:425) [reached on a form step after DigiD login with a family members component] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "PortalApplicantPrefill fills the applicant only (lib/Service/Intake/PortalApplicantPrefill.php header); OpenRegister's BrpPersonProvider is not called for family",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "data-lookups-and-checks-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "FormulierGezinsleden"
+			}
+		},
+		{
+			"id": "int-service-fetch",
+			"area": "intake",
+			"name": "Fetch data from an external service while the form is filled in, based on earlier answers, and use it in the form.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: service fetch from logic rules (src/openforms/api/v2_urls.py:63) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/api/v2_urls.py:63 service-fetch-configurations, run from logic rules (src/openforms/forms/models/logic.py:21) [reached on a form with a service fetch logic action] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no mid-form call in lib/Service/Intake; integriq is the connector layer and a portal form does not call it",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "data-lookups-and-checks-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Needs integriq to offer a server call a sibling app can make with inputs (CROSS).",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"FormulierVelden",
+					"FormulierNietBeschikbaar"
+				]
+			}
+		},
+		{
+			"id": "int-cosign",
+			"area": "intake",
+			"name": "Have a second person co-sign your submission with their own DigiD, after an e-mail invitation.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: co-signing with an invitation and the co-signer's own DigiD (src/openforms/formio/components/custom.py:1373, sdk:src/routes/cosign.tsx) [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/formio/components/custom.py:1373 coSign; src/openforms/submissions/urls.py:29-37 find submission and OTP for cosign; sdk:src/routes/cosign.tsx [reached on a form with a co-sign component] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no co-sign state or invitation on portalIntakeSubmission; dem-tnd-joint-case-partner covers seeing a shared case, not co-signing",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "resident-identity-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"MedeOndertekenen",
+					"WooVerzoekVerstuurd",
+					"PtFormulierInstellingen"
+				]
+			}
+		},
+		{
+			"id": "sig-yivi",
+			"area": "signin",
+			"name": "Sign in with Yivi and share only the attributes a form asks for.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: Yivi login and attribute prefill on the form (src/openforms/authentication/contrib/yivi_oidc/plugin.py:66), not on the portal's own sign-in [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/authentication/contrib/yivi_oidc/plugin.py:66; prefill src/openforms/prefill/contrib/yivi/plugin.py:30 [reached on a form with the Yivi OIDC login and prefill configured] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no yivi route kind in the broker login routes (openspec/specs/portal-broker-envelope-login REQ-BEL-001 names DigiD, eHerkenning, eIDAS); no match for 'yivi' in lib or src",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "resident-identity-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Needs integriq's broker to offer a Yivi route (CROSS).",
+			"screen": {
+				"board": null,
+				"reason": "not drawn yet; on for-design/portaliq-missing-boards.md"
+			}
+		},
+		{
+			"id": "id-staff-fills-on-behalf",
+			"area": "identity",
+			"name": "Let an employee fill in a form for a resident or company at the desk or on the phone, recorded as filled in by that employee.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: an employee fills in for a resident, recorded as registrator (src/openforms/authentication/models.py:413) [reached on product form page, employee login] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/authentication/models.py:413 RegistratorInfo with src/openforms/authentication/contrib/org_oidc/plugin.py:26 employee login; roadmap #5374 'Initiate a form for a person/company using external identifier' [reached on a form started by an employee with the organisation login] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "grep 'registrator|filledBy|employee' in lib/Service/Intake and lib/Controller/PortalIntakeController.php: 0 hits; id-staff-provision-desk issues an account, a different act",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "resident-identity-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"FormulierInloggen",
+					"PtFormulierInstellingen"
+				]
+			}
+		},
+		{
+			"id": "int-registration-per-form",
+			"area": "intake",
+			"name": "Choose per form where a submission is registered: a ZGW case, an Objects API record, StUF-ZDS, an e-mail mailbox or a JSON endpoint.",
+			"portaliq": "partial",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: a registration backend per form (src/openforms/registrations/contrib/) [reached on the Open Forms admin] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/registrations/contrib/zgw_apis/plugin.py:234, objects_api/plugin.py:42, stuf_zds/plugin.py:199, email/plugin.py:44, generic_json/plugin.py:34, microsoft_graph/plugin.py:30 [reached on the registration settings of a form] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "a portal form delivers to the app of its case type (int-generic-create-action) and Woo requests to dossiq (lib/Service/Intake/PortalWooRequestDelivery.php); no per-form choice of a mailbox or an external target",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-governance-availability-retention-and-routing"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "External targets go through integriq (CROSS).",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtFormulierInstellingen"
+			}
+		},
+		{
+			"id": "ops-registration-retry-digest",
+			"area": "operate",
+			"name": "Retry a submission whose registration failed, and send administrators a daily digest of failed registrations, prefills and e-mails.",
+			"portaliq": "partial",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: retry and the daily failure digest (src/openforms/registrations/tasks.py:107, src/openforms/emails/digest.py:73) [reached on the Open Forms admin and mail] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/registrations/tasks.py:107-155 on_retry; src/openforms/emails/digest.py:73 FailedEmail, :79 FailedRegistration, :89 FailedPrefill, :120 BrokenConfiguration [reached on the daily digest mail and the retry task] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "a failed create is recorded and shown as failed on the reference page (lib/Service/Intake/PortalIntakeQueue.php header); no retry and no digest",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-governance-availability-retention-and-routing"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"FormulierVerwerken",
+					"PtInzendingen",
+					"PtInzending"
+				]
+			}
+		},
+		{
+			"id": "ops-submission-retention",
+			"area": "operate",
+			"name": "Delete or anonymise submissions automatically after a set number of days, separately for completed, unfinished and failed ones.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: removal limits per kind of submission (src/openforms/forms/models/form.py:335-395) [reached on the Open Forms admin] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/forms/models/form.py:335-395 removal limit and method per kind; src/openforms/data_removal/tasks.py:21 delete_submissions, :87 make_sensitive_data_anonymous [reached on the data removal settings of a form] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no retention on portalIntakeSubmission and no removal job in lib/BackgroundJob for submissions",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-governance-availability-retention-and-routing"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Deletion runs through OpenRegister (ADR-022); anonymising is portaliq's.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtFormulierInstellingen"
+			}
+		},
+		{
+			"id": "ops-submissions-export",
+			"area": "operate",
+			"name": "Export submissions of a form to CSV or Excel for staff.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: submission export in the admin (src/openforms/submissions/admin.py:455) [reached on the Open Forms admin] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/submissions/admin.py:455 export_submissions, :458 export_csv [reached on the submissions list in the Open Forms admin] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no submission export in portaliq; the PtInzendingen 'Downloaden' is not built",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "form-governance-availability-retention-and-routing"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtInzendingen"
+			}
+		},
+		{
+			"id": "ops-form-import-export",
+			"area": "operate",
+			"name": "Export a form with its logic and import it on another installation.",
+			"portaliq": "partial",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "yes",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: form export and import (src/openforms/forms/admin/views.py:47, :77) [reached on the Open Forms admin] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "src/openforms/forms/admin/views.py:47 ExportFormsView, :77 ImportFormsView; src/openforms/api/v2_urls.py:97 forms-import [reached on the forms list in the Open Forms admin] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "built",
+				"evidence": "the form lives in buildiq and travels with its app export (buildiq lc-export-zip, built) or a copy (form-copy, built: apps-copy-app-and-page); the portal's form binding (route to form) is not exported: no export service in portaliq lib reads portalFormBinding",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/buildiq",
+				"change": "buildiq/openbuild-exporter"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Partial for a portal editor: the form moves with buildiq's export, the portal binding that opens it does not.",
+			"screen": {
+				"canvas": "QAAxpcsFKBCvDUGbQbwtCa",
+				"board": "BqExport"
+			}
+		},
+		{
+			"id": "int-product-price-options",
+			"area": "intake",
+			"name": "Pick a product variant in a form and have its price come from the product catalogue.",
+			"portaliq": "no",
+			"open-inwoner": "partial",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"open-forms": "partial",
+			"evidence": {
+				"open-inwoner": "via Open Forms, the separate Maykin form product this portal embeds (src/open_inwoner/templates/pages/product/form.html:26 openforms_form); not in this source: one product with one price per form (src/openforms/products/models/product.py:25); variants are on the 4.1 roadmap [reached on product form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 104 (Open Formulieren capabilities); this system was not re-read for it",
+				"open-forms": "at 4.0.1 a form sells one Product with one price (src/openforms/products/models/product.py:25) and can take the price from a variable (src/openforms/forms/models/form.py:138 price_variable_key); variant choice from Open Product is on the 4.1 roadmap (#6655, #6729, #6731, https://github.com/open-formulieren/open-forms/milestones, read 2026-10-08) [reached on a form with a product and a price] [read 2026-10-08 at 4.0.1]"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "the fee comes from the case type (intake-pay-on-submit, portalCaseType.portalFee); no variant field and no catalogue price in lib/Service/Intake",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "data-lookups-and-checks-in-forms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Taking the price from the catalogue changes intake-pay-on-submit's rule that the portal holds no price: needs Ruben's call (see the change's proposal).",
+			"screen": {
+				"board": null,
+				"reason": "the resident's variant choice is not drawn yet (PtProduct draws the Kosten block an editor fills); on for-design/portaliq-missing-boards.md"
+			}
 		}
 	],
 	"pending": [
