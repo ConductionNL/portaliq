@@ -392,6 +392,31 @@ class PortalFormValidatorTest extends TestCase {
 	}//end testACalculatedFieldIsNeverTakenFromTheBrowser()
 
 	/**
+	 * resident-identity-in-forms REQ-RIF-001: a signature is a PNG under 200 kB sent as a data address,
+	 * and an empty required one is refused.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t02
+	 */
+	public function testASignatureIsAPngUnder200kbAndARequiredOneMayNotBeEmpty(): void {
+		$validator = $this->validator();
+		$png = static fn (string $body): string => 'data:image/png;base64,'.base64_encode("\x89PNG\r\n\x1a\n".$body);
+		$fields = [['name' => 'handtekening', 'type' => 'signature', 'required' => true]];
+
+		$ok = $validator->validate(fields: $fields, answers: ['handtekening' => $png('stroke')]);
+		$this->assertTrue($ok['valid']);
+		$this->assertSame($png('stroke'), $ok['answers']['handtekening']);
+
+		$this->assertArrayHasKey('handtekening', $validator->validate(fields: $fields, answers: ['handtekening' => ''])['errors'], 'empty and required');
+		$this->assertArrayHasKey('handtekening', $validator->validate(fields: $fields, answers: ['handtekening' => 'data:image/png;base64,'.base64_encode('not a png')])['errors']);
+		$this->assertArrayHasKey('handtekening', $validator->validate(fields: $fields, answers: ['handtekening' => 'data:image/jpeg;base64,'.base64_encode("\x89PNG\r\n\x1a\n")])['errors']);
+		$this->assertArrayHasKey('handtekening', $validator->validate(fields: $fields, answers: ['handtekening' => 'https://example.nl/x.png'])['errors']);
+		$this->assertArrayHasKey('handtekening', $validator->validate(fields: $fields, answers: ['handtekening' => ['x']])['errors']);
+		$this->assertTrue($validator->validate(fields: $fields, answers: ['handtekening' => $png(str_repeat('a', 199990))])['valid'], 'just under the limit');
+		$this->assertArrayHasKey('handtekening', $validator->validate(fields: $fields, answers: ['handtekening' => $png(str_repeat('a', 200001))])['errors'], 'over the limit');
+		$this->assertTrue($validator->validate(fields: [['name' => 'handtekening', 'type' => 'signature']], answers: [])['valid'], 'optional may stay empty');
+	}//end testASignatureIsAPngUnder200kbAndARequiredOneMayNotBeEmpty()
+
+	/**
 	 * The validator with a translator that answers the text it was given.
 	 *
 	 * @return PortalFormValidator

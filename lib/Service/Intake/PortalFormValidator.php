@@ -37,6 +37,13 @@ use OCP\IL10N;
  */
 class PortalFormValidator {
 	/**
+	 * The largest signature image accepted, in bytes.
+	 *
+	 * @var int
+	 */
+	public const MAX_SIGNATURE_BYTES = 200000;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IL10N            $l10n        The sentences a refusal is given with.
@@ -266,12 +273,43 @@ class PortalFormValidator {
 			return $this->addressError(value: $value);
 		}
 
+		if ($type === 'signature') {
+			return $this->signatureError(value: $value);
+		}
+
 		if ($type === 'email' && filter_var((string)$value, FILTER_VALIDATE_EMAIL) === false) {
 			return $this->l10n->t('This does not look like an email address.');
 		}
 
 		return null;
 	}//end typeError()
+
+	/**
+	 * Whether a signature is a PNG image of at most 200 kB, sent as a data address.
+	 *
+	 * @param mixed $value The submitted signature.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t02
+	 */
+	private function signatureError(mixed $value): ?string {
+		$prefix = 'data:image/png;base64,';
+		if (is_string($value) === false || str_starts_with($value, $prefix) === false) {
+			return $this->l10n->t('The signature must be an image.');
+		}
+
+		$bytes = base64_decode(substr($value, strlen($prefix)), true);
+		if ($bytes === false || str_starts_with($bytes, "\x89PNG\r\n\x1a\n") === false) {
+			return $this->l10n->t('The signature must be an image.');
+		}
+
+		if (strlen($bytes) > self::MAX_SIGNATURE_BYTES) {
+			return $this->l10n->t('The signature is too large. Draw it again, smaller.');
+		}
+
+		return null;
+	}//end signatureError()
 
 	/**
 	 * Whether a family answer is a list of references. Whether they ARE the

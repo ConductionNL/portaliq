@@ -227,6 +227,21 @@
 					:base="apiBase"
 					:sameAddressOnly="field.sameAddressOnly !== false"
 					:testid="`intake-field-${field.name}`" />
+				<SignatureField
+					v-else-if="field.type === 'signature'"
+					v-model="values[field.name]"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`" />
+				<EmailCodeField
+					v-else-if="field.type === 'email' && field.verify === true"
+					:id="elementId(field)"
+					v-model="values[field.name]"
+					:base="apiBase"
+					:route="bindingRoute"
+					:portal="portal"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`"
+					@verified="onVerified" />
 				<DateInputGroup
 					v-else-if="isDate(field)"
 					:id="elementId(field)"
@@ -343,6 +358,7 @@
 import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
 import AddressNL from './forms/AddressNL.vue'
 import DateInputGroup from './forms/DateInputGroup.vue'
+import EmailCodeField from './forms/EmailCodeField.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
 import FamilyMembers from './forms/FamilyMembers.vue'
 import FieldShell from './forms/FieldShell.vue'
@@ -350,6 +366,7 @@ import FormIntro from './forms/FormIntro.vue'
 import FormProgress from './forms/FormProgress.vue'
 import RepeatingGroup from './forms/RepeatingGroup.vue'
 import ReviewList from './forms/ReviewList.vue'
+import SignatureField from './forms/SignatureField.vue'
 import StatementsBlock from './forms/StatementsBlock.vue'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
@@ -372,6 +389,7 @@ import {
 	summaryEntries,
 } from './forms/fields.js'
 import { groupCountErrors, itemLines } from './forms/group.js'
+import { identityWords } from './forms/identityWords.js'
 import { feeAmount, paymentView, returnedReference } from './forms/payment.js'
 import stepFlow from './forms/stepFlow.js'
 import { stepHeading } from './forms/steps.js'
@@ -413,6 +431,8 @@ export default {
 		FormProgress,
 		RepeatingGroup,
 		ReviewList,
+		SignatureField,
+		EmailCodeField,
 	},
 
 	mixins: [stepFlow],
@@ -530,6 +550,7 @@ export default {
 			reference: '',
 			confirmationText: '',
 			accepted: [],
+			verifiedEmails: {},
 			statementErrors: {},
 			confirmation: null,
 			mailedTo: '',
@@ -896,6 +917,7 @@ export default {
 					adoptSessionToken(),
 					null,
 					this.accepted,
+					this.verifiedEmails,
 				)
 				if (outcome.reference === '') {
 					const messages = this.messagesOf(outcome.errors)
@@ -1054,7 +1076,41 @@ export default {
 					errors[field.name] = problem
 				}
 			}
+			for (const field of asked) {
+				const address = String(this.values[field.name] ?? '').trim().toLowerCase()
+				if (
+					field.type === 'email'
+					&& field.verify === true
+					&& address !== ''
+					&& !errors[field.name]
+					&& !this.verifiedEmails[address]
+				) {
+					errors[field.name] = identityWords(document.documentElement?.lang).emailVerifyFirst
+				}
+			}
 			return errors
+		},
+
+		/**
+		 * An address was verified, or its proof was dropped because it changed.
+		 *
+		 * @param {{address: string, proof: string}} verified The address and its proof, '' to drop.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+		 */
+		onVerified(verified) {
+			const address = String(verified?.address ?? '').trim().toLowerCase()
+			if (address === '') {
+				return
+			}
+			if (verified.proof) {
+				this.verifiedEmails = { ...this.verifiedEmails, [address]: verified.proof }
+				return
+			}
+			const rest = { ...this.verifiedEmails }
+			delete rest[address]
+			this.verifiedEmails = rest
 		},
 
 		/**
@@ -1100,6 +1156,11 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		answerText(field) {
+			if (field.type === 'signature') {
+				return this.values[field.name]
+					? identityWords(document.documentElement?.lang).signatureSet
+					: ''
+			}
 			if (field.type === 'addressNL') {
 				return addressLine(this.values[field.name])
 			}

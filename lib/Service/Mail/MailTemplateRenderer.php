@@ -100,6 +100,14 @@ class MailTemplateRenderer {
 				'topic' => 'Afval',
 			],
 		],
+		'form-email-code' => [
+			'label' => 'Code to check an e-mail address',
+			'variables' => ['portal', 'code'],
+			'sample' => [
+				'portal' => 'Gemeente Voorbeeld',
+				'code' => '482915',
+			],
+		],
 		'form-confirmation' => [
 			'label' => 'Confirmation of a request',
 			'variables' => ['portal', 'reference', 'formName'],

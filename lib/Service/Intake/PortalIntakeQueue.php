@@ -91,6 +91,7 @@ class PortalIntakeQueue {
 	 * @param array<int, array<string, string>> $statements The statements accepted, with text version and time.
 	 * @param array<int, string> $computed The names of the fields the portal worked out or a decision filled.
 	 * @param array<string, string> $decisions The outcome of each decided step, by step id.
+	 * @param array<int, array<string, string>> $verifiedEmails The addresses verified with a code, each with the time.
 	 *
 	 * @return array{reference: string, state: string}|null Null when the
 	 *         submission could not be recorded, in which case nothing is
@@ -107,6 +108,7 @@ class PortalIntakeQueue {
 		array $statements = [],
 		array $computed = [],
 		array $decisions = [],
+		array $verifiedEmails = [],
 	): ?array {
 		if ($portal === '') {
 			return null;
@@ -134,6 +136,10 @@ class PortalIntakeQueue {
 
 		if ($decisions !== []) {
 			$data['decisions'] = $decisions;
+		}
+
+		if ($verifiedEmails !== []) {
+			$data['verifiedEmails'] = $verifiedEmails;
 		}
 
 		$created = $this->writer->createObject(

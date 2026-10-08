@@ -45,6 +45,7 @@ use OCA\Portaliq\Service\Intake\PortalFee;
 use OCA\Portaliq\Service\Intake\PortalPaymentIntents;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
+use OCA\Portaliq\Service\Intake\PortalEmailVerification;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormCalculator;
 use OCA\Portaliq\Service\Intake\PortalFormDecision;
@@ -97,6 +98,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalContributionRegistry|null $registry Finds the case app's pay action in the subject's own manifest.
 	 * @param PortalActionForwarder|null $forwarder Forwards the pay action with a server-built body.
 	 * @param PortalDeepLinkBuilder|null $deepLinks Builds the address the resident returns to.
+	 * @param PortalEmailVerification|null $emailVerification Checks the proof that an e-mail address was verified.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -119,6 +121,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly ?PortalContributionRegistry $registry = null,
 		private readonly ?PortalActionForwarder $forwarder = null,
 		private readonly ?PortalDeepLinkBuilder $deepLinks = null,
+		private readonly ?PortalEmailVerification $emailVerification = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -233,6 +236,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param string $signature This instance's signature over the nonce.
 	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
 	 * @param array<int, string> $statements The keys of the statements the citizen ticked.
+	 * @param array<string, string> $verifiedEmails Proofs of verified e-mail addresses, by address.
 	 *
 	 * @return JSONResponse The reference, the per-field errors, or a refusal.
 	 *
@@ -250,6 +254,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		string $signature = '',
 		string $portal = '',
 		array $statements = [],
+		array $verifiedEmails = [],
 	): JSONResponse {
 		$site = $this->site(portal: $portal);
 		if ($site === null) {
@@ -298,6 +303,13 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['errors' => $familyErrors], Http::STATUS_BAD_REQUEST);
 		}
 
+		// An address the form asks to verify is refused without the proof of its code
+		// (resident-identity-in-forms REQ-RIF-002).
+		$unverified = $this->unverifiedEmails(render: $render, answers: $validated['answers'], proofs: $verifiedEmails, site: $site, route: $route);
+		if ($unverified !== []) {
+			return new JSONResponse(['errors' => $unverified], Http::STATUS_BAD_REQUEST);
+		}
+
 		// A calculated value is worked out again here and a decision is asked of the
 		// rule engine again, whatever the browser sent (form-flow-repeating-groups-
 		// calculations-and-decisions REQ-FFL-002, REQ-FFL-003).
@@ -337,7 +349,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			origin: (string)$this->request->getHeader('Origin'),
 			statements: $checked['record'],
 			computed: $worked['computed'],
-			decisions: $worked['decisions']
+			decisions: $worked['decisions'],
+			verifiedEmails: $this->verifiedRecord(render: $render, answers: $validated['answers'])
 		);
 		if ($accepted === null) {
 			return new JSONResponse(['error' => 'not_accepted'], Http::STATUS_SERVICE_UNAVAILABLE);
@@ -889,6 +902,51 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	private function subject(): ?array {
 		return $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
 	}//end subject()
+
+	/**
+	 * The verified addresses to record with the submission.
+	 *
+	 * @param array<string, mixed> $render The rendered form.
+	 * @param array<string, mixed> $answers The accepted answers.
+	 *
+	 * @return array<int, array{address: string, verifiedAt: string}>
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+	 */
+	private function verifiedRecord(array $render, array $answers): array {
+		if ($this->emailVerification === null) {
+			return [];
+		}
+
+		return $this->emailVerification->record(fields: (array)($render['fields'] ?? []), answers: $answers, at: gmdate(DATE_ATOM));
+	}//end verifiedRecord()
+
+	/**
+	 * The errors for e-mail fields that must be verified and are not.
+	 *
+	 * @param array<string, mixed> $render The rendered form.
+	 * @param array<string, mixed> $answers The accepted answers.
+	 * @param array<string, mixed> $proofs The proofs the browser sent, by address.
+	 * @param array<string, mixed> $site The portal.
+	 * @param string $route The form page.
+	 *
+	 * @return array<string, string> The errors by field name.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+	 */
+	private function unverifiedEmails(array $render, array $answers, array $proofs, array $site, string $route): array {
+		if ($this->emailVerification === null) {
+			return [];
+		}
+
+		return $this->emailVerification->unverified(
+			fields: (array)($render['fields'] ?? []),
+			answers: $answers,
+			proofs: $proofs,
+			portal: (string)($site['slug'] ?? ''),
+			route: $route
+		);
+	}//end unverifiedEmails()
 
 	/**
 	 * The portal being visited, or null.

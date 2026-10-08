@@ -253,6 +253,60 @@ class PortalIntakeControllerTest extends TestCase {
 	}//end hostedForm()
 
 	/**
+	 * resident-identity-in-forms REQ-RIF-002: a form that asks for a verified
+	 * address refuses a submit whose address has no proof, and a proof of
+	 * another address, and records the address that has one.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+	 */
+	public function testASubmitWithoutTheProofOfAVerifiedAddressIsRefused(): void {
+		$render = $this->hostedForm();
+		$render['fields'][] = ['name' => 'mail', 'type' => 'email', 'verify' => true, 'required' => true];
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
+		$crypto = $this->createMock(\OCP\Security\ICrypto::class);
+		$crypto->method('calculateHMAC')->willReturnCallback(static fn (string $text): string => hash('sha256', 'k'.$text));
+		$verification = new \OCA\Portaliq\Service\Intake\PortalEmailVerification(
+			$this->createMock(\OCP\ICacheFactory::class),
+			$this->createMock(\OCP\Security\ISecureRandom::class),
+			$crypto,
+			$this->createMock(\OCA\Portaliq\Service\Intake\FormEmailCodeMailer::class),
+			$l10n
+		);
+		$controller = $this->controller(render: $render, pay: ['verification' => $verification]);
+		$this->doubles['queue']->expects($this->once())->method('accept')
+			->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->callback(
+				static fn (array $record): bool => $record[0]['address'] === 'sanne@example.nl'
+			))
+			->willReturn(['reference' => 'AANVRAAG-ABC123', 'state' => 'queued']);
+
+		$answers = ['postcode' => '1234 AB', 'mail' => 'Sanne@Example.nl'];
+		$none = $controller->submit(route: 'aanvragen/verhuizing', answers: $answers);
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $none->getStatus());
+		$this->assertArrayHasKey('mail', $none->getData()['errors']);
+
+		$foreign = $controller->submit(route: 'aanvragen/verhuizing', answers: $answers, verifiedEmails: ['sanne@example.nl' => '9999999999.bogus']);
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $foreign->getStatus());
+
+		$proof = $this->proofFor(verification: $verification, email: 'sanne@example.nl');
+		$ok = $controller->submit(route: 'aanvragen/verhuizing', answers: $answers, verifiedEmails: ['sanne@example.nl' => $proof]);
+		$this->assertSame(Http::STATUS_OK, $ok->getStatus());
+	}//end testASubmitWithoutTheProofOfAVerifiedAddressIsRefused()
+
+	/**
+	 * A proof, minted the way the check route mints one.
+	 *
+	 * @param \OCA\Portaliq\Service\Intake\PortalEmailVerification $verification The service.
+	 * @param string $email The address.
+	 *
+	 * @return string
+	 */
+	private function proofFor(\OCA\Portaliq\Service\Intake\PortalEmailVerification $verification, string $email): string {
+		$method = new \ReflectionMethod($verification, 'proofFor');
+		return $method->invoke($verification, 'gemeente-x', 'aanvragen/verhuizing', $email, time());
+	}//end proofFor()
+
+	/**
 	 * The controller over doubles, with a real validator so the ordering test
 	 * exercises the validation the controller really runs.
 	 *
@@ -319,7 +373,9 @@ class PortalIntakeControllerTest extends TestCase {
 			$pay['fees'] ?? null,
 			$pay['intents'] ?? null,
 			$pay['registry'] ?? null,
-			$pay['forwarder'] ?? null
+			$pay['forwarder'] ?? null,
+			null,
+			$pay['verification'] ?? null
 		);
 	}//end controller()
 

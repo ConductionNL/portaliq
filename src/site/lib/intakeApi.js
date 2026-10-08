@@ -258,7 +258,8 @@ export function initialValues(fields, prefill) {
  * @param {string} portal The portal slug, or ''.
  * @param {string} token The portal bearer, or ''.
  * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
- * @param statements
+ * @param {string[]} statements The keys of the statements ticked.
+ * @param {Record<string, string>} verifiedEmails The proof of each verified e-mail address, by address.
  * @return {Promise<{reference: string, confirmationText: string, errors: object}>} The outcome.
  *
  * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
@@ -271,8 +272,12 @@ export async function submitIntake(
 	token,
 	fetchImpl = null,
 	statements = [],
+	verifiedEmails = {},
 ) {
 	const body = { route, answers: answers || {} }
+	if (verifiedEmails && Object.keys(verifiedEmails).length > 0) {
+		body.verifiedEmails = verifiedEmails
+	}
 	if (portal) {
 		body.portal = portal
 	}
@@ -538,5 +543,77 @@ export async function payIntake(base, reference, portal, token, fetchImpl) {
 		return { ok: response.ok && url !== '', checkoutUrl: url, status: response.status }
 	} catch {
 		return { ok: false, checkoutUrl: '', status: 0 }
+	}
+}
+
+/**
+ * Ask for a code to be sent to an address the form wants verified
+ * (resident-identity-in-forms). A refusal is an answer: `error` names why.
+ *
+ * @param {string} base The portal API base.
+ * @param {string} route The binding route of the form.
+ * @param {string} email The address.
+ * @param {string} portal The portal slug, or ''.
+ * @param {string} token The portal bearer, or ''.
+ * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
+ * @return {Promise<{ok: boolean, error: string, resendAfter: number}>} The outcome.
+ *
+ * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+ */
+export async function requestEmailCode(base, route, email, portal, token, fetchImpl = null) {
+	try {
+		const body = { route, email }
+		if (portal) {
+			body.portal = portal
+		}
+		const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/email-code'), {
+			method: 'POST',
+			headers: headersFor(token, true),
+			body: JSON.stringify(body),
+		})
+		const parsed = await response.json().catch(() => ({}))
+		return {
+			ok: response.ok === true,
+			error: response.ok ? '' : String(parsed?.error || 'failed'),
+			resendAfter: Number(parsed?.resendAfter) || 60,
+		}
+	} catch {
+		return { ok: false, error: 'failed', resendAfter: 60 }
+	}
+}
+
+/**
+ * Check the code the resident typed. A right code answers the proof the form
+ * sends along with its answers.
+ *
+ * @param {string} base The portal API base.
+ * @param {string} route The binding route of the form.
+ * @param {string} email The address.
+ * @param {string} code The code.
+ * @param {string} portal The portal slug, or ''.
+ * @param {string} token The portal bearer, or ''.
+ * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
+ * @return {Promise<{ok: boolean, error: string, proof: string}>} The outcome.
+ *
+ * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+ */
+export async function checkEmailCode(base, route, email, code, portal, token, fetchImpl = null) {
+	try {
+		const body = { route, email, code }
+		if (portal) {
+			body.portal = portal
+		}
+		const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/email-code/check'), {
+			method: 'POST',
+			headers: headersFor(token, true),
+			body: JSON.stringify(body),
+		})
+		const parsed = await response.json().catch(() => ({}))
+		if (response.ok && typeof parsed?.proof === 'string' && parsed.proof !== '') {
+			return { ok: true, error: '', proof: parsed.proof }
+		}
+		return { ok: false, error: String(parsed?.error || 'failed'), proof: '' }
+	} catch {
+		return { ok: false, error: 'failed', proof: '' }
 	}
 }

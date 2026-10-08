@@ -204,10 +204,18 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {Array<object>} Requests to answer, then invitations sent.
+		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 */
 		waiting() {
 			return [...this.overview.incoming, ...this.overview.outgoing]
 		},
 
+		/**
+		 * @return {Array<object>} The contacts of the chosen role chip.
+		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 */
 		shown() {
 			return contactsOfRole(this.overview.contacts, this.role)
 		},

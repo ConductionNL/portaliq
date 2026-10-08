@@ -365,6 +365,9 @@ return [
         ['name' => 'portalIntake#family', 'url' => '/portal/api/intake/family', 'verb' => 'GET'],
         ['name' => 'portalIntake#form', 'url' => '/portal/api/intake/form', 'verb' => 'GET'],
         ['name' => 'portalIntake#submit', 'url' => '/portal/api/intake/submit', 'verb' => 'POST'],
+        // The code that proves a form's e-mail address is the resident's (resident-identity-in-forms).
+        ['name' => 'portalFormEmailCode#send', 'url' => '/portal/api/intake/email-code', 'verb' => 'POST'],
+        ['name' => 'portalFormEmailCode#check', 'url' => '/portal/api/intake/email-code/check', 'verb' => 'POST'],
         ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],
 
         // The citizen's own identity (portal-identity-and-the-organisations-cases):

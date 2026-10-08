@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.85.0"
+        "version": "0.86.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.85.0",
+                "version": "0.86.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -7721,7 +7721,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -7981,6 +7981,53 @@
                         ],
                         "example": "low"
                     },
+                    "cosign": {
+                        "title": "Co-signing",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "Whether a second person must co-sign after the form is sent: required (boolean) and deadlineDays. Off when empty.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "required": {
+                                "title": "Co-signing required",
+                                "type": "boolean",
+                                "description": "Whether the request waits for a co-signer before it is delivered.",
+                                "default": false
+                            },
+                            "deadlineDays": {
+                                "title": "Days to co-sign",
+                                "type": "integer",
+                                "description": "How many days the co-signer has before the request lapses.",
+                                "default": 14
+                            }
+                        }
+                    },
+                    "staffMayFill": {
+                        "title": "Employees may fill in",
+                        "type": "boolean",
+                        "description": "Whether an employee may fill this form in for a resident. The resident is then the applicant on the case.",
+                        "default": false
+                    },
+                    "yiviAttributes": {
+                        "title": "Yivi attributes",
+                        "type": "array",
+                        "description": "The Yivi attributes the form asks for, each with the field it fills in. Empty means the form does not offer Yivi.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "attribute": {
+                                    "title": "Attribute",
+                                    "type": "string",
+                                    "description": "The Yivi attribute identifier."
+                                },
+                                "field": {
+                                    "title": "Field",
+                                    "type": "string",
+                                    "description": "The name of the form field the attribute fills in."
+                                }
+                            }
+                        }
+                    },
                     "allowedOrigins": {
                         "title": "Allowed origins",
                         "type": "array",
@@ -8012,7 +8059,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Intake Submission",
                 "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
                 "type": "object",
@@ -8142,6 +8189,30 @@
                         "type": "object",
                         "widget": "json",
                         "description": "The outcome the rule engine gave for each decided step, by step id, asked again when the form was sent."
+                    },
+                    "filledBy": {
+                        "title": "Filled in by",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The employee who filled the form in for the applicant: uid and display name. Empty when the applicant filled it in."
+                    },
+                    "applicant": {
+                        "title": "Applicant",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "Who the request is for when an employee filled it in: a kind (bsn, kvk or named) and the value."
+                    },
+                    "cosign": {
+                        "title": "Co-signature",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The co-signature the form asked for: state (awaiting, signed, refused or expired), the co-signer address, the time and the co-signer subject."
+                    },
+                    "verifiedEmails": {
+                        "title": "Verified e-mail addresses",
+                        "type": "array",
+                        "widget": "json",
+                        "description": "The e-mail addresses the resident verified with a code before sending, each with the time."
                     },
                     "confirmationMailState": {
                         "title": "Confirmation mail state",

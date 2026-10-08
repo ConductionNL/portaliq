@@ -129,6 +129,13 @@ export default {
 		this.$refs.heading?.focus()
 	},
 
+	/**
+	 * Close the dialog with the component.
+	 *
+	 * @return {void}
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 */
 	beforeUnmount() {
 		if (this.$refs.dialog?.open && typeof this.$refs.dialog.close === 'function') {
 			this.$refs.dialog.close()
