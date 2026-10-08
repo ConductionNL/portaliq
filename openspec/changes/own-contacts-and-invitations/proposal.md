@@ -24,5 +24,5 @@ Open Inwoner keeps a contact list per resident (`src/open_inwoner/accounts/views
 
 ## Out of scope
 
-- Shared plans. `cmp-tsk-plan` is decided-no; the "In 1 plan met u" line shows only when a plan app contributes it.
+- Shared plans. `cmp-tsk-plan` was reopened by decision 105 (8 October 2026) and is specified in `shared-plans-with-a-caseworker`; that change fills the "In 1 plan met u" line.
 - Mandates. Acting for someone stays `cmp-sig-machtiging`; a contact gets no access to cases.

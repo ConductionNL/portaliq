@@ -28,5 +28,5 @@ Open Inwoner gives every resident a to-do list of actions with status, end date,
 
 ## Out of scope
 
-- Plans with goals and participants. The board draws the dialog inside a plan; plans are `cmp-tsk-plan`, decided-no.
+- Plans with goals and participants. The board draws the dialog inside a plan; plans are `cmp-tsk-plan`, reopened by decision 105 (8 October 2026) and specified in `shared-plans-with-a-caseworker`, which reuses this table and dialog inside a plan.
 - Case tasks. Tasks the organisation asks for stay in portal-task-delivery.

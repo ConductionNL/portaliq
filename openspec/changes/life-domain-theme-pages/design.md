@@ -20,6 +20,20 @@ A theme with nothing for this resident shows the intro and "Er is nu niets voor 
 
 A contribution collection or action MAY declare `theme` (a slug). A collection MAY declare `kind: products` with `validUntilField` and `metaFields`. The normaliser keeps `theme` only when the portal declares that slug.
 
+## The products a resident holds
+
+The block "Mijn {productsLabel}" follows the board: a count line ("2 vergunningen", the collection's `countLabel` in singular and plural), then one row per product with its title, a status tag, a meta line and "Geldig tot en met {datum}", and the row's update actions.
+
+| Board element | Source |
+|---|---|
+| Title "Bewonersvergunning binnenstad" | the collection's `titleField` |
+| Tag "Geldig" | computed: "Geldig" when `validUntilField` is empty or today or later; "Verlopen" when it is past; "Gaat in op {datum}" when `validFromField` is in the future |
+| Meta "Kenteken GZ-482-K · Lindelaan 12 · ingegaan op 1 januari 2026" | `metaFields` joined with " · ", `validFromField` as "ingegaan op {datum}" |
+| "Geldig tot en met 31 december 2026" | `validUntilField`, left out when empty |
+| "Bekijk alle parkeervergunningen" | `/mijn/thema/{slug}/producten`: the same rows for every product of the theme, expired ones last, with the same empty text |
+
+The theme page shows at most three products, valid first; the link shows when there are more, or when any has expired. The rows come through the contribution's scoped read like any collection; portaliq stores no product.
+
 ## Change a held product
 
 A product row's actions are the contribution's row actions (case-actions-row-inputs-and-conditions). "Kenteken wijzigen" is an `update` action on the product collection with its input fields; portaliq renders it with the existing action form and writes through the contribution's write path. Portaliq adds no endpoint (ADR-022).

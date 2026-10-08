@@ -2,7 +2,7 @@
 
 ## Screens
 
-The dialog follows the Zuiddrecht board **ActieBewerken** ("Mijn Zuiddrecht: actie bewerken", canvas `5NkFW28vZUUij43xzxHg5a`). The board places the action table and dialog inside the plan "Schuldhulp op orde"; this change uses the table and the dialog on their own page "Mijn acties", without the plan's goal, notes and participants.
+The dialog follows the Zuiddrecht board **ActieBewerken** ("Mijn Zuiddrecht: actie bewerken", canvas `5NkFW28vZUUij43xzxHg5a`). The board places the action table and dialog inside the plan "Schuldhulp op orde"; this change uses the table and the dialog on their own page "Mijn acties", without the plan's goal, notes and participants. `shared-plans-with-a-caseworker` puts the same table and dialog inside a plan, as the board draws them, and adds `plan` to `portalAction`. Mijn acties lists the resident's actions with and without a plan; an action in a plan shows the plan's name under its title.
 
 | Board element | Here |
 |---|---|
