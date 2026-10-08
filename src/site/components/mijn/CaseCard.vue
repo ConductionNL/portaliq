@@ -41,9 +41,9 @@
 			}"
 			:data-display="display">
 			<span class="pq-case-card__ident">
-				<span v-if="card.number" class="pq-case-card__number">{{
-					card.number
-				}}</span>
+				<span v-if="card.number" class="pq-case-card__number"
+					><NoTranslate :value="card.number"
+				/></span>
 				<DataBadge
 					v-if="display === 'compact' && boardTag"
 					:text="boardTag.text"
@@ -126,9 +126,9 @@
 						v-if="card.status"
 						:text="card.status"
 						:state="card.closed ? 'neutral' : 'success'" />
-					<span v-if="card.reference" class="pq-case-card__reference">{{
-						card.reference
-					}}</span>
+					<span v-if="card.reference" class="pq-case-card__reference"
+						><NoTranslate :value="card.reference"
+					/></span>
 				</div>
 				<div>
 					<p class="denhaag-case-card__title pq-case-card__title">
@@ -182,6 +182,7 @@
 </template>
 
 <script>
+import NoTranslate from '../NoTranslate.vue'
 import DataBadge from './DataBadge.vue'
 import { siteHref } from './rows.js'
 
@@ -194,7 +195,7 @@ const DISPLAYS = ['', 'compact', 'row']
 export default {
 	name: 'CaseCard',
 
-	components: { DataBadge },
+	components: { DataBadge, NoTranslate },
 
 	props: {
 		/** What caseCard() in cases.js answers for the row. */
