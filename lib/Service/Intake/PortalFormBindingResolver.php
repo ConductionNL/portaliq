@@ -87,6 +87,7 @@ class PortalFormBindingResolver {
 	 *                                         leaves such a field with no options, which
 	 *                                         closes it.
 	 * @param PortalFormCalculator $calculator Knows which `calculate` operations the server can repeat.
+	 * @param PortalFee|null $fees Reads the fee a case type declares. Absent means no form carries one.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
@@ -94,6 +95,7 @@ class PortalFormBindingResolver {
 		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
 		private readonly ?PortalReferenceLists $lists = null,
 		private readonly PortalFormCalculator $calculator = new PortalFormCalculator(),
+		private readonly ?PortalFee $fees = null,
 	) {
 	}//end __construct()
 
@@ -329,6 +331,7 @@ class PortalFormBindingResolver {
 				'settings' => $settings,
 			];
 		}
+		$fee = $this->fees?->forBinding(binding: $binding);
 
 		$confirmation = (string)($form['confirmationText'] ?? '');
 		if ($confirmation !== '') {
@@ -350,6 +353,9 @@ class PortalFormBindingResolver {
 				known: array_map(static fn (array $field): string => (string)$field['name'], $fields)
 			),
 			'settings' => $settings,
+			// What the request costs, from the case type and nowhere else
+			// (intake-pay-on-submit REQ-IPS-001). Null for a free request.
+			'fee' => $fee,
 			// The sign-in level the maker chose for this form (buildiq#935).
 			// Carried as declared; requiredTrust() decides what it means.
 			'minTrust' => ($form['minTrust'] ?? null),

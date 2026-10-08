@@ -332,7 +332,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// armed (woo-request-intake-through-opencatalogi). Additive.
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalFormBinding']['version']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
-		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
+		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
 		// 0.60.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
@@ -360,6 +360,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// (zuiddrecht-resident-pages-match-the-boards). Additive.
 		// 0.70.0 (portal 0.13.0): `residentMenu.leaveOut` (resident-menu-leave-out). Additive.
 		// 0.74.0 (portal 0.16.0, form 0.2.0, page 0.7.0): help details and section help texts (help-texts-and-form-help). Additive.
+		// 0.81.0 (portalCaseType 0.4.0, portalIntakeSubmission 0.5.0, portal 0.19.0): portalFee, paymentIntentId and paymentHosts (intake-pay-on-submit). Additive.
 		// 0.80.0 (portalIntakeSubmission 0.4.0): `computed` and `decisions` on the submission (form-flow-repeating-groups-calculations-and-decisions). Additive.
 		// 0.79.0 (portalMessage 0.7.0): readReceiptRequested, readAt and sendingRef (inbox-read-receipt-on-request). Additive.
 		// 0.77.0 (portalFormBinding 0.3.0, portalIntakeSubmission 0.3.0, portal 0.17.0): intro, statements, confirmation and confirmationMail on the binding, accepted statements on the submission, statement texts on the portal (form-statements-intro-and-confirmation-mail). Additive.
@@ -369,8 +370,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.72.0 (portal 0.15.0): `tokens` (portal-theme-blocks-and-contributed-pages). Additive.
 		// 0.71.0 (portal 0.14.0): `searchInsideDocuments` (portal-federated-search) and the
 		// `portalDraft` schema (site-multi-step-forms). Additive.
-		$this->assertSame('0.80.0', self::$register['info']['version']);
-		$this->assertSame('0.80.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.81.0', self::$register['info']['version']);
+		$this->assertSame('0.81.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -408,7 +409,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsItem']['properties']['translations']['description']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsItem']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalReporterContact']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalCaseType']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertArrayHasKey('handlerGroup', self::$register['components']['schemas']['portalCaseType']['properties']['portalReportDeclaration']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['guardianMessage']['version']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['guardianMessage']['properties']);
@@ -430,7 +431,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.18.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);

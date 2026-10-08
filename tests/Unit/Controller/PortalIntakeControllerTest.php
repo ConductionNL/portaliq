@@ -274,6 +274,7 @@ class PortalIntakeControllerTest extends TestCase {
 		?\OCA\Portaliq\Service\Intake\FormConfirmationMailer $mailer = null,
 		?\OCA\Portaliq\Service\Intake\PortalFormCalculator $calculator = null,
 		?\OCA\Portaliq\Service\Intake\PortalFormDecision $decision = null,
+		array $pay = [],
 	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -293,7 +294,7 @@ class PortalIntakeControllerTest extends TestCase {
 
 		$this->doubles = [
 			'portals' => $portals,
-			'queue' => $this->double(PortalIntakeQueue::class, ['accept', 'status', 'markConfirmationMail']),
+			'queue' => $this->double(PortalIntakeQueue::class, ['accept', 'status', 'markConfirmationMail', 'find', 'markPaymentIntent']),
 			'prefill' => $this->double(PortalApplicantPrefill::class, ['forSubject']),
 			'challenge' => $this->double(PortalChallengeService::class, ['issue', 'accepts']),
 			'catalogue' => $this->double(PortalCatalogueReader::class, ['topicsFor']),
@@ -314,7 +315,11 @@ class PortalIntakeControllerTest extends TestCase {
 			$statements,
 			$mailer,
 			$calculator,
-			$decision
+			$decision,
+			$pay['fees'] ?? null,
+			$pay['intents'] ?? null,
+			$pay['registry'] ?? null,
+			$pay['forwarder'] ?? null
 		);
 	}//end controller()
 
@@ -627,6 +632,224 @@ class PortalIntakeControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $controller->decide(route: 'parkeren', step: 'route', answers: [])->getStatus());
 
 	}//end testTheDecideRouteIsUnavailableWhenTheEngineIsDown()
+	/**
+	 * The collaborators of the pay route over doubles.
+	 *
+	 * @param array<string, mixed>|null $submission The stored submission, or null.
+	 * @param array<string, mixed>|null $fee        The fee the binding's case type declares.
+	 * @param int                       $status     The case app's answer status.
+	 * @param array<string, mixed>      $answer     The case app's answer body.
+	 * @param string|null               $intent     The payment intent status, or null.
+	 * @param bool                      $hasAction  Whether the pay action is in the subject's manifest.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function payParts(?array $submission, ?array $fee, int $status=200, array $answer=[], ?string $intent=null, bool $hasAction=true): array {
+		$fees = $this->getMockBuilder(\OCA\Portaliq\Service\Intake\PortalFee::class)->disableOriginalConstructor()->onlyMethods(['forBinding'])->getMock();
+		$fees->method('forBinding')->willReturn($fee);
+
+		$intents = $this->double(\OCA\Portaliq\Service\Intake\PortalPaymentIntents::class, ['status']);
+		$intents->method('status')->willReturn($intent);
+
+		$registry = $this->double(\OCA\Portaliq\Contribution\PortalContributionRegistry::class, ['aggregateFor']);
+		$registry->method('aggregateFor')->willReturn(['contributions' => $hasAction ? [['app' => 'dossiq', 'actions' => [['id' => 'create-payment', 'endpoint' => '/apps/dossiq/api/pay']]]] : []]);
+
+		$response = $this->createMock(\OCP\Http\Client\IResponse::class);
+		$response->method('getStatusCode')->willReturn($status);
+		$forwarder = $this->double(\OCA\Portaliq\Service\PortalActionForwarder::class, ['forward', 'decodeBody', 'isForwardable']);
+		$forwarder->method('isForwardable')->willReturn(true);
+		$forwarder->method('forward')->willReturn($response);
+		$forwarder->method('decodeBody')->willReturn($answer);
+
+		return ['fees' => $fees, 'intents' => $intents, 'registry' => $registry, 'forwarder' => $forwarder, 'submission' => $submission];
+	}//end payParts()
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function ownSubmission(): array {
+		return ['reference' => 'AANVRAAG-1', 'route' => 'parkeren', 'subjectRef' => 'sub-1', 'portal' => 'gemeente-x'];
+	}//end ownSubmission()
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function declaredFee(): array {
+		return ['amount' => '45.00', 'currency' => 'EUR', 'description' => 'Parkeervergunning', 'payAction' => 'create-payment'];
+	}//end declaredFee()
+
+	/**
+	 * The pay route over a signed-in subject and the given parts.
+	 *
+	 * @param array<string, mixed> $parts The parts from payParts().
+	 * @param array<string, mixed> $site  The portal.
+	 *
+	 * @return PortalIntakeController
+	 */
+	private function payController(array $parts, ?array $subject = ['subjectRef' => 'sub-1'], array $site = ['slug' => 'gemeente-x', 'paymentHosts' => ['www.mollie.com']]): PortalIntakeController {
+		$controller = $this->controller(render: [], subject: $subject, site: $site, pay: $parts);
+		$this->doubles['queue']->method('find')->willReturn($parts['submission']);
+
+		return $controller;
+	}//end payController()
+
+	/**
+	 * intake-pay-on-submit T04: the case app is asked for exactly the declared
+	 * amount; the browser has no say in it.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function testPayForwardsTheDeclaredAmount(): void {
+		$parts = $this->payParts($this->ownSubmission(), $this->declaredFee(), answer: ['checkoutUrl' => 'https://www.mollie.com/checkout/abc', 'paymentIntentId' => 'pi-1']);
+		$sent = null;
+		$parts['forwarder']->expects($this->once())->method('forward')->willReturnCallback(
+			function (array $action, array $subject, ?array $whitelisted = null, string $scopeValue = '') use (&$sent) {
+				$sent = $whitelisted;
+				$response = $this->createMock(\OCP\Http\Client\IResponse::class);
+				$response->method('getStatusCode')->willReturn(200);
+				return $response;
+			}
+		);
+		$controller = $this->payController($parts);
+		$this->doubles['queue']->expects($this->once())->method('markPaymentIntent')->with($this->ownSubmission(), 'pi-1');
+
+		$response = $controller->pay('AANVRAAG-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['checkoutUrl' => 'https://www.mollie.com/checkout/abc'], $response->getData());
+		$this->assertSame('45.00', $sent['amount']);
+		$this->assertSame('EUR', $sent['currency']);
+		$this->assertSame('AANVRAAG-1', $sent['reference']);
+		$this->assertStringContainsString('reference=AANVRAAG-1', $sent['returnUrl']);
+	}//end testPayForwardsTheDeclaredAmount()
+
+	/**
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function testPayNeedsASession(): void {
+		$parts = $this->payParts($this->ownSubmission(), $this->declaredFee());
+		$parts['forwarder']->expects($this->never())->method('forward');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->payController($parts, subject: null)->pay('AANVRAAG-1')->getStatus());
+	}//end testPayNeedsASession()
+
+	/**
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function testForeignReferenceIs404(): void {
+		$parts = $this->payParts(['reference' => 'AANVRAAG-1', 'route' => 'parkeren', 'subjectRef' => 'someone-else'], $this->declaredFee());
+		$parts['forwarder']->expects($this->never())->method('forward');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->payController($parts)->pay('AANVRAAG-1')->getStatus());
+
+		$none = $this->payParts(null, $this->declaredFee());
+		$none['forwarder']->expects($this->never())->method('forward');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->payController($none)->pay('AANVRAAG-9')->getStatus());
+	}//end testForeignReferenceIs404()
+
+	/**
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function testPaidSubmissionIs409(): void {
+		$submission = $this->ownSubmission() + ['paymentIntentId' => 'pi-1'];
+		$parts = $this->payParts($submission, $this->declaredFee(), intent: 'paid');
+		$parts['forwarder']->expects($this->never())->method('forward');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $this->payController($parts)->pay('AANVRAAG-1')->getStatus());
+	}//end testPaidSubmissionIs409()
+
+	/**
+	 * A case type without a fee has nothing to pay.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function testNoFeeIs409(): void {
+		$parts = $this->payParts($this->ownSubmission(), null);
+		$parts['forwarder']->expects($this->never())->method('forward');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $this->payController($parts)->pay('AANVRAAG-1')->getStatus());
+	}//end testNoFeeIs409()
+
+	/**
+	 * A pay action missing from the subject's own manifest is not forwarded.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function testAPayActionOutsideTheManifestIs403(): void {
+		$parts = $this->payParts($this->ownSubmission(), $this->declaredFee(), hasAction: false);
+		$parts['forwarder']->expects($this->never())->method('forward');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->payController($parts)->pay('AANVRAAG-1')->getStatus());
+	}//end testAPayActionOutsideTheManifestIs403()
+
+	/**
+	 * A checkout on a host the portal does not name is never handed on.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function testUndeclaredCheckoutHostIsRefused(): void {
+		foreach (['https://pay.example.org/checkout', 'http://www.mollie.com/checkout', 'https://www.mollie.com.evil.example/x', 'javascript:alert(1)'] as $checkout) {
+			$parts = $this->payParts($this->ownSubmission(), $this->declaredFee(), answer: ['checkoutUrl' => $checkout, 'paymentIntentId' => 'pi-1']);
+			$this->doubles = [];
+			$controller = $this->payController($parts);
+			$this->doubles['queue']->expects($this->never())->method('markPaymentIntent');
+
+			$response = $controller->pay('AANVRAAG-1');
+
+			$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus(), $checkout);
+			$this->assertSame('payment_unavailable', $response->getData()['error']);
+		}
+	}//end testUndeclaredCheckoutHostIsRefused()
+
+	/**
+	 * A case app that answers with an error gives the resident the same refusal.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function testACaseAppFailureIs502(): void {
+		$parts = $this->payParts($this->ownSubmission(), $this->declaredFee(), status: 500);
+
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $this->payController($parts)->pay('AANVRAAG-1')->getStatus());
+	}//end testACaseAppFailureIs502()
+
+	/**
+	 * intake-pay-on-submit T05: the status carries the state the payment
+	 * record says, and an address that claims otherwise changes nothing.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t05
+	 */
+	public function testStatusReadsPaymentFromTheIntent(): void {
+		$expected = ['paid' => 'paid', 'authorized' => 'paid', 'pending' => 'unpaid', 'open' => 'unpaid', 'failed' => 'failed', 'canceled' => 'failed', 'expired' => 'failed', 'refunded' => 'unknown'];
+		foreach ($expected as $status => $state) {
+			$this->doubles = [];
+			$submission = $this->ownSubmission() + ['paymentIntentId' => 'pi-1'];
+			$fees = new \OCA\Portaliq\Service\Intake\PortalFee($this->createMock(\OCA\Portaliq\Service\CaseTypeReader::class));
+			$parts = $this->payParts($submission, null, intent: $status);
+			$parts['fees'] = $fees;
+			$controller = $this->payController($parts);
+			$this->doubles['queue']->method('status')->willReturn(['reference' => 'AANVRAAG-1', 'state' => 'registered']);
+
+			$this->assertSame(['state' => $state], $controller->status('AANVRAAG-1')->getData()['payment'], $status);
+		}
+	}//end testStatusReadsPaymentFromTheIntent()
+
+	/**
+	 * T05: a submission with no payment started says nothing about one, and a
+	 * query-string status is not read at all.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t05
+	 */
+	public function testQueryStringDoesNotSetPaymentState(): void {
+		$fees = new \OCA\Portaliq\Service\Intake\PortalFee($this->createMock(\OCA\Portaliq\Service\CaseTypeReader::class));
+		$parts = $this->payParts($this->ownSubmission(), null, intent: 'paid');
+		$parts['fees'] = $fees;
+		$controller = $this->payController($parts);
+		$this->doubles['queue']->method('status')->willReturn(['reference' => 'AANVRAAG-1', 'state' => 'queued']);
+
+		$this->assertArrayNotHasKey('payment', $controller->status('AANVRAAG-1')->getData(), 'no intent stored, no payment state');
+		$source = (string)file_get_contents(__DIR__ . '/../../../lib/Controller/PortalIntakeController.php');
+		$this->assertDoesNotMatchRegularExpression('/getParam\(\s*.status/', $source, 'the controller never reads a status from the address');
+	}//end testQueryStringDoesNotSetPaymentState()
 
 	/**
 	 * A double of one class, limited to the methods it really has.

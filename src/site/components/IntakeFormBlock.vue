@@ -27,7 +27,7 @@
 			v-else-if="state === 'signIn'"
 			class="utrecht-paragraph"
 			data-testid="intake-form-sign-in">
-			{{ signInLabel }}
+			{{ feeAmountText ? text.signInFee.split('{amount}').join(feeAmountText) : signInLabel }}
 		</p>
 
 		<div v-else-if="state === 'external'" data-testid="intake-form-external">
@@ -70,6 +70,36 @@
 			</p>
 			<p class="utrecht-paragraph">
 				{{ keepReferenceLabel }}
+			</p>
+			<p
+				v-if="feeAmountText"
+				class="utrecht-paragraph"
+				data-testid="intake-form-fee">
+				{{ text.feeLine.split('{amount}').join(feeAmountText) }}
+			</p>
+			<p
+				v-if="paymentWords"
+				class="utrecht-paragraph"
+				role="status"
+				data-testid="intake-form-payment">
+				{{ text[paymentWords.key] }}
+			</p>
+			<p
+				v-if="payFailed"
+				class="utrecht-paragraph"
+				role="alert"
+				data-testid="intake-form-pay-error">
+				{{ text.payUnavailable }}
+			</p>
+			<p v-if="canPay">
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--primary-action"
+					:disabled="paying"
+					data-testid="intake-form-pay"
+					@click="pay">
+					{{ text.payNow.split('{amount}').join(feeAmountText) }}
+				</button>
 			</p>
 			<p
 				v-if="mailedTo"
@@ -328,6 +358,8 @@ import {
 	decideStep as decideStepOnServer,
 	initialValues,
 	loadForm,
+	lookUpStatus,
+	payIntake,
 	submitIntake,
 } from '../lib/intakeApi.js'
 import { addressLine, addressProblem } from './forms/address.js'
@@ -340,6 +372,7 @@ import {
 	summaryEntries,
 } from './forms/fields.js'
 import { groupCountErrors, itemLines } from './forms/group.js'
+import { feeAmount, paymentView, returnedReference } from './forms/payment.js'
 import stepFlow from './forms/stepFlow.js'
 import { stepHeading } from './forms/steps.js'
 
@@ -500,6 +533,9 @@ export default {
 			statementErrors: {},
 			confirmation: null,
 			mailedTo: '',
+			payment: null,
+			paying: false,
+			payFailed: false,
 		}
 	},
 
@@ -514,6 +550,46 @@ export default {
 		 */
 		calculated() {
 			return calculatedValues(this.fields, this.values)
+		},
+
+		/**
+		 * The fee in words, from the form's render or the sign-in refusal.
+		 *
+		 * @return {string} "€ 45,00", or '' for a free request.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t06
+		 */
+		feeAmountText() {
+			return feeAmount(
+				this.render.fee,
+				typeof document === 'undefined' ? 'nl' : document.documentElement?.lang,
+			)
+		},
+
+		/**
+		 * What the page says about the payment.
+		 *
+		 * @return {object|null} `{key, again}`.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t06
+		 */
+		paymentWords() {
+			return paymentView(this.payment)
+		},
+
+		/**
+		 * Whether "Pay now" shows: a fee, and no payment that went through.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t06
+		 */
+		canPay() {
+			return (
+				this.feeAmountText !== ''
+				&& this.reference !== ''
+				&& (this.paymentWords === null || this.paymentWords.again === true)
+			)
 		},
 
 		/**
@@ -777,6 +853,7 @@ export default {
 					view.state === 'form' && introView(view.render.settings?.intro)
 						? 'intro'
 						: view.state
+				await this.showReturnedPayment()
 			} catch {
 				this.state = 'notFound'
 			}
@@ -848,6 +925,60 @@ export default {
 			} finally {
 				this.submitting = false
 			}
+		},
+
+		/**
+		 * When the resident comes back from the payment page, show their
+		 * reference and what the payment record says, not what the address says.
+		 *
+		 * @return {Promise<void>} Resolves when shown or when there is nothing to show.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t05
+		 */
+		async showReturnedPayment() {
+			const reference = returnedReference(
+				typeof window === 'undefined' ? '' : window.location.search,
+			)
+			if (this.state !== 'form' || reference === '' || !this.render.fee) {
+				return
+			}
+			const status = await lookUpStatus(
+				authBaseFrom(resolveApiBase()),
+				reference,
+				this.portal,
+			)
+			if (!status || !status.reference) {
+				return
+			}
+			this.reference = status.reference
+			this.payment = status.payment || null
+			this.state = 'done'
+		},
+
+		/**
+		 * Take the resident to the payment page. The browser sends no amount.
+		 * The top window navigates, because a payment page in an iframe is
+		 * refused by most providers.
+		 *
+		 * @return {Promise<void>} Resolves when navigating or when it failed.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t06
+		 */
+		async pay() {
+			this.payFailed = false
+			this.paying = true
+			const result = await payIntake(
+				authBaseFrom(resolveApiBase()),
+				this.reference,
+				this.portal,
+				adoptSessionToken(),
+			)
+			this.paying = false
+			if (!result.ok) {
+				this.payFailed = true
+				return
+			}
+			window.top.location.assign(result.checkoutUrl)
 		},
 
 		/**

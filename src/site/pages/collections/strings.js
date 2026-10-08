@@ -12,6 +12,20 @@
 
 export default {
 	nl: {
+		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
+			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}, dan nemen wij uiterlijk {legal} een besluit.',
+		'We still need documents from you. Send them before {due}.':
+			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}.',
+		'We still need documents from you.':
+			'Wij hebben nog stukken van u nodig.',
+		'Your tasks could not be loaded.':
+			'Uw taken konden niet worden geladen.',
+		'Expected decision':
+			'Verwacht besluit',
+		'Ready by':
+			'Uiterlijk klaar op',
+		'Next step: {step}':
+			'Volgende stap: {step}',
 		'See all {label}': 'Bekijk alle {label}',
 		'Loading…': 'Laden…',
 		Other: 'Overig',
@@ -57,6 +71,20 @@ export default {
 			'Open een naam om alles daarover te zien.',
 	},
 	en: {
+		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
+			'We still need documents from you. Send them before {due}, and we will decide by {legal}.',
+		'We still need documents from you. Send them before {due}.':
+			'We still need documents from you. Send them before {due}.',
+		'We still need documents from you.':
+			'We still need documents from you.',
+		'Your tasks could not be loaded.':
+			'Your tasks could not be loaded.',
+		'Expected decision':
+			'Expected decision',
+		'Ready by':
+			'Ready by',
+		'Next step: {step}':
+			'Next step: {step}',
 		'See all {label}': 'See all {label}',
 		'Loading…': 'Loading…',
 		Other: 'Other',

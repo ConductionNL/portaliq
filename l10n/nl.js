@@ -2521,7 +2521,21 @@ OC.L10N.register(
         "The outcome the rule engine gave for each decided step, by step id, asked again when the form was sent.": "De uitkomst die de regelmotor gaf per beslissende stap, op stap-id, opnieuw gevraagd bij het versturen van het formulier.",
         "Add at least %s.": "Voeg minstens %s toe.",
         "You can add at most %s.": "U kunt hoogstens %s toevoegen.",
-        "This answer must be a list.": "Dit antwoord moet een lijst zijn."
+        "This answer must be a list.": "Dit antwoord moet een lijst zijn.",
+        "A short line the payment page shows.": "Een korte regel die de betaalpagina toont.",
+        "Amount": "Bedrag",
+        "Currency": "Valuta",
+        "Fee": "Tarief",
+        "Pay action": "Betaalactie",
+        "Payment hosts": "Betaalhosts",
+        "Payment intent": "Betaalopdracht",
+        "The fee as a decimal with a point, such as 45.00.": "Het tarief als decimaal getal met een punt, zoals 45.00.",
+        "The host names a resident may be sent to for paying, such as www.mollie.com. Only https addresses on these hosts are followed. Empty means no payment page is followed.": "De hostnamen waar een inwoner heen mag voor het betalen, zoals www.mollie.com. Alleen https-adressen op deze hosts worden gevolgd. Leeg betekent dat geen betaalpagina wordt gevolgd.",
+        "The id of the endpoint action in the case app's contribution that creates the payment and answers with the checkout address.": "Het id van de eindpuntactie in de bijdrage van de zaakapp die de betaling aanmaakt en antwoordt met het adres van de betaalpagina.",
+        "The id of the payment the case app created for this request. The payment state is read from this record, never from the address the resident returns on.": "Het id van de betaling die de zaakapp voor dit verzoek aanmaakte. De betaalstatus wordt uit dit record gelezen, nooit uit het adres waarmee de inwoner terugkomt.",
+        "The three-letter currency code, such as EUR.": "De valutacode van drie letters, zoals EUR.",
+        "What a request of this type costs and which action of the case app takes the payment. The portal holds no price: it shows this amount and forwards it, and ignores any amount the browser sends. Absent means the request is free.": "Wat een verzoek van dit type kost en welke actie van de zaakapp de betaling afhandelt. Het portaal heeft geen prijs: het toont dit bedrag en stuurt het door, en negeert elk bedrag dat de browser meestuurt. Zonder dit veld is het verzoek gratis.",
+        "What the fee is for": "Waar het tarief voor is"
     },
     "nplurals=2; plural=(n != 1);"
 )

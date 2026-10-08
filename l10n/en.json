@@ -2469,7 +2469,21 @@
         "The outcome the rule engine gave for each decided step, by step id, asked again when the form was sent.": "The outcome the rule engine gave for each decided step, by step id, asked again when the form was sent.",
         "Add at least %s.": "Add at least %s.",
         "You can add at most %s.": "You can add at most %s.",
-        "This answer must be a list.": "This answer must be a list."
+        "This answer must be a list.": "This answer must be a list.",
+        "A short line the payment page shows.": "A short line the payment page shows.",
+        "Amount": "Amount",
+        "Currency": "Currency",
+        "Fee": "Fee",
+        "Pay action": "Pay action",
+        "Payment hosts": "Payment hosts",
+        "Payment intent": "Payment intent",
+        "The fee as a decimal with a point, such as 45.00.": "The fee as a decimal with a point, such as 45.00.",
+        "The host names a resident may be sent to for paying, such as www.mollie.com. Only https addresses on these hosts are followed. Empty means no payment page is followed.": "The host names a resident may be sent to for paying, such as www.mollie.com. Only https addresses on these hosts are followed. Empty means no payment page is followed.",
+        "The id of the endpoint action in the case app's contribution that creates the payment and answers with the checkout address.": "The id of the endpoint action in the case app's contribution that creates the payment and answers with the checkout address.",
+        "The id of the payment the case app created for this request. The payment state is read from this record, never from the address the resident returns on.": "The id of the payment the case app created for this request. The payment state is read from this record, never from the address the resident returns on.",
+        "The three-letter currency code, such as EUR.": "The three-letter currency code, such as EUR.",
+        "What a request of this type costs and which action of the case app takes the payment. The portal holds no price: it shows this amount and forwards it, and ignores any amount the browser sends. Absent means the request is free.": "What a request of this type costs and which action of the case app takes the payment. The portal holds no price: it shows this amount and forwards it, and ignores any amount the browser sends. Absent means the request is free.",
+        "What the fee is for": "What the fee is for"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

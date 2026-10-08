@@ -39,7 +39,12 @@ use OCA\Portaliq\Service\Intake\FormStatements;
 use OCA\Portaliq\Service\Intake\PortalAddressLookup;
 use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
+use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Intake\PortalFamilyMembers;
+use OCA\Portaliq\Service\Intake\PortalFee;
+use OCA\Portaliq\Service\Intake\PortalPaymentIntents;
+use OCA\Portaliq\Service\PortalActionForwarder;
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormCalculator;
 use OCA\Portaliq\Service\Intake\PortalFormDecision;
@@ -86,6 +91,11 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param FormConfirmationMailer|null $confirmationMail Mails the resident the reference and a summary.
 	 * @param PortalFormCalculator|null $calculator Works out the form's calculated fields again on submit.
 	 * @param PortalFormDecision|null $decision Asks the rule engine for the decisions a form's steps declare.
+	 * @param PortalFee|null $fees Checks a fee and the address a resident may be sent to pay at.
+	 * @param PortalPaymentIntents|null $intents Reads the state of a payment.
+	 * @param PortalContributionRegistry|null $registry Finds the case app's pay action in the subject's own manifest.
+	 * @param PortalActionForwarder|null $forwarder Forwards the pay action with a server-built body.
+	 * @param PortalDeepLinkBuilder|null $deepLinks Builds the address the resident returns to.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -103,6 +113,11 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly ?FormConfirmationMailer $confirmationMail = null,
 		private readonly ?PortalFormCalculator $calculator = null,
 		private readonly ?PortalFormDecision $decision = null,
+		private readonly ?PortalFee $fees = null,
+		private readonly ?PortalPaymentIntents $intents = null,
+		private readonly ?PortalContributionRegistry $registry = null,
+		private readonly ?PortalActionForwarder $forwarder = null,
+		private readonly ?PortalDeepLinkBuilder $deepLinks = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -640,8 +655,160 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		// The payment state is read from the payment record the portal stored
+		// the id of, never from the address the resident returned on.
+		$payment = $this->paymentOf(reference: $reference, portal: (string)($site['slug'] ?? ''));
+		if ($payment !== null) {
+			$status['payment'] = $payment;
+		}
+
 		return new JSONResponse($status);
 	}//end status()
+
+	/**
+	 * Take the payment for a submission: forward the case app's pay action
+	 * with an amount the portal built, and answer the checkout address.
+	 *
+	 * Order of refusals: 401 without a session, 404 unless the submission is
+	 * the subject's own, 409 when the case type declares no fee or the
+	 * request is paid, 403 when the declared pay action is not in the
+	 * subject's own manifest, 502 for an answer without a usable checkout on
+	 * a declared host. Nothing is forwarded on the first four.
+	 *
+	 * @param string $reference The submission's reference.
+	 * @param string $portal    The portal's slug.
+	 *
+	 * @return JSONResponse `{checkoutUrl}` or the refusal.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function pay(string $reference, string $portal = ''): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$site = $this->site(portal: $portal);
+		if ($site === null || $this->fees === null || $this->forwarder === null || $this->registry === null) {
+			return new JSONResponse(['error' => 'payment_unavailable'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		$slug       = (string)($site['slug'] ?? '');
+		$submission = $this->queue->find(reference: $reference, portal: $slug);
+		$owner = (string)($submission['subjectRef'] ?? '');
+		if ($submission === null || $owner === '' || $owner !== (string)($subject['subjectRef'] ?? '')) {
+			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$binding = $this->bindings->bindingFor(portal: $slug, route: (string)($submission['route'] ?? ''));
+		$fee     = null;
+		if ($binding !== null) {
+			$fee = $this->fees->forBinding(binding: $binding);
+		}
+
+		$paid = (($this->paymentOf(reference: $reference, portal: $slug)['state'] ?? '') === 'paid');
+		if ($fee === null || $paid === true) {
+			return new JSONResponse(['error' => 'nothing_to_pay'], Http::STATUS_CONFLICT);
+		}
+
+		$action = $this->payAction(subject: $subject, actionId: $fee['payAction']);
+		if ($action === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$response = $this->forwarder->forward(
+			action: $action,
+			subject: $subject,
+			whitelisted: [
+				'reference' => $reference,
+				'amount' => $fee['amount'],
+				'currency' => $fee['currency'],
+				'description' => $fee['description'],
+				'returnUrl' => $this->returnUrl(slug: $slug, route: (string)($submission['route'] ?? ''), reference: $reference),
+			]
+		);
+		if ($response === null || $response->getStatusCode() < 200 || $response->getStatusCode() > 299) {
+			return new JSONResponse(['error' => 'payment_unavailable'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		$answer   = $this->forwarder->decodeBody($response);
+		$checkout = ($answer['checkoutUrl'] ?? null);
+		$intentId = trim((string)($answer['paymentIntentId'] ?? ''));
+		if ($intentId === '' || $this->fees->checkoutAllowed(url: $checkout, hosts: (array)($site['paymentHosts'] ?? [])) === false) {
+			return new JSONResponse(['error' => 'payment_unavailable'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		$this->queue->markPaymentIntent(submission: $submission, paymentIntentId: $intentId);
+
+		return new JSONResponse(['checkoutUrl' => $checkout]);
+	}//end pay()
+
+	/**
+	 * The payment state of a submission, or null when none was started.
+	 *
+	 * @param string $reference The submission's reference.
+	 * @param string $portal    The portal's slug.
+	 *
+	 * @return array{state: string}|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t05
+	 */
+	private function paymentOf(string $reference, string $portal): ?array {
+		$submission = $this->queue->find(reference: $reference, portal: $portal);
+		$intentId   = trim((string)($submission['paymentIntentId'] ?? ''));
+		if ($intentId === '' || $this->intents === null || $this->fees === null) {
+			return null;
+		}
+
+		$status = $this->intents->status(id: $intentId);
+		if ($status === null) {
+			return ['state' => 'unknown'];
+		}
+
+		return ['state' => $this->fees->stateOf(status: $status)];
+	}//end paymentOf()
+
+	/**
+	 * The case app's pay action in the subject's own manifest, or null.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $actionId The `payAction` the case type declares.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function payAction(array $subject, string $actionId): ?array {
+		$aggregate = $this->registry?->aggregateFor($subject);
+		foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
+			foreach ((array)($contribution['actions'] ?? []) as $action) {
+				if (is_array($action) === true && ($action['id'] ?? '') === $actionId && $this->forwarder?->isForwardable($action) === true) {
+					return $action;
+				}
+			}
+		}
+
+		return null;
+	}//end payAction()
+
+	/**
+	 * The page the resident comes back to from the payment page.
+	 *
+	 * @param string $slug      The portal.
+	 * @param string $route     The form's route.
+	 * @param string $reference The submission's reference.
+	 *
+	 * @return string
+	 */
+	private function returnUrl(string $slug, string $route, string $reference): string {
+		$base = '';
+		if ($this->deepLinks !== null) {
+			$base = $this->deepLinks->forSite(portalSlug: $slug);
+		}
+
+		return $base . '&route=' . rawurlencode('/' . ltrim($route, '/')) . '&reference=' . rawurlencode($reference);
+	}//end returnUrl()
 
 	/**
 	 * Why this form accepts no submission from this visitor, or null.
@@ -685,11 +852,11 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		if ($subject === null) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null)], Http::STATUS_UNAUTHORIZED);
 		}
 
 		if (PortalSessionService::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required], Http::STATUS_FORBIDDEN);
+			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null)], Http::STATUS_FORBIDDEN);
 		}
 
 		return null;

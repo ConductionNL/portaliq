@@ -513,3 +513,30 @@ export async function decideStep(base, route, step, answers, portal, token, fetc
 		nextStep: String(parsed.nextStep || ''),
 	}
 }
+
+/**
+ * Ask the portal for the checkout of a submitted request's fee. The amount is
+ * the case type's: nothing but the reference is sent.
+ *
+ * @param {string} base The portal API base.
+ * @param {string} reference The submission's reference.
+ * @param {string} portal The portal slug, or ''.
+ * @param {string} token The portal bearer.
+ * @param {Function} [fetchImpl] The fetch, for a test.
+ * @return {Promise<{ok: boolean, checkoutUrl: string, status: number}>} The checkout, or why not.
+ * @spec openspec/changes/intake-pay-on-submit/tasks.md#t06
+ */
+export async function payIntake(base, reference, portal, token, fetchImpl) {
+	try {
+		const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/pay'), {
+			method: 'POST',
+			headers: headersFor(token, true),
+			body: JSON.stringify(portal ? { reference, portal } : { reference }),
+		})
+		const body = await response.json().catch(() => ({}))
+		const url = typeof body?.checkoutUrl === 'string' ? body.checkoutUrl : ''
+		return { ok: response.ok && url !== '', checkoutUrl: url, status: response.status }
+	} catch {
+		return { ok: false, checkoutUrl: '', status: 0 }
+	}
+}

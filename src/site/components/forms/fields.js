@@ -192,6 +192,14 @@ export const DUTCH = Object.freeze({
 	decisionDown: 'Er is een storing bij een koppeling. Uw antwoorden zijn bewaard.',
 	retry: 'Opnieuw proberen',
 	notCalculated: 'Nog niet te berekenen',
+	feeLine: 'Deze aanvraag kost {amount}.',
+	payNow: 'Betaal {amount} nu',
+	paid: 'Betaald',
+	unpaid: 'Nog niet betaald',
+	paymentFailed: 'De betaling is mislukt',
+	paymentUnknown: 'Wij kunnen de betaling nu nog niet tonen',
+	payUnavailable: 'U kunt nu niet betalen. Probeer het later opnieuw.',
+	signInFee: 'Log in om deze aanvraag in te dienen. Er hoort een bedrag van {amount} bij.',
 })
 
 /**

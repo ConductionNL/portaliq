@@ -76,6 +76,7 @@ test('a portal without a contact page shows no contact link and no report senten
 test('site: the page renders the code, the heading, the links and the search box', async () => {
 	const html = await renderSfc(PAGE, {
 		path: '/parkeren-vergunning',
+		locale: 'en',
 		site: { accountLabel: 'Mijn Zuiddrecht' },
 		initialPages: PAGES,
 		searchEnabled: true,

@@ -303,6 +303,38 @@ class PortalIntakeQueue {
 	}//end byReference()
 
 	/**
+	 * A submission by its reference, as the portal stored it.
+	 *
+	 * @param string $reference The reference.
+	 * @param string $portal    The portal, re-checked against the row.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function find(string $reference, string $portal): ?array {
+		return $this->byReference(reference: $reference, portal: $portal);
+	}//end find()
+
+	/**
+	 * Keep the payment intent the case app created for a submission.
+	 *
+	 * @param array<string, mixed> $submission     The submission row.
+	 * @param string               $paymentIntentId The payment intent id.
+	 *
+	 * @return bool True when it was written.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function markPaymentIntent(array $submission, string $paymentIntentId): bool {
+		if ($paymentIntentId === '') {
+			return false;
+		}
+
+		return $this->write(submission: $submission, data: ['paymentIntentId' => $paymentIntentId]);
+	}//end markPaymentIntent()
+
+	/**
 	 * Record whether the confirmation mail went out.
 	 *
 	 * A failed mail is shown on the submissions page under Bevestiging

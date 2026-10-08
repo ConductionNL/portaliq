@@ -20,13 +20,13 @@
 		data-portaliq-status="404"
 		:data-portaliq-path="path">
 		<p class="utrecht-paragraph pq-not-found__code" data-testid="not-found-code">
-			{{ t('Error code 404') }}
+			{{ tr('Error code 404') }}
 		</p>
 		<h2 class="utrecht-heading-2">
 			{{ t('Page not found') }}
 		</h2>
 		<p class="utrecht-paragraph">
-			{{ t('This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.') }}
+			{{ tr('This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.') }}
 		</p>
 
 		<form
@@ -36,7 +36,7 @@
 			data-testid="not-found-search"
 			@submit.prevent="onSearch">
 			<label class="utrecht-form-label" for="pq-not-found-term">{{
-				t('Search for what you need')
+				tr('Search for what you need')
 			}}</label>
 			<input
 				id="pq-not-found-term"
@@ -53,7 +53,7 @@
 		</form>
 
 		<p class="utrecht-paragraph">
-			{{ t('Or go on to') }}
+			{{ tr('Or go on to') }}
 		</p>
 		<ul class="pq-not-found__links" data-testid="not-found-links">
 			<li v-for="link in view.links" :key="link.kind">
@@ -77,11 +77,27 @@
 import { fetchPages } from '../lib/contentApi.js'
 import { contactRouteOf } from '../lib/notFound.js'
 import { notFoundView } from '../lib/notFoundView.js'
+import { pageLocale } from '../pages/inbox/translate.js'
 
 import '@utrecht/button-css/dist/index.css'
 import '@utrecht/form-label-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 import '@utrecht/textbox-css/dist/index.css'
+
+const WORDS = {
+	nl: {
+		'Error code 404': 'Foutcode 404',
+		'This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.':
+			'Deze pagina bestaat niet (meer). Misschien is het adres verkeerd getypt, of hebben wij de pagina verplaatst.',
+		'Search for what you need': 'Zoek wat u nodig hebt',
+		'Or go on to': 'Of ga verder naar',
+		'The homepage': 'De homepage',
+		Contact: 'Contact',
+		'Did you get here through a link on our website? Let us know through Contact, and we will repair the link.':
+			'Kwam u hier via een link op onze website? Laat het ons weten via Contact, dan herstellen wij de link.',
+	},
+	en: {},
+}
 
 /**
  * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
@@ -118,6 +134,18 @@ export default {
 
 	computed: {
 		/**
+		 * The page's own words, with the shell's translator for the rest. They
+		 * live here, not in the shared catalogue, which the first-load entry carries.
+		 *
+		 * @return {(key: string) => string} The translator.
+		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+		 */
+		tr() {
+			const own = WORDS[pageLocale(this.locale)] || {}
+			return (key) => own[key] ?? this.t(key)
+		},
+
+		/**
 		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
 		 */
 		view() {
@@ -127,7 +155,7 @@ export default {
 				hasResidentArea: String(this.site.accountLabel || '') !== '' || this.hasWaysIn,
 				residentLabel: String(this.site.accountLabel || ''),
 				searchEnabled: this.searchEnabled,
-				t: this.t,
+				t: this.tr,
 			})
 		},
 	},

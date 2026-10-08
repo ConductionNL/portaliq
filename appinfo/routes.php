@@ -350,6 +350,8 @@ return [
         ['name' => 'portalIntake#catalogue', 'url' => '/portal/api/intake/catalogue', 'verb' => 'GET'],
         // Street and town for a postcode and house number (data-lookups-and-checks-in-forms).
         ['name' => 'portalIntake#address', 'url' => '/portal/api/intake/address', 'verb' => 'GET'],
+        // Pay the fee of a submitted request (intake-pay-on-submit).
+        ['name' => 'portalIntake#pay', 'url' => '/portal/api/intake/pay', 'verb' => 'POST'],
         ['name' => 'portalIntake#family', 'url' => '/portal/api/intake/family', 'verb' => 'GET'],
         ['name' => 'portalIntake#form', 'url' => '/portal/api/intake/form', 'verb' => 'GET'],
         ['name' => 'portalIntake#submit', 'url' => '/portal/api/intake/submit', 'verb' => 'POST'],
