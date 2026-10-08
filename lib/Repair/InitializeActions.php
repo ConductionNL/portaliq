@@ -83,6 +83,12 @@ class InitializeActions implements IRepairStep {
 		$matrix = $this->actionAuth->getMatrix();
 		$added  = [];
 		foreach ($seed as $action => $groups) {
+			// Two shapes: the old bare group list, and the catalogue entry
+			// `{groups, label, description}` (REQ-ORA-003).
+			if (is_array($groups) === true && array_key_exists('groups', $groups) === true) {
+				$groups = $groups['groups'];
+			}
+
 			if (is_string($action) === false || is_array($groups) === false || array_key_exists($action, $matrix) === true) {
 				continue;
 			}

@@ -19,6 +19,9 @@ return [
         // to be declared locally — without it PUT /api/settings answers 405.
         ['name' => 'settings#update', 'url' => '/api/settings', 'verb' => 'PUT'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
+        // Which groups may do which action (operate-roles-for-content-and-actions). Admin-only.
+        ['name' => 'actionSettings#index', 'url' => '/api/settings/actions', 'verb' => 'GET'],
+        ['name' => 'actionSettings#update', 'url' => '/api/settings/actions', 'verb' => 'PUT'],
 
         // Generic per-user preferences (used by shared nextcloud-vue widgets, e.g. CnSupportDialog).
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
