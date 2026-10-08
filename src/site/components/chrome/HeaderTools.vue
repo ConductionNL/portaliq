@@ -204,7 +204,7 @@ export default {
 		 * @param {KeyboardEvent} event The key event.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
 		 */
 		onSuggestKey(event) {
 			const list = this.$refs.suggestions
@@ -219,7 +219,7 @@ export default {
 		 * @param {{id: string, kind: string}} item The suggestion.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
 		 */
 		openSuggestion(item) {
 			this.$emit('navigate', suggestionRoute(item))

@@ -86,7 +86,7 @@ export default {
 		 * Whether the value is personal data the browser must not translate.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/personal-data-left-untranslated/specs/portaliq-cms/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
+		 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
 		 */
 		untranslated() {
 			return (

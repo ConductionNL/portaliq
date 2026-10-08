@@ -15,6 +15,8 @@
  *
  * @param {{actions?: Array<object>, availableGroups?: Array<object>}} data The server's answer.
  * @return {{rows: Array<object>, groupOptions: Array<object>}} The rows and the options.
+ *
+ * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-an-administrator-grants-an-action-to-a-group-on-screen-req-ora-001
  */
 export function grantRows(data) {
 	const groupOptions = Array.isArray(data?.availableGroups)
@@ -38,6 +40,8 @@ export function grantRows(data) {
  *
  * @param {Array<{action: string, groups: Array<{id: string}>}>} rows The rows.
  * @return {{grants: Record<string, string[]>}} The body.
+ *
+ * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-an-administrator-grants-an-action-to-a-group-on-screen-req-ora-001
  */
 export function grantsBody(rows) {
 	const grants = {}
@@ -54,6 +58,8 @@ export function grantsBody(rows) {
  * @param {{get: Function}} http The http client (axios).
  * @param {string} url The route.
  * @return {Promise<{rows: Array<object>, groupOptions: Array<object>}>} The rows.
+ *
+ * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-an-administrator-grants-an-action-to-a-group-on-screen-req-ora-001
  */
 export async function loadGrants(http, url) {
 	const { data } = await http.get(url)
@@ -67,6 +73,8 @@ export async function loadGrants(http, url) {
  * @param {string} url The route.
  * @param {Array<object>} rows The rows.
  * @return {Promise<{rows: Array<object>, groupOptions: Array<object>}>} The rows as stored.
+ *
+ * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-an-administrator-grants-an-action-to-a-group-on-screen-req-ora-001
  */
 export async function saveGrants(http, url, rows) {
 	const { data } = await http.put(url, grantsBody(rows))

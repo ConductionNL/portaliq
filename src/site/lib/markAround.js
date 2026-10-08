@@ -5,7 +5,7 @@
 // wrapped in NoTranslate and the words around it can not. Imports nothing, so
 // node tests it.
 //
-// @spec openspec/changes/personal-data-left-untranslated/specs/portaliq-cms/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
+// @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
 
 /**
  * The text before and after the first occurrence of a value.

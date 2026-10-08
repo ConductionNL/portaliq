@@ -279,7 +279,7 @@ export default {
 		 *
 		 * @return {{before: string, value: string, after: string}|null}
 		 *
-		 * @spec openspec/changes/personal-data-left-untranslated/specs/portaliq-cms/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
+		 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
 		 */
 		sessionParts() {
 			const name = String(

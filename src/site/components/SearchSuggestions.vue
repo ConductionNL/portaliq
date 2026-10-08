@@ -62,8 +62,8 @@ import {
  * Publication title suggestions under a search input, from the federation
  * endpoint the search already uses. Every string is a prop.
  *
- * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
- * @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+ * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+ * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
  */
 export default {
 	name: 'SearchSuggestions',
@@ -101,6 +101,8 @@ export default {
 	computed: {
 		/**
 		 * @return {boolean} Whether the list shows.
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
 		 */
 		open() {
 			return this.suggestions.length > 0 && !this.closed
@@ -108,20 +110,41 @@ export default {
 	},
 
 	watch: {
+		/**
+		 * The typed text changed: ask again.
+		 *
+		 * @param {string} value The text.
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
 		query(value) {
 			this.closed = false
 			this.suggester.input(value)
 		},
 
+		/**
+		 * Tell the host the list opened or closed.
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 */
 		open() {
 			this.publish()
 		},
 
+		/**
+		 * Tell the host which row is active.
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 */
 		active() {
 			this.publish()
 		},
 	},
 
+	/**
+	 * Build the suggester that asks the federation endpoint.
+	 *
+	 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+	 */
 	created() {
 		this.suggester = createSuggester({
 			endpoint: this.endpoint,
@@ -145,20 +168,38 @@ export default {
 		/**
 		 * @param {number} index The row.
 		 * @return {string} The option's id.
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
 		 */
 		optionId(index) {
 			return `${this.listId}-${index}`
 		},
 
+		/**
+		 * @param {{title: string}} item The suggestion.
+		 * @return {{typed: string, rest: string}} The title split at the typed text.
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
 		part(item) {
 			return typedPart(item.title, this.query)
 		},
 
+		/**
+		 * @param {string} kind The result kind.
+		 * @return {string} The tag text.
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
 		kindName(kind) {
 			return this.kindLabels[kind] || this.kindLabels.publication
 		},
 
-		/** Tell the host what to put on the input. */
+		/**
+		 * Tell the host what to put on the input.
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 */
 		publish() {
 			this.$emit('state', {
 				expanded: this.open,
@@ -168,6 +209,12 @@ export default {
 			})
 		},
 
+		/**
+		 * Open a suggestion and close the list.
+		 *
+		 * @param {{id: string, kind: string}} item The suggestion.
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
 		choose(item) {
 			this.closed = true
 			this.$emit('choose', item)
@@ -180,6 +227,8 @@ export default {
 		 *
 		 * @param {KeyboardEvent} event The key event.
 		 * @return {boolean} True when handled.
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
 		 */
 		onKey(event) {
 			if (event.key === 'Escape' || event.key === 'Tab') {

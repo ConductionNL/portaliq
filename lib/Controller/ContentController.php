@@ -589,7 +589,7 @@ class ContentController extends Controller {
 	 *
 	 * @return string The absolute address, or ''.
 	 *
-	 * @spec openspec/changes/password-reset-from-the-sign-in-page/specs/portaliq-cms/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-password-reset-req-pwr-001
+	 * @spec openspec/changes/password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-password-reset-req-pwr-001
 	 */
 	private function lostPasswordUrl(array $portal): string {
 		$modes = ($portal['authentication']['modes'] ?? []);

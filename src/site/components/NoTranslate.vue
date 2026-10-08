@@ -19,7 +19,7 @@
 /**
  * Marks a value `translate="no"`. Give the value as the `value` prop or as the slot.
  *
- * @spec openspec/changes/personal-data-left-untranslated/specs/portaliq-cms/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
+ * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
  */
 export default {
 	name: 'NoTranslate',

@@ -10,7 +10,7 @@
 // question goes to the federation endpoint the search block already uses, so
 // the suggestions honour the same publication visibility as the search.
 //
-// @spec openspec/changes/search-suggestions-while-typing/specs/portaliq-cms/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+// @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
 
 import { resultKind } from './federatedSearch.js'
 
