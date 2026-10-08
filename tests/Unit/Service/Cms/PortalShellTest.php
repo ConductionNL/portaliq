@@ -90,6 +90,22 @@ class PortalShellTest extends TestCase {
 		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: [])['myCases']);
 	}//end testTheProjectionServesTheMenuGroupsAndTheCasesDisplay()
 
+	/**
+	 * The items a portal leaves out of the menu reach the site by name, well
+	 * formed only and never `overview` (resident-menu-leave-out).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
+	 */
+	public function testTheProjectionServesTheItemsLeftOut(): void {
+		$projected = (new PortalShell())->project(portal: [
+			'residentMenu' => ['leaveOut' => ['cases', 'tasks', 'access', 'tasks', 'overview', 'bad name', 7]],
+		]);
+		$this->assertSame(expected: ['leaveOut' => ['cases', 'tasks', 'access']], actual: $projected['residentMenu']);
+		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: ['residentMenu' => ['leaveOut' => 'cases']])['residentMenu']);
+	}//end testTheProjectionServesTheItemsLeftOut()
+
 	public function testTheFooterServesItsButtonAndContactColumnOnNamedKeys(): void {
 		$footer = (new PortalShell())->footer(portal: ['footer' => [
 			'cta'     => ['label' => 'Contact en schooltijden', 'href' => '/contact', 'style' => 'x'],

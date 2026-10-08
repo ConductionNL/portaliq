@@ -83,10 +83,11 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, mixed> `{cardLabel?, groups?}`.
+	 * @return array<string, mixed> `{cardLabel?, groups?, leaveOut?}`.
 	 *
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+	 * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
 	 */
 	private function residentMenu(array $portal): array {
 		$menu = $portal['residentMenu'] ?? [];
@@ -123,6 +124,24 @@ class PortalShell {
 
 		if ($groups !== []) {
 			$out['groups'] = $groups;
+		}
+
+		// Items the portal leaves out of the menu (resident-menu-leave-out),
+		// by name, at most 20; `overview` always stays.
+		$leaveOut = [];
+		$declared = ($menu['leaveOut'] ?? []);
+		if (is_array($declared) === false) {
+			$declared = [];
+		}
+
+		foreach (array_slice($declared, 0, 20) as $item) {
+			if (is_string($item) === true && $item !== 'overview' && preg_match('/^[a-z0-9][a-z0-9:_-]{0,79}$/i', $item) === 1) {
+				$leaveOut[] = $item;
+			}
+		}
+
+		if ($leaveOut !== []) {
+			$out['leaveOut'] = array_values(array_unique($leaveOut));
 		}
 
 		return $out;

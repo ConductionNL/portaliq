@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.69.0"
+        "version": "0.70.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.69.0",
+                "version": "0.70.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2448,7 +2448,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.12.0",
+                "version": "0.13.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3056,6 +3056,19 @@
                                             "inbox"
                                         ]
                                     }
+                                ]
+                            },
+                            "leaveOut": {
+                                "title": "Left out of the menu",
+                                "type": "array",
+                                "description": "Items of the own area this portal leaves out of the menu by name, such as cases, tasks or access, when its design has no place for them. The pages stay reachable by their address. Empty leaves nothing out.",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "cases",
+                                    "tasks",
+                                    "access"
                                 ]
                             }
                         }

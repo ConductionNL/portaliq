@@ -2285,6 +2285,8 @@ OC.L10N.register(
         "The heading over this group of the menu, such as Zaken en taken.": "De kop boven deze groep van het menu, zoals Zaken en taken.",
         "Group items": "Onderdelen van de groep",
         "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.": "De onderdelen in deze groep, op volgorde, elk op naam: een sectie van de eigen omgeving of een bijgedragen pagina als app:page.",
+        "Left out of the menu": "Weggelaten uit het menu",
+        "Items of the own area this portal leaves out of the menu by name, such as cases, tasks or access, when its design has no place for them. The pages stay reachable by their address. Empty leaves nothing out.": "Onderdelen van de eigen omgeving die dit portaal op naam weglaat uit het menu, zoals cases, tasks of access, als het ontwerp er geen plek voor heeft. De pagina's blijven bereikbaar via hun adres. Leeg laat niets weg.",
         "On a collection block: cards, dated rows, bars or mark chips instead of a table; on tasks the highlight card; on kpi one segmented bar; on calendar date tiles (site-school-blocks) or one day as a timetable (calendar-timetable-display).": "Op een lijstblok: kaarten, rijen met datum, balken of cijferlabels in plaats van een tabel; bij taken de uitgelichte kaart; bij kerncijfers één verdeelde balk; bij de kalender datumtegels (site-school-blocks) of één dag als rooster (calendar-timetable-display).",
         "On a timetable: the small label over the first item of the day.": "Op een rooster: het kleine label boven het eerste onderdeel van de dag.",
         "firstLabel": "firstLabel",
