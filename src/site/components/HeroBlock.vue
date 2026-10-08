@@ -192,6 +192,8 @@ export default {
 		 * that marks where a photo goes (hero-aside).
 		 */
 		asideImage: { type: Object, default: null },
+		/** The portal, handed in by the host, for the block beside the text. */
+		portal: { type: String, default: '' },
 	},
 
 	emits: ['search', 'navigate'],
@@ -212,16 +214,21 @@ export default {
 		},
 
 		/**
-		 * The props of the block beside the text.
+		 * The props of the block beside the text, with the portal.
 		 *
 		 * @return {object} The props.
 		 * @spec openspec/changes/hero-aside/specs/portaliq-cms/spec.md#requirement-a-hero-may-hold-a-list-or-a-photo-beside-its-text
+		 * @spec openspec/changes/hero-on-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-hero-hands-its-portal-to-the-block-beside-it-and-draws-its-search-on-the-band
 		 */
 		asideProps() {
 			const props = this.aside?.props
-			return props && typeof props === 'object' && !Array.isArray(props)
-				? props
-				: {}
+			const own =
+				props && typeof props === 'object' && !Array.isArray(props)
+					? props
+					: {}
+			// The host's portal after the authored props, as the grid does
+			// for the same blocks (hero-on-the-school-boards).
+			return this.portal ? { ...own, portal: this.portal } : own
 		},
 
 		/**

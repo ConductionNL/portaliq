@@ -1451,10 +1451,20 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	margin-block-start: 24px;
 }
 
+/*
+ * The plain hero's form stands on the band itself (hero-on-the-school-boards):
+ * the vendored sheet paints every search box in its light blue, which drew a
+ * lilac strip behind Esdoornveen's label on a white hero. The label's weight
+ * is the set's: Zuiddrecht draws it regular, the schools semibold.
+ */
+.pq-site .ac-hero.pq-hero--plain .ac-search-box {
+	background: transparent;
+}
+
 .pq-site .ac-hero.pq-hero--plain .ac-search-box__label {
 	margin-block-end: 0.625rem;
-	font-size: 1.125rem;
-	font-weight: 400;
+	font-size: var(--nldesign-website-hero-search-label-font-size, 1.125rem);
+	font-weight: var(--nldesign-website-hero-search-label-font-weight, 400);
 	color: var(--nldesign-hero-body-color, inherit);
 }
 
