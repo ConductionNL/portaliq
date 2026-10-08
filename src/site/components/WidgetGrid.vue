@@ -335,6 +335,12 @@ export default {
 			default: false,
 		},
 
+		/** The portal's help details, offered as "Hulp nodig?" on a form. */
+		portalHelp: {
+			type: Object,
+			default: null,
+		},
+
 		/**
 		 * Whether the portal lets a search read inside public documents. Handed
 		 * to the search block AFTER its authored props, so a page cannot
@@ -540,7 +546,7 @@ export default {
 			// (fields/submitLabel/consentText, embedded at creation time —
 			// see LandingPageProvisioningService::buildBody()).
 			if (widget.widgetKey === 'form') {
-				return { ...props, portal: this.portal }
+				return { ...props, portal: this.portal, portalHelp: this.portalHelp }
 			}
 
 			// SAME RULE, FIFTH SUBJECT. The intake blocks ask this portal's

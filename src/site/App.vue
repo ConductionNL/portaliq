@@ -387,6 +387,12 @@
 								</h1>
 							</div>
 
+							<!-- The page's help text, closed under its heading
+							     (help-texts-and-form-help). -->
+							<div v-if="page.helpText" class="container">
+								<PageHelp :text="page.helpText" />
+							</div>
+
 							<!-- The page's hero image, from the portal's media library or
 					     an address (site-page-seo-history-and-media T08). The
 					     content API resolves media:<id> and carries the item's
@@ -623,6 +629,8 @@ const SharedDossierPage = defineAsyncComponent(
 
 // The guest page for a signed link (identity-guest-page-for-signed-links),
 // loaded only when the address carries one.
+import PageHelp from './components/PageHelp.vue'
+
 const GuestActionPage = defineAsyncComponent(
 	() => import('./pages/GuestActionPage.vue'),
 )
@@ -643,6 +651,7 @@ export default {
 	name: 'App',
 
 	components: {
+		PageHelp,
 		AccountArea,
 		ActingForSwitcher,
 		BranchSwitcher,
@@ -938,6 +947,8 @@ export default {
 				languages: this.languages,
 				// The portal's sign-in ways, for the nlSignIn block (lane L2, G-13).
 				signInRoutes: this.signInRoutes,
+				// The help details every form offers (help-texts-and-form-help).
+				portalHelp: this.site.help || null,
 			}
 		},
 

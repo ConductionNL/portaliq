@@ -10,6 +10,8 @@
 		:data-portaliq-form="formId || 'form'"
 		novalidate
 		@submit.prevent="submit">
+		<!-- "Hulp nodig?": the portal's help details, the form's own over them. -->
+		<FormHelp :portalHelp="portalHelp" :formHelp="formHelp" :title="title" />
 		<p v-if="!fields.length" class="utrecht-paragraph pq-form__empty">
 			{{ emptyLabel }}
 		</p>
@@ -125,6 +127,7 @@
 </template>
 
 <script>
+import FormHelp from './FormHelp.vue'
 import DateInputGroup from './forms/DateInputGroup.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
 import FieldShell from './forms/FieldShell.vue'
@@ -165,9 +168,27 @@ import {
 export default {
 	name: 'FormBlock',
 
-	components: { DateInputGroup, ErrorSummary, FieldShell },
+	components: { DateInputGroup, ErrorSummary, FieldShell, FormHelp },
 
 	props: {
+		/** The portal's help details; "Hulp nodig?" shows when there are any. */
+		portalHelp: {
+			type: Object,
+			default: null,
+		},
+
+		/** The form's own help details; each key overrides the portal's. */
+		formHelp: {
+			type: Object,
+			default: null,
+		},
+
+		/** The form's title, named in the help e-mail and the phone note. */
+		title: {
+			type: String,
+			default: '',
+		},
+
 		/** The bound form's own id. Not sent as a value (the anonymous action's server-stamped `defaults` are the source of truth for `formId`), but it names the form's create action (`?actionId=submit-{formId}`), and it is what the traffic client reports form analytics under, through `data-portaliq-form` (portal-traffic-outcomes). */
 		formId: {
 			type: String,

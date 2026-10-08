@@ -47,6 +47,17 @@
             "route": "/zoeken"
         },
         "accountLabel": "Mijn Zuiddrecht",
+        "help": {
+            "intro": "Komt u er niet uit? Wij helpen u graag.",
+            "phone": "14 020",
+            "phoneNote": "Noem dat u hulp nodig heeft bij {formulier}.",
+            "hours": "Maandag tot en met vrijdag, 9.00 tot 17.00 uur",
+            "desk": "Stadskantoor, Lindelaan 1. Maak eerst een afspraak, dan vullen wij het formulier samen met u in.",
+            "email": "info@zuiddrecht.example"
+        },
+        "sectionHelp": {
+            "tasks": "Hier staat wat de gemeente van u nodig heeft."
+        },
         "residentMenu": {
             "groups": [
                 {

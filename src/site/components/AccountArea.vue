@@ -124,6 +124,7 @@
 			<!-- `/mijn` itself: the resident's home, loaded on demand
 			     (site-mijn-omgeving-components REQ-SMO-007, design D4). -->
 			<template v-else-if="isHome">
+				<PageHelp :text="sectionHelpText" />
 				<component
 					:is="homeComponent"
 					v-if="homeComponent"
@@ -147,6 +148,7 @@
 					data-testid="site-account-title">
 					{{ entry.label }}
 				</h1>
+				<PageHelp :text="sectionHelpText" />
 				<p v-if="pageLoading" class="utrecht-paragraph" role="status">
 					{{ t('Loading…') }}
 				</p>
@@ -168,6 +170,7 @@
 <script>
 import { defineAsyncComponent, markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
+import PageHelp from './PageHelp.vue'
 import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
 import { ACTING_FOR_SELF } from '../../shared/myCases.js'
@@ -181,6 +184,7 @@ import {
 	recordIdOfRoute,
 	routeForNav,
 } from '../../shared/portalNav.js'
+import { sectionOf } from '../lib/help.js'
 import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
 import { actingFor } from './e/actingFor.js'
 
@@ -211,6 +215,7 @@ export default {
 	name: 'AccountArea',
 
 	components: {
+		PageHelp,
 		// Loaded only while the resident acts for someone else.
 		ActingForBar: defineAsyncComponent(() => import('./mijn/ActingForBar.vue')),
 		// Loaded only on a portal that writes its sign-in cards.
@@ -285,6 +290,18 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The help text of the part of Mijn omgeving on screen, or ''.
+		 *
+		 * @return {string} The text.
+		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+		 */
+		sectionHelpText() {
+			const section = sectionOf(this.entry, this.isHome)
+			const texts = (this.portal && this.portal.sectionHelp) || {}
+			return section && typeof texts[section] === 'string' ? texts[section] : ''
+		},
+
 		/**
 		 * The card at the top of the resident menu: whom the resident acts for,
 		 * when the session acts for an organisation and the portal names the

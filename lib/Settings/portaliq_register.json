@@ -2460,7 +2460,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.15.0",
+                "version": "0.16.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -4229,6 +4229,84 @@
                             }
                         }
                     },
+                    "help": {
+                        "title": "Help details",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The contact details of the help dialog on forms: introduction, phone with a note on what to say, opening hours, the desk and an e-mail address. A form may override each key. Empty shows no \"Hulp nodig?\".",
+                        "additionalProperties": false,
+                        "properties": {
+                            "intro": {
+                                "title": "Introduction",
+                                "type": "string",
+                                "description": "The sentence that opens the help dialog."
+                            },
+                            "image": {
+                                "title": "Image",
+                                "type": "string",
+                                "description": "A picture in the help dialog: a path in the site or an https address."
+                            },
+                            "phone": {
+                                "title": "Phone",
+                                "type": "string",
+                                "description": "The phone number of the desk."
+                            },
+                            "phoneNote": {
+                                "title": "What to say on the phone",
+                                "type": "string",
+                                "description": "What to tell the desk when calling. It may name the form with {formulier}."
+                            },
+                            "hours": {
+                                "title": "Opening hours",
+                                "type": "string",
+                                "description": "When the desk can be reached."
+                            },
+                            "desk": {
+                                "title": "Desk",
+                                "type": "string",
+                                "description": "Where to go in person, and what to do first."
+                            },
+                            "email": {
+                                "title": "E-mail",
+                                "type": "string",
+                                "description": "The address for \"Vraag per e-mail\"."
+                            }
+                        }
+                    },
+                    "sectionHelp": {
+                        "title": "Help per part of the area",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "A short help text for each part of Mijn omgeving, keyed by overview, cases, tasks, messages and contacts. A part with a text shows \"Hulp bij deze pagina\"; a part without shows nothing.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "overview": {
+                                "title": "Overview",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            },
+                            "cases": {
+                                "title": "Cases",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            },
+                            "tasks": {
+                                "title": "Tasks",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            },
+                            "messages": {
+                                "title": "Messages",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            },
+                            "contacts": {
+                                "title": "Contacts",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            }
+                        }
+                    },
                     "registeredDetails": {
                         "title": "My details forms",
                         "type": "object",
@@ -4413,7 +4491,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -4477,6 +4555,11 @@
                         "type": "string",
                         "description": "The address of an image shown by a hero widget, or media:<id> for an item of this portal's media library. Optional: a page without one renders as before.",
                         "example": "https://example.org/images/webinar-hero.jpg"
+                    },
+                    "helpText": {
+                        "title": "Help text",
+                        "type": "string",
+                        "description": "A short help text for this page. When set, the page shows \"Hulp bij deze pagina\" under its heading."
                     },
                     "seoTitle": {
                         "title": "Search title",
@@ -6189,7 +6272,7 @@
             "form": {
                 "slug": "form",
                 "icon": "FormSelect",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Form",
                 "authorization": {
                     "read": [
@@ -6308,6 +6391,50 @@
                                         "type": "string"
                                     }
                                 }
+                            }
+                        }
+                    },
+                    "help": {
+                        "title": "Form help details",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The help dialog of this form. Each key set here overrides the portal's help details for this form.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "intro": {
+                                "title": "Introduction",
+                                "type": "string",
+                                "description": "The sentence that opens the help dialog."
+                            },
+                            "image": {
+                                "title": "Image",
+                                "type": "string",
+                                "description": "A picture in the help dialog: a path in the site or an https address."
+                            },
+                            "phone": {
+                                "title": "Phone",
+                                "type": "string",
+                                "description": "The phone number of the desk."
+                            },
+                            "phoneNote": {
+                                "title": "What to say on the phone",
+                                "type": "string",
+                                "description": "What to tell the desk when calling. It may name the form with {formulier}."
+                            },
+                            "hours": {
+                                "title": "Opening hours",
+                                "type": "string",
+                                "description": "When the desk can be reached."
+                            },
+                            "desk": {
+                                "title": "Desk",
+                                "type": "string",
+                                "description": "Where to go in person, and what to do first."
+                            },
+                            "email": {
+                                "title": "E-mail",
+                                "type": "string",
+                                "description": "The address for \"Vraag per e-mail\"."
                             }
                         }
                     },

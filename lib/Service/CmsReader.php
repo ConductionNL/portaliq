@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Service\Cms\MediaReferences;
+use OCA\Portaliq\Service\Cms\PortalHelp;
 use OCA\Portaliq\Service\Cms\PortalShell;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -182,6 +183,7 @@ class CmsReader {
 				'title'   => (string)($row['title'] ?? ''),
 				'route'   => (string)($row['route'] ?? ''),
 				'summary' => (string)($row['summary'] ?? ''),
+			'helpText' => (new PortalHelp())->pageText(value: ($row['helpText'] ?? null)),
 				'locale'  => (string)($row['locale'] ?? ''),
 				'bodyType' => (string)($row['body']['type'] ?? ''),
 			];
