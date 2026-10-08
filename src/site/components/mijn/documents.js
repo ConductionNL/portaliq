@@ -139,3 +139,45 @@ export function fileLine(entry, tr, locale = 'nl') {
 		.join(', ')
 	return facts ? `${who}. ${facts}` : `${who}.`
 }
+
+/**
+ * The documents under one heading per distinct value of a row field, in the
+ * order the provider returned them. Rows without a value come first-seen too,
+ * under no heading.
+ *
+ * @param {Array<object>} entries The documents.
+ * @param {string} field The row field the block groups by; empty for one group.
+ * @return {Array<{heading: string, entries: Array<object>}>} The groups.
+ * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+ */
+export function groupDocuments(entries, field) {
+	const list = Array.isArray(entries) ? entries : []
+	if (!field || typeof field !== 'string') {
+		return list.length > 0 ? [{ heading: '', entries: list }] : []
+	}
+	const groups = []
+	const byHeading = new Map()
+	for (const entry of list) {
+		const raw = entry?.[field]
+		const heading = typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : ''
+		if (!byHeading.has(heading)) {
+			const group = { heading, entries: [] }
+			byHeading.set(heading, group)
+			groups.push(group)
+		}
+		byHeading.get(heading).entries.push(entry)
+	}
+	return groups
+}
+
+/**
+ * The badge state of a document's `status` pill.
+ *
+ * @param {object} entry The document.
+ * @return {string} success, warning, error or neutral.
+ * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+ */
+export function statusState(entry) {
+	const tone = String(entry?.statusTone || '').toLowerCase()
+	return ['success', 'warning', 'error'].includes(tone) ? tone : 'neutral'
+}

@@ -62,15 +62,37 @@
 			v-else-if="documents.length === 0"
 			:text="tr('There are no documents on this case yet.')" />
 		<template v-else>
-			<ul class="pq-documents-block__list">
-				<FileItem
-					v-for="entry in documents"
-					:key="entry.id"
-					:name="entry.title || entry.id"
-					:line="lineOf(entry)"
-					:busy="busyId === entry.id"
-					@open="openDocument(entry)" />
-			</ul>
+			<section
+				v-for="(group, g) in groups"
+				:key="`group-${g}`"
+				class="pq-documents-block__group"
+				data-testid="mijn-documents-group">
+				<component
+					:is="`h${Math.min(level + 1, 6)}`"
+					v-if="group.heading"
+					class="utrecht-heading-4 pq-documents-block__group-heading">
+					{{ group.heading }}
+				</component>
+				<ul class="pq-documents-block__list">
+					<FileItem
+						v-for="entry in group.entries"
+						:key="entry.id"
+						:name="entry.title || entry.id"
+						:line="lineOf(entry)"
+						:busy="busyId === entry.id"
+						:isNew="entry.isNew === true"
+						:newLabel="tr('New')"
+						:status="typeof entry.status === 'string' ? entry.status : ''"
+						:statusState="stateOf(entry)"
+						@open="openDocument(entry)" />
+				</ul>
+			</section>
+			<p
+				v-if="block.note"
+				class="utrecht-paragraph pq-documents-block__note"
+				data-testid="mijn-documents-note">
+				{{ block.note }}
+			</p>
 			<p v-if="openFailed" class="utrecht-paragraph" role="alert">
 				{{ tr('The document could not be opened. Try again.') }}
 			</p>
@@ -83,7 +105,7 @@ import EmptyState from './EmptyState.vue'
 import FileItem from './FileItem.vue'
 import LoadError from './LoadError.vue'
 import Skeleton from './Skeleton.vue'
-import { fileLine } from './documents.js'
+import { fileLine, groupDocuments, statusState } from './documents.js'
 import { mijnTranslator } from './rows.js'
 
 /**
@@ -167,6 +189,10 @@ export default {
 		 * @return {Array<object>} The listed documents.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
+		groups() {
+			return groupDocuments(this.documents, this.block?.groupBy)
+		},
+
 		documents() {
 			return Array.isArray(this.answer?.documents) ? this.answer.documents : []
 		},
@@ -228,7 +254,14 @@ export default {
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		lineOf(entry) {
-			return fileLine(entry, this.tr, this.locale)
+			// The provider's own line is shown as written.
+			return typeof entry?.meta === 'string' && entry.meta !== ''
+				? entry.meta
+				: fileLine(entry, this.tr, this.locale)
+		},
+
+		stateOf(entry) {
+			return statusState(entry)
 		},
 
 		/**
