@@ -361,13 +361,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.70.0 (portal 0.13.0): `residentMenu.leaveOut` (resident-menu-leave-out). Additive.
 		// 0.74.0 (portal 0.16.0, form 0.2.0, page 0.7.0): help details and section help texts (help-texts-and-form-help). Additive.
 		// 0.77.0 (portalFormBinding 0.3.0, portalIntakeSubmission 0.3.0, portal 0.17.0): intro, statements, confirmation and confirmationMail on the binding, accepted statements on the submission, statement texts on the portal (form-statements-intro-and-confirmation-mail). Additive.
+		// 0.78.0 (portal 0.18.0): `assistant` and the `assistant_asked` traffic event (search-assistant-from-public-content). Additive.
 		// 0.76.0 (portalCase 0.2.0, portalCaseType 0.3.0): `plannedDecisionDate`, `legalDecisionDate` and `portalStatusActions`, `caseField` on a collection (case-page-tasks-decision-dates-and-next-step). Additive.
 		// 0.73.0 (menu 0.1.1): a sub-item that declares its own `items` is rejected (portal-cms-content-model). Tightens, loses no deployed shape.
 		// 0.72.0 (portal 0.15.0): `tokens` (portal-theme-blocks-and-contributed-pages). Additive.
 		// 0.71.0 (portal 0.14.0): `searchInsideDocuments` (portal-federated-search) and the
 		// `portalDraft` schema (site-multi-step-forms). Additive.
-		$this->assertSame('0.77.0', self::$register['info']['version']);
-		$this->assertSame('0.77.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.78.0', self::$register['info']['version']);
+		$this->assertSame('0.78.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -427,7 +428,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.17.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.18.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
@@ -1139,4 +1140,23 @@ class PortaliqRegisterConfigTest extends TestCase {
 		}
 
 	}//end testTheInvitationFieldsAreReadableByAdministratorsOnly()
+
+	/**
+	 * search-assistant-from-public-content: the assistant is off unless the
+	 * portal says so, and the traffic event it counts is a known one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t02
+	 */
+	public function testThePortalDeclaresTheAssistantOffByDefault(): void {
+		$assistant = self::$register['components']['schemas']['portal']['properties']['assistant'];
+
+		$this->assertSame('object', $assistant['type']);
+		$this->assertFalse($assistant['properties']['enabled']['default']);
+		$this->assertSame('array', $assistant['properties']['excludedRoutes']['type']);
+		$events = self::$register['components']['schemas']['portal']['properties']['traffic']['properties']['events']['items']['enum'] ?? [];
+		$this->assertContains('assistant_asked', $events);
+
+	}//end testThePortalDeclaresTheAssistantOffByDefault()
 }//end class

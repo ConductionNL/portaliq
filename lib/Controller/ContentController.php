@@ -29,6 +29,8 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
+use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
@@ -95,6 +97,8 @@ class ContentController extends Controller {
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReader         $notices      The notices running on the site now.
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
+	 * @param PublicAssistantChannel|null $assistant   The public assistant's channel, when wired.
+	 * @param PublicSourceScope|null     $assistantScope What the public assistant may read.
 	 *
 	 * @return void
 	 */
@@ -111,6 +115,8 @@ class ContentController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReader $notices,
 		private readonly IUserSession $userSession,
+		private readonly ?PublicAssistantChannel $assistant = null,
+		private readonly ?PublicSourceScope $assistantScope = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -266,6 +272,10 @@ class ContentController extends Controller {
 				// documents. On unless the portal switched it off
 				// (portal-federated-search REQ-PFS-CONTENT-001).
 				'searchInsideDocuments' => (($portal['searchInsideDocuments'] ?? true) !== false),
+				// Whether the "Ask a question" widget is offered: the portal turned it on
+				// AND hermiq's entry point answers. Off otherwise
+				// (search-assistant-from-public-content REQ-SAP-006).
+				'assistantEnabled' => $this->assistantEnabled(portal: $portal),
 				// Maintenance and warning notices running now
 				// (operate-maintenance-notice). This answer is cached for up
 				// to five minutes, so each carries its end and the client
@@ -604,4 +614,18 @@ class ContentController extends Controller {
 
 		return $this->urlGenerator->linkToRouteAbsolute('core.login.showLoginForm', ['redirect_url' => $back]);
 	}//end lostPasswordUrl()
+
+	/**
+	 * Whether the assistant widget is on for a portal.
+	 *
+	 * @param array<string, mixed> $portal The portal object.
+	 *
+	 * @return bool True when the portal enabled it and hermiq answers.
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
+	 */
+	private function assistantEnabled(array $portal): bool {
+		$scope = $this->assistantScope ?? new PublicSourceScope();
+		return $scope->enabledFor(portal: $portal) === true && $this->assistant !== null && $this->assistant->isAvailable() === true;
+	}//end assistantEnabled()
 }//end class

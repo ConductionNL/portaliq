@@ -531,6 +531,7 @@ import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
 import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
+import { setAssistantAvailable } from './lib/assistantApi.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
@@ -1557,6 +1558,7 @@ export default {
 					),
 				])
 				this.site = site
+				setAssistantAvailable(site?.assistantEnabled === true)
 				this.menus = menus
 				this.glossary = glossary
 			} catch (error) {

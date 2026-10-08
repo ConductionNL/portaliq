@@ -24,6 +24,7 @@ import {
 	dashboardWidgetRegistry,
 	registerBuiltinDashboardWidgets,
 } from '@conduction/nextcloud-vue'
+import AssistantBlock from '../site/components/AssistantBlock.vue'
 import ContactForm from '../site/components/ContactForm.vue'
 import FederatedSearchBlock from '../site/components/FederatedSearchBlock.vue'
 import IntakeCatalogueBlock from '../site/components/IntakeCatalogueBlock.vue'
@@ -71,6 +72,7 @@ const DEFAULT_SIZES = {
 	intakeForm: { gridWidth: 8, gridHeight: 6 },
 	intakeStatus: { gridWidth: 6, gridHeight: 3 },
 	contactForm: { gridWidth: 8, gridHeight: 6 },
+	assistant: { gridWidth: 8, gridHeight: 6 },
 	card: { gridWidth: 4, gridHeight: 3 },
 	emptyState: { gridWidth: 6, gridHeight: 3 },
 	markdown: { gridWidth: 6, gridHeight: 4 },
@@ -95,6 +97,7 @@ const HOST_SUPPLIED = {
 	intakeForm: ['portal', 'routeParam'],
 	intakeStatus: ['portal'],
 	contactForm: ['portal', 'signedIn', 'ways', 'apiOverride'],
+	assistant: ['portal', 'askOverride'],
 }
 
 /**
@@ -138,6 +141,7 @@ const LAZY_ON_THE_SITE = {
 	intakeForm: IntakeFormBlock,
 	intakeStatus: IntakeStatusBlock,
 	contactForm: ContactForm,
+	assistant: AssistantBlock,
 }
 
 /**

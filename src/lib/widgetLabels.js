@@ -30,6 +30,7 @@ const PUBLIC_LABELS = {
 	intakeForm: 'Aanvraagformulier',
 	intakeStatus: 'Status van een aanvraag',
 	contactForm: 'Vraagformulier',
+	assistant: 'Vraag het de assistent',
 }
 
 /**

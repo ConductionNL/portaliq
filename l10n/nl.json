@@ -2509,7 +2509,13 @@
         "This form cannot be sent yet: a statement it needs has no text.": "Dit formulier kan nog niet worden verstuurd: een verklaring die het nodig heeft, heeft nog geen tekst.",
         "Accept this statement before you send the form.": "Accepteer deze verklaring voordat u het formulier verstuurt.",
         "We have received your request": "Wij hebben uw aanvraag ontvangen",
-        "Your request %1$s has been received under reference %2$s.": "Uw aanvraag %1$s is ontvangen onder kenmerk %2$s."
+        "Your request %1$s has been received under reference %2$s.": "Uw aanvraag %1$s is ontvangen onder kenmerk %2$s.",
+        "Assistant": "Assistent",
+        "Assistant enabled": "Assistent aan",
+        "Page routes the assistant does not read or link to.": "Paginaroutes die de assistent niet leest en waarnaar hij niet verwijst.",
+        "Pages the assistant leaves out": "Pagina's die de assistent overslaat",
+        "The assistant on the public site. It answers from this portal's published pages, glossary and publications only. Off unless enabled is true, and it needs hermiq.": "De assistent op de openbare site. Hij antwoordt alleen uit de gepubliceerde pagina's, de begrippenlijst en de publicaties van dit portaal. Uit, tenzij enabled op true staat, en hij heeft hermiq nodig.",
+        "Whether the assistant widget is offered and answers. Off by default.": "Of de assistent wordt aangeboden en antwoordt. Standaard uit."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

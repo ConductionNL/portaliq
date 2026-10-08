@@ -72,6 +72,7 @@ import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/pu
 import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
+import { assistantAvailable } from '../lib/assistantApi.js'
 import { withoutStyling } from '../lib/blockProps.js'
 import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
@@ -129,6 +130,7 @@ const IntakeCatalogueBlock = defineAsyncComponent(
 )
 const ContactForm = defineAsyncComponent(() => import('./ContactForm.vue'))
 const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
+const AssistantBlock = defineAsyncComponent(() => import('./AssistantBlock.vue'))
 const IntakeStatusBlock = defineAsyncComponent(
 	() => import('./IntakeStatusBlock.vue'),
 )
@@ -231,6 +233,9 @@ const PUBLIC_WIDGETS = {
 	intakeForm: IntakeFormBlock,
 	// A resident's question without a case (contact-page-question-form-and-not-found).
 	contactForm: ContactForm,
+	// search-assistant-from-public-content: only while the portal offers it, see
+	// publicWidgetFor() and assistantAvailable().
+	assistant: AssistantBlock,
 	intakeStatus: IntakeStatusBlock,
 	...nldsWidgets,
 	...siteBlockRegistry,
@@ -256,7 +261,9 @@ const PUBLIC_WIDGETS = {
  * @return {Array<string>} The widget keys that render at a public origin.
  */
 export function publicWidgetKeys() {
-	return Object.keys(PUBLIC_WIDGETS)
+	return Object.keys(PUBLIC_WIDGETS).filter(
+		(key) => key !== 'assistant' || assistantAvailable(),
+	)
 }
 
 /**
@@ -266,6 +273,10 @@ export function publicWidgetKeys() {
  * @return {object|null} The component, or null when the key is not public.
  */
 export function publicWidgetFor(key) {
+	if (key === 'assistant' && !assistantAvailable()) {
+		return null
+	}
+
 	return Object.hasOwn(PUBLIC_WIDGETS, key) ? PUBLIC_WIDGETS[key] : null
 }
 
@@ -638,6 +649,11 @@ export default {
 						href: r.href,
 					})),
 				}
+			}
+
+			// The assistant asks THIS portal's route; the portal comes from the host.
+			if (widget.widgetKey === 'assistant') {
+				return { ...props, portal: this.portal }
 			}
 
 			if (widget.widgetKey === 'nlSignIn') {

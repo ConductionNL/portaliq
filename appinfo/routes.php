@@ -211,6 +211,8 @@ return [
         // no Nextcloud session. The collector resolves the portal by HOST
         // first and accepts a slug only when the host resolves nothing.
         // Registered here, ahead of the SPA catch-all.
+        // search-assistant-from-public-content: the anonymous, tool-free assistant.
+        ['name' => 'publicAssistant#ask', 'url' => '/api/assistant/ask', 'verb' => 'POST'],
         ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
         ['name' => 'traffic#pixel', 'url' => '/api/traffic/pixel.gif', 'verb' => 'GET'],
         ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],

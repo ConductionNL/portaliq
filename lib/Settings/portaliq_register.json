@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.77.0"
+        "version": "0.78.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.77.0",
+                "version": "0.78.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2466,7 +2466,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.17.0",
+                "version": "0.18.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3461,6 +3461,7 @@
                                         "form_field",
                                         "form_abandon",
                                         "page_not_found",
+                                        "assistant_asked",
                                         "js_error",
                                         "email_open",
                                         "email_click"
@@ -3564,6 +3565,7 @@
                                                 "form_field",
                                                 "form_abandon",
                                                 "page_not_found",
+                                                "assistant_asked",
                                                 "js_error",
                                                 "email_open",
                                                 "email_click"
@@ -4240,6 +4242,29 @@
                         },
                         "example": {
                             "--nldesign-header-link-color": "#f36c21"
+                        }
+                    },
+                    "assistant": {
+                        "title": "Assistant",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The assistant on the public site. It answers from this portal's published pages, glossary and publications only. Off unless enabled is true, and it needs hermiq.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "enabled": {
+                                "title": "Assistant enabled",
+                                "type": "boolean",
+                                "description": "Whether the assistant widget is offered and answers. Off by default.",
+                                "default": false
+                            },
+                            "excludedRoutes": {
+                                "title": "Pages the assistant leaves out",
+                                "type": "array",
+                                "description": "Page routes the assistant does not read or link to.",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     },
                     "searchInsideDocuments": {
@@ -5042,6 +5067,7 @@
                             "form_field",
                             "form_abandon",
                             "page_not_found",
+                            "assistant_asked",
                             "js_error",
                             "heat_click",
                             "heat_scroll",
