@@ -42,6 +42,10 @@ class OpenRegisterAutoloaderTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
+		// The loader is static: under a booted Nextcloud the app's own bootstrap
+		// has registered it before this test runs, and register() then
+		// short-circuits to true. Start every test from an unregistered loader.
+		OpenRegisterAutoloader::unregister();
 		$this->appPath = sys_get_temp_dir() . '/portaliq-or-' . bin2hex(random_bytes(4));
 		mkdir($this->appPath . '/lib/Fake', 0777, true);
 		file_put_contents(
