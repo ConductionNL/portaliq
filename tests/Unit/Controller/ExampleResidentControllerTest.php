@@ -67,14 +67,23 @@ class ExampleResidentControllerTest extends TestCase {
 	/**
 	 * The one-click demo sign-in: the parts every test below shares. The
 	 * example resident `zuiddrecht` is installed as `sanne.devries` on the
-	 * portal `zuiddrecht`, which offers the `nextcloud` mode.
+	 * portal `zuiddrecht`, which offers the `nextcloud` mode, and has an
+	 * active portal account. A refusal in a test is therefore the guard's,
+	 * never a missing account's.
 	 *
-	 * @param string $switch The app config `example_resident_demo_login`.
-	 * @param bool   $debug  The system `debug` flag.
+	 * @param string             $switch     The app config `example_resident_demo_login`.
+	 * @param bool               $debug      The system `debug` flag.
+	 * @param array<int, string> $modes      The sign-in modes the portals offer.
+	 * @param string             $resolvesTo When set, the slug every portal lookup answers with.
 	 *
-	 * @return array{config: IConfig, record: ExampleResidentRecord, catalogue: ExampleResidentCatalogue, portals: PortalResolver}
+	 * @return array{config: IConfig, record: ExampleResidentRecord, catalogue: ExampleResidentCatalogue, portals: PortalResolver, accounts: PortalAccountService}
 	 */
-	private function demoParts(string $switch, bool $debug = false): array {
+	private function demoParts(
+		string $switch,
+		bool $debug = false,
+		array $modes = ['public', 'digid', 'nextcloud'],
+		string $resolvesTo = ''
+	): array {
 		$config = $this->createMock(originalClassName: IConfig::class);
 		$config->method('getSystemValueBool')->willReturn($debug);
 		$config->method('getAppValue')->willReturnCallback(
@@ -98,18 +107,22 @@ class ExampleResidentControllerTest extends TestCase {
 		$portals->method('resolve')->willReturnCallback(
 			static fn (IRequest $request, string $portalSlug): ?array => (
 				in_array(needle: $portalSlug, haystack: ['zuiddrecht', 'other'], strict: true)
-					? ['slug' => $portalSlug, 'authentication' => ['modes' => ['public', 'digid', 'nextcloud']]]
+					? ['slug' => ($resolvesTo !== '' ? $resolvesTo : $portalSlug), 'authentication' => ['modes' => $modes]]
 					: null
 			)
 		);
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturnCallback(
+			static fn (string $subjectRef): ?array => ($subjectRef === 'sanne.devries' ? ['status' => 'active', 'audience' => 'citizen', 'organisation' => 'zuiddrecht'] : null)
+		);
 
-		return ['config' => $config, 'record' => $record, 'catalogue' => $catalogue, 'portals' => $portals];
+		return ['config' => $config, 'record' => $record, 'catalogue' => $catalogue, 'portals' => $portals, 'accounts' => $accounts];
 	}//end demoParts()
 
 
 	/**
 	 * With the switch off the one-click sign-in is a throttled 404, even in
-	 * debug mode, and mints nothing.
+	 * debug mode, mints nothing and does not look the portal up.
 	 *
 	 * @return void
 	 *
@@ -119,11 +132,14 @@ class ExampleResidentControllerTest extends TestCase {
 		$parts   = $this->demoParts(switch: 'no', debug: true);
 		$session = $this->createMock(originalClassName: PortalSessionService::class);
 		$session->expects($this->never())->method('issueSession');
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals->expects($this->never())->method('resolve');
 
 		$response = $this->controller(
 			session: $session,
 			config: $parts['config'],
-			portals: $parts['portals'],
+			accounts: $parts['accounts'],
+			portals: $portals,
 			exampleResidents: $parts['record'],
 			exampleCatalogue: $parts['catalogue']
 		)->signIn(id: 'zuiddrecht', portal: 'zuiddrecht');
@@ -149,6 +165,7 @@ class ExampleResidentControllerTest extends TestCase {
 		$controller = $this->controller(
 			session: $session,
 			config: $parts['config'],
+			accounts: $parts['accounts'],
 			portals: $parts['portals'],
 			exampleResidents: $parts['record'],
 			exampleCatalogue: $parts['catalogue']
@@ -172,11 +189,7 @@ class ExampleResidentControllerTest extends TestCase {
 	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 */
 	public function testTheOneClickSignInMintsForTheExampleResidentOnly(): void {
-		$parts    = $this->demoParts(switch: 'yes');
-		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
-		$accounts->method('findBySubjectRef')->willReturnCallback(
-			static fn (string $subjectRef): ?array => ($subjectRef === 'sanne.devries' ? ['status' => 'active', 'audience' => 'citizen', 'organisation' => 'zuiddrecht'] : null)
-		);
+		$parts   = $this->demoParts(switch: 'yes');
 		$session = $this->createMock(originalClassName: PortalSessionService::class);
 		$session->expects($this->once())->method('issueSession')
 			->with('sanne.devries', 'citizen', 'zuiddrecht', 'low', ['citizen:read'])
@@ -187,7 +200,7 @@ class ExampleResidentControllerTest extends TestCase {
 		$response = $this->controller(
 			session: $session,
 			config: $parts['config'],
-			accounts: $accounts,
+			accounts: $parts['accounts'],
 			urlGenerator: $urlGenerator,
 			portals: $parts['portals'],
 			exampleResidents: $parts['record'],
@@ -225,4 +238,39 @@ class ExampleResidentControllerTest extends TestCase {
 
 		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
 	}//end testTheOneClickSignInRefusesAnInactiveAccount()
+
+
+	/**
+	 * The sign-in is refused when the resident's own portal does not offer
+	 * the `nextcloud` mode, the resident's own way in, and when the lookup
+	 * answers with the resident's portal for another portal the caller named
+	 * (for example by host).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	public function testTheOneClickSignInRefusesAPortalThatDoesNotOfferTheNextcloudMode(): void {
+		$cases = [
+			'no nextcloud mode' => ['named' => 'zuiddrecht', 'modes' => ['public', 'digid'], 'resolvesTo' => ''],
+			'another portal'    => ['named' => 'other', 'modes' => ['public', 'digid', 'nextcloud'], 'resolvesTo' => 'zuiddrecht'],
+		];
+		foreach ($cases as $case => $portal) {
+			$parts   = $this->demoParts(switch: 'yes', modes: $portal['modes'], resolvesTo: $portal['resolvesTo']);
+			$session = $this->createMock(originalClassName: PortalSessionService::class);
+			$session->expects($this->never())->method('issueSession');
+
+			$response = $this->controller(
+				session: $session,
+				config: $parts['config'],
+				accounts: $parts['accounts'],
+				portals: $parts['portals'],
+				exampleResidents: $parts['record'],
+				exampleCatalogue: $parts['catalogue']
+			)->signIn(id: 'zuiddrecht', portal: $portal['named']);
+
+			$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus(), message: $case);
+			$this->assertTrue(condition: $response->isThrottled(), message: $case);
+		}
+	}//end testTheOneClickSignInRefusesAPortalThatDoesNotOfferTheNextcloudMode()
 }//end class
