@@ -147,6 +147,12 @@
 				:block="item.block"
 				:collection="item.collection"
 				:titleFields="item.collection.titleFields || []"
+				:statusRows="
+					item.block.status
+						? loadedOf({ id: item.block.status.collection })
+						: null
+				"
+				:today="today || undefined"
 				:t="tr"
 				:locale="lang" />
 
