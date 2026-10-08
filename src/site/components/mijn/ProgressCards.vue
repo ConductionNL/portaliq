@@ -55,6 +55,7 @@
 
 <script>
 import DataBadge from './DataBadge.vue'
+import { cardStatus } from './cardStatus.js'
 import { cardParts } from './displays.js'
 import { mijnTranslator } from './rows.js'
 
@@ -79,6 +80,13 @@ export default {
 		t: { type: Function, default: null },
 		/** The page language. */
 		locale: { type: String, default: 'nl' },
+		/**
+		 * The block's `status` lookup collection as loaded, `{loading, failed,
+		 * objects}`, or null (card-status-today).
+		 */
+		statusRows: { type: Object, default: null },
+		/** Today, from the site's clock; a test passes a fixed day. */
+		today: { type: Date, default: null },
 	},
 
 	computed: {
@@ -117,6 +125,9 @@ export default {
 					// A sub line, a status with its note, and what is coming up
 					// (site-school-blocks).
 					...cardParts(row, this.block, this.collection),
+					// Where the record stands today, when the block says how to
+					// tell (card-status-today); it replaces a stored status.
+					...this.todayPart(row),
 					key: String(row?.id || row?.uuid || index),
 					title,
 					figure: figured
@@ -131,6 +142,28 @@ export default {
 						: '0%',
 				}
 			})
+		},
+	},
+
+	methods: {
+		/**
+		 * The status and tone a card derives for today, or nothing.
+		 *
+		 * @param {object} row The card's row.
+		 * @return {object} `{status, tone}` or `{}`.
+		 * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
+		 */
+		todayPart(row) {
+			if (!this.block?.status) {
+				return {}
+			}
+			const chip = cardStatus(
+				row,
+				this.block.status,
+				this.statusRows,
+				this.today || new Date(),
+			)
+			return chip ? { status: chip.text, tone: chip.tone } : { status: '' }
 		},
 	},
 }

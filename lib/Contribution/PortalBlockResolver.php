@@ -188,6 +188,7 @@ class PortalBlockResolver {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
 	 */
 	private function collectionBlock(string $type, array $block, array $entry, array $collectionIds, array $collections): array {
 		// A block on a record page may narrow its rows to the open record
@@ -217,7 +218,10 @@ class PortalBlockResolver {
 			}
 		}
 
-		return $entry + (new CollectionListKeys())->collectionKeys(block: $block, collection: $collection);
+		// Where a card's record stands today, from another collection of
+		// this contribution (card-status-today).
+		return $entry + (new CollectionListKeys())->collectionKeys(block: $block, collection: $collection)
+			+ (new CardStatusKeys())->keys(block: $block, collectionIds: $collectionIds, collections: $collections);
 	}//end collectionBlock()
 
 	/**
