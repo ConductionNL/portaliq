@@ -124,7 +124,7 @@ async function publicationPage(props) {
  * @param {object} props The props.
  * @return {Promise<string>} The HTML.
  */
-async function searchPage(props) {
+async function searchPage(props, results = RESULTS) {
 	const component = await loadSfc('src/site/components/FederatedSearchBlock.vue', {
 		'@conduction/nextcloud-vue/public': PUBLIC_STUB,
 	})
@@ -136,7 +136,7 @@ async function searchPage(props) {
 			data() {
 				return {
 					...data.call(this),
-					results: RESULTS,
+					results,
 					total: 12,
 					loading: false,
 					error: '',
@@ -238,4 +238,23 @@ test('the Zuiddrecht declaration places the two Woo pages as the boards draw the
 test('"Download" reads in both languages', () => {
 	assert.equal(nl.Download, 'Downloaden')
 	assert.equal(JSON.parse(read('src/shared/i18n/en.json')).Download, 'Download')
+})
+
+test('a document found by its text links to its own page and names its publication (REQ-PFS-CONTENT-001)', async () => {
+	const html = await searchPage({}, [
+		{
+			key: 'd-42',
+			id: 'd-42',
+			kind: 'document',
+			publication: 'Besluit Stationsweg',
+			title: 'Rapport geluidsscherm.pdf',
+			summary: '',
+			href: '',
+			directory: 'local',
+			date: '',
+			type: '',
+		},
+	])
+	assert.match(html, /route=%2Fdocument%2Fd-42/)
+	assert.match(html, /Onderdeel van Besluit Stationsweg/)
 })

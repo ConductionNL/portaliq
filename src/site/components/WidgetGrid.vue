@@ -336,6 +336,16 @@ export default {
 		},
 
 		/**
+		 * Whether the portal lets a search read inside public documents. Handed
+		 * to the search block AFTER its authored props, so a page cannot
+		 * switch it back on (portal-federated-search REQ-PFS-CONTENT-001).
+		 */
+		searchInsideDocuments: {
+			type: Boolean,
+			default: true,
+		},
+
+		/**
 		 * The menu block's data: `{groups, currentRoute, label, toggleLabel}`,
 		 * derived by the host from the menus and the signed-in navigation
 		 * (src/site/lib/siteNavigation.js). Supplied by the host for the same
@@ -517,7 +527,11 @@ export default {
 			// The search block learns the signed-in state the same way
 			// (woo-journey-entry-points D1).
 			if (widget.widgetKey === 'federatedSearch') {
-				return { ...props, signedIn: this.signedIn === true }
+				return {
+					...props,
+					signedIn: this.signedIn === true,
+					searchInsideDocuments: this.searchInsideDocuments !== false,
+				}
 			}
 
 			// SAME RULE, FOURTH SUBJECT. Which portal a form's UTM capture is

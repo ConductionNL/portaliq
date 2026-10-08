@@ -34,6 +34,7 @@ import {
 	pageWindow,
 	paginationItems,
 	readSearchState,
+	resultKind,
 	searchQuery,
 	toBuckets,
 	toResult,
@@ -216,6 +217,8 @@ assertEqual(
 		'@self': { id: 'abc', directory: 'opencatalogi.nl', summary: null },
 	}),
 	{
+		kind: 'publication',
+		publication: '',
 		key: 'abc',
 		title: 'GZAC',
 		summary: 'Een zaakgericht werken component',
@@ -251,6 +254,8 @@ assertEqual(
 	'degrades an almost-empty row to a titled entry instead of throwing',
 	toResult({}),
 	{
+		kind: 'publication',
+		publication: '',
 		key: '',
 		title: 'Zonder titel',
 		summary: '',
@@ -521,6 +526,78 @@ assertEqual(
 		catalog: '',
 	},
 )
+
+// REQ-PFS-CONTENT-001: the search reaches the text inside public documents.
+{
+	const base = {
+		endpoint: '/api/federation/publications',
+		origin: 'https://portaal.example',
+		pageSize: 12,
+		page: 1,
+		facetFields: ['themes'],
+		facets: {},
+	}
+	const flag = (state) =>
+		new URL(buildRequestUrl({ ...base, ...state })).searchParams.get('_content')
+
+	assertEqual(
+		'a term sends the content flag',
+		flag({ query: 'geluidsscherm' }),
+		'true',
+	)
+	assertEqual('no term sends no content flag', flag({ query: '' }), null)
+	assertEqual(
+		'a portal that switched it off sends no content flag',
+		flag({ query: 'geluidsscherm', searchInsideDocuments: false }),
+		null,
+	)
+	assertEqual(
+		'a portal that never said sends the content flag',
+		flag({ query: 'a', searchInsideDocuments: undefined }),
+		'true',
+	)
+
+	assertEqual(
+		'a row with resultType document is a document',
+		resultKind({ resultType: 'document' }),
+		'document',
+	)
+	assertEqual(
+		'the schema word on @self marks a document too',
+		resultKind({ '@self': { schema: 'Document' } }),
+		'document',
+	)
+	assertEqual(
+		'a row with no type is a publication',
+		resultKind({ name: 'x' }),
+		'publication',
+	)
+	assertEqual(
+		'a numeric schema id is not a type',
+		resultKind({ '@self': { schema: 17 } }),
+		'publication',
+	)
+
+	const document = toResult({
+		resultType: 'document',
+		name: 'Rapport geluid.pdf',
+		'@self': { id: 'd-42' },
+		publication: { title: 'Besluit Stationsweg' },
+	})
+	assertEqual(
+		'a document row names its publication',
+		document.publication,
+		'Besluit Stationsweg',
+	)
+	assertEqual('a document row keeps its own id', document.id, 'd-42')
+	assertEqual('a document row is marked a document', document.kind, 'document')
+	assertEqual(
+		'a publication row names no publication',
+		toResult({ name: 'x', '@self': { id: 'p-1' }, publication: 'y' })
+			.publication,
+		'',
+	)
+}
 
 if (failures > 0) {
 	console.error(`\n${failures} assertion(s) failed`)

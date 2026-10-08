@@ -556,6 +556,28 @@ export default {
 			default: '/publicatie',
 		},
 
+		/**
+		 * Whether a search also reads the text inside public documents. The
+		 * host sets it from the portal's `searchInsideDocuments`, after the
+		 * authored props.
+		 */
+		searchInsideDocuments: {
+			type: Boolean,
+			default: true,
+		},
+
+		/** The route of a document's own page; the id is appended. */
+		documentRoute: {
+			type: String,
+			default: '/document',
+		},
+
+		/** Words before the publication a document result belongs to. */
+		partOfLabel: {
+			type: String,
+			default: 'Onderdeel van',
+		},
+
 		/** Screen-reader prefix for a result's source directory. */
 		sourceLabel: {
 			type: String,
@@ -946,6 +968,7 @@ export default {
 				periodFrom: this.periodFrom,
 				periodTo: this.periodTo,
 				sort: this.sort,
+				searchInsideDocuments: this.searchInsideDocuments,
 			})
 		},
 
@@ -1102,6 +1125,15 @@ export default {
 				})
 			}
 
+			if (result.kind === 'document' && result.publication) {
+				items.push({
+					key: 'publication',
+					text: `${this.partOfLabel} ${result.publication}`,
+					prefix: '',
+					testid: 'federated-search-publication',
+				})
+			}
+
 			items.push({
 				key: 'source',
 				text: result.directory,
@@ -1131,6 +1163,21 @@ export default {
 		},
 
 		/**
+		 * The in-site path of a result's own page: a document has its own
+		 * page, everything else is a publication.
+		 *
+		 * @param {object} result A view-model row with an id.
+		 * @return {string} The path, with the id appended.
+		 *
+		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
+		 */
+		detailPath(result) {
+			const base =
+				result.kind === 'document' ? this.documentRoute : this.detailRoute
+			return `${base}/${result.id}`
+		},
+
+		/**
 		 * The in-site href of a result's detail page.
 		 *
 		 * @param {object} result A view-model row.
@@ -1147,7 +1194,7 @@ export default {
 
 			const url = new URL(window.location.href)
 			url.search = ''
-			url.searchParams.set('route', `${this.detailRoute}/${result.id}`)
+			url.searchParams.set('route', this.detailPath(result))
 
 			return url.toString()
 		},
@@ -1172,7 +1219,7 @@ export default {
 				return
 			}
 
-			this.$emit('navigate', `${this.detailRoute}/${result.id}`)
+			this.$emit('navigate', this.detailPath(result))
 		},
 
 		/**

@@ -258,6 +258,10 @@ class ContentController extends Controller {
 				// is exactly what the client is about to act on.
 				'traffic' => $this->traffic->resolve(portal: $portal),
 				'collector' => $this->urlGenerator->linkToRouteAbsolute('portaliq.traffic.collect'),
+				// Whether a visitor's search also reads the text inside public
+				// documents. On unless the portal switched it off
+				// (portal-federated-search REQ-PFS-CONTENT-001).
+				'searchInsideDocuments' => (($portal['searchInsideDocuments'] ?? true) !== false),
 				// Maintenance and warning notices running now
 				// (operate-maintenance-notice). This answer is cached for up
 				// to five minutes, so each carries its end and the client

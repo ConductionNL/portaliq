@@ -46,6 +46,14 @@ export function buildRequestUrl(state) {
 	// something this portal should be betting on.
 	if (state.query) {
 		url.searchParams.set('_search', state.query)
+
+		// THE TEXT INSIDE PUBLIC DOCUMENTS (REQ-PFS-CONTENT-001). The opt-in
+		// opencatalogi's document content search defines; sent whenever there
+		// is a term, unless the portal switched it off. Only the published,
+		// redacted copy of a document is searched on the other side.
+		if (state.searchInsideDocuments !== false) {
+			url.searchParams.set('_content', 'true')
+		}
 	}
 
 	// ONE FACET PER FIELD, IN THE SAME REQUEST (woo-search-and-detail D1).
@@ -109,8 +117,15 @@ export function buildRequestUrl(state) {
 export function toResult(row) {
 	const self = (row || {})['@self'] || {}
 	const summary = self.summary || (row || {}).description || ''
+	const kind = resultKind(row)
 
 	return {
+		// 'document' for a row that is a document, else 'publication' (or
+		// whatever the endpoint named). A document links to its own page.
+		kind,
+		// The publication a document belongs to, so a hit inside a PDF still
+		// says where it lives. Empty for a row that is not a document.
+		publication: kind === 'document' ? publicationName(row) : '',
 		key: self.id || (row || {}).id || (row || {}).sha || (row || {}).name || '',
 		title: (row || {}).name || self.name || self.title || 'Zonder titel',
 		// Truncated here rather than by CSS: an ellipsis that hides text still
@@ -133,6 +148,48 @@ export function toResult(row) {
 		// read; a page that knows its corpus supplies `typeLabel` instead.
 		type: self.schemaTitle || '',
 	}
+}
+
+/**
+ * What kind of row the endpoint returned: its `resultType`, else the schema
+ * word on `@self`, else 'publication'.
+ *
+ * @param {object} row One API result.
+ * @return {string} 'document', 'subject' or 'publication'.
+ *
+ * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
+ */
+export function resultKind(row) {
+	const self = (row || {})['@self'] || {}
+	const word = String(
+		(row || {}).resultType || self.resultType || self.schema || '',
+	)
+		.toLowerCase()
+		.trim()
+	if (word === 'document' || word === 'subject') {
+		return word
+	}
+
+	return 'publication'
+}
+
+/**
+ * The name of the publication a document row belongs to.
+ *
+ * @param {object} row One API result.
+ * @return {string} The name, or ''.
+ */
+function publicationName(row) {
+	const publication = (row || {}).publication
+	if (publication && typeof publication === 'object') {
+		return String(publication.title || publication.name || '')
+	}
+
+	return String(
+		(typeof publication === 'string' ? publication : '')
+			|| (row || {}).publicationTitle
+			|| '',
+	)
 }
 
 /**

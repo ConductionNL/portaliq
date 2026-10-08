@@ -2244,7 +2244,9 @@ OC.L10N.register(
         "The id of the step the resident reached.": "The id of the step the resident reached.",
         "The signed-in resident the draft belongs to.": "The signed-in resident the draft belongs to.",
         "The visible answers so far, without files.": "The visible answers so far, without files.",
-        "When the purge job deletes the draft.": "When the purge job deletes the draft."
+        "When the purge job deletes the draft.": "When the purge job deletes the draft.",
+        "Search inside documents": "Search inside documents",
+        "Whether a visitor's search also reads the text inside public documents. On by default. Switch it off when the catalogue should match titles and metadata only. Only the published, redacted copy of a document is ever searched.": "Whether a visitor's search also reads the text inside public documents. On by default. Switch it off when the catalogue should match titles and metadata only. Only the published, redacted copy of a document is ever searched."
     },
     "nplurals=2; plural=(n != 1);"
 )

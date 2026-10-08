@@ -933,6 +933,7 @@ export default {
 				routeParam: this.routeParam,
 				portal: this.site.slug || '',
 				signedIn: this.session !== null,
+				searchInsideDocuments: this.site.searchInsideDocuments !== false,
 				navigation: this.navigation,
 				languages: this.languages,
 				// The portal's sign-in ways, for the nlSignIn block (lane L2, G-13).

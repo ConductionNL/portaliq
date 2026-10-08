@@ -820,4 +820,29 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertFalse($data['traffic']['enabled']);
 	}//end testAnUnconfiguredPortalIsServedAsNotMeasuring()
+
+	/**
+	 * REQ-PFS-CONTENT-001: the search reads inside documents unless the
+	 * portal switched it off, and the site record says which.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteRecordSaysWhetherSearchReadsInsideDocuments(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->assertTrue($this->controller()->site()->getData()['searchInsideDocuments'], 'on by default');
+	}//end testTheSiteRecordSaysWhetherSearchReadsInsideDocuments()
+
+
+	/**
+	 * A portal that set it to false is served false.
+	 *
+	 * @return void
+	 */
+	public function testAPortalCanSwitchSearchInsideDocumentsOff(): void {
+		$portal = $this->portal();
+		$portal['searchInsideDocuments'] = false;
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$this->assertFalse($this->controller()->site()->getData()['searchInsideDocuments']);
+	}//end testAPortalCanSwitchSearchInsideDocumentsOff()
 }//end class

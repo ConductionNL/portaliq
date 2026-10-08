@@ -2318,7 +2318,9 @@
         "The id of the step the resident reached.": "Het id van de stap waar de inwoner was gebleven.",
         "The signed-in resident the draft belongs to.": "De ingelogde inwoner van wie het concept is.",
         "The visible answers so far, without files.": "De zichtbare antwoorden tot nu toe, zonder bestanden.",
-        "When the purge job deletes the draft.": "Wanneer de opschoonjob het concept verwijdert."
+        "When the purge job deletes the draft.": "Wanneer de opschoonjob het concept verwijdert.",
+        "Search inside documents": "Zoeken in documenten",
+        "Whether a visitor's search also reads the text inside public documents. On by default. Switch it off when the catalogue should match titles and metadata only. Only the published, redacted copy of a document is ever searched.": "Of de zoekopdracht van een bezoeker ook de tekst in openbare documenten doorzoekt. Standaard aan. Zet dit uit als de catalogus alleen op titels en metagegevens moet zoeken. Alleen de gepubliceerde, geanonimiseerde versie van een document wordt doorzocht."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
