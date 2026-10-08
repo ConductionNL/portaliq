@@ -144,6 +144,9 @@ class ActionConfigNormaliser {
 			$action = $this->form->fitWidgets(action: $action);
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
+			// What an endpoint row action asks for and when it is offered
+			// (case-actions-row-inputs-and-conditions).
+			$action = (new RowActionInputs())->normaliseAction(action: $action);
 			// Steps, a draft and a confirmation on a create or endpoint action
 			// (site-multi-step-forms REQ-SMF-020, -021, -022).
 			$action = $this->form->flow(action: $action, whitelist: $whitelist);

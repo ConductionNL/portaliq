@@ -39,6 +39,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\AttachedActionResolver;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Contribution\RowActionInputs;
 use OCA\Portaliq\Contribution\RowActionResolver;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
@@ -129,10 +130,32 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_offered'], Http::STATUS_CONFLICT);
 		}
 
+		// Offered only on the rows its `availableWhen` names; the button's
+		// absence is a convenience, this is the rule
+		// (case-actions-row-inputs-and-conditions REQ-RAI-004).
+		$inputs = new RowActionInputs();
+		$availability = $inputs->availability(action: $match['action'], row: $row);
+		if ($availability['available'] === false) {
+			return new JSONResponse(['error' => 'not_available', 'message' => $availability['reason']], Http::STATUS_CONFLICT);
+		}
+
 		$rowId = $this->rowId(row: $row, fallback: $id);
 		$body = $this->forwardBody(match: $match, subject: $subject, rowId: $rowId);
 		if ($body === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		// The inputs this row declares, for exactly the names it declares
+		// (REQ-RAI-002): a name it does not declare is dropped here, and a
+		// required one left empty is a 422 that forwards nothing.
+		$into = ($match['action']['rowInputs']['into'] ?? null);
+		if (is_string($into) === true) {
+			$collected = $inputs->collect(action: $match['action'], row: $row, submitted: $this->request->getParam($into));
+			if ($collected['errors'] !== []) {
+				return new JSONResponse(['error' => 'invalid', 'errors' => $collected['errors']], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+
+			$body['body'][$into] = $collected['values'];
 		}
 
 		// The action's required fields (REQ-SMF-024): refused before the audit
