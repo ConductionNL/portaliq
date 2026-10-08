@@ -10393,6 +10393,700 @@
 				"open-inwoner": "no web app manifest: master.html links only a favicon and apple-touch-icon (src/open_inwoner/templates/master.html:36); no match for 'manifest.json|webmanifest' [reached on nothing; was unknown] [read 2026-10-08 at v2.4.5]",
 				"nl-portal": "web app manifest with display standalone and maskable icons (frontend/packages/app/public/manifest.json:36), linked from frontend/packages/app/index.html:19; no service worker, so no offline use [reached on add to home screen; was unknown] [read 2026-10-08 at 3.1.1]"
 			}
+		},
+		{
+			"id": "cas-overview-dashboard",
+			"area": "cases",
+			"name": "See your open tasks, running cases and newest messages together on one overview page after signing in.",
+			"portaliq": "yes",
+			"open-inwoner": "yes",
+			"nl-portal": "yes",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/cms/plugins/cms_plugins/userfeed.py:11 UserFeedPlugin, with the Zaken and task plugins on the Mijn overzicht CMS page [reached on Mijn overzicht after login] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "frontend/packages/user-interface/src/pages/OverviewPage.tsx:61 tasks and :62 cases, routed at frontend/packages/app/src/constants/routes.tsx:20 [reached on the overview page after login] [read 2026-10-08 at 3.1.1]",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/site/components/mijn/MijnHome.vue:31 'What you still have to do' (open portal tasks), then the pages a contribution marks home: true, or else the running cases of every cases collection and the newest messages (header comment :6-12)",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/site-mijn-omgeving"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "MijnOverzicht"
+			}
+		},
+		{
+			"id": "cas-tasks-on-case",
+			"area": "cases",
+			"name": "See the tasks that belong to a case on that case's own page.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "yes",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: the 2026-10-08 re-drive named this capability from NL Portal's code and did not search Open Inwoner for it",
+				"nl-portal": "frontend/packages/user-interface/src/pages/CaseDetailsPage.tsx:57 getTakenV2 with zaakId, rendered with TasksList (:25) [reached on the case detail page] [read 2026-10-08 at 3.1.1]",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "src/site/components/e/CitizenCase.vue has no task section (sections: status, documents, withdraw, notice); TasksBlock (src/site/components/mijn/TasksBlock.vue:123) reads one collection with no case filter",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "case-page-tasks-decision-dates-and-next-step"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Zaak",
+					"TaakAfronden"
+				]
+			}
+		},
+		{
+			"id": "cas-expected-decision-date",
+			"area": "cases",
+			"name": "See the planned and the legal latest decision date of your case.",
+			"portaliq": "partial",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/cms/cases/views/status.py:117 end_date_planned, :118 end_date_legal [reached on the case status page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "the case card shows one 'klaar uiterlijk' date (src/site/components/mijn/CaseCard.vue:17, :217); portalCase (lib/Settings/portaliq_register.json) has no planned or legal decision date, so the two are not told apart",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "case-page-tasks-decision-dates-and-next-step"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "The Zaak board draws one date ('Uiterlijk klaar op 1 november 2026') and the banner sentence; the change adds the planned date beside it.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
+		},
+		{
+			"id": "cas-status-call-to-action",
+			"area": "case-actions",
+			"name": "See a button on the current status step that takes you to the action the organisation expects from you.",
+			"portaliq": "no",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/openzaak/models.py:918 call_to_action_url, :926 call_to_action_text per status type [reached on the case status page, current step] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "src/site/components/e/CitizenCase.vue renders the status (data-testid case-status) without a per-status action; portalCaseType (lib/Settings/portaliq_register.json) carries labels and windows, no action per status",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "case-page-tasks-decision-dates-and-next-step"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zaak"
+			}
+		},
+		{
+			"id": "cas-life-domain-themes",
+			"area": "cases",
+			"name": "See your cases, tasks and products grouped per life domain, such as Parkeren or Inkomen.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "partial",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: the 2026-10-08 re-drive named this capability from NL Portal's code and did not search Open Inwoner for it",
+				"nl-portal": "frontend/packages/user-interface/src/pages/ThemeOverviewPage.tsx:40, routed only in frontend/packages/app-dev/src/constants/routes.tsx:91, the demo shell; the released app does not route it [reached on nothing in the released app] [read 2026-10-08 at 3.1.1]",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no theme grouping in src/site: the resident menu groups by app section (src/site/components/SiteMenu.vue), not by life domain",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "life-domain-theme-pages"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "ThemaOverzicht"
+			}
+		},
+		{
+			"id": "prd-product-actions",
+			"area": "cases",
+			"name": "See what you can arrange for a product you hold (\"Wat kan ik regelen\"), decided by rules on that product.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "partial",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: the 2026-10-08 re-drive named this capability from NL Portal's code and did not search Open Inwoner for it",
+				"nl-portal": "frontend/packages/user-interface/src/pages/ThemeDetailsPage.tsx:73 DecisionsList from DMN decisions on the Open Product product, app-dev routes only [reached on nothing in the released app] [read 2026-10-08 at 3.1.1]",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no product or decision list in src/site or lib/Settings/portaliq_register.json",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "life-domain-theme-pages"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"ThemaOverzicht",
+					"MijnOverzicht"
+				]
+			}
+		},
+		{
+			"id": "prd-change-held-product",
+			"area": "case-actions",
+			"name": "Change a product you hold, such as the licence plate on a parking permit.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "partial",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: the 2026-10-08 re-drive named this capability from NL Portal's code and did not search Open Inwoner for it",
+				"nl-portal": "frontend/packages/user-interface/src/pages/ThemeMutatePage.tsx shell with the updateProduct mutation, frontend/packages/app-dev/src/constants/routes.tsx (demo shell) [reached on nothing in the released app] [read 2026-10-08 at 3.1.1]",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no held-product records and no change action on them in src/site; a contribution's update action (case-actions-row-inputs-and-conditions) works on rows of a collection, but no collection holds products",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "life-domain-theme-pages"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "Needs the products a resident holds, which is dem-rm-my-products (decided-no) and is drawn on the same ThemaOverzicht board. The change renders products a contribution hands over; it builds no product register.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "ThemaOverzicht"
+			}
+		},
+		{
+			"id": "int-general-contact-form",
+			"area": "intake",
+			"name": "Ask the organisation a question without a case, choosing a subject, and find it back under your questions.",
+			"portaliq": "partial",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/openklant/views/contactform.py:36 ContactFormView, subject at :162, registered in OpenKlant or e-Suite [reached on the contact form page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "pipelinq contributes a case-less request with Onderwerp and Omschrijving (ConductionNL/pipelinq@c9c6a728d lib/Portal/PortalContributionProvider.php:361 createRequest) listed as 'Verzoeken van uw organisatie' (:267), for the client audience only; the site has no contact form on its public contact page and no 'Mijn vragen' entry for residents",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "contact-page-question-form-and-not-found"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Contact",
+					"PtMailsjablonen"
+				]
+			}
+		},
+		{
+			"id": "srch-autocomplete",
+			"area": "search",
+			"name": "Get search suggestions while you type in the site search box.",
+			"portaliq": "no",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/api/urls.py:27 search/autocomplete/ AutocompleteView [reached on the site search box] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no suggestion endpoint or widget; only autocomplete=\"email|name\" form attributes (src/site/components/WaysIn.vue). search-sort-by-relevance adds 'Bedoelde u' after a search, not suggestions while typing",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "search-suggestions-while-typing"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Zoeken"
+			}
+		},
+		{
+			"id": "site-faq",
+			"area": "site",
+			"name": "Publish frequently asked questions with their answers on the public site.",
+			"portaliq": "partial",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/urls.py:135 faq/ FAQView, answers per product and category [reached on /faq and the product page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "an NL DS Accordion widget an editor can fill by hand (src/site/widgets/nlAccordion/meta.js:14); no FAQ content type, no FAQ list on a topic page and no FAQ page",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "public-faq-and-product-finder"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Onderwerp",
+					"ProductPagina"
+				]
+			}
+		},
+		{
+			"id": "site-product-finder",
+			"area": "intake",
+			"name": "Find the services that fit you by answering a few questions about your situation.",
+			"portaliq": "no",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/cms/products/cms_plugins.py:107 ProductFinderPlugin with ProductFinderForm (:11) [reached on the product finder plugin on a CMS page] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no finder widget or question model in src/site/widgets or lib/Settings/portaliq_register.json",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "public-faq-and-product-finder"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Productzoeker",
+					"Onderwerp"
+				]
+			}
+		},
+		{
+			"id": "site-page-help-text",
+			"area": "theming",
+			"name": "Read a short help text on each part of the portal that explains what you can do there.",
+			"portaliq": "no",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/configurations/models.py:317 home_help_text, :325 theme_help_text, :333 product_help_text, one per section, edited in admin [reached on the help button of each section] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no help text setting on portal or page (lib/Settings/portaliq_register.json portal, page); no help control in src/site",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "help-texts-and-form-help"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"board": null,
+				"reason": "on the design session's missing-boards list (for-design/portaliq-missing-boards.md)"
+			}
+		},
+		{
+			"id": "ops-mail-templates-ui",
+			"area": "operate",
+			"name": "Edit the texts of the e-mails the portal sends from an admin screen, without a code change.",
+			"portaliq": "no",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/conf/base.py:372 mail_editor app, its settings at :1737 [reached on the admin mail templates screen] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities) and 102 (portaliq boards without a row); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities) and 102 (portaliq boards without a row); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities) and 102 (portaliq boards without a row); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "mail texts are code constants: lib/Service/Identity/PortalIdentityMailer.php:56-78 template keys, :87-118 the subject and body per template; no mail template schema, no send log",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "mail-templates-admin-screen"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "PtMailsjablonen"
+			}
+		},
+		{
+			"id": "id-own-contacts",
+			"area": "identity",
+			"name": "Keep your own list of contacts, such as family or a caseworker, and invite them, so you can message and share plans with them.",
+			"portaliq": "no",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/accounts/views/contacts.py:22 ContactListView, :57 ContactCreateView [reached on Mijn contacten] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities) and 102 (portaliq boards without a row); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities) and 102 (portaliq boards without a row); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities) and 102 (portaliq boards without a row); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no contact list in lib/Settings/portaliq_register.json (portalInvitation invites into the portal for staff, identity-staff-account-screens; no resident-to-resident link) and no contacts page in src/site",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "own-contacts-and-invitations"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": [
+					"Contacten",
+					"ContactUitnodigen"
+				]
+			}
+		},
+		{
+			"id": "tsk-personal-actions",
+			"area": "tasks",
+			"name": "Keep your own to-do list of actions with a status, an end date, a file and a reminder.",
+			"portaliq": "no",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/accounts/views/actions.py:61 ActionListView, :223 ActionCreateView, reminders src/open_inwoner/accounts/notifications/actions/notify.py:15 [reached on Mijn acties] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no personal action schema in lib/Settings/portaliq_register.json; act-create-object covers creating objects in a contribution's collections, not a resident's own list",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "personal-action-list"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "The ActieBewerken board draws the action dialog inside a plan; plans are cmp-tsk-plan (decided-no). The change builds the action list on its own, without plans.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "ActieBewerken"
+			}
+		},
+		{
+			"id": "id-password-reset",
+			"area": "identity",
+			"name": "Reset a forgotten password for an e-mail and password portal account.",
+			"portaliq": "partial",
+			"open-inwoner": "yes",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "src/open_inwoner/accounts/views/password_reset.py:6 PasswordResetView with IP throttling [reached on the login page, Wachtwoord vergeten] [read 2026-10-08 at v2.4.5]",
+				"nl-portal": "not checked: the 2026-10-08 re-drive named this capability from Open Inwoner's code and did not search NL Portal for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "portaliq keeps no passwords: the Nextcloud-account route sends the visitor to Nextcloud's own login form (lib/Controller/SessionController.php:841-850), whose own lost-password flow resets it; the portal's sign-in page (src/site/components/WaysIn.vue) offers no 'Wachtwoord vergeten' link",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "password-reset-from-the-sign-in-page"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Inloggen"
+			}
+		},
+		{
+			"id": "thm-no-translate-personal-data",
+			"area": "theming",
+			"name": "Have the browser's automatic translation leave your name and personal data untouched.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "yes",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: the 2026-10-08 re-drive named this capability from NL Portal's code and did not search Open Inwoner for it",
+				"nl-portal": "frontend/packages/user-interface/src/pages/OverviewPage.tsx:102 translate=\"no\" on the user name, :109 on the represented party [reached on the overview page] [read 2026-10-08 at 3.1.1]",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no translate=\"no\" anywhere in src/site",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "personal-data-left-untranslated"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"board": null,
+				"reason": "no screen of its own: a markup attribute on the name and personal data the boards already draw (MijnOverzicht, MijnGegevens, the header menu); nothing for a designer to draw"
+			}
+		},
+		{
+			"id": "site-404-contact",
+			"area": "site",
+			"name": "Get a not-found page that points you to the home page and to how to contact the organisation.",
+			"portaliq": "partial",
+			"open-inwoner": "unknown",
+			"nl-portal": "yes",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: the 2026-10-08 re-drive named this capability from NL Portal's code and did not search Open Inwoner for it",
+				"nl-portal": "frontend/packages/user-interface/src/pages/NoMatchPage.tsx:16 with contactLink (:13) [reached on any unknown route] [read 2026-10-08 at 3.1.1]",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 101 (Open Inwoner and NL Portal capabilities); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "src/site/App.vue:323 shows 'Page not found' and 'This page does not exist (any more).' (:330); no search box, no way on to home, Mijn or Contact",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "contact-page-question-form-and-not-found"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "NietGevonden"
+			}
+		},
+		{
+			"id": "site-contact-page",
+			"area": "site",
+			"name": "Find on one contact page how to reach the organisation: by phone, by message or at the desk, with the opening hours.",
+			"portaliq": "yes",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: row added on 2026-10-08 for decision 102 from the Contact board; this system was not re-read for it",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 102 from the Contact board; this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 102 (portaliq boards without a row); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 102 (portaliq boards without a row); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 102 (portaliq boards without a row); this system was not re-read for it"
+			},
+			"built": {
+				"state": "built",
+				"evidence": "an editor composes the page from widgets; the Zuiddrecht example site ships /contact 'Contact en openingstijden' (lib/Settings/sites/zuiddrecht.json:1734) with phone, address, an opening-hours table and 'Afspraak maken'",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/portaliq-cms"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"note": "The example page is simpler than the Contact board (no message channel, no own-case pointer, no report link); contact-page-question-form-and-not-found brings the example page to the board.",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "Contact"
+			}
+		},
+		{
+			"id": "int-form-help",
+			"area": "intake",
+			"name": "Open a help window from a form with the phone number, opening hours and desk, without losing your answers.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: row added on 2026-10-08 for decision 102 from the FormulierHulp board (an Open Forms feature); this system was not re-read for it",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 102 from the FormulierHulp board (an Open Forms feature); this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 102 (portaliq boards without a row); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 102 (portaliq boards without a row); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 102 (portaliq boards without a row); this system was not re-read for it"
+			},
+			"built": {
+				"state": "specified",
+				"evidence": "no help control on a form: no match for 'Hulp nodig' or a help panel in src/site (site-multi-step-forms renders steps, save and errors)",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"change": "help-texts-and-form-help"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "FormulierHulp"
+			}
+		},
+		{
+			"id": "cas-shared-dossier-link",
+			"area": "cases",
+			"name": "Open a dossier someone shared with you by link and read only the documents in it that are public now.",
+			"portaliq": "yes",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: row added on 2026-10-08 for decision 102 from the GedeeldDossier board; this system was not re-read for it",
+				"nl-portal": "not checked: row added on 2026-10-08 for decision 102 from the GedeeldDossier board; this system was not re-read for it",
+				"xxllnc-pip": "not checked: row added on 2026-10-08 for decision 102 (portaliq boards without a row); this system was not re-read for it",
+				"mijnoverheid": "not checked: row added on 2026-10-08 for decision 102 (portaliq boards without a row); this system was not re-read for it",
+				"liferay-dxp": "not checked: row added on 2026-10-08 for decision 102 (portaliq boards without a row); this system was not re-read for it"
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/site/components/SharedDossierPage.vue renders /gedeeld-dossier/{token} without a sign-in, reading opencatalogi's shared collection; :24 the 'link no longer works' state, :47 the intro",
+				"readOn": "2026-10-08",
+				"owner": "ConductionNL/portaliq",
+				"spec": "openspec/specs/site-shared-dossier"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"source": "spec-round-2026-10-08",
+			"screen": {
+				"canvas": "5NkFW28vZUUij43xzxHg5a",
+				"board": "GedeeldDossier"
+			}
 		}
 	],
 	"pending": [
