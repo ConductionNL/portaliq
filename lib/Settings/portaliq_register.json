@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.76.0"
+        "version": "0.77.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.76.0",
+                "version": "0.77.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2466,7 +2466,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.16.0",
+                "version": "0.17.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -2492,6 +2492,47 @@
                         "type": "string",
                         "description": "One supporting line shown under the portal name in the footer's logo block. The NL Design System reference carries one; without this field every portal's footer showed a bare title.",
                         "example": "Één plek voor alle publicaties van de gemeente"
+                    },
+                    "statementTexts": {
+                        "title": "Statement texts",
+                        "type": "object",
+                        "description": "The wording of the statements a form asks on its review step, one wording per portal. Each has a `text` and a `version`; the version is recorded with every acceptance. A required statement without a text blocks the form.",
+                        "properties": {
+                            "truth": {
+                                "title": "Statement of truth text",
+                                "type": "object",
+                                "description": "The statement of truth.",
+                                "properties": {
+                                    "text": {
+                                        "title": "Text",
+                                        "type": "string",
+                                        "description": "What the resident ticks."
+                                    },
+                                    "version": {
+                                        "title": "Version",
+                                        "type": "string",
+                                        "description": "The version of this wording."
+                                    }
+                                }
+                            },
+                            "privacy": {
+                                "title": "Privacy consent text",
+                                "type": "object",
+                                "description": "The privacy consent.",
+                                "properties": {
+                                    "text": {
+                                        "title": "Text",
+                                        "type": "string",
+                                        "description": "What the resident ticks."
+                                    },
+                                    "version": {
+                                        "title": "Version",
+                                        "type": "string",
+                                        "description": "The version of this wording."
+                                    }
+                                }
+                            }
+                        }
                     },
                     "footer": {
                         "title": "Footer",
@@ -7412,7 +7453,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -7541,6 +7582,126 @@
                         "description": "What the citizen is told after submitting. The form's words, not the portal's.",
                         "example": "Bedankt. U hoort binnen vijf werkdagen van ons."
                     },
+                    "intro": {
+                        "title": "Introduction page",
+                        "type": "object",
+                        "description": "The page a form opens with, before step 1: what you need, how long it takes and what happens next. Absent means the form opens at step 1.",
+                        "properties": {
+                            "lead": {
+                                "title": "Lead",
+                                "type": "string",
+                                "description": "The opening sentence under the heading."
+                            },
+                            "blocks": {
+                                "title": "Blocks",
+                                "type": "array",
+                                "description": "The blocks under Voordat u begint, each with a title, a text and a list.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {
+                                            "title": "Block title",
+                                            "type": "string",
+                                            "description": "The block heading."
+                                        },
+                                        "text": {
+                                            "title": "Block text",
+                                            "type": "string",
+                                            "description": "The block text."
+                                        },
+                                        "items": {
+                                            "title": "Block list",
+                                            "type": "array",
+                                            "description": "The lines of the block's list.",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "statements": {
+                        "title": "Statements",
+                        "type": "object",
+                        "description": "The statements the resident accepts on the review step: `truth` (the answers are true) and `privacy` (the privacy statement). A statement whose `required` is true must be accepted before the form is sent. A statement not listed is not asked.",
+                        "properties": {
+                            "truth": {
+                                "title": "Statement of truth",
+                                "type": "object",
+                                "description": "Whether the statement of truth is asked, and whether it is required.",
+                                "properties": {
+                                    "required": {
+                                        "title": "Required",
+                                        "type": "boolean",
+                                        "description": "Whether the form cannot be sent without it."
+                                    }
+                                }
+                            },
+                            "privacy": {
+                                "title": "Privacy consent",
+                                "type": "object",
+                                "description": "Whether the privacy consent is asked, and whether it is required.",
+                                "properties": {
+                                    "required": {
+                                        "title": "Required",
+                                        "type": "boolean",
+                                        "description": "Whether the form cannot be sent without it."
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "confirmation": {
+                        "title": "Confirmation page",
+                        "type": "object",
+                        "description": "The page after sending: a title, a body with {reference} and {deadline}, and the steps that follow. A sentence whose value is empty is left out. `confirmationText` is the fallback body.",
+                        "properties": {
+                            "title": {
+                                "title": "Confirmation title",
+                                "type": "string",
+                                "description": "The heading of the confirmation page."
+                            },
+                            "body": {
+                                "title": "Confirmation body",
+                                "type": "string",
+                                "description": "The text under the heading. Write {reference} and {deadline} where they belong."
+                            },
+                            "next": {
+                                "title": "Next steps",
+                                "type": "array",
+                                "description": "What happens now, in order.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {
+                                            "title": "Step title",
+                                            "type": "string",
+                                            "description": "The step heading."
+                                        },
+                                        "text": {
+                                            "title": "Step text",
+                                            "type": "string",
+                                            "description": "The step text."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "confirmationMail": {
+                        "title": "Confirmation mail",
+                        "type": "object",
+                        "description": "The mail with the reference and a summary of the answers, sent to the e-mail address in the form.",
+                        "properties": {
+                            "enabled": {
+                                "title": "Send the mail",
+                                "type": "boolean",
+                                "description": "Whether a confirmation mail is sent."
+                            }
+                        }
+                    },
                     "minTrust": {
                         "title": "Sign-in level",
                         "type": "string",
@@ -7583,7 +7744,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Intake Submission",
                 "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
                 "type": "object",
@@ -7673,6 +7834,41 @@
                         "format": "date-time",
                         "description": "When it was submitted.",
                         "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "statements": {
+                        "title": "Accepted statements",
+                        "type": "array",
+                        "description": "The statements the resident accepted when sending: the key, the version of the text and the moment.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "key": {
+                                    "title": "Statement key",
+                                    "type": "string",
+                                    "description": "`truth` or `privacy`."
+                                },
+                                "textVersion": {
+                                    "title": "Text version",
+                                    "type": "string",
+                                    "description": "The version of the statement text the resident saw."
+                                },
+                                "acceptedAt": {
+                                    "title": "Accepted at",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the statement was accepted."
+                                }
+                            }
+                        }
+                    },
+                    "confirmationMailState": {
+                        "title": "Confirmation mail state",
+                        "type": "string",
+                        "enum": [
+                            "sent",
+                            "failed"
+                        ],
+                        "description": "Whether the confirmation mail went out. Failed lists the submission under Bevestiging mislukt."
                     },
                     "registeredAt": {
                         "title": "Registered at",

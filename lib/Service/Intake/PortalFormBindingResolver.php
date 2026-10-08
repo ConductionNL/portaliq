@@ -257,6 +257,13 @@ class PortalFormBindingResolver {
 			'prefillFromEarlierCases' => (($binding['prefillFromEarlierCases'] ?? false) === true),
 			'challenge' => (($binding['challenge'] ?? false) === true),
 			'confirmationText' => (string)($binding['confirmationText'] ?? ''),
+			// The introduction, the statements asked, the confirmation page and
+			// mail (form-statements-intro-and-confirmation-mail). Carried as the
+			// binding declares them; the controller adds the portal's wording.
+			'intro' => $this->arrayOrNull(value: ($binding['intro'] ?? null)),
+			'statementsDeclared' => $this->arrayOrNull(value: ($binding['statements'] ?? null)),
+			'confirmation' => $this->arrayOrNull(value: ($binding['confirmation'] ?? null)),
+			'confirmationMail' => ((($binding['confirmationMail']['enabled'] ?? false)) === true),
 		];
 
 		if ($this->caseTypes?->hidesBinding(binding: $binding) === true) {
@@ -461,6 +468,21 @@ class PortalFormBindingResolver {
 
 		return $out;
 	}//end fieldsOf()
+
+	/**
+	 * A value when it is an array, otherwise null.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function arrayOrNull(mixed $value): ?array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		return null;
+	}//end arrayOrNull()
 
 	/**
 	 * A field that names a reference list gets that list's active items as

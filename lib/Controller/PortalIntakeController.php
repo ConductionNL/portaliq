@@ -33,6 +33,9 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
+use OCA\Portaliq\Service\Intake\FormConfirmationSummary;
+use OCA\Portaliq\Service\Intake\FormStatements;
 use OCA\Portaliq\Service\Intake\PortalAddressLookup;
 use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
@@ -77,6 +80,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalCatalogueReader $catalogue The published request entries.
 	 * @param PortalAddressLookup|null $addresses Finds street and town for a postcode and number.
 	 * @param PortalFamilyMembers|null $family Lists and re-checks the resident's family from the BRP.
+	 * @param FormStatements|null $statements Resolves and checks the statements a form asks.
+	 * @param FormConfirmationMailer|null $confirmationMail Mails the resident the reference and a summary.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -90,6 +95,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly PortalCatalogueReader $catalogue,
 		private readonly ?PortalAddressLookup $addresses = null,
 		private readonly ?PortalFamilyMembers $family = null,
+		private readonly ?FormStatements $statements = null,
+		private readonly ?FormConfirmationMailer $confirmationMail = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -183,6 +190,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			fields: (array)($render['fields'] ?? [])
 		);
 
+		$render['statements'] = $this->askedStatements(render: $render, site: $site);
+
 		if (($render['settings']['challenge'] ?? false) === true) {
 			$render['challenge'] = $this->challenge->issue(site: $site, surface: 'form');
 		}
@@ -200,6 +209,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param int $expiresAt The expiry issued with the nonce.
 	 * @param string $signature This instance's signature over the nonce.
 	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
+	 * @param array<int, string> $statements The keys of the statements the citizen ticked.
 	 *
 	 * @return JSONResponse The reference, the per-field errors, or a refusal.
 	 *
@@ -216,6 +226,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		int $expiresAt = 0,
 		string $signature = '',
 		string $portal = '',
+		array $statements = [],
 	): JSONResponse {
 		$site = $this->site(portal: $portal);
 		if ($site === null) {
@@ -264,21 +275,47 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['errors' => $familyErrors], Http::STATUS_BAD_REQUEST);
 		}
 
+		// The statements the form asks are accepted before anything is
+		// recorded, and each accepted one is recorded with the version of its
+		// text (form-statements-intro-and-confirmation-mail REQ-FCI-002).
+		$asked = $this->askedStatements(render: $render, site: $site);
+		$checked = ['errors' => [], 'record' => []];
+		if ($asked !== []) {
+			if ($this->statements === null) {
+				return new JSONResponse(['error' => 'statements_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+			}
+
+			$checked = $this->statements->check(asked: $asked, accepted: $statements);
+			if ($checked['errors'] !== []) {
+				$errors = [];
+				foreach ($checked['errors'] as $key => $message) {
+					$errors['statement-' . $key] = $message;
+				}
+
+				return new JSONResponse(['errors' => $errors], Http::STATUS_BAD_REQUEST);
+			}
+		}
+
 		$accepted = $this->queue->accept(
 			portal: (string)($site['slug'] ?? ''),
 			route: $route,
 			answers: $validated['answers'],
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			origin: (string)$this->request->getHeader('Origin')
+			origin: (string)$this->request->getHeader('Origin'),
+			statements: $checked['record']
 		);
 		if ($accepted === null) {
 			return new JSONResponse(['error' => 'not_accepted'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
+		$mailedTo = $this->sendConfirmation(site: $site, render: $render, answers: $validated['answers'], reference: $accepted['reference']);
+
 		return new JSONResponse([
 			'reference' => $accepted['reference'],
 			'state' => $accepted['state'],
 			'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
+			'confirmation' => ($render['settings']['confirmation'] ?? null),
+			'mailedTo' => $mailedTo,
 		]);
 	}//end submit()
 
@@ -346,6 +383,86 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		return $errors;
 	}//end familyErrors()
+
+	/**
+	 * The statements this form asks, with the portal's wording.
+	 *
+	 * @param array<string, mixed> $render What the binding renders to.
+	 * @param array<string, mixed> $site   The portal.
+	 *
+	 * @return array<int, array{key: string, required: bool, text: string, version: string}>
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+	 */
+	private function askedStatements(array $render, array $site): array {
+		$declared = ($render['settings']['statementsDeclared'] ?? null);
+		if ($declared === null) {
+			return [];
+		}
+
+		if ($this->statements === null) {
+			// A form that asks for statements this server cannot show is not sent.
+			return array_map(
+				static fn (string $key): array => ['key' => $key, 'required' => true, 'text' => '', 'version' => ''],
+				array_keys(array_intersect_key((array)$declared, array_flip(FormStatements::KEYS)))
+			);
+		}
+
+		return $this->statements->asked(declared: $declared, site: $site);
+	}//end askedStatements()
+
+	/**
+	 * Mail the confirmation when the form asks for it, and record the outcome.
+	 *
+	 * @param array<string, mixed> $site      The portal.
+	 * @param array<string, mixed> $render    What the binding renders to.
+	 * @param array<string, mixed> $answers   The accepted answers.
+	 * @param string               $reference The submission's reference.
+	 *
+	 * @return string The address the mail went to, or '' when none went.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	private function sendConfirmation(array $site, array $render, array $answers, string $reference): string {
+		if (($render['settings']['confirmationMail'] ?? false) !== true || $this->confirmationMail === null) {
+			return '';
+		}
+
+		$fields = (array)($render['fields'] ?? []);
+		$email  = $this->confirmationMail->addressIn(fields: $fields, answers: $answers);
+		if ($email === '') {
+			return '';
+		}
+
+		$sent = $this->confirmationMail->send(
+			email: $email,
+			site: $site,
+			reference: $reference,
+			formName: (string)($render['formName'] ?? ''),
+			summary: (new FormConfirmationSummary())->build(fields: $fields, answers: $answers)
+		);
+		$this->queue->markConfirmationMail(reference: $reference, portal: (string)($site['slug'] ?? ''), state: $this->mailState(sent: $sent));
+		if ($sent === true) {
+			return $email;
+		}
+
+		return '';
+	}//end sendConfirmation()
+
+	/**
+	 * The state word recorded for a mail.
+	 *
+	 * @param bool $sent Whether the mail server took it.
+	 *
+	 * @return string
+	 */
+	private function mailState(bool $sent): string {
+		if ($sent === true) {
+			return 'sent';
+		}
+
+		return 'failed';
+	}//end mailState()
 
 	/**
 	 * What became of a submission.

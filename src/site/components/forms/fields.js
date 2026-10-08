@@ -185,6 +185,10 @@ export const DUTCH = Object.freeze({
 	change: 'Wijzigen',
 	changeStep: 'Stap {n} wijzigen',
 	notAnswered: 'Niet ingevuld',
+	mailedTo: 'Wij hebben een bevestiging gestuurd naar {email}, met een samenvatting van uw aanvraag. Geen mail gezien? Kijk ook bij uw ongewenste e-mail.',
+	whatNow: 'Wat gebeurt er nu?',
+	print: 'Deze pagina printen',
+	statementRequired: 'Vink deze verklaring aan voordat u verstuurt.',
 })
 
 /**

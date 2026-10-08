@@ -270,6 +270,8 @@ class PortalIntakeControllerTest extends TestCase {
 		array $site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
 		?\OCA\Portaliq\Service\Intake\PortalAddressLookup $addresses = null,
 		?\OCA\Portaliq\Service\Intake\PortalFamilyMembers $family = null,
+		?\OCA\Portaliq\Service\Intake\FormStatements $statements = null,
+		?\OCA\Portaliq\Service\Intake\FormConfirmationMailer $mailer = null,
 	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -289,7 +291,7 @@ class PortalIntakeControllerTest extends TestCase {
 
 		$this->doubles = [
 			'portals' => $portals,
-			'queue' => $this->double(PortalIntakeQueue::class, ['accept', 'status']),
+			'queue' => $this->double(PortalIntakeQueue::class, ['accept', 'status', 'markConfirmationMail']),
 			'prefill' => $this->double(PortalApplicantPrefill::class, ['forSubject']),
 			'challenge' => $this->double(PortalChallengeService::class, ['issue', 'accepts']),
 			'catalogue' => $this->double(PortalCatalogueReader::class, ['topicsFor']),
@@ -306,7 +308,9 @@ class PortalIntakeControllerTest extends TestCase {
 			$this->doubles['challenge'],
 			$this->doubles['catalogue'],
 			$addresses,
-			$family
+			$family,
+			$statements,
+			$mailer
 		);
 	}//end controller()
 
@@ -365,6 +369,129 @@ class PortalIntakeControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertArrayHasKey('mee', $response->getData()['errors']);
 	}//end testAForgedFamilyReferenceStopsTheSubmit()
+
+	/**
+	 * A form that asks both statements, on a portal that words them.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function formWithStatements(): array {
+		$form = $this->hostedForm();
+		$form['settings']['statementsDeclared'] = ['truth' => ['required' => true], 'privacy' => ['required' => true]];
+
+		return $form;
+	}//end formWithStatements()
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function wordedSite(): array {
+		return [
+			'slug' => 'gemeente-x',
+			'organisation' => 'gemeente-x',
+			'statementTexts' => ['truth' => ['text' => 'Mijn antwoorden kloppen.', 'version' => '2'], 'privacy' => ['text' => 'Ik ga akkoord.', 'version' => '5']],
+		];
+	}//end wordedSite()
+
+	/**
+	 * form-statements-intro-and-confirmation-mail T03: a required statement
+	 * that is not ticked stops the submission and names the statement.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+	 */
+	public function testAMissingRequiredStatementStopsTheSubmission(): void {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
+		$controller = $this->controller(render: $this->formWithStatements(), site: $this->wordedSite(), statements: new \OCA\Portaliq\Service\Intake\FormStatements($l10n));
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], statements: ['truth']);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['statement-privacy'], array_keys($response->getData()['errors']));
+	}//end testAMissingRequiredStatementStopsTheSubmission()
+
+	/**
+	 * Both statements ticked: the submission records each with its text version.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+	 */
+	public function testAcceptedStatementsAreRecordedWithTheirTextVersion(): void {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
+		$controller = $this->controller(render: $this->formWithStatements(), site: $this->wordedSite(), statements: new \OCA\Portaliq\Service\Intake\FormStatements($l10n));
+		$recorded = null;
+		$this->doubles['queue']->method('accept')->willReturnCallback(
+			function (string $portal, string $route, array $answers, string $subjectRef = '', string $origin = '', array $statements = []) use (&$recorded): array {
+				$recorded = $statements;
+				return ['reference' => 'AANVRAAG-ABC123', 'state' => 'queued'];
+			}
+		);
+
+		$controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], statements: ['truth', 'privacy', 'invented']);
+
+		$this->assertSame(['truth', 'privacy'], array_column($recorded, 'key'));
+		$this->assertSame(['2', '5'], array_column($recorded, 'textVersion'));
+		$this->assertNotEmpty($recorded[0]['acceptedAt']);
+	}//end testAcceptedStatementsAreRecordedWithTheirTextVersion()
+
+	/**
+	 * A required statement the portal has no wording for cannot be accepted.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+	 */
+	public function testARequiredStatementWithoutTextBlocksTheForm(): void {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
+		$controller = $this->controller(render: $this->formWithStatements(), statements: new \OCA\Portaliq\Service\Intake\FormStatements($l10n));
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], statements: ['truth', 'privacy']);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertCount(2, $response->getData()['errors']);
+	}//end testARequiredStatementWithoutTextBlocksTheForm()
+
+	/**
+	 * With the confirmation mail on, the mail goes to the form's e-mail answer,
+	 * the page learns where, and a refusal is recorded as failed.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	public function testTheConfirmationMailIsSentRecordedAndNamedOnThePage(): void {
+		foreach ([true, false] as $sent) {
+			$render = $this->hostedForm();
+			$render['fields'][] = ['name' => 'mail', 'type' => 'email'];
+			$render['settings']['confirmationMail'] = true;
+			$mailer = $this->double(\OCA\Portaliq\Service\Intake\FormConfirmationMailer::class, ['addressIn', 'send']);
+			$mailer->method('addressIn')->willReturn('sanne@example.nl');
+			$mailer->method('send')->willReturn($sent);
+			$controller = $this->controller(render: $render, mailer: $mailer);
+			$this->doubles['queue']->method('accept')->willReturn(['reference' => 'AANVRAAG-ABC123', 'state' => 'queued']);
+			$this->doubles['queue']->expects($this->once())->method('markConfirmationMail')->with('AANVRAAG-ABC123', 'gemeente-x', $sent ? 'sent' : 'failed');
+
+			$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB', 'mail' => 'sanne@example.nl'])->getData();
+
+			$this->assertSame($sent ? 'sanne@example.nl' : '', $data['mailedTo']);
+		}
+	}//end testTheConfirmationMailIsSentRecordedAndNamedOnThePage()
+
+	/**
+	 * No mail is sent when the form does not ask for one.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	public function testNoMailGoesWhenTheFormDoesNotAskForOne(): void {
+		$mailer = $this->double(\OCA\Portaliq\Service\Intake\FormConfirmationMailer::class, ['addressIn', 'send']);
+		$mailer->expects($this->never())->method('send');
+		$controller = $this->controller(render: $this->hostedForm(), mailer: $mailer);
+		$this->doubles['queue']->method('accept')->willReturn(['reference' => 'AANVRAAG-ABC123', 'state' => 'queued']);
+		$this->doubles['queue']->expects($this->never())->method('markConfirmationMail');
+
+		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getData();
+
+		$this->assertSame('', $data['mailedTo']);
+	}//end testNoMailGoesWhenTheFormDoesNotAskForOne()
 
 	/**
 	 * A double of one class, limited to the methods it really has.

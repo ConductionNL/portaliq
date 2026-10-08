@@ -36,6 +36,40 @@ class PortalIntakeQueueTest extends TestCase {
 
 	}//end testASubmissionIsAcknowledgedWithAReferenceAndNoCase()
 
+	/**
+	 * form-statements-intro-and-confirmation-mail T03: the accepted statements
+	 * are stored on the submission with their text version and time.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+	 */
+	public function testAcceptedStatementsAreStoredOnTheSubmission(): void {
+		$queue = $this->queue();
+		$statements = [['key' => 'truth', 'textVersion' => '2', 'acceptedAt' => '2026-10-08T10:00:00+00:00']];
+
+		$queue->accept(portal: 'gemeente-x', route: 'woo', answers: [], statements: $statements);
+		$queue->accept(portal: 'gemeente-x', route: 'woo', answers: []);
+
+		$rows = $this->storedRows('portalIntakeSubmission');
+		$this->assertSame($statements, $rows[0]['statements']);
+		$this->assertArrayNotHasKey('statements', $rows[1]);
+	}//end testAcceptedStatementsAreStoredOnTheSubmission()
+
+	/**
+	 * T05: a mail that failed is recorded on the submission; any other word is refused.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	public function testTheConfirmationMailOutcomeIsRecorded(): void {
+		$queue = $this->queue();
+		$accepted = $queue->accept(portal: 'gemeente-x', route: 'woo', answers: []);
+
+		$this->assertTrue($queue->markConfirmationMail($accepted['reference'], 'gemeente-x', 'failed'));
+		$this->assertSame('failed', $this->storedRows('portalIntakeSubmission')[0]['confirmationMailState']);
+		$this->assertFalse($queue->markConfirmationMail($accepted['reference'], 'gemeente-x', 'maybe'));
+		$this->assertFalse($queue->markConfirmationMail($accepted['reference'], 'andere-gemeente', 'sent'));
+		$this->assertFalse($queue->markConfirmationMail('AANVRAAG-NOPE', 'gemeente-x', 'sent'));
+	}//end testTheConfirmationMailOutcomeIsRecorded()
+
 	public function testTheReferencePageSaysQueuedUntilTheCaseExists(): void {
 		$queue = $this->queue();
 		$accepted = $queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: []);

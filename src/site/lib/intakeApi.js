@@ -258,6 +258,7 @@ export function initialValues(fields, prefill) {
  * @param {string} portal The portal slug, or ''.
  * @param {string} token The portal bearer, or ''.
  * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
+ * @param statements
  * @return {Promise<{reference: string, confirmationText: string, errors: object}>} The outcome.
  *
  * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
@@ -269,10 +270,14 @@ export async function submitIntake(
 	portal,
 	token,
 	fetchImpl = null,
+	statements = [],
 ) {
 	const body = { route, answers: answers || {} }
 	if (portal) {
 		body.portal = portal
+	}
+	if (Array.isArray(statements) && statements.length > 0) {
+		body.statements = statements
 	}
 
 	const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/submit'), {
@@ -295,6 +300,8 @@ export async function submitIntake(
 	return {
 		reference: String(parsed.reference),
 		confirmationText: String(parsed.confirmationText || ''),
+		confirmation: parsed.confirmation || null,
+		mailedTo: String(parsed.mailedTo || ''),
 		errors: {},
 	}
 }

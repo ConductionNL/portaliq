@@ -44,16 +44,25 @@
 			</a>
 		</div>
 
+		<FormIntro
+			v-else-if="state === 'intro'"
+			:intro="render.settings && render.settings.intro"
+			:formName="hideFormName ? '' : render.formName || ''"
+			@start="state = 'form'" />
+
 		<div v-else-if="state === 'done'" data-testid="intake-form-done">
 			<h2
 				ref="doneHeading"
 				class="utrecht-heading-2"
 				tabindex="-1"
 				data-testid="intake-form-done-heading">
-				{{ doneLabel }}
+				{{ confirmationPage.title }}
 			</h2>
-			<p v-if="confirmationText" class="utrecht-paragraph">
-				{{ confirmationText }}
+			<p
+				v-if="confirmationPage.body"
+				class="utrecht-paragraph"
+				data-testid="intake-form-done-body">
+				{{ confirmationPage.body }}
 			</p>
 			<p class="utrecht-paragraph" role="status">
 				{{ referenceLabel }}
@@ -61,6 +70,32 @@
 			</p>
 			<p class="utrecht-paragraph">
 				{{ keepReferenceLabel }}
+			</p>
+			<p
+				v-if="mailedTo"
+				class="utrecht-paragraph"
+				data-testid="intake-form-mailed">
+				{{ text.mailedTo.split('{email}').join(mailedTo) }}
+			</p>
+			<template v-if="confirmationPage.next.length > 0">
+				<h3 class="utrecht-heading-3">
+					{{ text.whatNow }}
+				</h3>
+				<ol data-testid="intake-form-next-steps">
+					<li v-for="(step, index) in confirmationPage.next" :key="index">
+						<strong v-if="step.title">{{ step.title }}</strong>
+						{{ step.text }}
+					</li>
+				</ol>
+			</template>
+			<p>
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action"
+					data-testid="intake-form-print"
+					@click="print">
+					{{ text.print }}
+				</button>
 			</p>
 		</div>
 
@@ -201,6 +236,12 @@
 					:data-testid="`intake-field-${field.name}`" />
 			</FieldShell>
 
+			<StatementsBlock
+				v-if="statementsShown"
+				v-model="accepted"
+				:statements="render.statements"
+				:errors="statementErrors" />
+
 			<div class="pq-intake-form__buttons">
 				<button
 					v-if="hasSteps && stepIndex > 0"
@@ -245,8 +286,10 @@ import DateInputGroup from './forms/DateInputGroup.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
 import FamilyMembers from './forms/FamilyMembers.vue'
 import FieldShell from './forms/FieldShell.vue'
+import FormIntro from './forms/FormIntro.vue'
 import FormProgress from './forms/FormProgress.vue'
 import ReviewList from './forms/ReviewList.vue'
+import StatementsBlock from './forms/StatementsBlock.vue'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import {
@@ -256,6 +299,7 @@ import {
 	submitIntake,
 } from '../lib/intakeApi.js'
 import { addressLine, addressProblem } from './forms/address.js'
+import { confirmationView, introView, missingStatements } from './forms/confirmation.js'
 import {
 	DUTCH,
 	explainsOptional,
@@ -295,6 +339,8 @@ export default {
 		AddressNL,
 		DateInputGroup,
 		FamilyMembers,
+		FormIntro,
+		StatementsBlock,
 		ErrorSummary,
 		FieldShell,
 		FormProgress,
@@ -415,10 +461,45 @@ export default {
 			sendFailed: false,
 			reference: '',
 			confirmationText: '',
+			accepted: [],
+			statementErrors: {},
+			confirmation: null,
+			mailedTo: '',
 		}
 	},
 
 	computed: {
+		/**
+		 * The statements show on the review step, or at the end of a one-page form.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+		 */
+		statementsShown() {
+			return (
+				Array.isArray(this.render.statements)
+				&& this.render.statements.length > 0
+				&& (!this.hasSteps || this.onReview)
+			)
+		},
+
+		/**
+		 * What the confirmation page says.
+		 *
+		 * @return {object} `{title, body, next}`.
+		 *
+		 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t04
+		 */
+		confirmationPage() {
+			return confirmationView(
+				this.confirmation,
+				this.confirmationText,
+				{ reference: this.reference, deadline: '' },
+				this.doneLabel,
+			)
+		},
+
 		/** The portal api base the address lookup asks. */
 		/**
 		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
@@ -628,7 +709,10 @@ export default {
 				)
 				this.render = view.render
 				this.values = initialValues(view.render.fields, view.render.prefill)
-				this.state = view.state
+				this.state =
+					view.state === 'form' && introView(view.render.settings?.intro)
+						? 'intro'
+						: view.state
 			} catch {
 				this.state = 'notFound'
 			}
@@ -653,6 +737,13 @@ export default {
 				return
 			}
 			this.errors = {}
+			const missing = missingStatements(this.render.statements, this.accepted)
+			this.statementErrors = Object.fromEntries(
+				missing.map((key) => [key, this.text.statementRequired]),
+			)
+			if (missing.length > 0) {
+				return
+			}
 
 			this.submitting = true
 			try {
@@ -662,14 +753,26 @@ export default {
 					this.values,
 					this.portal,
 					adoptSessionToken(),
+					null,
+					this.accepted,
 				)
 				if (outcome.reference === '') {
-					this.showErrors(this.messagesOf(outcome.errors))
+					const messages = this.messagesOf(outcome.errors)
+					this.statementErrors = {}
+					for (const key of Object.keys(messages)) {
+						if (key.startsWith('statement-')) {
+							this.statementErrors[key.slice(10)] = messages[key]
+							delete messages[key]
+						}
+					}
+					this.showErrors(messages)
 					return
 				}
 
 				this.reference = outcome.reference
 				this.confirmationText = outcome.confirmationText
+				this.confirmation = outcome.confirmation
+				this.mailedTo = outcome.mailedTo
 				this.state = 'done'
 				this.$nextTick(() => {
 					if (this.$refs.doneHeading) {
@@ -681,6 +784,17 @@ export default {
 			} finally {
 				this.submitting = false
 			}
+		},
+
+		/**
+		 * Print the confirmation page.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t04
+		 */
+		print() {
+			window.print()
 		},
 
 		/**
