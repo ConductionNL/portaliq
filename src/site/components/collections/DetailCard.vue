@@ -29,7 +29,18 @@
 		</component>
 		<!-- The fields as a description list (site-mijn-omgeving-components
 		     REQ-SMO-005, design D2). -->
-		<DescriptionList :items="facts" itemTestid="detail-card-field" />
+		<DescriptionList :items="facts" itemTestid="detail-card-field">
+			<!-- A `qr` field draws its code in full (link-field-qr-code). -->
+			<template
+				v-for="field in qrFields"
+				:key="field.field"
+				#[`value-${field.field}`]>
+				<QrValue
+					:value="String(detailRow[field.field] ?? '')"
+					:column="field"
+					:locale="locale" />
+			</template>
+		</DescriptionList>
 
 		<!-- The record as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
 		<PdfDownloadButton v-if="collection.exportPdf === true" :id="rowId" :collection="collection" :api="api" :locale="locale" />
@@ -120,6 +131,7 @@
 import { defineAsyncComponent } from 'vue'
 import DescriptionList from '../mijn/DescriptionList.vue'
 import ItemList from './ItemList.vue'
+import QrValue from './QrValue.vue'
 import SlotHost from './SlotHost.vue'
 import TimelineList from './TimelineList.vue'
 import { rowNotice } from '../../../shared/rowAction.js'
@@ -151,6 +163,7 @@ export default {
 		ItemList,
 		// On demand: only a collection that opted in with `exportPdf` loads it.
 		PdfDownloadButton: defineAsyncComponent(() => import('./PdfDownloadButton.vue')),
+		QrValue,
 		SlotHost,
 		TimelineList,
 	},
@@ -242,6 +255,14 @@ export default {
 				label: field.label,
 				value: field.text,
 			}))
+		},
+
+		/**
+		 * @return {Array<object>} The fields that render as a QR code.
+		 * @spec openspec/changes/link-field-qr-code/tasks.md#t5
+		 */
+		qrFields() {
+			return this.fields.filter((field) => field.render === 'qr')
 		},
 
 		files() {

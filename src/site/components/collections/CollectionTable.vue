@@ -79,13 +79,21 @@
 							:class="`pq-collection-table__badge--${badge(row, column)}`">
 							{{ cellText(row, column) }}
 						</span>
+						<QrValue
+							v-else-if="column.render === 'qr'"
+							:value="String(row[column.field] ?? '')"
+							:column="column"
+							compact
+							:open="openQr === qrKey(row, column)"
+							:locale="locale"
+							@toggle="toggleQr(row, column)" />
 						<a
 							v-else-if="
 								column.render === 'link' && href(row, column) !== ''
 							"
 							class="utrecht-link"
 							:href="href(row, column)">
-							{{ cellText(row, column) }}
+							{{ column.linkLabel || cellText(row, column) }}
 						</a>
 						<template v-else>
 							{{ cellText(row, column) }}
@@ -121,6 +129,7 @@
 </template>
 
 <script>
+import QrValue from './QrValue.vue'
 import { unavailableReason } from '../../../shared/rowAction.js'
 import {
 	badgeModifier,
@@ -148,6 +157,8 @@ import {
 export default {
 	name: 'CollectionTable',
 
+	components: { QrValue },
+
 	props: {
 		/** The collection: `id`, `kind`, `columns`. */
 		collection: { type: Object, required: true },
@@ -174,6 +185,10 @@ export default {
 	},
 
 	emits: ['select', 'rowAction'],
+
+	data() {
+		return { openQr: '' }
+	},
 
 	computed: {
 		rows() {
@@ -208,6 +223,29 @@ export default {
 				&& this.busyRow !== undefined
 				&& this.busyRow === rowIdOf(row)
 			)
+		},
+
+		/**
+		 * @param {object} row A row.
+		 * @param {object} column A `qr` column.
+		 * @return {string} The key of that cell, to open one code at a time.
+		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 */
+		qrKey(row, column) {
+			return `${rowIdOf(row)}:${column.field}`
+		},
+
+		/**
+		 * Open this cell's code, or close it when it is the open one; opening one closes the other.
+		 *
+		 * @param {object} row A row.
+		 * @param {object} column A `qr` column.
+		 * @return {void}
+		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 */
+		toggleQr(row, column) {
+			const key = this.qrKey(row, column)
+			this.openQr = this.openQr === key ? '' : key
 		},
 
 		cellText(row, column) {

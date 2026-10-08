@@ -206,6 +206,7 @@ export function detailFields(collection, row) {
 			field,
 			label: columnLabel(column),
 			render: column.render || 'text',
+			linkLabel: column.linkLabel,
 			valueLabels: column.valueLabels || config.valueLabels,
 			declared: declared.length > 0,
 		}
@@ -421,6 +422,55 @@ export function safeHref(value) {
 		|| (href.startsWith('/') && !href.startsWith('//'))
 		? href
 		: ''
+}
+
+/** The schemes a `qr` value may have besides http(s) and a site path: the two EUDI wallet schemes. */
+const QR_SCHEMES = /^(openid-credential-offer|openid4vp):\/\//i
+
+/**
+ * The address a `qr` cell draws as a code and links to: http(s), a
+ * site-relative path made absolute on the site's own origin (a phone camera
+ * cannot resolve a path), or an `openid-credential-offer://` or
+ * `openid4vp://` value. Anything else, `javascript:` included, is no
+ * address: it reads as plain text, with no code and no link.
+ *
+ * @param {unknown} value The value.
+ * @param {string} origin The site's origin, to make a path absolute.
+ * @return {string} The address, or '' when it is not one.
+ *
+ * @spec openspec/changes/link-field-qr-code/tasks.md#t3
+ */
+export function qrHref(value, origin = '') {
+	if (typeof value !== 'string') {
+		return ''
+	}
+	const href = value.trim()
+	if (QR_SCHEMES.test(href) && /^[!-~]+$/.test(href)) {
+		return href
+	}
+	const safe = safeHref(href)
+	if (safe.startsWith('/') && origin !== '') {
+		return `${String(origin).replace(/\/$/, '')}${safe}`
+	}
+	return safe.startsWith('/') ? '' : safe
+}
+
+/**
+ * The words of a link or code: the column's `linkLabel`, else its label, else
+ * the field name.
+ *
+ * @param {{linkLabel?: string, label?: string, field?: string}} column The column or field.
+ * @return {string} The words.
+ *
+ * @spec openspec/changes/link-field-qr-code/tasks.md#t5
+ */
+export function qrLabel(column) {
+	for (const key of ['linkLabel', 'label', 'field']) {
+		if (typeof column?.[key] === 'string' && column[key].trim() !== '') {
+			return column[key].trim()
+		}
+	}
+	return ''
 }
 
 /**

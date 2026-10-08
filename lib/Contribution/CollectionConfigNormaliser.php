@@ -47,7 +47,7 @@ class CollectionConfigNormaliser {
 	/**
 	 * Allowed column render kinds; anything else normalises to `text`.
 	 */
-	private const RENDER_KINDS = ['text', 'date', 'datetime', 'badge', 'currency', 'boolean', 'link', 'user'];
+	private const RENDER_KINDS = ['text', 'date', 'datetime', 'badge', 'currency', 'boolean', 'link', 'qr', 'user'];
 
 	/**
 	 * Allowed detail layouts; anything else normalises to `card`.
@@ -309,10 +309,39 @@ class CollectionConfigNormaliser {
 		}
 
 		$entry['render'] = $this->values->oneOf(value: ($column['render'] ?? null), allowed: self::RENDER_KINDS, default: 'text');
+		// The words of a link or a code, 1 to 60 characters, on a link or qr column only
+		// (link-field-qr-code).
+		$entry = $this->withLinkLabel(entry: $entry, source: $column);
+
 		// How each value reads ("approved" as "Goedgekeurd"); the cell falls
 		// back to the raw value for one the app did not label.
 		return (new ValueLabelsNormaliser())->apply(entry: $entry, source: $column);
 	}//end normaliseColumn()
+
+	/**
+	 * Keep a trimmed `linkLabel` of 1 to 60 characters on a `link` or `qr`
+	 * column; drop it on any other kind and when it is not that.
+	 *
+	 * @param array<string, mixed> $entry  The column so far.
+	 * @param array<string, mixed> $source The declared column.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/link-field-qr-code/tasks.md#t1
+	 */
+	private function withLinkLabel(array $entry, array $source): array {
+		$label = ($source['linkLabel'] ?? null);
+		if (in_array($entry['render'], ['link', 'qr'], true) === false || is_string($label) === false) {
+			return $entry;
+		}
+
+		$label = trim($label);
+		if ($label !== '' && mb_strlen($label) <= 60) {
+			$entry['linkLabel'] = $label;
+		}
+
+		return $entry;
+	}//end withLinkLabel()
 
 	/**
 	 * Keep a well-formed `detail` (layout + string `fields`); drop otherwise.

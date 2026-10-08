@@ -427,6 +427,7 @@ test('site: the slice exports its pages by the React section keys, each a lazy c
 		'__cases__',
 		'__contacts__',
 		'__details__',
+		'__theme__',
 	])
 	const index = readFileSync(
 		join(ROOT, 'src', 'site', 'pages', 'e', 'index.js'),

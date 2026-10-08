@@ -21,7 +21,9 @@
 				{{ item.label }}
 			</dt>
 			<dd class="utrecht-data-list__item-value pq-description-list__value">
-				{{ item.value }}
+				<slot :name="`value-${item.key}`" :item="item">
+					{{ item.value }}
+				</slot>
 			</dd>
 		</div>
 	</dl>
