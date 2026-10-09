@@ -122,12 +122,7 @@ import { fetchPublicNewsItem } from '../../lib/publicNews.js'
 import { interpolate, pageLocale } from '../../pages/inbox/translate.js'
 import strings from '../nlNewsList/strings.js'
 import { cardButton, safeWays } from '../nlSignIn/signIn.js'
-import {
-	areaName,
-	articleParts,
-	eventCardState,
-	splitLead,
-} from './article.js'
+import { areaName, articleParts, eventCardState, splitLead } from './article.js'
 
 import '@utrecht/heading-1-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
