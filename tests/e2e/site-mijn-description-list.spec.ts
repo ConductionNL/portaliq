@@ -74,10 +74,11 @@ test.describe('site-mijn-description-list', () => {
 			.filter({ hasText: label })
 			.first()
 			.click()
-		await page
-			.getByRole('button', { name: /Kapvergunning Lindelaan/ })
-			.first()
-			.click()
+		// The fixture declares no columns, so the table takes the row's own
+		// field order and the select button carries the first field (the
+		// subject reference), not the case number. The resident has this one
+		// case, so its row is the first.
+		await page.getByTestId('collection-table-select').first().click()
 		const list = page
 			.getByTestId('detail-card')
 			.getByTestId('mijn-description-list')
