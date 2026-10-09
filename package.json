@@ -214,7 +214,7 @@
   "dependencies": {
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.5",
-    "@babel/runtime": "^7.23.6",
+    "@babel/runtime": "^8.0.7",
     "@conduction/nextcloud-vue": "^2.74.0",
     "@gemeente-denhaag/action": "4.4.2",
     "@gemeente-denhaag/card": "5.1.4",
