@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 
@@ -58,6 +59,7 @@ class SiteShell {
 	 * @param SiteHead                    $siteHead       The head of the page a site request asks for.
 	 * @param PortalNoticeReader          $notices        The notices running on the signed-in surface now.
 	 * @param PortalRuntimeConfigResolver $configResolver Resolves the runtime config built from the portal.
+	 * @param SiteIcon                    $siteIcon       The tab icon: favicon, logo, theme icon, own mark.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
@@ -67,6 +69,7 @@ class SiteShell {
 		private readonly SiteHead $siteHead,
 		private readonly PortalNoticeReader $notices,
 		private readonly PortalRuntimeConfigResolver $configResolver,
+		private readonly SiteIcon $siteIcon,
 	) {
 	}//end __construct()
 
@@ -113,6 +116,8 @@ class SiteShell {
 			'themeParents' => $theme->parents(),
 			'themeTokenCss' => $theme->tokenCss(),
 			'themeLogoUrl' => $theme->logoUrl(),
+			// The one tab icon (portal-identity-from-the-admin REQ-PIA-002).
+			'siteIcon' => $this->siteIcon->url(portal: $this->sitePortal(), themeIcon: $theme->logoUrl()),
 			'themeAppSheets' => $theme->appSheets(),
 			// The NLDS token set this app ships for the serving portal's
 			// theme, when it has one. Separate from the line above because
@@ -313,6 +318,22 @@ class SiteShell {
 			return [];
 		}
 	}//end sitePortalNotices()
+
+	/**
+	 * The serving portal, or null when the request resolves to none.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function sitePortal(): ?array {
+		try {
+			return $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: $this->requestedPortalSlug()
+			);
+		} catch (\Throwable) {
+			return null;
+		}
+	}//end sitePortal()
 
 	/**
 	 * The serving portal's slug, or '' when the request resolves to none.

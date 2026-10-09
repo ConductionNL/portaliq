@@ -54,6 +54,7 @@ use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\Cms\AccessibilityFraming;
 use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -99,6 +100,7 @@ class PortalPageController extends Controller {
 	 * @param SiteHead $siteHead The head of the page a site request asks for.
 	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
 	 * @param AccessibilityFraming $framing Whether the accessibility measurement may frame this request.
+	 * @param SiteIcon $siteIcon The tab icon of the serving portal.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -109,6 +111,7 @@ class PortalPageController extends Controller {
 		SiteHead $siteHead,
 		PortalNoticeReader $notices,
 		private readonly AccessibilityFraming $framing,
+		SiteIcon $siteIcon,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 		$this->shell = new SiteShell(
@@ -118,7 +121,8 @@ class PortalPageController extends Controller {
 			urlGenerator: $urlGenerator,
 			siteHead: $siteHead,
 			notices: $notices,
-			configResolver: $configResolver
+			configResolver: $configResolver,
+			siteIcon: $siteIcon
 		);
 	}//end __construct()
 

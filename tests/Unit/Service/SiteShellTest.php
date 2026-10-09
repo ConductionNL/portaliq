@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Cms\MediaLibraryReader;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
@@ -26,6 +29,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(SiteShellTheme::class)]
 #[UsesClass(PortalThemeParents::class)]
 #[UsesClass(PortalTokenCss::class)]
+#[UsesClass(SiteIcon::class)]
+#[UsesClass(MediaReferences::class)]
 class SiteShellTest extends TestCase {
 	/**
 	 * Build the shell over doubles.
@@ -79,7 +84,10 @@ class SiteShellTest extends TestCase {
 		$config->method('resolvePortal')->willReturn($portal);
 		$config->method('runtimeConfigFor')->willReturn(['devLogin' => true, 'silentSignIn' => 'digid', 'waysIn' => ['digid']]);
 
-		$shell = new SiteShell($request, $resolver, $theme, $urls, $head, $notices, $config);
+		$library = $this->getMockBuilder(MediaLibraryReader::class)->disableOriginalConstructor()->onlyMethods(['item'])->getMock();
+		$library->method('item')->willReturn(null);
+		$icon  = new SiteIcon(new MediaReferences($urls, $library), $urls);
+		$shell = new SiteShell($request, $resolver, $theme, $urls, $head, $notices, $config, $icon);
 
 		return [$shell, ['resolver' => $resolver, 'notices' => $notices]];
 	}//end shell()
@@ -112,6 +120,8 @@ class SiteShellTest extends TestCase {
 		$this->assertSame('', $params['themeAppSheets']['emblem']);
 		$this->assertSame('/b.css', $params['themeAppSheets']['bridge']);
 		$this->assertSame('/apps/nldesign/img/child.css.svg', $params['themeLogoUrl']);
+		// No favicon or logo on this portal: the theme's icon is the tab icon.
+		$this->assertSame('/apps/nldesign/img/child.css.svg', $params['siteIcon']);
 	}//end testTemplateParamsForThemedPortal()
 
 	/**
