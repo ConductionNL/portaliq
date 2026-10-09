@@ -35,24 +35,24 @@ NOT offer it.
 
 When a response to a relevance order carries no `@self.relevance` on its
 first row, the block SHALL remove the option for the visit, run the search in
-the default order, and say "Sorting by relevance is not available here." once.
+the default order, and say "Sorteren op relevantie is hier niet beschikbaar." ("Sorting by relevance is not available here.") once, in the result count's live region. The site's search block speaks Dutch, like its other labels.
 
 #### Scenario: A backend without ranking
 - **GIVEN** an installation where OpenRegister has no trigram extension
 - **WHEN** a visitor searches for "parkeervergunning"
-- **THEN** the results come in the default order, "Meest relevant" is not offered, and the page says "Sorting by relevance is not available here."
-- @e2e exclude Needs an instance without pg_trgm; pinned by a Vitest test on the block with a response lacking `@self.relevance`
+- **THEN** the results come in the default order, "Meest relevant" is not offered, and the page says "Sorteren op relevantie is hier niet beschikbaar."
+- @e2e exclude Needs an instance without pg_trgm; pinned by the node test `tests/search-relevance.spec.mjs` on a response lacking `@self.relevance`
 
 ### Requirement: The match score is available to assistive technology only (REQ-SSR-003)
 
 When a result carries `@self.relevance`, its link SHALL be described to
-assistive technology as "Match: {n} percent", and the number SHALL NOT be
+assistive technology as "Overeenkomst: {n} procent" ("Match: {n} percent") through `aria-describedby`, and the number SHALL NOT be
 shown visually.
 
 #### Scenario: A screen reader user hears the match
 - **GIVEN** a relevance-sorted result with a score of 82
 - **WHEN** a screen reader reads the result link
-- **THEN** it announces "Match: 82 percent"
+- **THEN** it announces "Overeenkomst: 82 procent"
 - e2e: `tests/e2e/search-sort-by-relevance.spec.ts`
 
 ### Requirement: Every search with a term tolerates a misspelt title (REQ-SSR-004)
@@ -64,6 +64,7 @@ order. A search without a term SHALL NOT send it.
 - **GIVEN** a public publication titled "Parkeervergunning bewoners"
 - **WHEN** a visitor searches "parkeervergunnig" in the default order
 - **THEN** the request SHALL carry `_fuzzy=true` and the publication SHALL be among the results
+- e2e: `tests/e2e/search-sort-by-relevance.spec.ts`
 
 ### Requirement: A search that finds little offers a checked correction (REQ-SSR-005)
 
@@ -83,16 +84,19 @@ rate limited.
 - **GIVEN** public publications whose summaries contain "hondenbelasting", and none containing "hondenbelasing"
 - **WHEN** a visitor searches "hondenbelasing" and gets 0 results
 - **THEN** the block SHALL offer "Bedoelde u: hondenbelasting?" and following it SHALL show results
+- e2e: `tests/e2e/search-sort-by-relevance.spec.ts`
 
 #### Scenario: No suggestion that finds nothing
 - **GIVEN** a term whose closest correction also returns 0 results
 - **WHEN** the suggest route is asked
 - **THEN** it SHALL answer `suggestion` null and the block SHALL offer nothing
+- @e2e exclude Needs a term whose correction finds nothing on a live corpus; pinned by `SpellingSuggesterTest::testNoSuggestionThatFindsNothing`
 
 #### Scenario: Nothing non-public reaches the word list
 - **GIVEN** a draft publication titled "Reorganisatie geheim"
 - **WHEN** the word list is rebuilt and a visitor searches "geheimm"
 - **THEN** no suggestion SHALL be "geheim"
+- @e2e exclude A draft cannot be shown to be absent from a browser; pinned by `SuggestionWordListTest::testADraftNeverReachesTheList`
 
 ### Requirement: The publisher can read how search ranks (REQ-SSR-006)
 
@@ -106,3 +110,4 @@ from the same declaration, in Dutch and English.
 - **GIVEN** the declaration says titles match fuzzily and summaries and document text match exactly
 - **WHEN** an administrator opens "How search ranks"
 - **THEN** it SHALL say exactly that, and that federated results without a score come after scored results
+- @e2e exclude The text is a pure function of the declaration; pinned by the node test `tests/search-relevance.spec.mjs` 'the explanation is rendered from the declaration'

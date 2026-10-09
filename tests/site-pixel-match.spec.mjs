@@ -378,9 +378,9 @@ test('a breadcrumb reads like the menu', () => {
 })
 
 test('the document language follows the portal', () => {
-	// The site shell (built by the page controller) holds the locale to the portal.
+	// The site shell (injected into the page controller) holds the locale to the portal.
 	const controller = read('lib/Controller/PortalPageController.php')
-	assert.match(controller, /new SiteShell\(/)
+	assert.match(controller, /private readonly SiteShell \$shell/)
 	const shell = read('lib/Service/SiteShell.php')
 	assert.match(shell, /localeThePortalServes\(string \$locale\)/)
 	assert.match(
