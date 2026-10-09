@@ -26,7 +26,6 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Connection\ConnectionReporter;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
 use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
 use OCA\Portaliq\Service\Traffic\Geo\GeoSettings;
 use OCP\App\IAppManager;
@@ -74,7 +73,6 @@ class SettingsService {
 	 * @param GeoSettings $geoSettings The visitor geography provider and credentials
 	 * @param GeoRefreshService $geoRefresh Reports whether a geography database is installed
 	 * @param ConnectionReporter|null $connectionReporter Asks integriq to look again after a geography save.
-	 * @param EmailLinkSetting|null $emailLinks The e-mail link switch, OFF by default (sign-in-with-an-email-link).
 	 *
 	 * @return void
 	 *
@@ -91,7 +89,6 @@ class SettingsService {
 		private GeoSettings $geoSettings,
 		private GeoRefreshService $geoRefresh,
 		private ?ConnectionReporter $connectionReporter = null,
-		private ?EmailLinkSetting $emailLinks = null,
 	) {
 	}//end __construct()
 
@@ -115,7 +112,6 @@ class SettingsService {
 	 * @return array<string,mixed>
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-001
-	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
 	 */
 	public function getSettings(): array {
 		$settings = [];
@@ -145,9 +141,6 @@ class SettingsService {
 			// the key), and whether a database is installed. Administrators
 			// only: the provider choice is instance configuration.
 			$extra[self::GEO_KEY] = $this->geoSettings->toArray() + ['status' => $this->geoRefresh->status()];
-			// The e-mail link switch (decision 127): off until an
-			// administrator turns it on after the security review.
-			$extra[EmailLinkSetting::SETTINGS_KEY] = ($this->emailLinks?->isEnabled() === true);
 		}
 
 		return array_merge($settings, $extra);
@@ -167,7 +160,6 @@ class SettingsService {
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-002
 	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
-	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
 	 */
 	public function updateSettings(array $data): array {
 		foreach (self::CONFIG_KEYS as $key) {
@@ -194,10 +186,6 @@ class SettingsService {
 				settings: $this->geoSettings->toArray(),
 				status: $this->geoRefresh->status()
 			);
-		}
-
-		if (isset($data[EmailLinkSetting::SETTINGS_KEY]) === true && is_bool($data[EmailLinkSetting::SETTINGS_KEY]) === true) {
-			$this->emailLinks?->setEnabled(enabled: $data[EmailLinkSetting::SETTINGS_KEY]);
 		}
 
 		return $this->getSettings();

@@ -10,7 +10,12 @@
 
 import strings from './waysInStrings.js'
 
-const LINK = /^#(activate|invitation|reference)=([^&]+)$/
+const LINK = /^#(activate|invitation|reference|email-link)=([^&]+)$/
+
+// The e-mail link taken off the address bar at boot, before any other script
+// reads the location (sign-in-with-an-email-link M4); takeWayInLink() hands it
+// to the link page.
+let captured = null
 
 /**
  * The translator the ways in use: the site's own `t` first, then
@@ -42,7 +47,7 @@ export function waysInTranslator(t, locale) {
  * The doors the site config opens, closed when absent (REQ-IWI-005).
  *
  * @param {object} signin The site config's `signin` block.
- * @return {{register: boolean, reference: boolean, emailSignIn: string, referenceCaseTypes: Array<object>}}
+ * @return {{register: boolean, reference: boolean, emailSignIn: string, referenceCaseTypes: Array<object>, emailLink: boolean}}
  *
  * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
  */
@@ -62,6 +67,9 @@ export function waysInFrom(signin) {
 		reference: ways.reference === true && types.length > 0,
 		emailSignIn: typeof ways.emailSignIn === 'string' ? ways.emailSignIn : '',
 		referenceCaseTypes: types,
+		// The e-mail link (sign-in-with-an-email-link): never a door to
+		// "Create an account" (REQ-IWI-014).
+		emailLink: ways.emailLink === true,
 	}
 }
 
@@ -77,6 +85,11 @@ export function waysInFrom(signin) {
  * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T06
  */
 export function takeWayInLink(location, history) {
+	if (captured !== null) {
+		const link = captured
+		captured = null
+		return link
+	}
 	const match = String((location && location.hash) || '').match(LINK)
 	if (!match) {
 		return null
@@ -90,13 +103,40 @@ export function takeWayInLink(location, history) {
 }
 
 /**
+ * At boot: take an `#email-link=` fragment off the address bar at once and
+ * keep it for the link page, so no later script (the traffic client, a
+ * session recorder) ever reads the secret from the location.
+ *
+ * @param {Location|object} location The window location.
+ * @param {History|object} history The window history.
+ * @return {boolean} Whether an e-mail link was taken.
+ *
+ * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-never-reaches-a-log-an-answer-or-the-traffic-store-req-iwi-012
+ */
+export function captureEmailLink(location, history) {
+	const match = String((location && location.hash) || '').match(LINK)
+	if (!match || match[1] !== 'email-link') {
+		return false
+	}
+	captured = { kind: match[1], token: decodeURIComponent(match[2]) }
+	if (history && typeof history.replaceState === 'function') {
+		history.replaceState(
+			null,
+			'',
+			String(location.href || '').replace(/#.*$/, ''),
+		)
+	}
+	return true
+}
+
+/**
  * Whether the address carries a mailed link, without consuming it.
  *
  * @param {Location|object} location The window location.
  * @return {boolean}
  */
 export function hasWayInLink(location) {
-	return LINK.test(String((location && location.hash) || ''))
+	return captured !== null || LINK.test(String((location && location.hash) || ''))
 }
 
 /**
@@ -173,8 +213,24 @@ export function wayInRefusalText(code) {
 		invitation_not_valid: 'This invitation is no longer valid.',
 		route_not_offered:
 			'Cases of this kind cannot be followed with a case number.',
+		link_used: 'This link has already been used. Ask for a new link.',
+		address_wrong:
+			'That is not the address this link was sent to. Check it and try again.',
+		mode_not_offered: 'This portal does not offer sign-in with an e-mail link.',
 	}
 	return texts[code] || 'That did not work. Try again later.'
+}
+
+/**
+ * The one sentence after an e-mail link request, known address or not
+ * (sign-in-with-an-email-link REQ-IWI-007).
+ *
+ * @return {string} The sentence key.
+ *
+ * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-form-reveals-nothing-about-accounts-req-iwi-007
+ */
+export function emailLinkSentText() {
+	return 'If this address is known to us, you will receive a link. It works for 15 minutes.'
 }
 
 /**
@@ -367,6 +423,27 @@ export function waysInApi(
 			} catch {
 				return null
 			}
+		},
+		requestEmailLink(email) {
+			return post(
+				`${authBase}/identity/email-link`,
+				{ portal: portal || '', email },
+				fetchImpl,
+			)
+		},
+		describeEmailLink(token) {
+			return post(
+				`${authBase}/identity/email-link/describe`,
+				{ token },
+				fetchImpl,
+			)
+		},
+		redeemEmailLink({ token, nonce, email = '' }) {
+			return post(
+				`${authBase}/identity/email-link/redeem`,
+				{ token, nonce, email },
+				fetchImpl,
+			)
 		},
 		acceptInvitation(token) {
 			return post(

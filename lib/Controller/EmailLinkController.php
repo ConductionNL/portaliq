@@ -77,6 +77,8 @@ class EmailLinkController extends Controller {
 
 	/**
 	 * The cache the page-fetched values live in.
+	 *
+	 * @var ICache
 	 */
 	private ICache $nonces;
 
@@ -219,7 +221,8 @@ class EmailLinkController extends Controller {
 	public function redeem(string $token = '', string $nonce = '', string $email = ''): JSONResponse {
 		$key    = 'nonce/' . hash('sha256', $token);
 		$stored = $this->nonces->get($key);
-		if ($this->setting->isEnabled() === false || $token === '' || is_string($stored) === false || $nonce === '' || hash_equals($stored, $nonce) === false) {
+		$known  = (is_string($stored) === true && $nonce !== '' && hash_equals($stored, $nonce) === true);
+		if ($this->setting->isEnabled() === false || $token === '' || $known === false) {
 			$refused = $this->refusal(outcome: EmailLinkTokens::NOT_VALID);
 			$refused->throttle(['action' => 'portaliq_email_link']);
 			return $refused;

@@ -125,7 +125,7 @@ class SessionAdminController extends Controller {
 
 		$admin  = (string)$this->userSession->getUser()?->getUID();
 		$links  = (int)$this->emailLinks?->voidFor(subjectRef: $subjectRef, organisation: $organisation);
-		$result = ['links' => $links] + $this->session->revokeAllForSubject($subjectRef, $organisation, $admin);
+		$result = ['links' => $links] + $this->session->revokeAllForOrganisation($organisation, $admin, $subjectRef);
 		if ($result['complete'] === false) {
 			return new JSONResponse(['error' => 'revoke_incomplete'] + $result, Http::STATUS_SERVICE_UNAVAILABLE);
 		}

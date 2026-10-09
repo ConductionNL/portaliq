@@ -73,9 +73,8 @@ class SessionAdminControllerTest extends TestCase {
 	 */
 	public function testRevokeAccountVoidsTheLinksAndTheSessionsOfOneAccount(): void {
 		$session = $this->createMock(PortalSessionService::class);
-		$session->expects($this->once())->method('revokeAllForSubject')->with('email:tom', 'academie', 'beheerder')
+		$session->expects($this->once())->method('revokeAllForOrganisation')->with('academie', 'beheerder', 'email:tom')
 			->willReturn(['revoked' => 1, 'failed' => 0, 'complete' => true]);
-		$session->expects($this->never())->method('revokeAllForOrganisation');
 		$links = $this->getMockBuilder(EmailLinkTokens::class)->disableOriginalConstructor()->onlyMethods(['voidFor'])->getMock();
 		$links->expects($this->once())->method('voidFor')->with('email:tom', 'academie')->willReturn(2);
 		$user = $this->createMock(IUser::class);

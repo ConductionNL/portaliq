@@ -9,6 +9,22 @@
 
 export default {
 	nl: {
+		'Send me a sign-in link': 'Stuur mij een inloglink',
+		'The e-mail address you signed up with':
+			'Het e-mailadres waarmee u bent ingeschreven',
+		'If this address is known to us, you will receive a link. It works for 15 minutes.':
+			'Als dit adres bij ons bekend is, ontvangt u een link. De link werkt 15 minuten.',
+		'Sign in to {portal}': 'Inloggen bij {portal}',
+		'You sign in as {address}.': 'U logt in als {address}.',
+		'The e-mail address this link was sent to':
+			'Het e-mailadres waar deze link naartoe is gestuurd',
+		'Sign in': 'Inloggen',
+		'This link has already been used. Ask for a new link.':
+			'Deze link is al gebruikt. Vraag een nieuwe link aan.',
+		'That is not the address this link was sent to. Check it and try again.':
+			'Dit is niet het adres waar deze link naartoe is gestuurd. Controleer het en probeer het opnieuw.',
+		'This portal does not offer sign-in with an e-mail link.':
+			'Dit portaal biedt geen inloggen met een e-maillink.',
 		Accept: 'Accepteren',
 		'Case number': 'Zaaknummer',
 		'Case {reference}': 'Zaak {reference}',
@@ -45,6 +61,22 @@ export default {
 		'Your name': 'Uw naam',
 	},
 	en: {
+		'Send me a sign-in link': 'Send me a sign-in link',
+		'The e-mail address you signed up with':
+			'The e-mail address you signed up with',
+		'If this address is known to us, you will receive a link. It works for 15 minutes.':
+			'If this address is known to us, you will receive a link. It works for 15 minutes.',
+		'Sign in to {portal}': 'Sign in to {portal}',
+		'You sign in as {address}.': 'You sign in as {address}.',
+		'The e-mail address this link was sent to':
+			'The e-mail address this link was sent to',
+		'Sign in': 'Sign in',
+		'This link has already been used. Ask for a new link.':
+			'This link has already been used. Ask for a new link.',
+		'That is not the address this link was sent to. Check it and try again.':
+			'That is not the address this link was sent to. Check it and try again.',
+		'This portal does not offer sign-in with an e-mail link.':
+			'This portal does not offer sign-in with an e-mail link.',
 		Accept: 'Accept',
 		'Case number': 'Case number',
 		'Case {reference}': 'Case {reference}',

@@ -1003,15 +1003,29 @@ class PortalSessionService {
 	 *
 	 * @param string $organisation The tenant to revoke every session for.
 	 * @param string $admin The Nextcloud user id of the acting admin.
+	 * @param string $subjectRef One account only, or '' for the whole organisation.
 	 *
 	 * @return array{revoked: int, failed: int, complete: bool}
 	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-staff-can-revoke-an-accounts-e-mail-links-and-sessions-req-iwi-013
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 */
-	public function revokeAllForOrganisation(string $organisation, string $admin): array {
+	public function revokeAllForOrganisation(string $organisation, string $admin, string $subjectRef = ''): array {
 		if ($organisation === '') {
 			return ['revoked' => 0, 'failed' => 0, 'complete' => true];
+		}
+
+		// One account only (sign-in-with-an-email-link REQ-IWI-013): its
+		// sessions go, the rest of the organisation keeps theirs, and the
+		// per-session audit entries name the admin.
+		if ($subjectRef !== '') {
+			$own = $this->liveSessionsOf(organisation: $organisation, subjectRef: $subjectRef);
+			if ($own === null) {
+				return ['revoked' => 0, 'failed' => 0, 'complete' => false];
+			}
+
+			return $this->revokeRows(rows: $own, organisation: $organisation, admin: $admin);
 		}
 
 		$rows = $this->liveSessionsOf(organisation: $organisation);
@@ -1025,32 +1039,6 @@ class PortalSessionService {
 
 		return $result;
 	}//end revokeAllForOrganisation()
-
-	/**
-	 * Revoke every live session of ONE account, without touching the rest of
-	 * its organisation (sign-in-with-an-email-link REQ-IWI-013, security
-	 * review L4). Audited per session as `admin-revoke` naming the admin.
-	 *
-	 * @param string $subjectRef   The account's subject reference.
-	 * @param string $organisation The account's organisation.
-	 * @param string $admin        The acting staff member.
-	 *
-	 * @return array{revoked: int, failed: int, complete: bool}
-	 *
-	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-staff-can-revoke-an-accounts-e-mail-links-and-sessions-req-iwi-013
-	 */
-	public function revokeAllForSubject(string $subjectRef, string $organisation, string $admin): array {
-		if ($subjectRef === '' || $organisation === '') {
-			return ['revoked' => 0, 'failed' => 0, 'complete' => true];
-		}
-
-		$rows = $this->liveSessionsOf(organisation: $organisation, subjectRef: $subjectRef);
-		if ($rows === null) {
-			return ['revoked' => 0, 'failed' => 0, 'complete' => false];
-		}
-
-		return $this->revokeRows(rows: $rows, organisation: $organisation, admin: $admin);
-	}//end revokeAllForSubject()
 
 	/**
 	 * Revoke the given live session rows, one audited write each.

@@ -110,6 +110,41 @@
 			</p>
 		</NcSettingsSection>
 
+		<!--
+			The e-mail link sign-in (sign-in-with-an-email-link, decision 127).
+			OFF by default; the help text says the security review comes first.
+		-->
+		<NcSettingsSection
+			id="section-email-link"
+			:name="t('portaliq', 'Sign-in with an e-mail link')"
+			:description="
+				t(
+					'portaliq',
+					'Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.',
+				)
+			">
+			<NcNoteCard type="warning">
+				{{
+					t(
+						'portaliq',
+						'Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.',
+					)
+				}}
+			</NcNoteCard>
+			<NcCheckboxRadioSwitch
+				v-model="emailLinkEnabled"
+				type="switch"
+				:disabled="savingEmailLink"
+				data-testid="admin-email-link"
+				@update:modelValue="saveEmailLink">
+				{{ t('portaliq', 'Allow sign-in with an e-mail link') }}
+			</NcCheckboxRadioSwitch>
+			<p class="portaliq-admin-settings__hint" role="status">
+				<span v-if="emailLinkError">{{ emailLinkError }}</span>
+				<span v-else-if="emailLinkSaved">{{ t('portaliq', 'Saved.') }}</span>
+			</p>
+		</NcSettingsSection>
+
 		<NcSettingsSection
 			:name="t('portaliq', 'Page editors')"
 			:description="
@@ -368,6 +403,7 @@ import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcNoteCard,
 	NcPasswordField,
 	NcSelect,
@@ -380,6 +416,7 @@ export default {
 	name: 'AdminRoot',
 	components: {
 		NcSettingsSection,
+		NcCheckboxRadioSwitch,
 		NcNoteCard,
 		NcPasswordField,
 		NcSelect,
@@ -437,6 +474,12 @@ export default {
 			savingInternalBaseUrl: false,
 			internalBaseUrlSaved: false,
 			internalBaseUrlError: '',
+
+			// The e-mail link switch, off until an administrator turns it on.
+			emailLinkEnabled: false,
+			savingEmailLink: false,
+			emailLinkSaved: false,
+			emailLinkError: '',
 		}
 	},
 
@@ -620,11 +663,43 @@ export default {
 					metadata: (geo.status && geo.status.metadata) || {},
 				}
 				this.internalBaseUrl = String(data.internal_base_url || '')
+				this.emailLinkEnabled = data.email_link_signin_enabled === true
 			} catch {
 				this.geoError = t(
 					'portaliq',
 					'The geography settings could not be loaded.',
 				)
+			}
+		},
+
+		/**
+		 * Save the e-mail link switch; on failure the switch shows what is stored.
+		 *
+		 * @param {boolean} enabled The new state.
+		 * @return {Promise<void>} Resolves when saved.
+		 *
+		 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
+		 */
+		async saveEmailLink(enabled) {
+			this.savingEmailLink = true
+			this.emailLinkSaved = false
+			this.emailLinkError = ''
+			try {
+				const { data } = await axios.put(
+					generateUrl('/apps/portaliq/api/settings'),
+					{ email_link_signin_enabled: enabled === true },
+				)
+				this.emailLinkEnabled =
+					(data.config || {}).email_link_signin_enabled === true
+				this.emailLinkSaved = true
+			} catch {
+				this.emailLinkEnabled = !enabled
+				this.emailLinkError = t(
+					'portaliq',
+					'The setting could not be saved. Try again.',
+				)
+			} finally {
+				this.savingEmailLink = false
 			}
 		},
 

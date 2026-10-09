@@ -31,7 +31,6 @@ namespace OCA\Portaliq\Service\Identity\EmailLink;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
 
 /**
  * Changes an account's sign-in address, or refuses.
@@ -58,6 +57,12 @@ class SignInAddressChange {
 	 * The store did not take the write.
 	 */
 	public const FAILED = 'failed';
+
+	/**
+	 * The session trust levels that may change it themselves: `substantial`
+	 * and above (eIDAS), never the `low` of an e-mail link.
+	 */
+	private const TRUSTED = ['substantial', 'high'];
 
 	/**
 	 * Constructor.
@@ -88,7 +93,7 @@ class SignInAddressChange {
 	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
 	 */
 	public function change(array $account, string $newAddress, bool $byStaff, string $trust = ''): string {
-		if ($byStaff === false && PortalSessionService::trustSatisfies(subjectTrust: $trust, minTrust: 'substantial') === false) {
+		if ($byStaff === false && in_array($trust, self::TRUSTED, true) === false) {
 			return self::TRUST_TOO_LOW;
 		}
 

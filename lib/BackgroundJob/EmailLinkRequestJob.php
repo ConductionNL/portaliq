@@ -47,7 +47,7 @@ class EmailLinkRequestJob extends QueuedJob {
 		ITimeFactory $time,
 		private readonly EmailLinkSender $sender,
 	) {
-		parent::__construct($time);
+		parent::__construct(time: $time);
 	}//end __construct()
 
 	/**

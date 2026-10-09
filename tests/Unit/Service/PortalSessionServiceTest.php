@@ -277,7 +277,7 @@ class PortalSessionServiceTest extends TestCase {
 		$tom2 = $service->issueSession(subjectRef: 'email:tom', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
 		$anna = $service->issueSession(subjectRef: 'email:anna', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
 
-		$result = $service->revokeAllForSubject('email:tom', 'academie', 'beheerder');
+		$result = $service->revokeAllForOrganisation('academie', 'beheerder', 'email:tom');
 
 		$this->assertSame(['revoked' => 2, 'failed' => 0, 'complete' => true], $result);
 		$this->assertNull($service->resolveFromBearer('Bearer ' . $tom1['token']));

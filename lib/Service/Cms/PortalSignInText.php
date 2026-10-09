@@ -35,7 +35,7 @@ class PortalSignInText {
 	 * The ways in a sign-in card may be written for (the portal's modes
 	 * besides `public`).
 	 */
-	public const MODES = ['nextcloud', 'local', 'oidc', 'digid', 'eherkenning', 'eidas'];
+	public const MODES = ['nextcloud', 'local', 'oidc', 'digid', 'eherkenning', 'eidas', 'email-link'];
 
 	/**
 	 * The sign-in keys of an authentication block that say something.

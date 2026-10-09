@@ -62,7 +62,15 @@
 							</p>
 						</div>
 					</div>
+					<!-- The e-mail link is a form on its card (sign-in-with-an-email-link). -->
+					<EmailLinkForm
+						v-if="way.form === 'email-link'"
+						:authBase="way.authBase"
+						:portal="way.portal"
+						:label="way.label"
+						:secondary="index !== 0" />
 					<a
+						v-else
 						class="utrecht-button-link utrecht-button-link--html-a pq-signin__button"
 						:class="
 							index === 0
@@ -156,6 +164,7 @@
 </template>
 
 <script>
+import EmailLinkForm from '../EmailLinkForm.vue'
 import icons from '../../lib/menuIcons.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
@@ -169,6 +178,8 @@ import '@utrecht/button-link-css/dist/index.css'
  */
 export default {
 	name: 'SignInPage',
+
+	components: { EmailLinkForm },
 
 	props: {
 		/** The sign-in routes, each with its `card` (authApi signInRoutes). */

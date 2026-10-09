@@ -446,5 +446,15 @@
 	"Unknown impact": "Onbekende ernst",
 	"We cannot show the accessibility statement right now. Try again later.": "We kunnen de toegankelijkheidsverklaring nu niet tonen. Probeer het later opnieuw.",
 	"{impact}, on {pages} pages": "{impact}, op {pages} pagina's",
-	"{organisation} wants everybody to be able to use {website}. This statement says how far that succeeds and what is still wrong.": "{organisation} wil dat iedereen {website} kan gebruiken. Deze verklaring zegt hoe ver dat lukt en wat nog niet goed is."
+	"{organisation} wants everybody to be able to use {website}. This statement says how far that succeeds and what is still wrong.": "{organisation} wil dat iedereen {website} kan gebruiken. Deze verklaring zegt hoe ver dat lukt en wat nog niet goed is.",
+	"Send me a sign-in link": "Stuur mij een inloglink",
+	"The e-mail address you signed up with": "Het e-mailadres waarmee u bent ingeschreven",
+	"If this address is known to us, you will receive a link. It works for 15 minutes.": "Als dit adres bij ons bekend is, ontvangt u een link. De link werkt 15 minuten.",
+	"Sign in to {portal}": "Inloggen bij {portal}",
+	"You sign in as {address}.": "U logt in als {address}.",
+	"The e-mail address this link was sent to": "Het e-mailadres waar deze link naartoe is gestuurd",
+	"Sign in": "Inloggen",
+	"This link has already been used. Ask for a new link.": "Deze link is al gebruikt. Vraag een nieuwe link aan.",
+	"That is not the address this link was sent to. Check it and try again.": "Dit is niet het adres waar deze link naartoe is gestuurd. Controleer het en probeer het opnieuw.",
+	"This portal does not offer sign-in with an e-mail link.": "Dit portaal biedt geen inloggen met een e-maillink."
 }

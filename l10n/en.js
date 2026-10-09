@@ -2743,7 +2743,22 @@ OC.L10N.register(
         "The statement shows status {status}. Without an audit it cannot show A or B.": "The statement shows status {status}. Without an audit it cannot show A or B.",
         "This audit is older than three years. It no longer supports status A or B.": "This audit is older than three years. It no longer supports status A or B.",
         "This portal has not been measured yet.": "This portal has not been measured yet.",
-        "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.": "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running."
+        "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.": "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.",
+        "Your sign-in link for %1$s": "Your sign-in link for %1$s",
+        "Sign in": "Sign in",
+        "You asked for a link to sign in to %1$s. The link works for 15 minutes.": "You asked for a link to sign in to %1$s. The link works for 15 minutes.",
+        "This link was asked for %1$s.": "This link was asked for %1$s.",
+        "You signed in to %1$s": "You signed in to %1$s",
+        "You signed in": "You signed in",
+        "Your account at %1$s was signed in to with an e-mail link on %2$s.": "Your account at %1$s was signed in to with an e-mail link on %2$s.",
+        "Your sign-in address for %1$s was changed": "Your sign-in address for %1$s was changed",
+        "Your sign-in address was changed": "Your sign-in address was changed",
+        "From %2$s, sign-in links for your account at %1$s go to another address.": "From %2$s, sign-in links for your account at %1$s go to another address.",
+        "Sign-in with an e-mail link": "Sign-in with an e-mail link",
+        "Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.": "Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.",
+        "Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.": "Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.",
+        "Allow sign-in with an e-mail link": "Allow sign-in with an e-mail link",
+        "The setting could not be saved. Try again.": "The setting could not be saved. Try again."
     },
     "nplurals=2; plural=(n != 1);"
 )

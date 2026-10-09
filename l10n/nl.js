@@ -2806,7 +2806,22 @@ OC.L10N.register(
         "The statement shows status {status}. Without an audit it cannot show A or B.": "De verklaring toont status {status}. Zonder onderzoek kan zij geen A of B tonen.",
         "This audit is older than three years. It no longer supports status A or B.": "Dit onderzoek is ouder dan drie jaar. Het onderbouwt status A of B niet meer.",
         "This portal has not been measured yet.": "Dit portaal is nog niet gemeten.",
-        "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.": "Niet alle sessies konden worden ingetrokken. {count} sessie(s) ingetrokken; de rest is misschien nog actief. Probeer het opnieuw en controleer of OpenRegister draait."
+        "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.": "Niet alle sessies konden worden ingetrokken. {count} sessie(s) ingetrokken; de rest is misschien nog actief. Probeer het opnieuw en controleer of OpenRegister draait.",
+        "Your sign-in link for %1$s": "Uw inloglink voor %1$s",
+        "Sign in": "Inloggen",
+        "You asked for a link to sign in to %1$s. The link works for 15 minutes.": "U vroeg om een link om in te loggen bij %1$s. De link werkt 15 minuten.",
+        "This link was asked for %1$s.": "Deze link is aangevraagd voor %1$s.",
+        "You signed in to %1$s": "U bent ingelogd bij %1$s",
+        "You signed in": "U bent ingelogd",
+        "Your account at %1$s was signed in to with an e-mail link on %2$s.": "Op %2$s is met een e-maillink ingelogd op uw account bij %1$s.",
+        "Your sign-in address for %1$s was changed": "Uw inlogadres voor %1$s is gewijzigd",
+        "Your sign-in address was changed": "Uw inlogadres is gewijzigd",
+        "From %2$s, sign-in links for your account at %1$s go to another address.": "Vanaf %2$s gaan inloglinks voor uw account bij %1$s naar een ander adres.",
+        "Sign-in with an e-mail link": "Inloggen met een e-maillink",
+        "Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.": "Laat een deelnemer met een e-mailaccount inloggen met een eenmalige link die 15 minuten werkt. Een portaal biedt dit alleen aan als het ook de inlogmanier email-link noemt.",
+        "Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.": "Zet dit niet aan voordat de beveiligingsreview van deze manier van inloggen is goedgekeurd. Wie de mailbox kan lezen, kan inloggen zolang de link werkt.",
+        "Allow sign-in with an e-mail link": "Inloggen met een e-maillink toestaan",
+        "The setting could not be saved. Try again.": "De instelling is niet opgeslagen. Probeer het opnieuw."
     },
     "nplurals=2; plural=(n != 1);"
 )
