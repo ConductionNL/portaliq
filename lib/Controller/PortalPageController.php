@@ -52,6 +52,7 @@ use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Service\Cms\AccessibilityFraming;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -98,6 +99,7 @@ class PortalPageController extends Controller {
 	 *                                           token stylesheet.
 	 * @param SiteHead $siteHead The head of the page a site request asks for.
 	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
+	 * @param AccessibilityFraming $framing Whether the accessibility measurement may frame this request.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -107,6 +109,7 @@ class PortalPageController extends Controller {
 		PortalThemeResolver $themeResolver,
 		SiteHead $siteHead,
 		PortalNoticeReader $notices,
+		private readonly AccessibilityFraming $framing,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 		$this->shell = new SiteShell(
@@ -257,6 +260,13 @@ class PortalPageController extends Controller {
 		// configured embedders still allows same-origin framing.
 		$csp = new ContentSecurityPolicy();
 		$csp->disallowFrameAncestorDomain('\'self\'');
+		// The one exception: the accessibility measurement frames each page
+		// in the administrator's own browser (site-accessibility-statement
+		// REQ-SAS-001). Same origin only, and only for a user who may measure.
+		if ($this->framing->allowsSelf(request: $this->request) === true) {
+			$csp->addAllowedFrameAncestorDomain('\'self\'');
+		}
+
 		$csp->addAllowedFontDomain('https://fonts.gstatic.com');
 		$csp->addAllowedStyleDomain('https://fonts.googleapis.com');
 		$response->setContentSecurityPolicy($csp);

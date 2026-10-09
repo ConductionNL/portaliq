@@ -11287,7 +11287,7 @@
             },
             "accessibilityMeasurement": {
                 "slug": "accessibilityMeasurement",
-                "icon": "HumanWheelchair",
+                "icon": "ShieldCheckOutline",
                 "version": "0.1.0",
                 "title": "Accessibility measurement",
                 "authorization": {
