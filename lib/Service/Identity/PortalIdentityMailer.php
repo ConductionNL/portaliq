@@ -38,6 +38,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
+use DateTimeInterface;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
@@ -124,6 +125,12 @@ class PortalIdentityMailer {
 			'button' => 'Activate your account',
 		],
 	];
+
+	/**
+	 * The notice that an invitation was accepted by an account that took on
+	 * its audience (invitation-joins-an-unbound-account).
+	 */
+	public const NOTICE_TEMPLATE = 'invitation-accepted';
 
 	/**
 	 * The line every identity mail carries under its button.
@@ -225,6 +232,57 @@ class PortalIdentityMailer {
 
 		return true;
 	}//end send()
+
+	/**
+	 * Tell the invited address that its invitation was accepted by an account
+	 * that took on the invitation's audience (invitation-joins-an-unbound-account,
+	 * security review M1): the date, and who to contact when that was not
+	 * the person it was meant for. No secret and no link: the mail only
+	 * informs.
+	 *
+	 * Never throws. A mail that did not leave answers false and is logged
+	 * without the address.
+	 *
+	 * @param string            $email        The invited address.
+	 * @param string            $organisation The tenant.
+	 * @param DateTimeInterface $moment       When the invitation was accepted.
+	 *
+	 * @return bool True when the mail left.
+	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 */
+	public function sendClaimNotice(string $email, string $organisation, DateTimeInterface $moment): bool {
+		if ($this->mailer->validateMailAddress($email) === false) {
+			$this->logger->warning('Portaliq: identity mail not sent, the call was incomplete', ['template' => self::NOTICE_TEMPLATE]);
+			return false;
+		}
+
+		$portal = $this->portalOf(organisation: $organisation);
+		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+
+		try {
+			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
+			$day  = (string)$l10n->l('date', $moment, ['width' => 'long']);
+
+			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . self::NOTICE_TEMPLATE, []);
+			$mail->setSubject($l10n->t('Your invitation to %1$s was accepted', [$name]));
+			$mail->addHeader();
+			$mail->addHeading($l10n->t('Your invitation was accepted'));
+			$mail->addBodyText($l10n->t('Your invitation to the portal of %1$s was accepted on %2$s.', [$name, $day]));
+			$mail->addBodyText($l10n->t('Was this not you? Then contact %1$s.', [$name]));
+			$mail->addFooter();
+
+			$message = $this->mailer->createMessage();
+			$message->setTo([$email]);
+			$message->useTemplate($mail);
+			$failed = $this->mailer->send($message);
+		} catch (Throwable $failure) {
+			$this->logger->warning('Portaliq: identity mail not sent', ['template' => self::NOTICE_TEMPLATE, 'exception' => get_class($failure)]);
+			return false;
+		}
+
+		return count($failed) === 0;
+	}//end sendClaimNotice()
 
 	/**
 	 * The page a template's link opens. Every link opens the site: the ways
