@@ -32,7 +32,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
+use OCA\Portaliq\Contribution\PublicDetailShape;
 use OCA\Portaliq\Contribution\PublicIndexItems;
+use OCA\Portaliq\Contribution\PublicIndexKinds;
 use OCP\App\IAppManager;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
@@ -171,4 +173,137 @@ class PublicCatalogue {
 		return $out;
 	}//end appItems()
 
+	/**
+	 * What each installed app declares its public index kinds can be narrowed
+	 * by and drawn as. Not cached: it is read only when an editor opens the
+	 * palette.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<int, array<string, mixed>> The kinds.
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-1
+	 */
+	public function kindsFor(string $portal): array {
+		$out   = [];
+		$shape = new PublicIndexKinds();
+		foreach ($this->apps->getInstalledApps() as $appId) {
+			$provider = $this->locator->locate(appId: (string)$appId);
+			if ($provider === null || method_exists($provider, PublicIndexKinds::METHOD) === false) {
+				continue;
+			}
+
+			try {
+				$answer = $provider->{PublicIndexKinds::METHOD}($portal);
+			} catch (Throwable $e) {
+				$this->logger->warning('Portaliq: public index kinds failed', ['app' => (string)$appId, 'reason' => $e->getMessage()]);
+				continue;
+			}
+
+			$out = array_merge($out, $shape->kinds(appId: (string)$appId, answer: $answer));
+		}
+
+		return $out;
+	}//end kindsFor()
+
+	/**
+	 * The filter values the signed-in person resolves to in one app: the
+	 * value `visitor` of a table filter. An app that cannot say answers
+	 * nothing, and the filter stays empty.
+	 *
+	 * @param string               $portal  The portal slug.
+	 * @param string               $appId   The app whose index is read.
+	 * @param array<string, mixed> $subject The signed-in subject.
+	 *
+	 * @return array<string, array<int, string>> Filter label to values.
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-3
+	 */
+	public function visitorValuesFor(string $portal, string $appId, array $subject): array {
+		if (in_array($appId, $this->apps->getInstalledApps(), true) === false) {
+			return [];
+		}
+
+		$provider = $this->locator->locate(appId: $appId);
+		if ($provider === null || method_exists($provider, PublicIndexKinds::VISITOR_METHOD) === false) {
+			return [];
+		}
+
+		try {
+			$answer = $provider->{PublicIndexKinds::VISITOR_METHOD}($portal, $subject);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: public index visitor failed', ['app' => $appId, 'reason' => $e->getMessage()]);
+			return [];
+		}
+
+		return (new PublicIndexKinds())->visitorValues(answer: $answer);
+	}//end visitorValuesFor()
+
+	/**
+	 * The page of one item of an app's public index, or null. The item must be
+	 * one the app's index returns for this portal, of this kind, with this
+	 * slug; anything else is the same null, so an unknown slug and an item that
+	 * is not public cannot be told apart.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $appId  The app whose index holds the item.
+	 * @param string $kind   The item's `type` in the index.
+	 * @param string $slug   The item's slug.
+	 *
+	 * @return array{item: array<string, mixed>, detail: array<string, mixed>}|null
+	 *
+	 * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-2
+	 */
+	public function detailFor(string $portal, string $appId, string $kind, string $slug): ?array {
+		if ($slug === '' || preg_match('/^[a-z][a-z0-9_]{0,63}$/', $appId) !== 1) {
+			return null;
+		}
+
+		$found = $this->itemOf(portal: $portal, appId: $appId, kind: $kind, slug: $slug);
+		if ($found === null) {
+			return null;
+		}
+
+		$provider = $this->locator->locate(appId: $appId);
+		if ($provider === null || method_exists($provider, PublicDetailShape::METHOD) === false) {
+			return null;
+		}
+
+		try {
+			$answer = $provider->{PublicDetailShape::METHOD}($portal, substr((string)$found['id'], (strlen($appId) + 1)));
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: public detail failed', ['app' => $appId, 'reason' => $e->getMessage()]);
+			return null;
+		}
+
+		$detail = (new PublicDetailShape())->detail(answer: $answer);
+		if ($detail === null) {
+			return null;
+		}
+
+		return ['item' => $found, 'detail' => $detail];
+	}//end detailFor()
+
+	/**
+	 * The item the app's index returns for this portal, of this kind, with this slug.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $appId  The app whose index holds the item.
+	 * @param string $kind   The item's `type` in the index.
+	 * @param string $slug   The item's slug.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function itemOf(string $portal, string $appId, string $kind, string $slug): ?array {
+		foreach ($this->itemsFor(portal: $portal) as $item) {
+			if (str_starts_with((string)($item['id'] ?? ''), $appId . ':') === true
+				&& ($item['type'] ?? '') === $kind
+				&& ($item['slug'] ?? '') === $slug
+			) {
+				return $item;
+			}
+		}
+
+		return null;
+	}//end itemOf()
 }//end class

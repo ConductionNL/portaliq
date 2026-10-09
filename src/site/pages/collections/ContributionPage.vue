@@ -198,6 +198,12 @@
 					class="utrecht-heading-3">
 					{{ headingOf(item) }}
 				</component>
+				<!-- The list as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
+				<PdfDownloadButton
+					v-if="item.collection.exportPdf === true"
+					:collection="item.collection"
+					:api="api"
+					:locale="lang" />
 				<!-- A collection that declares groupByField shows one table per
 				     child, each named by its own heading
 				     (collection-group-by-field). -->
@@ -460,7 +466,11 @@
 				:row="selected[item.collection.id] || null"
 				:api="api"
 				:t="tr"
-				:locale="lang" />
+				:locale="lang"
+				:taskCollections="caseTaskCollections"
+				:nav="nav"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				@navigate="$emit('navigate', $event)" />
 
 			<SlotHost
 				v-else-if="item.kind === 'timedTask'"
@@ -578,6 +588,11 @@ export default {
 	components: {
 		CalendarBlock,
 		CollectionTable,
+		// On demand: only a collection that opted in with `exportPdf` loads it.
+		PdfDownloadButton: defineAsyncComponent(
+			() => import('../../components/collections/PdfDownloadButton.vue'),
+		),
+
 		DetailCard,
 		KpiCards,
 		LoadError,
@@ -678,6 +693,16 @@ export default {
 
 		currentContribution() {
 			return this.entry?.contribution || this.contribution || null
+		},
+
+		/** The collections whose rows are tasks of a case (they declare `caseField`). */
+		/**
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
+		caseTaskCollections() {
+			return (this.currentContribution?.collections || []).filter(
+				(collection) => typeof collection?.caseField === 'string',
+			)
 		},
 
 		lang() {

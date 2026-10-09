@@ -51,11 +51,13 @@ class PortalShell {
 	 * @param PortalRegionResolver $regions      The closed list of regions.
 	 * @param PortalSignInText     $signInText   The sign-in page's text.
 	 * @param PortalResidentMenu   $residentMenu The resident menu's card label, groups and left-out items.
+	 * @param PortalHelp           $help         The help details and section help texts.
 	 */
 	public function __construct(
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 		private readonly PortalSignInText $signInText=new PortalSignInText(),
 		private readonly PortalResidentMenu $residentMenu=new PortalResidentMenu(),
+		private readonly PortalHelp $help=new PortalHelp(),
 	) {
 	}//end __construct()
 
@@ -85,6 +87,10 @@ class PortalShell {
 			'myCases'        => $this->myCases(portal: $portal),
 			'footer'         => $this->footer(portal: $portal),
 			'regions'        => $this->publicRegions(portal: $portal),
+			// The portal's help for its forms and for each part of Mijn omgeving
+			// (help-texts-and-form-help).
+			'help'           => $this->help->details(help: ($portal['help'] ?? null)),
+			'sectionHelp'    => $this->help->sections(sections: ($portal['sectionHelp'] ?? null)),
 		];
 	}//end project()
 

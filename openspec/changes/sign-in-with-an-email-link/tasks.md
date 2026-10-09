@@ -1,7 +1,7 @@
 # Tasks: sign-in-with-an-email-link
 
 - [x] 0. Security review of design.md's table (design.md, "Security review (8 Oct)").
-- [ ] 0a. Build after the review is accepted: stop here until Ruben accepts the review.
+- [ ] 0a. Build after the review is accepted: stop here until Ruben accepts the review. — not run: needs a human decision (Ruben has not accepted the security review); tasks 1 to 14 stay unbuilt until then
 - [ ] 1. Mode `email-link` in the portal's `authentication.modes`; the role card on the sign-in page; the mode does not open registration (REQ-IWI-014).
   - PHPUnit on `PortalWaysInResolver`: `email-link` alone shows no "Create an account"
 - [ ] 2. Schema: `identityType` gains `email`; the account's sign-in address as a field of its own (H1, H2).

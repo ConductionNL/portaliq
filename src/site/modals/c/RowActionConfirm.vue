@@ -17,6 +17,43 @@
 			role="status">
 			{{ notice }}
 		</p>
+		<!-- The contribution's own confirmation words, never reworded. -->
+		<p
+			v-if="action.confirmText && message === ''"
+			class="utrecht-paragraph pq-rowaction__confirm-text"
+			data-testid="rowaction-confirm-text">
+			{{ action.confirmText }}
+		</p>
+		<div
+			v-for="input in shownInputs"
+			:key="input.name"
+			class="pq-rowaction__input">
+			<label
+				class="utrecht-form-label"
+				:for="`rowaction-input-${input.name}`"
+				>{{ input.label }}</label
+			>
+			<input
+				:id="`rowaction-input-${input.name}`"
+				v-model="values[input.name]"
+				:type="input.type"
+				class="utrecht-textbox utrecht-textbox--html-input"
+				:required="input.required"
+				:aria-required="input.required ? 'true' : undefined"
+				:aria-invalid="errors[input.name] ? 'true' : undefined"
+				:aria-describedby="
+					errors[input.name] ? `rowaction-error-${input.name}` : undefined
+				"
+				:data-testid="`rowaction-input-${input.name}`" />
+			<p
+				v-if="errors[input.name]"
+				:id="`rowaction-error-${input.name}`"
+				class="utrecht-form-field-error-message"
+				role="alert"
+				:data-testid="`rowaction-error-${input.name}`">
+				{{ errors[input.name] }}
+			</p>
+		</div>
 		<div class="pq-rowaction__buttons">
 			<button
 				v-if="message === ''"
@@ -64,7 +101,7 @@
 </template>
 
 <script>
-import { rowNotice, runRowAction } from '../../../shared/rowAction.js'
+import { rowInputsOf, rowNotice, runRowAction } from '../../../shared/rowAction.js'
 import { translatorOr } from '../../components/c/forms.js'
 
 /**
@@ -110,6 +147,8 @@ export default {
 			busy: false,
 			message: '',
 			link: '',
+			values: {},
+			errors: {},
 		}
 	},
 
@@ -124,6 +163,22 @@ export default {
 
 		notice() {
 			return rowNotice(this.collection, this.row)
+		},
+
+		/**
+		 * @return {Array<object>} The inputs the row declares for this action.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 */
+		inputs() {
+			return rowInputsOf(this.action, this.row)
+		},
+
+		/**
+		 * @return {Array<object>} The inputs on screen: none once the action has run.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 */
+		shownInputs() {
+			return this.message === '' ? this.inputs : []
 		},
 	},
 
@@ -143,20 +198,74 @@ export default {
 		 */
 		async confirm() {
 			this.busy = true
-			const { redirect, messageKey, link } = await runRowAction(
-				this.api,
-				this.collection,
-				this.row,
-				this.action,
-			)
+			this.errors = {}
+			const answers = this.answers()
+			const { redirect, messageKey, link, message, errors } =
+				await runRowAction(
+					this.api,
+					this.collection,
+					this.row,
+					this.action,
+					answers,
+				)
 			if (redirect) {
 				this.navigate(redirect)
 				return
 			}
 			this.busy = false
-			this.message = this.translate(messageKey)
+			// A refusal that names inputs shows under each and keeps the dialog
+			// open (REQ-RAI-003).
+			if (errors) {
+				this.errors = this.said(errors)
+				return
+			}
+			// The target's own sentence, else the contribution's, else ours.
+			this.message =
+				message
+				|| (messageKey === 'Done.' ? this.action.successText : '')
+				|| this.translate(messageKey)
 			this.link = link || ''
 			this.$emit('done')
+		},
+
+		/**
+		 * What the resident typed, under the body key the action declares.
+		 *
+		 * @return {object} `{}` for an action without row inputs.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 */
+		answers() {
+			const into = this.action.rowInputs?.into
+			if (!into || this.inputs.length === 0) {
+				return {}
+			}
+			const typed = {}
+			for (const input of this.inputs) {
+				const value = String(this.values[input.name] ?? '').trim()
+				if (value !== '') {
+					typed[input.name] = value
+				}
+			}
+			return { [into]: typed }
+		},
+
+		/**
+		 * The target's messages by input; the server's own `required` reads as
+		 * a sentence.
+		 *
+		 * @param {object} errors Input name to message.
+		 * @return {object} Input name to sentence.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-the-resident-sees-what-happened-req-rai-003
+		 */
+		said(errors) {
+			const out = {}
+			for (const [name, text] of Object.entries(errors)) {
+				out[name] =
+					text === 'required'
+						? this.translate('This field is required.')
+						: text
+			}
+			return out
 		},
 
 		copyLink() {

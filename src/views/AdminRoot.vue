@@ -145,6 +145,54 @@
 		</NcSettingsSection>
 
 		<!--
+			Who may do which action (operate-roles-for-content-and-actions
+			REQ-ORA-001). One picker per action the app checks; an empty picker
+			means only administrators. Administrators always keep every action.
+		-->
+		<NcSettingsSection
+			:name="t('portaliq', 'Actions')"
+			:description="
+				t(
+					'portaliq',
+					'Choose which groups may do each action. Administrators always may.',
+				)
+			">
+			<div
+				v-for="row in grantRows"
+				:key="row.action"
+				class="portaliq-admin-settings__grant"
+				:data-testid="`admin-action-${row.action}`">
+				<p class="portaliq-admin-settings__grant-label">
+					<strong>{{ row.label }}</strong>
+					<span>{{ row.description }}</span>
+				</p>
+				<NcSelect
+					v-model="row.groups"
+					:inputLabel="row.label"
+					:options="grantGroupOptions"
+					:multiple="true"
+					:keepOpen="true"
+					:disabled="savingGrants"
+					label="label"
+					:data-testid="`admin-action-groups-${row.action}`"
+					@update:modelValue="saveGrantRows" />
+				<p
+					v-if="row.groups.length === 0"
+					class="portaliq-admin-settings__hint">
+					{{ t('portaliq', 'Only administrators') }}
+				</p>
+			</div>
+			<p class="portaliq-admin-settings__hint" role="status">
+				<span v-if="grantsError" data-testid="admin-actions-error">{{
+					grantsError
+				}}</span>
+				<span v-else-if="grantsSaved" data-testid="admin-actions-saved">{{
+					t('portaliq', 'Saved.')
+				}}</span>
+			</p>
+		</NcSettingsSection>
+
+		<!--
 			Visitor geography (portal-traffic-visitors-and-geo, Ruben's
 			decision 7): DB-IP Lite by default, MaxMind with an account. The
 			licence key is write-only here: the server says whether one is
@@ -317,6 +365,7 @@ import {
 	NcSettingsSection,
 	NcTextField,
 } from '@nextcloud/vue'
+import { loadGrants, saveGrants } from '../lib/actionGrants.js'
 
 export default {
 	name: 'AdminRoot',
@@ -351,6 +400,13 @@ export default {
 			savingGroups: false,
 			groupsSaved: false,
 			groupsError: '',
+
+			// The Actions section: one row per action the app checks.
+			grantRows: [],
+			grantGroupOptions: [],
+			savingGrants: false,
+			grantsSaved: false,
+			grantsError: '',
 
 			// Visitor geography. The licence key field is write-only: it
 			// starts empty whether or not one is stored, and an empty
@@ -414,6 +470,7 @@ export default {
 	 */
 	mounted() {
 		this.loadEditorGroups()
+		this.loadActionGrants()
 		this.loadGeo()
 	},
 
@@ -474,6 +531,55 @@ export default {
 				)
 			} finally {
 				this.savingGroups = false
+			}
+		},
+
+		/**
+		 * Load the actions and the groups granted each.
+		 *
+		 * @return {Promise<void>} Resolves when loaded.
+		 *
+		 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-an-administrator-grants-an-action-to-a-group-on-screen-req-ora-001
+		 */
+		async loadActionGrants() {
+			try {
+				const loaded = await loadGrants(
+					axios,
+					generateUrl('/apps/portaliq/api/settings/actions'),
+				)
+				this.grantRows = loaded.rows
+				this.grantGroupOptions = loaded.groupOptions
+			} catch {
+				this.grantsError = t('portaliq', 'The actions could not be loaded.')
+			}
+		},
+
+		/**
+		 * Save the grants as the pickers now stand.
+		 *
+		 * @return {Promise<void>} Resolves when saved.
+		 *
+		 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-the-grants-accept-only-known-actions-and-existing-groups-req-ora-002
+		 */
+		async saveGrantRows() {
+			this.savingGrants = true
+			this.grantsSaved = false
+			this.grantsError = ''
+			try {
+				const stored = await saveGrants(
+					axios,
+					generateUrl('/apps/portaliq/api/settings/actions'),
+					this.grantRows,
+				)
+				this.grantRows = stored.rows
+				this.grantsSaved = true
+			} catch {
+				this.grantsError = t(
+					'portaliq',
+					'Saving the actions failed. The grants are unchanged.',
+				)
+			} finally {
+				this.savingGrants = false
 			}
 		},
 
@@ -632,6 +738,20 @@ export default {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 	line-height: 1.5;
+}
+
+.portaliq-admin-settings__grant {
+	margin-block-end: 1.25rem;
+}
+
+.portaliq-admin-settings__grant-label {
+	display: flex;
+	flex-direction: column;
+	margin: 0 0 0.25rem;
+}
+
+.portaliq-admin-settings__grant-label span {
+	color: var(--color-text-maxcontrast);
 }
 
 .portaliq-admin-settings__revoke {

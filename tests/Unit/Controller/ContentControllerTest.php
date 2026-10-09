@@ -23,6 +23,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
+use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
 use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalNoticeReader;
@@ -124,7 +125,7 @@ class ContentControllerTest extends TestCase {
 	 *
 	 * @return ContentController The controller.
 	 */
-	private function controller(string $authorization = ''): ContentController {
+	private function controller(string $authorization = '', ?PublicAssistantChannel $assistant = null): ContentController {
 		$this->request->method('getHeader')->willReturnCallback(
 			static function (string $name) use ($authorization): string {
 				if ($name === 'Authorization') {
@@ -151,7 +152,8 @@ class ContentControllerTest extends TestCase {
 			traffic: new TrafficConfigResolver(),
 			urlGenerator: $this->urlGenerator(),
 			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class)),
-			userSession: ($this->userSession ?? $this->createMock(IUserSession::class))
+			userSession: ($this->userSession ?? $this->createMock(IUserSession::class)),
+			assistant: $assistant
 		);
 	}//end controller()
 
@@ -162,7 +164,14 @@ class ContentControllerTest extends TestCase {
 	 */
 	private function urlGenerator(): IURLGenerator {
 		$generator = $this->createMock(IURLGenerator::class);
-		$generator->method('linkToRouteAbsolute')->willReturn('https://portaal.example/index.php/apps/portaliq/api/traffic');
+		$generator->method('linkToRouteAbsolute')->willReturnCallback(
+			static fn (string $route, array $params = []): string => ($route === 'core.login.showLoginForm'
+				? 'https://portaal.example/index.php/login?redirect_url=' . rawurlencode((string)$params['redirect_url'])
+				: 'https://portaal.example/index.php/apps/portaliq/api/traffic')
+		);
+		$generator->method('linkToRoute')->willReturnCallback(
+			static fn (string $route, array $params = []): string => '/index.php/apps/portaliq/portal/api/session/nextcloud?portal=' . $params['portal']
+		);
 
 		return $generator;
 	}//end urlGenerator()
@@ -820,4 +829,97 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertFalse($data['traffic']['enabled']);
 	}//end testAnUnconfiguredPortalIsServedAsNotMeasuring()
+
+	/**
+	 * REQ-PFS-CONTENT-001: the search reads inside documents unless the
+	 * portal switched it off, and the site record says which.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteRecordSaysWhetherSearchReadsInsideDocuments(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->assertTrue($this->controller()->site()->getData()['searchInsideDocuments'], 'on by default');
+	}//end testTheSiteRecordSaysWhetherSearchReadsInsideDocuments()
+
+
+	/**
+	 * The assistant widget is offered only when the portal enabled it AND hermiq's
+	 * entry point answers (search-assistant-from-public-content REQ-SAP-006).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
+	 */
+	public function testTheSiteRecordOffersTheAssistantOnlyWhenEnabledAndAvailable(): void {
+		$portal                = $this->portal();
+		$portal['assistant']   = ['enabled' => true];
+		$this->resolver->method('resolve')->willReturn($portal);
+		$available = $this->createMock(PublicAssistantChannel::class);
+		$available->method('isAvailable')->willReturn(true);
+		$missing = $this->createMock(PublicAssistantChannel::class);
+		$missing->method('isAvailable')->willReturn(false);
+
+		$this->assertTrue($this->controller(assistant: $available)->site()->getData()['assistantEnabled']);
+		$this->assertFalse($this->controller(assistant: $missing)->site()->getData()['assistantEnabled'], 'hermiq is not there');
+		$this->assertFalse($this->controller()->site()->getData()['assistantEnabled'], 'no channel at all');
+	}//end testTheSiteRecordOffersTheAssistantOnlyWhenEnabledAndAvailable()
+
+
+	/**
+	 * A portal that did not enable it is served false, even with hermiq there.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
+	 */
+	public function testAPortalThatDidNotEnableTheAssistantGetsNone(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$available = $this->createMock(PublicAssistantChannel::class);
+		$available->method('isAvailable')->willReturn(true);
+
+		$this->assertFalse($this->controller(assistant: $available)->site()->getData()['assistantEnabled']);
+	}//end testAPortalThatDidNotEnableTheAssistantGetsNone()
+
+
+	/**
+	 * A portal that set it to false is served false.
+	 *
+	 * @return void
+	 */
+	public function testAPortalCanSwitchSearchInsideDocumentsOff(): void {
+		$portal = $this->portal();
+		$portal['searchInsideDocuments'] = false;
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$this->assertFalse($this->controller()->site()->getData()['searchInsideDocuments']);
+	}//end testAPortalCanSwitchSearchInsideDocumentsOff()
+
+	/**
+	 * REQ-PWR-001: a portal offering the account route is served the address of
+	 * Nextcloud's login page with a way back; one that does not is served none.
+	 *
+	 * @return void
+	 */
+	public function testALostPasswordAddressIsServedOnlyWithTheAccountRoute(): void {
+		$withAccount = $this->portal();
+		$withAccount['authentication'] = ['modes' => ['nextcloud']];
+		$this->resolver->method('resolve')->willReturn($withAccount);
+		$url = $this->controller()->site()->getData()['lostPasswordUrl'];
+		$this->assertStringStartsWith('https://portaal.example/index.php/login?redirect_url=', $url);
+		$this->assertStringContainsString(rawurlencode('session/nextcloud?portal=open-tilburg'), $url);
+	}//end testALostPasswordAddressIsServedOnlyWithTheAccountRoute()
+
+
+	/**
+	 * A DigiD-only portal gets no address.
+	 *
+	 * @return void
+	 */
+	public function testADigidOnlyPortalIsServedNoLostPasswordAddress(): void {
+		$digid = $this->portal();
+		$digid['authentication'] = ['modes' => ['digid']];
+		$this->resolver->method('resolve')->willReturn($digid);
+
+		$this->assertSame('', $this->controller()->site()->getData()['lostPasswordUrl']);
+	}//end testADigidOnlyPortalIsServedNoLostPasswordAddress()
 }//end class

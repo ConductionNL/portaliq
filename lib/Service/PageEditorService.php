@@ -102,6 +102,13 @@ class PageEditorService {
 	private const NOTICE_SLUG = 'portalNotice';
 
 	/**
+	 * The shared page blocks follow the pages as well (site-shared-page-blocks).
+	 *
+	 * @var string
+	 */
+	private const SHARED_BLOCK_SLUG = 'sharedBlock';
+
+	/**
 	 * The actions the editor groups are granted on that schema.
 	 *
 	 * `read` is deliberately absent: it carries the public rule that serves
@@ -267,6 +274,7 @@ class PageEditorService {
 	 *
 	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t07
 	 */
 	public function applyToSchema(array $groups): bool {
 		$mapper = $this->schemaMapper();
@@ -287,7 +295,7 @@ class PageEditorService {
 			// The media library, the menus and the notices follow the pages. Any
 			// of them is absent on an instance whose register predates it, which
 			// leaves the pages governed.
-			foreach ([self::MEDIA_SLUG, self::MENU_SLUG, self::NOTICE_SLUG] as $slug) {
+			foreach ([self::MEDIA_SLUG, self::MENU_SLUG, self::NOTICE_SLUG, self::SHARED_BLOCK_SLUG] as $slug) {
 				$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: Application::APP_ID);
 				if ($follower !== null) {
 					$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups);

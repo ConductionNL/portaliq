@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "portaliq demo data",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -3374,6 +3374,51 @@
       {
         "@self": {
           "register": "portaliq",
+          "schema": "portalDraft",
+          "slug": "demo-draft-1"
+        },
+        "kind": "draft",
+        "subjectRef": "demo-subject-1",
+        "actionKey": "demo/woo-request",
+        "answers": {
+          "onderwerp": "Geluidsscherm langs de A2"
+        },
+        "step": "step-1",
+        "expiresAt": "2027-01-11T12:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalDraft",
+          "slug": "demo-draft-2"
+        },
+        "kind": "draft",
+        "subjectRef": "demo-subject-2",
+        "actionKey": "demo/woo-request",
+        "answers": {
+          "onderwerp": "Besluit over de Stationsweg"
+        },
+        "step": "step-2",
+        "expiresAt": "2027-01-12T12:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalDraft",
+          "slug": "demo-draft-3"
+        },
+        "kind": "draft",
+        "subjectRef": "demo-subject-3",
+        "actionKey": "demo/woo-request",
+        "answers": {
+          "onderwerp": "Verkeersmetingen in de binnenstad"
+        },
+        "step": "step-3",
+        "expiresAt": "2027-01-13T12:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
           "schema": "portalNotice",
           "slug": "demo-notice-1"
         },
@@ -3422,6 +3467,535 @@
           "portal"
         ],
         "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAction",
+          "slug": "demo-action-1"
+        },
+        "owner": "demo-subject-1",
+        "assignee": "demo-subject-1",
+        "organisation": "demo-organisation",
+        "title": "Bankafschriften van drie maanden uploaden",
+        "description": "Een eigen stap van de inwoner.",
+        "kind": "once",
+        "status": "todo",
+        "endDate": "2026-10-14"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAction",
+          "slug": "demo-action-2"
+        },
+        "owner": "demo-subject-1",
+        "assignee": "demo-subject-1",
+        "organisation": "demo-organisation",
+        "title": "Afspraak maken met de budgetcoach",
+        "description": "Een eigen stap van de inwoner.",
+        "kind": "once",
+        "status": "doing",
+        "endDate": "2026-10-21"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAction",
+          "slug": "demo-action-3"
+        },
+        "owner": "demo-subject-1",
+        "assignee": "demo-subject-1",
+        "organisation": "demo-organisation",
+        "title": "Maandelijks het energiecontract controleren",
+        "description": "Een eigen stap van de inwoner.",
+        "kind": "recurring",
+        "status": "done",
+        "endDate": "2026-09-30"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFaq",
+          "slug": "portalfaq-portalfaq-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "question": "Voorbeeld Question 1",
+        "answer": "Voorbeeld Answer 1",
+        "pages": [
+          "Voorbeeld Pages 1"
+        ],
+        "topic": "Voorbeeld Topic 1",
+        "order": 0,
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFaq",
+          "slug": "portalfaq-portalfaq-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "question": "Voorbeeld Question 2",
+        "answer": "Voorbeeld Answer 2",
+        "pages": [
+          "Voorbeeld Pages 2"
+        ],
+        "topic": "Voorbeeld Topic 2",
+        "order": 0,
+        "status": "published"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFaq",
+          "slug": "portalfaq-portalfaq-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "question": "Voorbeeld Question 3",
+        "answer": "Voorbeeld Answer 3",
+        "pages": [
+          "Voorbeeld Pages 3"
+        ],
+        "topic": "Voorbeeld Topic 3",
+        "order": 0,
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFinder",
+          "slug": "portalfinder-voorbeeld-title-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "title": "Voorbeeld Title 1",
+        "products": [
+          "Voorbeeld Products 1"
+        ],
+        "questions": [
+          {
+            "id": "Voorbeeld Id 1",
+            "text": "Voorbeeld Text 1",
+            "help": "Voorbeeld Help 1",
+            "excludesOnYes": [
+              "Voorbeeld Excludesonyes 1"
+            ],
+            "excludesOnNo": [
+              "Voorbeeld Excludesonno 1"
+            ]
+          }
+        ],
+        "intro": "Voorbeeld Intro 1",
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFinder",
+          "slug": "portalfinder-voorbeeld-title-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "title": "Voorbeeld Title 2",
+        "products": [
+          "Voorbeeld Products 2"
+        ],
+        "questions": [
+          {
+            "id": "Voorbeeld Id 2",
+            "text": "Voorbeeld Text 2",
+            "help": "Voorbeeld Help 2",
+            "excludesOnYes": [
+              "Voorbeeld Excludesonyes 2"
+            ],
+            "excludesOnNo": [
+              "Voorbeeld Excludesonno 2"
+            ]
+          }
+        ],
+        "intro": "Voorbeeld Intro 2",
+        "status": "published"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFinder",
+          "slug": "portalfinder-voorbeeld-title-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "title": "Voorbeeld Title 3",
+        "products": [
+          "Voorbeeld Products 3"
+        ],
+        "questions": [
+          {
+            "id": "Voorbeeld Id 3",
+            "text": "Voorbeeld Text 3",
+            "help": "Voorbeeld Help 3",
+            "excludesOnYes": [
+              "Voorbeeld Excludesonyes 3"
+            ],
+            "excludesOnNo": [
+              "Voorbeeld Excludesonno 3"
+            ]
+          }
+        ],
+        "intro": "Voorbeeld Intro 3",
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailLog",
+          "slug": "portalmaillog-portalmaillog-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "templateKey": "Voorbeeld Templatekey 1",
+        "status": "queued",
+        "sentAt": "2026-03-01T09:00:00+00:00",
+        "kind": "Voorbeeld Kind 1",
+        "recipientMasked": "Voorbeeld Recipientmasked 1",
+        "recipientHash": "Voorbeeld Recipienthash 1",
+        "subjectRef": "Voorbeeld Subjectref 1",
+        "caseRef": "Voorbeeld Caseref 1",
+        "failureReason": "Voorbeeld Failurereason 1",
+        "retryOf": "Voorbeeld Retryof 1"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailLog",
+          "slug": "portalmaillog-portalmaillog-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "templateKey": "Voorbeeld Templatekey 2",
+        "status": "delivered",
+        "sentAt": "2026-03-02T09:00:00+00:00",
+        "kind": "Voorbeeld Kind 2",
+        "recipientMasked": "Voorbeeld Recipientmasked 2",
+        "recipientHash": "Voorbeeld Recipienthash 2",
+        "subjectRef": "Voorbeeld Subjectref 2",
+        "caseRef": "Voorbeeld Caseref 2",
+        "failureReason": "Voorbeeld Failurereason 2",
+        "retryOf": "Voorbeeld Retryof 2"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailLog",
+          "slug": "portalmaillog-portalmaillog-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "templateKey": "Voorbeeld Templatekey 3",
+        "status": "failed",
+        "sentAt": "2026-03-03T09:00:00+00:00",
+        "kind": "Voorbeeld Kind 3",
+        "recipientMasked": "Voorbeeld Recipientmasked 3",
+        "recipientHash": "Voorbeeld Recipienthash 3",
+        "subjectRef": "Voorbeeld Subjectref 3",
+        "caseRef": "Voorbeeld Caseref 3",
+        "failureReason": "Voorbeeld Failurereason 3",
+        "retryOf": "Voorbeeld Retryof 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailTemplate",
+          "slug": "portalmailtemplate-portalmailtemplate-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "templateKey": "Voorbeeld Templatekey 1",
+        "subject": "Voorbeeld Subject 1",
+        "body": "Voorbeeld Body 1",
+        "active": true,
+        "updatedBy": "Voorbeeld Updatedby 1"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailTemplate",
+          "slug": "portalmailtemplate-portalmailtemplate-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "templateKey": "Voorbeeld Templatekey 2",
+        "subject": "Voorbeeld Subject 2",
+        "body": "Voorbeeld Body 2",
+        "active": true,
+        "updatedBy": "Voorbeeld Updatedby 2"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMailTemplate",
+          "slug": "portalmailtemplate-portalmailtemplate-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "templateKey": "Voorbeeld Templatekey 3",
+        "subject": "Voorbeeld Subject 3",
+        "body": "Voorbeeld Body 3",
+        "active": true,
+        "updatedBy": "Voorbeeld Updatedby 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "sharedBlock",
+          "slug": "sharedblock-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "organisation": "Voorbeeld Organisation 1",
+        "description": "Voorbeeld Description 1",
+        "status": "draft",
+        "widgets": [
+          {
+            "id": "Voorbeeld Id 1",
+            "widgetKey": "Voorbeeld Widgetkey 1",
+            "slot": "Voorbeeld Slot 1",
+            "gridX": 1,
+            "gridY": 1,
+            "gridWidth": 1,
+            "gridHeight": 1,
+            "props": {}
+          }
+        ],
+        "draftWidgets": [
+          {
+            "id": "Voorbeeld Id 1",
+            "widgetKey": "Voorbeeld Widgetkey 1",
+            "slot": "Voorbeeld Slot 1",
+            "gridX": 1,
+            "gridY": 1,
+            "gridWidth": 1,
+            "gridHeight": 1,
+            "props": {}
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "sharedBlock",
+          "slug": "sharedblock-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "organisation": "Voorbeeld Organisation 2",
+        "description": "Voorbeeld Description 2",
+        "status": "published",
+        "widgets": [
+          {
+            "id": "Voorbeeld Id 2",
+            "widgetKey": "Voorbeeld Widgetkey 2",
+            "slot": "Voorbeeld Slot 2",
+            "gridX": 2,
+            "gridY": 2,
+            "gridWidth": 2,
+            "gridHeight": 2,
+            "props": {}
+          }
+        ],
+        "draftWidgets": [
+          {
+            "id": "Voorbeeld Id 2",
+            "widgetKey": "Voorbeeld Widgetkey 2",
+            "slot": "Voorbeeld Slot 2",
+            "gridX": 2,
+            "gridY": 2,
+            "gridWidth": 2,
+            "gridHeight": 2,
+            "props": {}
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "sharedBlock",
+          "slug": "sharedblock-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "organisation": "Voorbeeld Organisation 3",
+        "description": "Voorbeeld Description 3",
+        "status": "draft",
+        "widgets": [
+          {
+            "id": "Voorbeeld Id 3",
+            "widgetKey": "Voorbeeld Widgetkey 3",
+            "slot": "Voorbeeld Slot 3",
+            "gridX": 3,
+            "gridY": 3,
+            "gridWidth": 3,
+            "gridHeight": 3,
+            "props": {}
+          }
+        ],
+        "draftWidgets": [
+          {
+            "id": "Voorbeeld Id 3",
+            "widgetKey": "Voorbeeld Widgetkey 3",
+            "slot": "Voorbeeld Slot 3",
+            "gridX": 3,
+            "gridY": 3,
+            "gridWidth": 3,
+            "gridHeight": 3,
+            "props": {}
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalPlan",
+          "slug": "plan-demo-schuldhulp"
+        },
+        "owner": "subject-demo-ada",
+        "participants": [
+          "subject-demo-bea"
+        ],
+        "title": "Schuldhulp op orde",
+        "goal": "Over drie maanden een overzicht van alle schulden en een vaste afbetaalregeling.",
+        "goalDetail": "We zetten stap voor stap alles op een rij.",
+        "endDate": "2026-10-27",
+        "status": "running",
+        "template": "plan-template-demo-schuldhulp",
+        "note": {
+          "text": "Eerst de brieven verzamelen.",
+          "editedBy": "subject-demo-bea",
+          "editedAt": "2026-10-06T14:02:00+02:00"
+        }
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalPlan",
+          "slug": "plan-demo-werk"
+        },
+        "owner": "subject-demo-bea",
+        "participants": [
+          "subject-demo-ada"
+        ],
+        "title": "Terug naar werk",
+        "goal": "Binnen zes maanden een passende baan.",
+        "endDate": "2027-03-31",
+        "status": "running"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalPlan",
+          "slug": "plan-demo-verhuizing"
+        },
+        "owner": "subject-demo-ada",
+        "participants": [],
+        "title": "Verhuizing regelen",
+        "goal": "Alles geregeld voor de verhuizing op 1 november.",
+        "endDate": "2026-09-30",
+        "status": "done",
+        "doneAt": "2026-09-30T12:00:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalPlanTemplate",
+          "slug": "plan-template-demo-schuldhulp"
+        },
+        "portal": "zuiddrecht",
+        "title": "Schuldhulp op orde",
+        "summary": "Vult het doel in en zet 5 acties klaar.",
+        "goal": "Over drie maanden een overzicht van alle schulden en een vaste afbetaalregeling.",
+        "durationDays": 56,
+        "actions": [
+          {
+            "title": "Alle brieven verzamelen",
+            "kind": "once",
+            "offsetDays": 7
+          },
+          {
+            "title": "Een overzicht van de schulden maken",
+            "kind": "once",
+            "offsetDays": 14
+          },
+          {
+            "title": "Een budgetplan opstellen",
+            "kind": "once",
+            "offsetDays": 28
+          }
+        ],
+        "published": true
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalPlanTemplate",
+          "slug": "plan-template-demo-werk"
+        },
+        "portal": "zuiddrecht",
+        "title": "Terug naar werk",
+        "summary": "Vult het doel in en zet 3 acties klaar.",
+        "goal": "Binnen zes maanden een passende baan.",
+        "durationDays": 180,
+        "actions": [
+          {
+            "title": "Mijn cv bijwerken",
+            "kind": "once",
+            "offsetDays": 14
+          }
+        ],
+        "published": true
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalPlanTemplate",
+          "slug": "plan-template-demo-concept"
+        },
+        "portal": "zuiddrecht",
+        "title": "Nog in bewerking",
+        "summary": "Een sjabloon dat nog niet klaar is.",
+        "goal": "Nog te bepalen.",
+        "durationDays": 30,
+        "actions": [],
+        "published": false
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalContact",
+          "slug": "contact-demo-ada"
+        },
+        "owner": "subject-demo-ada",
+        "contactRef": "subject-demo-bea",
+        "role": "contact",
+        "displayName": "Bea Jansen",
+        "line": "Buurvrouw",
+        "state": "approved"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalContact",
+          "slug": "contact-demo-bea"
+        },
+        "owner": "subject-demo-bea",
+        "contactRef": "subject-demo-ada",
+        "role": "contact",
+        "displayName": "Ada de Vries",
+        "line": "Buurvrouw",
+        "state": "approved"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalContact",
+          "slug": "contact-demo-uitgenodigd"
+        },
+        "owner": "subject-demo-ada",
+        "contactRef": "",
+        "role": "contact",
+        "displayName": "cor@example.nl",
+        "state": "invited",
+        "email": "cor@example.nl",
+        "message": "Kom je ook?",
+        "sentAt": "2026-10-01T10:00:00+02:00",
+        "expiresAt": "2026-10-15T10:00:00+02:00"
       }
     ]
   }

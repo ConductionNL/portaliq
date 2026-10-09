@@ -336,3 +336,19 @@ test('a composed widget is listed once, made of recorded components, and kept ou
 		assert.ok(inRecord !== keys.includes(key), `${key} must be in exactly one of the record and the compositions`)
 	}
 })
+
+test('the subject widgets are registered with a meta and a loader (home-and-theme-landing-pages)', () => {
+	// Spec calls them featuredSubjects and portalCounts; the registry keeps
+	// every key `nl`-prefixed (REQ-SNW-011), so they are nlFeaturedSubjects,
+	// nlPortalCounts and nlSubjectLanding.
+	const wanted = {
+		nlFeaturedSubjects: 'Uitgelichte onderwerpen',
+		nlPortalCounts: 'Wat we publiceren, in aantallen',
+		nlSubjectLanding: 'Pagina van een onderwerp',
+	}
+	for (const [key, label] of Object.entries(wanted)) {
+		assert.equal(metas[key]?.label, label, `${key} has no meta`)
+		assert.equal(typeof loaders[key], 'function', `${key} has no loader`)
+		assert.deepEqual(metaProblems(metas[key], key), [], `${key} meta is unsound`)
+	}
+})

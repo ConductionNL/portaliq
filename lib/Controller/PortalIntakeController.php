@@ -33,11 +33,26 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
+use OCA\Portaliq\Service\Intake\FormStatements;
+use OCA\Portaliq\Service\Intake\PortalAddressLookup;
 use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
+use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Intake\PortalFamilyMembers;
+use OCA\Portaliq\Service\Intake\PortalFee;
+use OCA\Portaliq\Service\Intake\PortalPaymentIntents;
+use OCA\Portaliq\Service\PortalActionForwarder;
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
+use OCA\Portaliq\Service\Intake\PortalEmailVerification;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\Intake\PortalFormCalculator;
+use OCA\Portaliq\Service\Intake\PortalFormDecision;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
+use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
+use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
+use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -60,6 +75,26 @@ use OCP\IRequest;
  * the one trust ordering every portal gate shares.
  */
 class PortalIntakeController extends Controller implements PortalProtected {
+	/**
+	 * The checks between a validated form and a recorded submission.
+	 *
+	 * @var PortalSubmissionChecks
+	 */
+	private readonly PortalSubmissionChecks $checks;
+
+	/**
+	 * Takes the payment for a submission and reads its state.
+	 *
+	 * @var PortalIntakePayments
+	 */
+	private readonly PortalIntakePayments $payments;
+
+	/**
+	 * Mails the resident the confirmation of a submission.
+	 *
+	 * @var PortalIntakeConfirmation
+	 */
+	private readonly PortalIntakeConfirmation $confirmation;
 
 	/**
 	 * Constructor.
@@ -73,6 +108,18 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalIntakeQueue $queue Records and reports on submissions.
 	 * @param PortalChallengeService $challenge The portal's own challenge.
 	 * @param PortalCatalogueReader $catalogue The published request entries.
+	 * @param PortalAddressLookup|null $addresses Finds street and town for a postcode and number.
+	 * @param PortalFamilyMembers|null $family Lists and re-checks the resident's family from the BRP.
+	 * @param FormStatements|null $statements Resolves and checks the statements a form asks.
+	 * @param FormConfirmationMailer|null $confirmationMail Mails the resident the reference and a summary.
+	 * @param PortalFormCalculator|null $calculator Works out the form's calculated fields again on submit.
+	 * @param PortalFormDecision|null $decision Asks the rule engine for the decisions a form's steps declare.
+	 * @param PortalFee|null $fees Checks a fee and the address a resident may be sent to pay at.
+	 * @param PortalPaymentIntents|null $intents Reads the state of a payment.
+	 * @param PortalContributionRegistry|null $registry Finds the case app's pay action in the subject's own manifest.
+	 * @param PortalActionForwarder|null $forwarder Forwards the pay action with a server-built body.
+	 * @param PortalDeepLinkBuilder|null $deepLinks Builds the address the resident returns to.
+	 * @param PortalEmailVerification|null $emailVerification Checks the proof that an e-mail address was verified.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -80,12 +127,42 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly PortalSessionService $session,
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly PortalApplicantPrefill $prefill,
-		private readonly PortalFormValidator $validator,
+		PortalFormValidator $validator,
 		private readonly PortalIntakeQueue $queue,
 		private readonly PortalChallengeService $challenge,
 		private readonly PortalCatalogueReader $catalogue,
+		private readonly ?PortalAddressLookup $addresses = null,
+		private readonly ?PortalFamilyMembers $family = null,
+		?FormStatements $statements = null,
+		?FormConfirmationMailer $confirmationMail = null,
+		?PortalFormCalculator $calculator = null,
+		?PortalFormDecision $decision = null,
+		?PortalFee $fees = null,
+		?PortalPaymentIntents $intents = null,
+		?PortalContributionRegistry $registry = null,
+		?PortalActionForwarder $forwarder = null,
+		?PortalDeepLinkBuilder $deepLinks = null,
+		?PortalEmailVerification $emailVerification = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
+		$this->checks       = new PortalSubmissionChecks(
+			validator: $validator,
+			family: $family,
+			statements: $statements,
+			calculator: $calculator,
+			decision: $decision,
+			emailVerification: $emailVerification
+		);
+		$this->payments     = new PortalIntakePayments(
+			queue: $queue,
+			bindings: $bindings,
+			fees: $fees,
+			intents: $intents,
+			registry: $registry,
+			forwarder: $forwarder,
+			deepLinks: $deepLinks
+		);
+		$this->confirmation = new PortalIntakeConfirmation(queue: $queue, confirmationMail: $confirmationMail);
 	}//end __construct()
 
 	/**
@@ -108,6 +185,38 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['topics' => $this->catalogue->topicsFor(portal: (string)($site['slug'] ?? ''))]);
 	}//end catalogue()
+
+	/**
+	 * Street and town for a postcode and house number.
+	 *
+	 * Public, because forms can be anonymous, and throttled per client. A miss
+	 * and a register that cannot be read answer the same 404, so the form
+	 * falls back to typing the street and town by hand.
+	 *
+	 * @param string $postcode The postcode.
+	 * @param string $number   The house number.
+	 * @param string $letter   The house letter.
+	 * @param string $addition The addition.
+	 *
+	 * @return JSONResponse `{street, town}` or 404.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+	 *
+	 * @no-admin-idor-exempt Postcode and house number are public address data from the
+	 * BAG, not a tenant's object: the lookup answers street and town for any caller and
+	 * touches no account, case or organisation record. It is rate limited per client.
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function address(string $postcode='', string $number='', string $letter='', string $addition=''): JSONResponse {
+		$found = $this->addresses?->find(postcode: $postcode, number: $number, letter: $letter, addition: $addition);
+		if ($found === null) {
+			return new JSONResponse(['error' => 'address_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse($found);
+	}//end address()
 
 	/**
 	 * The form a route is bound to, as it stands right now.
@@ -145,6 +254,9 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			fields: (array)($render['fields'] ?? [])
 		);
 
+		$render['statements'] = $this->checks->askedStatements(render: $render, site: $site);
+		$render['steps']      = $this->checks->stepsForTheBrowser(steps: (array)($render['steps'] ?? []));
+
 		if (($render['settings']['challenge'] ?? false) === true) {
 			$render['challenge'] = $this->challenge->issue(site: $site, surface: 'form');
 		}
@@ -162,6 +274,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param int $expiresAt The expiry issued with the nonce.
 	 * @param string $signature This instance's signature over the nonce.
 	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
+	 * @param array<int, string> $statements The keys of the statements the citizen ticked.
+	 * @param array<string, string> $verifiedEmails Proofs of verified e-mail addresses, by address.
 	 *
 	 * @return JSONResponse The reference, the per-field errors, or a refusal.
 	 *
@@ -178,6 +292,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		int $expiresAt = 0,
 		string $signature = '',
 		string $portal = '',
+		array $statements = [],
+		array $verifiedEmails = [],
 	): JSONResponse {
 		$site = $this->site(portal: $portal);
 		if ($site === null) {
@@ -211,30 +327,124 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			}
 		}
 
-		// Validation happens here, before anything is recorded and long before
-		// any case app is called: an invalid submission never reaches one.
-		$validated = $this->validator->validate(fields: (array)($render['fields'] ?? []), answers: $answers);
-		if ($validated['valid'] === false) {
-			return new JSONResponse(['errors' => $validated['errors']], Http::STATUS_BAD_REQUEST);
+		$prepared = $this->checks->prepare(
+			render: $render,
+			site: $site,
+			route: $route,
+			answers: $answers,
+			subject: $subject,
+			statements: $statements,
+			verifiedEmails: $verifiedEmails
+		);
+		if ($prepared instanceof JSONResponse) {
+			return $prepared;
 		}
 
 		$accepted = $this->queue->accept(
 			portal: (string)($site['slug'] ?? ''),
 			route: $route,
-			answers: $validated['answers'],
+			answers: $prepared['answers'],
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			origin: (string)$this->request->getHeader('Origin')
+			origin: (string)$this->request->getHeader('Origin'),
+			statements: $prepared['statements'],
+			computed: $prepared['computed'],
+			decisions: $prepared['decisions'],
+			verifiedEmails: $prepared['verified']
 		);
 		if ($accepted === null) {
 			return new JSONResponse(['error' => 'not_accepted'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
+		$mailedTo = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $accepted['reference']);
+
 		return new JSONResponse([
 			'reference' => $accepted['reference'],
 			'state' => $accepted['state'],
 			'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
+			'confirmation' => ($render['settings']['confirmation'] ?? null),
+			'mailedTo' => $mailedTo,
 		]);
 	}//end submit()
+
+	/**
+	 * Decide one step at the step change: ask the rule engine on the server and
+	 * answer with the outcome, the field it fills and the step it opens. The
+	 * rule and its table never reach the browser.
+	 *
+	 * @param string $route The form page.
+	 * @param string $step The id of the step that declares the decision.
+	 * @param array<string, mixed> $answers The answers so far.
+	 * @param string $portal The portal's slug; empty resolves it from the host.
+	 *
+	 * @return JSONResponse `{outcome, output, nextStep}`, 503 when the engine does not answer, or 404.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function decide(string $route, string $step, array $answers = [], string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
+		if ($site === null) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: $route);
+		if ($binding === null) {
+			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$render  = $this->bindings->render(binding: $binding);
+		$refusal = $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $this->subject());
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->checks->decideStep(render: $render, step: $step, answers: $answers);
+	}//end decide()
+
+	/**
+	 * The resident's partner and children to choose from, DigiD only.
+	 *
+	 * Reads the BSN from the session's own account, never from the request.
+	 * A visitor without a DigiD session, and a BRP that cannot be asked, get
+	 * the same answer: nothing to choose from here.
+	 *
+	 * The request may carry `sameAddressOnly` (default true): keep only members living at the
+	 * resident's address. It is read from the request, not bound, so the method takes no flag.
+	 *
+	 * @return JSONResponse `{members: [...]}`, 401 without a session, 404 when nothing can be offered.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function family(): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		// Cast as the framework casts a bound bool; absent means only the resident's own address.
+		$raw      = $this->request->getParam('sameAddressOnly');
+		$sameOnly = ($raw === null || ($raw !== 'false' && (bool)$raw === true));
+		$ref      = (string)($subject['subjectRef'] ?? '');
+		$members  = null;
+		if ($this->family !== null && $sameOnly === true) {
+			$members = $this->family->forSubject(subjectRef: $ref);
+		}
+
+		if ($this->family !== null && $sameOnly === false) {
+			$members = $this->family->allForSubject(subjectRef: $ref);
+		}
+
+		if ($members === null) {
+			return new JSONResponse(['error' => 'family_unavailable'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse(['members' => $members]);
+	}//end family()
 
 	/**
 	 * What became of a submission.
@@ -260,8 +470,44 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		// The payment state is read from the payment record the portal stored
+		// the id of, never from the address the resident returned on.
+		$payment = $this->payments->paymentOf(reference: $reference, portal: (string)($site['slug'] ?? ''));
+		if ($payment !== null) {
+			$status['payment'] = $payment;
+		}
+
 		return new JSONResponse($status);
 	}//end status()
+
+	/**
+	 * Take the payment for a submission: forward the case app's pay action
+	 * with an amount the portal built, and answer the checkout address.
+	 *
+	 * Order of refusals: 401 without a session, 404 unless the submission is
+	 * the subject's own, 409 when the case type declares no fee or the
+	 * request is paid, 403 when the declared pay action is not in the
+	 * subject's own manifest, 502 for an answer without a usable checkout on
+	 * a declared host. Nothing is forwarded on the first four.
+	 *
+	 * @param string $reference The submission's reference.
+	 * @param string $portal    The portal's slug.
+	 *
+	 * @return JSONResponse `{checkoutUrl}` or the refusal.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function pay(string $reference, string $portal = ''): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		return $this->payments->start(subject: $subject, site: $this->site(portal: $portal), reference: $reference);
+	}//end pay()
 
 	/**
 	 * Why this form accepts no submission from this visitor, or null.
@@ -305,11 +551,11 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		if ($subject === null) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null)], Http::STATUS_UNAUTHORIZED);
 		}
 
 		if (PortalSessionService::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required], Http::STATUS_FORBIDDEN);
+			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null)], Http::STATUS_FORBIDDEN);
 		}
 
 		return null;

@@ -52,6 +52,7 @@
 					:welcomeLabel="t('Welcome')"
 					:demoLabel="t('Only on this demo. No password is asked.')"
 					:introLabel="t('Log in to view your information.')"
+					:lostPasswordLabel="t('Forgot your password?')"
 					:noWayLabel="
 						t('No login method is configured for this organisation yet.')
 					" />
@@ -70,6 +71,13 @@
 								:data-mode="way.mode"
 								data-testid="site-account-signin-route">
 								{{ way.label }}
+							</a>
+							<a
+								v-if="way.lostPasswordUrl"
+								class="utrecht-link pq-account__lost-password"
+								:href="way.lostPasswordUrl"
+								data-testid="site-signin-lost-password">
+								{{ t('Forgot your password?') }}
 							</a>
 						</li>
 					</ul>
@@ -116,6 +124,7 @@
 			<!-- `/mijn` itself: the resident's home, loaded on demand
 			     (site-mijn-omgeving-components REQ-SMO-007, design D4). -->
 			<template v-else-if="isHome">
+				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
 				<component
 					:is="homeComponent"
 					v-if="homeComponent"
@@ -139,6 +148,7 @@
 					data-testid="site-account-title">
 					{{ entry.label }}
 				</h1>
+				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
 				<p v-if="pageLoading" class="utrecht-paragraph" role="status">
 					{{ t('Loading…') }}
 				</p>
@@ -173,6 +183,7 @@ import {
 	recordIdOfRoute,
 	routeForNav,
 } from '../../shared/portalNav.js'
+import { sectionOf } from '../lib/help.js'
 import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
 import { actingFor } from './e/actingFor.js'
 
@@ -203,6 +214,7 @@ export default {
 	name: 'AccountArea',
 
 	components: {
+		PageHelp: defineAsyncComponent(() => import('./PageHelp.vue')),
 		// Loaded only while the resident acts for someone else.
 		ActingForBar: defineAsyncComponent(() => import('./mijn/ActingForBar.vue')),
 		// Loaded only on a portal that writes its sign-in cards.
@@ -277,6 +289,20 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The help text of the part of Mijn omgeving on screen, or ''.
+		 *
+		 * @return {string} The text.
+		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+		 */
+		sectionHelpText() {
+			const section = sectionOf(this.entry, this.isHome)
+			const texts = (this.portal && this.portal.sectionHelp) || {}
+			return section && typeof texts[section] === 'string'
+				? texts[section]
+				: ''
+		},
+
 		/**
 		 * The card at the top of the resident menu: whom the resident acts for,
 		 * when the session acts for an organisation and the portal names the

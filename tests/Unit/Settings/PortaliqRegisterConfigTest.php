@@ -330,9 +330,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `deliverTo` routes a Woo-request form to opencatalogi's intake, and
 		// a submission keeps the `externalReference` and `dueAt` that intake
 		// armed (woo-request-intake-through-opencatalogi). Additive.
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalFormBinding']['version']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
 		// 0.60.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
@@ -358,9 +358,30 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.68.0 (messageThread 0.2.0): record, subject and contact copies (site-messages-per-record)
 		// 0.69.0 (portal 0.12.0): `residentMenu.groups` and `myCases.display`
 		// (zuiddrecht-resident-pages-match-the-boards). Additive.
-		// 0.71.0 (portal 0.14.0): `breadcrumb` (site-breadcrumb-follows-the-school-boards). Additive.
-		$this->assertSame('0.71.0', self::$register['info']['version']);
-		$this->assertSame('0.71.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.70.0 (portal 0.13.0): `residentMenu.leaveOut` (resident-menu-leave-out). Additive.
+		// 0.74.0 (portal 0.16.0, form 0.2.0, page 0.7.0): help details and section help texts (help-texts-and-form-help). Additive.
+		// 0.82.0 (portalMailTemplate 0.1.0, portalMailLog 0.1.0 new): mail texts per portal and the send log (mail-templates-admin-screen). Additive.
+		// 0.90.0 (portal 0.22.0): `breadcrumb` (site-breadcrumb-follows-the-school-boards). Additive.
+		// 0.89.0 (portalTrafficDaily 0.7.0): zeroResultSearches and searchesWithoutCount (portal-traffic-zero-result-searches). Additive.
+		// 0.88.0 (portalPlan 0.1.0, portalPlanTemplate 0.1.0, portalAction 0.2.0, portal 0.21.0: plansEnabled): shared plans with a caseworker. Additive.
+		// 0.87.0 (portal 0.20.0): themes, the life domains a portal groups a resident's items by (life-domain-theme-pages). Additive.
+		// 0.86.0 (portalFormBinding 0.4.0, portalIntakeSubmission 0.6.0): cosign, staffMayFill and yiviAttributes on the binding; filledBy, applicant, cosign and verifiedEmails on the submission (resident-identity-in-forms). Additive.
+		// 0.85.0 (own-contacts-and-invitations: portalContact schema)
+		// 0.84.0 (own-contacts-and-invitations: portalContact schema)
+		// 0.83.0 (portalFaq 0.1.0, portalFinder 0.1.0 new): the FAQ and the product finder (public-faq-and-product-finder). Additive.
+		// 0.84.0 (sharedBlock 0.1.0 new): page blocks shared by the portals of one organisation (site-shared-page-blocks). Additive.
+		// 0.81.0 (portalCaseType 0.4.0, portalIntakeSubmission 0.5.0, portal 0.19.0): portalFee, paymentIntentId and paymentHosts (intake-pay-on-submit). Additive.
+		// 0.80.0 (portalIntakeSubmission 0.4.0): `computed` and `decisions` on the submission (form-flow-repeating-groups-calculations-and-decisions). Additive.
+		// 0.79.0 (portalMessage 0.7.0): readReceiptRequested, readAt and sendingRef (inbox-read-receipt-on-request). Additive.
+		// 0.77.0 (portalFormBinding 0.3.0, portalIntakeSubmission 0.3.0, portal 0.17.0): intro, statements, confirmation and confirmationMail on the binding, accepted statements on the submission, statement texts on the portal (form-statements-intro-and-confirmation-mail). Additive.
+		// 0.78.0 (portal 0.18.0): `assistant` and the `assistant_asked` traffic event (search-assistant-from-public-content). Additive.
+		// 0.76.0 (portalCase 0.2.0, portalCaseType 0.3.0): `plannedDecisionDate`, `legalDecisionDate` and `portalStatusActions`, `caseField` on a collection (case-page-tasks-decision-dates-and-next-step). Additive.
+		// 0.73.0 (menu 0.1.1): a sub-item that declares its own `items` is rejected (portal-cms-content-model). Tightens, loses no deployed shape.
+		// 0.72.0 (portal 0.15.0): `tokens` (portal-theme-blocks-and-contributed-pages). Additive.
+		// 0.71.0 (portal 0.14.0): `searchInsideDocuments` (portal-federated-search) and the
+		// `portalDraft` schema (site-multi-step-forms). Additive.
+		$this->assertSame('0.90.0', self::$register['info']['version']);
+		$this->assertSame('0.90.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -373,11 +394,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['page']['properties']['seoNoindex']['type']);
@@ -398,7 +419,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsItem']['properties']['translations']['description']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsItem']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalReporterContact']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCaseType']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertArrayHasKey('handlerGroup', self::$register['components']['schemas']['portalCaseType']['properties']['portalReportDeclaration']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['guardianMessage']['version']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['guardianMessage']['properties']);
@@ -412,15 +433,19 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['activityAttendance']['authorization']['read']);
 		$this->assertArrayNotHasKey('fee', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
-		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.22.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
+		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
+		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
+		$this->assertContains('portalDraft', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
@@ -1131,4 +1156,41 @@ class PortaliqRegisterConfigTest extends TestCase {
 		}
 
 	}//end testTheInvitationFieldsAreReadableByAdministratorsOnly()
+
+	/**
+	 * search-assistant-from-public-content: the assistant is off unless the
+	 * portal says so, and the traffic event it counts is a known one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t02
+	 */
+	public function testThePortalDeclaresTheAssistantOffByDefault(): void {
+		$assistant = self::$register['components']['schemas']['portal']['properties']['assistant'];
+
+		$this->assertSame('object', $assistant['type']);
+		$this->assertFalse($assistant['properties']['enabled']['default']);
+		$this->assertSame('array', $assistant['properties']['excludedRoutes']['type']);
+		$events = self::$register['components']['schemas']['portal']['properties']['traffic']['properties']['events']['items']['enum'] ?? [];
+		$this->assertContains('assistant_asked', $events);
+
+	}//end testThePortalDeclaresTheAssistantOffByDefault()
+
+	/**
+	 * portal-traffic-zero-result-searches: the daily record names the terms
+	 * that found nothing and the searches whose count is unknown.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	public function testTheDailyRecordDeclaresZeroResultSearches(): void {
+		$daily = self::$register['components']['schemas']['portalTrafficDaily']['properties'];
+
+		$this->assertSame('array', $daily['zeroResultSearches']['type']);
+		$this->assertSame('string', $daily['zeroResultSearches']['items']['properties']['term']['type']);
+		$this->assertSame('integer', $daily['zeroResultSearches']['items']['properties']['count']['type']);
+		$this->assertSame('integer', $daily['searchesWithoutCount']['type']);
+
+	}//end testTheDailyRecordDeclaresZeroResultSearches()
 }//end class

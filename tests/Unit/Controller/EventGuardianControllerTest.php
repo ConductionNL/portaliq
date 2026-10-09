@@ -64,7 +64,7 @@ class EventGuardianControllerTest extends TestCase {
 
 	public function testRsvpReturns404WhenTheServiceRefuses(): void {
 		$rsvpService = $this->createMock(EventRsvpService::class);
-		$rsvpService->method('rsvp')->willReturn(false);
+		$rsvpService->method('attempt')->willReturn(EventRsvpService::REASON_NOT_FOUND);
 
 		$response = $this->controller(['subjectRef' => 's1'], rsvpService: $rsvpService)->rsvp('e1', 'child-1', 'yes');
 
@@ -73,12 +73,29 @@ class EventGuardianControllerTest extends TestCase {
 
 	public function testRsvpReturns204OnSuccess(): void {
 		$rsvpService = $this->createMock(EventRsvpService::class);
-		$rsvpService->method('rsvp')->willReturn(true);
+		$rsvpService->method('attempt')->willReturn(null);
 
 		$response = $this->controller(['subjectRef' => 's1'], rsvpService: $rsvpService)->rsvp('e1', 'child-1', 'yes');
 
 		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
 	}//end testRsvpReturns204OnSuccess()
+
+	/**
+	 * A full, closed or out-of-range answer is a 422 the page says in words.
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-2
+	 */
+	public function testRsvpMapsFullClosedAndSeatsTo422(): void {
+		foreach ([EventRsvpService::REASON_FULL, EventRsvpService::REASON_CLOSED, EventRsvpService::REASON_SEATS] as $reason) {
+			$rsvpService = $this->createMock(EventRsvpService::class);
+			$rsvpService->expects($this->once())->method('attempt')->with('s1', 'e1', 'child-1', 'yes', 2)->willReturn($reason);
+
+			$response = $this->controller(['subjectRef' => 's1'], rsvpService: $rsvpService)->rsvp('e1', 'child-1', 'yes', 2);
+
+			$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+			$this->assertSame(['error' => $reason], $response->getData());
+		}
+	}//end testRsvpMapsFullClosedAndSeatsTo422()
 
 	public function testSignupMapsRoleFullTo422(): void {
 		$signupService = $this->createMock(EventSignupService::class);

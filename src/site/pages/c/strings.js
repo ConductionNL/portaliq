@@ -94,6 +94,12 @@ export default {
 		Change: 'Wijzigen',
 		'Change step {n}': 'Stap {n} wijzigen',
 		'Not answered': 'Niet ingevuld',
+		'Forgot your password?': 'Wachtwoord vergeten',
+		'Save and continue later': 'Opslaan en later verdergaan',
+		'Your answers are saved until {date}. You can continue later.':
+			'Uw antwoorden zijn bewaard tot {date}. U kunt later verdergaan.',
+		'Your answers could not be saved.':
+			'Uw antwoorden konden niet worden bewaard.',
 		'Propose a change': 'Wijziging voorstellen',
 		Note: 'Toelichting',
 		'Send proposal': 'Voorstel indienen',
@@ -190,6 +196,11 @@ export default {
 		Change: 'Change',
 		'Change step {n}': 'Change step {n}',
 		'Not answered': 'Not answered',
+		'Forgot your password?': 'Forgot your password?',
+		'Save and continue later': 'Save and continue later',
+		'Your answers are saved until {date}. You can continue later.':
+			'Your answers are saved until {date}. You can continue later.',
+		'Your answers could not be saved.': 'Your answers could not be saved.',
 		'Propose a change': 'Propose a change',
 		Note: 'Note',
 		'Send proposal': 'Send proposal',

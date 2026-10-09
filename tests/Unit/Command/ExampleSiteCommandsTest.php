@@ -40,7 +40,7 @@ class ExampleSiteCommandsTest extends TestCase {
 	public function testInstallReportsWhatArrived(): void {
 		$installer = $this->createMock(ExampleSiteInstaller::class);
 		$installer->expects($this->once())->method('install')
-			->with($this->callback(static fn (array $site): bool => $site['id'] === 'zuiddrecht' && count($site['pages']) === 33))
+			->with($this->callback(static fn (array $site): bool => $site['id'] === 'zuiddrecht' && count($site['pages']) === 36))
 			->willReturn($this->report());
 
 		$output = new BufferedOutput();

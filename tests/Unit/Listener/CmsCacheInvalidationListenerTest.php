@@ -26,6 +26,7 @@ use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalResolver;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -130,6 +131,40 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 
 
 	/**
+	 * A shared block has no portal: a write clears every portal of its organisation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t03
+	 */
+	public function testSharedBlockWriteClearsEveryPortalOfItsOrganisation(): void {
+		if (class_exists(ObjectUpdatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('allPublishedPortals')->willReturn(
+			[
+				['slug' => 'inwoners', 'organisation' => 'gemeente-voorbeeld'],
+				['slug' => 'bedrijven', 'organisation' => 'gemeente-voorbeeld'],
+				['slug' => 'noord', 'organisation' => 'gemeente-noord'],
+			]
+		);
+		$cleared = [];
+		$this->reader->method('invalidate')->willReturnCallback(
+			static function (string $portal) use (&$cleared): void {
+				$cleared[] = $portal;
+			}
+		);
+		$listener = new CmsCacheInvalidationListener(reader: $this->reader, logger: $this->createMock(LoggerInterface::class), portals: $portals);
+
+		$listener->handle(new ObjectUpdatedEvent($this->entity(data: ['organisation' => 'gemeente-voorbeeld', 'title' => 'Contact', 'widgets' => []])));
+
+		$this->assertSame(['inwoners', 'bedrijven'], $cleared);
+	}//end testSharedBlockWriteClearsEveryPortalOfItsOrganisation()
+
+
+	/**
 	 * A portal object invalidates itself, keyed by its own slug.
 	 *
 	 * A `portal` has no `portal` property — it IS one — so without the slug
@@ -202,7 +237,7 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 */
 	public function testTheDeclaredCmsSchemasAreTheCachedOnes(): void {
 		$this->assertSame(
-			['portal', 'menu', 'page', 'glossaryTerm', 'media'],
+			['portal', 'menu', 'page', 'glossaryTerm', 'media', 'portalFaq', 'portalFinder', 'sharedBlock'],
 			CmsCacheInvalidationListener::cmsSchemas()
 		);
 	}//end testTheDeclaredCmsSchemasAreTheCachedOnes()

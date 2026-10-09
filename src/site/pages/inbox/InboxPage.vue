@@ -72,9 +72,35 @@
 			<p v-if="failed" class="utrecht-paragraph pq-inbox__failed" role="alert">
 				{{ tr('Not every message could be deleted. Please try again.') }}
 			</p>
+			<div
+				v-if="tabsOn && messages.length > 0"
+				class="pq-inbox__tabs"
+				role="group"
+				:aria-label="tr('Filter messages')">
+				<button
+					v-for="tab in tabs"
+					:key="tab.key"
+					type="button"
+					class="utrecht-button utrecht-button--subtle pq-inbox__tab"
+					:class="{ 'pq-inbox__tab--on': tab.key === activeTab }"
+					:aria-pressed="tab.key === activeTab ? 'true' : 'false'"
+					:data-testid="`inbox-tab-${tab.key}`"
+					@click="activeTab = tab.key">
+					{{ tabLabel(tab) }}
+				</button>
+				<button
+					v-if="shownUnread > 0"
+					type="button"
+					class="utrecht-button utrecht-button--subtle"
+					:disabled="markingAll"
+					data-testid="inbox-mark-all-read"
+					@click="markAllRead()">
+					{{ tr('Mark all as read') }}
+				</button>
+			</div>
 			<ul v-if="messages.length > 0" class="pq-inbox">
 				<li
-					v-for="(message, i) in messages"
+					v-for="(message, i) in shownMessages"
 					:key="idOf(message, i)"
 					class="pq-inbox-row"
 					:class="{ 'pq-inbox-row--unread': message.read !== true }">
@@ -106,6 +132,26 @@
 							{{ dateTime(message.receivedAt) }}
 						</span>
 					</div>
+					<p
+						v-if="message.senderRole"
+						class="utrecht-paragraph pq-inbox-row__role"
+						data-testid="inbox-row-role">
+						{{ message.senderRole }}
+					</p>
+					<p
+						v-if="message.about"
+						class="utrecht-paragraph pq-inbox-row__about"
+						data-testid="inbox-row-about">
+						<a
+							v-if="aboutHref(message)"
+							:href="aboutHref(message)"
+							@click="onAboutClick($event, message)"
+							>{{ tr('About: {value}', { value: message.about }) }}</a
+						>
+						<template v-else>
+							{{ tr('About: {value}', { value: message.about }) }}
+						</template>
+					</p>
 
 					<TranslatedText
 						v-if="shownBody(message)"
@@ -170,6 +216,15 @@
 						{{ delivery(message) }}
 					</p>
 
+					<!-- The sender asked to see when this opens; the resident is told
+					     before they open it (inbox-read-receipt-on-request). -->
+					<p
+						v-if="message.readReceiptRequested === true"
+						class="utrecht-paragraph pq-inbox-row__receipt"
+						data-testid="inbox-row-receipt-notice">
+						{{ tr('The sender sees when you opened this message.') }}
+					</p>
+
 					<div class="pq-inbox-row__actions">
 						<!-- A real link (a new tab, a bookmark); a plain click keeps
 						     the record for the page it opens, as an e-mail link does. -->
@@ -180,6 +235,14 @@
 							data-testid="inbox-row-open"
 							@click="onOpenClick($event, message.recordLink)">
 							{{ tr('Open') }}
+						</a>
+						<a
+							v-if="actionOf(message, origin)"
+							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
+							:href="actionHref(message)"
+							data-testid="inbox-row-action"
+							@click="onActionClick($event, message)">
+							{{ actionOf(message, origin).label }}
 						</a>
 						<button
 							v-if="message.taskUuid"
@@ -211,6 +274,16 @@
 							{{ tr('Delete') }}
 						</button>
 					</div>
+
+					<!-- The app lets the resident answer this message
+					     (inbox-reply-with-attachments). -->
+					<InboxReply
+						v-if="replyOf(message) && api"
+						:message="message"
+						:reply="replyOf(message)"
+						:api="api"
+						:locale="lang"
+						:idBase="`pq-inbox-reply-${idOf(message, i)}`" />
 				</li>
 			</ul>
 		</template>
@@ -218,6 +291,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import BusyStatus from '../../components/inbox/BusyStatus.vue'
 import NotificationSettings from '../../components/inbox/NotificationSettings.vue'
 import TranslatedText from '../../components/inbox/TranslatedText.vue'
@@ -225,6 +299,7 @@ import { unreadIn } from '../../../shared/inboxUnread.js'
 import { deliveryLine } from '../../../shared/messageBox.js'
 import { siteHref } from '../../components/mijn/rows.js'
 import {
+	actionOf,
 	attachmentsOf,
 	bodyParts,
 	bodyWithoutOpenLink,
@@ -232,9 +307,11 @@ import {
 	downloadCollection,
 	formatDateTime,
 	hasReadiness,
+	inboxTabs,
 	keepRecordToOpen,
 	keepTaskToOpen,
 	markedRead,
+	messagesOnTab,
 	recordRoute,
 	rowId,
 	sessionStore,
@@ -267,7 +344,16 @@ function pageOrigin() {
 export default {
 	name: 'InboxPage',
 
-	components: { BusyStatus, NotificationSettings, TranslatedText },
+	components: {
+		BusyStatus,
+		// On demand: only a message that can be answered needs the form.
+		InboxReply: defineAsyncComponent(
+			() => import('../../components/inbox/InboxReply.vue'),
+		),
+
+		NotificationSettings,
+		TranslatedText,
+	},
 
 	props: PAGE_PROPS,
 
@@ -286,6 +372,8 @@ export default {
 			notice: '',
 			failed: false,
 			origin: pageOrigin(),
+			activeTab: 'all',
+			markingAll: false,
 		}
 	},
 
@@ -317,6 +405,40 @@ export default {
 		 */
 		unread() {
 			return unreadIn(this.messages)
+		},
+
+		/**
+		 * @return {boolean} Whether the inbox page declares tabs (`entry.tabs`).
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		tabsOn() {
+			return Boolean(this.entry?.tabs)
+		},
+
+		/**
+		 * @return {Array<object>} The tabs: all, unread, one per tab value.
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		tabs() {
+			return inboxTabs(this.messages)
+		},
+
+		/**
+		 * @return {Array<object>} The messages on the active tab, or all without tabs.
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		shownMessages() {
+			return this.tabsOn
+				? messagesOnTab(this.messages, this.activeTab)
+				: this.messages
+		},
+
+		/**
+		 * @return {number} How many of the shown messages are unread.
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		shownUnread() {
+			return unreadIn(this.shownMessages)
 		},
 
 		/**
@@ -364,6 +486,20 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The reply a message can be answered with, or null.
+		 *
+		 * @param {object} message The message.
+		 * @return {object|null} The reply declaration.
+		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 */
+		replyOf(message) {
+			const reply = message && message._source && message._source.reply
+			return reply && reply.action && typeof reply.action.id === 'string'
+				? reply
+				: null
+		},
+
 		/**
 		 * Read the merged inbox.
 		 *
@@ -714,6 +850,138 @@ export default {
 		},
 
 		/**
+		 * @param {{key: string, kind: string, value?: string}} tab A tab.
+		 * @return {string} Its label: "All", "Unread (2)" or the tab value.
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		tabLabel(tab) {
+			if (tab.kind === 'all') {
+				return this.tr('All')
+			}
+			if (tab.kind === 'unread') {
+				return this.tr('Unread ({count})', { count: this.unread })
+			}
+			return tab.value
+		},
+
+		/**
+		 * Mark the shown unread messages read, each through its own
+		 * collection's read endpoint. A message the server refuses stays unread.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		async markAllRead() {
+			this.markingAll = true
+			for (const message of this.shownMessages.filter(
+				(m) => m.read !== true,
+			)) {
+				const id = rowId(message)
+				if (!id) {
+					continue
+				}
+				const result = await this.api.markMessageRead(message)
+				if (result?.ok) {
+					this.messages = markedRead(this.messages, id)
+				}
+			}
+			this.markingAll = false
+			this.$emit('unread', this.unread)
+		},
+
+		/**
+		 * @param {object} message A message.
+		 * @return {{label: string, href: string}|null} Its action, only when it stays in the portal.
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		actionOf(message) {
+			return actionOf(message, this.origin)
+		},
+
+		/**
+		 * @param {object} message A message.
+		 * @return {string} The address its action button opens.
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		actionHref(message) {
+			return this.portalHref(actionOf(message, this.origin)?.href)
+		},
+
+		/**
+		 * @param {object} message A message.
+		 * @return {string|null} The record page its "About" line links to, if any.
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		aboutHref(message) {
+			const link = actionOf(
+				{ action: { label: 'x', href: message?.aboutLink } },
+				this.origin,
+			)
+			return link ? this.portalHref(link.href) : null
+		},
+
+		/**
+		 * @param {string} href A same-portal address from `actionOf`.
+		 * @return {string} The address as the browser should follow it.
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		portalHref(href) {
+			return typeof href === 'string'
+				&& href.startsWith('/')
+				&& !href.startsWith('//')
+				&& !href.startsWith(this.origin + '/')
+				? siteHref(href)
+				: href
+		},
+
+		/**
+		 * A plain click on the action stays in the site.
+		 *
+		 * @param {MouseEvent} event The click.
+		 * @param {object} message The message.
+		 * @return {void}
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		onActionClick(event, message) {
+			const action = actionOf(message, this.origin)
+			if (action && action.href.startsWith('/')) {
+				this.followSameSite(event, action.href)
+			}
+		},
+
+		/**
+		 * @param {MouseEvent} event The click.
+		 * @param {object} message The message.
+		 * @return {void}
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		onAboutClick(event, message) {
+			const href = this.aboutHref(message)
+			if (href && message.aboutLink.startsWith('/')) {
+				this.followSameSite(event, message.aboutLink)
+			}
+		},
+
+		/**
+		 * @param {MouseEvent} event The click.
+		 * @param {string} route The in-site route.
+		 * @return {void}
+		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+		 */
+		followSameSite(event, route) {
+			if (
+				event?.ctrlKey
+				|| event?.metaKey
+				|| event?.shiftKey
+				|| (event?.button ?? 0) !== 0
+			) {
+				return
+			}
+			event?.preventDefault?.()
+			this.go(route)
+		},
+
+		/**
 		 * Go elsewhere in the signed-in area.
 		 *
 		 * @param {string} route The in-site route.
@@ -732,6 +1000,23 @@ export default {
 </script>
 
 <style scoped>
+.pq-inbox__tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-block-end: 1rem;
+}
+
+.pq-inbox__tab--on {
+	font-weight: 700;
+	text-decoration: underline;
+}
+
+.pq-inbox-row__role,
+.pq-inbox-row__about {
+	margin-block: 0.25rem;
+}
+
 .pq-inbox {
 	margin: 0;
 	padding: 0;

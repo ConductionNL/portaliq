@@ -238,6 +238,93 @@ class PortalRowActionControllerTest extends TestCase {
 	}//end testAnEmptyRequiredFieldIsRefusedBeforeTheForward()
 
 	/**
+	 * A signing request row that declares one required input.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function signingRow(): array {
+		return $this->invoice() + ['signerInputs' => [['name' => 'iban', 'label' => 'Bank account', 'required' => true, 'type' => 'text']]];
+	}//end signingRow()
+
+	/**
+	 * The inputs the row declares are forwarded under `into`, and a name the
+	 * row does not declare is dropped.
+	 *
+	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 *
+	 * @return void
+	 */
+	public function testRowInputUndeclaredNameIsDropped(): void {
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(200);
+		$forwarder = $this->createMock(PortalActionForwarder::class);
+		$forwarder->method('isForwardable')->willReturn(true);
+		$forwarder->expects($this->once())->method('forward')
+			->with($this->anything(), self::SUBJECT, ['invoiceId' => self::INVOICE_ID, 'fields' => ['iban' => 'NL91ABNA0417164300']])
+			->willReturn($response);
+		$forwarder->method('decodeBody')->willReturn(['message' => 'Signed.']);
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $this->pay(['rowInputs' => ['from' => 'signerInputs', 'into' => 'fields']]),
+			reader: $this->readerReturning($this->signingRow()),
+			forwarder: $forwarder,
+			params: ['collection' => 'salesInvoices', 'fields' => ['iban' => ' NL91ABNA0417164300 ', 'email' => 'x@example.org']],
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_OK, $result->getStatus());
+		$this->assertSame(['message' => 'Signed.'], $result->getData());
+	}//end testRowInputUndeclaredNameIsDropped()
+
+	/**
+	 * A required input left empty is a 422 that names it and forwards nothing.
+	 *
+	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 *
+	 * @return void
+	 */
+	public function testRequiredRowInputEmptyIs422AndNotForwarded(): void {
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		foreach ([[], ['iban' => '  '], 'junk'] as $sent) {
+			$reader = $this->readerReturning($this->signingRow());
+			$result = $this->controller(
+				collection: $this->salesInvoices(),
+				action: $this->pay(['rowInputs' => ['from' => 'signerInputs', 'into' => 'fields']]),
+				reader: $reader,
+				auditor: $auditor,
+				params: ['collection' => 'salesInvoices', 'fields' => $sent],
+			)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+			$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $result->getStatus());
+			$this->assertSame(['error' => 'invalid', 'errors' => ['iban' => 'required']], $result->getData());
+		}
+	}//end testRequiredRowInputEmptyIs422AndNotForwarded()
+
+	/**
+	 * A row where the action is not available answers 409 with the row's reason
+	 * and forwards nothing.
+	 *
+	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 *
+	 * @return void
+	 */
+	public function testUnavailableRowIs409AndNotForwarded(): void {
+		$action = $this->pay(['availableWhen' => ['field' => 'withdrawable', 'equals' => true], 'unavailableReasonField' => 'blockedReason']);
+		$row    = $this->invoice() + ['withdrawable' => false, 'blockedReason' => 'The withdrawal period ended on 4 October 2026.'];
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $action,
+			reader: $this->readerReturning($row),
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $result->getStatus());
+		$this->assertSame(['error' => 'not_available', 'message' => 'The withdrawal period ended on 4 October 2026.'], $result->getData());
+	}//end testUnavailableRowIs409AndNotForwarded()
+
+	/**
 	 * A declared `fields` whitelist forwards only those params, and the stamp
 	 * still wins over a client value under the row field.
 	 *

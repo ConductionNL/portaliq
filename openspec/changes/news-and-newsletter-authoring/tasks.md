@@ -62,13 +62,13 @@
 - [x] Implement
 - [x] Test (`NewsPhotoConsentGateTest`, 4 tests)
 
-### Task 8: Minimal staff authoring UI — BLOCKED, deferred to a follow-up
+### Task 8: Minimal staff authoring UI
 - **spec_ref**: `openspec/changes/news-and-newsletter-authoring/design.md#nl-design-system`
 - **files**: `src/views/News/NewsListView.vue`, `src/views/News/NewsEditorView.vue`
 - **acceptance_criteria**:
   - GIVEN staff on the news list WHEN they create and publish an item THEN it appears in the list with its status
-- [ ] Implement — NOT DONE this PR: the backend (schemas, controllers, services, tests) is the load-bearing half and ships complete; staff can already author through the raw `/api/news`/`/api/newsletters` endpoints or OpenRegister's own generic admin object editor. A dedicated Vue list/editor is scoped as a fast, low-risk follow-up PR against this same backend.
-- [ ] Test
+- [x] Implement — built as the manifest `News` index page (`src/manifest.json`, id `News`) with `src/dialogs/NewsItemDialog.vue` and `src/lib/newsAuthoring.js`, not as the two `src/views/News/*` files this task first named: staff create, change, publish and take back an item, and the list shows its audience and status.
+- [x] Test (`tests/news-authoring.spec.mjs`, `npm run check:news-authoring`: create as the signed-in author, change, publish and take back, and the News page is an index page whose actions are handlers backed by the routes). A staff screen for composing a newsletter is not part of this task — not run: no change names it yet.
 
 ## Quality checklist
 
@@ -80,6 +80,6 @@
 - No forbidden debug helpers (hydra-gate-forbidden-patterns)
 
 ## Verification
-- [ ] All tasks checked off — Task 8 (staff UI) intentionally not done, see its note
+- [x] All tasks checked off
 - [x] `openspec validate news-and-newsletter-authoring --strict` passes
 - [x] Diff-scoped gates green on touched files (php -l, phpcs, phpunit --filter — 25/25 passing)

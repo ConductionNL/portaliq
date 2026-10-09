@@ -39,13 +39,36 @@ use Throwable;
 class EventRsvpService {
 	use PagedObjectReads;
 
+	/**
+	 * Finds the event a person may answer for a child.
+	 *
+	 * @var EventRsvpEligibility
+	 */
+	private readonly EventRsvpEligibility $eligibility;
+
+	/**
+	 * Tells whether the sign-up deadline has passed.
+	 *
+	 * @var EventDeadline
+	 */
+	private readonly EventDeadline $deadline;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
 
 	private const SCHEMA = 'eventRsvp';
 
-	private const ALLOWED_RESPONSES = ['yes', 'no', 'maybe'];
+	/**
+	 * The refusals attempt() answers with; null is a recorded answer.
+	 */
+	public const REASON_NOT_FOUND = 'not_found';
+
+	public const REASON_FULL = 'event-full';
+
+	public const REASON_CLOSED = 'signup-closed';
+
+	public const REASON_SEATS = 'seats-invalid';
 
 	/**
 	 * Constructor.
@@ -56,47 +79,121 @@ class EventRsvpService {
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly EventFeedReader $feedReader,
+		EventFeedReader $feedReader,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->eligibility = new EventRsvpEligibility(feedReader: $feedReader);
+		$this->deadline    = new EventDeadline();
 	}//end __construct()
 
 	/**
 	 * Upsert an RSVP. Returns false for EVERY failure shape (not found,
 	 * not in audience, `rsvpEnabled` false, not the guardian's own child,
-	 * invalid response) — the
-	 * controller maps false to a single 404, carrying no existence oracle.
+	 * invalid response, closed, full) — kept for callers that need no
+	 * reason; the controller uses attempt().
 	 *
-	 * @param string $subjectRef The guardian's own subjectRef.
-	 * @param string $eventId The event id.
-	 * @param string $childRef The child the RSVP is for.
-	 * @param string $response One of `yes`, `no`, `maybe`.
+	 * @param string   $subjectRef The answering person's own subjectRef.
+	 * @param string   $eventId    The event id.
+	 * @param string   $childRef   The child the RSVP is for.
+	 * @param string   $response   One of `yes`, `no`, `maybe`.
+	 * @param int|null $seats      The seats asked, when the event asks for seats.
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
-	public function rsvp(string $subjectRef, string $eventId, string $childRef, string $response): bool {
-		if ($this->mayRsvp(subjectRef: $subjectRef, eventId: $eventId, childRef: $childRef, response: $response) === false) {
-			return false;
+	public function rsvp(string $subjectRef, string $eventId, string $childRef, string $response, ?int $seats = null): bool {
+		$reason = $this->attempt(subjectRef: $subjectRef, eventId: $eventId, childRef: $childRef, response: $response, seats: $seats);
+
+		return $reason === null;
+	}//end rsvp()
+
+	/**
+	 * Record one answer per child per event, whoever gave it: a guardian for
+	 * her own child, or the learner herself when the event allows it. A later
+	 * answer replaces the earlier one. With seats asked the answer carries
+	 * 1 to the event's maximum, and one that would pass the event's capacity
+	 * is refused. After the deadline every answer is refused.
+	 *
+	 * @param string      $subjectRef The answering person's own subjectRef.
+	 * @param string      $eventId    The event id.
+	 * @param string      $childRef   The child the answer is for.
+	 * @param string      $response   One of `yes`, `no`, `maybe`.
+	 * @param int|null    $seats      The seats asked, when the event asks for seats.
+	 * @param string|null $now        The moment, ISO 8601; defaults to the clock.
+	 *
+	 * @return string|null Null when recorded, else one of the REASON_ constants.
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+	 */
+	public function attempt(string $subjectRef, string $eventId, string $childRef, string $response, ?int $seats = null, ?string $now = null): ?string {
+		$event = $this->eligibility->answerableEvent(subjectRef: $subjectRef, eventId: $eventId, childRef: $childRef, response: $response);
+		if ($event === null) {
+			return self::REASON_NOT_FOUND;
+		}
+
+		if ($this->deadline->hasPassed(deadline: (string)($event['signupDeadline'] ?? ''), now: $now) === true) {
+			return self::REASON_CLOSED;
 		}
 
 		$objectService = $this->objectService();
 		if ($objectService === null) {
-			return false;
+			return self::REASON_NOT_FOUND;
 		}
 
-		$existingId = $this->findExistingRsvpId(objectService: $objectService, eventId: $eventId, subjectRef: $subjectRef, childRef: $childRef);
+		$asked = (new EventSeatRules())->seatsToRecord(event: $event, response: $response, seats: $seats);
+		if ($asked === false) {
+			return self::REASON_SEATS;
+		}
+
+		$existing = $this->findExistingRsvp(objectService: $objectService, eventId: $eventId, childRef: $childRef);
+		$full = false;
+		if ($response === 'yes') {
+			$full = $this->passesCapacity(objectService: $objectService, event: $event, eventId: $eventId, asked: $asked, existing: $existing);
+		}
+
+		if ($full === true) {
+			return self::REASON_FULL;
+		}
+
+		$answer = ['subjectRef' => $subjectRef, 'eventId' => $eventId, 'childRef' => $childRef, 'response' => $response, 'seats' => $asked];
+		$saved  = $this->saveAnswer(objectService: $objectService, existing: $existing, answer: $answer);
+		if ($saved === false) {
+			return self::REASON_NOT_FOUND;
+		}
+
+		return null;
+	}//end attempt()
+
+	/**
+	 * Write the answer, over the existing one when there is one.
+	 *
+	 * @param object                    $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed>|null $existing      The child's existing answer, or null.
+	 * @param array<string, mixed>      $answer        The `subjectRef`, `eventId`, `childRef`, `response` and `seats` to record.
+	 *
+	 * @return bool False when the save failed.
+	 */
+	private function saveAnswer(object $objectService, ?array $existing, array $answer): bool {
+		$existingId = null;
+		if ($existing !== null) {
+			$existingId = $this->rowId(row: $existing);
+		}
+
+		$object = [
+			'eventRef' => $answer['eventId'],
+			'guardianRef' => $answer['subjectRef'],
+			'childRef' => $answer['childRef'],
+			'response' => $answer['response'],
+			'respondedAt' => gmdate('c'),
+		];
+		if ($answer['seats'] !== null) {
+			$object['seats'] = $answer['seats'];
+		}
 
 		try {
 			$objectService->saveObject(
-				object: [
-					'eventRef' => $eventId,
-					'guardianRef' => $subjectRef,
-					'childRef' => $childRef,
-					'response' => $response,
-					'respondedAt' => gmdate('c'),
-				],
+				object: $object,
 				register: self::REGISTER,
 				schema: self::SCHEMA,
 				uuid: $existingId,
@@ -109,77 +206,117 @@ class EventRsvpService {
 		}
 
 		return true;
-	}//end rsvp()
+	}//end saveAnswer()
 
 	/**
-	 * Whether this guardian may answer for this child on this event: a known
-	 * response, an event in their own audience with RSVP on, and their own
-	 * child.
+	 * Whether this answer would take the event past its capacity. The
+	 * child's own earlier answer does not count against her new one.
 	 *
-	 * @param string $subjectRef The guardian's own subjectRef.
-	 * @param string $eventId The event id.
-	 * @param string $childRef The child the RSVP is for.
-	 * @param string $response The response.
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $event         The event.
+	 * @param string               $eventId       The event id.
+	 * @param int|null             $asked         The seats this answer takes; null counts one per answer.
+	 * @param array|null           $existing      The child's earlier answer.
 	 *
 	 * @return bool
 	 */
-	private function mayRsvp(string $subjectRef, string $eventId, string $childRef, string $response): bool {
-		if ($subjectRef === '' || $eventId === '' || $childRef === '' || in_array($response, self::ALLOWED_RESPONSES, true) === false) {
+	private function passesCapacity(object $objectService, array $event, string $eventId, ?int $asked, ?array $existing): bool {
+		$capacity = (int)($event['capacity'] ?? 0);
+		if ($capacity < 1) {
 			return false;
 		}
 
-		$event = $this->feedReader->readOwnEvent(subjectRef: $subjectRef, id: $eventId);
-		if ($event === null || ($event['rsvpEnabled'] ?? false) !== true) {
-			return false;
-		}
-
-		return $this->feedReader->isOwnChild(subjectRef: $subjectRef, childRef: $childRef);
-	}//end mayRsvp()
-
-	/**
-	 * The id of an existing RSVP for this guardian+child+event, if any.
-	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $eventId The event id.
-	 * @param string $subjectRef The guardian's own subjectRef.
-	 * @param string $childRef The child.
-	 *
-	 * @return string|null
-	 */
-	private function findExistingRsvpId(object $objectService, string $eventId, string $subjectRef, string $childRef): ?string {
-		try {
-			$rows = $this->readEveryPage(
-				objectService: $objectService,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				filters: ['eventRef' => $eventId, 'guardianRef' => $subjectRef, 'childRef' => $childRef]
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: event RSVP lookup failed', ['reason' => $e->getMessage()]);
-			return null;
-		}
-
-		if (is_array($rows) === false) {
-			return null;
-		}
-
-		foreach ($rows as $row) {
-			$normalised = $this->normalise(row: $row);
-			if ($normalised === null) {
+		$taken = 0;
+		foreach ($this->answersOf(objectService: $objectService, eventId: $eventId) as $row) {
+			if ($existing !== null && $this->rowId(row: $row) === $this->rowId(row: $existing)) {
 				continue;
 			}
 
-			$matches = (string)($normalised['eventRef'] ?? '') === $eventId
-				&& (string)($normalised['guardianRef'] ?? '') === $subjectRef
-				&& (string)($normalised['childRef'] ?? '') === $childRef;
+			if ((string)($row['response'] ?? '') !== 'yes') {
+				continue;
+			}
 
-			if ($matches === true) {
-				return $this->rowId(row: $normalised);
+			$rowSeats = 1;
+			if ($asked !== null) {
+				$rowSeats = max(1, (int)($row['seats'] ?? 1));
+			}
+
+			$taken += $rowSeats;
+		}
+
+		return ($taken + ($asked ?? 1)) > $capacity;
+	}//end passesCapacity()
+
+	/**
+	 * The seats taken on an event: the seats of every yes, or one per yes
+	 * when the answers carry none.
+	 *
+	 * @param array<int, array<string, mixed>> $answers The event's answers.
+	 *
+	 * @return int
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+	 */
+	public static function seatsTaken(array $answers): int {
+		$taken = 0;
+		foreach ($answers as $row) {
+			if ((string)($row['response'] ?? '') === 'yes') {
+				$taken += max(1, (int)($row['seats'] ?? 1));
+			}
+		}
+
+		return $taken;
+	}//end seatsTaken()
+
+	/**
+	 * Every answer on one event.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $eventId       The event id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function answersOf(object $objectService, string $eventId): array {
+		try {
+			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA, filters: ['eventRef' => $eventId]);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: event RSVP count failed', ['reason' => $e->getMessage()]);
+			return [];
+		}
+
+		$out = [];
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		foreach ($rows as $row) {
+			$row = $this->normalise(row: $row);
+			if ($row !== null && (string)($row['eventRef'] ?? '') === $eventId) {
+				$out[] = $row;
+			}
+		}
+
+		return $out;
+	}//end answersOf()
+
+	/**
+	 * The existing answer for this child on this event, whoever gave it.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $eventId       The event id.
+	 * @param string $childRef      The child.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function findExistingRsvp(object $objectService, string $eventId, string $childRef): ?array {
+		foreach ($this->answersOf(objectService: $objectService, eventId: $eventId) as $row) {
+			if ((string)($row['childRef'] ?? '') === $childRef) {
+				return $row;
 			}
 		}
 
 		return null;
-	}//end findExistingRsvpId()
+	}//end findExistingRsvp()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.

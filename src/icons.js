@@ -16,6 +16,7 @@ import Account from 'vue-material-design-icons/Account.vue'
 import AccountBoxOutline from 'vue-material-design-icons/AccountBoxOutline.vue'
 import AccountKey from 'vue-material-design-icons/AccountKey.vue'
 import AccountLock from 'vue-material-design-icons/AccountLock.vue'
+import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
 import AccountPlus from 'vue-material-design-icons/AccountPlus.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
@@ -32,21 +33,27 @@ import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
 import ChatOutline from 'vue-material-design-icons/ChatOutline.vue'
 import Check from 'vue-material-design-icons/Check.vue'
+import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
+import ClipboardListOutline from 'vue-material-design-icons/ClipboardListOutline.vue'
 import ClipboardText from 'vue-material-design-icons/ClipboardText.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultClickOutline.vue'
 import Email from 'vue-material-design-icons/Email.vue'
+import EmailEditOutline from 'vue-material-design-icons/EmailEditOutline.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import EmailPlusOutline from 'vue-material-design-icons/EmailPlusOutline.vue'
+import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
 import EyeLock from 'vue-material-design-icons/EyeLock.vue'
 import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
 import FileDocument from 'vue-material-design-icons/FileDocument.vue'
 import FileDocumentEdit from 'vue-material-design-icons/FileDocumentEdit.vue'
 import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
+import FileFindOutline from 'vue-material-design-icons/FileFindOutline.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
+import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
 import History from 'vue-material-design-icons/History.vue'
 import Home from 'vue-material-design-icons/Home.vue'
 import Login from 'vue-material-design-icons/Login.vue'
@@ -78,6 +85,7 @@ export default {
 	AccountBoxOutline,
 	AccountKey,
 	AccountLock,
+	AccountMultiple,
 	AccountPlus,
 	AlertCircleOutline,
 	BellOutline,
@@ -87,6 +95,8 @@ export default {
 	Calendar,
 	ChartBoxOutline,
 	ChartLine,
+	ClipboardCheckOutline,
+	ClipboardListOutline,
 	ChatOutline,
 	// The Grant and Refuse row actions of the Access requests page (#797).
 	Check,
@@ -108,6 +118,10 @@ export default {
 	FileTreeOutline,
 	FolderOutline,
 	FormSelect,
+	EmailEditOutline,
+	EmailSearchOutline,
+	HelpCircleOutline,
+	FileFindOutline,
 	History,
 	// The Home page entry of a portal's configuration (portal-home-page, #1183).
 	Home,

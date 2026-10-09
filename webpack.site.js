@@ -70,6 +70,28 @@ const site = {
 	},
 	plugins: [
 		new VueLoaderPlugin(),
+		// nextcloud-vue's `visibleWhen.js` (the one condition grammar, used by
+		// the intake form and the embed frame) imports three Nextcloud client
+		// packages for paths a public page never takes. Inside that folder they
+		// become a stub, so a public origin does not download them.
+		new webpack.NormalModuleReplacementPlugin(
+			/^@nextcloud\/(capabilities|router|auth)$/,
+			(resource) => {
+				if (
+					/@conduction[\\/]nextcloud-vue[\\/]src[\\/]utils/.test(
+						resource.context || '',
+					)
+				) {
+					resource.request = path.join(
+						__dirname,
+						'src',
+						'site',
+						'lib',
+						'nextcloudStub.js',
+					)
+				}
+			},
+		),
 		// Vue 3 reads these at build time; without them the runtime logs a
 		// warning on every boot about an undefined feature flag.
 		new webpack.DefinePlugin({
@@ -97,9 +119,15 @@ const site = {
 		// and mounting the notices adds 1,274 B (420,932 B). The notice
 		// component and its alert styles load on demand, only when a notice
 		// runs; what stays in the entry is the mount point and its loader.
+		//
+		// 420 KiB, up from 412, with the build-all merge of development. The
+		// entry measured 415 KiB on CI (the budget failed at 412 KiB): the
+		// catalogue kind/audience facets, the news article template and the
+		// school-board blocks all render on first paint, so none of them can
+		// load on demand without delaying the content itself.
 		hints: isDev ? false : 'error',
-		maxAssetSize: 412 * 1024,
-		maxEntrypointSize: 412 * 1024,
+		maxAssetSize: 420 * 1024,
+		maxEntrypointSize: 420 * 1024,
 	},
 }
 

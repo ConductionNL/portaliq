@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\SettingsService;
 use OCA\Portaliq\Service\Traffic\TrafficMetrics;
 use OCP\AppFramework\Controller;
@@ -96,6 +97,8 @@ class MetricsController extends Controller {
 	 *                                   (portal-session-hardening-v2).
 	 * @param TrafficMetrics $traffic The collector's accepted and refused
 	 *                                counters (portal-traffic-analytics).
+	 * @param CmsReader|null $cms The public content reader, for its cache hit and
+	 *                            miss counts (portal-headless-content-api).
 	 *
 	 * @return void
 	 *
@@ -108,6 +111,7 @@ class MetricsController extends Controller {
 		private LoggerInterface $logger,
 		private AuditTrailService $auditor,
 		private TrafficMetrics $traffic,
+		private ?CmsReader $cms=null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -173,6 +177,16 @@ class MetricsController extends Controller {
 			$lines[] = '# TYPE ' . $prefix . '_traffic_refused_total counter';
 			foreach ($this->traffic->refusedByReason() as $reason => $count) {
 				$lines[] = $prefix . '_traffic_refused_total{reason="' . $reason . '"} ' . $count;
+			}
+
+			// The public content cache (portal-headless-content-api): without
+			// the two counts a cache that never hits looks like no cache.
+			if ($this->cms !== null) {
+				$cache   = $this->cms->cacheStats();
+				$lines[] = '# HELP ' . $prefix . '_content_cache_total Public content reads by cache outcome.';
+				$lines[] = '# TYPE ' . $prefix . '_content_cache_total counter';
+				$lines[] = $prefix . '_content_cache_total{outcome="hit"} ' . $cache['hits'];
+				$lines[] = $prefix . '_content_cache_total{outcome="miss"} ' . $cache['misses'];
 			}
 
 			return new DataDisplayResponse(

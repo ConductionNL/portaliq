@@ -309,31 +309,25 @@
 						<!-- A failed load says so. Rendering an empty page instead would
 			     make a broken deployment look exactly like an empty site — the
 			     one confusion this surface can least afford. -->
+						<NotFoundPage
+							v-else-if="error && error.status === 404"
+							:path="route"
+							:site="site"
+							:portalSlug="portalSlug"
+							:locale="chosenLocale"
+							:hasWaysIn="signInRoutes.length > 0"
+							:searchEnabled="headerSearch.enabled"
+							:hrefForRoute="hrefForRoute"
+							:t="t"
+							@navigate="go"
+							@search="goSearch" />
 						<div
 							v-else-if="error"
 							class="container"
 							role="alert"
-							data-testid="site-error"
-							:data-portaliq-status="
-								error.status === 404 ? '404' : null
-							"
-							:data-portaliq-path="
-								error.status === 404 ? route : null
-							">
-							<h2>
-								{{
-									error.status === 404
-										? t('Page not found')
-										: t('Something went wrong')
-								}}
-							</h2>
-							<p>
-								{{
-									error.status === 404
-										? t('This page does not exist (any more).')
-										: t('The content could not be loaded.')
-								}}
-							</p>
+							data-testid="site-error">
+							<h2>{{ t('Something went wrong') }}</h2>
+							<p>{{ t('The content could not be loaded.') }}</p>
 						</div>
 
 						<!--
@@ -388,6 +382,12 @@
 									data-testid="page-title">
 									{{ page.title }}
 								</h1>
+							</div>
+
+							<!-- The page's help text, closed under its heading
+							     (help-texts-and-form-help). -->
+							<div v-if="page.helpText" class="container">
+								<PageHelp :text="page.helpText" />
 							</div>
 
 							<!-- The page's hero image, from the portal's media library or
@@ -537,6 +537,7 @@ import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
 import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
+import { setAssistantAvailable } from './lib/assistantAvailable.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
@@ -607,6 +608,9 @@ import { TASK_STORAGE_KEY } from './pages/inbox/inbox.js'
  * It is imported only once the probe has said this session may edit, so a
  * reader never downloads it at all.
  */
+const NotFoundPage = defineAsyncComponent(
+	() => import('./components/NotFoundPage.vue'),
+)
 const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
 )
@@ -631,6 +635,8 @@ const SharedDossierPage = defineAsyncComponent(
 
 // The guest page for a signed link (identity-guest-page-for-signed-links),
 // loaded only when the address carries one.
+const PageHelp = defineAsyncComponent(() => import('./components/PageHelp.vue'))
+
 const GuestActionPage = defineAsyncComponent(
 	() => import('./pages/GuestActionPage.vue'),
 )
@@ -651,6 +657,7 @@ export default {
 	name: 'App',
 
 	components: {
+		PageHelp,
 		AccountArea,
 		ActingForSwitcher,
 		BranchSwitcher,
@@ -662,6 +669,7 @@ export default {
 		IdleWarningDialog,
 		InstallBanner,
 		MarkdownBlock,
+		NotFoundPage,
 		SharedDossierPage,
 		SiteEditButton,
 		SiteNotices,
@@ -967,10 +975,13 @@ export default {
 				routeParam: this.routeParam,
 				portal: this.site.slug || '',
 				signedIn: this.session !== null,
+				searchInsideDocuments: this.site.searchInsideDocuments !== false,
 				navigation: this.navigation,
 				languages: this.languages,
 				// The portal's sign-in ways, for the nlSignIn block (lane L2, G-13).
 				signInRoutes: this.signInRoutes,
+				// The help details every form offers (help-texts-and-form-help).
+				portalHelp: this.site.help || null,
 			}
 		},
 
@@ -1483,6 +1494,15 @@ export default {
 		// An invitation's secret (`#claim=<secret>`) is kept the same way,
 		// and handed back once the visitor is signed in.
 		keepClaimSecret(window.location, window.history, this.claimStorage())
+		if (window.location.hash.includes('#contact-invitation=')) {
+			const { keepContactInvitation } =
+				await import('../shared/contactInvitation.js')
+			keepContactInvitation(
+				window.location,
+				window.history,
+				this.claimStorage(),
+			)
+		}
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()
@@ -1552,6 +1572,7 @@ export default {
 					),
 				])
 				this.site = site
+				setAssistantAvailable(site?.assistantEnabled === true)
 				this.menus = menus
 				this.glossary = glossary
 			} catch (error) {
@@ -1597,6 +1618,20 @@ export default {
 			})
 			if (this.claimMessage?.claimed) {
 				await this.reloadSession()
+			}
+
+			// A contact invitation kept from the mail is handed back the same way.
+			if (this.claimStorage()?.getItem('portaliq.contactInvitation')) {
+				const { redeemKeptContactInvitation } =
+					await import('../shared/contactInvitation.js')
+				this.claimMessage =
+					this.claimMessage
+					|| (await redeemKeptContactInvitation({
+						api: this.api,
+						session: this.session,
+						t: this.t,
+						storage: this.claimStorage(),
+					}))
 			}
 
 			if (this.session) {

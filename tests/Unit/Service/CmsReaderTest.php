@@ -267,6 +267,156 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
+	 * A draft FAQ entry is never served; the rest stand in their order and filter by page.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	public function testAFaqDraftIsNeverServedAndEntriesAreFiltered(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				['question' => 'Tweede?', 'answer' => 'b', 'status' => 'published', 'order' => 20, 'pages' => ['/parkeren'], 'topic' => 'Parkeren'],
+				['question' => 'GEHEIM?', 'answer' => 'x', 'status' => 'draft', 'order' => 1, 'pages' => ['/parkeren']],
+				['question' => 'Eerste?', 'answer' => 'a', 'status' => 'published', 'order' => 10, 'pages' => ['/parkeren', '/afval'], 'topic' => 'Parkeren'],
+				['question' => 'Afval?', 'answer' => 'c', 'status' => 'published', 'order' => 5, 'pages' => ['/afval'], 'topic' => 'Afval'],
+			]
+		);
+
+		$all = $this->reader->faq('open-tilburg', 'nl', 'anonymous');
+		$this->assertSame(['Afval?', 'Eerste?', 'Tweede?'], array_column($all, 'question'));
+		$this->assertStringNotContainsString('GEHEIM', json_encode($all));
+		$this->assertSame(['Eerste?', 'Tweede?'], array_column($this->reader->faq('open-tilburg', 'nl', 'anonymous', '/parkeren'), 'question'));
+		$this->assertSame(['Afval?'], array_column($this->reader->faq('open-tilburg', 'nl', 'anonymous', '', 'Afval'), 'question'));
+	}//end testAFaqDraftIsNeverServedAndEntriesAreFiltered()
+
+
+	/**
+	 * A finder offers only products whose page is published, and keeps the question rules.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	public function testAFinderOffersOnlyPublishedProducts(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				[
+					'id' => 'f1',
+					'title' => 'Welke vergunning?',
+					'status' => 'published',
+					'products' => ['/p/a', '/p/gone'],
+					'questions' => [
+						['id' => 'q1', 'text' => 'Woont u in de binnenstad?', 'excludesOnNo' => ['/p/a']],
+						['id' => 'q2', 'text' => ''],
+					],
+				],
+				['title' => 'Product A', 'route' => '/p/a', 'status' => 'published', 'body' => ['type' => 'markdown']],
+			]
+		);
+
+		$finder = $this->reader->finder('open-tilburg', 'f1', 'nl', 'anonymous');
+		$this->assertSame([['route' => '/p/a', 'title' => 'Product A']], $finder['products']);
+		$this->assertCount(1, $finder['questions']);
+		$this->assertSame(['/p/a'], $finder['questions'][0]['excludesOnNo']);
+		$this->assertNull($this->reader->finder('open-tilburg', 'other', 'nl', 'anonymous'));
+	}//end testAFinderOffersOnlyPublishedProducts()
+
+
+	/**
+	 * A block of the serving organisation expands into the placement; the placement keeps its cell.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	public function testSharedBlockExpandsForTheSameOrganisation(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-voorbeeld'));
+
+		$page = $this->reader->page('inwoners', '/', 'nl', 'anonymous', 'gemeente-voorbeeld');
+		$placement = $page['body']['widgets'][0];
+
+		$this->assertSame('sharedBlock', $placement['widgetKey']);
+		$this->assertSame(['gridX' => 0, 'gridY' => 0, 'gridWidth' => 6, 'gridHeight' => 2], [
+			'gridX' => $placement['gridX'], 'gridY' => $placement['gridY'], 'gridWidth' => $placement['gridWidth'], 'gridHeight' => $placement['gridHeight'],
+		]);
+		$this->assertFalse($placement['props']['unavailable']);
+		$this->assertCount(1, $placement['props']['widgets'], 'the nested placement inside the block is dropped');
+		$this->assertSame('Open van negen tot vijf', $placement['props']['widgets'][0]['props']['markdown']);
+	}//end testSharedBlockExpandsForTheSameOrganisation()
+
+
+	/**
+	 * Another organisation's block expands to nothing, exactly as a block that is not there.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	public function testForeignBlockExpandsToNothing(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-voorbeeld'));
+		$foreign = $this->reader->page('noord', '/', 'nl', 'anonymous', 'gemeente-noord')['body']['widgets'][0]['props'];
+
+		$this->withRows(array_slice($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-noord'), 0, 1));
+		$missing = $this->reader->page('noord', '/', 'nl', 'anonymous', 'gemeente-noord')['body']['widgets'][0]['props'];
+
+		$this->assertSame(['block' => 'blk-1', 'widgets' => [], 'unavailable' => true], $foreign);
+		$this->assertSame($missing, $foreign, 'a foreign block and a missing one answer the same');
+	}//end testForeignBlockExpandsToNothing()
+
+
+	/**
+	 * An unpublished block expands to nothing, and so does a read with no organisation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	public function testUnpublishedBlockExpandsToNothing(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows($this->pageAndBlockRows(status: 'draft', organisation: 'gemeente-voorbeeld'));
+		$draft = $this->reader->page('inwoners', '/', 'nl', 'anonymous', 'gemeente-voorbeeld')['body']['widgets'][0]['props'];
+		$this->assertTrue($draft['unavailable']);
+		$this->assertSame([], $draft['widgets']);
+		$this->assertStringNotContainsString('Open van negen', json_encode($draft));
+
+		$this->withRows($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-voorbeeld'));
+		$this->assertTrue($this->reader->page('inwoners', '/', 'nl', 'anonymous')['body']['widgets'][0]['props']['unavailable']);
+	}//end testUnpublishedBlockExpandsToNothing()
+
+
+	/**
+	 * A page placing one block, then the block.
+	 *
+	 * @param string $status       The block's status.
+	 * @param string $organisation The block's organisation.
+	 *
+	 * @return array The rows.
+	 */
+	private function pageAndBlockRows(string $status, string $organisation): array {
+		return [
+			[
+				'title' => 'Home', 'route' => '/', 'status' => 'published',
+				'body' => ['type' => 'grid', 'widgets' => [
+					['id' => 'w1', 'widgetKey' => 'sharedBlock', 'gridX' => 0, 'gridY' => 0, 'gridWidth' => 6, 'gridHeight' => 2, 'props' => ['block' => 'blk-1']],
+				]],
+			],
+			[
+				'id' => 'blk-1', 'title' => 'Contact', 'status' => $status, 'organisation' => $organisation,
+				'widgets' => [
+					['id' => 'b1', 'widgetKey' => 'markdown', 'gridX' => 0, 'gridY' => 0, 'gridWidth' => 12, 'gridHeight' => 2, 'props' => ['markdown' => 'Open van negen tot vijf']],
+					['id' => 'b2', 'widgetKey' => 'sharedBlock', 'gridX' => 0, 'gridY' => 2, 'gridWidth' => 12, 'gridHeight' => 2, 'props' => ['block' => 'blk-1']],
+				],
+			],
+		];
+	}//end pageAndBlockRows()
+
+
+	/**
 	 * An editor's route lookup finds the page behind a route, published or not.
 	 *
 	 * `identify()` is the one read on this class that deliberately does NOT

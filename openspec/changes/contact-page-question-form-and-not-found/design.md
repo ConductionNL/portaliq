@@ -19,7 +19,7 @@ All of this is content in `lib/Settings/sites/zuiddrecht.json` page `/contact`; 
 
 ## The contactForm block
 
-Props: `app` and `action` (a contribution create action), `subjectField` (the action's enum field used as Onderwerp), `intro`. The block renders Onderwerp as a select from the action's enum values, "Uw vraag" as a textarea, and "Versturen". On success it shows "Wij hebben uw vraag ontvangen. U vindt hem terug bij Mijn vragen." with a link to the contribution's questions collection page.
+Props: `app` and `action` (a contribution create action), `topicField` (the action's enum field used as Onderwerp), `intro`. The block renders Onderwerp as a select from the action's enum values, "Uw vraag" as a textarea, and "Versturen". On success it shows "Wij hebben uw vraag ontvangen. U vindt hem terug bij Mijn vragen." with a link to the contribution's questions collection page.
 
 The block writes through the existing contribution create path (`ContributionController` create), so identity stamping and the action's whitelist apply. Signed out, the block shows "Log in om een vraag te stellen" and the sign-in routes; it never posts without a session.
 

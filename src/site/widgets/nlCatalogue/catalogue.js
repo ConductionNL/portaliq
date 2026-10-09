@@ -204,6 +204,76 @@ export function eventItemsOf(items) {
 		}))
 }
 
+/**
+ * The catalogue query a page block's `source` stands for: `{app, kind,
+ * categories[], limit | range}` for a dated list, plus `filters{}` for a
+ * table. The kind is the index's `type`. Anything that is not text is left out.
+ *
+ * @param {object|null} source The block's declared source.
+ * @return {object|null} The query, or null without an app and a kind.
+ * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-2
+ */
+export function sourceQuery(source) {
+	const app = typeof source?.app === 'string' ? source.app.trim() : ''
+	const kind = typeof source?.kind === 'string' ? source.kind.trim() : ''
+	if (app === '' || kind === '') {
+		return null
+	}
+	const query = { app, types: [kind], sort: 'date' }
+	const categories = Array.isArray(source.categories)
+		? source.categories.filter((c) => typeof c === 'string' && c !== '')
+		: []
+	if (categories.length > 0) {
+		query.categories = categories
+	}
+	if (source.range === 'schoolYear') {
+		query.range = 'schoolYear'
+	}
+	const limit = Math.trunc(Number(source.limit))
+	query.limit = limit >= 1 ? Math.min(limit, 50) : 20
+	const filters = {}
+	for (const [label, values] of Object.entries(source.filters || {})) {
+		const list = (Array.isArray(values) ? values : [values]).filter(
+			(value) => typeof value === 'string' && value !== '',
+		)
+		if (list.length > 0) {
+			filters[label] = list
+		}
+	}
+	if (Object.keys(filters).length > 0) {
+		query.filters = filters
+	}
+	return query
+}
+
+/**
+ * A table's header and rows from catalogue items: one column per declared
+ * column (`{key, label}`), each cell the item's cell of that key.
+ *
+ * @param {Array<object>} items The catalogue items.
+ * @param {Array<{key: string, label: string}>} columns The columns the block chose.
+ * @return {{columns: Array<string>, rows: Array<Array<string>>}} The table.
+ * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-3
+ */
+export function tableOf(items, columns) {
+	const chosen = (Array.isArray(columns) ? columns : [])
+		.map((column) =>
+			typeof column === 'string'
+				? { key: column, label: column }
+				: {
+						key: String(column?.key ?? ''),
+						label: String(column?.label ?? column?.key ?? ''),
+					},
+		)
+		.filter((column) => column.key !== '')
+	return {
+		columns: chosen.map((column) => column.label),
+		rows: (Array.isArray(items) ? items : []).map((item) =>
+			chosen.map((column) => String(item?.cells?.[column.key] ?? '')),
+		),
+	}
+}
+
 /** How a facet may be chosen from: several values, one value, or a menu. */
 export const FACET_CONTROLS = ['checkbox', 'radio', 'select']
 

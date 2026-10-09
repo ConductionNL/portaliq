@@ -26,6 +26,47 @@ export function splitLead(body) {
 	}
 }
 
+/**
+ * What the article's sign-up card does for this visitor: `closed` when the
+ * event no longer takes answers, `signin` for a visitor without a session,
+ * else `open`. A closed event wins, so the card never invites an answer the
+ * server would refuse.
+ *
+ * @param {object|null} event The event facts from the content API.
+ * @param {boolean} signedIn Whether the visitor holds a session.
+ * @return {('none'|'closed'|'signin'|'open')} The card's state.
+ * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+ */
+export function eventCardState(event, signedIn) {
+	if (!event || typeof event !== 'object') {
+		return 'none'
+	}
+	if (event.closed === true) {
+		return 'closed'
+	}
+	return signedIn === true ? 'open' : 'signin'
+}
+
+/**
+ * The name of the resident area for the sign-in line ("Mijn Vaartveld"): the
+ * authored name, else the portal's slug with a capital.
+ *
+ * @param {string} authored The authored name.
+ * @param {string} portal The portal slug.
+ * @return {string} "Mijn Vaartveld", or "Mijn omgeving" without a slug.
+ * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+ */
+export function areaName(authored, portal) {
+	const name = String(authored ?? '').trim()
+	if (name !== '') {
+		return name
+	}
+	const slug = String(portal ?? '').trim()
+	return slug === ''
+		? 'Mijn omgeving'
+		: `Mijn ${slug.charAt(0).toUpperCase()}${slug.slice(1)}`
+}
+
 /** A list item that is a fact: `- **Wanneer:** woensdag 14 oktober`. */
 const FACT = /^[-*+]\s+\*\*([^*]+?):?\*\*:?\s+(.+)$/
 

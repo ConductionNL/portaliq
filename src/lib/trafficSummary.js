@@ -7,6 +7,8 @@
 // so every widget on the page reads ONE summary instead of each folding
 // the records its own way and disagreeing.
 
+import { pageSiteUrl } from './pageSiteUrl.js'
+
 /**
  * How many ranked rows a widget shows.
  */
@@ -184,7 +186,7 @@ export function warnedSwitches(portal) {
  *
  * @param {Array<object>} records The `portalTrafficDaily` objects, any order.
  * @param {Array<string>} dates   The dates of the range, oldest first.
- * @return {{totals: object, series: object, days: number, visitors: object, breakdowns: object, pages: Array<object>, sources: Array<object>, searches: Array<object>, goals: Array<object>, conversionRate: number, funnels: Array<object>, forms: Array<object>, notFound: Array<object>, errors: Array<object>, customDimensions: object, experiments: Array<object>, heatmaps: Array<object>, hasData: boolean}} The summary.
+ * @return {{totals: object, series: object, days: number, visitors: object, breakdowns: object, pages: Array<object>, sources: Array<object>, searches: Array<object>, zeroResultSearches: Array<object>, searchesWithoutCount: number, goals: Array<object>, conversionRate: number, funnels: Array<object>, forms: Array<object>, notFound: Array<object>, errors: Array<object>, customDimensions: object, experiments: Array<object>, heatmaps: Array<object>, hasData: boolean}} The summary.
  */
 export function summarise(records, dates) {
 	const byDate = {}
@@ -327,6 +329,8 @@ export function summarise(records, dates) {
 function newOutcomes() {
 	return {
 		searches: {},
+		zeroResults: {},
+		withoutCount: 0,
 		goals: {},
 		goalOrder: [],
 		converted: 0,
@@ -363,6 +367,17 @@ function foldOutcomes(outcomes, record, sessions) {
 			outcomes.searches[term] = (outcomes.searches[term] || 0) + num(row.count)
 		}
 	})
+
+	// Terms that found nothing, and the searches that never said
+	// (portal-traffic-zero-result-searches).
+	list(record.zeroResultSearches).forEach((row) => {
+		const term = String(row.term || '')
+		if (term !== '') {
+			outcomes.zeroResults[term] =
+				(outcomes.zeroResults[term] || 0) + num(row.count)
+		}
+	})
+	outcomes.withoutCount += num(record.searchesWithoutCount)
 
 	outcomes.sessions += sessions
 	outcomes.converted += Math.round(
@@ -587,6 +602,14 @@ function finishOutcomes(outcomes) {
 			})),
 			'count',
 		),
+		zeroResultSearches: rank(
+			Object.keys(outcomes.zeroResults).map((term) => ({
+				term,
+				count: outcomes.zeroResults[term],
+			})),
+			'count',
+		),
+		searchesWithoutCount: outcomes.withoutCount,
 		goals: outcomes.goalOrder.map((id) => outcomes.goals[id]),
 		conversionRate:
 			outcomes.sessions > 0
@@ -819,4 +842,27 @@ function num(value) {
  */
 function list(value) {
 	return Array.isArray(value) ? value : []
+}
+
+/**
+ * The public site's search page for one term (portal-traffic-zero-result-searches):
+ * the portal's own search route, else `/zoeken`, opened with the term typed in.
+ *
+ * @param {object|null} portal The portal object (`slug`, `headerSearch.route`).
+ * @param {string} term The search term.
+ * @param {(path: string) => string} generateUrlFn Nextcloud's URL generator.
+ * @return {string} The URL, or '' when there is no portal or term.
+ *
+ * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+ */
+export function searchLinkOf(portal, term, generateUrlFn) {
+	const slug = String((portal && portal.slug) || '')
+	if (slug === '' || String(term || '') === '') {
+		return ''
+	}
+	const configured = String(
+		(portal.headerSearch && portal.headerSearch.route) || '',
+	)
+	const route = /^\/(?!\/)/.test(configured) ? configured : '/zoeken'
+	return `${pageSiteUrl({ route, portal: slug }, generateUrlFn)}&_search=${encodeURIComponent(term)}`
 }

@@ -244,7 +244,7 @@ class PortalObjectWriter {
 	 *                             ownership check (may be empty). It is never
 	 *                             written on update.
 	 * @param string $id The client-supplied object id (never trusted).
-	 * @param array<string, mixed> $data The client-supplied fields (already whitelisted).
+	 * @param array<string, mixed>|\Closure $data The client-supplied fields (already whitelisted), or a closure that returns them from the verified row.
 	 *
 	 * @return array<string, mixed>|null The updated object, or null on ownership/OR failure.
 	 *
@@ -258,7 +258,7 @@ class PortalObjectWriter {
 		string $subjectRef,
 		string $organisation,
 		string $id,
-		array $data,
+		array|\Closure $data,
 	): ?array {
 		$this->lastFailure = '';
 		if ($id === '') {
@@ -283,6 +283,13 @@ class PortalObjectWriter {
 		);
 		if ($existing === null) {
 			return null;
+		}
+
+		// A callable decides the fields from the row just verified as the
+		// subject's own, so a write that depends on the stored value (the
+		// first read moment) cannot race a second read.
+		if ($data instanceof \Closure) {
+			$data = (array)$data($existing);
 		}
 
 		// (2) Merge the whitelisted fields onto the existing object; drop the

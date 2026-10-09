@@ -1027,4 +1027,39 @@ export const SITE_COMPOSITIONS = [
 		],
 		why: 'The portal\'s public catalogue: search, facets, results and pages ("Cursusaanbod", "Opleidingen").',
 	},
+	{
+		key: 'nlPublicTable',
+		composes: ['Table'],
+		why: 'One kind of an app\'s public index as a table ("Toetsrooster 4 havo").',
+	},
+	{
+		key: 'nlPublicDetail',
+		composes: ['Description List', 'Heading', 'Button', 'Radio Button'],
+		why: 'The page of one course or programme of an app: facts, sections, dates with places and an enrol card.',
+	},
+	{
+		key: 'nlFaqList',
+		composes: ['Accordion', 'Heading', 'Link'],
+		why: "The portal's frequently asked questions, written once and shown on the pages they belong to.",
+	},
+	{
+		key: 'nlProductFinder',
+		composes: ['Heading', 'Button', 'Link List'],
+		why: 'Yes or no questions that rule out the portal\'s products, evaluated in the browser ("Welke vergunning past bij u?").',
+	},
+	{
+		key: 'nlFeaturedSubjects',
+		composes: ['Card as Link', 'Heading', 'Image'],
+		why: 'The subjects an administrator features in the publication catalogue, each linking to its page ("Uitgelichte onderwerpen").',
+	},
+	{
+		key: 'nlPortalCounts',
+		composes: ['Link List', 'Heading'],
+		why: 'What the portal publishes in numbers, each linking into the search with that filter set ("Wat we publiceren, in aantallen").',
+	},
+	{
+		key: 'nlSubjectLanding',
+		composes: ['Heading', 'Image', 'Paragraph'],
+		why: 'The page of one subject: its image, description and its own publications through the search block.',
+	},
 ]

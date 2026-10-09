@@ -85,6 +85,9 @@ export function wooCategoryLabel(code, locale) {
  * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 export function labelBuckets(buckets, field, locale) {
+	if (field === 'resultType') {
+		return kindBuckets(buckets, locale)
+	}
 	if (field !== 'wooCategory') {
 		return buckets
 	}
@@ -105,4 +108,47 @@ export function pageLocale() {
 	return String(lang || 'nl')
 		.slice(0, 2)
 		.toLowerCase()
+}
+
+const KINDS = {
+	publication: ['Publicatie', 'Publication'],
+	document: ['Document', 'Document'],
+	subject: ['Onderwerp', 'Subject'],
+}
+
+/**
+ * The name of a kind of record in the site's language. A kind outside the
+ * three reads as itself.
+ *
+ * @param {string} kind `publication`, `document` or `subject`.
+ * @param {string} locale The site's language.
+ * @return {string} The name.
+ * @spec openspec/changes/search-filter-by-kind/specs/portal-federated-search/spec.md#requirement-results-filter-by-kind-req-sfk-001
+ */
+export function kindLabel(kind, locale) {
+	const key = String(kind ?? '').toLowerCase()
+	if (!Object.hasOwn(KINDS, key)) {
+		return String(kind ?? '')
+	}
+	return KINDS[key][locale === 'en' ? 1 : 0]
+}
+
+/**
+ * The `resultType` buckets in the order a visitor reads them (publication,
+ * document, subject), each named in the site's language.
+ *
+ * @param {Array<{value: string, label: string, count: number}>} buckets The buckets.
+ * @param {string} locale The site's language.
+ * @return {Array<{value: string, label: string, count: number}>} The buckets.
+ * @spec openspec/changes/search-filter-by-kind/specs/portal-federated-search/spec.md#requirement-results-filter-by-kind-req-sfk-001
+ */
+export function kindBuckets(buckets, locale) {
+	const order = Object.keys(KINDS)
+	const rank = (value) => {
+		const index = order.indexOf(String(value).toLowerCase())
+		return index === -1 ? order.length : index
+	}
+	return buckets
+		.map((bucket) => ({ ...bucket, label: kindLabel(bucket.value, locale) }))
+		.sort((a, b) => rank(a.value) - rank(b.value))
 }

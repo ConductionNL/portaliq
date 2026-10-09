@@ -93,7 +93,7 @@ class PortalAccessRequestServiceTest extends TestCase {
 		$mandates = $this->storedRows('portalMandate');
 		$this->assertCount(1, $mandates);
 		$this->assertSame('bookkeeper-1', $mandates[0]['subjectRef']);
-		$this->assertSame('87654321', $mandates[0]['onBehalfOf']);
+		$this->assertSame('kvk:87654321', $mandates[0]['onBehalfOf']);
 		$this->assertSame('active', $mandates[0]['status']);
 		$this->assertSame('organisation', $mandates[0]['reach']);
 		$this->assertSame('clerk-anna', $mandates[0]['grantedBy']);

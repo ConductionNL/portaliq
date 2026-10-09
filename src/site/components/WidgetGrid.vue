@@ -74,6 +74,7 @@ import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/pu
 import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
+import { assistantAvailable } from '../lib/assistantAvailable.js'
 import { withoutStyling } from '../lib/blockProps.js'
 import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
@@ -129,7 +130,12 @@ const ContributionsBlock = defineAsyncComponent(
 const IntakeCatalogueBlock = defineAsyncComponent(
 	() => import('./IntakeCatalogueBlock.vue'),
 )
+const ContactForm = defineAsyncComponent(() => import('./ContactForm.vue'))
 const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
+const PublicRecordsBlock = defineAsyncComponent(
+	() => import('./PublicRecordsBlock.vue'),
+)
+const AssistantBlock = defineAsyncComponent(() => import('./AssistantBlock.vue'))
 const IntakeStatusBlock = defineAsyncComponent(
 	() => import('./IntakeStatusBlock.vue'),
 )
@@ -183,6 +189,11 @@ const SiteNavigationBlock = defineAsyncComponent(
 )
 
 /**
+ * On demand too (site-shared-page-blocks): the nested grid of a shared block.
+ */
+const SharedBlock = defineAsyncComponent(() => import('./SharedBlock.vue'))
+
+/**
  * THE NL DESIGN SYSTEM WIDGETS, one chunk each
  * (site-nlds-widget-palette REQ-SNW-011).
  *
@@ -207,6 +218,9 @@ const PUBLIC_WIDGETS = {
 	// derives from the public menus and the signed-in navigation and hands
 	// over as `navigation`; the block fetches nothing.
 	siteNavigation: SiteNavigationBlock,
+	// site-shared-page-blocks: the content API puts the block's widgets in the
+	// placement; the block draws them as a nested grid. Lazy, like the menu.
+	sharedBlock: SharedBlock,
 	contributions: ContributionsBlock,
 	// `federatedSearch` stays owned here rather than coming from the shared
 	// registry, because what it is allowed to query is this app's decision.
@@ -230,6 +244,13 @@ const PUBLIC_WIDGETS = {
 	// and validate before anything is recorded; nothing here decides access.
 	intakeCatalogue: IntakeCatalogueBlock,
 	intakeForm: IntakeFormBlock,
+	// A resident's question without a case (contact-page-question-form-and-not-found).
+	contactForm: ContactForm,
+	// search-assistant-from-public-content: only while the portal offers it, see
+	// publicWidgetFor() and assistantAvailable().
+	assistant: AssistantBlock,
+	// site-member-voting-record-and-confidential-papers: a contributed public record list.
+	publicRecords: PublicRecordsBlock,
 	intakeStatus: IntakeStatusBlock,
 	...nldsWidgets,
 	...siteBlockRegistry,
@@ -255,7 +276,9 @@ const PUBLIC_WIDGETS = {
  * @return {Array<string>} The widget keys that render at a public origin.
  */
 export function publicWidgetKeys() {
-	return Object.keys(PUBLIC_WIDGETS)
+	return Object.keys(PUBLIC_WIDGETS).filter(
+		(key) => key !== 'assistant' || assistantAvailable(),
+	)
 }
 
 /**
@@ -265,6 +288,10 @@ export function publicWidgetKeys() {
  * @return {object|null} The component, or null when the key is not public.
  */
 export function publicWidgetFor(key) {
+	if (key === 'assistant' && !assistantAvailable()) {
+		return null
+	}
+
 	return Object.hasOwn(PUBLIC_WIDGETS, key) ? PUBLIC_WIDGETS[key] : null
 }
 
@@ -335,6 +362,22 @@ export default {
 		signedIn: {
 			type: Boolean,
 			default: false,
+		},
+
+		/** The portal's help details, offered as "Hulp nodig?" on a form. */
+		portalHelp: {
+			type: Object,
+			default: null,
+		},
+
+		/**
+		 * Whether the portal lets a search read inside public documents. Handed
+		 * to the search block AFTER its authored props, so a page cannot
+		 * switch it back on (portal-federated-search REQ-PFS-CONTENT-001).
+		 */
+		searchInsideDocuments: {
+			type: Boolean,
+			default: true,
 		},
 
 		/**
@@ -536,7 +579,11 @@ export default {
 			// The search block learns the signed-in state the same way
 			// (woo-journey-entry-points D1).
 			if (widget.widgetKey === 'federatedSearch') {
-				return { ...props, signedIn: this.signedIn === true }
+				return {
+					...props,
+					signedIn: this.signedIn === true,
+					searchInsideDocuments: this.searchInsideDocuments !== false,
+				}
 			}
 
 			// SAME RULE, FOURTH SUBJECT. Which portal a form's UTM capture is
@@ -545,7 +592,7 @@ export default {
 			// (fields/submitLabel/consentText, embedded at creation time —
 			// see LandingPageProvisioningService::buildBody()).
 			if (widget.widgetKey === 'form') {
-				return { ...props, portal: this.portal }
+				return { ...props, portal: this.portal, portalHelp: this.portalHelp }
 			}
 
 			// SAME RULE, FIFTH SUBJECT. The intake blocks ask this portal's
@@ -586,8 +633,27 @@ export default {
 			if (
 				widget.widgetKey === 'nlNewsList'
 				|| widget.widgetKey === 'nlNewsArticle'
+				|| widget.widgetKey === 'nlPublicDetail'
 			) {
-				return { ...props, portal: this.portal, routeParam: this.routeParam }
+				const news = {
+					...props,
+					portal: this.portal,
+					routeParam: this.routeParam,
+				}
+				if (widget.widgetKey === 'nlNewsList') {
+					return news
+				}
+				// The article's event card asks a visitor who is not signed in to
+				// sign in first, and sends them back to the article.
+				return {
+					...news,
+					signedIn: this.signedIn === true,
+					ways: this.signInRoutes.map((r) => ({
+						id: r.mode,
+						label: r.label,
+						href: r.href,
+					})),
+				}
 			}
 
 			// portal-public-catalogue: the catalogue and a dated list that
@@ -595,13 +661,54 @@ export default {
 			if (
 				widget.widgetKey === 'nlCatalogue'
 				|| widget.widgetKey === 'nlEventList'
+				|| widget.widgetKey === 'nlPublicTable'
 			) {
+				return { ...props, portal: this.portal }
+			}
+
+			// site-shared-page-blocks: the nested grid gets the page's own props.
+			if (widget.widgetKey === 'sharedBlock') {
+				return { ...props, host: { ...this.$props, widgets: undefined } }
+			}
+
+			// public-faq-and-product-finder: the FAQ reads this portal's entries
+			// for the page on screen; the finder reads this portal's finder.
+			if (widget.widgetKey === 'nlFaqList') {
+				const navigation = this.navigation || {}
+				return {
+					...props,
+					portal: this.portal,
+					currentRoute: navigation.currentRoute || '',
+				}
+			}
+
+			if (widget.widgetKey === 'nlProductFinder') {
 				return { ...props, portal: this.portal }
 			}
 
 			// The hero hands the portal on to the list beside it, which reads
 			// this portal's catalogue or news (hero-on-the-school-boards).
 			if (widget.widgetKey === 'hero') {
+				return { ...props, portal: this.portal }
+			}
+
+			// The host names the portal, the session and the ways in; the
+			// author names the action and the wording (contactForm).
+			if (widget.widgetKey === 'contactForm') {
+				return {
+					...props,
+					portal: this.portal,
+					signedIn: this.signedIn === true,
+					ways: this.signInRoutes.map((r) => ({
+						id: r.mode,
+						label: r.label,
+						href: r.href,
+					})),
+				}
+			}
+
+			// The assistant asks THIS portal's route; the portal comes from the host.
+			if (widget.widgetKey === 'assistant') {
 				return { ...props, portal: this.portal }
 			}
 

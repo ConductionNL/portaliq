@@ -27,7 +27,11 @@
 			v-else-if="state === 'signIn'"
 			class="utrecht-paragraph"
 			data-testid="intake-form-sign-in">
-			{{ signInLabel }}
+			{{
+				feeAmountText
+					? text.signInFee.split('{amount}').join(feeAmountText)
+					: signInLabel
+			}}
 		</p>
 
 		<div v-else-if="state === 'external'" data-testid="intake-form-external">
@@ -44,16 +48,25 @@
 			</a>
 		</div>
 
+		<FormIntro
+			v-else-if="state === 'intro'"
+			:intro="render.settings && render.settings.intro"
+			:formName="hideFormName ? '' : render.formName || ''"
+			@start="state = 'form'" />
+
 		<div v-else-if="state === 'done'" data-testid="intake-form-done">
 			<h2
 				ref="doneHeading"
 				class="utrecht-heading-2"
 				tabindex="-1"
 				data-testid="intake-form-done-heading">
-				{{ doneLabel }}
+				{{ confirmationPage.title }}
 			</h2>
-			<p v-if="confirmationText" class="utrecht-paragraph">
-				{{ confirmationText }}
+			<p
+				v-if="confirmationPage.body"
+				class="utrecht-paragraph"
+				data-testid="intake-form-done-body">
+				{{ confirmationPage.body }}
 			</p>
 			<p class="utrecht-paragraph" role="status">
 				{{ referenceLabel }}
@@ -61,6 +74,62 @@
 			</p>
 			<p class="utrecht-paragraph">
 				{{ keepReferenceLabel }}
+			</p>
+			<p
+				v-if="feeAmountText"
+				class="utrecht-paragraph"
+				data-testid="intake-form-fee">
+				{{ text.feeLine.split('{amount}').join(feeAmountText) }}
+			</p>
+			<p
+				v-if="paymentWords"
+				class="utrecht-paragraph"
+				role="status"
+				data-testid="intake-form-payment">
+				{{ text[paymentWords.key] }}
+			</p>
+			<p
+				v-if="payFailed"
+				class="utrecht-paragraph"
+				role="alert"
+				data-testid="intake-form-pay-error">
+				{{ text.payUnavailable }}
+			</p>
+			<p v-if="canPay">
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--primary-action"
+					:disabled="paying"
+					data-testid="intake-form-pay"
+					@click="pay">
+					{{ text.payNow.split('{amount}').join(feeAmountText) }}
+				</button>
+			</p>
+			<p
+				v-if="mailedTo"
+				class="utrecht-paragraph"
+				data-testid="intake-form-mailed">
+				{{ text.mailedTo.split('{email}').join(mailedTo) }}
+			</p>
+			<template v-if="confirmationPage.next.length > 0">
+				<h3 class="utrecht-heading-3">
+					{{ text.whatNow }}
+				</h3>
+				<ol data-testid="intake-form-next-steps">
+					<li v-for="(step, index) in confirmationPage.next" :key="index">
+						<strong v-if="step.title">{{ step.title }}</strong>
+						{{ step.text }}
+					</li>
+				</ol>
+			</template>
+			<p>
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action"
+					data-testid="intake-form-print"
+					@click="print">
+					{{ text.print }}
+				</button>
 			</p>
 		</div>
 
@@ -133,8 +202,54 @@
 				:error="errors[field.name] || ''"
 				:group="isDate(field)"
 				:errorTestid="`intake-field-error-${field.name}`">
+				<RepeatingGroup
+					v-if="field.type === 'group'"
+					:id="elementId(field)"
+					v-model="values[field.name]"
+					:field="field"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`" />
+				<output
+					v-else-if="isComputedField(field)"
+					:id="elementId(field)"
+					class="utrecht-paragraph pq-intake-form__output"
+					:data-testid="`intake-field-${field.name}`">
+					{{ computedText(field) }}
+				</output>
+				<AddressNL
+					v-else-if="field.type === 'addressNL'"
+					:id="elementId(field)"
+					v-model="values[field.name]"
+					:houseLetter="field.houseLetter === true"
+					:lookup="
+						render.settings && render.settings.addressLookup === true
+					"
+					:base="apiBase"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`" />
+				<FamilyMembers
+					v-else-if="field.type === 'familyMembers'"
+					v-model="values[field.name]"
+					:base="apiBase"
+					:sameAddressOnly="field.sameAddressOnly !== false"
+					:testid="`intake-field-${field.name}`" />
+				<SignatureField
+					v-else-if="field.type === 'signature'"
+					v-model="values[field.name]"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`" />
+				<EmailCodeField
+					v-else-if="field.type === 'email' && field.verify === true"
+					:id="elementId(field)"
+					v-model="values[field.name]"
+					:base="apiBase"
+					:route="bindingRoute"
+					:portal="portal"
+					:invalid="!!errors[field.name]"
+					:testid="`intake-field-${field.name}`"
+					@verified="onVerified" />
 				<DateInputGroup
-					v-if="isDate(field)"
+					v-else-if="isDate(field)"
 					:id="elementId(field)"
 					v-model="values[field.name]"
 					:required="field.required === true"
@@ -186,6 +301,12 @@
 					:data-testid="`intake-field-${field.name}`" />
 			</FieldShell>
 
+			<StatementsBlock
+				v-if="statementsShown"
+				v-model="accepted"
+				:statements="render.statements"
+				:errors="statementErrors" />
+
 			<div class="pq-intake-form__buttons">
 				<button
 					v-if="hasSteps && stepIndex > 0"
@@ -213,6 +334,22 @@
 			</div>
 
 			<p
+				v-if="decisionDown"
+				class="utrecht-paragraph pq-intake-form__error"
+				role="alert"
+				data-testid="intake-form-decision-down">
+				{{ text.decisionDown }}
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--subtle"
+					:disabled="deciding"
+					data-testid="intake-form-decision-retry"
+					@click="nextStep">
+					{{ text.retry }}
+				</button>
+			</p>
+
+			<p
 				v-if="sendFailed"
 				class="utrecht-paragraph pq-intake-form__error"
 				data-testid="intake-form-error"
@@ -224,25 +361,46 @@
 </template>
 
 <script>
+import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
+import AddressNL from './forms/AddressNL.vue'
 import DateInputGroup from './forms/DateInputGroup.vue'
+import EmailCodeField from './forms/EmailCodeField.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
+import FamilyMembers from './forms/FamilyMembers.vue'
 import FieldShell from './forms/FieldShell.vue'
+import FormIntro from './forms/FormIntro.vue'
 import FormProgress from './forms/FormProgress.vue'
+import RepeatingGroup from './forms/RepeatingGroup.vue'
 import ReviewList from './forms/ReviewList.vue'
+import SignatureField from './forms/SignatureField.vue'
+import StatementsBlock from './forms/StatementsBlock.vue'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import {
 	bindingRouteFrom,
+	decideStep as decideStepOnServer,
 	initialValues,
 	loadForm,
+	lookUpStatus,
+	payIntake,
 	submitIntake,
 } from '../lib/intakeApi.js'
+import { addressLine, addressProblem } from './forms/address.js'
+import { calculatedValues } from './forms/calculate.js'
+import {
+	confirmationView,
+	introView,
+	missingStatements,
+} from './forms/confirmation.js'
 import {
 	DUTCH,
 	explainsOptional,
 	plainFieldErrors,
 	summaryEntries,
 } from './forms/fields.js'
+import { groupCountErrors, itemLines } from './forms/group.js'
+import { identityWords } from './forms/identityWords.js'
+import { feeAmount, paymentView, returnedReference } from './forms/payment.js'
 import stepFlow from './forms/stepFlow.js'
 import { stepHeading } from './forms/steps.js'
 
@@ -273,11 +431,18 @@ export default {
 	name: 'IntakeFormBlock',
 
 	components: {
+		AddressNL,
 		DateInputGroup,
+		FamilyMembers,
+		FormIntro,
+		StatementsBlock,
 		ErrorSummary,
 		FieldShell,
 		FormProgress,
+		RepeatingGroup,
 		ReviewList,
+		SignatureField,
+		EmailCodeField,
 	},
 
 	mixins: [stepFlow],
@@ -394,10 +559,111 @@ export default {
 			sendFailed: false,
 			reference: '',
 			confirmationText: '',
+			accepted: [],
+			verifiedEmails: {},
+			statementErrors: {},
+			confirmation: null,
+			mailedTo: '',
+			payment: null,
+			paying: false,
+			payFailed: false,
 		}
 	},
 
 	computed: {
+		/**
+		 * The values of the calculated fields, worked out from the answers so far.
+		 * For display only: the server works them out again on submit.
+		 *
+		 * @return {Record<string, number|string>} The value per calculated field.
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 */
+		calculated() {
+			return calculatedValues(this.fields, this.values)
+		},
+
+		/**
+		 * The fee in words, from the form's render or the sign-in refusal.
+		 *
+		 * @return {string} "€ 45,00", or '' for a free request.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t06
+		 */
+		feeAmountText() {
+			return feeAmount(
+				this.render.fee,
+				typeof document === 'undefined'
+					? 'nl'
+					: document.documentElement?.lang,
+			)
+		},
+
+		/**
+		 * What the page says about the payment.
+		 *
+		 * @return {object|null} `{key, again}`.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t06
+		 */
+		paymentWords() {
+			return paymentView(this.payment)
+		},
+
+		/**
+		 * Whether "Pay now" shows: a fee, and no payment that went through.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t06
+		 */
+		canPay() {
+			return (
+				this.feeAmountText !== ''
+				&& this.reference !== ''
+				&& (this.paymentWords === null || this.paymentWords.again === true)
+			)
+		},
+
+		/**
+		 * The statements show on the review step, or at the end of a one-page form.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+		 */
+		statementsShown() {
+			return (
+				Array.isArray(this.render.statements)
+				&& this.render.statements.length > 0
+				&& (!this.hasSteps || this.onReview)
+			)
+		},
+
+		/**
+		 * What the confirmation page says.
+		 *
+		 * @return {object} `{title, body, next}`.
+		 *
+		 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t04
+		 */
+		confirmationPage() {
+			return confirmationView(
+				this.confirmation,
+				this.confirmationText,
+				{ reference: this.reference, deadline: '' },
+				this.doneLabel,
+			)
+		},
+
+		/** The portal api base the address lookup asks. */
+		/**
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+		 */
+		apiBase() {
+			return authBaseFrom(resolveApiBase())
+		},
+
 		/**
 		 * The binding route this block renders: the author's, else the link's.
 		 *
@@ -430,13 +696,16 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		shownFields() {
+			const shown = this.fields.filter((field) =>
+				this.isShownField(field.name),
+			)
 			if (!this.hasSteps) {
-				return this.fields
+				return shown
 			}
 			if (this.onReview) {
 				return []
 			}
-			return this.fields.filter((field) =>
+			return shown.filter((field) =>
 				this.currentStep.fields.includes(field.name),
 			)
 		},
@@ -498,7 +767,7 @@ export default {
 					index,
 					title: step.title,
 					rows: step.fields
-						.filter((name) => byName[name])
+						.filter((name) => byName[name] && this.isShownField(name))
 						.map((name) => ({
 							field: name,
 							label: byName[name].label || name,
@@ -554,6 +823,25 @@ export default {
 
 	watch: {
 		/**
+		 * Keep the calculated fields' values in step with the answers, so the
+		 * review shows them.
+		 *
+		 * @param {Record<string, number|string>} now The calculated values.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 */
+		calculated(now) {
+			for (const field of this.fields) {
+				if (field.calculate) {
+					this.values[field.name] = Object.hasOwn(now, field.name)
+						? String(now[field.name])
+						: ''
+				}
+			}
+		},
+
+		/**
 		 * Load the other form when the catalogue link changes under the page.
 		 *
 		 * @return {void}
@@ -596,7 +884,11 @@ export default {
 				)
 				this.render = view.render
 				this.values = initialValues(view.render.fields, view.render.prefill)
-				this.state = view.state
+				this.state =
+					view.state === 'form' && introView(view.render.settings?.intro)
+						? 'intro'
+						: view.state
+				await this.showReturnedPayment()
 			} catch {
 				this.state = 'notFound'
 			}
@@ -611,12 +903,23 @@ export default {
 		 */
 		async submit() {
 			this.sendFailed = false
-			const wrong = this.checkFields(this.fields.map((field) => field.name))
+			const wrong = this.checkFields(
+				this.fields
+					.filter((field) => this.isShownField(field.name))
+					.map((field) => field.name),
+			)
 			if (Object.keys(wrong).length > 0) {
 				this.showErrors(wrong)
 				return
 			}
 			this.errors = {}
+			const missing = missingStatements(this.render.statements, this.accepted)
+			this.statementErrors = Object.fromEntries(
+				missing.map((key) => [key, this.text.statementRequired]),
+			)
+			if (missing.length > 0) {
+				return
+			}
 
 			this.submitting = true
 			try {
@@ -626,14 +929,27 @@ export default {
 					this.values,
 					this.portal,
 					adoptSessionToken(),
+					null,
+					this.accepted,
+					this.verifiedEmails,
 				)
 				if (outcome.reference === '') {
-					this.showErrors(this.messagesOf(outcome.errors))
+					const messages = this.messagesOf(outcome.errors)
+					this.statementErrors = {}
+					for (const key of Object.keys(messages)) {
+						if (key.startsWith('statement-')) {
+							this.statementErrors[key.slice(10)] = messages[key]
+							delete messages[key]
+						}
+					}
+					this.showErrors(messages)
 					return
 				}
 
 				this.reference = outcome.reference
 				this.confirmationText = outcome.confirmationText
+				this.confirmation = outcome.confirmation
+				this.mailedTo = outcome.mailedTo
 				this.state = 'done'
 				this.$nextTick(() => {
 					if (this.$refs.doneHeading) {
@@ -645,6 +961,71 @@ export default {
 			} finally {
 				this.submitting = false
 			}
+		},
+
+		/**
+		 * When the resident comes back from the payment page, show their
+		 * reference and what the payment record says, not what the address says.
+		 *
+		 * @return {Promise<void>} Resolves when shown or when there is nothing to show.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t05
+		 */
+		async showReturnedPayment() {
+			const reference = returnedReference(
+				typeof window === 'undefined' ? '' : window.location.search,
+			)
+			if (this.state !== 'form' || reference === '' || !this.render.fee) {
+				return
+			}
+			const status = await lookUpStatus(
+				authBaseFrom(resolveApiBase()),
+				reference,
+				this.portal,
+			)
+			if (!status || !status.reference) {
+				return
+			}
+			this.reference = status.reference
+			this.payment = status.payment || null
+			this.state = 'done'
+		},
+
+		/**
+		 * Take the resident to the payment page. The browser sends no amount.
+		 * The top window navigates, because a payment page in an iframe is
+		 * refused by most providers.
+		 *
+		 * @return {Promise<void>} Resolves when navigating or when it failed.
+		 *
+		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t06
+		 */
+		async pay() {
+			this.payFailed = false
+			this.paying = true
+			const result = await payIntake(
+				authBaseFrom(resolveApiBase()),
+				this.reference,
+				this.portal,
+				adoptSessionToken(),
+			)
+			this.paying = false
+			if (!result.ok) {
+				this.payFailed = true
+				return
+			}
+			window.top.location.assign(result.checkoutUrl)
+		},
+
+		/**
+		 * Print the confirmation page.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t04
+		 */
+		print() {
+			window.print()
 		},
 
 		/**
@@ -672,12 +1053,20 @@ export default {
 		},
 
 		/**
-		 * Every field of a published form shows; conditions arrive with #1071.
+		 * Whether a field shows: its `visibleWhen`, a local condition over the
+		 * answers so far, decides. The server repeats the same check on submit.
 		 *
-		 * @return {boolean} True.
+		 * @param {string} name The field's name.
+		 * @return {boolean} True to show it.
+		 *
+		 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-fields-condition-decides-whether-the-resident-sees-it-req-icq-001
 		 */
-		isShownField() {
-			return true
+		isShownField(name) {
+			const field = this.fields.find((entry) => entry.name === name)
+			if (!field || !field.visibleWhen) {
+				return true
+			}
+			return evaluateVisibleWhenLocal(field.visibleWhen, this.values)
 		},
 
 		/**
@@ -690,16 +1079,99 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		checkFields(names) {
+			const asked = this.fields.filter((field) => names.includes(field.name))
+			const addresses = asked.filter((field) => field.type === 'addressNL')
+			const errors = this.checkPlainFields(names)
+			Object.assign(errors, groupCountErrors(asked, this.values))
+			for (const field of addresses) {
+				const block = this.values[field.name]
+				const problem = addressProblem(block)
+				if (
+					problem !== ''
+					&& (field.required === true || addressLine(block) !== '')
+				) {
+					errors[field.name] = problem
+				}
+			}
+			for (const field of asked) {
+				const address = String(this.values[field.name] ?? '')
+					.trim()
+					.toLowerCase()
+				if (
+					field.type === 'email'
+					&& field.verify === true
+					&& address !== ''
+					&& !errors[field.name]
+					&& !this.verifiedEmails[address]
+				) {
+					errors[field.name] = identityWords(
+						document.documentElement?.lang,
+					).emailVerifyFirst
+				}
+			}
+			return errors
+		},
+
+		/**
+		 * An address was verified, or its proof was dropped because it changed.
+		 *
+		 * @param {{address: string, proof: string}} verified The address and its proof, '' to drop.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+		 */
+		onVerified(verified) {
+			const address = String(verified?.address ?? '')
+				.trim()
+				.toLowerCase()
+			if (address === '') {
+				return
+			}
+			if (verified.proof) {
+				this.verifiedEmails = {
+					...this.verifiedEmails,
+					[address]: verified.proof,
+				}
+				return
+			}
+			const rest = { ...this.verifiedEmails }
+			delete rest[address]
+			this.verifiedEmails = rest
+		},
+
+		/**
+		 * The plain checks (required, date, format) over the names given.
+		 *
+		 * @param {string[]} names The field names.
+		 * @return {Record<string, string>} The errors.
+		 *
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
+		 */
+		checkPlainFields(names) {
+			const values = { ...this.values }
+			for (const field of this.fields) {
+				if (field.type === 'addressNL') {
+					values[field.name] = addressLine(values[field.name])
+				}
+				if (field.type === 'familyMembers') {
+					values[field.name] = (values[field.name] || []).join(',')
+				}
+			}
 			return plainFieldErrors(
 				this.fields
 					.filter((field) => names.includes(field.name))
+					.filter(
+						(field) =>
+							field.type !== 'group' && !this.isComputedField(field),
+					)
 					.map((field) => ({
 						name: field.name,
 						label: field.label || field.name,
 						required: field.required === true,
 						date: this.isDate(field),
+						format: typeof field.format === 'string' ? field.format : '',
 					})),
-				this.values,
+				values,
 			)
 		},
 
@@ -713,6 +1185,25 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		answerText(field) {
+			if (field.type === 'signature') {
+				return this.values[field.name]
+					? identityWords(document.documentElement?.lang).signatureSet
+					: ''
+			}
+			if (field.type === 'addressNL') {
+				return addressLine(this.values[field.name])
+			}
+			if (field.type === 'familyMembers') {
+				return (this.values[field.name] || []).length + ''
+			}
+			if (field.type === 'group') {
+				return (this.values[field.name] || [])
+					.map((item) => {
+						const lines = itemLines(field, item)
+						return [lines.first, lines.rest].filter(Boolean).join(', ')
+					})
+					.join('; ')
+			}
 			const value = String(this.values[field.name] ?? '')
 			const option = (Array.isArray(field.options) ? field.options : []).find(
 				(entry) => String(entry?.value ?? entry) === value,
@@ -729,6 +1220,55 @@ export default {
 				}).format(new Date(year, month - 1, day))
 			}
 			return value
+		},
+
+		/**
+		 * Whether the server fills a field: a calculation or a decision's output.
+		 *
+		 * @param {object} field The field.
+		 * @return {boolean} True for a read-only, computed line.
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 */
+		isComputedField(field) {
+			return Boolean(field.calculate) || field.computed === true
+		},
+
+		/**
+		 * What a computed line says: its value, or that it cannot be worked out yet.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The text.
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 */
+		computedText(field) {
+			const text = this.answerText(field)
+			return text === '' ? this.text.notCalculated : text
+		},
+
+		/**
+		 * Ask the server to decide a step that decides, and keep the outcome in
+		 * the field the decision fills. A throw means the rule engine is down.
+		 *
+		 * @param {object} step The step.
+		 * @return {Promise<{nextStep: string}>} The decision.
+		 *
+		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
+		 */
+		async decideStep(step) {
+			const decided = await decideStepOnServer(
+				authBaseFrom(resolveApiBase()),
+				this.bindingRoute,
+				step.id,
+				this.values,
+				this.portal,
+				adoptSessionToken(),
+			)
+			if (decided.output !== '' && decided.outcome !== '') {
+				this.values[decided.output] = decided.outcome
+			}
+			return decided
 		},
 
 		/**

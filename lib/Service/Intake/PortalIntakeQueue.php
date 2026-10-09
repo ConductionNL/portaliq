@@ -88,6 +88,10 @@ class PortalIntakeQueue {
 	 * @param array<string, mixed> $answers The validated answers.
 	 * @param string $subjectRef The portal identity, or '' when anonymous.
 	 * @param string $origin The framing origin, or '' on the portal itself.
+	 * @param array<int, array<string, string>> $statements The statements accepted, with text version and time.
+	 * @param array<int, string> $computed The names of the fields the portal worked out or a decision filled.
+	 * @param array<string, string> $decisions The outcome of each decided step, by step id.
+	 * @param array<int, array<string, string>> $verifiedEmails The addresses verified with a code, each with the time.
 	 *
 	 * @return array{reference: string, state: string}|null Null when the
 	 *         submission could not be recorded, in which case nothing is
@@ -95,28 +99,56 @@ class PortalIntakeQueue {
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 */
-	public function accept(string $portal, string $route, array $answers, string $subjectRef = '', string $origin = ''): ?array {
+	public function accept(
+		string $portal,
+		string $route,
+		array $answers,
+		string $subjectRef = '',
+		string $origin = '',
+		array $statements = [],
+		array $computed = [],
+		array $decisions = [],
+		array $verifiedEmails = [],
+	): ?array {
 		if ($portal === '') {
 			return null;
 		}
 
 		$reference = 'AANVRAAG-' . strtoupper($this->random->generate(8, (ISecureRandom::CHAR_UPPER . ISecureRandom::CHAR_DIGITS)));
+		$data = [
+			'reference' => $reference,
+			'portal' => $portal,
+			'route' => $route,
+			'subjectRef' => $subjectRef,
+			'origin' => $origin,
+			'answers' => $answers,
+			'state' => self::STATE_QUEUED,
+			'submittedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+		if ($statements !== []) {
+			$data['statements'] = $statements;
+		}
+
+		// The fields the portal worked out or a decision filled, so delivery can say so.
+		if ($computed !== []) {
+			$data['computed'] = array_values($computed);
+		}
+
+		if ($decisions !== []) {
+			$data['decisions'] = $decisions;
+		}
+
+		if ($verifiedEmails !== []) {
+			$data['verifiedEmails'] = $verifiedEmails;
+		}
+
 		$created = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
 			organisation: '',
-			data: [
-				'reference' => $reference,
-				'portal' => $portal,
-				'route' => $route,
-				'subjectRef' => $subjectRef,
-				'origin' => $origin,
-				'answers' => $answers,
-				'state' => self::STATE_QUEUED,
-				'submittedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-			]
+			data: $data
 		);
 		if ($created === null) {
 			return null;
@@ -275,6 +307,65 @@ class PortalIntakeQueue {
 
 		return null;
 	}//end byReference()
+
+	/**
+	 * A submission by its reference, as the portal stored it.
+	 *
+	 * @param string $reference The reference.
+	 * @param string $portal    The portal, re-checked against the row.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function find(string $reference, string $portal): ?array {
+		return $this->byReference(reference: $reference, portal: $portal);
+	}//end find()
+
+	/**
+	 * Keep the payment intent the case app created for a submission.
+	 *
+	 * @param array<string, mixed> $submission     The submission row.
+	 * @param string               $paymentIntentId The payment intent id.
+	 *
+	 * @return bool True when it was written.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function markPaymentIntent(array $submission, string $paymentIntentId): bool {
+		if ($paymentIntentId === '') {
+			return false;
+		}
+
+		return $this->write(submission: $submission, data: ['paymentIntentId' => $paymentIntentId]);
+	}//end markPaymentIntent()
+
+	/**
+	 * Record whether the confirmation mail went out.
+	 *
+	 * A failed mail is shown on the submissions page under Bevestiging
+	 * mislukt; a mail that was never asked for leaves the field empty.
+	 *
+	 * @param string $reference The submission's reference.
+	 * @param string $portal    The portal.
+	 * @param string $state     `sent` or `failed`.
+	 *
+	 * @return bool True when the state was written.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	public function markConfirmationMail(string $reference, string $portal, string $state): bool {
+		if (in_array($state, ['sent', 'failed'], true) === false) {
+			return false;
+		}
+
+		$submission = $this->byReference(reference: $reference, portal: $portal);
+		if ($submission === null) {
+			return false;
+		}
+
+		return $this->write(submission: $submission, data: ['confirmationMailState' => $state]);
+	}//end markConfirmationMail()
 
 	/**
 	 * Write on a submission row.

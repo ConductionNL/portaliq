@@ -154,6 +154,10 @@ class PortalManifestNormaliser {
 		// collection's own row actions, so it resolves after them.
 		$collections = (new ItemListConfigNormaliser())->resolve(collections: $collections, actions: $actions);
 
+		// An inbox collection's reply must be one of this contribution's create
+		// actions (inbox-reply-with-attachments REQ-IRA-001).
+		$collections = (new InboxReplyConfigNormaliser())->resolve(collections: $collections, actions: $actions);
+
 		$contribution['collections'] = $collections;
 		$contribution['actions'] = $actions;
 		$contribution['pages'] = $this->pages->normalisePages(

@@ -40,6 +40,9 @@ export async function fetchCatalogue(portal, query = {}) {
 		page: query.page || '',
 		limit: query.limit || '',
 		upcoming: query.upcoming ? '1' : '',
+		app: query.app || '',
+		categories: (query.categories || []).join(','),
+		range: query.range || '',
 		// The facets the block asks for besides the declared ones
 		// (site-catalogue-follows-the-school-boards).
 		facetsBy:
@@ -71,4 +74,75 @@ export async function fetchCatalogue(portal, query = {}) {
 		pages: Number(body?.pages) || 1,
 		facets: Array.isArray(body?.facets) ? body.facets : [],
 	}
+}
+
+/**
+ * The kinds each app declares its public index can be narrowed by and drawn
+ * as (categories, filters, columns), for the editor's block forms.
+ *
+ * @param {string} portal The portal slug.
+ * @return {Promise<Array<object>>} The kinds, or none when the read fails.
+ * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
+ */
+export async function fetchCatalogueKinds(portal) {
+	const url = new URL(
+		resolveApiBase() + '/catalogue/kinds',
+		window.location.origin,
+	)
+	if (portal) {
+		url.searchParams.set('portal', portal)
+	}
+	const headers = { Accept: 'application/json' }
+	const token = adoptSessionToken()
+	if (token) {
+		headers.Authorization = `Bearer ${token}`
+	}
+	try {
+		const response = await fetch(url.toString(), { headers })
+		if (!response.ok) {
+			return []
+		}
+		const body = await response.json()
+		return Array.isArray(body?.kinds) ? body.kinds : []
+	} catch {
+		return []
+	}
+}
+
+/**
+ * One item of an app's public index with the page the app projects for it.
+ *
+ * @param {string} portal The portal slug.
+ * @param {{app: string, kind: string, slug: string}} address Which item.
+ * @return {Promise<{item: object, detail: object}|null>} The page, or null for an item that is not public.
+ * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-3
+ */
+export async function fetchCatalogueDetail(portal, address) {
+	const url = new URL(
+		resolveApiBase() + '/catalogue/detail',
+		window.location.origin,
+	)
+	for (const [key, value] of Object.entries({ portal, ...address })) {
+		if (value !== undefined && value !== null && value !== '') {
+			url.searchParams.set(key, String(value))
+		}
+	}
+	const headers = { Accept: 'application/json' }
+	const token = adoptSessionToken()
+	if (token) {
+		headers.Authorization = `Bearer ${token}`
+	}
+	const response = await fetch(url.toString(), { headers })
+	if (response.status === 404) {
+		return null
+	}
+	if (!response.ok) {
+		const error = new Error(
+			`content api ${response.status} for /catalogue/detail`,
+		)
+		error.status = response.status
+		throw error
+	}
+	const body = await response.json()
+	return body?.detail ? { item: body.item || {}, detail: body.detail } : null
 }

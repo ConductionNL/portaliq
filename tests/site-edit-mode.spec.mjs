@@ -108,7 +108,7 @@ test('the palette limited to public widgets offers only what the renderer mounts
 
 test('the site entry stays under its budget and the editor is its own bundle', { skip: !existsSync(join(ROOT, 'js', 'portaliq-site-editor.js')) && 'no site build in js/' }, () => {
 	const entry = statSync(join(ROOT, 'js', 'portaliq-site.js')).size
-	assert.ok(entry < 410 * 1024, `portaliq-site.js is ${entry} bytes`)
+	assert.ok(entry < 412 * 1024, `portaliq-site.js is ${entry} bytes`)
 	assert.doesNotMatch(readFileSync(join(ROOT, 'js', 'portaliq-site.js'), 'utf8'), /PageGridEditor|createPageEditor/)
 })
 

@@ -69,4 +69,22 @@ class DocumentsProviderMethodTest extends TestCase {
 		$this->assertSame(['label' => 'Stukken', 'provider' => 'caseDocuments'], $collections[0]['documents']);
 		$this->assertArrayNotHasKey('documents', $collections[1]);
 	}//end testEveryContributionPassesThroughIt()
+
+	/**
+	 * The `opened` hook is kept as a plain method name and dropped otherwise,
+	 * without dropping the documents declaration.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t5
+	 */
+	public function testTheOpenedHookIsKeptOrDroppedAlone(): void {
+		$out = (new DocumentsProviderMethod())->normalise(collection: ['documents' => ['provider' => 'papers', 'opened' => 'confidentialPaperOpened']]);
+		$this->assertSame(['label' => '', 'provider' => 'papers', 'opened' => 'confidentialPaperOpened'], $out['documents']);
+
+		foreach (['getContribution', 'a-b', '__call', 7, null] as $bad) {
+			$out = (new DocumentsProviderMethod())->normalise(collection: ['documents' => ['provider' => 'papers', 'opened' => $bad]]);
+			$this->assertSame(['label' => '', 'provider' => 'papers'], $out['documents'], json_encode($bad));
+		}
+	}//end testTheOpenedHookIsKeptOrDroppedAlone()
 }//end class

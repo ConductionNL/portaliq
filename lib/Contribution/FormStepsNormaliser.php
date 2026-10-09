@@ -132,8 +132,31 @@ class FormStepsNormaliser {
 			$kept[] = ['id' => self::LOOSE_STEP, 'title' => '', 'fields' => $loose];
 		}
 
-		return array_merge($kept, array_slice($reviews, 0, 1));
+		$all = array_merge($kept, array_slice($reviews, 0, 1));
+
+		return $this->withKnownTargets(steps: $all);
 	}//end steps()
+
+	/**
+	 * Keep a decision's `nextStep` entries only where they name a step the form has.
+	 *
+	 * @param array<int, array<string, mixed>> $steps The kept steps.
+	 *
+	 * @return array<int, array<string, mixed>> The steps.
+	 */
+	private function withKnownTargets(array $steps): array {
+		$ids = array_column($steps, 'id');
+		foreach ($steps as $index => $step) {
+			if (isset($step['decision']) === true) {
+				$steps[$index]['decision']['nextStep'] = array_filter(
+					$step['decision']['nextStep'],
+					static fn (string $target): bool => in_array($target, $ids, true)
+				);
+			}
+		}
+
+		return $steps;
+	}//end withKnownTargets()
 
 	/**
 	 * An action's draft declaration: `{ retentionDays }` clamped to 1 to 90.
@@ -217,6 +240,11 @@ class FormStepsNormaliser {
 
 		if ($review === true) {
 			$clean['review'] = true;
+		}
+
+		$decision = (new FormStepDecision())->normalise(decision: ($step['decision'] ?? null), known: $known);
+		if ($decision !== null && $review === false) {
+			$clean['decision'] = $decision;
 		}
 
 		return $clean;

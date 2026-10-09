@@ -52,23 +52,30 @@ use OCA\Portaliq\Contribution\CreateBody;
 use OCA\Portaliq\Contribution\CreateActionMatcher;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeNames;
 use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Service\Identity\ContactConfirmationMailer;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
+use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\VisibleFromGate;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
@@ -170,6 +177,12 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param PortalUserDisplayNames $userNames Reads a `render: "user"` column as the user's name.
 	 * @param CaseTypeNames|null $typeNames Names each case's type on a `cases` collection
 	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
+	 * @param PortalResolver|null $portals Finds the serving portal, for its navigation choice.
+	 *                                     Absent leaves the navigation as the aggregate has it.
+	 * @param ContactConfirmationMailer|null $confirmation Mails the resident that a question arrived, after
+	 *                                                     a create whose action asks for it; fail-safe.
+	 * @param PortalPdfExport|null $pdf Renders a list or a record the resident can see as a PDF through
+	 *                                  OpenRegister (cases-export-own-data-pdf). Absent offers no export.
 	 * @param PortalRateLimit|null $rateLimit Limits a portal session per subject and a call
 	 *                                        without one per IP (portal-subject-rate-limit).
 	 */
@@ -195,6 +208,9 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
 		private readonly ?CaseTypeNames $typeNames = null,
+		private readonly ?PortalResolver $portals = null,
+		private readonly ?ContactConfirmationMailer $confirmation = null,
+		private readonly ?PortalPdfExport $pdf = null,
 		private readonly ?PortalRateLimit $rateLimit = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
@@ -244,7 +260,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param string $subjectRef The resolved ownership scope value.
 	 * @param string $organisation The subject's organisation.
 	 * @param string $id The object id (never trusted; ownership re-checked in the writer).
-	 * @param array<string, mixed> $data The literal fields to write.
+	 * @param array<string, mixed>|\Closure $data The literal fields to write, or a closure that returns them from the verified row.
 	 * @param string $context Short label naming the caller, for the log line only.
 	 *
 	 * @return array<string, mixed>|JSONResponse The updated object, or the response to return.
@@ -257,7 +273,7 @@ class ContributionController extends Controller implements PortalProtected {
 		string $subjectRef,
 		string $organisation,
 		string $id,
-		array $data,
+		array|\Closure $data,
 		string $context,
 	): array|JSONResponse {
 		try {
@@ -280,7 +296,13 @@ class ContributionController extends Controller implements PortalProtected {
 		// value the store refused on the owned row names its field
 		// (site-action-forms).
 		if ($updated === null) {
-			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $data)
+			// A closure names no fields up front, so nothing can be reported invalid.
+			$named = [];
+			if (is_array($data) === true) {
+				$named = $data;
+			}
+
+			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $named)
 				?? new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -339,6 +361,8 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$aggregate = $this->registry->aggregateFor($subject);
+		$aggregate = $this->withPortalNavigation(aggregate: $aggregate);
+		$aggregate = $this->withExportAvailability(aggregate: $aggregate);
 		$aggregate['unreadCount'] = $this->inboxReader->unreadCount(subject: $subject, aggregate: $aggregate);
 		// Announce the "Mijn taken" surface (portal-task-delivery) for
 		// AUTHENTICATED subjects only — the anonymous aggregate above never
@@ -349,9 +373,100 @@ class ContributionController extends Controller implements PortalProtected {
 		// Announce "My cases" (cases-my-cases-page REQ-CMC-001) and whether
 		// any case collection can tell a closed case from an open one.
 		$aggregate['cases'] = (new CaseRowMarker())->announce(aggregate: $aggregate);
+		$aggregate = $this->withThemes(aggregate: $aggregate);
+		// The pages of the resident's own area the serving portal switched on
+		// (own-contacts-and-invitations, shared-plans-with-a-caseworker).
+		$aggregate['areaPages'] = $this->areaPages();
 
 		return new JSONResponse($aggregate);
 	}//end index()
+
+	/**
+	 * The portal's life domains with something for this resident
+	 * (life-domain-theme-pages): tags the portal does not declare are dropped.
+	 *
+	 * @param array<string, mixed> $aggregate The subject's aggregate.
+	 *
+	 * @return array<string, mixed> The aggregate with `themes`.
+	 *
+	 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t02
+	 */
+	private function withThemes(array $aggregate): array {
+		$declared = [];
+		if ($this->portals !== null) {
+			$slug = $this->request->getParam('portal');
+			if (is_string($slug) === false) {
+				$slug = null;
+			}
+
+			$declared = ($this->portals->resolve(request: $this->request, portalSlug: $slug)['themes'] ?? []);
+		}
+
+		return (new ThemeChoice())->arrange(aggregate: $aggregate, themes: $declared);
+	}//end withThemes()
+
+	/**
+	 * The own-area pages the serving portal switched on, each with the label
+	 * and icon of its menu item.
+	 *
+	 * @return array<int, array{special: string, label: string, icon: string}> The pages, in menu order.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
+	 */
+	private function areaPages(): array {
+		if ($this->portals === null) {
+			return [];
+		}
+
+		$slug = $this->request->getParam('portal');
+		if (is_string($slug) === false) {
+			$slug = null;
+		}
+
+		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		$pages  = [];
+		if (($portal['contactsEnabled'] ?? false) === true) {
+			$pages[] = ['special' => 'contacts', 'label' => 'My contacts', 'icon' => 'AccountMultiple'];
+		}
+
+		if (($portal['plansEnabled'] ?? false) === true) {
+			$pages[] = ['special' => 'samenwerken', 'label' => 'Collaborate', 'icon' => 'ClipboardCheckOutline'];
+		}
+
+		return $pages;
+	}//end areaPages()
+
+	/**
+	 * Apply the serving portal's navigation choice for the subject's audience:
+	 * hidden pages dropped, listed pages ordered. This is presentation only, so
+	 * it sits here, where the request and so the portal are known, and not in
+	 * the aggregate the collection routes authorise against.
+	 *
+	 * @param array<string, mixed> $aggregate The subject's aggregate.
+	 *
+	 * @return array<string, mixed> The aggregate as this portal shows it.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
+	 */
+	private function withPortalNavigation(array $aggregate): array {
+		if ($this->portals === null) {
+			return $aggregate;
+		}
+
+		$slug = $this->request->getParam('portal');
+		if (is_string($slug) === false) {
+			$slug = null;
+		}
+
+		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		$navigation = $portal['navigation'][(string)($aggregate['audience'] ?? '')] ?? null;
+		if (is_array($navigation) === false) {
+			return $aggregate;
+		}
+
+		return (new PageChoice())->arrange(aggregate: $aggregate, navigation: $navigation);
+	}//end withPortalNavigation()
 
 	/**
 	 * The subject's unified inbox: every `kind: inbox` collection across ALL
@@ -445,10 +560,10 @@ class ContributionController extends Controller implements PortalProtected {
 		// own read date, messageFields.readAt) is the only field this
 		// endpoint can ever change.
 		$fields = new InboxMessageFields();
-		$payload = $fields->readPayload(
-			collection: $fields->normalise(collection: $collection),
-			now: gmdate(format: 'Y-m-d\TH:i:s\Z')
-		);
+		$normalised = $fields->normalise(collection: $collection);
+		$now = gmdate(format: 'Y-m-d\TH:i:s\Z');
+		// Decided from the row the writer has just proven the subject's own.
+		$payload = static fn (array $row): array => $fields->readPayload(collection: $normalised, now: $now, row: $row);
 		$updated = $this->writeScoped(
 			register: $register,
 			schema: $schema,
@@ -535,6 +650,169 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['deleted' => true]);
 	}//end deleteMessage()
+
+	/**
+	 * Answer one of the resident's inbox messages through the create action its
+	 * collection declares as `reply`.
+	 *
+	 * The message is proven the resident's with the checks `markRead()` makes. The
+	 * fields the declaration carries are set on the server from the original
+	 * message, over anything the client sent; the rest of the body is the
+	 * action's whitelist. The reply is written through the pipeline every portal
+	 * create uses. The answer names the new reply and its action, so the screen
+	 * can upload files into it.
+	 *
+	 * @param string $register The register of the inbox collection.
+	 * @param string $schema The schema of the inbox collection.
+	 * @param string $id The message id (never trusted; ownership proven first).
+	 *
+	 * @return JSONResponse `{object, action, register, schema}`, or 401 / 403 / 404 / 400 / 502.
+	 *
+	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t03
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function reply(string $register, string $schema, string $id): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+		$declared   = ($collection['reply'] ?? null);
+		if (is_array($declared) === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$message = $this->readReplyMessage(subject: $subject, match: $match, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+		// Not the resident's, or not there: one 404, and nothing is written.
+		if ($message === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$action = $this->replyAction(subject: $subject, app: $match['app'], actionId: (string)($declared['action'] ?? ''));
+		if ($action === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$carried = $this->carriedFields(declared: $declared, message: $message);
+
+		return $this->createReply(subject: $subject, match: ['action' => $action, 'app' => $match['app']], carried: $carried);
+	}//end reply()
+
+	/**
+	 * Write the reply through the create pipeline and name it in the answer.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{action: array<string, mixed>, app: string} $match The reply action and its app.
+	 * @param array<string, string|int> $carried The values set from the original message.
+	 *
+	 * @return JSONResponse The created reply with its action, register and schema, or the pipeline's refusal.
+	 */
+	private function createReply(array $subject, array $match, array $carried): JSONResponse {
+		$action   = $match['action'];
+		$response = $this->createFrom(
+			subject: $subject,
+			match: $match,
+			register: (string)($action['register'] ?? ''),
+			schema: (string)($action['schema'] ?? ''),
+			carried: $carried
+		);
+		if ($response->getStatus() !== Http::STATUS_OK) {
+			return $response;
+		}
+
+		$named = [
+			'action' => (string)($action['id'] ?? ''),
+			'register' => (string)($action['register'] ?? ''),
+			'schema' => (string)($action['schema'] ?? ''),
+		];
+
+		return new JSONResponse($response->getData() + $named);
+	}//end createReply()
+
+	/**
+	 * The resident's inbox message, read through the scope of its collection.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $match The authorised inbox collection and its app.
+	 * @param array{register: string, schema: string, id: string} $target The requested register, schema and message id.
+	 *
+	 * @return array<string, mixed>|null The message, or null when it is not the resident's or not there.
+	 */
+	private function readReplyMessage(array $subject, array $match, array $target): ?array {
+		$collection = $match['collection'];
+
+		return $this->reader->readObject(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $target['id'],
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			via: ($collection['via'] ?? null),
+			audience: (string)($subject['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null)
+		);
+	}//end readReplyMessage()
+
+	/**
+	 * The reply fields set from the original message, as the declaration carries them.
+	 *
+	 * @param array<string, mixed> $declared The collection's `reply` declaration.
+	 * @param array<string, mixed> $message The original message.
+	 *
+	 * @return array<string, string|int> The values to set on the reply.
+	 */
+	private function carriedFields(array $declared, array $message): array {
+		$carried = [];
+		foreach ((array)($declared['carry'] ?? []) as $replyField => $messageField) {
+			$value = ($message[$messageField] ?? null);
+			if (is_string($value) === true || is_int($value) === true) {
+				$carried[(string)$replyField] = $value;
+			}
+		}
+
+		return $carried;
+	}//end carriedFields()
+
+	/**
+	 * The create action of one contribution the subject holds, by id.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $app The contributing app.
+	 * @param string $actionId The action id a reply declaration names.
+	 *
+	 * @return array<string, mixed>|null The action, or null when the subject does not hold it.
+	 */
+	private function replyAction(array $subject, string $app, string $actionId): ?array {
+		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
+			if (($contribution['app'] ?? null) !== $app) {
+				continue;
+			}
+
+			foreach (($contribution['actions'] ?? []) as $action) {
+				if (is_array($action) === true && ($action['id'] ?? null) === $actionId && ($action['type'] ?? '') === 'create') {
+					return $action;
+				}
+			}
+		}
+
+		return null;
+	}//end replyAction()
 
 	/**
 	 * Find a `kind: inbox` collection matching (register, schema) in the
@@ -628,6 +906,34 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		$objects = $this->screenRows(subject: $subject, match: $match, register: $register, schema: $schema);
+
+		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
+	}//end collection()
+
+	/**
+	 * The rows a collection's screen shows this subject: the scoped read, then
+	 * the branch, the waiting-row, the hidden-case-type, the user-name and the
+	 * case-type-name passes. The list, and the PDF of the list, both read here,
+	 * so the file can hold nothing the screen does not.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $match The subject's own collection.
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 *
+	 * @return array<int, mixed> The rows.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 */
+	private function screenRows(array $subject, array $match, string $register, string $schema): array {
+		$collection = $match['collection'];
+		// A session with no organisation reads nothing of an organisation-scoped schema
+		// (operate-portals-per-organisation REQ-OPO-002).
+		if ($this->withoutTenant(subject: $subject, schema: $schema) === true) {
+			return [];
+		}
+
 		$objects = $this->reader->readCollection(
 			register: $register,
 			schema: $schema,
@@ -673,8 +979,8 @@ class ContributionController extends Controller implements PortalProtected {
 		// (site-mijn-omgeving-components REQ-SMO-030).
 		$objects = ($this->typeNames?->stampRows(rows: $objects, collection: $collection) ?? $objects);
 
-		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
-	}//end collection()
+		return $objects;
+	}//end screenRows()
 
 
 	/**
@@ -765,6 +1071,62 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		// Null = not the subject's OR does not exist, or a case of a type the serving
+		// portal hides: a single 404, no oracle (operate-show-per-case-type REQ-OSC-002).
+		$object = $this->screenRow(subject: $subject, match: $match, register: $register, schema: $schema, id: $id);
+		if ($object === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		// Opt-in only, and only after ownership is already proven above — the
+		// listing itself never widens which ROWS are visible, only what a row
+		// the subject already owns additionally shows.
+		if (($collection['filesDownload'] ?? false) === true) {
+			$object['_files'] = $this->fileReader->listFiles(register: $register, schema: $schema, id: $id);
+		}
+
+		$object = $this->userNames->row(row: $object, collection: $collection);
+
+		return new JSONResponse(['object' => $object]);
+	}//end object()
+
+	/**
+	 * Whether a session has no organisation while the schema is declared
+	 * organisation-scoped, which leaves it nothing to read there.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $schema The schema read.
+	 *
+	 * @return bool True when the session names no tenant for an organisation-scoped schema.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
+	 */
+	private function withoutTenant(array $subject, string $schema): bool {
+		return (string)($subject['organisation'] ?? '') === '' && SchemaTenancy::isOrganisationScoped(schema: $schema) === true;
+	}//end withoutTenant()
+
+	/**
+	 * The one row this subject may see under an id: the scoped read, then the
+	 * waiting-row, branch and hidden-case-type passes. A foreign, missing,
+	 * waiting, other-branch or hidden row is null. The record, and the PDF of
+	 * the record, both read here.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $match The subject's own collection.
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 * @param string $id The object id (never trusted).
+	 *
+	 * @return array<string, mixed>|null The row.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 */
+	private function screenRow(array $subject, array $match, string $register, string $schema, string $id): ?array {
+		$collection = $match['collection'];
+		if ($this->withoutTenant(subject: $subject, schema: $schema) === true) {
+			return null;
+		}
+
 		$object = $this->reader->readObject(
 			register: $register,
 			schema: $schema,
@@ -780,29 +1142,17 @@ class ContributionController extends Controller implements PortalProtected {
 			filter: (array)($collection['filter'] ?? [])
 		);
 
-		// Null = not the subject's OR does not exist — a single 404, no oracle.
-		// A case of a type the serving portal hides answers the same 404
-		// (operate-show-per-case-type REQ-OSC-002).
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($object === null
 			|| (new VisibleFromGate())->rows(rows: [$object], collection: $collection) === []
 			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
 			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
 		) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+			return null;
 		}
 
-		// Opt-in only, and only after ownership is already proven above — the
-		// listing itself never widens which ROWS are visible, only what a row
-		// the subject already owns additionally shows.
-		if (($collection['filesDownload'] ?? false) === true) {
-			$object['_files'] = $this->fileReader->listFiles(register: $register, schema: $schema, id: $id);
-		}
-
-		$object = $this->userNames->row(row: $object, collection: $collection);
-
-		return new JSONResponse(['object' => $object]);
-	}//end object()
+		return $object;
+	}//end screenRow()
 
 	/**
 	 * Attach an uploaded file to an object the subject owns (the file-upload
@@ -1121,8 +1471,36 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
+		return $this->createFrom(subject: $subject, match: $match, register: $register, schema: $schema);
+	}//end create()
+
+	/**
+	 * Run the create pipeline for a matched create action: the whitelist, the
+	 * defaults, the required fields and cross references, the scope stamp, the
+	 * write, the audit entry, the receipt and the confirmation. `create()` and
+	 * `reply()` both write through here, so there is one write pipeline.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{action: array<string, mixed>, app: string} $match The matched create action.
+	 * @param string $register The action's register.
+	 * @param string $schema The action's schema.
+	 * @param array<string, mixed> $carried Fields set on the server over the client's body (a reply's carried fields).
+	 *
+	 * @return JSONResponse The created object, or the refusal.
+	 *
+	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t02
+	 */
+	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
+		$action = $match['action'];
+
+		$leftOut     = array_keys($carried);
+		$whitelisted = $this->withoutFileFields(
+			action: $action,
+			data: $this->whitelist(fields: array_values(array_diff((array)($action['fields'] ?? []), $leftOut)))
+		);
 		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+		// A carried field is set from the message the resident owns, over anything the client sent.
+		$data = array_merge($data, $carried);
 
 		// The body's own checks, before the stamp and any write. First the
 		// action's required fields (REQ-SMF-024): an empty one answers 400
@@ -1185,8 +1563,12 @@ class ContributionController extends Controller implements PortalProtected {
 			audience: (string)($subject['audience'] ?? '')
 		);
 
+		// The question is stored; the confirmation mail is a follow-on that
+		// never changes the answer (contact-page-question-form-and-not-found).
+		$this->confirmation?->afterCreate(subject: $subject, action: $action, data: $data);
+
 		return new JSONResponse(['object' => $created]);
-	}//end create()
+	}//end createFrom()
 
 
 	/**
@@ -1772,4 +2154,167 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
 	}//end isForwardableAction()
+
+	/**
+	 * Report `exportPdf` on a collection only when OpenRegister's rows renderer is there,
+	 * so the button is never shown for an export that can only answer 503.
+	 *
+	 * @param array<string, mixed> $aggregate The subject's aggregate.
+	 *
+	 * @return array<string, mixed> The aggregate.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t01
+	 */
+	private function withExportAvailability(array $aggregate): array {
+		if ($this->pdf?->available() === true) {
+			return $aggregate;
+		}
+
+		foreach ((array)($aggregate['contributions'] ?? []) as $i => $contribution) {
+			foreach ((array)($contribution['collections'] ?? []) as $j => $collection) {
+				if (is_array($collection) === true && array_key_exists('exportPdf', $collection) === true) {
+					$aggregate['contributions'][$i]['collections'][$j]['exportPdf'] = false;
+				}
+			}
+		}
+
+		return $aggregate;
+	}//end withExportAvailability()
+
+	/**
+	 * Download the subject's own list as a PDF: the same authorisation and the same
+	 * scoped read as `collection()`, projected to the columns the screen shows.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 *
+	 * @return Response The PDF, or 401 / 403 / 404 / 400 / 502 / 503.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function exportCollectionPdf(string $register, string $schema): Response {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+		if (($collection['exportPdf'] ?? false) !== true) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$columns = ($this->pdf?->listColumns(collection: $collection) ?? []);
+		$rows    = $this->screenRows(subject: $subject, match: $match, register: $register, schema: $schema);
+
+		return $this->pdfResponse(
+			subject: $subject,
+			collection: $collection,
+			columns: $columns,
+			rows: $rows,
+			target: ['register' => $register, 'schema' => $schema, 'id' => (string)($collection['id'] ?? '')]
+		);
+	}//end exportCollectionPdf()
+
+	/**
+	 * Download one of the subject's own records as a PDF: the same authorisation and
+	 * scoped read as `object()`. A foreign or missing record is one 404.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 * @param string $id The object id (never trusted; ownership re-checked server-side).
+	 *
+	 * @return Response The PDF, or 401 / 403 / 404 / 400 / 502 / 503.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function exportObjectPdf(string $register, string $schema, string $id): Response {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+		$object     = null;
+		if (($collection['exportPdf'] ?? false) === true) {
+			$object = $this->screenRow(subject: $subject, match: $match, register: $register, schema: $schema, id: $id);
+		}
+
+		if ($object === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $this->pdfResponse(
+			subject: $subject,
+			collection: $collection,
+			columns: ($this->pdf?->recordColumns(collection: $collection) ?? []),
+			rows: [$this->userNames->row(row: $object, collection: $collection)],
+			target: ['register' => $register, 'schema' => $schema, 'id' => $id]
+		);
+	}//end exportObjectPdf()
+
+	/**
+	 * Render the rows and answer with the file, or with the reason there is none.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $collection The collection.
+	 * @param array<int, array<string, mixed>> $columns The columns.
+	 * @param array<int, mixed> $rows The rows the screen shows.
+	 * @param array{register: string, schema: string, id: string} $target What the audit entry names.
+	 *
+	 * @return Response The PDF, or 400 (too long) / 502 / 503.
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t05
+	 */
+	private function pdfResponse(array $subject, array $collection, array $columns, array $rows, array $target): Response {
+		if ($this->pdf === null || $this->pdf->available() === false) {
+			return new JSONResponse(['error' => 'pdf_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		$title = $this->pdf->title(
+			label: (string)($collection['label'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			date: gmdate('Y-m-d')
+		);
+		$bytes = $this->pdf->render(
+			title: $title,
+			columns: array_map(static fn (array $c): array => ['key' => $c['key'], 'label' => $c['label']], $columns),
+			rows: $this->pdf->textRows(columns: $columns, rows: array_values(array_filter($rows, 'is_array')))
+		);
+		if ($bytes === PortalPdfExport::TOO_LARGE) {
+			return new JSONResponse(['error' => 'too_large'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($bytes === null) {
+			return new JSONResponse(['error' => 'pdf_failed'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		$this->auditHook->download(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			register: $target['register'],
+			schema: $target['schema'],
+			id: $target['id']
+		);
+
+		return new PdfDownloadResponse(bytes: $bytes, name: (string)($collection['label'] ?? 'export'));
+	}//end pdfResponse()
 }//end class

@@ -109,9 +109,59 @@ class ContributionControllerTest extends TestCase {
 		// (portal-inbox-v2 T04) — the default inbox reader stub yields 0 —
 		// and the tasks announcement (portal-task-delivery): with no gateway
 		// wired (this fixture's default), the surface reads disabled.
-		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false], 'cases' => ['enabled' => false, 'closedMarker' => false]]), $response->getData());
+		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false], 'cases' => ['enabled' => false, 'closedMarker' => false], 'themes' => [], 'areaPages' => []]), $response->getData());
 
 	}//end testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject()
+
+	/**
+	 * A portal's navigation choice hides and orders the pages of the portal that serves the request.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t02
+	 */
+	public function testPortalNavigationHidesAndOrdersPages(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'organisation' => 'org-1',
+			'contributions' => [[
+				'app' => 'pipelinq',
+				'pages' => [['id' => 'quotes'], ['id' => 'invoices'], ['id' => 'cases']],
+				'collections' => [],
+			]],
+		];
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn([
+			'slug' => 'open-tilburg',
+			'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true], ['page' => 'pipelinq:cases'], ['page' => 'pipelinq:invoices']]],
+		]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals)->index()->getData();
+
+		$this->assertSame(['cases', 'invoices'], array_column($data['contributions'][0]['pages'], 'id'));
+	}//end testPortalNavigationHidesAndOrdersPages()
+
+	/**
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t02
+	 */
+	public function testUnlistedPageKeepsItsPlaceAndNoChoiceAnswersAsToday(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'organisation' => 'org-1',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [['id' => 'quotes'], ['id' => 'documents']], 'collections' => []]],
+		];
+
+		$hidingOther = $this->createMock(PortalResolver::class);
+		$hidingOther->method('resolve')->willReturn(['slug' => 'p', 'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+		$this->assertSame(['documents'], array_column($this->controller(aggregate: $aggregate, portals: $hidingOther)->index()->getData()['contributions'][0]['pages'], 'id'));
+
+		$forOtherAudience = $this->createMock(PortalResolver::class);
+		$forOtherAudience->method('resolve')->willReturn(['slug' => 'p', 'navigation' => ['supplier' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+		$this->assertSame(['quotes', 'documents'], array_column($this->controller(aggregate: $aggregate, portals: $forOtherAudience)->index()->getData()['contributions'][0]['pages'], 'id'), 'another audience\'s choice does not apply');
+
+		$noPortal = $this->createMock(PortalResolver::class);
+		$noPortal->method('resolve')->willReturn(null);
+		$this->assertSame(['quotes', 'documents'], array_column($this->controller(aggregate: $aggregate, portals: $noPortal)->index()->getData()['contributions'][0]['pages'], 'id'));
+		$this->assertSame(['quotes', 'documents'], array_column($this->controller(aggregate: $aggregate)->index()->getData()['contributions'][0]['pages'], 'id'));
+	}//end testUnlistedPageKeepsItsPlaceAndNoChoiceAnswersAsToday()
 
 	/**
 	 * cases-my-cases-page REQ-CMC-001: the contributions answer announces the
@@ -799,6 +849,45 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 
 	}//end testCreateWithoutAnIdAndOneActionStillWorks()
+
+	/**
+	 * contact-page-question-form-and-not-found T02: after a stored create the
+	 * confirmation follow-on runs with the matched action and the stored values.
+	 *
+	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 */
+	public function testACreateHandsTheStoredValuesToTheConfirmationMail(): void {
+		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(['id' => 'new']);
+		$mailer = $this->createMock(\OCA\Portaliq\Service\Identity\ContactConfirmationMailer::class);
+		$mailer->expects($this->once())->method('afterCreate')->with(
+			$this->callback(static fn (array $subject): bool => ($subject['subjectRef'] ?? '') === self::SUBJECT['subjectRef']),
+			$this->callback(static fn (array $a): bool => ($a['confirmationMail'] ?? '') === 'contact-confirmation'),
+			$this->callback(static fn (array $data): bool => ($data['title'] ?? '') === 'X')
+		);
+
+		$response = $this->controller(aggregate: $this->aggregate(actions: [$action]), writer: $writer, confirmation: $mailer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testACreateHandsTheStoredValuesToTheConfirmationMail()
+
+	/**
+	 * A create that was not stored sends no confirmation.
+	 *
+	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 */
+	public function testAFailedCreateSendsNoConfirmation(): void {
+		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(null);
+		$mailer = $this->createMock(\OCA\Portaliq\Service\Identity\ContactConfirmationMailer::class);
+		$mailer->expects($this->never())->method('afterCreate');
+
+		$response = $this->controller(aggregate: $this->aggregate(actions: [$action]), writer: $writer, confirmation: $mailer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+	}//end testAFailedCreateSendsNoConfirmation()
 
 	/**
 	 * Two create actions writing the same schema with different defaults.
@@ -1818,7 +1907,10 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('updateObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$received) {
+				if ($data instanceof \Closure) {
+					$data = $data([]);
+				}
 				$received = ['id' => $id, 'subjectRef' => $subjectRef, 'organisation' => $organisation, 'data' => $data];
 				return ['id' => $id, 'subject' => 'Hallo', 'read' => true];
 			}
@@ -1844,6 +1936,56 @@ class ContributionControllerTest extends TestCase {
 	 *
 	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
 	 */
+	/**
+	 * inbox-read-receipt-on-request T03: a second open keeps the first moment.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testMarkReadKeepsTheFirstReadMoment(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage']]);
+		$payloads = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$payloads) {
+				$payloads[] = $data;
+				return ['id' => $id];
+			}
+		);
+
+		$this->controller(aggregate: $aggregate, writer: $writer)->markRead('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertInstanceOf(\Closure::class, $payloads[0]);
+		$first = $payloads[0](['readReceiptRequested' => true]);
+		$this->assertSame(['read', 'readAt'], array_keys($first));
+		$this->assertSame(['read' => true], $payloads[0](['readReceiptRequested' => true, 'readAt' => '2026-10-08T09:14:00Z']));
+		$this->assertSame(['read' => true], $payloads[0](['readReceiptRequested' => false]));
+	}//end testMarkReadKeepsTheFirstReadMoment()
+
+	/**
+	 * T03: whatever the request body says, only the read fields are written;
+	 * the resident cannot withdraw the request or move the moment.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testMarkReadNeverWritesTheReceiptRequest(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage']]);
+		$payload = null;
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$payload) {
+				$payload = $data;
+				return ['id' => $id];
+			}
+		);
+
+		$this->controller(aggregate: $aggregate, writer: $writer, params: ['readReceiptRequested' => false, 'readAt' => '1999-01-01', 'sendingRef' => 'x'])
+			->markRead('portaliq', 'portalMessage', 'm-1');
+
+		$written = $payload(['readReceiptRequested' => true, 'sendingRef' => 'brief-1']);
+		$this->assertSame(['read', 'readAt'], array_keys($written));
+		$this->assertNotSame('1999-01-01', $written['readAt']);
+	}//end testMarkReadNeverWritesTheReceiptRequest()
+
 	public function testMarkReadWritesTheDeclaredReadAtField(): void {
 		$aggregate = $this->aggregate(
 			collections: [
@@ -1861,7 +2003,10 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('updateObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$received) {
+				if ($data instanceof \Closure) {
+					$data = $data([]);
+				}
 				$received = ['scopeField' => $scopeField, 'data' => $data];
 				return ['id' => $id];
 			}
@@ -1942,7 +2087,10 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->expects($this->once())->method('updateObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$received) {
+				if ($data instanceof \Closure) {
+					$data = $data([]);
+				}
 				$received = [$register, $schema, $scopeField, $subjectRef, $organisation, $id, $data];
 				return ['id' => $id, 'read' => true];
 			}
@@ -2478,6 +2626,8 @@ class ContributionControllerTest extends TestCase {
 		?PortalSchemaReader $schemaReader = null,
 		?CaseTypeVisibility $caseTypes = null,
 		array $params = [],
+		?PortalResolver $portals = null,
+		?\OCA\Portaliq\Service\Identity\ContactConfirmationMailer $confirmation = null,
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', '']]);
@@ -2535,7 +2685,9 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			null,
 			null,
-			$caseTypes
+			$caseTypes,
+			portals: $portals,
+			confirmation: $confirmation
 		);
 
 	}//end controller()

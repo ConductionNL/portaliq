@@ -72,16 +72,21 @@ class PublicCatalogueQuery {
 	 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
 	 */
 	public function run(array $items, array $params): array {
-		$items   = $this->withDerivedFacets(items: $items, params: $params);
+		$items   = (new DerivedCatalogueFacets())->apply(items: $items, params: $params);
 		$types   = array_values(array_filter((array)($params['types'] ?? []), 'is_string'));
 		$words   = $this->words(text: (string)($params['q'] ?? ''));
 		$filters = $this->filters(declared: ($params['filters'] ?? []));
 		$today   = (string)($params['today'] ?? gmdate('Y-m-d'));
 
-		$base = array_values(
+		$app        = (string)($params['app'] ?? '');
+		$categories = array_values(array_filter((array)($params['categories'] ?? []), 'is_string'));
+		$range      = (string)($params['range'] ?? '');
+
+		$scope = ['types' => $types, 'app' => $app, 'categories' => $categories, 'range' => $range, 'today' => $today];
+		$base  = array_values(
 			array_filter(
 				$items,
-				fn (array $item): bool => ($types === [] || in_array($item['type'] ?? '', $types, true) === true)
+				fn (array $item): bool => $this->inScope(item: $item, scope: $scope)
 					&& $this->matches(item: $item, words: $words)
 					&& (($params['upcoming'] ?? false) !== true || $this->isUpcoming(item: $item, today: $today))
 			)
@@ -103,82 +108,19 @@ class PublicCatalogueQuery {
 	}//end query()
 
 	/**
-	 * The items with the facets the block asks for besides the declared ones:
-	 * the kind of each item under `kindFacet` (a news item's kind is
-	 * `kindNews`, the word the page uses for news), and a news item's
-	 * audience under `audienceFacet`. A label the item already declares is
-	 * left as it is; an empty label asks for nothing.
-	 *
-	 * @param array<int, array<string, mixed>> $items  The portal's items.
-	 * @param array<string, mixed>             $params The query.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 *
-	 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
-	 */
-	private function withDerivedFacets(array $items, array $params): array {
-		$kindLabel     = $this->label(value: ($params['kindFacet'] ?? ''));
-		$kindNews      = $this->label(value: ($params['kindNews'] ?? ''));
-		$audienceLabel = $this->label(value: ($params['audienceFacet'] ?? ''));
-		if ($kindLabel === '' && $audienceLabel === '') {
-			return $items;
-		}
-
-		return array_map(
-			function (array $item) use ($kindLabel, $kindNews, $audienceLabel): array {
-				$isNews = (($item['type'] ?? '') === PublicCatalogue::TYPE_NEWS);
-				$kind   = trim((string)($item['kind'] ?? ''));
-				if ($isNews === true) {
-					$kind = $kindNews;
-				}
-
-				$item = $this->withFacet(item: $item, label: $kindLabel, value: $kind);
-				if ($isNews === true) {
-					$item = $this->withFacet(item: $item, label: $audienceLabel, value: trim((string)($item['audience'] ?? '')));
-				}
-
-				return $item;
-			},
-			$items
-		);
-	}//end withDerivedFacets()
-
-	/**
-	 * The item with one more facet, unless the label or the value is empty or
-	 * the item declares that label itself.
+	 * Whether an item is of a wanted type, app and category, and in the wanted range.
 	 *
 	 * @param array<string, mixed> $item  The item.
-	 * @param string               $label The facet.
-	 * @param string               $value Its value.
+	 * @param array<string, mixed> $scope The `types`, `app`, `categories`, `range` and `today` the query asks for.
 	 *
-	 * @return array<string, mixed>
+	 * @return bool
 	 */
-	private function withFacet(array $item, string $label, string $value): array {
-		if ($label === '' || $value === '' || isset($item['facets'][$label]) === true) {
-			return $item;
-		}
-
-		$item['facets']         = (array)($item['facets'] ?? []);
-		$item['facets'][$label] = [$value];
-
-		return $item;
-	}//end withFacet()
-
-	/**
-	 * A facet label or value from the address: a string, trimmed, at most 60
-	 * characters; anything else is empty.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string
-	 */
-	private function label(mixed $value): string {
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return mb_substr(trim($value), 0, 60);
-	}//end label()
+	private function inScope(array $item, array $scope): bool {
+		return ($scope['types'] === [] || in_array($item['type'] ?? '', $scope['types'], true) === true)
+			&& ($scope['app'] === '' || str_starts_with((string)($item['id'] ?? ''), $scope['app'] . ':') === true)
+			&& ($scope['categories'] === [] || in_array((string)($item['category'] ?? ''), $scope['categories'], true) === true)
+			&& ($scope['range'] !== 'schoolYear' || $this->inSchoolYear(item: $item, today: $scope['today']) === true);
+	}//end inScope()
 
 	/**
 	 * The words of a text, lower case and without accents.
@@ -230,6 +172,32 @@ class PublicCatalogueQuery {
 
 		return true;
 	}//end matches()
+
+	/**
+	 * Whether the item's day falls in the school year that holds today
+	 * (1 August to 31 July).
+	 *
+	 * @param array<string, mixed> $item  The item.
+	 * @param string               $today Today, `Y-m-d`.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-2
+	 */
+	private function inSchoolYear(array $item, string $today): bool {
+		$day = substr((string)($item['date'] ?? ''), 0, 10);
+		if ($day === '' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $today) !== 1) {
+			return false;
+		}
+
+		$year  = (int)substr($today, 0, 4);
+		$start = ($year - 1);
+		if ((int)substr($today, 5, 2) >= 8) {
+			$start = $year;
+		}
+
+		return $day >= sprintf('%04d-08-01', $start) && $day <= sprintf('%04d-07-31', ($start + 1));
+	}//end inSchoolYear()
 
 	/**
 	 * Whether an item's (end) date is today or later; an item without a date

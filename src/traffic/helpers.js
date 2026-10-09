@@ -28,6 +28,7 @@ export const KNOWN_EVENTS = [
 	'form_field',
 	'form_abandon',
 	'page_not_found',
+	'assistant_asked',
 	'js_error',
 	'heat_click',
 	'heat_scroll',

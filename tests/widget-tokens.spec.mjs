@@ -228,6 +228,17 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		// portal-public-catalogue: a composition too (search, facets, cards,
 		// pages); layout and theme tokens only.
 		'nlCatalogue',
+		// public-detail-page-for-a-provider-item: date cards and a facts grid.
+		'nlPublicDetail',
+		// public-faq-and-product-finder: the FAQ's group spacing and the
+		// finder's chips, layout and result panel; layout and tokens only.
+		'nlFaqList',
+		'nlProductFinder',
+		// home-and-theme-landing-pages: a card grid, a count grid and the
+		// subject page's picture; layout and tokens only.
+		'nlFeaturedSubjects',
+		'nlPortalCounts',
+		'nlSubjectLanding',
 		// site-callouts-steps-and-tables-follow-the-boards: a button and a
 		// warning mark inside the melding, and a plain white card, which
 		// Utrecht's alert does not draw. Layout and theme tokens only.

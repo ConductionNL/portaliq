@@ -46,6 +46,31 @@ class PortalIntakeDeliveryJobTest extends TestCase {
 
 	}//end testTheAnswersAreWrittenWhereTheBindingSays()
 
+	/**
+	 * form-flow-repeating-groups-calculations-and-decisions T07: a field the
+	 * portal worked out or a decision filled travels marked computed, and a
+	 * submission without any is delivered exactly as before.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t07
+	 */
+	public function testComputedFieldsAreMarkedInTheDeliveredCase(): void {
+		$writer = $this->writer();
+		$writer->expects($this->once())
+			->method('createAnonymousObject')
+			->with(
+				$this->equalTo('dossiq'),
+				$this->equalTo('zaak'),
+				$this->equalTo(['postcode' => '1234 AB', 'einddatum' => '2027-11-01', 'fieldMeta' => ['einddatum' => ['computed' => true]]])
+			)
+			->willReturn(['id' => 'zaak-1']);
+		$submission = $this->submission();
+		$submission['answers']['einddatum'] = '2027-11-01';
+		$submission['computed'] = ['einddatum'];
+
+		$this->job(queue: $this->queue(), writer: $writer, binding: $this->binding())->deliver(submission: $submission);
+
+	}//end testComputedFieldsAreMarkedInTheDeliveredCase()
+
 	public function testAFailedCreateMarksTheSubmissionFailedWithAReason(): void {
 		$queue = $this->queue();
 		$queue->expects($this->once())->method('markFailed')->with($this->anything(), $this->equalTo('The case could not be created.'));

@@ -225,7 +225,7 @@ test('the header links to the own area when signed in, and keeps the sign-in lin
 		accountLink: link,
 		signOutLabel: 'Uitloggen',
 	})
-	assert.match(signedIn, /data-testid="site-auth-subject"[^>]*>Ingelogd als Suzanne Moulin</)
+	assert.match(signedIn, /data-testid="site-auth-subject"[^>]*>(<!--\[-->)?Ingelogd als <span translate="no"[^>]*>(<!--\[-->)?Suzanne Moulin</)
 	assert.match(signedIn, /data-testid="site-own-area"[^>]*>\s*Mijn omgeving\s*</)
 	assert.match(signedIn, /href="\/apps\/portaliq\/site\?route=%2Fmijn"/)
 	assert.match(signedIn, /data-testid="site-signout"[^>]*>\s*Uitloggen\s*</)

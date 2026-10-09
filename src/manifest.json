@@ -212,6 +212,61 @@
         "appInstalled": "integriq",
         "access.admin": true
       }
+    },
+    {
+      "id": "MailTemplatesMenu",
+      "label": "Mail templates",
+      "icon": "EmailEditOutline",
+      "route": "MailTemplates",
+      "section": "settings",
+      "order": 97,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "MailLogMenu",
+      "label": "Sent mail",
+      "icon": "EmailSearchOutline",
+      "route": "MailLog",
+      "section": "settings",
+      "order": 97,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "FaqMenu",
+      "label": "Frequently asked questions",
+      "icon": "HelpCircleOutline",
+      "route": "Faq",
+      "section": "settings",
+      "order": 94,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "FindersMenu",
+      "label": "Product finders",
+      "icon": "FileFindOutline",
+      "route": "Finders",
+      "section": "settings",
+      "order": 94,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "SharedBlocksMenu",
+      "label": "Shared blocks",
+      "icon": "ViewDashboardOutline",
+      "route": "SharedBlocks",
+      "section": "settings",
+      "order": 93,
+      "visibleIf": {
+        "access.admin": true
+      }
     }
   ],
   "pages": [
@@ -1160,7 +1215,10 @@
         "schema": "portalMessage",
         "columns": [
           "subject",
-          "subjectRef",
+          {
+            "key": "subjectRef",
+            "label": "Recipient"
+          },
           {
             "key": "read",
             "label": "Read",
@@ -1171,6 +1229,14 @@
                 "true": "success"
               }
             }
+          },
+          {
+            "key": "readAt",
+            "label": "Read on"
+          },
+          {
+            "key": "sendingRef",
+            "label": "Sending"
           },
           "receivedAt"
         ],
@@ -2461,6 +2527,181 @@
         }
       },
       "_note": "adopt-connection-registry (hydra connection-registry D8, hydra#667, #673, #674 and #676). The rows are integriq's `app_connection` objects, synced from lib/Settings/connections.json; integriq works out each status. The app=portaliq preset is the IntegrationsMenu entry's `query` (ADR-097 decision 5), which the index page merges into the fetch as a bare filter key. `showAdd` is false because a row nothing declared has nothing to check (D9). Add integration leaves for integriq's overview through the openIntegriqConnections handler in src/customComponents.js, because a header action's `navigate` only pushes a route inside this app."
+    },
+    {
+      "id": "MailTemplates",
+      "route": "/mail-templates",
+      "type": "index",
+      "title": "Mail templates",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalMailTemplate",
+        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController.",
+        "columns": [
+          "portal",
+          "templateKey",
+          "subject",
+          {
+            "key": "active",
+            "label": "Active",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "true": "success",
+                "false": "warning"
+              }
+            }
+          },
+          "updatedBy"
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "MailLog",
+      "route": "/mail-log",
+      "type": "index",
+      "title": "Sent mail",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalMailLog",
+        "_note": "Every mail the portal sent, kept 90 days, with the address masked (mail-templates-admin-screen). A failed mail is sent again through MailTemplateAdminController::resend.",
+        "showAdd": false,
+        "columns": [
+          "sentAt",
+          "recipientMasked",
+          "templateKey",
+          "caseRef",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "delivered": "success",
+                "failed": "error",
+                "queued": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "Faq",
+      "route": "/faq",
+      "type": "index",
+      "title": "Frequently asked questions",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalFaq",
+        "_note": "One FAQ entry, written once and shown on every page in `pages` (public-faq-and-product-finder). Only published entries reach the public site.",
+        "columns": [
+          "question",
+          "topic",
+          "pages",
+          "order",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "Finders",
+      "route": "/finders",
+      "type": "index",
+      "title": "Product finders",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalFinder",
+        "_note": "Yes or no questions that rule out the portal's product pages (public-faq-and-product-finder). Evaluated in the visitor's browser; no answer is kept.",
+        "columns": [
+          "title",
+          "portal",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "SharedBlocks",
+      "route": "/shared-blocks",
+      "type": "index",
+      "title": "Shared blocks",
+      "config": {
+        "register": "portaliq",
+        "schema": "sharedBlock",
+        "_note": "Blocks of widgets that belong to one organisation and are placed on pages by id (site-shared-page-blocks). Only a published block is shown, and only on portals of its organisation. The `open-layout` action opens the page designer on the block.",
+        "columns": [
+          "title",
+          "organisation",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "actions": [
+          {
+            "id": "open-layout",
+            "label": "Layout",
+            "icon": "ViewDashboardOutline",
+            "type": "open-page",
+            "target": "SharedBlockLayout"
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "SharedBlockLayout",
+      "route": "/shared-blocks/:id/layout",
+      "type": "custom",
+      "title": "Shared block layout",
+      "component": "PageLayoutDesigner",
+      "_note": "The page designer on a shared block: it saves `draftWidgets` and publishes into `widgets` (src/editor/blockSaver.js)."
     }
   ],
   "walkthrough": {

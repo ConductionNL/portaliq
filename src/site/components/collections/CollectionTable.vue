@@ -79,13 +79,21 @@
 							:class="`pq-collection-table__badge--${badge(row, column)}`">
 							{{ cellText(row, column) }}
 						</span>
+						<QrValue
+							v-else-if="column.render === 'qr'"
+							:value="String(row[column.field] ?? '')"
+							:column="column"
+							compact
+							:open="openQr === qrKey(row, column)"
+							:locale="locale"
+							@toggle="toggleQr(row, column)" />
 						<a
 							v-else-if="
 								column.render === 'link' && href(row, column) !== ''
 							"
 							class="utrecht-link"
 							:href="href(row, column)">
-							{{ cellText(row, column) }}
+							{{ column.linkLabel || cellText(row, column) }}
 						</a>
 						<template v-else>
 							{{ cellText(row, column) }}
@@ -104,6 +112,15 @@
 							@click.stop="rowAction(action, row)">
 							{{ action.label || action.id }}
 						</button>
+						<!-- Where an action is not offered on this row, the reason the
+						     contribution gives (case-actions-row-inputs-and-conditions). -->
+						<span
+							v-for="reason in reasonsFor(row)"
+							:key="reason.id"
+							class="pq-collection-table__reason"
+							data-testid="collection-table-reason">
+							{{ reason.text }}
+						</span>
 					</td>
 				</tr>
 			</tbody>
@@ -112,6 +129,8 @@
 </template>
 
 <script>
+import QrValue from './QrValue.vue'
+import { unavailableReason } from '../../../shared/rowAction.js'
 import {
 	badgeModifier,
 	deriveColumns,
@@ -137,6 +156,8 @@ import {
  */
 export default {
 	name: 'CollectionTable',
+
+	components: { QrValue },
 
 	props: {
 		/** The collection: `id`, `kind`, `columns`. */
@@ -164,6 +185,10 @@ export default {
 	},
 
 	emits: ['select', 'rowAction'],
+
+	data() {
+		return { openQr: '' }
+	},
 
 	computed: {
 		rows() {
@@ -200,6 +225,29 @@ export default {
 			)
 		},
 
+		/**
+		 * @param {object} row A row.
+		 * @param {object} column A `qr` column.
+		 * @return {string} The key of that cell, to open one code at a time.
+		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 */
+		qrKey(row, column) {
+			return `${rowIdOf(row)}:${column.field}`
+		},
+
+		/**
+		 * Open this cell's code, or close it when it is the open one; opening one closes the other.
+		 *
+		 * @param {object} row A row.
+		 * @param {object} column A `qr` column.
+		 * @return {void}
+		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 */
+		toggleQr(row, column) {
+			const key = this.qrKey(row, column)
+			this.openQr = this.openQr === key ? '' : key
+		},
+
 		cellText(row, column) {
 			return formatCell(row?.[column.field], column.render, {
 				locale: this.locale,
@@ -220,6 +268,24 @@ export default {
 			return this.actions.filter(
 				(action) => !this.offers || this.offers(action, row),
 			)
+		},
+
+		/**
+		 * @param {object} row A row.
+		 * @return {Array<{id: string, text: string}>} The reasons its actions are not offered.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
+		 */
+		reasonsFor(row) {
+			const out = []
+			for (const action of this.actions) {
+				if (this.offers && !this.offers(action, row)) {
+					const text = unavailableReason(action, row)
+					if (text !== '') {
+						out.push({ id: action.id, text })
+					}
+				}
+			}
+			return out
 		},
 
 		select(row) {

@@ -6,6 +6,8 @@ namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\Intake\PortalReferenceLists;
+use OCA\Portaliq\Service\Intake\VisibleWhenLocal;
 use OCA\Portaliq\Service\Intake\PortalFormTrustLevel;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
@@ -156,6 +158,57 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertSame('Gemeente X', $render['fields'][0]['preset']);
 
 	}//end testAPresetIsCarriedOntoItsField()
+
+	/**
+	 * data-lookups-and-checks-in-forms T03: a field naming a reference list
+	 * gets the list's items as options; an empty or missing list closes it.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t03
+	 */
+	public function testAReferenceListFillsTheFieldsOptionsAndAnEmptyOneClosesIt(): void {
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'woning', 'order' => 1, 'options' => ['referenceList' => 'woningtypen']],
+			['name' => 'leeg', 'order' => 2, 'options' => ['referenceList' => 'bestaatniet']],
+			['name' => 'vast', 'order' => 3, 'options' => ['a', 'b']],
+		]);
+		$lists = $this->createMock(PortalReferenceLists::class);
+		$lists->method('items')->willReturnCallback(
+			static fn (string $list): array => $list === 'woningtypen' ? [['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']] : []
+		);
+
+		$fields = (new PortalFormBindingResolver($this->fakeReader(), null, new VisibleWhenLocal(), $lists))->render(binding: $this->binding())['fields'];
+
+		$this->assertSame([['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']], $fields[0]['options']);
+		$this->assertArrayNotHasKey('referenceListEmpty', $fields[0]);
+		$this->assertSame([], $fields[1]['options']);
+		$this->assertTrue($fields[1]['referenceListEmpty']);
+		$this->assertSame(['a', 'b'], $fields[2]['options'], 'a plain list is left as it is');
+
+		$none = (new PortalFormBindingResolver($this->fakeReader()))->render(binding: $this->binding())['fields'];
+		$this->assertTrue($none[0]['referenceListEmpty'], 'without a reader the field is closed, not open');
+	}//end testAReferenceListFillsTheFieldsOptionsAndAnEmptyOneClosesIt()
+
+	/**
+	 * intake-pay-on-submit T03: the render carries the case type's fee, and a
+	 * fee makes the form need a session at substantial.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t03
+	 */
+	public function testFeeRequiresSession(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'kenteken', 'order' => 1]]);
+		$reader = $this->createMock(\OCA\Portaliq\Service\CaseTypeReader::class);
+		$reader->method('readCaseType')->willReturn(['portalFee' => ['amount' => '45.00', 'currency' => 'EUR', 'payAction' => 'create-payment']]);
+		$resolver = new PortalFormBindingResolver($this->fakeReader(), null, new VisibleWhenLocal(), null, new \OCA\Portaliq\Service\Intake\PortalFormCalculator(), new \OCA\Portaliq\Service\Intake\PortalFee($reader));
+
+		$render = $resolver->render(binding: $this->binding());
+
+		$this->assertSame('45.00', $render['fee']['amount']);
+		$this->assertSame('substantial', $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
+
+		$free = $this->resolver()->render(binding: $this->binding());
+		$this->assertNull($free['fee']);
+		$this->assertNull($this->resolver()->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $free));
+	}//end testFeeRequiresSession()
 
 	public function testTheFormsSignInLevelIsCarriedToTheRender(): void {
 		// portaliq#725: buildiq writes the per-form sign-in level on the
@@ -397,6 +450,35 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertFalse($render['resolvesToNoForm']);
 		$this->assertSame($local['visibleWhen'], $render['fields'][1]['visibleWhen']);
 	}//end testNonLocalConditionResolvesToNoForm()
+
+	/**
+	 * form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002: a form
+	 * with a calculation the server cannot repeat opens no form.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 */
+	public function testAnUnknownCalculationResolvesToNoForm(): void {
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'start', 'order' => 1],
+			['name' => 'end', 'order' => 2, 'calculate' => ['op' => 'power', 'args' => ['start', 2]]],
+		]);
+
+		$render = $this->resolver()->render(binding: $this->binding());
+
+		$this->assertTrue($render['resolvesToNoForm']);
+		$this->assertSame('unsupportedCalculation', $render['reason']);
+		$this->assertSame([], $render['fields']);
+
+		$this->setUp();
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'start', 'order' => 1],
+			['name' => 'end', 'order' => 2, 'calculate' => ['op' => 'addDays', 'args' => ['start', 365]]],
+		]);
+		$this->assertFalse($this->resolver()->render(binding: $this->binding())['resolvesToNoForm']);
+
+	}//end testAnUnknownCalculationResolvesToNoForm()
 
 	/**
 	 * A resolver whose portal gemeente-x hides the case type verhuizing.

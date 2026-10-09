@@ -18,7 +18,7 @@
 <template>
 	<form class="pq-embed-form" data-testid="embed-form" @submit.prevent="submit">
 		<div
-			v-for="field in fields"
+			v-for="field in shownFields"
 			:key="field.name"
 			class="utrecht-form-field utrecht-form-field--text">
 			<div class="utrecht-form-field__label">
@@ -62,6 +62,7 @@
 </template>
 
 <script>
+import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
 import { labelFor } from '../shared/embedCopy.js'
 import { initialAnswers } from './frame.js'
 
@@ -102,6 +103,23 @@ export default {
 		}
 	},
 
+	computed: {
+		/**
+		 * The fields whose condition holds for the answers so far.
+		 *
+		 * @return {Array<object>} The fields to show.
+		 *
+		 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-fields-condition-decides-whether-the-resident-sees-it-req-icq-001
+		 */
+		shownFields() {
+			return this.fields.filter(
+				(field) =>
+					!field.visibleWhen
+					|| evaluateVisibleWhenLocal(field.visibleWhen, this.answers),
+			)
+		},
+	},
+
 	methods: {
 		labelFor,
 
@@ -117,7 +135,12 @@ export default {
 				return
 			}
 
-			this.$emit('submit', { ...this.answers })
+			// A hidden field's answer is not sent.
+			const sent = {}
+			for (const field of this.shownFields) {
+				sent[field.name] = this.answers[field.name]
+			}
+			this.$emit('submit', sent)
 		},
 	},
 }
