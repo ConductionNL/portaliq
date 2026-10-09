@@ -2906,7 +2906,15 @@ OC.L10N.register(
         "The small image in the browser tab, as media:<id>: an image from this portal's media library. It must be a PNG, SVG or ICO file. Empty uses the logo.": "De kleine afbeelding in het tabblad van de browser, als media:<id>: een afbeelding uit de mediabibliotheek van dit portaal. Het moet een PNG-, SVG- of ICO-bestand zijn. Leeg gebruikt het logo.",
         "The large image at the top of the home page, as media:<id>: an image from this portal's media library. A hero block with its own image keeps that image.": "De grote afbeelding bovenaan de startpagina, als media:<id>: een afbeelding uit de mediabibliotheek van dit portaal. Een headerblok met een eigen afbeelding houdt die afbeelding.",
         "What kind of organisation runs this portal, as a concept of the TOOI list of organisation types. Picked from OpenRegister's concept register; free text is not accepted.": "Wat voor organisatie dit portaal beheert, als begrip uit de TOOI-lijst met soorten organisaties. Gekozen uit het begrippenregister van OpenRegister; vrije tekst wordt niet geaccepteerd.",
-        "The name of the picked kind of organisation, stored with it, such as waterschap. The site uses it where it names the organisation: \"Van het waterschap\".": "De naam van de gekozen soort organisatie, samen ermee opgeslagen, zoals waterschap. De site gebruikt die waar het de organisatie noemt: \"Van het waterschap\"."
+        "The name of the picked kind of organisation, stored with it, such as waterschap. The site uses it where it names the organisation: \"Van het waterschap\".": "De naam van de gekozen soort organisatie, samen ermee opgeslagen, zoals waterschap. De site gebruikt die waar het de organisatie noemt: \"Van het waterschap\".",
+        "How search ranks": "Hoe zoeken rangschikt",
+        "the title": "de titel",
+        "the summary": "de samenvatting",
+        "the text inside documents": "de tekst in documenten",
+        "A search with a term shows the best matches first.": "Een zoekopdracht met een zoekterm toont de beste treffers eerst.",
+        "A misspelling is still found in {fields}.": "Een tikfout wordt nog gevonden in {fields}.",
+        "Only exact words are found in {fields}.": "Alleen exacte woorden worden gevonden in {fields}.",
+        "Results from other catalogues without a score come after the scored results.": "Resultaten uit andere catalogi zonder score komen na de resultaten met een score."
     },
     "nplurals=2; plural=(n != 1);"
 )

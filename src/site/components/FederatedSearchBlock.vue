@@ -1167,7 +1167,8 @@ export default {
 				// this visit, say so once, and search again in the default order.
 				if (this.sort === RELEVANCE && relevanceApplied(body) === false) {
 					this.relevanceOff = true
-					this.relevanceNotice = 'Sorteren op relevantie is hier niet beschikbaar.'
+					this.relevanceNotice =
+						'Sorteren op relevantie is hier niet beschikbaar.'
 					this.sort = ''
 					this.writeLocation(false)
 					return this.search()
@@ -1232,8 +1233,16 @@ export default {
 					{ headers: { Accept: 'application/json' } },
 				)
 				const body = response.ok ? await response.json() : null
-				if (mine === this.sequence && body && typeof body.suggestion === 'string' && body.suggestion !== '') {
-					this.suggestion = { term: body.suggestion, results: Number(body.results) || 0 }
+				if (
+					mine === this.sequence
+					&& body
+					&& typeof body.suggestion === 'string'
+					&& body.suggestion !== ''
+				) {
+					this.suggestion = {
+						term: body.suggestion,
+						results: Number(body.results) || 0,
+					}
 				}
 			} catch {
 				this.suggestion = null

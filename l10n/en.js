@@ -2804,7 +2804,15 @@ OC.L10N.register(
         "The small image in the browser tab, as media:<id>: an image from this portal's media library. It must be a PNG, SVG or ICO file. Empty uses the logo.": "The small image in the browser tab, as media:<id>: an image from this portal's media library. It must be a PNG, SVG or ICO file. Empty uses the logo.",
         "The large image at the top of the home page, as media:<id>: an image from this portal's media library. A hero block with its own image keeps that image.": "The large image at the top of the home page, as media:<id>: an image from this portal's media library. A hero block with its own image keeps that image.",
         "What kind of organisation runs this portal, as a concept of the TOOI list of organisation types. Picked from OpenRegister's concept register; free text is not accepted.": "What kind of organisation runs this portal, as a concept of the TOOI list of organisation types. Picked from OpenRegister's concept register; free text is not accepted.",
-        "The name of the picked kind of organisation, stored with it, such as waterschap. The site uses it where it names the organisation: \"Van het waterschap\".": "The name of the picked kind of organisation, stored with it, such as waterschap. The site uses it where it names the organisation: \"Van het waterschap\"."
+        "The name of the picked kind of organisation, stored with it, such as waterschap. The site uses it where it names the organisation: \"Van het waterschap\".": "The name of the picked kind of organisation, stored with it, such as waterschap. The site uses it where it names the organisation: \"Van het waterschap\".",
+        "How search ranks": "How search ranks",
+        "the title": "the title",
+        "the summary": "the summary",
+        "the text inside documents": "the text inside documents",
+        "A search with a term shows the best matches first.": "A search with a term shows the best matches first.",
+        "A misspelling is still found in {fields}.": "A misspelling is still found in {fields}.",
+        "Only exact words are found in {fields}.": "Only exact words are found in {fields}.",
+        "Results from other catalogues without a score come after the scored results.": "Results from other catalogues without a score come after the scored results."
     },
     "nplurals=2; plural=(n != 1);"
 )

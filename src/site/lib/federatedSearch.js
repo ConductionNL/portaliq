@@ -13,6 +13,35 @@
  */
 
 /**
+ * THE RANKING THE SEARCH ASKS FOR, declared once (REQ-SSR-006).
+ * `buildRequestUrl()` reads it, and the portal admin's "How search ranks"
+ * renders it, so the explanation cannot drift from the request.
+ *
+ * - `termOrder`: the order a new search with a term uses.
+ * - `fuzzy`: whether `_fuzzy=true` goes with every term.
+ * - `fuzzyFields` / `exactFields`: what OpenRegister matches fuzzily and what
+ *   only exactly (its trigram similarity reads the title alone).
+ * - `unscoredFederated`: where a federated row without a score sorts.
+ *
+ * @type {{termOrder: string, fuzzy: boolean, fuzzyFields: Array<string>, exactFields: Array<string>, unscoredFederated: string}}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-publisher-can-read-how-search-ranks-req-ssr-006
+ */
+export const RANKING = {
+	termOrder: '_relevance:DESC',
+	fuzzy: true,
+	fuzzyFields: ['title'],
+	exactFields: ['summary', 'documentText'],
+	unscoredFederated: 'after',
+}
+
+/**
+ * The relevance order's value in the sort control.
+ *
+ * @type {string}
+ */
+export const RELEVANCE = RANKING.termOrder
+
+/**
  * The request URL for one search state.
  *
  * The query-parameter names are OpenCatalogi's own (`_search`, `_page`,
@@ -598,35 +627,6 @@ export function withoutLocked(fields, locked) {
 }
 
 /**
- * THE RANKING THE SEARCH ASKS FOR, declared once (REQ-SSR-006).
- * `buildRequestUrl()` reads it, and the portal admin's "How search ranks"
- * renders it, so the explanation cannot drift from the request.
- *
- * - `termOrder`: the order a new search with a term uses.
- * - `fuzzy`: whether `_fuzzy=true` goes with every term.
- * - `fuzzyFields` / `exactFields`: what OpenRegister matches fuzzily and what
- *   only exactly (its trigram similarity reads the title alone).
- * - `unscoredFederated`: where a federated row without a score sorts.
- *
- * @type {{termOrder: string, fuzzy: boolean, fuzzyFields: Array<string>, exactFields: Array<string>, unscoredFederated: string}}
- * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-publisher-can-read-how-search-ranks-req-ssr-006
- */
-export const RANKING = {
-	termOrder: '_relevance:DESC',
-	fuzzy: true,
-	fuzzyFields: ['title'],
-	exactFields: ['summary', 'documentText'],
-	unscoredFederated: 'after',
-}
-
-/**
- * The relevance order's value in the sort control.
- *
- * @type {string}
- */
-export const RELEVANCE = RANKING.termOrder
-
-/**
  * The orders the sort control offers: "Meest relevant" first when there is a
  * term and relevance was not found missing, then the orders that always work.
  *
@@ -745,13 +745,27 @@ export function rankingExplanation(ranking, t) {
 		lines.push(t('A search with a term shows the best matches first.'))
 	}
 	if (ranking.fuzzy === true && (ranking.fuzzyFields || []).length > 0) {
-		lines.push(t('A misspelling is still found in {fields}.').replace('{fields}', names(ranking.fuzzyFields)))
+		lines.push(
+			t('A misspelling is still found in {fields}.').replace(
+				'{fields}',
+				names(ranking.fuzzyFields),
+			),
+		)
 	}
 	if ((ranking.exactFields || []).length > 0) {
-		lines.push(t('Only exact words are found in {fields}.').replace('{fields}', names(ranking.exactFields)))
+		lines.push(
+			t('Only exact words are found in {fields}.').replace(
+				'{fields}',
+				names(ranking.exactFields),
+			),
+		)
 	}
 	if (ranking.unscoredFederated === 'after') {
-		lines.push(t('Results from other catalogues without a score come after the scored results.'))
+		lines.push(
+			t(
+				'Results from other catalogues without a score come after the scored results.',
+			),
+		)
 	}
 	return lines
 }

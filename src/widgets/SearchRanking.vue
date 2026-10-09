@@ -25,13 +25,9 @@ import { RANKING, rankingExplanation } from '../site/lib/federatedSearch.js'
 export default {
 	name: 'SearchRanking',
 
-	props: {
-		/** The portal the detail page shows (unused: the ranking is the same for every portal). */
-		objectData: {
-			type: Object,
-			default: null,
-		},
-	},
+	// The detail page hands every widget its object; the ranking is the same
+	// for every portal, so it is not read, and not rendered as an attribute.
+	inheritAttrs: false,
 
 	computed: {
 		/**
