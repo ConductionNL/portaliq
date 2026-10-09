@@ -413,7 +413,13 @@ class CmsReader {
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
 	 */
 	public function shell(array $portal): array {
-		return $this->shell->project(portal: $portal);
+		return [
+			...$this->shell->project(portal: $portal),
+			// The portal's hero image, for a hero block without its own
+			// (portal-identity-from-the-admin REQ-PIA-002). Resolved here
+			// because only the reader holds the portal's media library.
+			'heroImage' => $this->media->hero(portal: (string)($portal['slug'] ?? ''), value: ($portal['heroImage'] ?? null)),
+		];
 	}//end shell()
 
 

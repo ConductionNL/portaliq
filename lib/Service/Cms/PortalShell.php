@@ -91,8 +91,33 @@ class PortalShell {
 			// (help-texts-and-form-help).
 			'help'           => $this->help->details(help: ($portal['help'] ?? null)),
 			'sectionHelp'    => $this->help->sections(sections: ($portal['sectionHelp'] ?? null)),
+			// The kind of organisation, for "Van het waterschap", the footer
+			// and DCTERMS.creator (portal-identity-from-the-admin REQ-PIA-003).
+			'organisation'   => $this->organisation(portal: $portal),
 		];
 	}//end project()
+
+	/**
+	 * The organisation that runs the portal: its name, and its kind as the TOOI
+	 * uri with the label picked beside it. A kind that is not a uri is no TOOI
+	 * concept, so both type and label read '' and the site says "de organisatie".
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array{type: string, label: string, name: string}
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function organisation(array $portal): array {
+		$type  = $this->text(value: ($portal['organisationType'] ?? ''));
+		$label = $this->text(value: ($portal['organisationTypeLabel'] ?? ''));
+		if (preg_match('#^https?://#i', $type) !== 1 || $label === '') {
+			$type  = '';
+			$label = '';
+		}
+
+		return ['type' => $type, 'label' => $label, 'name' => $this->text(value: ($portal['title'] ?? ''))];
+	}//end organisation()
 
 	/**
 	 * How Mijn zaken draws its list: `{display: rows}` when the portal says

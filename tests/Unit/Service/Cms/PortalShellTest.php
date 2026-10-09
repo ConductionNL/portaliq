@@ -41,6 +41,28 @@ class PortalShellTest extends TestCase {
 		);
 	}//end testTheHeaderSearchIsOffUntilEnabledAndOpensAnInSitePage()
 
+	/**
+	 * The kind of organisation reaches the site: the TOOI uri and its label,
+	 * nothing else (portal-identity-from-the-admin REQ-PIA-003).
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function testTheProjectionNamesTheKindOfOrganisation(): void {
+		$shell = new PortalShell();
+
+		$this->assertSame(
+			['type' => 'https://identifier.overheid.nl/tooi/def/ont/Waterschap', 'label' => 'waterschap', 'name' => 'Waterschap Rivierenland'],
+			$shell->project(portal: [
+				'title'                 => ' Waterschap Rivierenland ',
+				'organisationType'      => 'https://identifier.overheid.nl/tooi/def/ont/Waterschap',
+				'organisationTypeLabel' => ' waterschap ',
+			])['organisation']
+		);
+		$this->assertSame(['type' => '', 'label' => '', 'name' => ''], $shell->project(portal: [])['organisation']);
+		// Something that is not a uri is not a TOOI concept.
+		$this->assertSame('', $shell->project(portal: ['organisationType' => 'gemeente', 'organisationTypeLabel' => 'gemeente'])['organisation']['type']);
+	}//end testTheProjectionNamesTheKindOfOrganisation()
+
 	public function testTheProjectionServesTheHeaderSearchAndTheAccountLabel(): void {
 		$projected = (new PortalShell())->project(portal: [
 			'headerSearch' => ['enabled' => true],
