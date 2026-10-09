@@ -103,13 +103,19 @@ class WriteRefusal {
 		}
 
 		foreach ($matches as $match) {
-			$required = (($match[3] ?? '') !== '');
-			$field = $this->fieldOf(path: ($match[3] ?? '') !== '' ? $match[3] : $match[1]);
+			$path = $match[1];
+			$kind = $this->kindOf(rest: ($match[2] ?? ''));
+			if (($match[3] ?? '') !== '') {
+				$path = $match[3];
+				$kind = 'required';
+			}
+
+			$field = $this->fieldOf(path: $path);
 			if (in_array($field, $fields, true) === false || isset($out[$field]) === true) {
 				continue;
 			}
 
-			$out[$field] = $required === true ? 'required' : $this->kindOf(rest: ($match[2] ?? ''));
+			$out[$field] = $kind;
 		}
 
 		return $out;
