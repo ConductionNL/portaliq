@@ -31,6 +31,7 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalNoticeReader;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -68,14 +69,16 @@ class CmsCacheInvalidationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CmsReader       $reader The reader owning the cache.
-	 * @param LoggerInterface $logger The logger.
+	 * @param CmsReader               $reader  The reader owning the cache.
+	 * @param LoggerInterface         $logger  The logger.
+	 * @param PortalNoticeReader|null $notices The reader owning the notice rows' cache.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly CmsReader $reader,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalNoticeReader $notices = null,
 	) {
 	}//end __construct()
 
@@ -114,6 +117,9 @@ class CmsCacheInvalidationListener implements IEventListener {
 			// I/O, and getting it wrong the other way (skipping an
 			// invalidation) is invisible until someone reports stale content.
 			$this->reader->invalidate(portal: $portal);
+			// The notices above every page keep their own minute of cache
+			// (PortalNoticeReader); a notice written now must not wait it out.
+			$this->notices?->invalidate(portal: $portal);
 		} catch (Throwable $e) {
 			// Never let a cache concern break a write. A stale cache is a
 			// nuisance; a failed save is data loss.

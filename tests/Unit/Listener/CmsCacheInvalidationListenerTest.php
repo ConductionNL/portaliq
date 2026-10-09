@@ -26,6 +26,7 @@ use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalNoticeReader;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -71,6 +72,25 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class)
 		);
 	}//end setUp()
+
+
+	/**
+	 * A notice written now drops that portal's cached notice rows too, so it
+	 * is on the site at once rather than after the minute the rows are kept.
+	 *
+	 * @return void
+	 */
+	public function testAWrittenNoticeDropsThatPortalsNoticeRows(): void {
+		$notices = $this->createMock(PortalNoticeReader::class);
+		$notices->expects($this->once())->method('invalidate')->with(portal: 'open-tilburg');
+		$listener = new CmsCacheInvalidationListener(
+			reader: $this->reader,
+			logger: $this->createMock(LoggerInterface::class),
+			notices: $notices
+		);
+
+		$listener->handle(new ObjectCreatedEvent($this->entity(data: ['portal' => 'open-tilburg', 'message' => 'Onderhoud'])));
+	}//end testAWrittenNoticeDropsThatPortalsNoticeRows()
 
 
 	/**

@@ -230,6 +230,28 @@ class PortalNoticeReader {
 
 
 	/**
+	 * Drop one portal's cached rows, so a notice written now shows at once.
+	 *
+	 * The minute of caching keeps the site read cheap; it was never meant to
+	 * hold back an editor's notice, and without this a notice published for
+	 * an outage that starts now stayed off the site for up to that minute.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 */
+	public function invalidate(string $portal): void {
+		if ($portal === '') {
+			return;
+		}
+
+		$this->cache->remove($portal);
+	}//end invalidate()
+
+
+	/**
 	 * The published notices of one portal, cached for a minute.
 	 *
 	 * @param string $portal The portal slug.
