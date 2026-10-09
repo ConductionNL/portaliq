@@ -81,10 +81,21 @@
 					v-for="action in shownActions"
 					:key="action.href + action.label"
 					class="pq-hero__action"
+					:class="{ 'pq-hero__action--link': action.style === 'link' }"
 					:href="action.href"
 					data-testid="hero-action"
 					@click="onAction($event, action.href)">
-					{{ action.label }}
+					{{ action.label
+					}}<svg
+						v-if="action.chevron"
+						class="pq-hero__action-chevron"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+						focusable="false">
+						<path
+							d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+							fill="currentColor" />
+					</svg>
 				</a>
 			</div>
 		</div>
@@ -174,7 +185,7 @@ export default {
 		backgroundImage: { type: String, default: '' },
 		/** Paint the heading; `null` paints it, also beside a search box. */
 		headingVisible: { type: Boolean, default: null },
-		/** `{label, href}` calls to action; at most two render. */
+		/** `{label, href, style?, chevron?}` calls to action; at most two render. `style: link` is an underlined text link. */
 		actions: { type: Array, default: () => [] },
 		/** `card` (the search in a card, today's look) or `plain` (joined input and button on the band). */
 		variant: { type: String, default: 'card' },
