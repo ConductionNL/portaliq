@@ -24,9 +24,9 @@ A contributing app puts `theme: "<slug>"` on a collection or an action. A tag th
 
 - **Wat moet ik regelen**: the rows of collections tagged with the theme (not `kind: products`), with a link to all tasks.
 - **Wat kan ik regelen**: the tagged actions. An action with `when: {field, op, value}` shows only when at least one product the resident holds in its collection satisfies it. The operators are `eq`, `neq` and `in`. A condition with no product to test against does not hold.
-- **Mijn {producten}**: collections with `kind: products`.
+- **Mijn \{producten\}**: collections with `kind: products`.
 
-A theme is listed in the menu, under the group "Thema's", only when something is tagged for that resident. A theme with nothing to show says "Er is nu niets voor u bij {thema}."
+A theme is listed in the menu, under the group "Thema's", only when something is tagged for that resident. A theme with nothing to show says "Er is nu niets voor u bij \{thema\}."
 
 ## Products
 
@@ -36,7 +36,7 @@ A `kind: products` collection can declare `titleField`, `validFromField`, `valid
 |---|---|
 | Geldig | no last day, or the last day is today or later |
 | Verlopen | the last day has passed |
-| Gaat in op {datum} | the first day is in the future |
+| Gaat in op \{datum\} | the first day is in the future |
 
 The page shows at most three products, valid ones first. A link shows the whole list, expired ones last, when there are more than three or any has expired. Portaliq stores no product: the rows come through the contribution's scoped read.
 

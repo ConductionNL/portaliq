@@ -28,4 +28,4 @@ An empty value shows nothing. A value that is not an address shows as plain text
 
 ## How it is drawn
 
-In the browser, by the portal's own encoder (`src/site/lib/qr.js`), so no address goes to a QR service and the site carries no extra library. It writes byte mode at error correction level M, versions 1 to 20 (up to 666 bytes); a longer value shows the link only. The code is black on white with a four-module quiet zone in every theme, and has the accessible name "QR-code voor: {link text}".
+In the browser, by the portal's own encoder (`src/site/lib/qr.js`), so no address goes to a QR service and the site carries no extra library. It writes byte mode at error correction level M, versions 1 to 20 (up to 666 bytes); a longer value shows the link only. The code is black on white with a four-module quiet zone in every theme, and has the accessible name "QR-code voor: \{link text\}".
