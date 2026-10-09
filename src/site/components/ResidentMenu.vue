@@ -520,6 +520,11 @@ export default {
 		align-self: flex-start;
 	}
 
+	/* The phone header shows the person; the menu does not repeat it. */
+	.pq-resident-menu__person {
+		display: none;
+	}
+
 	.pq-resident-menu__groups {
 		display: none;
 	}
