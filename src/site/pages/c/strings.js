@@ -67,6 +67,14 @@ export default {
 		'For example 1 3 2026': 'Bijvoorbeeld 1 3 2026',
 		'{field}: enter a real date, for example 1 3 2026.':
 			'{field}: vul een geldige datum in, bijvoorbeeld 1 3 2026.',
+		'{field}: enter a number, for example 8 or 7.5.':
+			'{field}: vul een getal in, bijvoorbeeld 8 of 7,5.',
+		'{field}: enter a whole number, for example 8.':
+			'{field}: vul een heel getal in, bijvoorbeeld 8.',
+		'{field} is not filled in correctly. Check it.':
+			'{field} is niet goed ingevuld. Kijk het nog eens na.',
+		'Not everything is filled in correctly. Check your answers.':
+			'Niet alles is goed ingevuld. Kijk uw antwoorden na.',
 		'Choose a file or photo': 'Bestand of foto kiezen',
 		'Remove {file}': '{file} verwijderen',
 		Today: 'Vandaag',
@@ -155,6 +163,14 @@ export default {
 		'For example 1 3 2026': 'For example 1 3 2026',
 		'{field}: enter a real date, for example 1 3 2026.':
 			'{field}: enter a real date, for example 1 3 2026.',
+		'{field}: enter a number, for example 8 or 7.5.':
+			'{field}: enter a number, for example 8 or 7.5.',
+		'{field}: enter a whole number, for example 8.':
+			'{field}: enter a whole number, for example 8.',
+		'{field} is not filled in correctly. Check it.':
+			'{field} is not filled in correctly. Check it.',
+		'Not everything is filled in correctly. Check your answers.':
+			'Not everything is filled in correctly. Check your answers.',
 		'Choose a file or photo': 'Choose a file or photo',
 		'Remove {file}': 'Remove {file}',
 		Today: 'Today',

@@ -271,7 +271,7 @@ test('a filled form sends only the whitelisted fields and shows the success mess
 })
 
 test('a refused save says so in words', async () => {
-	const api = fakeApi({ created: { ok: false, status: 400 } })
+	const api = fakeApi({ created: { ok: false, status: 502 } })
 	const action = { id: 'a', type: 'create', fields: ['title'], fieldConfigs: {} }
 	const form = await mountSfc(FORM, {
 		action,
