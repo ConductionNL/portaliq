@@ -67,8 +67,11 @@ export default {
 	max-inline-size: max-content;
 	padding-block: var(--nl-data-badge-padding-block, 0.125rem);
 	padding-inline: var(--nl-data-badge-padding-inline, 0.5rem);
+	/* A tinted pill, as every school board draws it: the tone's ground and
+	   text colour, and no outline unless the theme names one
+	   (mijn-overview-follows-the-boards). */
 	border: var(--nl-data-badge-border-width, 1px) solid
-		var(--nl-data-badge-border-color, currentcolor);
+		var(--nl-data-badge-border-color, transparent);
 	border-radius: var(--nl-data-badge-border-radius, 0.25rem);
 	font-size: var(--nl-data-badge-font-size, 0.875rem);
 	font-weight: var(--nl-data-badge-font-weight, 600);

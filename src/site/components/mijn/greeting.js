@@ -41,3 +41,20 @@ export function greetingFor(session, now, tr) {
 	}[part]
 	return name ? tr(`${key}, {name}`, { name }) : tr(key)
 }
+
+/**
+ * The ISO 8601 week number of a day (week 1 holds the year's first Thursday).
+ *
+ * @param {Date} day The day.
+ * @return {number} The week number, 1 to 53.
+ * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-greeting-may-name-the-week
+ */
+export function isoWeek(day) {
+	const date = new Date(
+		Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()),
+	)
+	const weekday = date.getUTCDay() || 7
+	date.setUTCDate(date.getUTCDate() + 4 - weekday)
+	const yearStart = Date.UTC(date.getUTCFullYear(), 0, 1)
+	return Math.ceil(((date.getTime() - yearStart) / 86400000 + 1) / 7)
+}

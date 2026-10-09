@@ -86,393 +86,424 @@
 			{{ tr('Open a name to see everything about it.') }}
 		</p>
 
-		<template v-for="item in visibleBlocks" :key="item.index">
-			<RichTextBlock
-				v-if="item.kind === 'richText'"
-				:markdown="item.block.markdown || ''" />
-
-			<!-- A text filled from the open record, as text (REQ-SMO-027). -->
-			<div
-				v-else-if="item.kind === 'template'"
-				class="pq-contribution-page__template"
-				data-testid="contribution-page-template">
-				<p
-					v-for="(sentence, s) in templateOf(item)"
-					:key="s"
-					class="utrecht-paragraph">
-					{{ sentence }}
-				</p>
-			</div>
-
-			<!-- Quick tiles: cta blocks that open a page or a route (REQ-SMO-024). -->
-			<QuickTiles
-				v-else-if="item.kind === 'tiles'"
-				:tiles="tilesOf(item)"
-				@open="openTile" />
-
-			<!-- The overview's opening (site-school-blocks). -->
-			<GreetingBlock
-				v-else-if="item.kind === 'greeting'"
-				:block="item.block"
-				:session="session"
-				:route="item.block.page ? tileTarget(item.block).route || '' : ''"
-				:pageHeading="homeHeading && item.index === firstGreetingIndex"
-				:t="tr"
-				:locale="lang"
+		<!-- The blocks in two columns, framed, with a link in their heading
+		     row, where the page declares it (mijn-overview-follows-the-boards);
+		     otherwise the shells draw nothing of their own. -->
+		<BlockShell
+			kind="grid"
+			:wrap="layout.columns"
+			@navigate="$emit('navigate', $event)">
+			<BlockShell
+				v-for="item in visibleBlocks"
+				:key="item.index"
+				kind="block"
+				:wrap="shellWraps(item)"
+				:classes="blockClasses(item.block)"
+				:place="placeStyle(layout, item.index)"
+				:more="moreOf(item)"
+				:type="item.block.type || ''"
 				@navigate="$emit('navigate', $event)">
-				<template v-if="item.action" #action>
-					<SlotHost
-						name="action"
-						:block="{
-							type: 'cta',
-							action: item.block.action,
-							label: item.block.label,
-						}"
-						:action="item.action"
-						:contribution="currentContribution"
-						:api="api"
-						:t="tr"
-						:locale="lang"
-						@created="
-							(object, written) => afterWrite(written || item.action)
-						" />
-				</template>
-			</GreetingBlock>
+				<RichTextBlock
+					v-if="item.kind === 'richText'"
+					:markdown="item.block.markdown || ''" />
 
-			<!-- Rows as cards with a progress figure (REQ-SMO-028), and the
+				<!-- A text filled from the open record, as text (REQ-SMO-027). -->
+				<div
+					v-else-if="item.kind === 'template'"
+					class="pq-contribution-page__template"
+					data-testid="contribution-page-template">
+					<p
+						v-for="(sentence, s) in templateOf(item)"
+						:key="s"
+						class="utrecht-paragraph">
+						{{ sentence }}
+					</p>
+				</div>
+
+				<!-- Quick tiles: cta blocks that open a page or a route (REQ-SMO-024). -->
+				<QuickTiles
+					v-else-if="item.kind === 'tiles'"
+					:tiles="tilesOf(item)"
+					@open="openTile" />
+
+				<!-- The overview's opening (site-school-blocks). -->
+				<GreetingBlock
+					v-else-if="item.kind === 'greeting'"
+					:block="item.block"
+					:session="session"
+					:route="
+						item.block.page ? tileTarget(item.block).route || '' : ''
+					"
+					:pageHeading="homeHeading && item.index === firstGreetingIndex"
+					:t="tr"
+					:locale="lang"
+					@navigate="$emit('navigate', $event)">
+					<template v-if="item.action" #action>
+						<SlotHost
+							name="action"
+							:block="{
+								type: 'cta',
+								action: item.block.action,
+								label: item.block.label,
+							}"
+							:action="item.action"
+							:contribution="currentContribution"
+							:api="api"
+							:t="tr"
+							:locale="lang"
+							@created="
+								(object, written) =>
+									afterWrite(written || item.action)
+							" />
+					</template>
+				</GreetingBlock>
+
+				<!-- Rows as cards with a progress figure (REQ-SMO-028), and the
 			     status, note and coming-up parts (site-school-blocks). -->
-			<ProgressCards
-				v-else-if="item.kind === 'table' && item.block.display === 'cards'"
-				:rows="tableWindow(item).rows"
-				:block="item.block"
-				:collection="item.collection"
-				:titleFields="item.collection.titleFields || []"
-				:statusRows="
-					item.block.status
-						? loadedOf({ id: item.block.status.collection })
-						: null
-				"
-				:today="today || undefined"
-				:t="tr"
-				:locale="lang" />
+				<ProgressCards
+					v-else-if="
+						item.kind === 'table' && item.block.display === 'cards'
+					"
+					:rows="tableWindow(item).rows"
+					:block="item.block"
+					:collection="item.collection"
+					:titleFields="item.collection.titleFields || []"
+					:statusRows="
+						item.block.status
+							? loadedOf({ id: item.block.status.collection })
+							: null
+					"
+					:today="today || undefined"
+					:t="tr"
+					:locale="lang" />
 
-			<!-- Dated rows, bars and mark chips (site-school-blocks). -->
-			<component
-				:is="displayComponent(item.block.display)"
-				v-else-if="
-					item.kind === 'table' && displayComponent(item.block.display)
-				"
-				:rows="tableWindow(item).rows"
-				:block="item.block"
-				:collection="item.collection"
-				:label="item.block.label || item.collection.label || ''"
-				:level="sectionLevel"
-				:loading="loadedOf(item.collection).loading"
-				:t="tr"
-				:locale="lang" />
+				<!-- Dated rows, bars and mark chips (site-school-blocks). -->
+				<component
+					:is="displayComponent(item.block.display)"
+					v-else-if="
+						item.kind === 'table' && displayComponent(item.block.display)
+					"
+					:rows="tableWindow(item).rows"
+					:block="item.block"
+					:collection="item.collection"
+					:label="item.block.label || item.collection.label || ''"
+					:level="sectionLevel"
+					:loading="loadedOf(item.collection).loading"
+					:t="tr"
+					:locale="lang" />
 
-			<div
-				v-else-if="item.kind === 'table'"
-				class="pq-contribution-page__collection"
-				:data-collection="item.collection.id"
-				data-testid="contribution-page-collection">
-				<!-- One heading per title: a collection named like the page it
+				<div
+					v-else-if="item.kind === 'table'"
+					class="pq-contribution-page__collection"
+					:data-collection="item.collection.id"
+					data-testid="contribution-page-collection">
+					<!-- One heading per title: a collection named like the page it
 				     is on is already titled by the shell's h1, whose id it then
 				     takes as its label. -->
-				<component
-					:is="`h${sectionLevel}`"
-					v-if="showsHeading(item)"
-					:id="headingId(item)"
-					class="utrecht-heading-3">
-					{{ headingOf(item) }}
-				</component>
-				<!-- A collection that declares groupByField shows one table per
+					<component
+						:is="`h${sectionLevel}`"
+						v-if="showsHeading(item)"
+						:id="headingId(item)"
+						class="utrecht-heading-3">
+						{{ headingOf(item) }}
+					</component>
+					<!-- A collection that declares groupByField shows one table per
 				     child, each named by its own heading
 				     (collection-group-by-field). -->
-				<template
-					v-for="group in groupsOf(item)"
-					:key="group.value || '_rest'">
-					<h3
-						:id="groupHeadingId(item, group)"
-						class="utrecht-heading-4 pq-contribution-page__group"
-						data-testid="contribution-page-group">
-						{{ group.label || tr('Other') }}
-					</h3>
+					<template
+						v-for="group in groupsOf(item)"
+						:key="group.value || '_rest'">
+						<h3
+							:id="groupHeadingId(item, group)"
+							class="utrecht-heading-4 pq-contribution-page__group"
+							data-testid="contribution-page-group">
+							{{ group.label || tr('Other') }}
+						</h3>
+						<CollectionTable
+							:collection="item.collection"
+							:objects="group.rows"
+							:loading="loadedOf(item.collection).loading"
+							:selectable="true"
+							:selectedRow="selected[item.collection.id] || null"
+							:rowActions="item.tableActions"
+							:offers="offers"
+							:busyRow="busyRow"
+							:labelledby="groupHeadingId(item, group)"
+							:t="tr"
+							:locale="lang"
+							@select="select(item.collection, $event)"
+							@rowAction="
+								(action, row) => onRowAction(item, action, row)
+							" />
+					</template>
 					<CollectionTable
+						v-if="groupsOf(item).length === 0"
 						:collection="item.collection"
-						:objects="group.rows"
+						:objects="tableWindow(item).rows"
 						:loading="loadedOf(item.collection).loading"
 						:selectable="true"
 						:selectedRow="selected[item.collection.id] || null"
 						:rowActions="item.tableActions"
 						:offers="offers"
 						:busyRow="busyRow"
-						:labelledby="groupHeadingId(item, group)"
+						:labelledby="labelOf(item)"
 						:t="tr"
 						:locale="lang"
 						@select="select(item.collection, $event)"
 						@rowAction="
 							(action, row) => onRowAction(item, action, row)
 						" />
-				</template>
-				<CollectionTable
-					v-if="groupsOf(item).length === 0"
-					:collection="item.collection"
-					:objects="tableWindow(item).rows"
-					:loading="loadedOf(item.collection).loading"
-					:selectable="true"
-					:selectedRow="selected[item.collection.id] || null"
-					:rowActions="item.tableActions"
-					:offers="offers"
-					:busyRow="busyRow"
-					:labelledby="labelOf(item)"
-					:t="tr"
-					:locale="lang"
-					@select="select(item.collection, $event)"
-					@rowAction="(action, row) => onRowAction(item, action, row)" />
-				<!-- A block that shows its first rows (`limit`) leads to all of
+					<!-- A block that shows its first rows (`limit`) leads to all of
 				     them: the collection's own page, else the rest here
 				     (site-mijn-omgeving-components REQ-SMO-021). -->
-				<p
-					v-if="groupsOf(item).length === 0 && tableWindow(item).more"
-					class="utrecht-paragraph pq-contribution-page__more"
-					data-testid="contribution-page-more">
-					<a
-						v-if="allRouteOf(item)"
-						class="utrecht-link"
-						:href="hrefOf(allRouteOf(item))"
-						@click.prevent="$emit('navigate', allRouteOf(item))"
-						>{{ seeAll(item) }}</a
-					>
-					<button
-						v-else
-						type="button"
-						class="utrecht-button utrecht-button--subtle"
-						@click="expanded = { ...expanded, [item.index]: true }">
-						{{ seeAll(item) }}
-					</button>
-				</p>
-				<!-- Sign and decline get their own step, every other endpoint
+					<p
+						v-if="groupsOf(item).length === 0 && tableWindow(item).more"
+						class="utrecht-paragraph pq-contribution-page__more"
+						data-testid="contribution-page-more">
+						<a
+							v-if="allRouteOf(item)"
+							class="utrecht-link"
+							:href="hrefOf(allRouteOf(item))"
+							@click.prevent="$emit('navigate', allRouteOf(item))"
+							>{{ seeAll(item) }}</a
+						>
+						<button
+							v-else
+							type="button"
+							class="utrecht-button utrecht-button--subtle"
+							@click="expanded = { ...expanded, [item.index]: true }">
+							{{ seeAll(item) }}
+						</button>
+					</p>
+					<!-- Sign and decline get their own step, every other endpoint
 				     row action the plain confirm step: slice c fills it. -->
-				<SlotHost
-					v-if="pending && pending.collectionId === item.collection.id"
-					:key="pendingKey"
-					name="rowAction"
-					:dialog="pending.dialog"
-					:action="pending.action"
-					:viewAction="item.viewAction"
+					<SlotHost
+						v-if="pending && pending.collectionId === item.collection.id"
+						:key="pendingKey"
+						name="rowAction"
+						:dialog="pending.dialog"
+						:action="pending.action"
+						:viewAction="item.viewAction"
+						:collection="item.collection"
+						:row="pending.row"
+						:api="api"
+						:t="tr"
+						:locale="lang"
+						@done="afterWrite(item.collection)"
+						@close="pending = null" />
+				</div>
+
+				<DetailCard
+					v-else-if="item.kind === 'detail'"
 					:collection="item.collection"
-					:row="pending.row"
+					:row="detailRow(item)"
+					:quietWhenEmpty="item.quietWhenEmpty === true"
+					:api="api"
+					:proposeAction="item.proposeAction"
+					:label="item.block.label || ''"
+					:level="sectionLevel"
+					:showTimeline="item.block.timeline !== false"
+					:t="tr"
+					:locale="lang" />
+
+				<!-- One figure as a segmented bar (site-school-blocks). -->
+				<SegmentedFigure
+					v-else-if="
+						item.kind === 'kpi' && item.block.display === 'segmented'
+					"
+					:row="kpiRow(item)"
+					:block="item.block"
+					:label="item.block.label || ''"
+					:level="sectionLevel"
+					:loading="loadedOf(item.collection).loading"
+					:t="tr"
+					:locale="lang" />
+
+				<KpiCards
+					v-else-if="item.kind === 'kpi'"
+					:cards="item.block.cards || []"
+					:row="kpiRow(item)"
+					:loading="loadedOf(item.collection).loading"
+					:label="item.block.label || ''"
+					:caption="item.block.caption || null"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang" />
+
+				<!-- One day as a timetable (calendar-timetable-display). -->
+				<TimetableDay
+					v-else-if="
+						item.kind === 'calendar'
+						&& item.block.display === 'timetable'
+					"
+					:items="calendarOf(item)"
+					:range="item.block.range || 'day'"
+					:firstLabel="item.block.firstLabel || ''"
+					:loading="calendarLoading(item)"
+					:label="item.block.label || ''"
+					:level="sectionLevel"
+					:today="today || undefined"
+					:t="tr"
+					:locale="lang" />
+
+				<!-- The same items as date tiles (site-school-blocks). -->
+				<CalendarTiles
+					v-else-if="
+						item.kind === 'calendar' && item.block.display === 'tiles'
+					"
+					:items="calendarOf(item)"
+					:range="item.block.range || ''"
+					:loading="calendarLoading(item)"
+					:label="item.block.label || ''"
+					:level="sectionLevel"
+					:today="today || undefined"
+					:t="tr"
+					:locale="lang" />
+
+				<CalendarBlock
+					v-else-if="item.kind === 'calendar'"
+					:items="calendarOf(item)"
+					:loading="calendarLoading(item)"
+					:label="item.block.label || ''"
+					:level="sectionLevel"
+					:today="today || undefined"
+					:t="tr"
+					:locale="lang" />
+
+				<NewsBlock
+					v-else-if="item.kind === 'news'"
+					:api="api"
+					:limit="item.block.limit || 3"
+					:label="item.block.label || ''"
+					:level="sectionLevel"
+					:record="activeRecord"
+					:contribution="currentContribution"
+					:groups="openRecordGroups"
+					:initialFeed="initialFeed"
+					:t="tr"
+					:locale="lang"
+					@navigate="$emit('navigate', $event)" />
+
+				<!-- What the resident still has to do and their newest messages
+			     (site-mijn-omgeving-components), loaded on demand. -->
+				<TasksBlock
+					v-else-if="item.kind === 'tasks'"
+					:block="item.block"
+					:collection="item.collection"
+					:rows="rowsOf(item)"
+					:loading="loadedOf(item.collection).loading"
+					:failed="loadedOf(item.collection).failed === true"
+					:app="currentContribution ? currentContribution.app || '' : ''"
+					:nav="nav"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang"
+					:today="today || undefined"
+					@navigate="$emit('navigate', $event)"
+					@retry="reload(item.collection)" />
+
+				<CasesBlock
+					v-else-if="item.kind === 'cases'"
+					:block="item.block"
+					:collection="item.collection"
+					:rows="rowsOf(item)"
+					:loading="loadedOf(item.collection).loading"
+					:failed="loadedOf(item.collection).failed === true"
+					:api="api"
+					:app="currentContribution ? currentContribution.app || '' : ''"
+					:nav="nav"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang"
+					:today="today || undefined"
+					@navigate="$emit('navigate', $event)"
+					@retry="reload(item.collection)" />
+
+				<StepsBlock
+					v-else-if="item.kind === 'steps'"
+					:block="item.block"
+					:collection="item.collection"
+					:record="activeRecord"
+					:api="api"
+					:level="sectionLevel"
+					:route="
+						item.block.page ? tileTarget(item.block).route || '' : ''
+					"
+					:t="tr"
+					:locale="lang"
+					:today="today || undefined"
+					@navigate="$emit('navigate', $event)" />
+
+				<DocumentsBlock
+					v-else-if="item.kind === 'documents'"
+					:block="item.block"
+					:collection="item.collection"
+					:record="activeRecord"
+					:api="api"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang" />
+
+				<TimelineBlock
+					v-else-if="item.kind === 'timeline'"
+					:block="item.block"
+					:collection="item.collection"
+					:record="activeRecord"
+					:api="api"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang" />
+
+				<InboxBlock
+					v-else-if="item.kind === 'inbox'"
+					:block="item.block"
+					:record="activeRecord"
+					:api="api"
+					:app="currentContribution ? currentContribution.app || '' : ''"
+					:nav="nav"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang"
+					:today="today || undefined"
+					@navigate="$emit('navigate', $event)" />
+
+				<SlotHost
+					v-else-if="item.kind === 'citizenCase'"
+					name="citizenCase"
+					:block="item.block"
+					:collection="item.collection"
+					:quietWhenEmpty="item.quietWhenEmpty === true"
+					:row="selected[item.collection.id] || null"
+					:api="api"
+					:t="tr"
+					:locale="lang" />
+
+				<SlotHost
+					v-else-if="item.kind === 'timedTask'"
+					name="timedTask"
+					:block="item.block"
+					:collection="item.collection"
+					:app="currentContribution ? currentContribution.app || '' : ''"
+					:attempts="loadedOf(item.collection).objects"
 					:api="api"
 					:t="tr"
 					:locale="lang"
-					@done="afterWrite(item.collection)"
-					@close="pending = null" />
-			</div>
+					@changed="afterWrite(item.collection)" />
 
-			<DetailCard
-				v-else-if="item.kind === 'detail'"
-				:collection="item.collection"
-				:row="detailRow(item)"
-				:quietWhenEmpty="item.quietWhenEmpty === true"
-				:api="api"
-				:proposeAction="item.proposeAction"
-				:label="item.block.label || ''"
-				:level="sectionLevel"
-				:showTimeline="item.block.timeline !== false"
-				:t="tr"
-				:locale="lang" />
-
-			<!-- One figure as a segmented bar (site-school-blocks). -->
-			<SegmentedFigure
-				v-else-if="item.kind === 'kpi' && item.block.display === 'segmented'"
-				:row="kpiRow(item)"
-				:block="item.block"
-				:label="item.block.label || ''"
-				:level="sectionLevel"
-				:loading="loadedOf(item.collection).loading"
-				:t="tr"
-				:locale="lang" />
-
-			<KpiCards
-				v-else-if="item.kind === 'kpi'"
-				:cards="item.block.cards || []"
-				:row="kpiRow(item)"
-				:loading="loadedOf(item.collection).loading"
-				:label="item.block.label || ''"
-				:caption="item.block.caption || null"
-				:level="sectionLevel"
-				:t="tr"
-				:locale="lang" />
-
-			<!-- One day as a timetable (calendar-timetable-display). -->
-			<TimetableDay
-				v-else-if="
-					item.kind === 'calendar' && item.block.display === 'timetable'
-				"
-				:items="calendarOf(item)"
-				:range="item.block.range || 'day'"
-				:firstLabel="item.block.firstLabel || ''"
-				:loading="calendarLoading(item)"
-				:label="item.block.label || ''"
-				:level="sectionLevel"
-				:today="today || undefined"
-				:t="tr"
-				:locale="lang" />
-
-			<!-- The same items as date tiles (site-school-blocks). -->
-			<CalendarTiles
-				v-else-if="
-					item.kind === 'calendar' && item.block.display === 'tiles'
-				"
-				:items="calendarOf(item)"
-				:range="item.block.range || ''"
-				:loading="calendarLoading(item)"
-				:label="item.block.label || ''"
-				:level="sectionLevel"
-				:today="today || undefined"
-				:t="tr"
-				:locale="lang" />
-
-			<CalendarBlock
-				v-else-if="item.kind === 'calendar'"
-				:items="calendarOf(item)"
-				:loading="calendarLoading(item)"
-				:label="item.block.label || ''"
-				:level="sectionLevel"
-				:today="today || undefined"
-				:t="tr"
-				:locale="lang" />
-
-			<NewsBlock
-				v-else-if="item.kind === 'news'"
-				:api="api"
-				:limit="item.block.limit || 3"
-				:label="item.block.label || ''"
-				:level="sectionLevel"
-				:record="activeRecord"
-				:contribution="currentContribution"
-				:groups="openRecordGroups"
-				:initialFeed="initialFeed"
-				:t="tr"
-				:locale="lang"
-				@navigate="$emit('navigate', $event)" />
-
-			<!-- What the resident still has to do and their newest messages
-			     (site-mijn-omgeving-components), loaded on demand. -->
-			<TasksBlock
-				v-else-if="item.kind === 'tasks'"
-				:block="item.block"
-				:collection="item.collection"
-				:rows="rowsOf(item)"
-				:loading="loadedOf(item.collection).loading"
-				:failed="loadedOf(item.collection).failed === true"
-				:app="currentContribution ? currentContribution.app || '' : ''"
-				:nav="nav"
-				:level="sectionLevel"
-				:t="tr"
-				:locale="lang"
-				:today="today || undefined"
-				@navigate="$emit('navigate', $event)"
-				@retry="reload(item.collection)" />
-
-			<CasesBlock
-				v-else-if="item.kind === 'cases'"
-				:block="item.block"
-				:collection="item.collection"
-				:rows="rowsOf(item)"
-				:loading="loadedOf(item.collection).loading"
-				:failed="loadedOf(item.collection).failed === true"
-				:api="api"
-				:app="currentContribution ? currentContribution.app || '' : ''"
-				:nav="nav"
-				:level="sectionLevel"
-				:t="tr"
-				:locale="lang"
-				:today="today || undefined"
-				@navigate="$emit('navigate', $event)"
-				@retry="reload(item.collection)" />
-
-			<StepsBlock
-				v-else-if="item.kind === 'steps'"
-				:block="item.block"
-				:collection="item.collection"
-				:record="activeRecord"
-				:api="api"
-				:level="sectionLevel"
-				:route="item.block.page ? tileTarget(item.block).route || '' : ''"
-				:t="tr"
-				:locale="lang"
-				:today="today || undefined"
-				@navigate="$emit('navigate', $event)" />
-
-			<DocumentsBlock
-				v-else-if="item.kind === 'documents'"
-				:block="item.block"
-				:collection="item.collection"
-				:record="activeRecord"
-				:api="api"
-				:level="sectionLevel"
-				:t="tr"
-				:locale="lang" />
-
-			<TimelineBlock
-				v-else-if="item.kind === 'timeline'"
-				:block="item.block"
-				:collection="item.collection"
-				:record="activeRecord"
-				:api="api"
-				:level="sectionLevel"
-				:t="tr"
-				:locale="lang" />
-
-			<InboxBlock
-				v-else-if="item.kind === 'inbox'"
-				:block="item.block"
-				:record="activeRecord"
-				:api="api"
-				:app="currentContribution ? currentContribution.app || '' : ''"
-				:nav="nav"
-				:level="sectionLevel"
-				:t="tr"
-				:locale="lang"
-				:today="today || undefined"
-				@navigate="$emit('navigate', $event)" />
-
-			<SlotHost
-				v-else-if="item.kind === 'citizenCase'"
-				name="citizenCase"
-				:block="item.block"
-				:collection="item.collection"
-				:quietWhenEmpty="item.quietWhenEmpty === true"
-				:row="selected[item.collection.id] || null"
-				:api="api"
-				:t="tr"
-				:locale="lang" />
-
-			<SlotHost
-				v-else-if="item.kind === 'timedTask'"
-				name="timedTask"
-				:block="item.block"
-				:collection="item.collection"
-				:app="currentContribution ? currentContribution.app || '' : ''"
-				:attempts="loadedOf(item.collection).objects"
-				:api="api"
-				:t="tr"
-				:locale="lang"
-				@changed="afterWrite(item.collection)" />
-
-			<SlotHost
-				v-else-if="item.kind === 'action' || item.kind === 'cta'"
-				name="action"
-				:block="withTitle(item.block)"
-				:action="item.action"
-				:contribution="currentContribution"
-				:api="api"
-				:t="tr"
-				:locale="lang"
-				@created="(object, written) => afterWrite(written || item.action)" />
-		</template>
+				<SlotHost
+					v-else-if="item.kind === 'action' || item.kind === 'cta'"
+					name="action"
+					:block="withTitle(item.block)"
+					:action="item.action"
+					:contribution="currentContribution"
+					:api="api"
+					:t="tr"
+					:locale="lang"
+					@created="
+						(object, written) => afterWrite(written || item.action)
+					" />
+			</BlockShell>
+		</BlockShell>
 	</section>
 </template>
 
@@ -485,6 +516,7 @@ import KpiCards from '../../components/collections/KpiCards.vue'
 import NewsBlock from '../../components/collections/NewsBlock.vue'
 import RichTextBlock from '../../components/collections/RichTextBlock.vue'
 import SlotHost from '../../components/collections/SlotHost.vue'
+import BlockShell from './BlockShell.vue'
 import {
 	anyGrouped,
 	groupFieldOf,
@@ -522,6 +554,7 @@ import { ctaLabel, fillTemplate } from '../../components/mijn/template.js'
 import { keepRecordToOpen, sessionStore as tabStore } from '../inbox/inbox.js'
 import { createCollectionLoader, openRecordState } from './collectionLoader.js'
 import { resolveBlocks } from './pageBlocks.js'
+import { blockClasses, blockPlaces, placeStyle } from './pageLayout.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
 
 /**
@@ -562,6 +595,7 @@ export default {
 	name: 'ContributionPage',
 
 	components: {
+		BlockShell,
 		CalendarBlock,
 		CollectionTable,
 		DetailCard,
@@ -818,6 +852,17 @@ export default {
 		 * @return {Array<object>}
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
 		 */
+		/**
+		 * Where each visible block stands (mijn-overview-follows-the-boards).
+		 *
+		 * @return {{columns: boolean, places: object}}
+		 *
+		 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-block-may-stand-in-a-column-and-in-a-frame
+		 */
+		layout() {
+			return blockPlaces(this.visibleBlocks)
+		},
+
 		visibleBlocks() {
 			const record = this.recordPage
 			if (!record) {
@@ -1156,6 +1201,66 @@ export default {
 		 *         '' when the page is not offered.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
+		/**
+		 * Whether a block gets a box of its own: on a page with columns, or
+		 * when it declares a frame or a link (mijn-overview-follows-the-boards).
+		 *
+		 * @param {object} item A visible block.
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-block-may-stand-in-a-column-and-in-a-frame
+		 */
+		shellWraps(item) {
+			return (
+				this.layout.columns
+				|| Boolean(item.block?.frame)
+				|| Boolean(this.moreOf(item))
+			)
+		},
+
+		/**
+		 * @param {object} block A block.
+		 * @return {Array<string>} Its wrapper classes (pageLayout.js).
+		 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-block-may-stand-in-a-column-and-in-a-frame
+		 */
+		blockClasses(block) {
+			return blockClasses(block)
+		},
+
+		/**
+		 * @param {object} layout From blockPlaces().
+		 * @param {number} index The block's index.
+		 * @return {object|undefined} Its place in the grid (pageLayout.js).
+		 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-block-may-stand-in-a-column-and-in-a-frame
+		 */
+		placeStyle(layout, index) {
+			return placeStyle(layout, index)
+		},
+
+		/**
+		 * A block's "Alle ..." link: its label, the route of the page or
+		 * site route it names, and that route's address; null when the block
+		 * declares none or its page is not offered.
+		 *
+		 * @param {object} item A visible block.
+		 * @return {{label: string, route: string, href: string}|null}
+		 *
+		 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-block-may-carry-a-link-to-all-of-it
+		 */
+		moreOf(item) {
+			const more = item.block?.more
+			if (!more || !more.label) {
+				return null
+			}
+			const { route } = this.tileTarget({
+				route: more.route,
+				page: more.page,
+			})
+			return route
+				? { label: more.label, route, href: this.hrefOf(route) }
+				: null
+		},
+
 		tileTarget(block) {
 			if (block.route) {
 				return { route: block.route, carriesRecord: false }

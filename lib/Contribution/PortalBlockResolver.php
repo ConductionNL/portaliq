@@ -107,7 +107,9 @@ class PortalBlockResolver {
 				collections: $collections
 			);
 			if ($entry !== null) {
-				$out[] = $entry;
+				// Where the block stands, its frame and its link to all of it
+				// (mijn-overview-follows-the-boards).
+				$out[] = $entry + (new BlockLayoutKeys())->keys(block: (array)$block, pageIds: $pageIds);
 			}
 		}
 
