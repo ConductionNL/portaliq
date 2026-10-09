@@ -65,7 +65,7 @@
 				:variant="headerVariant"
 				:menus="headerMenus"
 				:showNavigation="!menuOnPage"
-				:currentRoute="route"
+				:currentRoute="menuRoute"
 				:breadcrumbs="breadcrumbs"
 				:session="session"
 				:sessionLabel="sessionLabel"
@@ -101,7 +101,8 @@
 				:widgets="[block]"
 				v-bind="gridContext"
 				@navigate="go"
-				@search="goSearch" />
+				@search="goSearch"
+				@subject="onSubject" />
 		</template>
 
 		<!-- The warning before an inactivity sign-out (signin-session-idle-warning-and-sso T06). -->
@@ -209,7 +210,8 @@
 					:widgets="regions.hero"
 					v-bind="gridContext"
 					@navigate="go"
-					@search="goSearch" />
+					@search="goSearch"
+					@subject="onSubject" />
 
 				<!--
 					THE SIDE MENU (site-navigation-block). When the side region
@@ -230,7 +232,8 @@
 							:widgets="regions.aside"
 							v-bind="gridContext"
 							@navigate="go"
-							@search="goSearch" />
+							@search="goSearch"
+							@subject="onSubject" />
 					</aside>
 					<div class="pq-site__content">
 						<!-- A signed link opens its one act before any page (REQ-GST-002). -->
@@ -406,7 +409,8 @@
 								:widgets="regions.main"
 								v-bind="gridContext"
 								@navigate="go"
-								@search="goSearch" />
+								@search="goSearch"
+								@subject="onSubject" />
 
 							<div v-else class="container">
 								<MarkdownBlock
@@ -433,7 +437,8 @@
 						:widgets="regions.aside"
 						v-bind="gridContext"
 						@navigate="go"
-						@search="goSearch" />
+						@search="goSearch"
+						@subject="onSubject" />
 				</aside>
 
 				<!--
@@ -484,7 +489,8 @@
 				:widgets="[block]"
 				v-bind="gridContext"
 				@navigate="go"
-				@search="goSearch" />
+				@search="goSearch"
+				@subject="onSubject" />
 		</template>
 
 		<!--
@@ -581,6 +587,7 @@ import {
 	navigationGroups,
 	sideMenuOf,
 } from './lib/siteNavigation.js'
+import { menuRouteOf, subjectCrumbs, subjectOf } from './lib/subjectTrail.js'
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
@@ -742,6 +749,8 @@ export default {
 			routeParam: '',
 			// The title of the shared dossier on screen, once it is read.
 			sharedDossierTitle: '',
+			// What a block on the page shows, told by it (site-article-page-follows-the-board).
+			subject: null,
 			loading: true,
 			error: null,
 			// The editing context for the route on screen, or null for every
@@ -858,7 +867,22 @@ export default {
 				crumbs.push({ route, label, href: this.hrefForRoute(route) })
 			})
 
-			return crumbs
+			return subjectCrumbs(crumbs, this.subject, {
+				labelFor: (route) => menuLabelFor(this.menus, route),
+				hrefFor: (route) => this.hrefForRoute(route),
+			})
+		},
+
+		/**
+		 * The route the header menu marks: inside the section of the subject
+		 * on screen when a block told one, else the route.
+		 *
+		 * @return {string} The route.
+		 *
+		 * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+		 */
+		menuRoute() {
+			return menuRouteOf(this.route, this.subject)
 		},
 
 		/**
@@ -1894,6 +1918,9 @@ export default {
 			if (this.sharedDossierRoute) {
 				pageName = this.sharedDossierTitle || this.t('Shared dossier')
 			}
+			if (this.subject) {
+				pageName = this.subject.title
+			}
 			document.title =
 				pageName && pageName !== portalName
 					? `${pageName} - ${portalName}`
@@ -2015,6 +2042,20 @@ export default {
 		},
 
 		/**
+		 * Take what a block on the page shows (a news article's title and
+		 * section) for the breadcrumb, the menu and the tab.
+		 *
+		 * @param {object|null} told What the block emitted.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+		 */
+		onSubject(told) {
+			this.subject = subjectOf(told)
+			this.applyDocumentTitle()
+		},
+
+		/**
 		 * Take the shared dossier's title for the tab and the breadcrumb.
 		 *
 		 * @param {string} title The dossier's title, or ''.
@@ -2039,6 +2080,7 @@ export default {
 		 */
 		async loadRoute(route, { fresh = false } = {}) {
 			this.signInNeeded = false
+			this.subject = null
 			// The signed-in area renders from the session, not from a CMS
 			// page, so no page is read for it.
 			if (isAccountRoute(route)) {
