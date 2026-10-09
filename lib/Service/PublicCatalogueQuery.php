@@ -63,7 +63,8 @@ class PublicCatalogueQuery {
 	 * (end) date is today or later, with the day given as `today`.
 	 *
 	 * @param array<int, array<string, mixed>> $items  The portal's items.
-	 * @param array<string, mixed>             $params `q`, `types`, `filters`, `sort`, `page`, `limit`, `upcoming`, `today`, `kindFacet`, `kindNews`, `audienceFacet`.
+	 * @param array<string, mixed>             $params `q`, `types`, `filters`, `sort`, `page`, `limit`, `upcoming`, `today`,
+	 *                                                 `kindFacet`, `kindNews`, `audienceFacet`.
 	 *
 	 * @return array{items: array<int, array<string, mixed>>, total: int, page: int, pages: int, facets: array<int, array<string, mixed>>}
 	 *

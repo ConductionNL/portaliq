@@ -174,7 +174,7 @@ class PublicCatalogueTest extends TestCase {
 		$this->assertSame(['news:n1', 'news:n2'], array_column($news['items'], 'id'));
 
 		$this->assertSame(['Plaats', 'Start in'], array_column($query->run($items, [])['facets'], 'label'), 'nothing asked, nothing added');
-		$this->assertSame(['Praktijkhal Zuiddrecht', 'Bij u op de zaak'], array_column(array_column($query->run($items, ['kindFacet' => 'Plaats'])['facets'], 'values', 'label')['Plaats'], 'value'), 'a declared facet is not overwritten by the kind');
+		$this->assertSame(['Praktijkhal Zuiddrecht', 'Bij u op de zaak'], array_column(array_column($query->run($items, ['kindFacet' => 'Plaats', 'types' => ['course']])['facets'], 'values', 'label')['Plaats'], 'value'), 'a declared facet is not overwritten by the kind');
 
 		$endpoint = $this->controller(modes: ['public'])->index('warmtepompacademie', facetsBy: '{"kind":"Soort"}');
 		$this->assertContains('Soort', array_column($endpoint->getData()['facets'], 'label'));

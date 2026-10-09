@@ -84,7 +84,8 @@ class ContentCatalogueController extends Controller {
 	 * @param int         $page     The page, from 1.
 	 * @param int         $limit    Results per page, at most 50.
 	 * @param string      $upcoming `1` for only the items whose date is today or later.
-	 * @param string      $facetsBy The facets to add, as JSON `{kind, news, audience}`: the label of a facet by item kind ("Soort"), a news item's kind word in it ("Nieuws"), and the label of a facet by a news item's audience ("Voor wie").
+	 * @param string      $facetsBy The facets to add, as JSON `{kind, news, audience}`: a facet by kind ("Soort"),
+	 *                              a news item's kind in it ("Nieuws"), a facet by a news item's audience ("Voor wie").
 	 *
 	 * @return JSONResponse `{items, total, page, pages, facets}`, or 401 / 403 / 404.
 	 *
