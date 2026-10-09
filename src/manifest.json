@@ -45,7 +45,7 @@
     {
       "id": "Dashboard",
       "label": "Dashboard",
-      "icon": "HomeOutline",
+      "icon": "ViewDashboardOutline",
       "route": "Dashboard",
       "order": 10
     },
@@ -190,7 +190,7 @@
       "label": "Reports",
       "icon": "ChartBoxOutline",
       "route": "Reports",
-      "section": "settings",
+      "section": "footer",
       "order": 95,
       "visibleIf": {
         "access.admin": true
