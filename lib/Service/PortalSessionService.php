@@ -673,22 +673,34 @@ class PortalSessionService {
 	 * expired bearer, malformed bearer, or past the absolute cap — all
 	 * indistinguishable to the caller, exactly like `resolveFromBearer()`.
 	 *
+	 * With an audience (read from the account, never the request), the new
+	 * session carries it instead (invitation-joins-an-unbound-account); the
+	 * session's own audience and `supplier` are refused.
+	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 * @param string      $audience            The audience the account holds now, or '' to keep the session's.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The NEW
 	 *         bearer token, its id and when the rotated session ends, or null on any rejection.
 	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */
-	public function refreshSession(?string $authorizationHeader): ?array {
+	public function refreshSession(?string $authorizationHeader, string $audience = ''): ?array {
 		// Resolving the bearer already fails closed on: unconfigured secret,
 		// absent/malformed/forged bearer, expired bearer, and revoked/unknown
 		// jti — refresh inherits every one of those rejections for free.
 		$subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);
-		if ($subject === null) {
+		if ($subject === null || ($audience !== '' && in_array($audience, ['supplier', (string)($subject['audience'] ?? '')], true) === true)) {
 			return null;
+		}
+
+		// A new audience brings that audience's role, never the old one's.
+		if ($audience !== '') {
+			$subject['audience'] = $audience;
+			$subject['roles']    = [$audience . ':read'];
 		}
 
 		// A refresh carries the branch and its restriction unchanged: it
@@ -772,11 +784,7 @@ class PortalSessionService {
 			return null;
 		}
 
-		// Rotate: the OLD bearer stops validating from here on. A quiet
-		// revoke (no separate `logout` audit entry) — the visible event for
-		// this rotation is `refresh`, recorded once, below.
-		$this->revokeQuietly(jti: $oldJti);
-
+		// `refresh` is recorded before the old bearer is revoked.
 		$this->auditor->record(
 			verb: 'refresh',
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
@@ -786,6 +794,13 @@ class PortalSessionService {
 			id: $issued['jti'],
 			jti: $oldJti
 		);
+
+		// A quiet revoke; a failed one never signs the person out.
+		try {
+			$this->revokeQuietly(jti: $oldJti);
+		} catch (Throwable $exception) {
+			$this->logger->warning('Portaliq: the old bearer was not revoked after a rotation', ['exception' => get_class($exception)]);
+		}
 
 		return $issued;
 	}//end rotate()
