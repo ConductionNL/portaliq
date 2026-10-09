@@ -86,7 +86,7 @@ class ActionReminderService {
 			return false;
 		}
 
-		$day = DateTimeImmutable::createFromFormat('!Y-m-d', $today);
+		$day = date_create_immutable_from_format('!Y-m-d', $today);
 		if ($day === false) {
 			return false;
 		}

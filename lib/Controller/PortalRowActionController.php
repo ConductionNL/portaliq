@@ -41,6 +41,7 @@ use OCA\Portaliq\Contribution\AttachedActionResolver;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\RowActionInputs;
 use OCA\Portaliq\Contribution\RowActionResolver;
+use OCA\Portaliq\Contribution\RowIdentifier;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -132,7 +133,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return $refusal;
 		}
 
-		$rowId = (new RowActionResolver())->rowIdOf(row: $row, fallback: $id);
+		$rowId = (new RowIdentifier())->idFor(row: $row, fallback: $id);
 		$body = $this->forwardBody(match: $match, subject: $subject, rowId: $rowId);
 		if ($body === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);

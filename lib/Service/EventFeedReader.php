@@ -98,10 +98,14 @@ class EventFeedReader {
 
 			$row['myRsvp'] = $this->myRsvp(eventId: $this->rowId(row: $row), subjectRef: $subjectRef, rsvps: $rsvps);
 			if (($row['askSeats'] ?? false) === true) {
+				if ($everyRsvp === null) {
+					$everyRsvp = $this->findAll(schema: 'eventRsvp');
+				}
+
 				$row['seatsTaken'] = EventRsvpService::seatsTaken(
 					answers: array_values(
 						array_filter(
-							$everyRsvp ??= $this->findAll(schema: 'eventRsvp'),
+							$everyRsvp,
 							fn (array $rsvp): bool => (string)($rsvp['eventRef'] ?? '') === $this->rowId(row: $row)
 						)
 					)

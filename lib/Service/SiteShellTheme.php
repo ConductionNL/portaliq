@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Theme\PortalThemeParents;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 
@@ -99,7 +100,7 @@ class SiteShellTheme {
 			return [];
 		}
 
-		return $this->themeResolver->parentStylesheetsFor(theme: (string)($portal['theme'] ?? ''));
+		return (new PortalThemeParents(resolver: $this->themeResolver))->stylesheetsFor(theme: (string)($portal['theme'] ?? ''));
 	}//end parents()
 
 	/**

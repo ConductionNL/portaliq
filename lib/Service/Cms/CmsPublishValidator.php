@@ -56,16 +56,7 @@ class CmsPublishValidator {
 		$blocking = [];
 		$warnings = [];
 
-		$byRoute = [];
-		foreach ($pages as $page) {
-			$route = $this->normalise(route: (string)($page['route'] ?? ''));
-			if ($route === '') {
-				continue;
-			}
-
-			$byRoute[$route][] = (($page['status'] ?? '') === 'published');
-		}
-
+		$byRoute = $this->byRoute(pages: $pages);
 		foreach ($byRoute as $route => $states) {
 			if (count($states) > 1) {
 				$blocking[] = ['code' => self::DUPLICATE_ROUTE, 'route' => $route];
@@ -94,6 +85,27 @@ class CmsPublishValidator {
 
 		return ['blocking' => $this->unique(rows: $blocking), 'warnings' => $this->unique(rows: $warnings)];
 	}//end check()
+
+	/**
+	 * Whether each page of a route is published, by normalised route.
+	 *
+	 * @param array<int, array<string, mixed>> $pages The pages.
+	 *
+	 * @return array<string, array<int, bool>>
+	 */
+	private function byRoute(array $pages): array {
+		$byRoute = [];
+		foreach ($pages as $page) {
+			$route = $this->normalise(route: (string)($page['route'] ?? ''));
+			if ($route === '') {
+				continue;
+			}
+
+			$byRoute[$route][] = (($page['status'] ?? '') === 'published');
+		}
+
+		return $byRoute;
+	}//end byRoute()
 
 	/**
 	 * The in-site links of every menu item and sub-item.

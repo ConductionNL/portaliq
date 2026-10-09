@@ -86,16 +86,9 @@ class PortalProvisioningService {
 			return ['status' => self::UNAVAILABLE, 'dns' => null];
 		}
 
-		foreach ($this->store->find(schema: 'portal', filters: []) as $portal) {
-			if (($portal['slug'] ?? null) === $slug) {
-				return ['status' => self::SLUG_TAKEN, 'dns' => null];
-			}
-
-			foreach ((array)($portal['domains'] ?? []) as $domain) {
-				if (strtolower((string)($domain['hostname'] ?? '')) === $host) {
-					return ['status' => self::HOST_TAKEN, 'dns' => null];
-				}
-			}
+		$taken = $this->takenBy(slug: $slug, host: $host);
+		if ($taken !== null) {
+			return ['status' => $taken, 'dns' => null];
 		}
 
 		$token   = 'portaliq-site-verification='.bin2hex(random_bytes(16));
@@ -132,6 +125,30 @@ class PortalProvisioningService {
 
 		return ['status' => self::CREATED, 'dns' => ['name' => PortalDomainVerifier::PREFIX.$host, 'value' => $token]];
 	}//end provision()
+
+	/**
+	 * Whether a portal already holds the slug or lists the host.
+	 *
+	 * @param string $slug The wanted slug.
+	 * @param string $host The wanted host.
+	 *
+	 * @return string|null SLUG_TAKEN, HOST_TAKEN, or null when both are free.
+	 */
+	private function takenBy(string $slug, string $host): ?string {
+		foreach ($this->store->find(schema: 'portal', filters: []) as $portal) {
+			if (($portal['slug'] ?? null) === $slug) {
+				return self::SLUG_TAKEN;
+			}
+
+			foreach ((array)($portal['domains'] ?? []) as $domain) {
+				if (strtolower((string)($domain['hostname'] ?? '')) === $host) {
+					return self::HOST_TAKEN;
+				}
+			}
+		}
+
+		return null;
+	}//end takenBy()
 
 	/**
 	 * Whether a value is a plain hostname: labels of letters, digits and hyphens.

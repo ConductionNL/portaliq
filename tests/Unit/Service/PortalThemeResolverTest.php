@@ -17,6 +17,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
+use OCA\Portaliq\Service\Theme\PortalThemeParents;
 use OCA\Thematiq\Service\CustomTokenSetValidator;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -758,8 +759,8 @@ class PortalThemeResolverTest extends TestCase {
 			])
 		);
 
-		$this->assertSame(['tokens/lasuite'], $this->resolver()->parentStylesheetsFor('frankendesk'));
-		$this->assertSame([], $this->resolver()->parentStylesheetsFor('vng'));
+		$this->assertSame(['tokens/lasuite'], (new PortalThemeParents($this->resolver()))->stylesheetsFor('frankendesk'));
+		$this->assertSame([], (new PortalThemeParents($this->resolver()))->stylesheetsFor('vng'));
 	}//end testAParentIsLinkedBeforeItsChild()
 
 
@@ -788,8 +789,8 @@ class PortalThemeResolverTest extends TestCase {
 			])
 		);
 
-		$this->assertSame(['tokens/b'], $this->resolver()->parentStylesheetsFor('a'));
-		$this->assertSame(['tokens/c4', 'tokens/c3', 'tokens/c2', 'tokens/c1'], $this->resolver()->parentStylesheetsFor('c0'));
+		$this->assertSame(['tokens/b'], (new PortalThemeParents($this->resolver()))->stylesheetsFor('a'));
+		$this->assertSame(['tokens/c4', 'tokens/c3', 'tokens/c2', 'tokens/c1'], (new PortalThemeParents($this->resolver()))->stylesheetsFor('c0'));
 	}//end testACycleLinksEachSetOnceAndAChainStopsAtFourHops()
 
 

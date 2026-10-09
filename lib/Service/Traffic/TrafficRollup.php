@@ -93,22 +93,7 @@ class TrafficRollup {
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
 		$pages = $this->journeys->pages(sessions: $sessions, engaged: $totals['engagedBy']);
-		// NULL, NOT ZERO, in cookieless mode (Ruben, decision 2). A hash
-		// that does not survive the day cannot say whether it was here
-		// yesterday, and a zero would read as "nobody came back". The same
-		// for accounts on a portal that does not link them.
-		$newVisitors = null;
-		$returningVisitors = null;
-		$accounts = null;
-		if (($options['persistClientId'] ?? false) === true) {
-			$newVisitors = $totals['newVisitors'];
-			$returningVisitors = $totals['returningVisitors'];
-		}
-
-		if (($options['accountLinking'] ?? false) === true) {
-			$accounts = $totals['accounts'];
-		}
-
+		$visitorCounts = $this->visitorCounts(totals: $totals, options: $options);
 		$goalDefinitions = $this->definitions(options: $options, key: 'goals');
 
 		$zeroResults = $this->dimensions->zeroResults(sessions: $sessions);
@@ -122,9 +107,9 @@ class TrafficRollup {
 			'pageViews' => $totals['pageViews'],
 			'sessions' => count($sessions),
 			'visitors' => $totals['visitors'],
-			'newVisitors' => $newVisitors,
-			'returningVisitors' => $returningVisitors,
-			'accounts' => $accounts,
+			'newVisitors' => $visitorCounts['new'],
+			'returningVisitors' => $visitorCounts['returning'],
+			'accounts' => $visitorCounts['accounts'],
 			'engagedSessions' => $totals['engaged'],
 			'avgEngagementSeconds' => $this->mean(sum: $totals['seconds'], count: count($sessions)),
 			'bounceRate' => $this->bounceRate(engaged: $totals['engaged'], sessions: count($sessions)),
@@ -194,6 +179,33 @@ class TrafficRollup {
 			'aggregatedAt' => $aggregatedAt,
 			'lastEventAt' => $totals['lastEventAt'],
 		];
+	}
+
+	/**
+	 * The new, returning and linked-account counts the portal's mode allows.
+	 *
+	 * NULL, NOT ZERO, in cookieless mode (Ruben, decision 2). A hash
+	 * that does not survive the day cannot say whether it was here
+	 * yesterday, and a zero would read as "nobody came back". The same
+	 * for accounts on a portal that does not link them.
+	 *
+	 * @param array<string, mixed> $totals  The session totals.
+	 * @param array<string, mixed> $options The options.
+	 *
+	 * @return array{new: int|null, returning: int|null, accounts: int|null}
+	 */
+	private function visitorCounts(array $totals, array $options): array {
+		$counts = ['new' => null, 'returning' => null, 'accounts' => null];
+		if (($options['persistClientId'] ?? false) === true) {
+			$counts['new']       = $totals['newVisitors'];
+			$counts['returning'] = $totals['returningVisitors'];
+		}
+
+		if (($options['accountLinking'] ?? false) === true) {
+			$counts['accounts'] = $totals['accounts'];
+		}
+
+		return $counts;
 	}
 
 	/**

@@ -1166,7 +1166,7 @@ class PortalObjectReader {
 			return true;
 		}
 
-		if ($schema !== '' && SchemaTenancy::isOrganisationScoped(schema: $schema) === true) {
+		if ($schema !== '' && (new SchemaTenancy())->declaresOrganisation(schema: $schema) === true) {
 			return $rowOrganisation === $organisation;
 		}
 

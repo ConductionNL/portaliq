@@ -41,7 +41,7 @@ class SharedBlockPortals {
 	 *
 	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t03
 	 */
-	public static function isBlock(array $data): bool {
+	public function isBlock(array $data): bool {
 		if ((string)($data['organisation'] ?? '') === '' || (string)($data['portal'] ?? $data['slug'] ?? '') !== '') {
 			return false;
 		}
@@ -59,8 +59,8 @@ class SharedBlockPortals {
 	 *
 	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t03
 	 */
-	public static function slugsFor(array $data, array $portals): array {
-		if (self::isBlock(data: $data) === false) {
+	public function slugsFor(array $data, array $portals): array {
+		if ($this->isBlock(data: $data) === false) {
 			return [];
 		}
 

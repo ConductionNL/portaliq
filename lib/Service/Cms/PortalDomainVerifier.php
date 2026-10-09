@@ -73,7 +73,14 @@ class PortalDomainVerifier {
 		?Closure $lookup = null,
 	) {
 		$this->lookup = ($lookup ?? static function (string $name): array {
-			$records = @dns_get_record($name, DNS_TXT);
+			// A failed lookup warns; the handler swallows it so the miss reads as no record.
+			set_error_handler(static fn (): bool => true);
+			try {
+				$records = dns_get_record($name, DNS_TXT);
+			} finally {
+				restore_error_handler();
+			}
+
 			if (is_array($records) === false) {
 				return [];
 			}

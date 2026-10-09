@@ -73,6 +73,13 @@ class PublicRecordReader {
 	private readonly ICache $cache;
 
 	/**
+	 * Holds a provider's answer to the contract's plain shape.
+	 *
+	 * @var PublicRecordShape
+	 */
+	private readonly PublicRecordShape $shape;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalProviderLocator $locator Finds the contributing app's provider.
@@ -85,6 +92,7 @@ class PublicRecordReader {
 		private readonly LoggerInterface $logger,
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_public_records');
+		$this->shape = new PublicRecordShape();
 	}//end __construct()
 
 	/**
@@ -154,7 +162,7 @@ class PublicRecordReader {
 			return null;
 		}
 
-		$record = $this->shapeRecord(answer: $answer);
+		$record = $this->shape->record(answer: $answer);
 		$this->cache->set($key, $record, self::TTL);
 		return $record;
 	}//end record()
@@ -261,13 +269,17 @@ class PublicRecordReader {
 	private function listEntries(array $answer): array {
 		$entries = [];
 		foreach ($answer as $row) {
-			if (is_array($row) === false || $this->text(value: ($row['id'] ?? null)) === '' || $this->text(value: ($row['title'] ?? null)) === '') {
+			if (is_array($row) === false) {
+				continue;
+			}
+
+			if ($this->shape->text(value: ($row['id'] ?? null)) === '' || $this->shape->text(value: ($row['title'] ?? null)) === '') {
 				continue;
 			}
 
 			$entry = [];
 			foreach (self::LIST_KEYS as $key) {
-				$value = $this->text(value: ($row[$key] ?? null));
+				$value = $this->shape->text(value: ($row[$key] ?? null));
 				if ($value !== '') {
 					$entry[$key] = $value;
 				}
@@ -282,78 +294,4 @@ class PublicRecordReader {
 		return $entries;
 	}//end listEntries()
 
-	/**
-	 * A record as `{title, subtitle?, summary[], columns[], rows[], note?}`, plain values only.
-	 *
-	 * @param array<string, mixed> $answer The provider's record.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function shapeRecord(array $answer): array {
-		$record = ['title' => $this->text(value: ($answer['title'] ?? null))];
-		foreach (['subtitle', 'note'] as $key) {
-			$value = $this->text(value: ($answer[$key] ?? null));
-			if ($value !== '') {
-				$record[$key] = $value;
-			}
-		}
-
-		$record['summary'] = [];
-		foreach ((array)($answer['summary'] ?? []) as $card) {
-			if (is_array($card) === true && $this->text(value: ($card['label'] ?? null)) !== '') {
-				$record['summary'][] = [
-					'label'  => $this->text(value: $card['label']),
-					'value'  => $this->text(value: ($card['value'] ?? null)),
-					'detail' => $this->text(value: ($card['detail'] ?? null)),
-				];
-			}
-		}
-
-		$record['columns'] = [];
-		foreach ((array)($answer['columns'] ?? []) as $column) {
-			if (is_array($column) === true && $this->text(value: ($column['key'] ?? null)) !== '') {
-				$record['columns'][] = ['key' => $this->text(value: $column['key']), 'label' => $this->text(value: ($column['label'] ?? $column['key']))];
-			}
-		}
-
-		$keys             = array_column($record['columns'], 'key');
-		$record['rows']   = [];
-		foreach ((array)($answer['rows'] ?? []) as $row) {
-			if (is_array($row) === false) {
-				continue;
-			}
-
-			$kept = [];
-			foreach ($keys as $key) {
-				$kept[$key] = $this->text(value: ($row[$key] ?? null));
-			}
-
-			if (is_string($row['subjectUrl'] ?? null) === true && preg_match('#^(https?://|/)#', $row['subjectUrl']) === 1) {
-				$kept['subjectUrl'] = $row['subjectUrl'];
-			}
-
-			$record['rows'][] = $kept;
-		}
-
-		return $record;
-	}//end shapeRecord()
-
-	/**
-	 * A string or number as text, anything else as ''; never markup.
-	 *
-	 * @param mixed $value A provider's value.
-	 *
-	 * @return string
-	 */
-	private function text(mixed $value): string {
-		if (is_int($value) === true || is_float($value) === true) {
-			return (string)$value;
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim(strip_tags($value));
-	}//end text()
 }//end class

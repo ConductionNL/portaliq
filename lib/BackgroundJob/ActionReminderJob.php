@@ -61,6 +61,9 @@ class ActionReminderJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/personal-action-list/tasks.md#t04
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; dropping the parameter breaks the override.
 	 */
 	protected function run($argument): void {
 		$this->reminders->remindDue();

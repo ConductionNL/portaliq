@@ -257,17 +257,7 @@ class PublicCatalogue {
 			return null;
 		}
 
-		$found = null;
-		foreach ($this->itemsFor(portal: $portal) as $item) {
-			if (str_starts_with((string)($item['id'] ?? ''), $appId . ':') === true
-				&& ($item['type'] ?? '') === $kind
-				&& ($item['slug'] ?? '') === $slug
-			) {
-				$found = $item;
-				break;
-			}
-		}
-
+		$found = $this->itemOf(portal: $portal, appId: $appId, kind: $kind, slug: $slug);
 		if ($found === null) {
 			return null;
 		}
@@ -291,4 +281,27 @@ class PublicCatalogue {
 
 		return ['item' => $found, 'detail' => $detail];
 	}//end detailFor()
+
+	/**
+	 * The item the app's index returns for this portal, of this kind, with this slug.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $appId  The app whose index holds the item.
+	 * @param string $kind   The item's `type` in the index.
+	 * @param string $slug   The item's slug.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function itemOf(string $portal, string $appId, string $kind, string $slug): ?array {
+		foreach ($this->itemsFor(portal: $portal) as $item) {
+			if (str_starts_with((string)($item['id'] ?? ''), $appId . ':') === true
+				&& ($item['type'] ?? '') === $kind
+				&& ($item['slug'] ?? '') === $slug
+			) {
+				return $item;
+			}
+		}
+
+		return null;
+	}//end itemOf()
 }//end class

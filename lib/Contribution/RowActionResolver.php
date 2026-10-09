@@ -272,27 +272,4 @@ class RowActionResolver {
 			&& str_starts_with($endpoint, '//') === false
 			&& str_contains($endpoint, '://') === false;
 	}//end isLocalEndpoint()
-
-	/**
-	 * The row's own identifier, else the path id it was read by.
-	 *
-	 * @param array<string, mixed> $row The proven row.
-	 * @param string $fallback The path id.
-	 *
-	 * @return string
-	 */
-	public function rowIdOf(array $row, string $fallback): string {
-		$self = ($row['@self'] ?? []);
-		if (is_array($self) === false) {
-			$self = [];
-		}
-
-		foreach ([($row['id'] ?? null), ($row['uuid'] ?? null), ($self['uuid'] ?? null), ($self['id'] ?? null)] as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return $fallback;
-	}//end rowIdOf()
 }//end class

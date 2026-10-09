@@ -58,6 +58,9 @@ class MailLogRetentionJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t05
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; dropping the parameter breaks the override.
 	 */
 	protected function run($argument): void {
 		$this->log->purgeExpired();

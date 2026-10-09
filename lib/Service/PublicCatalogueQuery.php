@@ -79,13 +79,11 @@ class PublicCatalogueQuery {
 		$categories = array_values(array_filter((array)($params['categories'] ?? []), 'is_string'));
 		$range      = (string)($params['range'] ?? '');
 
-		$base = array_values(
+		$scope = ['types' => $types, 'app' => $app, 'categories' => $categories, 'range' => $range, 'today' => $today];
+		$base  = array_values(
 			array_filter(
 				$items,
-				fn (array $item): bool => ($types === [] || in_array($item['type'] ?? '', $types, true) === true)
-					&& ($app === '' || str_starts_with((string)($item['id'] ?? ''), $app . ':') === true)
-					&& ($categories === [] || in_array((string)($item['category'] ?? ''), $categories, true) === true)
-					&& ($range !== 'schoolYear' || $this->inSchoolYear(item: $item, today: $today) === true)
+				fn (array $item): bool => $this->inScope(item: $item, scope: $scope)
 					&& $this->matches(item: $item, words: $words)
 					&& (($params['upcoming'] ?? false) !== true || $this->isUpcoming(item: $item, today: $today))
 			)
@@ -105,6 +103,21 @@ class PublicCatalogueQuery {
 			'facets' => $this->facets(items: $base, filters: $filters),
 		];
 	}//end query()
+
+	/**
+	 * Whether an item is of a wanted type, app and category, and in the wanted range.
+	 *
+	 * @param array<string, mixed> $item  The item.
+	 * @param array<string, mixed> $scope The `types`, `app`, `categories`, `range` and `today` the query asks for.
+	 *
+	 * @return bool
+	 */
+	private function inScope(array $item, array $scope): bool {
+		return ($scope['types'] === [] || in_array($item['type'] ?? '', $scope['types'], true) === true)
+			&& ($scope['app'] === '' || str_starts_with((string)($item['id'] ?? ''), $scope['app'] . ':') === true)
+			&& ($scope['categories'] === [] || in_array((string)($item['category'] ?? ''), $scope['categories'], true) === true)
+			&& ($scope['range'] !== 'schoolYear' || $this->inSchoolYear(item: $item, today: $scope['today']) === true);
+	}//end inScope()
 
 	/**
 	 * The words of a text, lower case and without accents.

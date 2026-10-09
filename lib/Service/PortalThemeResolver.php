@@ -190,51 +190,6 @@ class PortalThemeResolver {
 
 
 	/**
-	 * The sets a theme extends, parent first, as stylesheet paths that resolve.
-	 *
-	 * Follows `extends` in the catalogue for at most four hops and stops at a
-	 * set already in the chain, so a cycle links each set once. The theme
-	 * itself is not in the list. A parent that does not resolve is skipped.
-	 *
-	 * @param string $theme The portal's theme reference.
-	 *
-	 * @return array<int, string> Stylesheet paths relative to the theme app's `css/`, parent first.
-	 *
-	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-theme-that-extends-another-must-load-its-parent-first-req-ptb-003
-	 */
-	public function parentStylesheetsFor(string $theme): array {
-		$byId = [];
-		foreach ($this->catalogue() as $entry) {
-			$byId[(string)$entry['id']] = $entry;
-		}
-
-		$seen = [$theme => true];
-		$parents = [];
-		$current = $theme;
-		for ($hop = 0; $hop < 4; $hop++) {
-			$parent = (string)(($byId[$current] ?? [])['extends'] ?? '');
-			if ($parent === '' || isset($seen[$parent]) === true) {
-				break;
-			}
-
-			$seen[$parent] = true;
-			array_unshift($parents, $parent);
-			$current = $parent;
-		}
-
-		$sheets = [];
-		foreach ($parents as $parent) {
-			$sheet = $this->stylesheetFor(theme: $parent);
-			if ($sheet !== null) {
-				$sheets[] = $sheet;
-			}
-		}
-
-		return $sheets;
-	}//end parentStylesheetsFor()
-
-
-	/**
 	 * The theme app's own stylesheets the site links beside a set, relative
 	 * to its `css/` directory, each null when the installed theme app ships
 	 * none: its public bridge and its bundled faces.
@@ -331,13 +286,7 @@ class PortalThemeResolver {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 	 */
 	private function catalogueHas(string $theme): bool {
-		foreach ($this->catalogue() as $entry) {
-			if ($entry['id'] === $theme) {
-				return true;
-			}
-		}
-
-		return false;
+		return in_array($theme, array_column($this->catalogue(), 'id'), true);
 	}//end catalogueHas()
 
 	/**
@@ -367,21 +316,17 @@ class PortalThemeResolver {
 		}
 
 		$sets = [];
-		$ids = [];
 		foreach (array_values($decoded) as $entry) {
 			if (is_array($entry) === true && is_string($entry['id'] ?? null) === true) {
 				$sets[] = $entry;
-				$ids[$entry['id']] = true;
 			}
 		}
 
 		// The sets an administrator made or received in the theme app
 		// (task 4.1): an upload, or a theme shared through OpenRegister that
 		// the theme app imported as a custom set.
-		foreach (($this->customSets?->all() ?? []) as $entry) {
-			if (isset($ids[$entry['id']]) === false) {
-				$sets[] = $entry;
-			}
+		if ($this->customSets !== null) {
+			return $this->customSets->mergedInto(sets: $sets);
 		}
 
 		return $sets;
@@ -550,10 +495,6 @@ class PortalThemeResolver {
 	 * @return bool True when it is a plain lowercase slug.
 	 */
 	private function isSafeThemeName(string $theme): bool {
-		if ($theme === '') {
-			return false;
-		}
-
 		return preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/', $theme) === 1;
 	}//end isSafeThemeName()
 

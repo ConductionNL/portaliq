@@ -73,6 +73,7 @@ class CmsCacheInvalidationListener implements IEventListener {
 	 * @param CmsReader       $reader The reader owning the cache.
 	 * @param LoggerInterface $logger The logger.
 	 * @param PortalResolver|null $portals Lists the portals of a shared block's organisation.
+	 * @param SharedBlockPortals $blocks Tells which portals a write to a shared block can touch.
 	 *
 	 * @return void
 	 */
@@ -80,6 +81,7 @@ class CmsCacheInvalidationListener implements IEventListener {
 		private readonly CmsReader $reader,
 		private readonly LoggerInterface $logger,
 		private readonly ?PortalResolver $portals=null,
+		private readonly SharedBlockPortals $blocks=new SharedBlockPortals(),
 	) {
 	}//end __construct()
 
@@ -142,11 +144,11 @@ class CmsCacheInvalidationListener implements IEventListener {
 	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t03
 	 */
 	private function invalidateOrganisation(array $data): void {
-		if ($this->portals === null || SharedBlockPortals::isBlock(data: $data) === false) {
+		if ($this->portals === null || $this->blocks->isBlock(data: $data) === false) {
 			return;
 		}
 
-		foreach (SharedBlockPortals::slugsFor(data: $data, portals: $this->portals->allPublishedPortals()) as $slug) {
+		foreach ($this->blocks->slugsFor(data: $data, portals: $this->portals->allPublishedPortals()) as $slug) {
 			$this->reader->invalidate(portal: $slug);
 		}
 	}//end invalidateOrganisation()

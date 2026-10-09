@@ -83,12 +83,7 @@ class InitializeActions implements IRepairStep {
 		$matrix = $this->actionAuth->getMatrix();
 		$added  = [];
 		foreach ($seed as $action => $groups) {
-			// Two shapes: the old bare group list, and the catalogue entry
-			// `{groups, label, description}` (REQ-ORA-003).
-			if (is_array($groups) === true && array_key_exists('groups', $groups) === true) {
-				$groups = $groups['groups'];
-			}
-
+			$groups = $this->groupsOf(entry: $groups);
 			if (is_string($action) === false || is_array($groups) === false || array_key_exists($action, $matrix) === true) {
 				continue;
 			}
@@ -113,6 +108,22 @@ class InitializeActions implements IRepairStep {
 		$output->info($message);
 		$this->logger->info('[portaliq] ADR-023 ' . $message);
 	}//end run()
+
+	/**
+	 * The groups of a seed entry: the old bare group list, or the catalogue
+	 * entry `{groups, label, description}` (REQ-ORA-003).
+	 *
+	 * @param mixed $entry The seed entry.
+	 *
+	 * @return mixed The groups.
+	 */
+	private function groupsOf(mixed $entry): mixed {
+		if (is_array($entry) === true && array_key_exists('groups', $entry) === true) {
+			return $entry['groups'];
+		}
+
+		return $entry;
+	}//end groupsOf()
 
 	/**
 	 * The seed's `actions` object, or null (with a warning) when it cannot be read.

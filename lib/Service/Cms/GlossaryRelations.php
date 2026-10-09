@@ -41,6 +41,26 @@ class GlossaryRelations {
 	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
 	 */
 	public function foreign(string $portal, array $relations, array $portalTerms): array {
+		$known = $this->knownIds(portal: $portal, portalTerms: $portalTerms);
+		$foreign = [];
+		foreach ($relations as $relation) {
+			if (is_string($relation) === false || isset($known[$relation]) === false) {
+				$foreign[] = $this->label(relation: $relation);
+			}
+		}
+
+		return $foreign;
+	}//end foreign()
+
+	/**
+	 * The ids of the terms of this portal, as keys.
+	 *
+	 * @param string                           $portal      The portal slug.
+	 * @param array<int, array<string, mixed>> $portalTerms Every term stored on that portal.
+	 *
+	 * @return array<string, bool>
+	 */
+	private function knownIds(string $portal, array $portalTerms): array {
 		$known = [];
 		foreach ($portalTerms as $term) {
 			if ((string)($term['portal'] ?? $portal) !== $portal) {
@@ -59,15 +79,8 @@ class GlossaryRelations {
 			}
 		}
 
-		$foreign = [];
-		foreach ($relations as $relation) {
-			if (is_string($relation) === false || isset($known[$relation]) === false) {
-				$foreign[] = $this->label(relation: $relation);
-			}
-		}
-
-		return $foreign;
-	}//end foreign()
+		return $known;
+	}//end knownIds()
 
 	/**
 	 * The text to show for a relation that does not resolve.

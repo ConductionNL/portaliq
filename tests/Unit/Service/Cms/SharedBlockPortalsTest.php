@@ -41,7 +41,7 @@ class SharedBlockPortalsTest extends TestCase {
 	 * @return void
 	 */
 	public function testABlockWriteNamesThePortalsOfItsOrganisation(): void {
-		$slugs = SharedBlockPortals::slugsFor(['organisation' => 'gemeente-voorbeeld', 'title' => 'Contact', 'widgets' => []], self::PORTALS);
+		$slugs = (new SharedBlockPortals())->slugsFor(['organisation' => 'gemeente-voorbeeld', 'title' => 'Contact', 'widgets' => []], self::PORTALS);
 
 		$this->assertSame(['inwoners', 'bedrijven'], $slugs);
 	}//end testABlockWriteNamesThePortalsOfItsOrganisation()
@@ -52,8 +52,8 @@ class SharedBlockPortalsTest extends TestCase {
 	 * @return void
 	 */
 	public function testOtherWritesNameNothing(): void {
-		$this->assertSame([], SharedBlockPortals::slugsFor(['organisation' => 'gemeente-voorbeeld', 'displayName' => 'A'], self::PORTALS));
-		$this->assertSame([], SharedBlockPortals::slugsFor(['portal' => 'inwoners', 'organisation' => 'gemeente-voorbeeld', 'widgets' => []], self::PORTALS));
-		$this->assertSame([], SharedBlockPortals::slugsFor(['widgets' => []], self::PORTALS));
+		$this->assertSame([], (new SharedBlockPortals())->slugsFor(['organisation' => 'gemeente-voorbeeld', 'displayName' => 'A'], self::PORTALS));
+		$this->assertSame([], (new SharedBlockPortals())->slugsFor(['portal' => 'inwoners', 'organisation' => 'gemeente-voorbeeld', 'widgets' => []], self::PORTALS));
+		$this->assertSame([], (new SharedBlockPortals())->slugsFor(['widgets' => []], self::PORTALS));
 	}//end testOtherWritesNameNothing()
 }//end class

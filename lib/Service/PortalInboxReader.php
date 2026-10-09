@@ -122,48 +122,17 @@ class PortalInboxReader {
 	 */
 	public function aggregateInbox(array $subject, array $aggregate): array {
 		$rows = [];
-		$messageFields = new InboxMessageFields();
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			if (is_array($contribution) === false) {
 				continue;
 			}
-
-			$appId = (string)($contribution['app'] ?? '');
-			$label = (string)($contribution['label'] ?? $appId);
 
 			foreach (($contribution['collections'] ?? []) as $collection) {
 				if (is_array($collection) === false || ($collection['kind'] ?? '') !== 'inbox') {
 					continue;
 				}
 
-				foreach ($this->readInboxCollection(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
-					// The app's own field names onto the inbox's (portaliq#702),
-					// before the sort and the unread count below read them.
-					$row = $messageFields->apply(row: $row, collection: $collection);
-					$row = $this->withFiles(row: $row, collection: $collection);
-
-					// Provenance envelope: appId/label per spec, plus the
-					// register/schema/collection id the SPA needs to address
-					// this exact row through the mark-read endpoint (which is
-					// parametrised on register/schema, disambiguated the SAME
-					// way as every other scoped endpoint via `?collection=`).
-					$row['_source'] = [
-						'appId' => $appId,
-						'label' => $label,
-						'register' => (string)($collection['register'] ?? ''),
-						'schema' => (string)($collection['schema'] ?? ''),
-						'collection' => (string)($collection['id'] ?? ''),
-					];
-					if (self::residentMayDelete(collection: $collection) === true) {
-						$row['_source']['deletable'] = true;
-					}
-					$reply = $this->replyOf(collection: $collection, contribution: $contribution);
-					if ($reply !== null) {
-						$row['_source']['reply'] = $reply;
-					}
-
-					$rows[] = $row;
-				}
+				$rows = array_merge($rows, $this->collectionRows(subject: $subject, collection: $collection, contribution: $contribution));
 			}//end foreach
 		}//end foreach
 
@@ -182,6 +151,56 @@ class PortalInboxReader {
 
 		return $rows;
 	}//end aggregateInbox()
+
+	/**
+	 * The rows of one inbox collection, in the inbox's field names and with
+	 * their provenance envelope.
+	 *
+	 * @param array<string, mixed> $subject      The resolved subject.
+	 * @param array<string, mixed> $collection   The inbox collection.
+	 * @param array<string, mixed> $contribution The contribution it belongs to.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T01
+	 */
+	private function collectionRows(array $subject, array $collection, array $contribution): array {
+		$appId         = (string)($contribution['app'] ?? '');
+		$label         = (string)($contribution['label'] ?? $appId);
+		$messageFields = new InboxMessageFields();
+		$rows          = [];
+		foreach ($this->readInboxCollection(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
+			// The app's own field names onto the inbox's (portaliq#702),
+			// before the sort and the unread count read them.
+			$row = $messageFields->apply(row: $row, collection: $collection);
+			$row = $this->withFiles(row: $row, collection: $collection);
+
+			// Provenance envelope: appId/label per spec, plus the
+			// register/schema/collection id the SPA needs to address
+			// this exact row through the mark-read endpoint (which is
+			// parametrised on register/schema, disambiguated the SAME
+			// way as every other scoped endpoint via `?collection=`).
+			$row['_source'] = [
+				'appId' => $appId,
+				'label' => $label,
+				'register' => (string)($collection['register'] ?? ''),
+				'schema' => (string)($collection['schema'] ?? ''),
+				'collection' => (string)($collection['id'] ?? ''),
+			];
+			if (self::residentMayDelete(collection: $collection) === true) {
+				$row['_source']['deletable'] = true;
+			}
+
+			$reply = $this->replyOf(collection: $collection, contribution: $contribution);
+			if ($reply !== null) {
+				$row['_source']['reply'] = $reply;
+			}
+
+			$rows[] = $row;
+		}
+
+		return $rows;
+	}//end collectionRows()
 
 	/**
 	 * What the screen needs to offer a reply under a message: the reply action

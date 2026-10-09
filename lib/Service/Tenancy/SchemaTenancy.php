@@ -171,4 +171,17 @@ final class SchemaTenancy {
 	public static function isOrganisationScoped(string $schema): bool {
 		return self::scopeOf(schema: $schema) === self::ORGANISATION;
 	}//end isOrganisationScoped()
+
+	/**
+	 * Whether a schema is declared scoped by organisation, for a caller that holds an instance.
+	 *
+	 * @param string $schema The schema slug.
+	 *
+	 * @return bool True for an organisation-scoped schema.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
+	 */
+	public function declaresOrganisation(string $schema): bool {
+		return self::isOrganisationScoped(schema: $schema);
+	}//end declaresOrganisation()
 }//end class
