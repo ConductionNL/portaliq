@@ -1063,7 +1063,10 @@ export default {
 
 			this.query = state.query
 			this.page = state.page
-			this.sort = state.sort
+			// An address with a term and no order opens on the best matches,
+			// as a new search with a term does (search-sort-by-relevance
+			// REQ-SSR-001); an order in the address is kept.
+			this.sort = state.sort || defaultSortFor(state.query, this.relevanceOff)
 			this.facets = state.facets
 			this.periodFrom = state.periodFrom
 			this.periodTo = state.periodTo

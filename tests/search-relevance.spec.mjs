@@ -78,6 +78,11 @@ test('Meest relevant is offered with a term only, and a new search with a term d
 		BLOCK,
 		/this\.sort = defaultSortFor\(this\.query, this\.relevanceOff\)/,
 	)
+	// A shared address with a term and no order opens the same way.
+	assert.match(
+		BLOCK,
+		/this\.sort =\s*state\.sort \|\| defaultSortFor\(state\.query, this\.relevanceOff\)/,
+	)
 })
 
 test('a response without a score means relevance was not applied', () => {
