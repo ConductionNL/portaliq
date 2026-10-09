@@ -77,6 +77,27 @@
 			aria-live="polite"
 			data-testid="federated-search-status">
 			{{ status }}
+			<!-- Relevance asked and not applied (search-sort-by-relevance
+			     REQ-SSR-002): said once, with the count it explains. -->
+			<span
+				v-if="relevanceNotice"
+				data-testid="federated-search-relevance-off"
+				>{{ relevanceNotice }}</span
+			>
+			<!-- The correction is announced here and shown as the link below. -->
+			<span v-if="suggestionText" class="sr-only">{{ suggestionText }}</span>
+		</p>
+		<!-- "Bedoelde u" (search-sort-by-relevance REQ-SSR-005): a link that
+		     runs the corrected search; announced in the status above. -->
+		<p v-if="suggestion" class="utrecht-paragraph pq-search__suggestion">
+			Bedoelde u:
+			<a
+				class="utrecht-link"
+				href="#"
+				data-testid="federated-search-did-you-mean"
+				@click.prevent="followSuggestion"
+				>{{ suggestion.term }}</a
+			>?
 		</p>
 
 		<!--
@@ -159,15 +180,10 @@
 							data-testid="federated-search-sort"
 							@change="onSort($event.target.value)">
 							<!--
-								NO "MEEST RELEVANT" OPTION.
-
-								The reference offers one. Nothing in this API
-								implements relevance ordering, so it would be a
-								control that changes the URL and not the list —
-								the same class of defect as a filter that
-								silently returns nothing. Every option below was
-								checked against the live endpoint and returns a
-								different first row.
+								"MEEST RELEVANT" ONLY WITH A TERM, and only while
+								the answers carry a score (search-sort-by-relevance
+								REQ-SSR-001, REQ-SSR-002). A control that changes
+								the URL and not the list is never offered.
 							-->
 							<option
 								v-for="option in sortOptions"
@@ -196,7 +212,7 @@
 						8px-radius card with a 24px inner and a 12px column gap.
 					-->
 					<li
-						v-for="result in results"
+						v-for="(result, resultIndex) in results"
 						:key="result.key"
 						class="ac-card ac-card--search-result ac-card--padding-md pq-search__result"
 						data-testid="federated-search-result">
@@ -274,6 +290,11 @@
 									class="utrecht-link utrecht-link--html-a pq-search__more"
 									:href="detailHref(result)"
 									data-testid="federated-search-result-link"
+									:aria-describedby="
+										hasMatch(result)
+											? matchId(resultIndex)
+											: null
+									"
 									@click.prevent="openDetail(result)">
 									<span class="sr-only"
 										>{{ moreLabel }} over
@@ -292,6 +313,16 @@
 											d="M8.29289 0.292893C8.68342 -0.0976311 9.31658 -0.0976311 9.70711 0.292893L15.7071 6.29289C16.0976 6.68342 16.0976 7.31658 15.7071 7.70711L9.70711 13.7071C9.31658 14.0976 8.68342 14.0976 8.29289 13.7071C7.90237 13.3166 7.90237 12.6834 8.29289 12.2929L12.5858 8H1C0.447715 8 0 7.55228 0 7C0 6.44772 0.447715 6 1 6H12.5858L8.29289 1.70711C7.90237 1.31658 7.90237 0.683417 8.29289 0.292893Z" />
 									</svg>
 								</a>
+								<!-- The match, for assistive technology only
+								     (search-sort-by-relevance REQ-SSR-003): the
+								     link's description, never shown. -->
+								<span
+									v-if="hasMatch(result)"
+									:id="matchId(resultIndex)"
+									class="sr-only"
+									data-testid="federated-search-result-match"
+									>Overeenkomst: {{ result.match }} procent</span
+								>
 							</div>
 						</div>
 					</li>
@@ -478,13 +509,19 @@ import { defineAsyncComponent } from 'vue'
 import SearchSuggestions from './SearchSuggestions.vue'
 import {
 	buildRequestUrl,
+	defaultSortFor,
 	lockedFiltersOf,
 	pageWindow,
 	paginationItems,
 	readSearchState,
+	RELEVANCE,
+	relevanceApplied,
 	searchQuery,
+	sortOptionsFor,
+	suggestUrl,
 	toBuckets,
 	toResult,
+	wantsSuggestion,
 	withKindField,
 	withoutLocked,
 	writeSearchState,
@@ -593,6 +630,16 @@ export default {
 		searchInsideDocuments: {
 			type: Boolean,
 			default: true,
+		},
+
+		/**
+		 * The serving portal's slug, for the "Bedoelde u" correction
+		 * (search-sort-by-relevance REQ-SSR-005). The host sets it; empty
+		 * lets the server resolve the portal by host.
+		 */
+		portal: {
+			type: String,
+			default: '',
 		},
 
 		/** The route of a document's own page; the id is appended. */
@@ -807,6 +854,12 @@ export default {
 			// older ones — a race that shows up as "the page ignored my
 			// search" and is invisible on a fast connection.
 			sequence: 0,
+			// Relevance was asked and not applied on this visit (REQ-SSR-002):
+			// the option is gone and the notice below says why, once.
+			relevanceOff: false,
+			relevanceNotice: '',
+			// The checked "Bedoelde u" correction, or null (REQ-SSR-005).
+			suggestion: null,
 		}
 	},
 
@@ -911,6 +964,16 @@ export default {
 		},
 
 		/**
+		 * The "Bedoelde u" line, read out with the result count (REQ-SSR-005).
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+		 */
+		suggestionText() {
+			return this.suggestion ? `Bedoelde u: ${this.suggestion.term}?` : ''
+		},
+
+		/**
 		 * The page numbers to offer.
 		 *
 		 * Windowed around the current page: 356 pages of links is not a
@@ -954,21 +1017,15 @@ export default {
 		 * The orderings this API actually implements.
 		 *
 		 * Each was checked against the live endpoint on 2026-08-20 and returns
-		 * a different first row. The reference's "Meest relevant" is absent
-		 * because nothing here implements relevance ranking.
+		 * a different first row. "Meest relevant" is offered for a term,
+		 * unless this visit found it not applied (search-sort-by-relevance).
 		 *
 		 * @return {Array<object>} `{value, label}` options.
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		sortOptions() {
-			return [
-				{ value: '', label: 'Standaardvolgorde' },
-				{ value: 'publicationDate:DESC', label: 'Datum - nieuw naar oud' },
-				{ value: 'publicationDate:ASC', label: 'Datum - oud naar nieuw' },
-				{ value: 'title:ASC', label: 'Naam - A naar Z' },
-				{ value: 'title:DESC', label: 'Naam - Z naar A' },
-			]
+			return sortOptionsFor(this.query, this.relevanceOff)
 		},
 	},
 
@@ -1105,8 +1162,20 @@ export default {
 					return
 				}
 
+				// RELEVANCE ASKED, NOT APPLIED (REQ-SSR-002): without a score on
+				// the rows the order is the backend's default. Drop the option for
+				// this visit, say so once, and search again in the default order.
+				if (this.sort === RELEVANCE && relevanceApplied(body) === false) {
+					this.relevanceOff = true
+					this.relevanceNotice = 'Sorteren op relevantie is hier niet beschikbaar.'
+					this.sort = ''
+					this.writeLocation(false)
+					return this.search()
+				}
+
 				this.results = (body.results || []).map((row) => toResult(row))
 				this.total = body.total || 0
+				this.askSuggestion(mine)
 				this.pages = Math.max(1, body.pages || 1)
 				this.facetGroups = this.fields
 					.map((field) => ({
@@ -1142,6 +1211,67 @@ export default {
 					this.loading = false
 				}
 			}
+		},
+
+		/**
+		 * Ask for a checked "Bedoelde u" when a term found fewer than three
+		 * results (REQ-SSR-005). A failed ask offers nothing.
+		 *
+		 * @param {number} mine The search this ask belongs to.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+		 */
+		async askSuggestion(mine) {
+			this.suggestion = null
+			if (wantsSuggestion(this.query, this.total) === false) {
+				return
+			}
+			try {
+				const response = await fetch(
+					suggestUrl(window.location.origin, this.portal, this.query),
+					{ headers: { Accept: 'application/json' } },
+				)
+				const body = response.ok ? await response.json() : null
+				if (mine === this.sequence && body && typeof body.suggestion === 'string' && body.suggestion !== '') {
+					this.suggestion = { term: body.suggestion, results: Number(body.results) || 0 }
+				}
+			} catch {
+				this.suggestion = null
+			}
+		},
+
+		/**
+		 * Whether a result carries a match score (REQ-SSR-003).
+		 *
+		 * @param {object} result One shaped result.
+		 * @return {boolean}
+		 * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-match-score-is-available-to-assistive-technology-only-req-ssr-003
+		 */
+		hasMatch(result) {
+			return typeof result?.match === 'number'
+		},
+
+		/**
+		 * The id of a result's match description (one search block per page, as the sort control's id assumes).
+		 *
+		 * @param {number} index The result's position.
+		 * @return {string}
+		 * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-match-score-is-available-to-assistive-technology-only-req-ssr-003
+		 */
+		matchId(index) {
+			return `pq-search-match-${index}`
+		},
+
+		/**
+		 * Run the suggested search.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+		 */
+		followSuggestion() {
+			const term = this.suggestion ? this.suggestion.term : ''
+			this.suggestion = null
+			this.onSearch(term)
 		},
 
 		/**
@@ -1181,6 +1311,11 @@ export default {
 		onSearch(term) {
 			this.query = term || ''
 			this.reported = ''
+			// A new search with a term opens on the best matches (REQ-SSR-001);
+			// a chosen date or name order stays.
+			if (this.sort === '' || this.sort === RELEVANCE) {
+				this.sort = defaultSortFor(this.query, this.relevanceOff)
+			}
 			// A new query invalidates the page number. Staying on page 7 of a
 			// previous search shows an empty list for a search that has
 			// results, which reads as "nothing found".

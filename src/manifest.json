@@ -2019,6 +2019,13 @@
             "content": {}
           },
           {
+            "id": "portal-search-ranking",
+            "type": "SearchRanking",
+            "title": "How search ranks",
+            "icon": "ClipboardListOutline",
+            "content": {}
+          },
+          {
             "id": "portal-signin",
             "type": "PortalSignin",
             "title": "Sign-in",
@@ -2137,10 +2144,18 @@
             "gridHeight": 6
           },
           {
+            "id": "portal-search-ranking",
+            "widgetId": "portal-search-ranking",
+            "gridX": 0,
+            "gridY": 34,
+            "gridWidth": 12,
+            "gridHeight": 3
+          },
+          {
             "id": "portal-signin",
             "widgetId": "portal-signin",
             "gridX": 0,
-            "gridY": 34,
+            "gridY": 37,
             "gridWidth": 12,
             "gridHeight": 6
           },
@@ -2148,7 +2163,7 @@
             "id": "portal-registration",
             "widgetId": "portal-registration",
             "gridX": 0,
-            "gridY": 40,
+            "gridY": 43,
             "gridWidth": 12,
             "gridHeight": 7
           },
@@ -2156,7 +2171,7 @@
             "id": "portal-accessibility",
             "widgetId": "portal-accessibility",
             "gridX": 0,
-            "gridY": 47,
+            "gridY": 50,
             "gridWidth": 12,
             "gridHeight": 10
           }

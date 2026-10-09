@@ -592,6 +592,8 @@ export default {
 					...props,
 					signedIn: this.signedIn === true,
 					searchInsideDocuments: this.searchInsideDocuments !== false,
+					// The portal the "Bedoelde u" correction is asked for (REQ-SSR-005).
+					portal: this.portal,
 				}
 			}
 

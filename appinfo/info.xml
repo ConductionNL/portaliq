@@ -103,6 +103,9 @@
         <!-- site-multi-step-forms: hourly, deletes drafts past their retention. -->
         <job>OCA\Portaliq\BackgroundJob\PortalDraftPurgeJob</job>
         <job>OCA\Portaliq\BackgroundJob\MailLogRetentionJob</job>
+        <!-- search-sort-by-relevance: daily, the word list "Bedoelde u" picks
+             corrections from, per published portal. -->
+        <job>OCA\Portaliq\BackgroundJob\SuggestionWordListJob</job>
     </background-jobs>
 
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
