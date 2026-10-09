@@ -30,6 +30,26 @@
 			</span>
 		</li>
 	</ol>
+	<!-- COMPACT NUMBERED STEPS (board Contentpagina of Esdoornveen,
+	     site-callouts-steps-and-tables-follow-the-boards): the number in a
+	     filled circle in the primary colour, only the lead phrase bold. -->
+	<ol
+		v-else-if="numbered"
+		class="utrecht-ordered-list nl-list-numbered"
+		data-testid="nl-list">
+		<li
+			v-for="(item, index) in safeItems"
+			:key="`${index}-${item.title}`"
+			class="utrecht-ordered-list__item nl-list-numbered__item">
+			<span class="nl-list-numbered__number" aria-hidden="true">{{
+				index + 1
+			}}</span>
+			<span
+				><strong>{{ leadOf(item).lead }}</strong
+				>{{ restOf(item) }}</span
+			>
+		</li>
+	</ol>
 	<component
 		:is="ordered ? 'ol' : 'ul'"
 		v-else
@@ -54,7 +74,7 @@
 </template>
 
 <script>
-import { listLines } from './lines.js'
+import { listLines, stepLead } from './lines.js'
 
 import '@utrecht/unordered-list-css/dist/index.css'
 import '@utrecht/ordered-list-css/dist/index.css'
@@ -67,7 +87,7 @@ export default {
 		items: { type: Array, default: () => [] },
 		/** Numbered instead of bulleted. */
 		ordered: { type: Boolean, default: false },
-		/** `list`, or `steps` for large numbers with a title and a line. */
+		/** `list`, `steps` for large numbers with a title and a line, or `numbered` for compact steps in circles. */
 		display: { type: String, default: 'list' },
 	},
 
@@ -86,6 +106,35 @@ export default {
 		 */
 		steps() {
 			return this.display === 'steps'
+		},
+
+		/**
+		 * @return {boolean} Whether the lines are drawn as compact numbered steps.
+		 * @spec openspec/changes/site-callouts-steps-and-tables-follow-the-boards/specs/site-look/spec.md#requirement-numbered-steps-may-be-compact-with-the-lead-in-bold
+		 */
+		numbered() {
+			return this.display === 'numbered'
+		},
+	},
+
+	methods: {
+		/**
+		 * @param {{title: string, text: string}} item A line.
+		 * @return {{lead: string, rest: string}} Its bold lead and the rest.
+		 * @spec openspec/changes/site-callouts-steps-and-tables-follow-the-boards/specs/site-look/spec.md#requirement-numbered-steps-may-be-compact-with-the-lead-in-bold
+		 */
+		leadOf(item) {
+			return stepLead(item)
+		},
+
+		/**
+		 * @param {{title: string, text: string}} item A line.
+		 * @return {string} The words after the bold lead, with the space before them.
+		 * @spec openspec/changes/site-callouts-steps-and-tables-follow-the-boards/specs/site-look/spec.md#requirement-numbered-steps-may-be-compact-with-the-lead-in-bold
+		 */
+		restOf(item) {
+			const rest = stepLead(item).rest
+			return rest ? ` ${rest}` : ''
 		},
 	},
 }
@@ -133,5 +182,35 @@ export default {
 		--thematiq-website-text-muted,
 		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
+}
+
+.nl-list-numbered {
+	display: grid;
+	gap: 0.875rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.nl-list-numbered__item {
+	display: flex;
+	gap: 0.875rem;
+	align-items: flex-start;
+	margin: 0;
+}
+
+.nl-list-numbered__number {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	inline-size: 1.75rem;
+	block-size: 1.75rem;
+	border-radius: 50%;
+	background-color: var(--nldesign-color-primary, CanvasText);
+	color: var(--nldesign-color-primary-text, Canvas);
+	font-size: 0.875rem;
+	font-weight: 700;
+	line-height: 1;
 }
 </style>

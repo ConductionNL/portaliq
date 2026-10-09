@@ -1046,6 +1046,51 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 /*
+ * A HERO ACTION AS A TEXT LINK, A BUTTON WITH A CHEVRON (boards Home of
+ * Vaartveld and the academy, site-home-follows-the-school-boards): "Lees wat
+ * er speelt op school" underlined beside the button, "Kom kennismaken ›".
+ */
+.pq-site .ac-hero .pq-hero__action:has(.pq-hero__action-chevron) {
+	display: inline-flex;
+	gap: 0.375rem;
+	align-items: center;
+}
+
+.pq-site .ac-hero .pq-hero__action.pq-hero__action--link {
+	border-color: transparent;
+	background-color: transparent;
+	padding-inline: 0.25rem;
+	color: var(--utrecht-link-color, LinkText);
+	text-decoration: underline;
+}
+
+.pq-hero__action-chevron {
+	flex: none;
+	inline-size: 1.25rem;
+	block-size: 1.25rem;
+}
+
+/*
+ * THE MONTH OF A DATE TILE in the set's case: capitals on the academy's
+ * boards ("OKT"), as typed elsewhere (school-sets-type-scale in thematiq).
+ */
+.pq-site .pq-date-tile .pq-date-tile__month {
+	text-transform: var(--thematiq-date-month-text-transform, none);
+}
+
+/*
+ * ONE FRAME IN THE HERO'S ASIDE (board Home of the academy): the aside is
+ * the card, so a framed list in it loses its own line and padding.
+ */
+.pq-site .pq-hero__aside-card .nl-event-list--framed {
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+}
+
+/*
  * THE SIGN-IN PAGE AS ROLE CARDS (G-18).
  */
 .pq-signin {
@@ -2316,6 +2361,40 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	margin: 0;
 	font-size: 1.125rem;
 	line-height: 1.5 !important;
+}
+
+/*
+ * THE LINE FOR STAFF READS AS ONE LINE (board Inloggen: "Werkt u bij De
+ * Wilgenboom? Log in op de werkplek"): the link stays in the sentence,
+ * where a bare `.utrecht-link` rule from the shared app sheet makes it a
+ * flex box on a line of its own.
+ */
+.pq-site .pq-signin__staff .utrecht-link {
+	display: inline;
+}
+
+/*
+ * ONE WAY IN READS AS ONE ROW (board Inloggen of De Wilgenboom,
+ * site-breadcrumb-follows-the-school-boards): the mark, then the title with
+ * its line under it, the button below both. Two or more cards keep the text
+ * under the mark and the title, as the other boards draw them.
+ */
+.pq-site:has(.pq-site__header--designed)
+	.pq-signin__card:only-child
+	.pq-signin__card-head
+	> div {
+	display: block;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-signin__card:only-child
+	.pq-signin__card-text.utrecht-paragraph {
+	margin-block-start: 4px;
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, currentcolor)
+	);
+	font-size: 1rem;
 }
 
 .pq-site:has(.pq-site__header--designed) .pq-signin__button.utrecht-button-link {

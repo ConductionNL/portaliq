@@ -189,6 +189,20 @@ class PortalShellTest extends TestCase {
 		$this->assertSame('single', $shell->headerVariant(portal: ['headerVariant' => 'single']));
 	}//end testAnUnknownOrMissingHeaderVariantIsDouble()
 
+	/**
+	 * @spec openspec/changes/site-breadcrumb-follows-the-school-boards/specs/site-look/spec.md#requirement-a-portal-chooses-the-words-of-the-last-crumb
+	 */
+	public function testTheBreadcrumbWordsAreThePortalsChoiceElseTheMenus(): void {
+		$shell = new PortalShell();
+
+		$this->assertSame('menu', $shell->breadcrumb(portal: []));
+		$this->assertSame('menu', $shell->breadcrumb(portal: ['breadcrumb' => 'title']));
+		$this->assertSame('menu', $shell->breadcrumb(portal: ['breadcrumb' => ['page']]));
+		$this->assertSame('page', $shell->breadcrumb(portal: ['breadcrumb' => 'page']));
+		$this->assertSame('page', $shell->project(portal: ['breadcrumb' => 'page'])['breadcrumb']);
+		$this->assertSame('menu', $shell->project(portal: [])['breadcrumb']);
+	}//end testTheBreadcrumbWordsAreThePortalsChoiceElseTheMenus()
+
 	public function testTheRegisterDestinationIsServedOnlyWhenDeclared(): void {
 		$shell = new PortalShell();
 

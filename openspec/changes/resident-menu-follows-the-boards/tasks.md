@@ -1,7 +1,7 @@
 # Tasks: resident menu follows the boards
 
 ## 1. portaliq
-- [x] 1.1 Portal schema 0.14.0, register 0.71.0: labelled items, `person`, `routes`; schema strings in English and Dutch.
+- [x] 1.1 Portal schema 0.15.0, register 0.72.0: labelled items, `person`, `routes`; schema strings in English and Dutch.
 - [x] 1.2 `PortalResidentMenu` projects them (PHPUnit `PortalResidentMenuTest`).
 - [x] 1.3 `residentMenuGroups()`, `menuPerson()`, `menuSubline()`, `aliasedRoute()`, `loadPerRecordRows()` extra collections.
 - [x] 1.4 `accountRedirect()` opens a second address, else the home.
