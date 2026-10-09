@@ -128,6 +128,23 @@ class AccessibilityStatementTest extends TestCase {
 		$this->assertSame(['email' => 'toegankelijkheid@tilburg.nl', 'phone' => '14 013'], $statement['contact']);
 	}//end testAnUnmeasuredPageIsListedAndAnUnknownRuleFallsBackToAxe()
 
+	public function testTheDemoMeasurementsFitTheSchemaAndBuildAStatement(): void {
+		$root     = __DIR__.'/../../../../lib/Settings/';
+		$mock     = json_decode((string)file_get_contents($root.'portaliq_mock_register.json'), true);
+		$register = json_decode((string)file_get_contents($root.'portaliq_register.json'), true);
+		$fragment = $register['components']['schemas']['accessibilityMeasurement'];
+		$schema   = json_decode((string)json_encode(['type' => 'object', 'required' => $fragment['required'], 'properties' => $fragment['properties']]), false);
+
+		$rows = array_values(array_filter($mock['components']['objects'], static fn (array $o): bool => ($o['@self']['schema'] ?? '') === 'accessibilityMeasurement'));
+		$this->assertGreaterThanOrEqual(3, count($rows));
+		foreach ($rows as $row) {
+			unset($row['@self']);
+			$this->assertTrue((new \Opis\JsonSchema\Validator())->validate(json_decode((string)json_encode($row), false), $schema)->isValid());
+			$statement = $this->build(measurement: $row);
+			$this->assertSame('C', $statement['status']);
+		}
+	}//end testTheDemoMeasurementsFitTheSchemaAndBuildAStatement()
+
 	/**
 	 * @param array<string, mixed>|null $measurement The latest measurement.
 	 * @param array<string, mixed>|null $audit       The portal's audit.
