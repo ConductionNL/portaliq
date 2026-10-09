@@ -20,6 +20,12 @@ export const metaOf = {
 		{ name: 'kindLabel', kind: 'string', label: 'Label boven de titel' },
 		{ name: 'backLabel', kind: 'string', label: 'Tekst van de link terug' },
 		{ name: 'backHref', kind: 'string', label: 'Adres van de link terug' },
+		{
+			name: 'sectionHref',
+			kind: 'string',
+			label: 'Pagina waar het bericht onder valt, zoals /zoeken',
+		},
+		{ name: 'sectionLabel', kind: 'string', label: 'Woorden van die kruimel' },
 	],
 	defaultSize: { gridWidth: 8, gridHeight: 6 },
 	scope: 'public',
