@@ -143,6 +143,15 @@ if [ -n "$OCC" ]; then
 	$OCC config:system:set mail_smtpmode --value=null >/dev/null
 	echo "[ci-seed] mail_smtpmode = $($OCC config:system:get mail_smtpmode 2>/dev/null || echo '<unset>')"
 
+	# NO ANONYMOUS RATE LIMIT ON A TEST INSTANCE. dev-login allows ten
+	# anonymous calls a minute per address (AnonRateLimit on
+	# SessionController::devLogin), and the whole suite signs in from one
+	# address dozens of times a minute, so specs failed at random on "dev-login
+	# must be enabled" while it was (HTTP 429). No spec asserts a rate limit;
+	# the throttles are covered by PHPUnit.
+	$OCC config:system:set ratelimit.protection.enabled --value=false --type=boolean >/dev/null
+	echo "[ci-seed] ratelimit.protection.enabled = $($OCC config:system:get ratelimit.protection.enabled 2>/dev/null || echo '<unset>')"
+
 	echo "[ci-seed] enabling portaliq/dev_login_enabled"
 	$OCC config:app:set portaliq dev_login_enabled --value=yes
 	echo "[ci-seed] dev_login_enabled = $($OCC config:app:get portaliq dev_login_enabled 2>/dev/null || echo '<unset>')"
