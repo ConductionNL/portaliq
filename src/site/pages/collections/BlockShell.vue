@@ -170,6 +170,11 @@ export default {
 	inset-inline-end: 22px;
 }
 
+/* A strip keeps room for the link at the end of its line. */
+.pq-block--more-heading > .pq-kpi--strip {
+	padding-inline-end: 6em;
+}
+
 /* The block's heading leaves room for the link at its end. */
 .pq-block--more-heading > * > :is(h2, h3, h4):first-child,
 .pq-block--more-heading > :is(h2, h3, h4):first-child {
