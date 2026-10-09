@@ -18,7 +18,14 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { ADMIN_HEADERS, APP, ENABLED, login, portalRecord } from './lib/traffic.ts'
+import {
+	ADMIN_HEADERS,
+	APP,
+	ENABLED,
+	login,
+	OR_OBJECTS,
+	portalRecord,
+} from './lib/traffic.ts'
 
 const OTHER = 'open-venray'
 const HIDDEN = process.env.E2E_CASE_TYPE_HIDDEN ?? ''
@@ -116,7 +123,12 @@ test.describe('operate-show-per-case-type', () => {
 			.getByRole('switch', { name: 'Show in this portal' })
 		await expect(toggle).toBeChecked()
 
-		await toggle.click()
+		// The switch's own label is what a person clicks: NcCheckboxRadioSwitch
+		// lays it over the input, so a click aimed at the input lands on it.
+		await page
+			.getByTestId('case-type-e2e-internal')
+			.getByText('Show in this portal')
+			.click()
 		await expect(page.getByTestId('case-types-warning')).toHaveText(
 			'Residents with a case of this type will no longer see it here.',
 		)

@@ -98,7 +98,13 @@ async function signIn(
 		],
 	})
 	const subjectRef = `subject-${stamp}-${Math.floor(Math.random() * 10000)}`
-	for (const row of cases) {
+	for (const [index, row] of cases.entries()) {
+		if (index > 0) {
+			// "Newest first" orders by the created time OpenRegister stamps,
+			// to the second. Two cases created in the same second have no
+			// order between them, so each case gets a second of its own.
+			await new Promise((resolve) => setTimeout(resolve, 1100))
+		}
 		await seed(request, 'portalCase', {
 			subjectRef,
 			organisation: ORGANISATION,
@@ -165,7 +171,8 @@ test.describe('cases-my-cases-page', () => {
 		await signIn(request, page, [
 			{ reference: 'Kapvergunning', omschrijving: 'vergunning' },
 		])
-		await page.getByRole('button', { name: 'Kapvergunning' }).click()
+		// A real link since 6bbbde4b (a new tab, a bookmark), no longer a button.
+		await page.getByRole('link', { name: 'Kapvergunning' }).click()
 		await expect(page.getByTestId('my-cases')).toHaveCount(0)
 		await expect(page.getByText('Kapvergunning').first()).toBeVisible()
 	})
@@ -278,17 +285,22 @@ test.describe('cases-my-cases-page acting for', () => {
 		await page.getByLabel('Namens').selectOption({ label: 'Bakkerij Jansen BV' })
 		const row = page.getByTestId('my-cases-row')
 		await expect(row).toContainText('Terrasvergunning')
-		await expect(page.getByTestId('my-cases-mandate')).toHaveText(
+		// The row is a case card since b89fc9e5; the card names the mandate.
+		await expect(page.getByTestId('mijn-case-card-mandate')).toHaveText(
 			'Bakkerij Jansen BV',
 		)
 
 		await page.reload()
-		await expect(page.getByLabel('Namens')).toHaveValue(/.+/)
+		// The page's own switcher: since 3bef40d5 the acting-for bar is named
+		// "Namens wie u werkt" too, so a bare getByLabel('Namens') finds both.
+		await expect(
+			page.getByTestId('acting-for').getByLabel('Namens'),
+		).toHaveValue(/.+/)
 		await expect(page.getByTestId('my-cases-row')).toContainText(
 			'Terrasvergunning',
 		)
 
-		await page.getByRole('button', { name: 'Terrasvergunning' }).click()
+		await page.getByRole('link', { name: 'Terrasvergunning' }).click()
 		await expect(page.getByTestId('case-window-closed')).toContainText(
 			'Bakkerij Jansen BV',
 		)
