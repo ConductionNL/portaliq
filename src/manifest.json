@@ -2947,16 +2947,12 @@
             "label": "Notice"
           },
           {
-            "key": "portal",
-            "label": "Portal"
-          },
-          {
             "key": "startsAt",
-            "label": "Starts"
+            "label": "Visible from"
           },
           {
             "key": "endsAt",
-            "label": "Ends"
+            "label": "Until"
           },
           {
             "key": "status",
@@ -3670,7 +3666,7 @@
         "Receipt failed": "Ontvangstbevestiging mislukt",
         "Submission": "Gegevens",
         "via {appId}": "via {appId}",
-        "Forms": "Formulier in Nextcloud Forms",
+        "Forms": "Formulieren",
         "Read": "Gelezen",
         "Unread": "Ongelezen",
         "Message": "Bericht",
@@ -3680,7 +3676,26 @@
         "Umbrella": "Overkoepelend",
         "Home page": "Startpagina",
         "Portal details": "Instellingen",
-        "Pages": "Pagina's"
+        "Pages": "Pagina's",
+        "Traffic": "Verkeer",
+        "What visitors looked at, who they were, where they came from and whether they did what the portal hoped. Pick a portal, a period and a segment at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes, and Export downloads exactly what the page shows.": "Wat bezoekers bekeken, waar ze vandaan kwamen en of ze deden wat de portal hoopte · dagcijfers, elk kwartier bijgewerkt",
+        "Page views": "Paginaweergaven",
+        "Visitors": "Bezoekers",
+        "Engaged sessions": "Betrokken sessies",
+        "Per day": "Per dag",
+        "Paths": "Paden",
+        "Sources": "Bronnen",
+        "Goals": "Doelen",
+        "Funnels": "Trechters",
+        "Custom dimensions": "Eigen dimensies",
+        "Script errors": "Scriptfouten",
+        "Experiments": "Experimenten",
+        "Heatmap": "Heatmap",
+        "Session recordings": "Sessieopnames",
+        "Availability": "Beschikbaarheid",
+        "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.": "Hoe beschikbaar elke portal was over de laatste twaalf volle maanden, met elke storing · voor een overleg over het serviceniveau",
+        "Visible from": "Zichtbaar van",
+        "Until": "Tot"
       }
     }
   }

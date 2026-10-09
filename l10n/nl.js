@@ -2875,7 +2875,9 @@ OC.L10N.register(
         "in the inbox of {subjectRef}": "in de inbox van {subjectRef}",
         "Draft": "Concept",
         "Umbrella": "Overkoepelend",
-        "Ingetrokken": "Ingetrokken"
+        "Ingetrokken": "Ingetrokken",
+        "Visible from": "Zichtbaar van",
+        "Until": "Tot"
     },
     "nplurals=2; plural=(n != 1);"
 )
