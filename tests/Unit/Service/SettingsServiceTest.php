@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
 use OCA\Portaliq\Service\PageEditorService;
 use OCA\Portaliq\Service\SettingsService;
 use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
@@ -132,7 +133,9 @@ class SettingsServiceTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			($pageEditor ?? $this->editor()),
 			new GeoSettings($appConfig),
-			$this->geoRefresh()
+			$this->geoRefresh(),
+			null,
+			new EmailLinkSetting($appConfig)
 		);
 	}//end service()
 
@@ -152,6 +155,27 @@ class SettingsServiceTest extends TestCase {
 
 		return $editor;
 	}//end editor()
+
+
+	/**
+	 * The e-mail link switch is OFF by default (decision 127) and only an
+	 * administrator sees and sets it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
+	 */
+	public function testTheEmailLinkSwitchIsOffUntilAnAdministratorTurnsItOn(): void {
+		$this->assertFalse($this->service(isAdmin: true)->getSettings()['email_link_signin_enabled']);
+		$this->assertArrayNotHasKey('email_link_signin_enabled', $this->service(isAdmin: false)->getSettings());
+
+		$this->service(isAdmin: true)->updateSettings(['email_link_signin_enabled' => 'yes']);
+		$this->assertFalse($this->service(isAdmin: true)->getSettings()['email_link_signin_enabled'], 'Only a real boolean switches it.');
+
+		$this->assertTrue($this->service(isAdmin: true)->updateSettings(['email_link_signin_enabled' => true])['email_link_signin_enabled']);
+		$this->assertSame('1', $this->stored['email_link_signin']);
+		$this->assertFalse($this->service(isAdmin: true)->updateSettings(['email_link_signin_enabled' => false])['email_link_signin_enabled']);
+	}//end testTheEmailLinkSwitchIsOffUntilAnAdministratorTurnsItOn()
 
 
 	/**

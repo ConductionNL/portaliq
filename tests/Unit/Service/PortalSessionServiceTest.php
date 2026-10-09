@@ -264,6 +264,52 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testRevokeAllForOrganisationRevokesEveryActiveSession()
 
 	/**
+	 * Staff revoke one account's sessions; the rest of the organisation keeps
+	 * theirs (sign-in-with-an-email-link REQ-IWI-013).
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#12
+	 */
+	public function testRevokeAllForSubjectRevokesOnlyThatAccount(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$tom1 = $service->issueSession(subjectRef: 'email:tom', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
+		$tom2 = $service->issueSession(subjectRef: 'email:tom', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
+		$anna = $service->issueSession(subjectRef: 'email:anna', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
+
+		$result = $service->revokeAllForSubject('email:tom', 'academie', 'beheerder');
+
+		$this->assertSame(['revoked' => 2, 'failed' => 0, 'complete' => true], $result);
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $tom1['token']));
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $tom2['token']));
+		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $anna['token']));
+
+	}//end testRevokeAllForSubjectRevokesOnlyThatAccount()
+
+	/**
+	 * An e-mail link session is `low`, names its method, and a refresh
+	 * cannot raise it.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
+	 */
+	public function testAnEmailLinkSessionStaysLowThroughARefresh(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+		$issued = $service->issueSession(subjectRef: 'email:tom', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame('low', $subject['trust']);
+		$this->assertSame('email-link', $subject['provider']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertNotNull($refreshed);
+		$this->assertNotSame($issued['jti'], $refreshed['jti']);
+		$this->assertSame('low', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['trust']);
+		$this->assertFalse(PortalSessionService::trustSatisfies($subject['trust'], 'substantial'));
+
+	}//end testAnEmailLinkSessionStaysLowThroughARefresh()
+
+	/**
 	 * Review B1: an organisation with more than one page of session rows,
 	 * most of them revoked by rotation, still loses its one live session,
 	 * which sits on the last page.
