@@ -171,7 +171,7 @@
       "label": "Documentation",
       "icon": "BookOpenVariantOutline",
       "href": "https://www.conduction.nl/academy",
-      "section": "settings",
+      "section": "footer",
       "order": 90
     },
     {
@@ -179,7 +179,7 @@
       "label": "Store",
       "icon": "StoreOutline",
       "route": "Store",
-      "section": "settings",
+      "section": "footer",
       "order": 92,
       "visibleIf": {
         "access.admin": true
@@ -201,7 +201,7 @@
       "label": "Features & roadmap",
       "icon": "MapMarkerPath",
       "route": "FeaturesRoadmap",
-      "section": "settings",
+      "section": "footer",
       "order": 100,
       "visibleIf": {
         "access.admin": true
