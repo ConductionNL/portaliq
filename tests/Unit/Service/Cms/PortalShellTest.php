@@ -91,6 +91,27 @@ class PortalShellTest extends TestCase {
 	}//end testTheProjectionServesTheMenuGroupsAndTheCasesDisplay()
 
 	/**
+	 * The e-mail ask: off, in the portal's words, or the site's own
+	 * (mijn-overview-follows-the-boards).
+	 *
+	 * @return void
+	 */
+	public function testTheProjectionServesTheContactPrompt(): void {
+		$shell = new PortalShell();
+		$this->assertSame(['show' => false], $shell->project(portal: ['contactPrompt' => ['show' => false, 'text' => 'x']])['contactPrompt']);
+		$this->assertSame(
+			['text' => 'Voeg je e-mailadres toe.', 'button' => 'Naar mijn account'],
+			$shell->project(portal: ['contactPrompt' => [
+				'text'    => ' Voeg je e-mailadres toe. ',
+				'button'  => 'Naar mijn account',
+				'dismiss' => str_repeat('x', 201),
+			]])['contactPrompt']
+		);
+		$this->assertSame([], $shell->project(portal: [])['contactPrompt']);
+		$this->assertSame([], $shell->project(portal: ['contactPrompt' => 'aan'])['contactPrompt']);
+	}//end testTheProjectionServesTheContactPrompt()
+
+	/**
 	 * The items a portal leaves out of the menu reach the site by name, well
 	 * formed only and never `overview` (resident-menu-leave-out).
 	 *

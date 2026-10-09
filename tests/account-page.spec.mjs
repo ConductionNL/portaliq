@@ -209,7 +209,7 @@ test('site: the shell offers "My account", consumes the link and shows the promp
 	assert.match(app, /this\.confirmMessage = await confirmEmailFromLink\(/)
 	assert.match(
 		app,
-		/this\.contactPrompt = await contactPromptWanted\(this\.session\)/,
+		/this\.contactPrompt =\s*this\.site\?\.contactPrompt\?\.show !== false\s*&&\s*\(await contactPromptWanted\(this\.session\)\)/,
 	)
 	// On a `/mijn` page the prompt stands in the signed-in area's content
 	// column, above the page heading; it used to sit above `main`, over the

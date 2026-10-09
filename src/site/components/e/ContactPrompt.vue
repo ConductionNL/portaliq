@@ -16,7 +16,10 @@
 		data-testid="contact-prompt">
 		<p class="utrecht-paragraph">
 			{{
-				t('Add an e-mail address so we can tell you when something changes.')
+				texts.text
+				|| t(
+					'Add an e-mail address so we can tell you when something changes.',
+				)
 			}}
 		</p>
 		<div class="pq-e-buttons">
@@ -25,14 +28,14 @@
 				class="utrecht-button utrecht-button--primary-action"
 				data-testid="contact-prompt-open"
 				@click="open">
-				{{ t('Go to My account') }}
+				{{ texts.button || t('Go to My account') }}
 			</button>
 			<button
 				type="button"
 				class="utrecht-button utrecht-button--secondary-action"
 				data-testid="contact-prompt-dismiss"
 				@click="dismiss">
-				{{ t('Not now') }}
+				{{ texts.dismiss || t('Not now') }}
 			</button>
 		</div>
 	</div>
@@ -69,6 +72,15 @@ export default {
 		t: {
 			type: Function,
 			required: true,
+		},
+
+		/**
+		 * The portal's own words, `{text?, button?, dismiss?}`, in its tone
+		 * (mijn-overview-follows-the-boards); the site's words where it writes none.
+		 */
+		texts: {
+			type: Object,
+			default: () => ({}),
 		},
 
 		/** The shell's `navigate(key, params)`; "Go to My account" opens `__account__`. */

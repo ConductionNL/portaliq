@@ -232,22 +232,42 @@ export function fieldConfigOf(collection, field) {
 }
 
 /**
- * Format a date or a moment for the resident's language.
+ * Format a date or a moment for the resident's language, in words, as the
+ * school boards write them: "2 oktober 2026", and with the time
+ * "13 november 2025, 08.40 uur" (mijn-lists-follow-the-boards). Never
+ * "2-10-2026" or a raw stamp. A day without a time (`2026-10-02`) is that
+ * day wherever the browser stands.
  *
  * @param {string|number} value The value.
  * @param {boolean} withTime Whether the time of day matters.
  * @param {string} locale The language.
  * @return {string}
+ * @spec openspec/changes/mijn-lists-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-dates-read-as-words
  */
-function formatMoment(value, withTime, locale) {
-	const date = new Date(value)
+export function formatMoment(value, withTime, locale) {
+	const day =
+		typeof value === 'string' ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null
+	const date = day
+		? new Date(Number(day[1]), Number(day[2]) - 1, Number(day[3]))
+		: new Date(value)
 	if (Number.isNaN(date.getTime())) {
 		return String(value)
 	}
+	const english = String(locale || 'nl').startsWith('en')
 	try {
-		return withTime
-			? date.toLocaleString(locale)
-			: date.toLocaleDateString(locale)
+		const text = new Intl.DateTimeFormat(english ? 'en-GB' : 'nl-NL', {
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric',
+		}).format(date)
+		if (!withTime || day) {
+			return text
+		}
+		const hours = String(date.getHours()).padStart(2, '0')
+		const minutes = String(date.getMinutes()).padStart(2, '0')
+		return english
+			? `${text}, ${hours}:${minutes}`
+			: `${text}, ${hours}.${minutes} uur`
 	} catch {
 		return String(value)
 	}

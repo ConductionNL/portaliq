@@ -1368,9 +1368,15 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 		--thematiq-accent-light-color,
 		var(--nldesign-color-primary-light)
 	);
-	color: var(--nldesign-color-text, var(--utrecht-document-color));
+	/* A set names the item's text colour and the bar's width when its board
+	   draws them otherwise: the school boards draw no bar and their accent's
+	   text colour (resident-menu-follows-the-boards). */
+	color: var(
+		--nldesign-website-menu-current-color,
+		var(--nldesign-color-text, var(--utrecht-document-color))
+	);
 	font-weight: 700;
-	box-shadow: inset 4px 0 0
+	box-shadow: inset var(--nldesign-website-menu-current-bar-width, 4px) 0 0
 		var(--thematiq-accent-color, var(--nldesign-color-primary));
 }
 
@@ -2432,7 +2438,9 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 .pq-site:has(.pq-site__header--designed) .pq-account .pq-resident-menu__link {
-	min-block-size: 60px;
+	/* 60px on the Zuiddrecht board; a set whose board draws lower rows names
+	   its own (resident-menu-follows-the-boards). */
+	min-block-size: var(--nldesign-website-menu-item-min-block-size, 60px);
 	padding-block: 8px;
 	font-weight: 500;
 }

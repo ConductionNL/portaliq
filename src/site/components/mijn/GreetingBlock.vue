@@ -42,7 +42,7 @@
 </template>
 
 <script>
-import { greetingFor } from './greeting.js'
+import { greetingFor, isoWeek } from './greeting.js'
 import { mijnTranslator, siteHref } from './rows.js'
 
 /**
@@ -88,15 +88,22 @@ export default {
 		},
 
 		/**
-		 * @return {string} "Maandag 5 oktober 2026".
+		 * @return {string} "Maandag 5 oktober 2026", with " · week 41" when asked.
 		 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-greeting-block-opens-the-overview
+		 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-greeting-may-name-the-week
 		 */
 		today() {
+			const day = this.now || new Date()
 			const text = new Intl.DateTimeFormat(
 				String(this.locale).startsWith('en') ? 'en-GB' : 'nl-NL',
 				{ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
-			).format(this.now || new Date())
-			return text.charAt(0).toUpperCase() + text.slice(1)
+			).format(day)
+			const date = text.charAt(0).toUpperCase() + text.slice(1)
+			// "Maandag 5 oktober 2026 · week 41" where the block asks for the
+			// week (mijn-overview-follows-the-boards).
+			return this.block.showWeek === true
+				? `${date} · ${this.tr('week {number}', { number: isoWeek(day) })}`
+				: date
 		},
 
 		/**

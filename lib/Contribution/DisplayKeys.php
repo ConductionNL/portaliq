@@ -42,19 +42,52 @@ class DisplayKeys {
 	 */
 	private const FIELDS = [
 		'cards' => ['statusField', 'noteField', 'soonField'],
-		'rows'  => ['dateField', 'subtitleField', 'quoteField', 'statusField', 'statusNoteField'],
+		'rows'  => [
+			'dateField',
+			'subtitleField',
+			'quoteField',
+			'statusField',
+			'statusNoteField',
+			// Mijn-lists-follow-the-boards: the big figure, the "Nieuw" pill, the small line above the title.
+			'valueField',
+			'newField',
+			'eyebrowField',
+		],
 		'bars'  => ['labelField', 'valueField', 'noteField', 'captionField'],
-		'chips' => ['labelField', 'valuesField', 'averageField'],
+		'chips' => [
+			'labelField',
+			'valuesField',
+			'averageField',
+			// Mijn-lists-follow-the-boards: one row per mark, grouped per subject.
+			'groupField',
+			'valueField',
+			'dateField',
+			'weightField',
+			'subtitleField',
+			'newField',
+		],
 	];
 
 	/**
-	 * The text keys each display keeps, at most 80 characters.
+	 * The text keys each display keeps, at most 160 characters.
 	 */
 	private const TEXTS = [
 		'cards' => ['soonLabel'],
-		'rows'  => [],
+		'rows'  => ['dateLabel'],
 		'bars'  => ['noteLabel'],
-		'chips' => [],
+		'chips' => ['summaryText'],
+	];
+
+	/**
+	 * The choices a display key may take, the first one the default
+	 * (mijn-lists-follow-the-boards).
+	 */
+	private const CHOICES = [
+		'rows'  => [
+			'dateDisplay' => ['tile', 'line', 'eyebrow', 'end'],
+			'rowStyle'    => ['cards', 'lines'],
+		],
+		'chips' => ['summary' => [true]],
 	];
 
 	/**
@@ -70,7 +103,7 @@ class DisplayKeys {
 	/**
 	 * The longest text a display key may carry.
 	 */
-	private const MAX_TEXT = 80;
+	private const MAX_TEXT = 160;
 
 	/**
 	 * The display keys a collection block keeps.
@@ -103,8 +136,31 @@ class DisplayKeys {
 		}
 
 		return $out + $this->lists(display: $display, block: $block, collection: $collection)
-			+ $this->numbers(display: $display, block: $block) + $this->tones(display: $display, block: $block);
+			+ $this->numbers(display: $display, block: $block) + $this->tones(display: $display, block: $block)
+			+ $this->choices(display: $display, block: $block);
 	}//end keys()
+
+	/**
+	 * The keys of a display that take one of a few values; any other value is
+	 * dropped (mijn-lists-follow-the-boards).
+	 *
+	 * @param string               $display The display.
+	 * @param array<string, mixed> $block   The declared block.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/mijn-lists-follow-the-boards/specs/portal-contribution-contract/spec.md#requirement-rows-may-read-as-the-boards-lists
+	 */
+	private function choices(string $display, array $block): array {
+		$out = [];
+		foreach ((self::CHOICES[$display] ?? []) as $key => $values) {
+			if (in_array(($block[$key] ?? null), $values, true) === true) {
+				$out[$key] = $block[$key];
+			}
+		}
+
+		return $out;
+	}//end choices()
 
 	/**
 	 * The tone of each status value on rows and cards: `statusTones`, a map
