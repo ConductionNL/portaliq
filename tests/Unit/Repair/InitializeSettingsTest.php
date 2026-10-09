@@ -10,6 +10,9 @@ use OCA\Portaliq\Service\SettingsService;
 use OCP\IConfig;
 use OCP\Migration\IOutput;
 use OCP\Security\ISecureRandom;
+use OCP\SystemTag\ISystemTag;
+use OCP\SystemTag\ISystemTagManager;
+use OCP\SystemTag\TagCreationForbiddenException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -229,6 +232,66 @@ class InitializeSettingsTest extends TestCase {
 		$this->assertSame($thrown, $logged, 'the logger must receive the Throwable instance, not a string');
 
 	}//end testAThrowingImportLogsTheThrowableInstanceNotItsMessage()
+
+	public function testTheApplicantUploadTagIsCreatedWhenItIsMissing(): void {
+		$tags = $this->createMock(ISystemTagManager::class);
+		$tags->method('getAllTags')->willReturn([]);
+		$tags->expects($this->once())
+			->method('createTag')
+			->with('portal:from-applicant', true, true)
+			->willReturn($this->createMock(ISystemTag::class));
+
+		$this->repairWithTags(tags: $tags)->run($this->repairOutput());
+
+	}//end testTheApplicantUploadTagIsCreatedWhenItIsMissing()
+
+	public function testAnExistingApplicantUploadTagIsLeftAsItIs(): void {
+		$existing = $this->createMock(ISystemTag::class);
+		$existing->method('getName')->willReturn('portal:from-applicant');
+		$tags = $this->createMock(ISystemTagManager::class);
+		$tags->method('getAllTags')->willReturn([$existing]);
+		$tags->expects($this->never())->method('createTag');
+
+		$this->repairWithTags(tags: $tags)->run($this->repairOutput());
+
+	}//end testAnExistingApplicantUploadTagIsLeftAsItIs()
+
+	public function testARefusedTagCreationDoesNotStopTheRepairStep(): void {
+		$tags = $this->createMock(ISystemTagManager::class);
+		$tags->method('getAllTags')->willReturn([]);
+		$tags->method('createTag')->willThrowException(new TagCreationForbiddenException());
+		$warnings = [];
+		$output = $this->createMock(IOutput::class);
+		$output->method('warning')->willReturnCallback(function (string $message) use (&$warnings): void {
+			$warnings[] = $message;
+		});
+
+		$this->repairWithTags(tags: $tags)->run($output);
+
+		$named = array_filter($warnings, static fn (string $warning): bool => str_contains($warning, 'portal:from-applicant'));
+		$this->assertCount(1, $named);
+
+	}//end testARefusedTagCreationDoesNotStopTheRepairStep()
+
+	/**
+	 * The step with a tag manager, the signing secret present and no
+	 * OpenRegister, so only the tag is under test.
+	 */
+	private function repairWithTags(ISystemTagManager $tags): InitializeSettings {
+		$settingsService = $this->createMock(SettingsService::class);
+		$settingsService->method('isOpenRegisterAvailable')->willReturn(false);
+		$random = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturn(str_repeat('a', 32));
+
+		return new InitializeSettings(
+			$settingsService,
+			$this->createMock(LoggerInterface::class),
+			$this->configWithSecret(),
+			$random,
+			$tags
+		);
+
+	}//end repairWithTags()
 
 	/**
 	 * An IConfig whose signing secret is already set, so `ensureSigningSecret()`
