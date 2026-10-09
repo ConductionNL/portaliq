@@ -282,7 +282,7 @@ class PortalAccessRequestService {
 			data: [
 				'subjectRef' => (string)($request['subjectRef'] ?? ''),
 				'organisation' => $organisation,
-				'onBehalfOf' => PortalMandateAdminService::typed(value: (string)($request['onBehalfOf'] ?? '')),
+				'onBehalfOf' => (new MandateParties())->typed(value: (string)($request['onBehalfOf'] ?? '')),
 				'label' => self::MANDATE_LABEL,
 				'reach' => 'organisation',
 				'status' => 'active',

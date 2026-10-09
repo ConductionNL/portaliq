@@ -93,26 +93,7 @@ class PortalMandateService {
 			return [];
 		}
 
-		// The reader's scope filter is trusted to narrow, never to answer: a
-		// mandate is the record that opens somebody else's cases, so every row
-		// is re-verified against what it was asked for.
-		$candidates = [];
-		foreach ($this->readBy(field: 'subjectRef', value: $subjectRef, organisation: $organisation) as $row) {
-			if (($row['subjectRef'] ?? '') === $subjectRef) {
-				$candidates[] = $row;
-			}
-		}
-
-		// A company holds the mandate it accepted: every sign-in that carries
-		// its number reads it (site-mandates-the-represented-manage REQ-SMR-005).
-		foreach (array_values(array_filter($holders, static fn ($h): bool => is_string($h) === true && str_starts_with($h, 'kvk:') === true)) as $holder) {
-			foreach ($this->readBy(field: 'holder', value: $holder, organisation: $organisation) as $row) {
-				if (($row['holder'] ?? '') === $holder) {
-					$candidates[] = $row;
-				}
-			}
-		}
-
+		$candidates = $this->candidates(subjectRef: $subjectRef, organisation: $organisation, holders: $holders);
 		$moment = ($now ?? new DateTimeImmutable());
 		$live   = [];
 		$seen   = [];
@@ -136,6 +117,42 @@ class PortalMandateService {
 
 		return $live;
 	}//end mandatesFor()
+
+	/**
+	 * The rows that may be this identity's mandates: its own, and the ones a
+	 * company it signs in for holds.
+	 *
+	 * The reader's scope filter is trusted to narrow, never to answer: a
+	 * mandate is the record that opens somebody else's cases, so every row
+	 * is re-verified against what it was asked for.
+	 *
+	 * @param string             $subjectRef   The portal identity.
+	 * @param string             $organisation The tenant, or ''.
+	 * @param array<int, string> $holders      The parties the session carries beyond itself.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function candidates(string $subjectRef, string $organisation, array $holders): array {
+		$candidates = [];
+		foreach ($this->readBy(field: 'subjectRef', value: $subjectRef, organisation: $organisation) as $row) {
+			if (($row['subjectRef'] ?? '') === $subjectRef) {
+				$candidates[] = $row;
+			}
+		}
+
+		// A company holds the mandate it accepted: every sign-in that carries
+		// its number reads it (site-mandates-the-represented-manage REQ-SMR-005).
+		$companies = array_filter($holders, static fn ($holder): bool => is_string($holder) === true && str_starts_with($holder, 'kvk:') === true);
+		foreach (array_values($companies) as $holder) {
+			foreach ($this->readBy(field: 'holder', value: $holder, organisation: $organisation) as $row) {
+				if (($row['holder'] ?? '') === $holder) {
+					$candidates[] = $row;
+				}
+			}
+		}
+
+		return $candidates;
+	}//end candidates()
 
 	/**
 	 * The mandate rows on one scope field.
@@ -223,7 +240,7 @@ class PortalMandateService {
 			// is why a typed mandate (`kvk:87654321`) opens the same cases as an
 			// old untyped one (site-mandates-the-represented-manage REQ-SMR-001).
 			'onBehalfOf' => $this->untyped(value: (string)($mandate['onBehalfOf'] ?? '')),
-			'party' => PortalMandateAdminService::typed(value: (string)($mandate['onBehalfOf'] ?? '')),
+			'party' => (new MandateParties())->typed(value: (string)($mandate['onBehalfOf'] ?? '')),
 			'caseTypes' => array_values((array)($mandate['caseTypes'] ?? [])),
 		];
 	}//end describe()

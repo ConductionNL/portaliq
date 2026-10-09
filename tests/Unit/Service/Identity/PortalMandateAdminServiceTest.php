@@ -16,6 +16,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Controller\MandateController;
+use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateAdminService;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -47,20 +48,20 @@ class PortalMandateAdminServiceTest extends TestCase {
 	}//end now()
 
 	public function testThePartyComesFromTheSessionAlone(): void {
-		$this->assertSame('kvk:12345678', PortalMandateAdminService::partyOf(self::company()));
-		$this->assertNull(PortalMandateAdminService::partyOf(self::company(['kvk' => ''])), 'an eHerkenning session without its company manages nothing');
-		$this->assertNull(PortalMandateAdminService::partyOf(self::company(['kvk' => '123'])));
-		$this->assertSame('subject:h-bakker', PortalMandateAdminService::partyOf(['subjectRef' => 'h-bakker', 'provider' => 'digid']));
-		$this->assertNull(PortalMandateAdminService::partyOf(['provider' => 'digid']));
-		$this->assertSame(['subject:jan-willem', 'kvk:12345678'], PortalMandateAdminService::holdersOf(self::company()));
-		$this->assertSame(['subject:linda'], PortalMandateAdminService::holdersOf(['subjectRef' => 'linda', 'provider' => 'digid', 'kvk' => '12345678']));
+		$this->assertSame('kvk:12345678', (new MandateParties())->partyOf(self::company()));
+		$this->assertNull((new MandateParties())->partyOf(self::company(['kvk' => ''])), 'an eHerkenning session without its company manages nothing');
+		$this->assertNull((new MandateParties())->partyOf(self::company(['kvk' => '123'])));
+		$this->assertSame('subject:h-bakker', (new MandateParties())->partyOf(['subjectRef' => 'h-bakker', 'provider' => 'digid']));
+		$this->assertNull((new MandateParties())->partyOf(['provider' => 'digid']));
+		$this->assertSame(['subject:jan-willem', 'kvk:12345678'], (new MandateParties())->holdersOf(self::company()));
+		$this->assertSame(['subject:linda'], (new MandateParties())->holdersOf(['subjectRef' => 'linda', 'provider' => 'digid', 'kvk' => '12345678']));
 	}
 
 	public function testTypedFormReadsAnUntypedValue(): void {
-		$this->assertSame('kvk:87654321', PortalMandateAdminService::typed('87654321'));
-		$this->assertSame('subject:abc', PortalMandateAdminService::typed('abc'));
-		$this->assertSame('kvk:87654321', PortalMandateAdminService::typed('kvk:87654321'));
-		$this->assertSame('', PortalMandateAdminService::typed(' '));
+		$this->assertSame('kvk:87654321', (new MandateParties())->typed('87654321'));
+		$this->assertSame('subject:abc', (new MandateParties())->typed('abc'));
+		$this->assertSame('kvk:87654321', (new MandateParties())->typed('kvk:87654321'));
+		$this->assertSame('', (new MandateParties())->typed(' '));
 	}
 
 	public function testAnInvitationNeedsAnAddressAndAFutureEndDate(): void {

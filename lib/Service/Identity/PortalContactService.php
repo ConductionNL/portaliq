@@ -82,6 +82,20 @@ class PortalContactService {
 	private const MAX_MESSAGE = 500;
 
 	/**
+	 * The contact rows of a resident and the questions asked of them.
+	 *
+	 * @var ContactRows
+	 */
+	private readonly ContactRows $rows;
+
+	/**
+	 * The read side of a resident's contacts.
+	 *
+	 * @var ContactOverview
+	 */
+	private readonly ContactOverview $overview;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads contact rows and accounts.
@@ -91,52 +105,15 @@ class PortalContactService {
 	 * @param PortalAccountLookup $accounts Reads an account's name.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly PortalIdentityMailer $mailer,
 		private readonly PortalAccountLookup $accounts,
 	) {
+		$this->rows     = new ContactRows(reader: $reader);
+		$this->overview = new ContactOverview(rows: $this->rows);
 	}//end __construct()
-
-	/**
-	 * The resident's contacts, and what waits for an answer.
-	 *
-	 * @param string $owner The resident's subject reference.
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<string, mixed> `incoming`, `outgoing` and `contacts` lists of rows, and `counts` per role.
-	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
-	 */
-	public function overview(string $owner, string $organisation): array {
-		$overview = ['incoming' => [], 'outgoing' => [], 'contacts' => [], 'counts' => ['all' => 0, 'begeleider' => 0, 'contact' => 0, 'organisatie' => 0]];
-		foreach ($this->rowsOf(owner: $owner, organisation: $organisation) as $row) {
-			$shown = $this->shown(row: $row);
-			switch ((string)($row['state'] ?? '')) {
-				case 'requested':
-					$overview['incoming'][] = $shown;
-					break;
-				case 'invited':
-				case 'declined':
-					$overview['outgoing'][] = $shown;
-					break;
-				case 'approved':
-					$overview['contacts'][] = $shown;
-					$overview['counts']['all']++;
-					$role = $shown['role'];
-					if (isset($overview['counts'][$role]) === true) {
-						$overview['counts'][$role]++;
-					}
-
-					break;
-				default:
-					break;
-			}
-		}
-
-		return $overview;
-	}//end overview()
 
 	/**
 	 * Invite someone by e-mail address.
@@ -159,22 +136,22 @@ class PortalContactService {
 		$organisation = (string)($subject['organisation'] ?? '');
 		$email        = strtolower(trim($email));
 		$message      = trim($message);
-		if ($owner === '' || $organisation === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false || mb_strlen($message) > self::MAX_MESSAGE) {
+		if ($this->inviteFits(owner: $owner, organisation: $organisation, email: $email, message: $message) === false) {
 			return self::INVALID;
 		}
 
 		$now  = ($now ?? new DateTimeImmutable());
-		$rows = $this->rowsOf(owner: $owner, organisation: $organisation);
-		if ($this->sentToday(rows: $rows, now: $now) >= self::DAILY_LIMIT) {
+		$rows = $this->rows->rowsOf(owner: $owner, organisation: $organisation);
+		if ($this->rows->sentToday(rows: $rows, now: $now) >= self::DAILY_LIMIT) {
 			return self::LIMIT;
 		}
 
-		$account = $this->accountByEmail(email: $email, organisation: $organisation);
+		$account = $this->rows->accountByEmail(email: $email, organisation: $organisation);
 		if ($account !== null && (string)($account['subjectRef'] ?? '') === $owner) {
 			return self::INVALID;
 		}
 
-		if ($this->alreadyOpenOrLinked(rows: $rows, email: $email, account: $account) === true) {
+		if ($this->rows->alreadyOpenOrLinked(rows: $rows, email: $email, account: $account) === true) {
 			return self::DUPLICATE;
 		}
 
@@ -197,7 +174,7 @@ class PortalContactService {
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function resend(array $subject, string $id, ?DateTimeImmutable $now=null): string {
-		$row = $this->ownRow(subject: $subject, id: $id, states: ['invited']);
+		$row = $this->rows->ownRow(subject: $subject, id: $id, states: ['invited']);
 		if ($row === null) {
 			return self::NOT_FOUND;
 		}
@@ -282,10 +259,10 @@ class PortalContactService {
 			return self::NOT_FOUND;
 		}
 
-		$row = $this->byToken(token: $token, organisation: $organisation);
+		$row = $this->rows->byToken(token: $token, organisation: $organisation);
 		$now = ($now ?? new DateTimeImmutable());
 		if ($row === null || (string)($row['state'] ?? '') !== 'invited' || (string)($row['owner'] ?? '') === $newRef
-			|| $this->expired(row: $row, now: $now) === true
+			|| $this->rows->expired(row: $row, now: $now) === true
 		) {
 			return self::NOT_FOUND;
 		}
@@ -297,7 +274,7 @@ class PortalContactService {
 			scopeField: 'owner',
 			subjectRef: $inviter,
 			organisation: $organisation,
-			id: $this->idOf(row: $row),
+			id: $this->rows->idOf(row: $row),
 			data: ['contactRef' => $newRef, 'displayName' => $displayName, 'state' => 'approved', 'tokenHash' => '', 'email' => '']
 		);
 		if ($written === null) {
@@ -318,6 +295,20 @@ class PortalContactService {
 	}//end acceptInvitation()
 
 	/**
+	 * The resident's contacts, and what waits for an answer.
+	 *
+	 * @param string $owner The resident's subject reference.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed> `incoming`, `outgoing` and `contacts` lists of rows, and `counts` per role.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 */
+	public function overview(string $owner, string $organisation): array {
+		return $this->overview->overview(owner: $owner, organisation: $organisation);
+	}//end overview()
+
+	/**
 	 * The approved contacts of a resident, each with the other account's
 	 * reference, for choosing who takes part in a plan.
 	 *
@@ -329,14 +320,7 @@ class PortalContactService {
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t02
 	 */
 	public function approvedContacts(string $owner, string $organisation): array {
-		$out = [];
-		foreach ($this->rowsOf(owner: $owner, organisation: $organisation) as $row) {
-			if ((string)($row['state'] ?? '') === 'approved' && (string)($row['contactRef'] ?? '') !== '') {
-				$out[] = ['id' => $this->idOf(row: $row), 'ref' => (string)$row['contactRef'], 'displayName' => (string)($row['displayName'] ?? '')];
-			}
-		}
-
-		return $out;
+		return $this->overview->approvedContacts(owner: $owner, organisation: $organisation);
 	}//end approvedContacts()
 
 	/**
@@ -350,14 +334,7 @@ class PortalContactService {
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function approvedRefs(string $owner, string $organisation): array {
-		$refs = [];
-		foreach ($this->rowsOf(owner: $owner, organisation: $organisation) as $row) {
-			if ((string)($row['state'] ?? '') === 'approved' && (string)($row['contactRef'] ?? '') !== '') {
-				$refs[] = (string)$row['contactRef'];
-			}
-		}
-
-		return $refs;
+		return $this->overview->approvedRefs(owner: $owner, organisation: $organisation);
 	}//end approvedRefs()
 
 	/**
@@ -425,7 +402,6 @@ class PortalContactService {
 	 * @return string SENT or FAILED.
 	 */
 	private function mailInvitation(array $subject, string $email, string $message, DateTimeImmutable $now, ?array $row): string {
-		$owner        = (string)$subject['subjectRef'];
 		$organisation = (string)$subject['organisation'];
 		$token        = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
 		$data         = [
@@ -434,18 +410,7 @@ class PortalContactService {
 			'expiresAt' => $now->add(new DateInterval(self::TTL))->format(DATE_ATOM),
 		];
 
-		if ($row === null) {
-			$saved = $this->writer->createObject(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				scopeField: 'owner',
-				subjectRef: $owner,
-				organisation: $organisation,
-				data: $data + ['role' => 'contact', 'displayName' => $email, 'state' => 'invited', 'email' => $email, 'message' => $message]
-			);
-		} else {
-			$saved = $this->update(subject: $subject, id: $this->idOf(row: $row), data: $data);
-		}
+		$saved = $this->storeInvitation(subject: $subject, details: ['email' => $email, 'message' => $message], data: $data, row: $row);
 
 		if ($saved === null) {
 			return self::FAILED;
@@ -467,6 +432,51 @@ class PortalContactService {
 	}//end mailInvitation()
 
 	/**
+	 * Whether an invitation names an owner, a tenant, a valid address and a message that is not too long.
+	 *
+	 * @param string $owner        The inviter's subject reference.
+	 * @param string $organisation The tenant.
+	 * @param string $email        The address.
+	 * @param string $message      The message.
+	 *
+	 * @return bool
+	 */
+	private function inviteFits(string $owner, string $organisation, string $email, string $message): bool {
+		return $owner !== '' && $organisation !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false && mb_strlen($message) <= self::MAX_MESSAGE;
+	}//end inviteFits()
+
+	/**
+	 * Create the invitation row, or renew the existing one.
+	 *
+	 * @param array<string, mixed>      $subject The inviter.
+	 * @param array<string, string>     $details The address and the message.
+	 * @param array<string, string>     $data    The new link's hash and dates.
+	 * @param array<string, mixed>|null $row     The existing invitation to renew, or null for a new one.
+	 *
+	 * @return array<string, mixed>|null The stored row, or null when it could not be stored.
+	 */
+	private function storeInvitation(array $subject, array $details, array $data, ?array $row): ?array {
+		if ($row !== null) {
+			return $this->update(subject: $subject, id: $this->rows->idOf(row: $row), data: $data);
+		}
+
+		return $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'owner',
+			subjectRef: (string)$subject['subjectRef'],
+			organisation: (string)$subject['organisation'],
+			data: $data + [
+				'role' => 'contact',
+				'displayName' => $details['email'],
+				'state' => 'invited',
+				'email' => $details['email'],
+				'message' => $details['message'],
+			]
+		);
+	}//end storeInvitation()
+
+	/**
 	 * End both sides of a link: the resident's row and the other side's.
 	 *
 	 * @param array<string, mixed> $subject The resident.
@@ -479,7 +489,7 @@ class PortalContactService {
 	 * @return string SENT or NOT_FOUND.
 	 */
 	private function endLink(array $subject, string $id, array $from, string $to, string $theirs, string $theirTo=''): string {
-		$row = $this->ownRow(subject: $subject, id: $id, states: $from);
+		$row = $this->rows->ownRow(subject: $subject, id: $id, states: $from);
 		if ($row === null) {
 			return self::NOT_FOUND;
 		}
@@ -494,7 +504,7 @@ class PortalContactService {
 			return self::SENT;
 		}
 
-		foreach ($this->rowsOf(owner: $other, organisation: (string)$subject['organisation']) as $counterpart) {
+		foreach ($this->rows->rowsOf(owner: $other, organisation: (string)$subject['organisation']) as $counterpart) {
 			if ((string)($counterpart['contactRef'] ?? '') === (string)$subject['subjectRef'] && (string)($counterpart['state'] ?? '') === $theirs) {
 				$this->writer->updateObject(
 					register: self::REGISTER,
@@ -502,7 +512,7 @@ class PortalContactService {
 					scopeField: 'owner',
 					subjectRef: $other,
 					organisation: (string)$subject['organisation'],
-					id: $this->idOf(row: $counterpart),
+					id: $this->rows->idOf(row: $counterpart),
 					data: ['state' => $theirTo]
 				);
 			}
@@ -532,194 +542,4 @@ class PortalContactService {
 		);
 	}//end update()
 
-	/**
-	 * One of the resident's own rows, in one of some states, or null.
-	 *
-	 * @param array<string, mixed> $subject The resident.
-	 * @param string $id The row id.
-	 * @param array<int, string> $states The states it may be in.
-	 *
-	 * @return array<string, mixed>|null The row.
-	 */
-	private function ownRow(array $subject, string $id, array $states): ?array {
-		if ($id === '') {
-			return null;
-		}
-
-		foreach ($this->rowsOf(owner: (string)($subject['subjectRef'] ?? ''), organisation: (string)($subject['organisation'] ?? '')) as $row) {
-			if ($this->idOf(row: $row) === $id && in_array((string)($row['state'] ?? ''), $states, true) === true) {
-				return $row;
-			}
-		}
-
-		return null;
-	}//end ownRow()
-
-	/**
-	 * Every row a resident holds, read through the scoped reader.
-	 *
-	 * @param string $owner The resident.
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 */
-	private function rowsOf(string $owner, string $organisation): array {
-		if ($owner === '') {
-			return [];
-		}
-
-		return $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'owner',
-			subjectRef: $owner,
-			organisation: $organisation,
-			limit: 200
-		);
-	}//end rowsOf()
-
-	/**
-	 * The active account that holds an address, or null.
-	 *
-	 * @param string $email The address.
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<string, mixed>|null The account.
-	 */
-	private function accountByEmail(string $email, string $organisation): ?array {
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: 'portalAccount',
-			scopeField: 'email',
-			subjectRef: $email,
-			organisation: $organisation,
-			limit: 5
-		);
-		foreach ($rows as $row) {
-			$active = ((string)($row['status'] ?? '') === 'active' && (string)($row['subjectRef'] ?? '') !== '');
-			if ($active === true && strtolower((string)($row['email'] ?? '')) === $email) {
-				return $row;
-			}
-		}
-
-		return null;
-	}//end accountByEmail()
-
-	/**
-	 * The invitation a link's secret belongs to.
-	 *
-	 * @param string $token The secret.
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<string, mixed>|null The row.
-	 */
-	private function byToken(string $token, string $organisation): ?array {
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'tokenHash',
-			subjectRef: hash('sha256', $token),
-			organisation: $organisation,
-			limit: 2
-		);
-
-		return ($rows[0] ?? null);
-	}//end byToken()
-
-	/**
-	 * How many invitations the rows hold from today.
-	 *
-	 * @param array<int, array<string, mixed>> $rows The resident's rows.
-	 * @param DateTimeImmutable $now The moment.
-	 *
-	 * @return int The count; a withdrawn invitation still counts, it was sent.
-	 */
-	private function sentToday(array $rows, DateTimeImmutable $now): int {
-		$day   = $now->format('Y-m-d');
-		$count = 0;
-		foreach ($rows as $row) {
-			if (str_starts_with((string)($row['sentAt'] ?? ''), $day) === true && (string)($row['state'] ?? '') !== 'requested') {
-				$count++;
-			}
-		}
-
-		return $count;
-	}//end sentToday()
-
-	/**
-	 * Whether the address already has an open invitation, or the account is already linked or asked.
-	 *
-	 * @param array<int, array<string, mixed>> $rows The resident's rows.
-	 * @param string $email The address.
-	 * @param array<string, mixed>|null $account The account behind the address.
-	 *
-	 * @return bool
-	 */
-	private function alreadyOpenOrLinked(array $rows, string $email, ?array $account): bool {
-		foreach ($rows as $row) {
-			if (in_array((string)($row['state'] ?? ''), ['invited', 'requested', 'approved'], true) === false) {
-				continue;
-			}
-
-			if (strtolower((string)($row['email'] ?? '')) === $email) {
-				return true;
-			}
-
-			if ($account !== null && (string)($row['contactRef'] ?? '') === (string)$account['subjectRef']) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end alreadyOpenOrLinked()
-
-	/**
-	 * Whether an invitation's link has lapsed.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 * @param DateTimeImmutable $now The moment.
-	 *
-	 * @return bool True when it has expired or carries no expiry.
-	 */
-	private function expired(array $row, DateTimeImmutable $now): bool {
-		$expires = (string)($row['expiresAt'] ?? '');
-		if ($expires === '') {
-			return true;
-		}
-
-		return new DateTimeImmutable($expires) <= $now;
-	}//end expired()
-
-	/**
-	 * A row as the browser may see it: no token hash, and a declined request
-	 * reads only as not accepted.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return array<string, mixed> The row to show.
-	 */
-	private function shown(array $row): array {
-		return [
-			'id'          => $this->idOf(row: $row),
-			'displayName' => (string)($row['displayName'] ?? ''),
-			'line'        => (string)($row['line'] ?? ''),
-			'role'        => (string)($row['role'] ?? 'contact'),
-			'state'       => (string)($row['state'] ?? ''),
-			'email'       => (string)($row['email'] ?? ''),
-			'message'     => (string)($row['message'] ?? ''),
-			'sentAt'      => (string)($row['sentAt'] ?? ''),
-			'expiresAt'   => (string)($row['expiresAt'] ?? ''),
-		];
-	}//end shown()
-
-	/**
-	 * A row's identifier, wherever OpenRegister put it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The id, or ''.
-	 */
-	private function idOf(array $row): string {
-		return (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));
-	}//end idOf()
 }//end class

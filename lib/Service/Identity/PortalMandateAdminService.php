@@ -55,15 +55,41 @@ class PortalMandateAdminService {
 
 	public const GONE = 'gone';
 
-	private const REGISTER = 'portaliq';
+	private const REGISTER = MandateStore::REGISTER;
 
-	private const MANDATES = 'portalMandate';
+	private const MANDATES = MandateStore::MANDATES;
 
-	private const INVITATIONS = 'portalInvitation';
+	private const INVITATIONS = MandateStore::INVITATIONS;
 
 	private const WINDOW = 'P14D';
 
-	private const LIMIT = 500;
+	/**
+	 * Who holds and who is represented.
+	 *
+	 * @var MandateParties
+	 */
+	private readonly MandateParties $parties;
+
+	/**
+	 * Whether an end has passed, and the end of a day.
+	 *
+	 * @var MandateDays
+	 */
+	private readonly MandateDays $days;
+
+	/**
+	 * The mandate and invitation rows.
+	 *
+	 * @var MandateStore
+	 */
+	private readonly MandateStore $store;
+
+	/**
+	 * The read side: mandates given and held.
+	 *
+	 * @var MandateListing
+	 */
+	private readonly MandateListing $listing;
 
 	/**
 	 * Constructor.
@@ -73,87 +99,15 @@ class PortalMandateAdminService {
 	 * @param ISecureRandom      $random Mints the invitation secret.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 	) {
+		$this->parties = new MandateParties();
+		$this->days    = new MandateDays();
+		$this->store   = new MandateStore(reader: $reader, writer: $writer);
+		$this->listing = new MandateListing(store: $this->store, parties: $this->parties, days: $this->days);
 	}//end __construct()
-
-	/**
-	 * The party a session may manage, from the session alone: the company of
-	 * an eHerkenning sign-in, the person of any other. An eHerkenning session
-	 * that does not carry its company's number manages nothing.
-	 *
-	 * @param array<string, mixed> $subject The resolved session subject.
-	 *
-	 * @return string|null `kvk:<8 digits>`, `subject:<ref>`, or null.
-	 *
-	 * @spec openspec/changes/site-mandates-the-represented-manage/design.md#d1-who-is-the-represented-party
-	 */
-	public static function partyOf(array $subject): ?string {
-		if (($subject['provider'] ?? '') === 'eherkenning') {
-			$kvk = (string)($subject['kvk'] ?? '');
-			if (preg_match('/^\d{8}$/', $kvk) === 1) {
-				return 'kvk:' . $kvk;
-			}
-
-			return null;
-		}
-
-		$ref = (string)($subject['subjectRef'] ?? '');
-		if ($ref === '') {
-			return null;
-		}
-
-		return 'subject:' . $ref;
-	}//end partyOf()
-
-	/**
-	 * The parties a session carries as a holder: itself, and its company.
-	 *
-	 * @param array<string, mixed> $subject The resolved session subject.
-	 *
-	 * @return array<int, string>
-	 *
-	 * @spec openspec/changes/site-mandates-the-represented-manage/design.md#d7-who-holds-a-mandate-decided
-	 */
-	public static function holdersOf(array $subject): array {
-		$out = [];
-		$ref = (string)($subject['subjectRef'] ?? '');
-		if ($ref !== '') {
-			$out[] = 'subject:' . $ref;
-		}
-
-		$kvk = (string)($subject['kvk'] ?? '');
-		if (($subject['provider'] ?? '') === 'eherkenning' && preg_match('/^\d{8}$/', $kvk) === 1) {
-			$out[] = 'kvk:' . $kvk;
-		}
-
-		return $out;
-	}//end holdersOf()
-
-	/**
-	 * A party in its typed form: an untyped value of eight digits is a KVK
-	 * number, any other untyped value a subject reference.
-	 *
-	 * @param string $value The stored value.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-a-mandate-must-name-its-party-in-a-typed-form-req-smr-001
-	 */
-	public static function typed(string $value): string {
-		$value = trim($value);
-		if ($value === '' || str_starts_with($value, 'kvk:') === true || str_starts_with($value, 'subject:') === true) {
-			return $value;
-		}
-
-		if (preg_match('/^\d{8}$/', $value) === 1) {
-			return 'kvk:' . $value;
-		}
-
-		return 'subject:' . $value;
-	}//end typed()
 
 	/**
 	 * Every mandate and open invitation given on this party's behalf.
@@ -167,48 +121,7 @@ class PortalMandateAdminService {
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-the-represented-party-must-see-who-may-act-for-it-req-smr-002
 	 */
 	public function given(string $party, string $organisation, ?DateTimeImmutable $now = null): array {
-		$moment = ($now ?? new DateTimeImmutable());
-		$out    = [];
-		foreach ($this->rows(schema: self::MANDATES, organisation: $organisation) as $row) {
-			if (self::typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party || ($row['status'] ?? 'active') === 'revoked') {
-				continue;
-			}
-
-			$mandateState = 'active';
-			if ($this->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true) {
-				$mandateState = 'expired';
-			}
-
-			$out[] = [
-				'kind' => 'mandate',
-				'id' => $this->idOf(row: $row),
-				'holder' => $this->holderOf(row: $row),
-				'label' => (string)($row['label'] ?? ''),
-				'caseTypes' => array_values((array)($row['caseTypes'] ?? [])),
-				'expiresAt' => (string)($row['expiresAt'] ?? ''),
-				'state' => $mandateState,
-			];
-		}
-
-		foreach ($this->rows(schema: self::INVITATIONS, organisation: $organisation) as $row) {
-			$state = (string)($row['state'] ?? 'sent');
-			if (self::typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party || in_array($state, ['sent', 'opened'], true) === false) {
-				continue;
-			}
-
-			$terms = (array)($row['mandate'] ?? []);
-			$out[] = [
-				'kind' => 'invitation',
-				'id' => $this->idOf(row: $row),
-				'email' => (string)($row['email'] ?? ''),
-				'label' => (string)($terms['label'] ?? ''),
-				'caseTypes' => array_values((array)($terms['caseTypes'] ?? [])),
-				'expiresAt' => (string)($terms['expiresAt'] ?? ''),
-				'state' => 'pending',
-			];
-		}
-
-		return $out;
+		return $this->listing->given(party: $party, organisation: $organisation, now: $now);
 	}//end given()
 
 	/**
@@ -232,7 +145,7 @@ class PortalMandateAdminService {
 		}
 
 		$end = trim((string)($terms['expiresAt'] ?? ''));
-		if ($end !== '' && $this->futureDay(value: $end, now: $moment) === false) {
+		if ($end !== '' && $this->days->futureDay(value: $end, now: $moment) === false) {
 			return self::BAD_END_DATE;
 		}
 
@@ -288,13 +201,13 @@ class PortalMandateAdminService {
 	public function accept(string $token, array $subject, ?DateTimeImmutable $now = null): array|string {
 		$moment = ($now ?? new DateTimeImmutable());
 		$ref    = (string)($subject['subjectRef'] ?? '');
-		$row    = $this->invitationByToken(token: $token);
+		$row    = $this->store->invitationByToken(token: $token);
 		if ($row === null || $ref === '') {
 			return self::GONE;
 		}
 
 		$open = in_array((string)($row['state'] ?? 'sent'), ['sent', 'opened'], true);
-		if ($open === false || $this->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true) {
+		if ($open === false || $this->days->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true) {
 			return self::GONE;
 		}
 
@@ -302,7 +215,7 @@ class PortalMandateAdminService {
 			return self::OWN_INVITATION;
 		}
 
-		$holders = self::holdersOf(subject: $subject);
+		$holders = $this->parties->holdersOf(subject: $subject);
 		$holder  = (string)end($holders);
 		$terms   = (array)($row['mandate'] ?? []);
 		$mandate = $this->writer->createObject(
@@ -322,8 +235,8 @@ class PortalMandateAdminService {
 				'status' => 'active',
 				'grantedBy' => (string)($row['invitedBy'] ?? ''),
 				'grantedAt' => $moment->format(DATE_ATOM),
-				'expiresAt' => $this->endOfDay(day: (string)($terms['expiresAt'] ?? '')),
-				'invitationId' => $this->idOf(row: $row),
+				'expiresAt' => $this->days->endOfDay(day: (string)($terms['expiresAt'] ?? '')),
+				'invitationId' => $this->store->idOf(row: $row),
 			]
 		);
 		if ($mandate === null) {
@@ -337,11 +250,11 @@ class PortalMandateAdminService {
 			scopeField: 'organisation',
 			subjectRef: (string)($row['organisation'] ?? ''),
 			organisation: (string)($row['organisation'] ?? ''),
-			id: $this->idOf(row: $row),
+			id: $this->store->idOf(row: $row),
 			data: ['state' => 'accepted', 'subjectRef' => $ref]
 		);
 
-		return ['id' => $this->idOf(row: $mandate), 'holder' => $holder];
+		return ['id' => $this->store->idOf(row: $mandate), 'holder' => $holder];
 	}//end accept()
 
 	/**
@@ -350,20 +263,20 @@ class PortalMandateAdminService {
 	 * @param string                 $party        The session's party.
 	 * @param string                 $organisation The tenant.
 	 * @param string                 $id           The mandate.
-	 * @param string                 $by           Who ends it (a subject reference).
+	 * @param string                 $actor           Who ends it (a subject reference).
 	 * @param DateTimeImmutable|null $now          The moment.
 	 *
 	 * @return string '' when done, else NOT_FOUND.
 	 *
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-either-side-must-be-able-to-end-a-mandate-req-smr-004
 	 */
-	public function revoke(string $party, string $organisation, string $id, string $by, ?DateTimeImmutable $now = null): string {
-		$row = $this->mandate(id: $id, organisation: $organisation);
-		if ($row === null || self::typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party) {
+	public function revoke(string $party, string $organisation, string $id, string $actor, ?DateTimeImmutable $now = null): string {
+		$row = $this->store->mandate(id: $id, organisation: $organisation);
+		if ($row === null || $this->parties->typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party) {
 			return self::NOT_FOUND;
 		}
 
-		return $this->end(row: $row, by: $by, now: ($now ?? new DateTimeImmutable()));
+		return $this->end(row: $row, actor: $actor, now: ($now ?? new DateTimeImmutable()));
 	}//end revoke()
 
 	/**
@@ -372,20 +285,20 @@ class PortalMandateAdminService {
 	 * @param array<int, string>     $holders      The parties the session carries.
 	 * @param string                 $organisation The tenant.
 	 * @param string                 $id           The mandate.
-	 * @param string                 $by           Who stops it.
+	 * @param string                 $actor           Who stops it.
 	 * @param DateTimeImmutable|null $now          The moment.
 	 *
 	 * @return string '' when done, else NOT_FOUND.
 	 *
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-either-side-must-be-able-to-end-a-mandate-req-smr-004
 	 */
-	public function stop(array $holders, string $organisation, string $id, string $by, ?DateTimeImmutable $now = null): string {
-		$row = $this->mandate(id: $id, organisation: $organisation);
-		if ($row === null || in_array($this->holderOf(row: $row), $holders, true) === false) {
+	public function stop(array $holders, string $organisation, string $id, string $actor, ?DateTimeImmutable $now = null): string {
+		$row = $this->store->mandate(id: $id, organisation: $organisation);
+		if ($row === null || in_array($this->parties->holderOf(row: $row), $holders, true) === false) {
 			return self::NOT_FOUND;
 		}
 
-		return $this->end(row: $row, by: $by, now: ($now ?? new DateTimeImmutable()));
+		return $this->end(row: $row, actor: $actor, now: ($now ?? new DateTimeImmutable()));
 	}//end stop()
 
 	/**
@@ -400,8 +313,8 @@ class PortalMandateAdminService {
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-either-side-must-be-able-to-end-a-mandate-req-smr-004
 	 */
 	public function revokeInvitation(string $party, string $organisation, string $id): string {
-		foreach ($this->rows(schema: self::INVITATIONS, organisation: $organisation) as $row) {
-			if ($this->idOf(row: $row) !== $id || self::typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party) {
+		foreach ($this->store->rows(schema: self::INVITATIONS, organisation: $organisation) as $row) {
+			if ($this->store->idOf(row: $row) !== $id || $this->parties->typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party) {
 				continue;
 			}
 
@@ -409,7 +322,7 @@ class PortalMandateAdminService {
 				return self::GONE;
 			}
 
-			$this->update(schema: self::INVITATIONS, row: $row, data: ['state' => 'revoked']);
+			$this->store->update(schema: self::INVITATIONS, row: $row, data: ['state' => 'revoked']);
 
 			return '';
 		}
@@ -433,20 +346,20 @@ class PortalMandateAdminService {
 	 */
 	public function setExpiry(string $party, string $organisation, string $id, string $day, ?DateTimeImmutable $now = null): string {
 		$moment = ($now ?? new DateTimeImmutable());
-		$row    = $this->mandate(id: $id, organisation: $organisation);
-		if ($row === null || self::typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party) {
+		$row    = $this->store->mandate(id: $id, organisation: $organisation);
+		if ($row === null || $this->parties->typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party) {
 			return self::NOT_FOUND;
 		}
 
-		if (($row['status'] ?? 'active') !== 'active' || $this->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true) {
+		if (($row['status'] ?? 'active') !== 'active' || $this->days->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true) {
 			return self::GONE;
 		}
 
-		if ($this->futureDay(value: $day, now: $moment) === false) {
+		if ($this->days->futureDay(value: $day, now: $moment) === false) {
 			return self::BAD_END_DATE;
 		}
 
-		$this->update(schema: self::MANDATES, row: $row, data: ['expiresAt' => $this->endOfDay(day: $day)]);
+		$this->store->update(schema: self::MANDATES, row: $row, data: ['expiresAt' => $this->days->endOfDay(day: $day)]);
 
 		return '';
 	}//end setExpiry()
@@ -463,28 +376,7 @@ class PortalMandateAdminService {
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-either-side-must-be-able-to-end-a-mandate-req-smr-004
 	 */
 	public function held(array $holders, string $organisation, ?DateTimeImmutable $now = null): array {
-		$moment = ($now ?? new DateTimeImmutable());
-		$out    = [];
-		foreach ($this->rows(schema: self::MANDATES, organisation: $organisation) as $row) {
-			if (in_array($this->holderOf(row: $row), $holders, true) === false || ($row['status'] ?? 'active') !== 'active') {
-				continue;
-			}
-
-			if ($this->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true) {
-				continue;
-			}
-
-			$out[] = [
-				'id' => $this->idOf(row: $row),
-				'label' => (string)($row['label'] ?? ''),
-				'onBehalfOf' => self::typed(value: (string)($row['onBehalfOf'] ?? '')),
-				'expiresAt' => (string)($row['expiresAt'] ?? ''),
-				'grantedBy' => (string)($row['grantedBy'] ?? ''),
-				'grantedAt' => (string)($row['grantedAt'] ?? ''),
-			];
-		}
-
-		return $out;
+		return $this->listing->held(holders: $holders, organisation: $organisation, now: $now);
 	}//end held()
 
 	/**
@@ -497,201 +389,27 @@ class PortalMandateAdminService {
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-a-company-must-hold-the-mandate-it-accepts-req-smr-005
 	 */
 	public function holderOf(array $row): string {
-		$holder = trim((string)($row['holder'] ?? ''));
-		if ($holder !== '') {
-			return self::typed(value: $holder);
-		}
-
-		$ref = trim((string)($row['subjectRef'] ?? ''));
-		if ($ref === '') {
-			return '';
-		}
-
-		return 'subject:' . $ref;
+		return $this->parties->holderOf(row: $row);
 	}//end holderOf()
 
 	/**
 	 * Mark a mandate revoked, once; final.
 	 *
 	 * @param array<string, mixed> $row The mandate.
-	 * @param string               $by  Who ends it.
+	 * @param string               $actor Who ends it.
 	 * @param DateTimeImmutable    $now The moment.
 	 *
 	 * @return string
 	 */
-	private function end(array $row, string $by, DateTimeImmutable $now): string {
+	private function end(array $row, string $actor, DateTimeImmutable $now): string {
 		if (($row['status'] ?? 'active') === 'revoked') {
 			return '';
 		}
 
-		$this->update(schema: self::MANDATES, row: $row, data: ['status' => 'revoked', 'revokedBy' => $by, 'revokedAt' => $now->format(DATE_ATOM)]);
+		$ended = ['status' => 'revoked', 'revokedBy' => $actor, 'revokedAt' => $now->format(DATE_ATOM)];
+		$this->store->update(schema: self::MANDATES, row: $row, data: $ended);
 
 		return '';
 	}//end end()
 
-	/**
-	 * @param string               $schema The schema.
-	 * @param array<string, mixed> $row    The row.
-	 * @param array<string, mixed> $data   The change.
-	 *
-	 * @return void
-	 */
-	private function update(string $schema, array $row, array $data): void {
-		$organisation = (string)($row['organisation'] ?? '');
-		$this->writer->updateObject(
-			register: self::REGISTER,
-			schema: $schema,
-			scopeField: 'organisation',
-			subjectRef: $organisation,
-			organisation: $organisation,
-			id: $this->idOf(row: $row),
-			data: $data
-		);
-	}//end update()
-
-	/**
-	 * @param string $id           The mandate id.
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function mandate(string $id, string $organisation): ?array {
-		if ($id === '') {
-			return null;
-		}
-
-		foreach ($this->rows(schema: self::MANDATES, organisation: $organisation) as $row) {
-			if ($this->idOf(row: $row) === $id) {
-				return $row;
-			}
-		}
-
-		return null;
-	}//end mandate()
-
-	/**
-	 * @param string $token The invitation secret.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function invitationByToken(string $token): ?array {
-		if ($token === '') {
-			return null;
-		}
-
-		$hash = hash('sha256', $token);
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::INVITATIONS,
-			scopeField: 'tokenHash',
-			subjectRef: $hash,
-			organisation: '',
-			limit: 5
-		);
-		foreach ($rows as $row) {
-			if (is_array($row) === true && hash_equals((string)($row['tokenHash'] ?? ''), $hash) === true && isset($row['mandate']) === true) {
-				return $row;
-			}
-		}
-
-		return null;
-	}//end invitationByToken()
-
-	/**
-	 * Every row of one schema in one tenant, re-checked against the tenant.
-	 *
-	 * @param string $schema       The schema.
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function rows(string $schema, string $organisation): array {
-		if ($organisation === '') {
-			return [];
-		}
-
-		$out = [];
-		foreach ($this->reader->readCollection(
-			register: self::REGISTER,
-			schema: $schema,
-			scopeField: 'organisation',
-			subjectRef: $organisation,
-			organisation: $organisation,
-			limit: self::LIMIT
-		) as $row) {
-			if (is_array($row) === true && ($row['organisation'] ?? '') === $organisation) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
-	}//end rows()
-
-	/**
-	 * @param array<string, mixed> $row A stored row.
-	 *
-	 * @return string
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		foreach ([($row['uuid'] ?? null), ($row['id'] ?? null), ($self['uuid'] ?? null), ($self['id'] ?? null)] as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
-	}//end idOf()
-
-	/**
-	 * @param string            $value A date or date-time, '' for none.
-	 * @param DateTimeImmutable $now   The moment.
-	 *
-	 * @return bool
-	 */
-	private function expired(string $value, DateTimeImmutable $now): bool {
-		if ($value === '') {
-			return false;
-		}
-
-		$when = date_create_immutable($value);
-
-		return $when === false || $when <= $now;
-	}//end expired()
-
-	/**
-	 * The last moment of a day in Amsterdam, as the date-time the register
-	 * stores. An empty day stays empty: no end.
-	 *
-	 * @param string $day A day, `Y-m-d`, or ''.
-	 *
-	 * @return string
-	 */
-	private function endOfDay(string $day): string {
-		if ($day === '') {
-			return '';
-		}
-
-		$end = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $day . ' 23:59:59', new DateTimeZone('Europe/Amsterdam'));
-		if ($end === false) {
-			return '';
-		}
-
-		return $end->format(DATE_ATOM);
-	}//end endOfDay()
-
-	/**
-	 * @param string            $value A day, `Y-m-d`.
-	 * @param DateTimeImmutable $now   The moment.
-	 *
-	 * @return bool Whether it is a real day after today.
-	 */
-	private function futureDay(string $value, DateTimeImmutable $now): bool {
-		$day = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-		if ($day === false || $day->format('Y-m-d') !== $value) {
-			return false;
-		}
-
-		return $day > $now->setTime(23, 59, 59);
-	}//end futureDay()
 }//end class
