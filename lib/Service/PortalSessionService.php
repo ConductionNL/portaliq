@@ -673,11 +673,9 @@ class PortalSessionService {
 	 * expired bearer, malformed bearer, or past the absolute cap — all
 	 * indistinguishable to the caller, exactly like `resolveFromBearer()`.
 	 *
-	 * With an audience, the rotated session carries that audience instead:
-	 * after a claim moved the account into an invitation's audience
-	 * (invitation-joins-an-unbound-account). The caller reads it from the
-	 * account, never from the request. The audience the session has, and the
-	 * company audience, are refused.
+	 * With an audience (read from the account, never the request), the new
+	 * session carries it instead (invitation-joins-an-unbound-account); the
+	 * session's own audience and `supplier` are refused.
 	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
 	 * @param string      $audience            The audience the account holds now, or '' to keep the session's.
@@ -699,8 +697,10 @@ class PortalSessionService {
 			return null;
 		}
 
+		// A new audience brings that audience's role, never the old one's.
 		if ($audience !== '') {
 			$subject['audience'] = $audience;
+			$subject['roles']    = [$audience . ':read'];
 		}
 
 		// A refresh carries the branch and its restriction unchanged: it
@@ -784,11 +784,7 @@ class PortalSessionService {
 			return null;
 		}
 
-		// Rotate: the OLD bearer stops validating from here on. A quiet
-		// revoke (no separate `logout` audit entry) — the visible event for
-		// this rotation is `refresh`, recorded once, below.
-		$this->revokeQuietly(jti: $oldJti);
-
+		// `refresh` is recorded before the old bearer is revoked.
 		$this->auditor->record(
 			verb: 'refresh',
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
@@ -798,6 +794,13 @@ class PortalSessionService {
 			id: $issued['jti'],
 			jti: $oldJti
 		);
+
+		// A quiet revoke; a failed one never signs the person out.
+		try {
+			$this->revokeQuietly(jti: $oldJti);
+		} catch (Throwable $exception) {
+			$this->logger->warning('Portaliq: the old bearer was not revoked after a rotation', ['exception' => get_class($exception)]);
+		}
 
 		return $issued;
 	}//end rotate()

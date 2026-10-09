@@ -14,19 +14,20 @@ The audience check is right for a supplier who tries to take over a parent's inv
 
 ## What changes
 
-- A redeem of an invitation's secret may join the waiting account into an account of another audience, when that account is the person's own and still unbound:
-  - it names one natural person (DigiD or eIDAS) and carries its identity reference;
-  - nobody provisioned it: no app, no clerk, no self-registration;
-  - it holds no claims yet;
-  - neither account is a company account (`supplier`);
+- A redeem of an invitation's mailed link may join the waiting account into an account of another audience, when that account is the person's own and still unbound. A code from a paper letter never does: anyone in the house can read a letter.
+  - The invitation's audience is on the organisation's allow-list: `parent` unless the organisation sets `unboundAudiences` in its presentation override. `supplier` is never on it.
+  - The account names one natural person (DigiD or eIDAS) and carries its identity reference.
+  - Nobody provisioned it: no app, no clerk, no self-registration.
+  - It holds no claims yet, and it is no company account (`supplier`).
   - the session is at trust level substantial or higher;
   - everything else the join asks still holds: the waiting account is pending, has no identity reference, sits in the same organisation, and carries no conflicting claim.
 - The account then takes on the waiting account's audience, with its claims and address, in the same write. The waiting account is withdrawn as before, and the audit trail records the claim as before.
-- The redeem route answers the audience and a reissued bearer when the account's audience moved. The site stores the new bearer and reads the session again, so the parent pages open without a second sign-in. A reissue that fails costs nothing: the next sign-in carries the account's audience.
+- A move leaves two traces. The audit trail gets an `audience` row with the old and the new audience. The invited address gets a mail: the invitation was accepted on that date, and who to contact if that was not you. The mail holds no secret and no link.
+- The redeem route answers the audience and a reissued bearer when the account's audience moved. The new bearer carries the new audience's role (`parent:read`), never the old one's. The rotation records its audit row before it revokes the old bearer, and a failed revoke is logged, so a late failure never leaves the person signed out. The site stores the new bearer and reads the session again, so the parent pages open without a second sign-in. A reissue that fails costs nothing: the next sign-in carries the account's audience.
 
 ## Trust
 
-The secret is still the proof, as in REQ-PIS-008. The session adds who she is. Nothing here joins on an address alone: the join at sign-in (REQ-PIS-005, REQ-PIS-010) and a confirmed address (REQ-PIS-006) keep refusing another audience.
+The mailed secret is still the proof, as in REQ-PIS-008. The session adds who she is. A leaked or forwarded link could be redeemed by anyone with DigiD and a fresh account, so the move is limited to the allow-list, and the invited address hears about it. Nothing here joins on an address alone: the join at sign-in (REQ-PIS-005, REQ-PIS-010) and a confirmed address (REQ-PIS-006) keep refusing another audience.
 
 Why this and not "no account before an invitation": a DigiD answer through the broker carries no address. Without her own account she could never sign in to hand the secret back.
 
@@ -37,6 +38,11 @@ The review points stay closed:
 - M2: the adoption happens inside the existing lock, after the waiting account is read again.
 - M3: a company account or identity never takes over a person's invitation, and a person never moves into the company audience.
 - M4: unchanged; the secret and code hashes are the existing ones.
+
+## Known, not changed here
+
+- L5: a lost update outside the redeem locks, inherited from the join at sign-in.
+- L7: an account that moved from `client` to `parent` no longer sees pages declared for `client` only.
 
 ## Not changed
 

@@ -55,29 +55,44 @@ final class UnboundAccount {
 	private const ADOPT_TRUST = 'substantial';
 
 	/**
+	 * Constructor.
+	 *
+	 * @param mixed              $trust     The redeeming session's trust level.
+	 * @param array<int, string> $audiences The audiences an unbound account of
+	 *                                      this organisation may take on
+	 *                                      (security review L1; see AudienceMove).
+	 */
+	public function __construct(
+		private readonly mixed $trust,
+		private readonly array $audiences,
+	) {
+	}//end __construct()
+
+	/**
 	 * Whether the account may take on the audience of the waiting account:
-	 * it names one natural person (DigiD or eIDAS) with an identity
-	 * reference, nobody provisioned it, it holds no claims, neither side is
-	 * a company account, and the session is at substantial or higher.
+	 * that audience is one the organisation allows (security review L1), the
+	 * account names one natural person (DigiD or eIDAS) with an identity
+	 * reference, nobody provisioned it, it holds no claims, it is no company
+	 * account, and the session is at substantial or higher.
 	 *
 	 * What the join itself asks (pending, organisation, conflicting claims)
 	 * is WaitingAccountJoin's check, not this one.
 	 *
 	 * @param array<string, mixed> $account The account that would receive the claims.
 	 * @param array<string, mixed> $waiting The account that would be withdrawn.
-	 * @param mixed $trust The session's trust level.
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 */
-	public function mayTakeOn(array $account, array $waiting, mixed $trust): bool {
-		return in_array(self::BUSINESS_AUDIENCE, [(string)($waiting['audience'] ?? ''), (string)($account['audience'] ?? '')], true) === false
+	public function mayTakeOn(array $account, array $waiting): bool {
+		return in_array((string)($waiting['audience'] ?? ''), $this->audiences, true) === true
+			&& (string)($account['audience'] ?? '') !== self::BUSINESS_AUDIENCE
 			&& in_array((string)($account['identityType'] ?? ''), self::PERSON_IDENTITIES, true) === true
 			&& (string)($account['identityRef'] ?? '') !== ''
 			&& (string)($account['provisionedBy'] ?? '') === ''
 			&& $this->holdsNoClaims(account: $account) === true
-			&& PortalSessionService::trustSatisfies(subjectTrust: $trust, minTrust: self::ADOPT_TRUST) === true;
+			&& PortalSessionService::trustSatisfies(subjectTrust: $this->trust, minTrust: self::ADOPT_TRUST) === true;
 	}//end mayTakeOn()
 
 	/**

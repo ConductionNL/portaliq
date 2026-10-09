@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Service\Identity\UnboundAccount;
 use OCA\Portaliq\Service\Identity\WaitingAccountJoin;
 use PHPUnit\Framework\TestCase;
 
@@ -59,7 +60,7 @@ class WaitingAccountJoinTest extends TestCase {
 		$this->assertNull($join->joinWaiting(account: $this->rows[$account], waiting: $this->rows[$waiting]));
 		$this->assertSame('client', $this->rows[$account]['audience']);
 
-		$this->assertSame($waiting, $join->joinWaiting(account: $this->rows[$account], waiting: $this->rows[$waiting], sessionTrust: 'substantial'));
+		$this->assertSame($waiting, $join->joinWaiting(account: $this->rows[$account], waiting: $this->rows[$waiting], unbound: $this->rules()));
 		$this->assertSame('parent', $this->rows[$account]['audience']);
 		$this->assertSame(['learniq' => ['guardianRef' => 'guardian-7']], $this->rows[$account]['claims']);
 		$this->assertSame('void', $this->rows[$waiting]['status']);
@@ -74,9 +75,9 @@ class WaitingAccountJoinTest extends TestCase {
 	 */
 	public function testEachConditionOfTakingOnAnAudienceRefusesOnItsOwn(): void {
 		$join = $this->join();
-		$this->assertTrue($join->mayAdoptAudience(account: $this->unbound(), waiting: $this->waiting(), trust: 'substantial'), 'the guardian');
-		$this->assertTrue($join->mayAdoptAudience(account: $this->unbound(['identityType' => 'eidas']), waiting: $this->waiting(), trust: 'high'), 'eIDAS, high');
-		$this->assertTrue($join->mayAdoptAudience(account: $this->unbound(['claims' => ['learniq' => []]]), waiting: $this->waiting(), trust: 'substantial'), 'an empty claim list holds nothing');
+		$this->assertTrue($join->mayAdoptAudience(account: $this->unbound(), waiting: $this->waiting(), unbound: $this->rules(trust: 'substantial')), 'the guardian');
+		$this->assertTrue($join->mayAdoptAudience(account: $this->unbound(['identityType' => 'eidas']), waiting: $this->waiting(), unbound: $this->rules(trust: 'high')), 'eIDAS, high');
+		$this->assertTrue($join->mayAdoptAudience(account: $this->unbound(['claims' => ['learniq' => []]]), waiting: $this->waiting(), unbound: $this->rules(trust: 'substantial')), 'an empty claim list holds nothing');
 
 		$refusals = [
 			'another person\'s identity on the invitation' => [[], ['identityType' => 'digid', 'identityRef' => 'bsn-somebody'], 'substantial'],
@@ -93,11 +94,12 @@ class WaitingAccountJoinTest extends TestCase {
 			'an account with claims' => [['claims' => ['dossiq' => ['caseRef' => 'case-1']]], [], 'substantial'],
 			'a company account' => [['audience' => 'supplier'], [], 'substantial'],
 			'an invitation into the company audience' => [[], ['audience' => 'supplier'], 'substantial'],
+			'an audience the organisation does not allow' => [[], ['audience' => 'participant'], 'substantial'],
 			'an invitation without an audience' => [[], ['audience' => ''], 'substantial'],
 			'an invitation that is no longer pending' => [[], ['status' => 'void'], 'substantial'],
 		];
 		foreach ($refusals as $case => [$accountFields, $waitingFields, $trust]) {
-			$this->assertFalse($join->mayAdoptAudience(account: $this->unbound($accountFields), waiting: $this->waiting($waitingFields), trust: $trust), $case);
+			$this->assertFalse($join->mayAdoptAudience(account: $this->unbound($accountFields), waiting: $this->waiting($waitingFields), unbound: $this->rules(trust: $trust)), $case);
 		}
 
 	}//end testEachConditionOfTakingOnAnAudienceRefusesOnItsOwn()
@@ -140,6 +142,18 @@ class WaitingAccountJoinTest extends TestCase {
 			'claims' => ['learniq' => ['guardianRef' => 'guardian-7']],
 		], $overrides);
 	}//end waiting()
+
+	/**
+	 * The rules of an organisation that lets an unbound account take on the
+	 * parent audience, for a session of this trust.
+	 *
+	 * @param string $trust The session's trust level.
+	 *
+	 * @return UnboundAccount
+	 */
+	private function rules(string $trust = 'substantial'): UnboundAccount {
+		return new UnboundAccount(trust: $trust, audiences: ['parent']);
+	}//end rules()
 
 	/**
 	 * The join over the fake store.

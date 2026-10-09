@@ -121,11 +121,12 @@ class WaitingAccountJoin {
 	 * @param bool $addressProven Whether the way in proved the invited
 	 *                            address (an address or a mailed link did; a
 	 *                            code on paper did not).
-	 * @param string|null $sessionTrust The trust of the session that handed in
-	 *                                  an invitation's secret, or null for
-	 *                                  every other way in. Only with it may
-	 *                                  an unbound account take on the waiting
-	 *                                  account's audience, see mayAdoptAudience().
+	 * @param UnboundAccount|null $unbound The rules for an unbound account, given
+	 *                                     only by the redeem of a mailed link,
+	 *                                     or null for every other way in. Only
+	 *                                     with them may an account take on the
+	 *                                     waiting account's audience, see
+	 *                                     mayAdoptAudience().
 	 *
 	 * @return string|null The identifier of the waiting account that was
 	 *                     joined, or null when nothing was.
@@ -143,9 +144,9 @@ class WaitingAccountJoin {
 		array $waiting,
 		string $reason = self::VOID_REASON,
 		bool $addressProven = true,
-		?string $sessionTrust = null,
+		?UnboundAccount $unbound = null,
 	): ?string {
-		$audience = $this->audienceAfterJoin(account: $account, waiting: $waiting, sessionTrust: $sessionTrust);
+		$audience = $this->audienceAfterJoin(account: $account, waiting: $waiting, unbound: $unbound);
 		if ($audience === null) {
 			return null;
 		}
@@ -221,26 +222,30 @@ class WaitingAccountJoin {
 	 * - nobody provisioned it: no app and no clerk gave it an audience;
 	 * - it holds no claims yet, so no access is moved from one audience to
 	 *   another;
-	 * - neither account is a company account (`supplier`), so a supplier
-	 *   still never takes over a parent's invitation (M3);
+	 * - the invitation's audience is one the organisation allows an unbound
+	 *   account to take on (default `parent`, never `supplier`), and the
+	 *   account is no company account, so a supplier still never takes over
+	 *   a parent's invitation (M3, review L1);
 	 * - the session is at substantial or higher;
 	 * - everything else isJoinable() asks holds, with the waiting account's
 	 *   audience in place of the account's own: pending, no identity
 	 *   reference, the same organisation, no conflicting claim (M1).
 	 *
-	 * Only the redeem of a secret passes a trust, so an address alone (the
-	 * join at sign-in, a confirmed address) never moves an audience.
+	 * Only the redeem of a mailed link passes these rules, so an address
+	 * alone (the join at sign-in, a confirmed address) and a code from a
+	 * paper letter never move an audience (second review M1).
 	 *
 	 * @param array<string, mixed> $account The account that would receive the claims.
 	 * @param array<string, mixed> $waiting The account that would be withdrawn.
-	 * @param mixed $trust The session's trust level.
+	 * @param UnboundAccount $unbound The rules: the session's trust and the
+	 *                                audiences the organisation allows.
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 */
-	public function mayAdoptAudience(array $account, array $waiting, mixed $trust): bool {
-		return (new UnboundAccount())->mayTakeOn(account: $account, waiting: $waiting, trust: $trust)
+	public function mayAdoptAudience(array $account, array $waiting, UnboundAccount $unbound): bool {
+		return $unbound->mayTakeOn(account: $account, waiting: $waiting)
 			&& $this->isJoinable(account: ['audience' => (string)($waiting['audience'] ?? '')] + $account, waiting: $waiting) === true;
 	}//end mayAdoptAudience()
 
@@ -251,16 +256,16 @@ class WaitingAccountJoin {
 	 *
 	 * @param array<string, mixed> $account The account that receives the claims.
 	 * @param array<string, mixed> $waiting The waiting account.
-	 * @param string|null $sessionTrust The redeeming session's trust, or null.
+	 * @param UnboundAccount|null $unbound The rules for an unbound account, or null.
 	 *
 	 * @return string|null
 	 */
-	private function audienceAfterJoin(array $account, array $waiting, ?string $sessionTrust): ?string {
+	private function audienceAfterJoin(array $account, array $waiting, ?UnboundAccount $unbound): ?string {
 		if ($this->isJoinable(account: $account, waiting: $waiting) === true) {
 			return '';
 		}
 
-		if ($sessionTrust !== null && $this->mayAdoptAudience(account: $account, waiting: $waiting, trust: $sessionTrust) === true) {
+		if ($unbound !== null && $this->mayAdoptAudience(account: $account, waiting: $waiting, unbound: $unbound) === true) {
 			return (string)$waiting['audience'];
 		}
 

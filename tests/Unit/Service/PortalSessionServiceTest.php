@@ -629,7 +629,7 @@ class PortalSessionServiceTest extends TestCase {
 		$store = [];
 		$service = $this->service(store: $store);
 
-		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', trust: 'substantial', provider: 'digid');
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', trust: 'substantial', roles: ['client:read'], provider: 'digid');
 		$reissued = $service->refreshSession('Bearer ' . $issued['token'], 'parent');
 		$this->assertNotNull($reissued);
 		$subject = $service->resolveFromBearer('Bearer ' . $reissued['token']);
@@ -638,6 +638,7 @@ class PortalSessionServiceTest extends TestCase {
 		$this->assertSame('org-1', $subject['organisation']);
 		$this->assertSame('substantial', $subject['trust']);
 		$this->assertSame('digid', $subject['provider']);
+		$this->assertSame(['parent:read'], $subject['roles'], 'The new audience brings its own role, never the old one (review L2).');
 		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token']), 'the old bearer is rotated out');
 
 	}//end testASessionIsReissuedForTheAudienceItsAccountTookOn()

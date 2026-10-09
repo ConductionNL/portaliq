@@ -6,10 +6,14 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\Identity\AudienceMove;
 use OCA\Portaliq\Service\Identity\ClaimAttempts;
 use OCA\Portaliq\Service\Identity\ClaimLock;
 use OCA\Portaliq\Service\Identity\InvitationCode;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\WaitingAccountInvitation;
+use OCA\Portaliq\Service\Identity\WaitingAccountClaim;
 use OCA\Portaliq\Service\Identity\WaitingAccountSecret;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -67,6 +71,18 @@ class WaitingAccountInvitationTest extends TestCase {
 	private ?\Closure $beforeLock = null;
 
 	/**
+	 * The organisation's presentation overrides the fake config answers.
+	 * @var array<string, mixed>
+	 */
+	private array $overrides = [];
+
+	/**
+	 * The claim notices mailed: address, organisation, day.
+	 * @var array<int, array<int, string>>
+	 */
+	private array $noticed = [];
+
+	/**
 	 * The instance secret the fake config answers.
 	 *
 	 * @var string
@@ -76,6 +92,8 @@ class WaitingAccountInvitationTest extends TestCase {
 	protected function setUp(): void {
 		$this->rows = [];
 		$this->audited = [];
+		$this->overrides = [];
+		$this->noticed = [];
 		$this->cached = [];
 		$this->cacheBroken = false;
 		$this->held = [];
@@ -385,9 +403,78 @@ class WaitingAccountInvitationTest extends TestCase {
 		$this->assertSame('ouder@example.org', $this->rows[$account]['email']);
 		$this->assertSame('void', $this->rows[$waiting]['status']);
 		$this->assertSame('', $this->rows[$waiting]['claimTokenHash']);
-		$this->assertSame([['claim', 'subject-1', 'gemeente-x', 'portaliq', 'portalAccount', $waiting, 'jti-1']], $this->audited);
+		// The move is its own audit row with the old and the new audience
+		// (review L3), and the invited address is told (review M1).
+		$this->assertSame(
+			[
+				['audience', 'subject-1', 'gemeente-x', 'portaliq', 'portalAccount', $account, 'jti-1', ['from' => 'client', 'to' => 'parent']],
+				['claim', 'subject-1', 'gemeente-x', 'portaliq', 'portalAccount', $waiting, 'jti-1'],
+			],
+			$this->audited
+		);
+		$this->assertSame([['ouder@example.org', 'gemeente-x', (new DateTimeImmutable())->format('Y-m-d')]], $this->noticed);
 
 	}//end testAPersonWhoSignedInBeforeSheWasInvitedTakesOnTheInvitationsAudience()
+
+	/**
+	 * Second review M1: a code from a paper letter can be read by anyone in
+	 * the house, so it never moves an audience. The same code still joins an
+	 * account of the invitation's own audience.
+	 *
+	 * @return void
+	 */
+	public function testACodeFromALetterNeverMovesAnAudience(): void {
+		$waiting = $this->seedWaiting();
+		$account = $this->seedSignedIn(['audience' => 'client']);
+		$service = $this->service();
+		$code    = $service->issueCode(subjectRef: 'waiting-1', appId: 'learniq');
+
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: $code['code']));
+		$this->assertSame('client', $this->rows[$account]['audience']);
+		$this->assertArrayNotHasKey('claims', $this->rows[$account]);
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+		$this->assertNotSame('', $this->rows[$waiting]['claimCodeHash'], 'The code is not spent.');
+		$this->assertSame([], $this->noticed);
+
+		$this->rows[$account]['audience'] = 'parent';
+		$this->assertSame(WaitingAccountInvitation::CLAIMED, $service->redeem(subject: $this->subject(['jti' => 'jti-2']), secret: $code['code']));
+		$this->assertSame([], $this->noticed, 'No move, no notice.');
+
+	}//end testACodeFromALetterNeverMovesAnAudience()
+
+	/**
+	 * Review L1: the audiences an unbound account may take on are an
+	 * allow-list, `parent` unless the organisation names its own. The company
+	 * audience is never on it, and a list that names nothing usable allows
+	 * nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheAudiencesAnUnboundAccountMayTakeOnAreTheOrganisations(): void {
+		$cases = [
+			'another audience by default' => [[], 'participant', false],
+			'parent by default' => [[], 'parent', true],
+			'an audience the organisation names' => [['unboundAudiences' => ['participant']], 'participant', true],
+			'parent when the organisation names only another' => [['unboundAudiences' => ['participant']], 'parent', false],
+			'the company audience, even when named' => [['unboundAudiences' => ['supplier']], 'supplier', false],
+			'nothing when the list is empty' => [['unboundAudiences' => []], 'parent', false],
+		];
+
+		foreach ($cases as $case => [$overrides, $audience, $moves]) {
+			$this->setUp();
+			$this->overrides = $overrides;
+			$waiting = $this->seedWaiting(['audience' => $audience]);
+			$account = $this->seedSignedIn(['audience' => 'client']);
+			$service = $this->service();
+			$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+
+			$expected = $moves ? WaitingAccountInvitation::CLAIMED : WaitingAccountInvitation::NOT_VALID;
+			$this->assertSame($expected, $service->redeem(subject: $this->subject(), secret: $issued['token']), $case);
+			$this->assertSame($moves ? $audience : 'client', $this->rows[$account]['audience'], $case);
+			$this->assertSame($moves ? 'void' : 'pending', $this->rows[$waiting]['status'], $case);
+		}
+
+	}//end testTheAudiencesAnUnboundAccountMayTakeOnAreTheOrganisations()
 
 	/**
 	 * The attack cases of invitation-joins-an-unbound-account. Each one holds
@@ -840,8 +927,13 @@ class WaitingAccountInvitationTest extends TestCase {
 	private function service(?ISecureRandom $random = null): WaitingAccountInvitation {
 		$auditor = $this->getMockBuilder(AuditTrailService::class)->disableOriginalConstructor()->onlyMethods(['record'])->getMock();
 		$auditor->method('record')->willReturnCallback(
-			function (string $verb, string $subjectRef, string $organisation, string $register, string $schema, string $id, string $jti = ''): void {
-				$this->audited[] = [$verb, $subjectRef, $organisation, $register, $schema, $id, $jti];
+			function (string $verb, string $subjectRef, string $organisation, string $register, string $schema, string $id, string $jti = '', string $appId = 'portaliq', array $detail = []): void {
+				$fact = [$verb, $subjectRef, $organisation, $register, $schema, $id, $jti];
+				if ($detail !== []) {
+					$fact[] = $detail;
+				}
+
+				$this->audited[] = $fact;
 			}
 		);
 
@@ -866,7 +958,18 @@ class WaitingAccountInvitationTest extends TestCase {
 
 		$writer = $this->fakeWriter();
 
-		return new WaitingAccountInvitation($this->fakeReader(), $writer, ($random ?? $this->codeAwareRandom()), new ClaimAttempts($writer, $factory), $auditor, new ClaimLock($this->fakeLocks(), 0), new WaitingAccountSecret($this->fakeReader(), $this->fakeConfig()));
+		$organisations = $this->getMockBuilder(PortalOrganisationConfigService::class)->disableOriginalConstructor()->onlyMethods(['presentationFor'])->getMock();
+		$organisations->method('presentationFor')->willReturnCallback(fn (string $orgSlug): ?array => ['uuid' => 'org-' . $orgSlug, 'overrides' => $this->overrides]);
+		$mailer = $this->getMockBuilder(PortalIdentityMailer::class)->disableOriginalConstructor()->onlyMethods(['sendClaimNotice'])->getMock();
+		$mailer->method('sendClaimNotice')->willReturnCallback(
+			function (string $email, string $organisation, \DateTimeInterface $moment): bool {
+				$this->noticed[] = [$email, $organisation, $moment->format('Y-m-d')];
+				return true;
+			}
+		);
+		$moves = new AudienceMove($organisations, $mailer, $auditor);
+
+		return new WaitingAccountInvitation($this->fakeReader(), $writer, ($random ?? $this->codeAwareRandom()), new ClaimAttempts($writer, $factory), $auditor, new ClaimLock($this->fakeLocks(), 0), new WaitingAccountSecret($this->fakeReader(), $this->fakeConfig()), new WaitingAccountClaim($writer, new WaitingAccountSecret($this->fakeReader(), $this->fakeConfig()), $moves));
 	}//end service()
 
 	/**
