@@ -187,7 +187,7 @@ class PublicNewsReader {
 				'end'               => (string)($event['end'] ?? ''),
 				'location'          => trim((string)($event['location'] ?? '')),
 				'signupDeadline'    => $deadline,
-				'closed'            => ($event['rsvpEnabled'] ?? false) !== true || EventDeadline::hasPassed(deadline: $deadline),
+				'closed'            => ($event['rsvpEnabled'] ?? false) !== true || (new EventDeadline())->hasPassed(deadline: $deadline),
 				'askSeats'          => ($event['askSeats'] ?? false) === true,
 				'maxSeatsPerAnswer' => (int)($event['maxSeatsPerAnswer'] ?? 4),
 			];

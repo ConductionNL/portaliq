@@ -30,11 +30,9 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalHelp;
 use OCA\Portaliq\Service\Cms\PortalShell;
-use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Reads the CMS content of ONE portal.
@@ -51,41 +49,38 @@ use Throwable;
  * only worth having if it has been seen to fail.
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
+ *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one method per kind of content the headless API serves.
  */
 class CmsReader {
 
 	/**
-	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
+	 * The audience-keyed distributed cache.
 	 *
-	 * @var string
+	 * @var CmsContentCache
 	 */
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+	private readonly CmsContentCache $cache;
 
 	/**
-	 * Cache lifetime for a public content read, in seconds.
+	 * The scoped read of CMS rows.
 	 *
-	 * Deliberately modest: invalidation is event-driven on the content
-	 * object's write, and this TTL is only the backstop for a missed event.
-	 * An editor who publishes should never have to wait it out.
-	 *
-	 * @var int
+	 * @var CmsRows
 	 */
-	private const TTL = 300;
+	private readonly CmsRows $rows;
 
 	/**
-	 * Key prefix of the hit and miss counters; no portal slug can begin with it, so a portal's invalidation leaves them alone.
+	 * Shapes the widgets of a page and expands its shared blocks.
 	 *
-	 * @var string
+	 * @var CmsSharedBlocks
 	 */
-	private const STATS_PREFIX = '__stats|';
+	private readonly CmsSharedBlocks $blocks;
 
 	/**
-	 * The distributed cache.
+	 * The FAQ entries and the product finder.
 	 *
-	 * @var ICache
+	 * @var CmsFaq
 	 */
-	private readonly ICache $cache;
-
+	private readonly CmsFaq $faqReader;
 
 	/**
 	 * Constructor.
@@ -101,95 +96,19 @@ class CmsReader {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ContainerInterface $container,
+		ContainerInterface $container,
 		ICacheFactory $cacheFactory,
-		private readonly LoggerInterface $logger,
-		private readonly PortalRegisterContext $context,
+		LoggerInterface $logger,
+		PortalRegisterContext $context,
 		private readonly MediaReferences $media,
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 		private readonly PortalShell $shell=new PortalShell(),
 	) {
-		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
+		$this->cache     = new CmsContentCache(cache: $cacheFactory->createDistributed('portaliq_cms'), logger: $logger);
+		$this->rows      = new CmsRows(container: $container, logger: $logger, context: $context);
+		$this->blocks    = new CmsSharedBlocks(rows: $this->rows);
+		$this->faqReader = new CmsFaq(cache: $this->cache, rows: $this->rows, reader: $this);
 	}//end __construct()
-
-
-	/**
-	 * Read one cache entry and count whether it was there.
-	 *
-	 * The counts are what tells a cache that never hits from no cache at all.
-	 *
-	 * @param string $key The cache key.
-	 *
-	 * @return mixed The stored value, or null on a miss.
-	 *
-	 * @spec openspec/changes/portal-headless-content-api/tasks.md#task-2
-	 */
-	private function lookup(string $key): mixed {
-		$hit = $this->cache->get($key);
-		$outcome = 'hits';
-		if ($hit === null) {
-			$outcome = 'misses';
-		}
-
-		$this->count(outcome: $outcome);
-
-		return $hit;
-	}//end lookup()
-
-
-	/**
-	 * Add one to a cache outcome counter. A lost increment under a race is acceptable for a gauge.
-	 *
-	 * @param string $outcome `hits` or `misses`.
-	 *
-	 * @return void
-	 */
-	private function count(string $outcome): void {
-		try {
-			$this->cache->set(self::STATS_PREFIX . $outcome, ((int)$this->cache->get(self::STATS_PREFIX . $outcome)) + 1, 0);
-		} catch (Throwable $e) {
-			$this->logger->debug('Portaliq: content cache counter failed', ['reason' => $e->getMessage()]);
-		}
-	}//end count()
-
-
-	/**
-	 * How many content reads the cache answered and how many it missed.
-	 *
-	 * @return array{hits: int, misses: int}
-	 *
-	 * @spec openspec/changes/portal-headless-content-api/tasks.md#task-2
-	 */
-	public function cacheStats(): array {
-		return [
-			'hits'   => (int)$this->cache->get(self::STATS_PREFIX . 'hits'),
-			'misses' => (int)$this->cache->get(self::STATS_PREFIX . 'misses'),
-		];
-	}//end cacheStats()
-
-
-	/**
-	 * Build the cache key for a content read.
-	 *
-	 * @param string $portal  The portal slug.
-	 * @param string $kind     What is being read (menus, page, pages, glossary).
-	 * @param string $selector The route or other selector, '' when not applicable.
-	 * @param string $locale   The locale.
-	 * @param string $audience 'anonymous' or the authenticated audience.
-	 *
-	 * @return string The cache key.
-	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
-	 */
-	public function cacheKey(string $portal, string $kind, string $selector, string $locale, string $audience): string {
-		// `audience` is NOT optional and NOT last-by-accident. Dropping it is
-		// the single change that turns this cache into a cross-visitor data
-		// leak, so it is part of the key's identity, not a suffix.
-		return implode(
-			'|',
-			[$portal, $kind, $selector, $locale, $audience]
-		);
-	}//end cacheKey()
 
 
 	/**
@@ -204,17 +123,17 @@ class CmsReader {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
 	public function menus(string $portal, string $locale, string $audience): array {
-		$key = $this->cacheKey(portal: $portal, kind: 'menus', selector: '', locale: $locale, audience: $audience);
-		$hit = $this->lookup(key: $key);
+		$key = $this->cache->key(portal: $portal, kind: 'menus', selector: '', locale: $locale, audience: $audience);
+		$hit = $this->cache->lookup(key: $key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->query(schema: 'menu', filters: ['portal' => $portal]);
+		$rows = $this->rows->query(schema: 'menu', filters: ['portal' => $portal]);
 		usort($rows, static fn ($a, $b) => (int)($a['position'] ?? 0) <=> (int)($b['position'] ?? 0));
 
 		$menus = array_map(fn (array $row) => $this->shapeMenu(row: $row), $rows);
-		$this->cache->set($key, json_encode($menus), self::TTL);
+		$this->cache->store($key, json_encode($menus));
 
 		return $menus;
 	}//end menus()
@@ -232,13 +151,13 @@ class CmsReader {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
 	public function pages(string $portal, string $locale, string $audience): array {
-		$key = $this->cacheKey(portal: $portal, kind: 'pages', selector: '', locale: $locale, audience: $audience);
-		$hit = $this->lookup(key: $key);
+		$key = $this->cache->key(portal: $portal, kind: 'pages', selector: '', locale: $locale, audience: $audience);
+		$hit = $this->cache->lookup(key: $key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->query(schema: 'page', filters: ['portal' => $portal, 'status' => 'published']);
+		$rows = $this->rows->query(schema: 'page', filters: ['portal' => $portal, 'status' => 'published']);
 		$pages = [];
 		foreach ($rows as $row) {
 			$pages[] = [
@@ -252,7 +171,7 @@ class CmsReader {
 		}
 
 		usort($pages, static fn ($a, $b) => strcmp($a['route'], $b['route']));
-		$this->cache->set($key, json_encode($pages), self::TTL);
+		$this->cache->store($key, json_encode($pages));
 
 		return $pages;
 	}//end pages()
@@ -281,8 +200,8 @@ class CmsReader {
 			$selector = $route . '#org=' . $organisation;
 		}
 
-		$key = $this->cacheKey(portal: $portal, kind: 'page', selector: $selector, locale: $locale, audience: $audience);
-		$hit = $this->lookup(key: $key);
+		$key = $this->cache->key(portal: $portal, kind: 'page', selector: $selector, locale: $locale, audience: $audience);
+		$hit = $this->cache->lookup(key: $key);
 		if ($hit !== null) {
 			$decoded = json_decode($hit, true);
 			if ($decoded === []) {
@@ -296,7 +215,7 @@ class CmsReader {
 		// must never reach this process's memory, let alone a response: an
 		// unpublished route and a non-existent route are answered identically,
 		// so the API is not an existence oracle for unreleased content.
-		$rows = $this->query(schema: 'page', filters: ['portal' => $portal, 'route' => $route, 'status' => 'published']);
+		$rows = $this->rows->query(schema: 'page', filters: ['portal' => $portal, 'route' => $route, 'status' => 'published']);
 		$page = null;
 		foreach ($rows as $row) {
 			if ((string)($row['route'] ?? '') === $route) {
@@ -305,7 +224,7 @@ class CmsReader {
 			}
 		}
 
-		$this->cache->set($key, json_encode($page ?? []), self::TTL);
+		$this->cache->store($key, json_encode($page ?? []));
 
 		return $page;
 	}//end page()
@@ -338,13 +257,13 @@ class CmsReader {
 			return null;
 		}
 
-		$rows = $this->query(schema: 'page', filters: ['portal' => $portal, 'route' => $route]);
+		$rows = $this->rows->query(schema: 'page', filters: ['portal' => $portal, 'route' => $route]);
 		foreach ($rows as $row) {
 			if ((string)($row['route'] ?? '') !== $route) {
 				continue;
 			}
 
-			$id = $this->rowId(row: $row);
+			$id = $this->rows->rowId(row: $row);
 			if ($id !== null) {
 				return $id;
 			}
@@ -371,40 +290,8 @@ class CmsReader {
 			return [];
 		}
 
-		return $this->query(schema: $schema, filters: ['portal' => $portal]);
+		return $this->rows->query(schema: $schema, filters: ['portal' => $portal]);
 	}//end rowsForCheck()
-
-	/**
-	 * The identifier of a stored row, flat or inside the `@self` envelope.
-	 *
-	 * Both shapes are read because both occur: OpenRegister's object API
-	 * returns a flat `id` alongside the envelope, and a row that has been
-	 * projected or re-serialised elsewhere may carry only one of them.
-	 *
-	 * @param array $row The stored row.
-	 *
-	 * @return string|null The identifier, or null when the row carries none.
-	 */
-	private function rowId(array $row): ?string {
-		$self = ($row['@self'] ?? null);
-		$candidates = [
-			($row['id'] ?? null),
-			($row['uuid'] ?? null),
-		];
-		if (is_array($self) === true) {
-			$candidates[] = ($self['id'] ?? null);
-			$candidates[] = ($self['uuid'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
-	}//end rowId()
-
 
 	/**
 	 * Read the glossary of a portal.
@@ -418,13 +305,13 @@ class CmsReader {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
 	public function glossary(string $portal, string $locale, string $audience): array {
-		$key = $this->cacheKey(portal: $portal, kind: 'glossary', selector: '', locale: $locale, audience: $audience);
-		$hit = $this->lookup(key: $key);
+		$key = $this->cache->key(portal: $portal, kind: 'glossary', selector: '', locale: $locale, audience: $audience);
+		$hit = $this->cache->lookup(key: $key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->query(schema: 'glossaryTerm', filters: ['portal' => $portal]);
+		$rows = $this->rows->query(schema: 'glossaryTerm', filters: ['portal' => $portal]);
 		$terms = [];
 		foreach ($rows as $row) {
 			$terms[] = [
@@ -436,186 +323,10 @@ class CmsReader {
 		}
 
 		usort($terms, static fn ($a, $b) => strcasecmp($a['term'], $b['term']));
-		$this->cache->set($key, json_encode($terms), self::TTL);
+		$this->cache->store($key, json_encode($terms));
 
 		return $terms;
 	}//end glossary()
-
-
-	/**
-	 * Read the published FAQ entries of a portal, for one page or one topic or all.
-	 *
-	 * A draft entry is never served. The entries stand in their order.
-	 *
-	 * @param string $portal   The portal slug.
-	 * @param string $locale   The locale.
-	 * @param string $audience The requesting audience.
-	 * @param string $page     Only the entries shown on this page route, or '' for no filter.
-	 * @param string $topic    Only the entries of this topic, or '' for no filter.
-	 *
-	 * @return array The entries: question, answer, topic, pages.
-	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
-	 */
-	public function faq(string $portal, string $locale, string $audience, string $page='', string $topic=''): array {
-		$key = $this->cacheKey(portal: $portal, kind: 'faq', selector: '', locale: $locale, audience: $audience);
-		$hit = $this->lookup(key: $key);
-		if ($hit !== null) {
-			$entries = (json_decode($hit, true) ?? []);
-		} else {
-			$entries = $this->shapeFaq(rows: $this->query(schema: 'portalFaq', filters: ['portal' => $portal, 'status' => 'published']));
-			$this->cache->set($key, json_encode($entries), self::TTL);
-		}
-
-		return array_values(
-			array_filter(
-				$entries,
-				static function (array $entry) use ($page, $topic): bool {
-					if ($page !== '' && in_array($page, $entry['pages'], true) === false) {
-						return false;
-					}
-
-					return ($topic === '' || $entry['topic'] === $topic);
-				}
-			)
-		);
-	}//end faq()
-
-	/**
-	 * Shape the stored FAQ rows: published only, ordered.
-	 *
-	 * @param array $rows The stored rows.
-	 *
-	 * @return array The entries.
-	 */
-	private function shapeFaq(array $rows): array {
-		$entries = [];
-		foreach ($rows as $row) {
-			$question = trim((string)($row['question'] ?? ''));
-			if (($row['status'] ?? '') !== 'published' || $question === '') {
-				continue;
-			}
-
-			$entries[] = [
-				'question' => $question,
-				'answer'   => (string)($row['answer'] ?? ''),
-				'topic'    => (string)($row['topic'] ?? ''),
-				'pages'    => array_values(array_filter(array_map('strval', (array)($row['pages'] ?? [])))),
-				'order'    => (int)($row['order'] ?? 0),
-			];
-		}
-
-		usort($entries, static fn ($a, $b) => [$a['order'], $a['question']] <=> [$b['order'], $b['question']]);
-
-		return $entries;
-	}//end shapeFaq()
-
-	/**
-	 * Read one published product finder of a portal.
-	 *
-	 * The products are named by route; each carries the title of its published
-	 * page, and a route with no published page is left out, so the resident is
-	 * never offered a product she cannot open.
-	 *
-	 * @param string $portal   The portal slug.
-	 * @param string $id       The finder's id, or '' for the first published one.
-	 * @param string $locale   The locale.
-	 * @param string $audience The requesting audience.
-	 *
-	 * @return array|null The finder, or null when there is none published.
-	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
-	 */
-	public function finder(string $portal, string $id, string $locale, string $audience): ?array {
-		$titles = [];
-		foreach ($this->pages(portal: $portal, locale: $locale, audience: $audience) as $summary) {
-			$titles[$summary['route']] = $summary['title'];
-		}
-
-		foreach ($this->query(schema: 'portalFinder', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
-			$rowId = (string)($row['@self']['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
-			if (($row['status'] ?? '') !== 'published' || ($id !== '' && $rowId !== $id)) {
-				continue;
-			}
-
-			$products = [];
-			foreach ((array)($row['products'] ?? []) as $route) {
-				if (is_string($route) === true && isset($titles[$route]) === true) {
-					$products[] = ['route' => $route, 'title' => $titles[$route]];
-				}
-			}
-
-			return [
-				'id'        => $rowId,
-				'title'     => (string)($row['title'] ?? ''),
-				'intro'     => (string)($row['intro'] ?? ''),
-				'products'  => $products,
-				'questions' => $this->shapeQuestions(questions: (array)($row['questions'] ?? [])),
-			];
-		}
-
-		return null;
-	}//end finder()
-
-	/**
-	 * The finder's questions with only the fields the browser needs.
-	 *
-	 * @param array $questions The stored questions.
-	 *
-	 * @return array The questions.
-	 */
-	private function shapeQuestions(array $questions): array {
-		$shaped = [];
-		foreach ($questions as $question) {
-			if (is_array($question) === false || trim((string)($question['text'] ?? '')) === '') {
-				continue;
-			}
-
-			$shaped[] = [
-				'id'            => (string)($question['id'] ?? ''),
-				'text'          => (string)$question['text'],
-				'help'          => (string)($question['help'] ?? ''),
-				'excludesOnYes' => array_values(array_filter(array_map('strval', (array)($question['excludesOnYes'] ?? [])))),
-				'excludesOnNo'  => array_values(array_filter(array_map('strval', (array)($question['excludesOnNo'] ?? [])))),
-			];
-		}
-
-		return $shaped;
-	}//end shapeQuestions()
-
-
-	/**
-	 * Drop every cached entry for a portal.
-	 *
-	 * Invalidation is event-driven, not expiry-driven: an editor who publishes
-	 * and then has to wait out a TTL will conclude the CMS is broken, and will
-	 * be right.
-	 *
-	 * @param string $portal The portal slug.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
-	 */
-	public function invalidate(string $portal): void {
-		// Prefix clear covers everything for this site, INCLUDING per-route
-		// page entries, whose keys are not enumerable from here. That matters
-		// more than it looks: the page cache stores negative results too, so a
-		// missed invalidation leaves a newly created route 404ing for the rest
-		// of the TTL while the object plainly exists.
-		$this->cache->clear($portal . '|');
-
-		// Belt and braces for backends whose clear() ignores the prefix: the
-		// keys that can be named are removed by name as well. Cheap, and the
-		// alternative failure is invisible until someone reports stale content.
-		foreach (['menus', 'pages', 'glossary', 'faq'] as $kind) {
-			foreach (['anonymous', 'authenticated'] as $audience) {
-				foreach (['', 'nl', 'en'] as $locale) {
-					$this->cache->remove($this->cacheKey(portal: $portal, kind: $kind, selector: '', locale: $locale, audience: $audience));
-				}
-			}
-		}
-	}//end invalidate()
 
 
 	/**
@@ -742,7 +453,7 @@ class CmsReader {
 			return $shaped;
 		}
 
-		$widgets = $this->expandSharedBlocks(widgets: $this->shapeWidgets(raw: (array)($body['widgets'] ?? [])), organisation: $organisation);
+		$widgets = $this->blocks->expand(widgets: $this->blocks->shapeWidgets(raw: (array)($body['widgets'] ?? [])), organisation: $organisation);
 
 		usort(
 			$widgets,
@@ -761,165 +472,77 @@ class CmsReader {
 		return $shaped;
 	}//end shapePage()
 
+	/**
+	 * Hits and misses of the content cache since it was first used.
+	 *
+	 * @return array{hits: int, misses: int}
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
+	 */
+	public function cacheStats(): array {
+		return $this->cache->stats();
+	}//end cacheStats()
 
 	/**
-	 * Shape stored widget entries to the API shape, in grid order.
+	 * The cache key of a read: portal, kind, selector, locale and AUDIENCE.
 	 *
-	 * @param array $raw The stored entries.
+	 * @param string $portal   The portal slug.
+	 * @param string $kind     The kind of content.
+	 * @param string $selector The route or other selector, or ''.
+	 * @param string $locale   The locale.
+	 * @param string $audience The requesting audience.
 	 *
-	 * @return array The entries.
+	 * @return string
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
 	 */
-	private function shapeWidgets(array $raw): array {
-		$widgets = [];
-		foreach ($raw as $widget) {
-			if (is_array($widget) === false) {
-				continue;
-			}
-
-			$widgets[] = [
-				'id'         => (string)($widget['id'] ?? ''),
-				'widgetKey'  => (string)($widget['widgetKey'] ?? ''),
-				'slot'       => (string)($widget['slot'] ?? 'body'),
-				'gridX'      => (int)($widget['gridX'] ?? 0),
-				'gridY'      => (int)($widget['gridY'] ?? 0),
-				'gridWidth'  => (int)($widget['gridWidth'] ?? 12),
-				'gridHeight' => (int)($widget['gridHeight'] ?? 4),
-				'props'      => (array)($widget['props'] ?? []),
-			];
-		}
-
-		usort(
-			$widgets,
-			static fn ($a, $b) => [$a['gridY'], $a['gridX']] <=> [$b['gridY'], $b['gridX']]
-		);
-
-		return $widgets;
-	}//end shapeWidgets()
+	public function cacheKey(string $portal, string $kind, string $selector, string $locale, string $audience): string {
+		return $this->cache->key(portal: $portal, kind: $kind, selector: $selector, locale: $locale, audience: $audience);
+	}//end cacheKey()
 
 	/**
-	 * Put the widgets of each placed shared block into the placement.
+	 * Drop every cached entry for a portal.
 	 *
-	 * A block expands only when it is published and belongs to the serving
-	 * portal's organisation. A foreign, unpublished or missing block all
-	 * answer the same way, with no widgets and `unavailable`, so the answer is
-	 * not an existence oracle for another organisation's blocks. A placement
-	 * inside a block is not expanded again.
+	 * @param string $portal The portal slug.
 	 *
-	 * @param array  $widgets      The shaped page widgets.
-	 * @param string $organisation The serving portal's organisation.
+	 * @return void
 	 *
-	 * @return array The widgets, placements expanded.
-	 *
-	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
 	 */
-	private function expandSharedBlocks(array $widgets, string $organisation): array {
-		$blocks = null;
-		foreach ($widgets as $index => $widget) {
-			if ($widget['widgetKey'] !== 'sharedBlock') {
-				continue;
-			}
-
-			if ($blocks === null) {
-				$blocks = $this->publishedBlocks(organisation: $organisation);
-			}
-
-			$id  = trim((string)($widget['props']['block'] ?? ''));
-			$row = ($blocks[$id] ?? null);
-
-			$widgets[$index]['props'] = ['block' => $id, 'widgets' => [], 'unavailable' => true];
-			if ($row !== null) {
-				$inner = array_values(
-					array_filter(
-						$this->shapeWidgets(raw: (array)($row['widgets'] ?? [])),
-						static fn (array $inner): bool => $inner['widgetKey'] !== 'sharedBlock'
-					)
-				);
-				$widgets[$index]['props'] = ['block' => $id, 'widgets' => $inner, 'unavailable' => false];
-			}
-		}
-
-		return $widgets;
-	}//end expandSharedBlocks()
+	public function invalidate(string $portal): void {
+		$this->cache->invalidate(portal: $portal);
+	}//end invalidate()
 
 	/**
-	 * The published shared blocks of an organisation, by id.
+	 * Read the published FAQ entries of a portal, for one page or one topic or all.
 	 *
-	 * @param string $organisation The organisation.
+	 * @param string $portal   The portal slug.
+	 * @param string $locale   The locale.
+	 * @param string $audience The requesting audience.
+	 * @param string $page     Only the entries shown on this page route, or '' for no filter.
+	 * @param string $topic    Only the entries of this topic, or '' for no filter.
 	 *
-	 * @return array<string, array> Empty for no organisation.
+	 * @return array The entries: question, answer, topic, pages.
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
 	 */
-	private function publishedBlocks(string $organisation): array {
-		if ($organisation === '') {
-			return [];
-		}
-
-		$blocks = [];
-		foreach ($this->query(schema: 'sharedBlock', filters: ['organisation' => $organisation, 'status' => 'published']) as $row) {
-			$id = $this->rowId(row: $row);
-			if ($id !== null && ($row['status'] ?? '') === 'published' && (string)($row['organisation'] ?? '') === $organisation) {
-				$blocks[$id] = $row;
-			}
-		}
-
-		return $blocks;
-	}//end publishedBlocks()
+	public function faq(string $portal, string $locale, string $audience, string $page='', string $topic=''): array {
+		return $this->faqReader->faq(portal: $portal, locale: $locale, audience: $audience, page: $page, topic: $topic);
+	}//end faq()
 
 	/**
-	 * Query one CMS schema with the given property filters.
+	 * Read one published product finder of a portal.
 	 *
-	 * @param string $schema  The schema slug.
-	 * @param array  $filters The property filters, always including `portal` (or `organisation`, for a shared block).
+	 * @param string $portal   The portal slug.
+	 * @param string $id       The finder's id, or '' for the first published one.
+	 * @param string $locale   The locale.
+	 * @param string $audience The requesting audience.
 	 *
-	 * @return array The rows, as plain arrays.
+	 * @return array|null The finder, or null when there is none published.
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
 	 */
-	private function query(string $schema, array $filters): array {
-		if (($filters['portal'] ?? '') === '' && ($filters['organisation'] ?? '') === '') {
-			// Refusing here rather than returning everything: an unscoped read
-			// would silently serve one site's content under another's domain,
-			// and the response would look entirely normal.
-			$this->logger->error('Portaliq: refusing an unscoped CMS query', ['schema' => $schema]);
-			return [];
-		}
-
-		try {
-			$objectService = $this->container->get(self::OBJECT_SERVICE);
-			// Through the context helper, never through two slug setters: the
-			// slug form re-resolves whatever schema ref another app left
-			// pending on the shared ObjectService, and that took every content
-			// read here down with a slug this app does not own. See
-			// PortalRegisterContext.
-			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-				return [];
-			}
-
-			$rows = $objectService->findAll(
-				config: ['filters' => $filters, 'limit' => 500, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Portaliq: CMS read failed',
-				['schema' => $schema, 'reason' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		return array_map(
-			static function ($row) {
-				if (is_array($row) === true) {
-					return $row;
-				}
-
-				return (array)$row->jsonSerialize();
-			},
-			$rows
-		);
-	}//end query()
-
-
+	public function finder(string $portal, string $id, string $locale, string $audience): ?array {
+		return $this->faqReader->finder(portal: $portal, id: $id, locale: $locale, audience: $audience);
+	}//end finder()
 }//end class

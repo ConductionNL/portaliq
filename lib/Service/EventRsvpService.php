@@ -39,13 +39,25 @@ use Throwable;
 class EventRsvpService {
 	use PagedObjectReads;
 
+	/**
+	 * Finds the event a person may answer for a child.
+	 *
+	 * @var EventRsvpEligibility
+	 */
+	private readonly EventRsvpEligibility $eligibility;
+
+	/**
+	 * Tells whether the sign-up deadline has passed.
+	 *
+	 * @var EventDeadline
+	 */
+	private readonly EventDeadline $deadline;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
 
 	private const SCHEMA = 'eventRsvp';
-
-	private const ALLOWED_RESPONSES = ['yes', 'no', 'maybe'];
 
 	/**
 	 * The refusals attempt() answers with; null is a recorded answer.
@@ -59,11 +71,6 @@ class EventRsvpService {
 	public const REASON_SEATS = 'seats-invalid';
 
 	/**
-	 * The seats one answer may ask for when the event names no maximum.
-	 */
-	private const DEFAULT_MAX_SEATS = 4;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister services.
@@ -72,9 +79,11 @@ class EventRsvpService {
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly EventFeedReader $feedReader,
+		EventFeedReader $feedReader,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->eligibility = new EventRsvpEligibility(feedReader: $feedReader);
+		$this->deadline    = new EventDeadline();
 	}//end __construct()
 
 	/**
@@ -118,12 +127,12 @@ class EventRsvpService {
 	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
 	 */
 	public function attempt(string $subjectRef, string $eventId, string $childRef, string $response, ?int $seats = null, ?string $now = null): ?string {
-		$event = $this->answerableEvent(subjectRef: $subjectRef, eventId: $eventId, childRef: $childRef, response: $response);
+		$event = $this->eligibility->answerableEvent(subjectRef: $subjectRef, eventId: $eventId, childRef: $childRef, response: $response);
 		if ($event === null) {
 			return self::REASON_NOT_FOUND;
 		}
 
-		if (EventDeadline::hasPassed(deadline: (string)($event['signupDeadline'] ?? ''), now: $now) === true) {
+		if ($this->deadline->hasPassed(deadline: (string)($event['signupDeadline'] ?? ''), now: $now) === true) {
 			return self::REASON_CLOSED;
 		}
 
@@ -132,7 +141,7 @@ class EventRsvpService {
 			return self::REASON_NOT_FOUND;
 		}
 
-		$asked = $this->seatsToRecord(event: $event, response: $response, seats: $seats);
+		$asked = (new EventSeatRules())->seatsToRecord(event: $event, response: $response, seats: $seats);
 		if ($asked === false) {
 			return self::REASON_SEATS;
 		}
@@ -147,20 +156,39 @@ class EventRsvpService {
 			return self::REASON_FULL;
 		}
 
+		$answer = ['subjectRef' => $subjectRef, 'eventId' => $eventId, 'childRef' => $childRef, 'response' => $response, 'seats' => $asked];
+		$saved  = $this->saveAnswer(objectService: $objectService, existing: $existing, answer: $answer);
+		if ($saved === false) {
+			return self::REASON_NOT_FOUND;
+		}
+
+		return null;
+	}//end attempt()
+
+	/**
+	 * Write the answer, over the existing one when there is one.
+	 *
+	 * @param object                    $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed>|null $existing      The child's existing answer, or null.
+	 * @param array<string, mixed>      $answer        The `subjectRef`, `eventId`, `childRef`, `response` and `seats` to record.
+	 *
+	 * @return bool False when the save failed.
+	 */
+	private function saveAnswer(object $objectService, ?array $existing, array $answer): bool {
 		$existingId = null;
 		if ($existing !== null) {
 			$existingId = $this->rowId(row: $existing);
 		}
 
 		$object = [
-			'eventRef' => $eventId,
-			'guardianRef' => $subjectRef,
-			'childRef' => $childRef,
-			'response' => $response,
+			'eventRef' => $answer['eventId'],
+			'guardianRef' => $answer['subjectRef'],
+			'childRef' => $answer['childRef'],
+			'response' => $answer['response'],
 			'respondedAt' => gmdate('c'),
 		];
-		if ($asked !== null) {
-			$object['seats'] = $asked;
+		if ($answer['seats'] !== null) {
+			$object['seats'] = $answer['seats'];
 		}
 
 		try {
@@ -174,82 +202,11 @@ class EventRsvpService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: event RSVP save failed', ['reason' => $e->getMessage()]);
-			return self::REASON_NOT_FOUND;
-		}
-
-		return null;
-	}//end attempt()
-
-	/**
-	 * The event this person may answer for this child, or null: a known
-	 * response, an event in their own audience with RSVP on, and either their
-	 * own child (a guardian, when the event lets guardians answer) or
-	 * themselves (a learner, when it lets learners answer).
-	 *
-	 * @param string $subjectRef The answering person's own subjectRef.
-	 * @param string $eventId    The event id.
-	 * @param string $childRef   The child the RSVP is for.
-	 * @param string $response   The response.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function answerableEvent(string $subjectRef, string $eventId, string $childRef, string $response): ?array {
-		if ($subjectRef === '' || $eventId === '' || $childRef === '' || in_array($response, self::ALLOWED_RESPONSES, true) === false) {
-			return null;
-		}
-
-		$event = $this->feedReader->readOwnEvent(subjectRef: $subjectRef, id: $eventId);
-		if ($event === null || ($event['rsvpEnabled'] ?? false) !== true) {
-			return null;
-		}
-
-		$by = $this->stringList(value: ($event['rsvpBy'] ?? null));
-		if ($by === []) {
-			$by = ['guardian'];
-		}
-
-		if ($childRef === $subjectRef && in_array('learner', $by, true) === true) {
-			return $event;
-		}
-
-		if (in_array('guardian', $by, true) === true && $this->feedReader->isOwnChild(subjectRef: $subjectRef, childRef: $childRef) === true) {
-			return $event;
-		}
-
-		return null;
-	}//end answerableEvent()
-
-	/**
-	 * The seats to record: null when the event does not ask for seats, 0 for
-	 * an answer other than yes, else the asked number; false when the number
-	 * is outside 1 to the event's maximum.
-	 *
-	 * @param array<string, mixed> $event    The event.
-	 * @param string               $response The response.
-	 * @param int|null             $seats    The seats asked.
-	 *
-	 * @return int|false|null
-	 */
-	private function seatsToRecord(array $event, string $response, ?int $seats): int|false|null {
-		if (($event['askSeats'] ?? false) !== true) {
-			return null;
-		}
-
-		if ($response !== 'yes') {
-			return 0;
-		}
-
-		$max = (int)($event['maxSeatsPerAnswer'] ?? self::DEFAULT_MAX_SEATS);
-		if ($max < 1) {
-			$max = self::DEFAULT_MAX_SEATS;
-		}
-
-		if ($seats === null || $seats < 1 || $seats > $max) {
 			return false;
 		}
 
-		return $seats;
-	}//end seatsToRecord()
+		return true;
+	}//end saveAnswer()
 
 	/**
 	 * Whether this answer would take the event past its capacity. The
@@ -341,19 +298,6 @@ class EventRsvpService {
 
 		return $out;
 	}//end answersOf()
-
-	/**
-	 * @param mixed $value A list.
-	 *
-	 * @return array<int, string>
-	 */
-	private function stringList(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return array_values(array_filter($value, 'is_string'));
-	}//end stringList()
 
 	/**
 	 * The existing answer for this child on this event, whoever gave it.

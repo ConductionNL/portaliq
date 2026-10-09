@@ -46,7 +46,7 @@ class EventDeadline {
 	 *
 	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
 	 */
-	public static function hasPassed(?string $deadline, ?string $now = null): bool {
+	public function hasPassed(?string $deadline, ?string $now = null): bool {
 		$deadline = trim((string)$deadline);
 		if ($deadline === '') {
 			return false;
