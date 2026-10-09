@@ -618,6 +618,50 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testAWholeCompanySessionNarrowsToABranchAndBack()
 
 	/**
+	 * invitation-joins-an-unbound-account: after a claim moved the account
+	 * into the invitation's audience, the session is reissued for it. The
+	 * subject, organisation, trust and provider stay; the old bearer stops
+	 * working.
+	 *
+	 * @return void
+	 */
+	public function testASessionIsReissuedForTheAudienceItsAccountTookOn(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', trust: 'substantial', roles: ['client:read'], provider: 'digid');
+		$reissued = $service->refreshSession('Bearer ' . $issued['token'], 'parent');
+		$this->assertNotNull($reissued);
+		$subject = $service->resolveFromBearer('Bearer ' . $reissued['token']);
+		$this->assertSame('parent', $subject['audience']);
+		$this->assertSame('s1', $subject['subjectRef']);
+		$this->assertSame('org-1', $subject['organisation']);
+		$this->assertSame('substantial', $subject['trust']);
+		$this->assertSame('digid', $subject['provider']);
+		$this->assertSame(['parent:read'], $subject['roles'], 'The new audience brings its own role, never the old one (review L2).');
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token']), 'the old bearer is rotated out');
+
+	}//end testASessionIsReissuedForTheAudienceItsAccountTookOn()
+
+	/**
+	 * The audience the session has, the company audience and a missing
+	 * bearer reissue nothing, and the session keeps working.
+	 *
+	 * @return void
+	 */
+	public function testAReissueForNoNewAudienceIsRefused(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', trust: 'substantial');
+		$this->assertNull($service->refreshSession('Bearer ' . $issued['token'], 'client'));
+		$this->assertNull($service->refreshSession('Bearer ' . $issued['token'], 'supplier'));
+		$this->assertNull($service->refreshSession(null, 'parent'));
+		$this->assertSame('client', $service->resolveFromBearer('Bearer ' . $issued['token'])['audience']);
+
+	}//end testAReissueForNoNewAudienceIsRefused()
+
+	/**
 	 * A session the login restricted to one branch cannot choose another, nor
 	 * the whole company, and keeps working.
 	 *
