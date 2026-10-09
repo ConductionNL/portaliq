@@ -183,6 +183,13 @@ export default {
 	margin-block-start: 0.125rem;
 }
 
+/* With a heading the button stands under the words: the Utrecht alert is a
+   row, so a melding with a button turns into a column. */
+.nl-alert:has(.nl-alert__action):not(.nl-alert--row) {
+	flex-direction: column;
+	align-items: flex-start;
+}
+
 /* Without a heading the button stands beside the words (Esdoornveen). */
 .nl-alert--row {
 	flex-wrap: wrap;

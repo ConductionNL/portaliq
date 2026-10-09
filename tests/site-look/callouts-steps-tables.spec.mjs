@@ -70,6 +70,10 @@ test('"Online melden" carries its button with a chevron inside the melding', asy
 		/<a class="[^"]*utrecht-button-link--primary-action nl-alert__action"[^>]*>Afwezig melden<svg/,
 	)
 	assert.ok(html.indexOf('nl-alert__action') > html.indexOf('Het snelst.'))
+	assert.match(
+		source('nlAlert/NlAlert.vue'),
+		/\.nl-alert:has\(\.nl-alert__action\):not\(\.nl-alert--row\) \{ flex-direction: column;/,
+	)
 	assert.doesNotMatch(
 		html,
 		/nl-alert--row/,
