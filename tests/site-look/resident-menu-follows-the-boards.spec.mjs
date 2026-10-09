@@ -300,3 +300,27 @@ test('the site theme reads the menu row height, bar and text colour from tokens,
 		/--nldesign-website-menu-current-color,\s*var\(--nldesign-color-text/,
 	)
 })
+
+test('a per-row page without a group stands once in a declared group', () => {
+	const split = structuredClone(LEARNIQ)
+	split.pages.push({
+		id: 'conferences',
+		label: 'Oudergesprekken',
+		records: { collection: 'parentChildren', titleFields: ['givenName'] },
+		perRecord: 'parentChildren',
+		blocks: [{ type: 'richText', markdown: 'x' }],
+	})
+	const groups = residentMenuGroups(buildNav([split], t, {}), t, 0, href, ROWS, [
+		{ title: 'Regelen', items: ['learniq:conferences'] },
+	])
+	const regelen = groups.find((group) => group.title === 'Regelen')
+	assert.deepEqual(
+		regelen.items.map((item) => [item.name, item.link]),
+		[['Oudergesprekken', '/mijn/learniq/conferences']],
+	)
+	assert.equal(
+		groups.some((group) => group.title === 'Vera' || group.title === 'Sami'),
+		false,
+		'no group per child is left behind',
+	)
+})
