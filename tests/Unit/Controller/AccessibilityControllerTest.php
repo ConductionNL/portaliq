@@ -11,6 +11,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Controller\AccessibilityController;
+use OCA\Portaliq\Controller\ContentAccessibilityController;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Cms\AccessibilityMeasurements;
 use OCA\Portaliq\Service\Cms\AccessibilityRun;
@@ -87,7 +88,7 @@ class AccessibilityControllerTest extends TestCase {
 		$this->assertValidAgainstSchema(row: $row, schema: 'accessibilityMeasurement');
 
 		// The public statement now names the issue and the date.
-		$statement = $this->controller()->statement(portal: 'open-tilburg', locale: 'en')->getData();
+		$statement = $this->publicController()->statement(portal: 'open-tilburg', locale: 'en')->getData();
 		$this->assertSame('color-contrast', $statement['statement']['issues'][0]['rule']);
 		$this->assertSame('2026-10-09T12:00:00+00:00', $statement['statement']['measurement']['measuredAt']);
 		$this->assertSame('C', $statement['statement']['status']);
@@ -129,7 +130,7 @@ class AccessibilityControllerTest extends TestCase {
 		$this->assertSame(['url' => '/stil', 'measured' => false, 'reason' => AccessibilityRun::NO_REASON], $row['pages'][2]);
 		$this->assertValidAgainstSchema(row: $row, schema: 'accessibilityMeasurement');
 
-		$statement = $this->controller()->statement(portal: 'open-tilburg', locale: 'nl')->getData()['statement'];
+		$statement = $this->publicController()->statement(portal: 'open-tilburg', locale: 'nl')->getData()['statement'];
 		$this->assertSame([], $statement['issues']);
 		$this->assertSame(['/extern', '/stil'], array_column($statement['notMeasured'], 'url'));
 	}//end testAnUnmeasuredPageIsKeptAsNotMeasured()
@@ -163,8 +164,8 @@ class AccessibilityControllerTest extends TestCase {
 	}//end testAnAOrBClaimNeedsACompleteRecentAudit()
 
 	public function testTheStatementIsPublicAndAnUnknownPortalIsNotFound(): void {
-		$this->assertSame(Http::STATUS_OK, $this->controller(signedIn: false)->statement(portal: 'open-tilburg', locale: 'nl')->getStatus());
-		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(signedIn: false)->statement(portal: 'nergens', locale: 'nl')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $this->publicController()->statement(portal: 'open-tilburg', locale: 'nl')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->publicController()->statement(portal: 'nergens', locale: 'nl')->getStatus());
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller(signedIn: false)->store(slug: 'open-tilburg', axeVersion: '4', tags: [], theme: '', pages: [])->getStatus());
 	}//end testTheStatementIsPublicAndAnUnknownPortalIsNotFound()
 
@@ -188,8 +189,6 @@ class AccessibilityControllerTest extends TestCase {
 		$clock->method('now')->willReturn(new DateTimeImmutable(self::NOW));
 
 		$measurements = new AccessibilityMeasurements($this->fakeReader(), $this->fakeWriter());
-		$resolver     = $this->createMock(PortalResolver::class);
-		$resolver->method('resolve')->willReturnCallback(fn ($request, ?string $portalSlug = null): ?array => $measurements->portalBySlug(slug: (string)$portalSlug));
 
 		return new AccessibilityController(
 			$this->createMock(IRequest::class),
@@ -198,10 +197,19 @@ class AccessibilityControllerTest extends TestCase {
 			new AccessibilityStatement(),
 			new ActionAuthService($config, $groups),
 			$session,
-			$resolver,
 			$clock
 		);
 	}//end controller()
+
+	private function publicController(): ContentAccessibilityController {
+		$clock = $this->createMock(ITimeFactory::class);
+		$clock->method('now')->willReturn(new DateTimeImmutable(self::NOW));
+		$measurements = new AccessibilityMeasurements($this->fakeReader(), $this->fakeWriter());
+		$resolver     = $this->createMock(PortalResolver::class);
+		$resolver->method('resolve')->willReturnCallback(fn ($request, ?string $portalSlug = null): ?array => $measurements->portalBySlug(slug: (string)$portalSlug));
+
+		return new ContentAccessibilityController($this->createMock(IRequest::class), $measurements, new AccessibilityStatement(), $resolver, $clock);
+	}//end publicController()
 
 	/**
 	 * @param array<string, mixed> $row    The stored row.

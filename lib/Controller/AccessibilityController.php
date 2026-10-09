@@ -6,7 +6,8 @@
  * The accessibility measurement and the statement it feeds
  * (site-accessibility-statement): an administrator, or a group the action
  * matrix names for `portal.measure-accessibility`, reads the settings,
- * records the audit and stores a run; anyone reads the statement.
+ * records the audit and stores a run. The public statement is served by
+ * ContentAccessibilityController.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -21,7 +22,6 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
 
 declare(strict_types=1);
@@ -34,20 +34,16 @@ use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Cms\AccessibilityMeasurements;
 use OCA\Portaliq\Service\Cms\AccessibilityRun;
 use OCA\Portaliq\Service\Cms\AccessibilityStatement;
-use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
-use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
-use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * Three guarded routes on a portal and one public read.
+ * Three guarded routes on a portal.
  *
  * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
@@ -65,7 +61,6 @@ class AccessibilityController extends Controller {
 	 * @param AccessibilityStatement    $statement    The statement builder.
 	 * @param ActionAuthService         $actionAuth   The action matrix.
 	 * @param IUserSession              $userSession  The signed-in user.
-	 * @param PortalResolver            $resolver     The public portal resolver.
 	 * @param ITimeFactory              $clock        The clock.
 	 */
 	public function __construct(
@@ -75,7 +70,6 @@ class AccessibilityController extends Controller {
 		private readonly AccessibilityStatement $statement,
 		private readonly ActionAuthService $actionAuth,
 		private readonly IUserSession $userSession,
-		private readonly PortalResolver $resolver,
 		private readonly ITimeFactory $clock,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
@@ -180,46 +174,6 @@ class AccessibilityController extends Controller {
 
 		return new JSONResponse(['measurement' => $stored], Http::STATUS_CREATED);
 	}//end store()
-
-	/**
-	 * The public statement of the portal the request names.
-	 *
-	 * Public on every portal, whatever its sign-in modes: the statement is a
-	 * duty towards everybody, signed in or not.
-	 *
-	 * @param string|null $portal Explicit portal slug.
-	 * @param string|null $locale The language of the sentences.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 120, period: 60)]
-	public function statement(?string $portal = null, ?string $locale = null): JSONResponse {
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			$response = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-			$response->addHeader('Cache-Control', 'private, no-store');
-			return $response;
-		}
-
-		$slug     = (string)($resolved['slug'] ?? '');
-		$response = new JSONResponse(
-			[
-				'statement' => $this->statement->build(
-					portal: $resolved,
-					measurement: $this->measurements->latest(slug: $slug),
-					locale: (string)$locale,
-					now: $this->now()
-				),
-			]
-		);
-		$response->addHeader('Cache-Control', 'public, max-age=300, must-revalidate');
-
-		return $response;
-	}//end statement()
 
 	/**
 	 * What the admin widget shows.

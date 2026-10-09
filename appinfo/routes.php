@@ -122,7 +122,7 @@ return [
         // because an in-site route is arbitrary depth ('/beleid/2026/woo').
         ['name' => 'content#site', 'url' => '/api/content/site', 'verb' => 'GET'],
         // The public accessibility statement of every portal (site-accessibility-statement).
-        ['name' => 'accessibility#statement', 'url' => '/api/content/accessibility', 'verb' => 'GET'],
+        ['name' => 'contentAccessibility#statement', 'url' => '/api/content/accessibility', 'verb' => 'GET'],
         ['name' => 'content#menus', 'url' => '/api/content/menus', 'verb' => 'GET'],
         ['name' => 'content#pages', 'url' => '/api/content/pages', 'verb' => 'GET'],
         ['name' => 'content#glossary', 'url' => '/api/content/glossary', 'verb' => 'GET'],
