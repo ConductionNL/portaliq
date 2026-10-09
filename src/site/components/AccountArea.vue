@@ -25,6 +25,7 @@
 			:label="t('My area')"
 			:showLabel="(portal && portal.accountLabel) || t('Menu of my area')"
 			:card="menuCard"
+			:person="menuPerson"
 			:newLabel="t('{count} new')"
 			:hideLabel="t('Close the menu')"
 			@navigate="$emit('navigate', $event)" />
@@ -257,6 +258,10 @@ export default {
 		portal: { type: Object, default: null },
 		/** The resident menu's groups, from residentMenuGroups(); empty shows none. */
 		menuGroups: { type: Array, default: () => [] },
+		/** The person block at the top of the menu, or null. */
+		menuPerson: { type: Object, default: null },
+		/** The second line of the menu's organisation card, or ''. */
+		menuSubline: { type: String, default: '' },
 		/** The route on screen, to mark the current item in the menu. */
 		currentRoute: { type: String, default: '' },
 	},
@@ -289,7 +294,14 @@ export default {
 		menuCard() {
 			const label = this.portal?.residentMenu?.cardLabel
 			const title = this.session?.organisationName
-			return label && title ? { label, title } : null
+			if (!label || !title) {
+				return null
+			}
+			// The second line from the portal's person collection
+			// (resident-menu-follows-the-boards).
+			return this.menuSubline
+				? { label, title, subline: this.menuSubline }
+				: { label, title }
 		},
 
 		/**

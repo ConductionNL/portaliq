@@ -151,6 +151,7 @@
 			<ContactPrompt
 				:t="t"
 				:navigate="goSection"
+				:texts="site.contactPrompt || {}"
 				@dismiss="contactPrompt = false" />
 		</div>
 
@@ -274,6 +275,8 @@
 							:locale="locale"
 							:portal="site"
 							:menuGroups="residentMenu"
+							:menuPerson="residentMenuPerson"
+							:menuSubline="residentMenuSubline"
 							:currentRoute="route"
 							@devlogin="devLogin"
 							@navigate="goSection"
@@ -285,6 +288,7 @@
 								<ContactPrompt
 									:t="t"
 									:navigate="goSection"
+									:texts="site.contactPrompt || {}"
 									@dismiss="contactPrompt = false" />
 							</template>
 						</AccountArea>
@@ -568,6 +572,8 @@ import { blocksOwnHeading } from './lib/pageHeading.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
 	loadPerRecordRows,
+	menuPerson,
+	menuSubline,
 	ownAreaLink as ownAreaLinkFor,
 	residentMenuGroups,
 	showsResidentMenu,
@@ -1141,6 +1147,34 @@ export default {
 		},
 
 		/**
+		 * The person block at the top of the resident menu, when the portal
+		 * declares one (resident-menu-follows-the-boards).
+		 *
+		 * @return {object|null} `{initials, name, subline}`.
+		 *
+		 * @spec openspec/changes/resident-menu-follows-the-boards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-the-person-and-their-class
+		 */
+		residentMenuPerson() {
+			return menuPerson(
+				this.session,
+				this.site?.residentMenu?.person,
+				this.recordRows,
+			)
+		},
+
+		/**
+		 * The second line the portal's person collection gives the menu's
+		 * top card ("4 medewerkers · via eHerkenning"), or ''.
+		 *
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/resident-menu-follows-the-boards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-the-person-and-their-class
+		 */
+		residentMenuSubline() {
+			return menuSubline(this.site?.residentMenu?.person, this.recordRows)
+		},
+
+		/**
 		 * The top right link to the resident's own area, null when signed out.
 		 *
 		 * @return {object|null} The link.
@@ -1703,7 +1737,10 @@ export default {
 				this.api.fetchNewsFeed(),
 			])
 			this.unreadOverride = null
-			this.contactPrompt = await contactPromptWanted(this.session)
+			// A portal may leave the ask out (mijn-overview-follows-the-boards).
+			this.contactPrompt =
+				this.site?.contactPrompt?.show !== false
+				&& (await contactPromptWanted(this.session))
 			this.account = {
 				loading: false,
 				contributions,
@@ -1714,6 +1751,9 @@ export default {
 			this.recordRows = await loadPerRecordRows(
 				contributions?.contributions,
 				this.api,
+				// The collection the menu's person block reads
+				// (resident-menu-follows-the-boards).
+				[this.site?.residentMenu?.person?.collection].filter(Boolean),
 			)
 			// The mandates the resident holds, so the acting-for bar can name
 			// its party before Mijn zaken was opened (REQ-SMO-008). Only when
@@ -1777,7 +1817,11 @@ export default {
 				this.freshSignIn = false
 				this.replaceRoute(ACCOUNT_ROUTE)
 			}
-			const target = accountRedirect(this.nav, this.route)
+			const target = accountRedirect(
+				this.nav,
+				this.route,
+				this.site?.residentMenu?.routes,
+			)
 			if (target) {
 				this.replaceRoute(target)
 			}

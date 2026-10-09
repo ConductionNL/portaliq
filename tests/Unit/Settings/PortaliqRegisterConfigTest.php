@@ -358,9 +358,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.68.0 (messageThread 0.2.0): record, subject and contact copies (site-messages-per-record)
 		// 0.69.0 (portal 0.12.0): `residentMenu.groups` and `myCases.display`
 		// (zuiddrecht-resident-pages-match-the-boards). Additive.
+		// 0.70.0 (portal 0.13.0): `residentMenu.leaveOut` (resident-menu-leave-out). Additive.
 		// 0.71.0 (portal 0.14.0): `breadcrumb` (site-breadcrumb-follows-the-school-boards). Additive.
-		$this->assertSame('0.71.0', self::$register['info']['version']);
-		$this->assertSame('0.71.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.72.0 (portal 0.15.0): `residentMenu.person`, `residentMenu.routes` and labelled
+		// group items (resident-menu-follows-the-boards). Additive.
+		// 0.73.0 (portal 0.16.0): `contactPrompt` (mijn-overview-follows-the-boards). Additive.
+		$this->assertSame('0.73.0', self::$register['info']['version']);
+		$this->assertSame('0.73.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -420,7 +424,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.16.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);

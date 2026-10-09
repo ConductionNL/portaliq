@@ -14,6 +14,8 @@
 
 export default {
 	nl: {
+		// mijn-overview-follows-the-boards
+		'week {number}': 'week {number}',
 		// calendar-timetable-display
 		'Choose a day': 'Kies een dag',
 		'Nothing on the timetable this day.':
@@ -105,6 +107,8 @@ export default {
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		// mijn-overview-follows-the-boards
+		'week {number}': 'week {number}',
 		// calendar-timetable-display
 		'Choose a day': 'Choose a day',
 		'Nothing on the timetable this day.': 'Nothing on the timetable this day.',

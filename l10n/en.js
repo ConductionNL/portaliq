@@ -2242,7 +2242,23 @@ OC.L10N.register(
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "The words that name that record, copied when the thread is started, such as Vera, Groep 7.",
         "With": "With",
         "You are not allowed to do this. Ask an administrator for access.": "You are not allowed to do this. Ask an administrator for access.",
-        "Only on this demo. No password is asked.": "Only on this demo. No password is asked."
+        "Only on this demo. No password is asked.": "Only on this demo. No password is asked.",
+        "A second address under /mijn/ for an item of the own area, by name, so /mijn/berichten opens the conversations. Letters, digits and hyphens only. Empty adds none.": "A second address under /mijn/ for an item of the own area, by name, so /mijn/berichten opens the conversations. Letters, digits and hyphens only. Empty adds none.",
+        "At most four fields of that row, joined by a dot in the second line.": "At most four fields of that row, joined by a dot in the second line.",
+        "Person block": "Person block",
+        "Second addresses": "Second addresses",
+        "Shows the signed-in person at the top of the menu: initials in a circle, the name, and a second line from the first row of a collection, such as the class. With an organisation card the second line goes under the organisation's name. Empty shows no person block.": "Shows the signed-in person at the top of the menu: initials in a circle, the name, and a second line from the first row of a collection, such as the class. With an organisation card the second line goes under the organisation's name. Empty shows no person block.",
+        "The collection whose first row gives the second line, as app:collection, such as learniq:studentEnrolments.": "The collection whose first row gives the second line, as app:collection, such as learniq:studentEnrolments.",
+        "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page. An item may also be an object with item (the name) and label (the word the menu shows for it, such as Berichten).": "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page. An item may also be an object with item (the name) and label (the word the menu shows for it, such as Berichten).",
+        "Dismiss text": "Dismiss text",
+        "E-mail address prompt": "E-mail address prompt",
+        "False leaves the prompt out on this portal.": "False leaves the prompt out on this portal.",
+        "Prompt text": "Prompt text",
+        "Show the prompt": "Show the prompt",
+        "The button that hides the prompt for now, such as Niet nu.": "The button that hides the prompt for now, such as Niet nu.",
+        "The button to the account page, such as Naar mijn account.": "The button to the account page, such as Naar mijn account.",
+        "The note in the own area that asks for an e-mail address while the account has none. Set show to false to leave it out, or write its words in the tone of the portal.": "The note in the own area that asks for an e-mail address while the account has none. Set show to false to leave it out, or write its words in the tone of the portal.",
+        "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert.": "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert."
     },
     "nplurals=2; plural=(n != 1);"
 )

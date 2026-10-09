@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.71.0"
+        "version": "0.73.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.71.0",
+                "version": "0.73.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2448,7 +2448,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.14.0",
+                "version": "0.16.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3051,9 +3051,24 @@
                                         "items": {
                                             "title": "Group items",
                                             "type": "array",
-                                            "description": "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page.",
+                                            "description": "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page. An item may also be an object with item (the name) and label (the word the menu shows for it, such as Berichten).",
                                             "items": {
-                                                "type": "string"
+                                                "oneOf": [
+                                                    {
+                                                        "type": "string"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "item": {
+                                                                "type": "string"
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    }
+                                                ]
                                             }
                                         }
                                     }
@@ -3080,7 +3095,75 @@
                                     "tasks",
                                     "access"
                                 ]
+                            },
+                            "person": {
+                                "title": "Person block",
+                                "type": "object",
+                                "description": "Shows the signed-in person at the top of the menu: initials in a circle, the name, and a second line from the first row of a collection, such as the class. With an organisation card the second line goes under the organisation's name. Empty shows no person block.",
+                                "properties": {
+                                    "collection": {
+                                        "title": "Collection",
+                                        "type": "string",
+                                        "description": "The collection whose first row gives the second line, as app:collection, such as learniq:studentEnrolments."
+                                    },
+                                    "fields": {
+                                        "title": "Fields",
+                                        "type": "array",
+                                        "description": "At most four fields of that row, joined by a dot in the second line.",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "collection": "learniq:studentEnrolments",
+                                    "fields": [
+                                        "levelLabel",
+                                        "groupName"
+                                    ]
+                                }
+                            },
+                            "routes": {
+                                "title": "Second addresses",
+                                "type": "object",
+                                "description": "A second address under /mijn/ for an item of the own area, by name, so /mijn/berichten opens the conversations. Letters, digits and hyphens only. Empty adds none.",
+                                "additionalProperties": {
+                                    "type": "string"
+                                },
+                                "example": {
+                                    "berichten": "messages"
+                                }
                             }
+                        }
+                    },
+                    "contactPrompt": {
+                        "title": "E-mail address prompt",
+                        "type": "object",
+                        "description": "The note in the own area that asks for an e-mail address while the account has none. Set show to false to leave it out, or write its words in the tone of the portal.",
+                        "properties": {
+                            "show": {
+                                "title": "Show the prompt",
+                                "type": "boolean",
+                                "description": "False leaves the prompt out on this portal."
+                            },
+                            "text": {
+                                "title": "Prompt text",
+                                "type": "string",
+                                "description": "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert."
+                            },
+                            "button": {
+                                "title": "Button text",
+                                "type": "string",
+                                "description": "The button to the account page, such as Naar mijn account."
+                            },
+                            "dismiss": {
+                                "title": "Dismiss text",
+                                "type": "string",
+                                "description": "The button that hides the prompt for now, such as Niet nu."
+                            }
+                        },
+                        "example": {
+                            "show": false
                         }
                     },
                     "myCases": {
