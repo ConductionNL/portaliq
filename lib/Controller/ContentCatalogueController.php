@@ -84,10 +84,12 @@ class ContentCatalogueController extends Controller {
 	 * @param int         $page     The page, from 1.
 	 * @param int         $limit    Results per page, at most 50.
 	 * @param string      $upcoming `1` for only the items whose date is today or later.
+	 * @param string      $facetsBy The facets to add, as JSON `{kind, news, audience}`: the label of a facet by item kind ("Soort"), a news item's kind word in it ("Nieuws"), and the label of a facet by a news item's audience ("Voor wie").
 	 *
 	 * @return JSONResponse `{items, total, page, pages, facets}`, or 401 / 403 / 404.
 	 *
 	 * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
+	 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -101,6 +103,7 @@ class ContentCatalogueController extends Controller {
 		int $page = 1,
 		int $limit = 10,
 		string $upcoming = '',
+		string $facetsBy = '',
 	): JSONResponse {
 		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
 		if ($resolved === null) {
@@ -117,6 +120,11 @@ class ContentCatalogueController extends Controller {
 			$chosen = [];
 		}
 
+		$derive = json_decode($facetsBy, true);
+		if (is_array($derive) === false) {
+			$derive = [];
+		}
+
 		if (in_array($sort, PublicCatalogueQuery::SORTS, true) === false) {
 			$sort = 'relevance';
 		}
@@ -131,7 +139,10 @@ class ContentCatalogueController extends Controller {
 				'page'     => $page,
 				'limit'    => $limit,
 				'upcoming' => ($upcoming === '1'),
-				'today'    => date('Y-m-d'),
+				'today'         => date('Y-m-d'),
+				'kindFacet'     => ($derive['kind'] ?? ''),
+				'kindNews'      => ($derive['news'] ?? ''),
+				'audienceFacet' => ($derive['audience'] ?? ''),
 			]
 		);
 
