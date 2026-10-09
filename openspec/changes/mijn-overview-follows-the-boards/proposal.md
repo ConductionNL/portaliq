@@ -26,7 +26,7 @@ the right ones, but the page did not look like the boards:
 - `kpi` may declare `display: "strip"`: the heading and the figures on one line, each figure followed
   by its card's `stripLabel` ("1 dag ziek").
 - Data badges are tinted: no outline unless the theme names `--nl-data-badge-border-color`.
-- Portal schema 0.15.0 (register 0.72.0): `contactPrompt` `{show, text, button, dismiss}`. `show: false`
+- Portal schema 0.16.0 (register 0.73.0): `contactPrompt` `{show, text, button, dismiss}`. `show: false`
   leaves the e-mail prompt out; the texts replace the site's words, so a pupil portal can say "je".
 
 ## For learniq
@@ -37,4 +37,4 @@ The exact declarations per overview are in tasks.md section 2.
 
 - Additive keys only. A page without them is unchanged, except that every data badge loses its
   outline.
-- Depends on portaliq #1423 (register 0.71.0); this PR is stacked on it.
+- Depends on portaliq #1423 (register 0.72.0); this PR is stacked on it.

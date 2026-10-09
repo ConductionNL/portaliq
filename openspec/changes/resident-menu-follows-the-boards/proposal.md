@@ -13,7 +13,7 @@ declaration, but three things a portal cannot declare today:
 
 ## What Changes
 
-- Portal schema 0.14.0 (register 0.71.0), all additive:
+- Portal schema 0.15.0 (register 0.72.0), all additive:
   - `residentMenu.groups[].items[]` may be `{item, label}` besides a name; the menu shows the label.
   - `residentMenu.person`: `{collection: "app:id", fields: [...]}`. The menu opens with the initials,
     the session's name and the fields of that collection's first row joined by " · ". With an

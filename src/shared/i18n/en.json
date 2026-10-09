@@ -398,5 +398,9 @@
 	"One less": "One less",
 	"One more": "One more",
 	"Download": "Download",
-	"Only on this demo. No password is asked.": "Only on this demo. No password is asked."
+	"Only on this demo. No password is asked.": "Only on this demo. No password is asked.",
+	"{field}: enter a number, for example 8 or 7.5.": "{field}: enter a number, for example 8 or 7.5.",
+	"{field}: enter a whole number, for example 8.": "{field}: enter a whole number, for example 8.",
+	"{field} is not filled in correctly. Check it.": "{field} is not filled in correctly. Check it.",
+	"Not everything is filled in correctly. Check your answers.": "Not everything is filled in correctly. Check your answers."
 }

@@ -37,6 +37,7 @@ export const strings = {
 		next: 'Volgende',
 		page: 'Pagina {page}',
 		pages: "Pagina's",
+		all: 'Alles',
 	},
 	en: {
 		search: 'Search',
@@ -60,6 +61,7 @@ export const strings = {
 		next: 'Next',
 		page: 'Page {page}',
 		pages: 'Pages',
+		all: 'All',
 	},
 }
 
@@ -200,4 +202,79 @@ export function eventItemsOf(items) {
 			note: item.note || '',
 			noteTone: item.noteTone || 'neutral',
 		}))
+}
+
+/** How a facet may be chosen from: several values, one value, or a menu. */
+export const FACET_CONTROLS = ['checkbox', 'radio', 'select']
+
+/**
+ * The facets the block asks the server to add besides the ones the items
+ * declare: one by kind ("Soort": Nieuws, Nieuwsbrief, ...) and one by a news
+ * item's audience ("Voor wie"). The word for a news item is the page's own.
+ *
+ * @param {object} options The block's choices.
+ * @param {string} [options.kindFacet] The label of the kind facet; '' for none.
+ * @param {string} [options.audienceFacet] The label of the audience facet; '' for none.
+ * @param {string} options.lang The page language.
+ * @return {{kind?: string, news?: string, audience?: string}} Empty when nothing is asked.
+ * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
+ */
+export function facetsByOf({ kindFacet = '', audienceFacet = '', lang }) {
+	const out = {}
+	if (String(kindFacet).trim() !== '') {
+		out.kind = String(kindFacet).trim()
+		out.news = word(lang, 'news')
+	}
+	if (String(audienceFacet).trim() !== '') {
+		out.audience = String(audienceFacet).trim()
+	}
+	return out
+}
+
+/**
+ * How one facet is chosen from: the block's `facetDisplay` for its label,
+ * else checkboxes.
+ *
+ * @param {Record<string, string>} display Facet label to `checkbox`, `radio` or `select`.
+ * @param {string} label The facet.
+ * @return {string} One of FACET_CONTROLS.
+ * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+ */
+export function facetControl(display, label) {
+	const chosen = display && typeof display === 'object' ? display[label] : ''
+	return FACET_CONTROLS.includes(chosen) ? chosen : 'checkbox'
+}
+
+/**
+ * The facet choices with one facet set to a single value (a radio or a
+ * menu); an empty value clears that facet.
+ *
+ * @param {Record<string, Array<string>>} filters The choices.
+ * @param {string} label The facet.
+ * @param {string} value The value, or '' for all.
+ * @return {Record<string, Array<string>>}
+ * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+ */
+export function chooseOne(filters, label, value) {
+	const next = { ...(filters || {}) }
+	if (String(value || '') === '') {
+		delete next[label]
+	} else {
+		next[label] = [String(value)]
+	}
+	return next
+}
+
+/**
+ * The lines of a card in the `meta` style (boards Opleidingen and
+ * Cursusaanbod): no kind label above the title; under the summary the first
+ * meta part as a label ("Niveau 4", "Basis"), then the rest.
+ *
+ * @param {{meta: Array<string>}} card The card.
+ * @return {{pill: string, rest: Array<string>}}
+ * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+ */
+export function metaLine(card) {
+	const meta = Array.isArray(card?.meta) ? card.meta.filter(Boolean) : []
+	return { pill: meta[0] || '', rest: meta.slice(1) }
 }

@@ -20,12 +20,15 @@
 		</p>
 
 		<form
-			v-if="showSearch"
+			v-if="showSearch && !railSearch"
 			class="nl-catalogue__search"
 			role="search"
 			data-testid="nl-catalogue-search"
 			@submit.prevent="search">
-			<label class="utrecht-form-label" :for="`${uid}-q`">
+			<label
+				class="utrecht-form-label"
+				:class="{ 'nl-catalogue__hidden': labelHidden }"
+				:for="`${uid}-q`">
 				{{ searchLabel || w('searchIn') }}
 			</label>
 			<span class="nl-catalogue__search-row">
@@ -37,7 +40,7 @@
 					:placeholder="placeholder" />
 				<button
 					type="submit"
-					class="utrecht-button utrecht-button--primary-action">
+					class="utrecht-button utrecht-button--primary-action nl-catalogue__submit">
 					{{ w('search') }}
 				</button>
 			</span>
@@ -45,12 +48,58 @@
 
 		<div
 			class="nl-catalogue__body"
-			:class="{ 'nl-catalogue__body--rail': hasFacets }">
+			:class="{ 'nl-catalogue__body--rail': hasRail }">
 			<aside
-				v-if="hasFacets"
+				v-if="hasRail"
 				class="nl-catalogue__facets"
-				:aria-labelledby="`${uid}-filters`">
-				<h3 :id="`${uid}-filters`" class="utrecht-heading-4">
+				:aria-labelledby="hasFacets ? `${uid}-filters` : undefined"
+				:aria-label="hasFacets ? undefined : searchLabel || w('searchIn')">
+				<!-- THE SEARCH IN THE RAIL (board Cursusaanbod): the field and
+				     a button with only the magnifier, above the facets. -->
+				<form
+					v-if="showSearch && railSearch"
+					class="nl-catalogue__search nl-catalogue__search--rail"
+					role="search"
+					data-testid="nl-catalogue-search"
+					@submit.prevent="search">
+					<label
+						class="utrecht-form-label"
+						:class="{ 'nl-catalogue__hidden': labelHidden }"
+						:for="`${uid}-q`">
+						{{ searchLabel || w('searchIn') }}
+					</label>
+					<span class="nl-catalogue__search-row">
+						<input
+							:id="`${uid}-q`"
+							v-model="draft"
+							class="utrecht-textbox nl-catalogue__input"
+							type="search"
+							:placeholder="placeholder" />
+						<button
+							type="submit"
+							class="utrecht-button utrecht-button--primary-action nl-catalogue__submit nl-catalogue__submit--icon">
+							<svg
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+								focusable="false">
+								<path :d="MAGNIFIER" fill="currentColor" />
+							</svg>
+							<span class="nl-catalogue__hidden">{{
+								w('search')
+							}}</span>
+						</button>
+					</span>
+				</form>
+				<h3
+					v-if="hasFacets && !railSearch"
+					:id="`${uid}-filters`"
+					class="utrecht-heading-4 nl-catalogue__filters">
+					{{ w('filters') }}
+				</h3>
+				<h3
+					v-else-if="hasFacets"
+					:id="`${uid}-filters`"
+					class="nl-catalogue__hidden">
 					{{ w('filters') }}
 				</h3>
 				<fieldset
@@ -61,16 +110,39 @@
 					<legend class="nl-catalogue__legend">
 						{{ facet.label }}
 					</legend>
-					<label
-						v-for="option in facet.values"
-						:key="option.value"
-						class="nl-catalogue__option">
-						<input
-							type="checkbox"
-							:checked="isChosen(facet.label, option.value)"
-							@change="toggle(facet.label, option.value)" />
-						{{ option.value }} ({{ option.count }})
-					</label>
+					<select
+						v-if="controlOf(facet.label) === 'select'"
+						class="utrecht-select nl-catalogue__control"
+						:aria-label="facet.label"
+						@change="pick(facet.label, $event.target.value)">
+						<option value="">{{ w('all') }}</option>
+						<option
+							v-for="option in facet.values"
+							:key="option.value"
+							:value="option.value"
+							:selected="isChosen(facet.label, option.value)">
+							{{ option.value }} ({{ option.count }})
+						</option>
+					</select>
+					<template v-else>
+						<label
+							v-for="option in facet.values"
+							:key="option.value"
+							class="nl-catalogue__option">
+							<input
+								v-if="controlOf(facet.label) === 'radio'"
+								type="radio"
+								:name="`${uid}-${facet.label}`"
+								:checked="isChosen(facet.label, option.value)"
+								@change="pick(facet.label, option.value)" />
+							<input
+								v-else
+								type="checkbox"
+								:checked="isChosen(facet.label, option.value)"
+								@change="toggle(facet.label, option.value)" />
+							{{ option.value }} ({{ option.count }})
+						</label>
+					</template>
 				</fieldset>
 				<button
 					v-if="hasFilters"
@@ -93,7 +165,7 @@
 						{{ w('sort') }}
 						<select
 							v-model="sortBy"
-							class="utrecht-select"
+							class="utrecht-select nl-catalogue__control nl-catalogue__control--sort"
 							@change="reload(1)">
 							<option
 								v-for="option in sorts"
@@ -135,17 +207,15 @@
 							:date="card.date.slice(0, 10)"
 							:locale="contentLocale() || lang" />
 						<span class="nl-catalogue__text">
-							<span class="nl-catalogue__line">
-								<span
-									v-if="card.kind && display !== 'dated'"
-									class="nl-catalogue__kind"
-									>{{ card.kind }}</span
-								>
-								<time
-									v-if="card.date && display !== 'dated'"
-									:datetime="card.date"
-									>{{ longDate(card.date) }}</time
-								>
+							<span
+								v-if="display !== 'dated' && cardStyle !== 'meta'"
+								class="nl-catalogue__line">
+								<span v-if="card.kind" class="nl-catalogue__kind">{{
+									card.kind
+								}}</span>
+								<time v-if="card.date" :datetime="card.date">{{
+									longDate(card.date)
+								}}</time>
 								<span
 									v-for="part in card.meta.slice(0, 1)"
 									:key="part"
@@ -168,7 +238,21 @@
 								>{{ card.summary }}</span
 							>
 							<span
-								v-if="display === 'dated' && card.meta.length > 0"
+								v-if="cardStyle === 'meta' && card.meta.length > 0"
+								class="nl-catalogue__line nl-catalogue__line--meta">
+								<span class="nl-catalogue__pill">{{
+									metaOf(card).pill
+								}}</span>
+								<span
+									v-for="part in metaOf(card).rest"
+									:key="part"
+									>{{ part }}</span
+								>
+							</span>
+							<span
+								v-else-if="
+									display === 'dated' && card.meta.length > 0
+								"
 								class="nl-catalogue__line">
 								<span v-if="card.kind" class="nl-catalogue__kind">{{
 									card.kind
@@ -189,6 +273,14 @@
 								>{{ card.note }}</span
 							>
 						</span>
+						<svg
+							v-if="card.link"
+							class="nl-catalogue__chevron"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+							focusable="false">
+							<path :d="CHEVRON" fill="currentColor" />
+						</svg>
 					</li>
 				</ul>
 
@@ -200,7 +292,7 @@
 						v-for="n in result.pages"
 						:key="n"
 						type="button"
-						class="utrecht-button utrecht-button--secondary-action"
+						class="utrecht-button utrecht-button--secondary-action nl-catalogue__page"
 						:aria-current="n === result.page ? 'page' : undefined"
 						:aria-label="w('page', { page: n })"
 						@click="reload(n)">
@@ -209,7 +301,7 @@
 					<button
 						v-if="result.page < result.pages"
 						type="button"
-						class="utrecht-button utrecht-button--secondary-action"
+						class="utrecht-button utrecht-button--secondary-action nl-catalogue__page nl-catalogue__page--next"
 						@click="reload(result.page + 1)">
 						{{ w('next') }}
 					</button>
@@ -226,8 +318,12 @@ import { staysInSite } from '../../components/mijn/links.js'
 import { fetchCatalogue } from '../../lib/publicCatalogue.js'
 import { pageLocale } from '../../pages/inbox/translate.js'
 import {
+	chooseOne,
 	countText,
+	facetControl,
+	facetsByOf,
 	initialQuery,
+	metaLine,
 	resultCard,
 	SORTS,
 	toggleFilter,
@@ -240,6 +336,13 @@ import '@utrecht/link-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 
 let counter = 0
+
+/** The magnifier of the search button in the rail (Material "magnify"). */
+const MAGNIFIER =
+	'M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z'
+
+/** The chevron at the end of a linked result (Material "chevron-right"). */
+const CHEVRON = 'M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z'
 
 /**
  * @spec openspec/changes/portal-public-catalogue/specs/portaliq-cms/spec.md#requirement-a-catalogue-block-searches-and-filters-the-portals-public-catalogue
@@ -282,6 +385,18 @@ export default {
 		showSearch: { type: Boolean, default: true },
 		/** The route of the news article page, for a news result. */
 		newsRoute: { type: String, default: '/nieuws' },
+		/** A facet by item kind under this label ("Soort"); empty for none. */
+		kindFacet: { type: String, default: '' },
+		/** A facet by a news item's audience under this label ("Voor wie"); empty for none. */
+		audienceFacet: { type: String, default: '' },
+		/** Facet label to `checkbox` (default), `radio` or `select`. */
+		facetDisplay: { type: Object, default: () => ({}) },
+		/** Keep the field's label for screen readers only. */
+		labelHidden: { type: Boolean, default: false },
+		/** `top` (above results and facets) or `rail` (above the facets, beside the results). */
+		searchPlacement: { type: String, default: 'top' },
+		/** `kind` (a kind label above the title) or `meta` (the first meta part as a label under the summary). */
+		cardStyle: { type: String, default: 'kind' },
 	},
 
 	emits: ['navigate'],
@@ -299,6 +414,8 @@ export default {
 			result: { items: [], total: 0, page: 1, pages: 1, facets: [] },
 			loading: false,
 			failed: false,
+			MAGNIFIER,
+			CHEVRON,
 		}
 	},
 
@@ -343,6 +460,22 @@ export default {
 		 */
 		hasFacets() {
 			return this.result.facets.length > 0
+		},
+
+		/**
+		 * @return {boolean} Whether the search sits in the rail.
+		 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+		 */
+		railSearch() {
+			return this.searchPlacement === 'rail'
+		},
+
+		/**
+		 * @return {boolean} Whether the block has a column beside the results.
+		 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+		 */
+		hasRail() {
+			return this.hasFacets || (this.showSearch && this.railSearch)
 		},
 
 		/**
@@ -399,6 +532,11 @@ export default {
 					sort: this.sortBy,
 					page,
 					limit: Math.min(20, Math.max(5, Number(this.pageSize) || 10)),
+					facetsBy: facetsByOf({
+						kindFacet: this.kindFacet,
+						audienceFacet: this.audienceFacet,
+						lang: this.lang,
+					}),
 				})
 			} catch {
 				// Unavailable is not "nothing found".
@@ -443,6 +581,38 @@ export default {
 		},
 
 		/**
+		 * @param {string} label A facet.
+		 * @return {string} How it is chosen from.
+		 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+		 */
+		controlOf(label) {
+			return facetControl(this.facetDisplay, label)
+		},
+
+		/**
+		 * Choose one value of a facet (a radio or a menu) and read the first
+		 * page again; '' clears the facet.
+		 *
+		 * @param {string} label The facet.
+		 * @param {string} value The value.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+		 */
+		pick(label, value) {
+			this.filters = chooseOne(this.filters, label, value)
+			return this.reload(1)
+		},
+
+		/**
+		 * @param {object} card A result card.
+		 * @return {{pill: string, rest: Array<string>}} Its meta line in the `meta` style.
+		 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+		 */
+		metaOf(card) {
+			return metaLine(card)
+		},
+
+		/**
 		 * Clear every facet choice.
 		 *
 		 * @return {Promise<void>}
@@ -477,17 +647,63 @@ export default {
 .nl-catalogue__search {
 	display: grid;
 	gap: 0.375rem;
-	max-inline-size: 48rem;
+	max-inline-size: 33rem;
 	margin-block: 1.5rem;
+}
+
+.nl-catalogue__search--rail {
+	margin-block: 0 1.5rem;
 }
 
 .nl-catalogue__search-row {
 	display: flex;
 }
 
-.nl-catalogue__input {
+/* THE FIELD AND ITS BUTTON AS ONE (boards Zoeken): the field's strong edge,
+   the button against it at the same height. */
+.nl-catalogue__input.utrecht-textbox {
 	flex: 1;
 	min-inline-size: 0;
+	max-inline-size: none;
+	block-size: 3rem;
+	padding-inline: 0.875rem;
+	border: 2px solid
+		var(--nldesign-color-border-dark, var(--utrecht-document-color, CanvasText));
+	border-start-end-radius: 0;
+	border-end-end-radius: 0;
+	font-size: 1.0625rem;
+}
+
+.nl-catalogue__submit.utrecht-button {
+	flex: none;
+	block-size: 3rem;
+	min-block-size: 3rem;
+	padding-block: 0;
+	padding-inline: 1.375rem;
+	border-start-start-radius: 0;
+	border-end-start-radius: 0;
+	font-weight: 600;
+}
+
+.nl-catalogue__submit--icon.utrecht-button {
+	inline-size: 3rem;
+	padding-inline: 0;
+	justify-content: center;
+}
+
+.nl-catalogue__submit--icon svg {
+	inline-size: 1.25rem;
+	block-size: 1.25rem;
+}
+
+/* A label for screen readers only. */
+.nl-catalogue__hidden {
+	position: absolute;
+	inline-size: 1px;
+	block-size: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
 
 .nl-catalogue__body--rail {
@@ -502,6 +718,11 @@ export default {
 	border: 0;
 }
 
+.nl-catalogue__filters {
+	margin-block: 0 1.25rem;
+	font-size: 1.375rem;
+}
+
 .nl-catalogue__legend {
 	margin-block-end: 0.5rem;
 	font-weight: 700;
@@ -509,9 +730,41 @@ export default {
 
 .nl-catalogue__option {
 	display: flex;
-	gap: 0.5rem;
+	gap: 0.625rem;
 	align-items: center;
-	padding-block: 0.25rem;
+	padding-block: 0.3125rem;
+}
+
+.nl-catalogue__option input {
+	flex: none;
+	inline-size: 1.125rem;
+	block-size: 1.125rem;
+	margin: 0;
+	accent-color: var(--nldesign-color-primary, LinkText);
+}
+
+/* THE MENUS (sort and a facet chosen from a menu): a bordered box at the
+   height of the board's, its arrow drawn by the browser. */
+.nl-catalogue__control.utrecht-select {
+	block-size: 2.75rem;
+	padding-block: 0;
+	padding-inline: 0.75rem;
+	border: 1px solid
+		var(--nldesign-color-border-dark, var(--utrecht-document-color, CanvasText));
+	border-radius: var(--nldesign-website-border-radius, 0.375rem);
+	background-color: var(--utrecht-document-background-color, Canvas);
+	color: inherit;
+	font: inherit;
+}
+
+.nl-catalogue__facet .nl-catalogue__control.utrecht-select {
+	inline-size: 100%;
+}
+
+.nl-catalogue__clear.utrecht-button {
+	padding-inline: 0;
+	color: var(--utrecht-link-color, LinkText);
+	text-decoration: underline;
 }
 
 .nl-catalogue__bar {
@@ -544,7 +797,7 @@ export default {
 .nl-catalogue__card {
 	display: flex;
 	gap: 1.25rem;
-	align-items: flex-start;
+	align-items: center;
 	padding: 1.25rem 1.5rem;
 	border: 1px solid
 		var(--nldesign-color-border, var(--utrecht-color-grey-80, currentcolor));
@@ -588,6 +841,30 @@ export default {
 	font-weight: 700;
 }
 
+.nl-catalogue__line--meta > span + span::before {
+	content: '·';
+	margin-inline-end: 0.75rem;
+}
+
+.nl-catalogue__line--meta > .nl-catalogue__pill + span::before {
+	content: none;
+}
+
+.nl-catalogue__pill {
+	padding: 0.0625rem 0.5rem;
+	border-radius: var(--nldesign-website-border-radius, 0.25rem);
+	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-90));
+	color: var(--utrecht-document-color, CanvasText);
+	font-weight: 700;
+}
+
+.nl-catalogue__chevron {
+	flex: none;
+	inline-size: 1.5rem;
+	block-size: 1.5rem;
+	color: var(--nldesign-color-primary, LinkText);
+}
+
 .nl-catalogue__aside {
 	display: flex;
 	flex-direction: column;
@@ -617,9 +894,28 @@ export default {
 	margin-block-start: 1.25rem;
 }
 
-.nl-catalogue__pages [aria-current='page'] {
-	font-weight: 700;
+/* THE PAGES (boards Zoeken): small boxes, the current one filled in the
+   primary colour, the others and "Volgende" outlined and underlined. */
+.nl-catalogue__pages .nl-catalogue__page.utrecht-button {
+	min-inline-size: 2.5rem;
+	block-size: 2.5rem;
+	min-block-size: 2.5rem;
+	padding-block: 0;
+	padding-inline: 0.75rem;
+	border: 1px solid
+		var(--nldesign-color-border, var(--utrecht-document-color, CanvasText));
+	border-radius: var(--nldesign-website-border-radius, 0.25rem);
+	background-color: var(--utrecht-document-background-color, Canvas);
+	color: var(--nldesign-color-primary, LinkText);
+	font-weight: 600;
 	text-decoration: underline;
+}
+
+.nl-catalogue__pages .nl-catalogue__page.utrecht-button[aria-current='page'] {
+	border-color: var(--nldesign-color-primary, CanvasText);
+	background-color: var(--nldesign-color-primary, CanvasText);
+	color: var(--nldesign-color-primary-text, Canvas);
+	text-decoration: none;
 }
 
 @media (max-width: 768px) {
