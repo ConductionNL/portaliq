@@ -558,6 +558,7 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
+import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
@@ -823,6 +824,10 @@ export default {
 		 */
 		breadcrumbs() {
 			if (this.accountRoute) {
+				// Signed out, the own area is the sign-in page.
+				if (!this.session) {
+					return signInCrumbs(this.route, this.t, this.hrefForRoute)
+				}
 				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
 			}
 			// The token is not a word and no page sits at its parent.
@@ -853,16 +858,21 @@ export default {
 
 				// The id segment of `/publicatie/<id>` is not a word; the
 				// page's own title is what a visitor recognises.
-				let label = segment.charAt(0).toUpperCase() + segment.slice(1)
+				let fromRoute = segment.charAt(0).toUpperCase() + segment.slice(1)
 				if (isLast === true && this.page && this.page.title) {
-					label = this.page.title
+					fromRoute = this.page.title
 				}
 				// The header menu's own words for a route it names, so the trail
-				// reads like the menu ("Home › Afval"), on every crumb.
-				const fromMenu = menuLabelFor(this.menus, route)
-				if (fromMenu !== '') {
-					label = fromMenu
-				}
+				// reads like the menu ("Home › Afval"), on every crumb; a portal
+				// that chooses `breadcrumb: page` names the page on screen by its
+				// own title (site-breadcrumb-follows-the-school-boards).
+				const label = crumbLabel({
+					fromRoute,
+					fromMenu: menuLabelFor(this.menus, route),
+					isLast,
+					pageTitle: this.page?.title,
+					choice: this.site.breadcrumb,
+				})
 
 				crumbs.push({ route, label, href: this.hrefForRoute(route) })
 			})
