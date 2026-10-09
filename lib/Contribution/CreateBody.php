@@ -66,6 +66,6 @@ class CreateBody {
 			}
 		}
 
-		return (new EntryFormKeys())->stamp(action: $action, body: $whitelisted);
+		return (new DurationField())->stamp(action: $action, body: $whitelisted);
 	}//end build()
 }//end class

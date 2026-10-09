@@ -20,7 +20,7 @@ Action forms already ask text, numbers, dates, choice cards, files and a count (
 ## What changes
 
 - A field whose schema format is `time` is a time input (`input: time`).
-- A field config may declare `computed: {kind: "duration", from, to, minus?}`: the form works the hours out from two time fields minus a pause in minutes, shows them as a line with the field's label ("Dat is vandaag 8 uur"), and sends them as a number. The server works them out again from the same times (`EntryFormKeys::stamp`), so a typed total never stands. A computed value that reads a field the action does not have, or itself, is dropped.
+- A field config may declare `computed: {kind: "duration", from, to, minus?}`: the form works the hours out from two time fields minus a pause in minutes, shows them as a line with the field's label ("Dat is vandaag 8 uur"), and sends them as a number. The server works them out again from the same times (`DurationField::stamp`), so a typed total never stands. A computed value that reads a field the action does not have, or itself, is dropped.
 - A field config may declare `widget: "checks"` on a field with options: check cards, more than one may be ticked, sent as a list in the order of the options. `shown: N` shows the first N cards and a "Alle N tonen" button; a ticked card always shows. A `collection` options provider may name a `noteField`: a short line above each option's label (the work process code).
 - Choice cards may declare `inline: true`: short cards side by side, wrapping on a narrow screen. A ticked choice card gets the theme's light primary ground, as on the boards.
 - A file field may declare `buttonLabel` ("Foto toevoegen").

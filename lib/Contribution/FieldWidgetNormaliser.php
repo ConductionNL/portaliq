@@ -142,20 +142,28 @@ class FieldWidgetNormaliser {
 				continue;
 			}
 
-			// Check cards are fitted by EntryFormKeys (action-form-day-entry).
-			if ($config['widget'] === EntryFormKeys::CHECKS) {
-				continue;
-			}
-
-			if (($config['input'] ?? null) !== 'date') {
-				unset($config['widget'], $config['dateChoices']);
-				$configs[$field] = $config;
-			}
+			$configs[$field] = $this->fitDateChoices(config: $config);
 		}
 
 		$action['fieldConfigs'] = $configs;
 		return $action;
 	}//end reconcile()
+
+	/**
+	 * Drop named days from a field that is no date. Any other widget is left
+	 * as it is: check cards are fitted by EntryFormKeys (action-form-day-entry).
+	 *
+	 * @param array<string, mixed> $config The field config, after the input hints.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fitDateChoices(array $config): array {
+		if ($config['widget'] === self::DATE_CHOICES && ($config['input'] ?? null) !== 'date') {
+			unset($config['widget'], $config['dateChoices']);
+		}
+
+		return $config;
+	}//end fitDateChoices()
 
 	/**
 	 * The `choices` widget with its subset and its "other" card label.

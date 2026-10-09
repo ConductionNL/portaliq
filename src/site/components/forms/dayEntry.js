@@ -8,7 +8,7 @@
  * two times and a pause, and the values of check cards.
  *
  * The server works the hours out again from the same times
- * (`EntryFormKeys::stamp`), so the number shown here is only a preview.
+ * (`DurationField::stamp`), so the number shown here is only a preview.
  *
  * @spec openspec/changes/action-form-day-entry/specs/site-forms/spec.md
  */

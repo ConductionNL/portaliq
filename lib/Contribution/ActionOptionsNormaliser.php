@@ -146,11 +146,11 @@ class ActionOptionsNormaliser {
 	 * frontend through the SUBJECT-SCOPED collection endpoint, so it can only
 	 * ever offer values the subject may already read.
 	 *
-	 * @spec openspec/changes/action-form-day-entry/specs/site-forms/spec.md
-	 *
 	 * @param array<string, mixed> $provider The provider config.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/action-form-day-entry/specs/site-forms/spec.md
 	 */
 	private function normaliseCollectionProvider(array $provider): ?array {
 		$keys = ['register', 'schema', 'labelField', 'valueField'];

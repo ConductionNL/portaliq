@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Contribution;
 
 use OCA\Portaliq\Contribution\CreateBody;
-use OCA\Portaliq\Contribution\EntryFormKeys;
+use OCA\Portaliq\Contribution\DurationField;
 use OCA\Portaliq\Contribution\PortalManifestNormaliser;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use PHPUnit\Framework\TestCase;
@@ -113,11 +113,11 @@ class EntryFormKeysTest extends TestCase {
 		$none = (new CreateBody())->build(action: $action, whitelisted: ['startTime' => '16:30', 'stopTime' => '08:00', 'hours' => 8]);
 		$this->assertArrayNotHasKey('hours', $none, 'a stop before the start is no total');
 
-		$this->assertSame(7.5, EntryFormKeys::hours(from: '08.00', to: '16.00', pause: '30'));
-		$this->assertSame(1.33, EntryFormKeys::hours(from: '9:00', to: '10:20', pause: 0));
-		$this->assertNull(EntryFormKeys::hours(from: '25:00', to: '26:00', pause: 0));
-		$this->assertNull(EntryFormKeys::hours(from: '08:00', to: '', pause: 0));
-		$this->assertNull(EntryFormKeys::hours(from: '08:00', to: '09:00', pause: 'lang'));
+		$this->assertSame(7.5, DurationField::hours(from: '08.00', to: '16.00', pause: '30'));
+		$this->assertSame(1.33, DurationField::hours(from: '9:00', to: '10:20', pause: 0));
+		$this->assertNull(DurationField::hours(from: '25:00', to: '26:00', pause: 0));
+		$this->assertNull(DurationField::hours(from: '08:00', to: '', pause: 0));
+		$this->assertNull(DurationField::hours(from: '08:00', to: '09:00', pause: 'lang'));
 	}//end testTheServerWorksTheHoursOutAgain()
 
 	/**
