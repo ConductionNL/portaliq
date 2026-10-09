@@ -55,6 +55,8 @@ class InitializeSettings implements IRepairStep {
 	 * @param ISecureRandom $random Cryptographically secure generator
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.2
 	 */
 	public function __construct(
 		private SettingsService $settingsService,

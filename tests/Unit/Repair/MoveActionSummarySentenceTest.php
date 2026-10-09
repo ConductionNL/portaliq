@@ -173,6 +173,96 @@ class MoveActionSummarySentenceTest extends TestCase {
 	}//end testAnExistingAnswerSummaryWins()
 
 	/**
+	 * Without OpenRegister, the step does nothing.
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterNothingHappens(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new \RuntimeException('no OR'));
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->never())->method('info');
+
+		(new MoveActionSummarySentence($container, $this->createMock(PortalRegisterContext::class), $this->createMock(LoggerInterface::class)))->run($output);
+	}//end testWithoutOpenRegisterNothingHappens()
+
+	/**
+	 * A schema the context cannot point at, and a read that fails, both end
+	 * the run with nothing moved.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreachableSchemaOrReadMovesNothing(): void {
+		$store     = $this->store([$this->page('p-1', [['id' => 'a', 'summary' => ['template' => 'x']]])]);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($store);
+		$context = $this->createMock(PortalRegisterContext::class);
+		$context->method('apply')->willReturn(false);
+		(new MoveActionSummarySentence($container, $context, $this->createMock(LoggerInterface::class)))->run($this->createMock(IOutput::class));
+		$this->assertSame([], $store->saves);
+
+		$throwing = $this->createMock(PortalRegisterContext::class);
+		$throwing->method('apply')->willThrowException(new \RuntimeException('down'));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('info');
+		(new MoveActionSummarySentence($container, $throwing, $logger))->run($this->createMock(IOutput::class));
+		$this->assertSame([], $store->saves);
+	}//end testAnUnreachableSchemaOrReadMovesNothing()
+
+	/**
+	 * A row that serialises itself is read, and a failed save is logged, not thrown.
+	 *
+	 * @return void
+	 */
+	public function testSerialisableRowsAreReadAndAFailedSaveIsLogged(): void {
+		$row   = new class($this->page('p-1', [['id' => 'a', 'summary' => ['template' => 'x']]])) implements \JsonSerializable {
+			public function __construct(private array $data) {
+			}
+
+			public function jsonSerialize(): array {
+				return $this->data;
+			}
+		};
+		$service = new class([$row, 'not-a-row']) {
+			public function __construct(private array $rows) {
+			}
+
+			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				return $this->rows;
+			}
+
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				throw new \RuntimeException('save refused');
+			}
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($service);
+		$context = $this->createMock(PortalRegisterContext::class);
+		$context->method('apply')->willReturn(true);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning');
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')->with($this->stringContains('on 0 portal pages'));
+
+		(new MoveActionSummarySentence($container, $context, $logger))->run($output);
+	}//end testSerialisableRowsAreReadAndAFailedSaveIsLogged()
+
+	/**
+	 * A record without an identifier or without a list of actions is left alone.
+	 *
+	 * @return void
+	 */
+	public function testARecordWithoutAnIdentifierOrActionsIsLeftAlone(): void {
+		$noId = ['actions' => [['id' => 'a', 'summary' => ['template' => 'x']]]];
+		$store = $this->store([$noId, ['label' => 'No actions', '@self' => ['uuid' => 'p-9']], $this->page('p-1', ['plain'])]);
+
+		$this->step($store)->run($this->createMock(IOutput::class));
+
+		$this->assertSame([], $store->saves);
+		$this->assertNull($this->step($store)->movedActions(['actions' => 'oops']));
+	}//end testARecordWithoutAnIdentifierOrActionsIsLeftAlone()
+
+	/**
 	 * Whether a record fits the portalPage schema of the shipped register.
 	 *
 	 * @param array<string, mixed> $record The record without `@self`.

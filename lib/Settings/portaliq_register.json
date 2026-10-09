@@ -2152,14 +2152,20 @@
                                     ],
                                     "properties": {
                                         "label": {
+                                            "title": "Sentence lead-in",
+                                            "description": "The words that open the sentence, for example You report. Optional.",
                                             "type": "string",
                                             "maxLength": 120
                                         },
                                         "template": {
+                                            "title": "Sentence template",
+                                            "description": "The sentence with the action's own fields named as {field}. At most 300 characters.",
                                             "type": "string",
                                             "maxLength": 300
                                         },
                                         "phrases": {
+                                            "title": "Sentence phrases",
+                                            "description": "Per field, the words shown for each answer value instead of the raw value.",
                                             "type": "object"
                                         }
                                     },
