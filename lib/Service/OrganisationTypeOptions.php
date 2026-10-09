@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
  * when the concept register does not hold that scheme, nothing is offered and
  * the picker says the list is not installed.
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 class OrganisationTypeOptions {
 
@@ -78,7 +78,7 @@ class OrganisationTypeOptions {
 	 *
 	 * @return array{installed: bool, options: list<array{uri: string, label: string}>}
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function options(): array {
 		$none   = ['installed' => false, 'options' => []];

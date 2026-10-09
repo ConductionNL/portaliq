@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use OCP\IRequest;
 /**
  * Answers the TOOI kinds of organisation an administrator can pick.
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 class OrganisationTypeController extends Controller {
 
@@ -56,7 +56,7 @@ class OrganisationTypeController extends Controller {
 	 *
 	 * @auth admin-only Naming the organisation is a portal setting, which an administrator sets.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function index(): JSONResponse {
 		return new JSONResponse($this->options->options());

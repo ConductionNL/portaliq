@@ -135,7 +135,7 @@ const NEUTER_KINDS = ['waterschap', 'ministerie', 'agentschap']
  * @param {{label: string}|null} organisation The portal's kind of organisation.
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @return {string}
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 export function organisationFrom(organisation, tr) {
 	const label = String(organisation?.label || '').trim()
@@ -158,7 +158,7 @@ export function organisationFrom(organisation, tr) {
  * @param {{label: string}|null} [organisation] The portal's kind of organisation (site `organisation`).
  * @return {string}
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 export function fileLine(entry, tr, locale = 'nl', organisation = null) {
 	const from =

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
  * would change what it saves. A reference that cannot be read is refused:
  * an image nobody can verify is not served on every page.
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
  */
 class PortalIdentityImages {
 
@@ -85,7 +85,7 @@ class PortalIdentityImages {
 	 *
 	 * @return string|null The refusal.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 	 */
 	public function refusal(array $portal): ?string {
 		$slug = (string)($portal['slug'] ?? '');

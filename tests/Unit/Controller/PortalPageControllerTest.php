@@ -724,7 +724,7 @@ class PortalPageControllerTest extends TestCase {
 	 * The portal's own favicon is the tab icon, ahead of the theme's logo,
 	 * as the public media address (portal-identity-from-the-admin REQ-PIA-002).
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	public function testSiteEmitsThePortalsFaviconAsTheTabIcon(): void {
 		$controller = $this->controller(

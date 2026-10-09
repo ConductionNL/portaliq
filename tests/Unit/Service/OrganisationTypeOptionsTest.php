@@ -28,7 +28,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Portaliq\Service\OrganisationTypeOptions
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 class OrganisationTypeOptionsTest extends TestCase {
 

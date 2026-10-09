@@ -45,7 +45,7 @@ class PortalShellTest extends TestCase {
 	 * The kind of organisation reaches the site: the TOOI uri and its label,
 	 * nothing else (portal-identity-from-the-admin REQ-PIA-003).
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function testTheProjectionNamesTheKindOfOrganisation(): void {
 		$shell = new PortalShell();

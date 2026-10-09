@@ -11,7 +11,7 @@
   and offers nothing. The save goes through OpenRegister's object API, where
   the portal guard refuses a favicon that is not a PNG, SVG or ICO file.
 
-  @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+  @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 -->
 <template>
 	<div class="portal-identity" data-testid="portal-identity">
@@ -120,7 +120,7 @@ export default {
 		 * The portal's id.
 		 *
 		 * @return {string}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 		 */
 		portalId() {
 			return String(this.objectData?.id || this.objectData?.['@self']?.id || '')
@@ -130,7 +130,7 @@ export default {
 		 * The library images as options.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 		 */
 		imageOptions() {
 			return this.images
@@ -140,7 +140,7 @@ export default {
 		 * The three image pickers.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 		 */
 		fields() {
 			return [
@@ -164,7 +164,7 @@ export default {
 	},
 
 	/**
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 	 */
 	created() {
 		this.api = createPortalIdentity({
@@ -184,7 +184,7 @@ export default {
 		 * Read the images and the kinds of organisation.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 		 */
 		async load() {
 			const [images, types] = await Promise.all([
@@ -200,7 +200,7 @@ export default {
 		 * Save the choice; a refusal is shown as the guard words it.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 		 */
 		async save() {
 			this.saving = true

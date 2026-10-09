@@ -15,7 +15,7 @@
  * The transport is handed in by `src/widgets/PortalIdentity.vue`, so
  * `tests/portal-identity.spec.mjs` runs this as a plain node script.
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
  */
 
 import { createMediaLibrary } from './mediaLibrary.js'
@@ -34,7 +34,7 @@ const PREFIX = 'media:'
  *
  * @param {*} value The stored value.
  * @return {string}
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
  */
 export function mediaIdOf(value) {
 	return typeof value === 'string' && value.startsWith(PREFIX)
@@ -47,7 +47,7 @@ export function mediaIdOf(value) {
  *
  * @param {object} portal The portal object.
  * @return {object} `{favicon, logo, heroImage, organisationType}` as media ids and a uri.
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
  */
 export function choiceOf(portal) {
 	const choice = {}
@@ -68,7 +68,7 @@ export function choiceOf(portal) {
  * @param {object} choice The widget's choice (see choiceOf()).
  * @param {{installed: boolean, options: Array<{uri: string, label: string}>}} types The offered kinds.
  * @return {object}
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 export function portalWithIdentity(portal, choice, types) {
 	const next = { ...portal }
@@ -106,7 +106,7 @@ export function portalWithIdentity(portal, choice, types) {
  * @param {Function} deps.ocUrl (path, params) => string, an address on the Nextcloud root
  * @param {Function} deps.translate key => string
  * @return {object}
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
  */
 export function createPortalIdentity({ get, put, url, ocUrl, translate }) {
 	const library = createMediaLibrary({ get: (path) => get(ocUrl(path)) })
@@ -117,7 +117,7 @@ export function createPortalIdentity({ get, put, url, ocUrl, translate }) {
 		 *
 		 * @param {string} slug The portal slug.
 		 * @return {Promise<{state: string, items: Array}>}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 		 */
 		async images(slug) {
 			const loaded = await library.load(slug)
@@ -131,7 +131,7 @@ export function createPortalIdentity({ get, put, url, ocUrl, translate }) {
 		 * The kinds of organisation on offer.
 		 *
 		 * @return {Promise<{installed: boolean, options: Array}>}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 		 */
 		async types() {
 			try {
@@ -152,7 +152,7 @@ export function createPortalIdentity({ get, put, url, ocUrl, translate }) {
 		 * @param {object} choice The widget's choice.
 		 * @param {object} types The offered kinds.
 		 * @return {Promise<{ok: boolean, message: string}>}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 		 */
 		async save(portalId, choice, types) {
 			const address = ocUrl(

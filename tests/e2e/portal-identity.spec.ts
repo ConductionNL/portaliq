@@ -6,7 +6,7 @@
  * tab icon, and that icon loads without a session.
  *
  * @e2e REQ-PIA-002
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
  */
 
 import { expect, test } from '@playwright/test'

@@ -1235,7 +1235,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 	 */
 	public function testThePortalDeclaresFaviconAndHeroImage(): void {
 		$portal = self::$register['components']['schemas']['portal']['properties'];

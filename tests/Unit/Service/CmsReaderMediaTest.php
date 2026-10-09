@@ -73,7 +73,7 @@ class CmsReaderMediaTest extends TestCase {
 	 * hero block without an image of its own (portal-identity-from-the-admin
 	 * REQ-PIA-002); an item of another portal or a draft lends nothing.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	public function testThePortalsHeroImageReachesTheShell(): void {
 		$reader = $this->reader(pages: []);

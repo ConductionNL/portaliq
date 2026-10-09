@@ -37,7 +37,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Portaliq\Listener\PortalIdentityGuardListener
  * @covers \OCA\Portaliq\Service\Cms\PortalIdentityImages
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
  */
 class PortalIdentityGuardListenerTest extends TestCase {
 

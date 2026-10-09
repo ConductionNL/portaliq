@@ -25,7 +25,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Portaliq\Service\Cms\SiteIcon
  * @uses   \OCA\Portaliq\Service\Cms\MediaReferences
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
  */
 class SiteIconTest extends TestCase {
 
