@@ -23,6 +23,8 @@ export default {
 		'Below {mark}': 'Onder {mark}',
 		'on average over {count} subjects': 'gemiddeld over {count} vakken',
 		'on average over 1 subject': 'gemiddeld over 1 vak',
+		// mijn-messages-follow-the-boards: a case without a readable name
+		Case: 'Zaak',
 		// calendar-timetable-display
 		'Choose a day': 'Kies een dag',
 		'Nothing on the timetable this day.':
@@ -123,6 +125,8 @@ export default {
 		'Below {mark}': 'Below {mark}',
 		'on average over {count} subjects': 'on average over {count} subjects',
 		'on average over 1 subject': 'on average over 1 subject',
+		// mijn-messages-follow-the-boards: a case without a readable name
+		Case: 'Case',
 		// calendar-timetable-display
 		'Choose a day': 'Choose a day',
 		'Nothing on the timetable this day.': 'Nothing on the timetable this day.',

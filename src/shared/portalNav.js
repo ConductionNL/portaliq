@@ -129,7 +129,7 @@ export function buildNav(contributions, t, enabled = {}) {
 /**
  * Which of the shell's own sections the answers announce: tasks and my cases
  * when the aggregate says so, messages when the subject takes part in a
- * thread, news when the feed holds an item, and access, details and account
+ * thread or has a contact to write to, news when the feed holds an item, and access, details and account
  * once a signed-in resident's contributions have loaded.
  *
  * @param {object} state What the shell loaded.
@@ -137,13 +137,19 @@ export function buildNav(contributions, t, enabled = {}) {
  * @param {object|null} state.contributions The contributions aggregate, or null.
  * @param {Array|null} state.threads The message threads.
  * @param {Array|null} state.news The news feed.
+ * @param {Array|null} [state.contacts] Whom the resident may write to.
  * @return {{tasks: boolean, messages: boolean, news: boolean, access: boolean, cases: boolean}}
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
-export function shellSections({ session, contributions, threads, news }) {
+export function shellSections({ session, contributions, threads, news, contacts }) {
 	return {
 		tasks: contributions?.tasks?.enabled === true,
-		messages: Array.isArray(threads) && threads.length > 0,
+		// Also with no conversation yet, once the resident has someone to
+		// write to (mijn-messages-follow-the-boards): the page is where the
+		// first message is written.
+		messages:
+			(Array.isArray(threads) && threads.length > 0)
+			|| (Array.isArray(contacts) && contacts.length > 0),
 		news: Array.isArray(news) && news.length > 0,
 		access: Boolean(session && contributions),
 		cases: contributions?.cases?.enabled === true,

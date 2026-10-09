@@ -567,6 +567,7 @@ import {
 	loadPerRecordRows,
 	menuPerson,
 	menuSubline,
+	withLayoutLabel,
 	ownAreaLink as ownAreaLinkFor,
 	residentMenuGroups,
 	showsResidentMenu,
@@ -1312,7 +1313,13 @@ export default {
 		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		accountEntry() {
-			return navEntryForRoute(this.nav, this.route)
+			// The page carries the word the portal's menu gives it, so the
+			// heading and the breadcrumb read "Berichten" where the menu does
+			// (mijn-messages-follow-the-boards).
+			return withLayoutLabel(
+				navEntryForRoute(this.nav, this.route),
+				this.site?.residentMenu?.groups,
+			)
 		},
 
 		/**
@@ -1676,10 +1683,13 @@ export default {
 				return
 			}
 			this.account = { ...this.account, loading: true }
-			const [contributions, threads, news] = await Promise.all([
+			const [contributions, threads, news, contacts] = await Promise.all([
 				this.api.getContributions(),
 				this.api.fetchThreads(),
 				this.api.fetchNewsFeed(),
+				// Whom the resident may write to: the conversations page then
+				// shows before the first message (mijn-messages-follow-the-boards).
+				this.fetchMessageContacts(),
 			])
 			this.unreadOverride = null
 			// A portal may leave the ask out (mijn-overview-follows-the-boards).
@@ -1691,6 +1701,7 @@ export default {
 				contributions,
 				threads: threads || [],
 				news: news || [],
+				contacts,
 			}
 			this.followAccountRoute()
 			this.recordRows = await loadPerRecordRows(
@@ -1705,6 +1716,28 @@ export default {
 			// the portal lists cases: that answer carries the mandates.
 			if (contributions?.cases?.enabled === true) {
 				learnMandates(await this.api.fetchMyCases().catch(() => null))
+			}
+		},
+
+		/**
+		 * The contacts the resident may write to, or none when the portal
+		 * offers no messaging or the read fails (mijn-messages-follow-the-boards).
+		 *
+		 * @return {Promise<Array<object>>}
+		 *
+		 * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-item-opens-the-conversations-under-the-boards-title
+		 */
+		async fetchMessageContacts() {
+			if (typeof this.api?.messaging !== 'function') {
+				return []
+			}
+			try {
+				const res = await this.api.messaging('GET', '/contacts')
+				return res?.ok && Array.isArray(res.data?.contacts)
+					? res.data.contacts
+					: []
+			} catch {
+				return []
 			}
 		},
 

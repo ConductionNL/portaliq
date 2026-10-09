@@ -715,3 +715,31 @@ export function pageGroupOf(entry) {
 		title: appNameOf(entry),
 	}
 }
+
+/**
+ * A navigation entry with the label the portal's menu layout gives its item
+ * (`{item, label}` in `residentMenu.groups`), so the page's heading and
+ * breadcrumb read what the menu reads. The entry as it is without one.
+ *
+ * @param {object|null} entry The navigation entry.
+ * @param {Array<{title: string, items: Array}>|null} layout The portal's groups.
+ * @return {object|null} The entry.
+ * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-item-opens-the-conversations-under-the-boards-title
+ */
+export function withLayoutLabel(entry, layout) {
+	if (!entry || !Array.isArray(layout)) {
+		return entry
+	}
+	const name = entry.special
+		? entry.special
+		: `${entry.contribution?.app || ''}:${entry.page?.id || ''}`
+	for (const group of layout) {
+		for (const declared of Array.isArray(group?.items) ? group.items : []) {
+			const { name: item, label } = layoutItem(declared)
+			if (item === name && label !== '') {
+				return { ...entry, label }
+			}
+		}
+	}
+	return entry
+}
