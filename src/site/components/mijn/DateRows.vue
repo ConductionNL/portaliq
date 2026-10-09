@@ -75,7 +75,9 @@
 				<p
 					v-if="block.dateDisplay === 'end' && entry.endDate"
 					class="pq-date-rows__end">
-					<template v-if="block.dateLabel">{{ `${block.dateLabel} ` }}</template
+					<template v-if="block.dateLabel">{{
+						`${block.dateLabel} `
+					}}</template
 					><strong>{{ entry.endDate }}</strong>
 				</p>
 				<div
