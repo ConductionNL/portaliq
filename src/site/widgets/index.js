@@ -72,6 +72,7 @@ import { metaOf as quickTasksMeta } from './nlQuickTasks/meta.js'
 import { metaOf as quoteMeta } from './nlQuote/meta.js'
 import { metaOf as separatorMeta } from './nlSeparator/meta.js'
 import { metaOf as signInMeta } from './nlSignIn/meta.js'
+import { metaOf as startTilesMeta } from './nlStartTiles/meta.js'
 import { metaOf as subjectLandingMeta } from './nlSubjectLanding/meta.js'
 import { metaOf as tableMeta } from './nlTable/meta.js'
 import { metaOf as tabsMeta } from './nlTabs/meta.js'
@@ -144,6 +145,7 @@ export const metas = {
 	nlFeaturedSubjects: featuredSubjectsMeta,
 	nlPortalCounts: portalCountsMeta,
 	nlSubjectLanding: subjectLandingMeta,
+	nlStartTiles: startTilesMeta,
 }
 
 /**

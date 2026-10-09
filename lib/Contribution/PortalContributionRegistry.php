@@ -255,6 +255,48 @@ class PortalContributionRegistry {
 	}//end aggregateAnonymous()
 
 	/**
+	 * The public start tiles of the serving portal (site-nlds-widget-palette
+	 * D6): every action that declares a `summary` and that a page offers,
+	 * read for each audience every provider serves. A tile carries label,
+	 * summary, audiences and route only (StartTileCollector), so the public
+	 * list never names a field, an endpoint or any data.
+	 *
+	 * @return array<int, array{label: string, summary: string, audiences: array<int, string>, route: string}>
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
+	 */
+	public function startTiles(): array {
+		$tiles = new StartTileCollector();
+		foreach ($this->appManager->getInstalledApps() as $appId) {
+			$provider = $this->resolveProvider(appId: (string)$appId);
+			if ($provider === null || method_exists($provider, 'getContribution') === false) {
+				continue;
+			}
+
+			$served = $this->providerAudiences(provider: $provider);
+			foreach ($served as $audience) {
+				try {
+					$contribution = $this->locator->contributionOf(provider: $provider, subject: ['audience' => $audience]);
+					if (is_array($contribution) === false) {
+						continue;
+					}
+
+					$contribution['servedAudiences'] = $served;
+					$contribution = $this->normaliser->normalise(contribution: $contribution);
+				} catch (Throwable $e) {
+					$this->logger->error('Portaliq: contribution provider failed (start tiles)', ['app' => $appId, 'reason' => $e->getMessage()]);
+					continue;
+				}
+
+				$contribution['app'] = (string)$appId;
+				$tiles->add(contribution: $contribution);
+			}
+		}//end foreach
+
+		return $tiles->all();
+	}//end startTiles()
+
+	/**
 	 * The full set of audiences a provider serves (contract v2, A2 duck
 	 * typing — same preference order as `servesAudience()`): `getAudiences()`
 	 * when present, else the single `getAudience()` value, else none.

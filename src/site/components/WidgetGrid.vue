@@ -682,6 +682,11 @@ export default {
 				}
 			}
 
+			// site-nlds-widget-palette T10: the start tiles of THIS portal.
+			if (widget.widgetKey === 'nlStartTiles') {
+				return { ...props, portal: this.portal }
+			}
+
 			if (widget.widgetKey === 'nlProductFinder') {
 				return { ...props, portal: this.portal }
 			}

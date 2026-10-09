@@ -26,7 +26,9 @@
 			v-if="confirmed.summary"
 			class="pq-schema-form__summary"
 			data-testid="schema-form-confirmation-summary">
-			<p v-if="action.answerSummary.label" class="pq-schema-form__summary-label">
+			<p
+				v-if="action.answerSummary.label"
+				class="pq-schema-form__summary-label">
 				{{ action.answerSummary.label }}
 			</p>
 			<p class="utrecht-paragraph pq-schema-form__summary-text">
@@ -131,7 +133,9 @@
 			class="pq-schema-form__summary"
 			aria-live="polite"
 			data-testid="schema-form-summary">
-			<p v-if="action.answerSummary.label" class="pq-schema-form__summary-label">
+			<p
+				v-if="action.answerSummary.label"
+				class="pq-schema-form__summary-label">
 				{{ action.answerSummary.label }}
 			</p>
 			<p class="utrecht-paragraph pq-schema-form__summary-text">

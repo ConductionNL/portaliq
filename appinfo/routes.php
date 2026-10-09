@@ -123,6 +123,8 @@ return [
         ['name' => 'content#site', 'url' => '/api/content/site', 'verb' => 'GET'],
         // The public accessibility statement of every portal (site-accessibility-statement).
         ['name' => 'contentAccessibility#statement', 'url' => '/api/content/accessibility', 'verb' => 'GET'],
+        // The public start tiles of every portal (site-nlds-widget-palette D6).
+        ['name' => 'contentStartTiles#index', 'url' => '/api/content/start-tiles', 'verb' => 'GET'],
         ['name' => 'content#menus', 'url' => '/api/content/menus', 'verb' => 'GET'],
         ['name' => 'content#pages', 'url' => '/api/content/pages', 'verb' => 'GET'],
         ['name' => 'content#glossary', 'url' => '/api/content/glossary', 'verb' => 'GET'],

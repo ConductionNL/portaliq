@@ -89,10 +89,7 @@
 					{{ t('portaliq', 'Revoke all sessions for this organisation') }}
 				</NcButton>
 			</form>
-			<NcNoteCard
-				v-if="revokeFailed"
-				type="error"
-				data-testid="revoke-failed">
+			<NcNoteCard v-if="revokeFailed" type="error" data-testid="revoke-failed">
 				{{
 					t(
 						'portaliq',
