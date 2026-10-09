@@ -36,6 +36,12 @@ export const conversationStrings = {
 		'No messages about {name} yet.': 'Nog geen berichten over {name}.',
 		New: 'Nieuw',
 		You: 'U',
+		// mijn-messages-follow-the-boards
+		Messages: 'Berichten',
+		View: 'Bekijken',
+		'today {time}': 'vandaag {time} uur',
+		'yesterday {time}': 'gisteren {time} uur',
+		'Messages in another language': 'Berichten in een andere taal',
 	},
 	en: {
 		'All messages': 'All messages',
@@ -61,6 +67,12 @@ export const conversationStrings = {
 		'No messages about {name} yet.': 'No messages about {name} yet.',
 		New: 'New',
 		You: 'You',
+		// mijn-messages-follow-the-boards
+		Messages: 'Messages',
+		View: 'View',
+		'today {time}': 'today {time}',
+		'yesterday {time}': 'yesterday {time}',
+		'Messages in another language': 'Messages in another language',
 	},
 }
 
@@ -309,4 +321,139 @@ export async function markRead(api, threadId) {
 			{},
 		)
 	}
+}
+
+/**
+ * When a message came, as the board writes it: "vandaag 8.40 uur",
+ * "gisteren 16.05 uur", else "1 oktober" (with the year when it is not this
+ * year's). '' for no date (mijn-messages-follow-the-boards).
+ *
+ * @param {string} value The moment.
+ * @param {Date} today Today.
+ * @param {string} lang `nl` or `en`.
+ * @param {(key: string, vars?: object) => string} tr The translator.
+ * @return {string}
+ * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-page-reads-as-the-boards
+ */
+export function whenWords(value, today, lang, tr) {
+	const date = value ? new Date(value) : null
+	if (!date || Number.isNaN(date.getTime())) {
+		return ''
+	}
+	const english = lang === 'en'
+	const start = (day) =>
+		new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime()
+	const offset = Math.round((start(today) - start(date)) / 86400000)
+	const hours = String(date.getHours())
+	const minutes = String(date.getMinutes()).padStart(2, '0')
+	const time = english
+		? `${hours.padStart(2, '0')}:${minutes}`
+		: `${hours}.${minutes}`
+	if (offset === 0) {
+		return tr('today {time}', { time })
+	}
+	if (offset === 1) {
+		return tr('yesterday {time}', { time })
+	}
+	const options = { day: 'numeric', month: 'long' }
+	if (date.getFullYear() !== today.getFullYear()) {
+		options.year = 'numeric'
+	}
+	return new Intl.DateTimeFormat(english ? 'en-GB' : 'nl-NL', options).format(date)
+}
+
+/**
+ * A message from the organisation itself (the inbox: "Uw
+ * afwezigheidsmelding is goedgekeurd") as a card among the conversations:
+ * the portal as its sender, its subject, its text, whether it is unread, and
+ * the record it opens (mijn-messages-follow-the-boards).
+ *
+ * @param {object} message An inbox message.
+ * @param {string} sender The organisation's name.
+ * @param {string} [lang] `nl` or `en`, for moments in the text.
+ * @return {{title: string, who: string, initials: string, when: string, preview: string, isNew: boolean}}
+ * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-page-reads-as-the-boards
+ */
+export function noticeCard(message, sender, lang = 'nl') {
+	const who = String(sender || '').trim()
+	return {
+		title: String(message?.subject || '').trim(),
+		who,
+		initials: initialsOf(who).slice(0, 1),
+		when: String(message?.receivedAt || ''),
+		preview: withoutStamps(String(message?.body || '').trim(), lang),
+		isNew: message?.read !== true,
+	}
+}
+
+/** A moment as a stamp in a text: `2026-10-09T00:47:09+00:00`. */
+const STAMP =
+	/\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?\b/g
+
+/**
+ * A text with every moment stamp in it written in words: a receipt's
+ * "ontvangen op 2026-10-09T00:47:09+00:00" reads "ontvangen op 9 oktober
+ * 2026, 02.47 uur" (mijn-messages-follow-the-boards).
+ *
+ * @param {string} text The text.
+ * @param {string} lang `nl` or `en`.
+ * @return {string}
+ * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-page-reads-as-the-boards
+ */
+export function withoutStamps(text, lang = 'nl') {
+	return String(text || '').replace(STAMP, (stamp) => {
+		const date = new Date(stamp)
+		if (Number.isNaN(date.getTime())) {
+			return stamp
+		}
+		const english = lang === 'en'
+		const day = new Intl.DateTimeFormat(english ? 'en-GB' : 'nl-NL', {
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric',
+		}).format(date)
+		const hours = String(date.getHours()).padStart(2, '0')
+		const minutes = String(date.getMinutes()).padStart(2, '0')
+		return english
+			? `${day}, ${hours}:${minutes}`
+			: `${day}, ${hours}.${minutes} uur`
+	})
+}
+
+/**
+ * The conversations and the organisation's own messages in one list, newest
+ * first, each `{kind: 'thread'|'notice', key, item, when}`. A record's tab
+ * holds its conversations only.
+ *
+ * @param {Array<object>} threads The conversations of the open tab.
+ * @param {Array<object>} notices The inbox messages, or none.
+ * @param {string} tabKey The open tab ('' for all).
+ * @return {Array<object>}
+ * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-page-reads-as-the-boards
+ */
+export function messageItems(threads, notices, tabKey) {
+	const when = (value) => {
+		const time = new Date(value || 0).getTime()
+		return Number.isNaN(time) ? 0 : time
+	}
+	const items = (Array.isArray(threads) ? threads : []).map((thread, index) => ({
+		kind: 'thread',
+		key: `thread:${thread?.id || index}`,
+		item: thread,
+		when: when(thread?.summary?.lastSentAt || thread?.createdAt),
+	}))
+	if (tabKey === '' && Array.isArray(notices)) {
+		notices.forEach((message, index) => {
+			if (String(message?.subject || '').trim() === '') {
+				return
+			}
+			items.push({
+				kind: 'notice',
+				key: `notice:${message?.id || message?.uuid || index}`,
+				item: message,
+				when: when(message?.receivedAt),
+			})
+		})
+	}
+	return items.sort((a, b) => b.when - a.when)
 }

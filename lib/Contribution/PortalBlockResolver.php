@@ -107,7 +107,9 @@ class PortalBlockResolver {
 				collections: $collections
 			);
 			if ($entry !== null) {
-				$out[] = $entry;
+				// Where the block stands, its frame and its link to all of it
+				// (mijn-overview-follows-the-boards).
+				$out[] = $entry + (new BlockLayoutKeys())->keys(block: (array)$block, pageIds: $pageIds);
 			}
 		}
 
@@ -225,7 +227,9 @@ class PortalBlockResolver {
 		// Where a card's record stands today, from another collection of
 		// this contribution (card-status-today).
 		return $entry + (new CollectionListKeys())->collectionKeys(block: $block, collection: $collection)
-			+ (new CardStatusKeys())->keys(block: $block, collectionIds: $collectionIds, collections: $collections);
+			+ (new CardStatusKeys())->keys(block: $block, collectionIds: $collectionIds, collections: $collections)
+			// The row link and the tabs (mijn-lists-follow-the-boards).
+			+ (new ListKeys())->keys(block: $block, collection: $collection, pageIds: $this->pageIds);
 	}//end collectionBlock()
 
 	/**

@@ -180,6 +180,11 @@ class SchoolBlockKeys {
 	 */
 	public function greetingBlock(array $block, array $actionIds, array $pageIds): array {
 		$out = ['type' => 'greeting', 'showDate' => (($block['showDate'] ?? true) !== false)];
+		// The week number after the date (mijn-overview-follows-the-boards).
+		if (($block['showWeek'] ?? null) === true) {
+			$out['showWeek'] = true;
+		}
+
 		$cta = (new CtaBlockNormaliser())->normalise(block: $block, actionIds: $actionIds, pageIds: $pageIds);
 		if ($cta === null) {
 			return $out;

@@ -65,7 +65,7 @@ class PortalShell {
 	 * @param array<string, mixed> $portal The portal record.
 	 *
 	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `breadcrumb`,
-	 *                              `residentMenu`, `footer` and `regions`.
+	 *                              `residentMenu`, `myCases`, `contactPrompt`, `footer` and `regions`.
 	 *
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 *
@@ -83,6 +83,9 @@ class PortalShell {
 			'residentMenu'   => $this->residentMenu->project(portal: $portal),
 			// How Mijn zaken draws its list (zuiddrecht-resident-pages-match-the-boards).
 			'myCases'        => $this->myCases(portal: $portal),
+			// The ask for an e-mail address in the portal's own words, or off
+			// (mijn-overview-follows-the-boards).
+			'contactPrompt'  => $this->contactPrompt(portal: $portal),
 			'footer'         => $this->footer(portal: $portal),
 			'regions'        => $this->publicRegions(portal: $portal),
 		];
@@ -106,6 +109,38 @@ class PortalShell {
 
 		return [];
 	}//end myCases()
+
+	/**
+	 * The ask for an e-mail address: `{show: false}` when the portal turns it
+	 * off, else the texts it writes for it (`text`, `button`, `dismiss`, each
+	 * at most 200 characters), else [] for the site's own words.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array<string, string|bool>
+	 *
+	 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-e-mail-ask-speaks-the-portals-words-or-stays-away
+	 */
+	private function contactPrompt(array $portal): array {
+		$prompt = $portal['contactPrompt'] ?? [];
+		if (is_array($prompt) === false) {
+			return [];
+		}
+
+		if (($prompt['show'] ?? true) === false) {
+			return ['show' => false];
+		}
+
+		$out = [];
+		foreach (['text', 'button', 'dismiss'] as $key) {
+			$text = $this->text(value: ($prompt[$key] ?? ''));
+			if ($text !== '' && mb_strlen($text) <= 200) {
+				$out[$key] = $text;
+			}
+		}
+
+		return $out;
+	}//end contactPrompt()
 
 	/**
 	 * The search box in the header: whether it shows (a declared box shows
@@ -236,8 +271,34 @@ class PortalShell {
 			'badges'      => $this->links(entries: ($footer['badges'] ?? []), extra: null),
 			'cta'         => ($cta[0] ?? null),
 			'contact'     => $this->contact(contact: ($footer['contact'] ?? null)),
+			// The short footer of the own area on a phone (mijn-phone-chrome).
+			'compact'     => $this->compactFooter(declared: ($footer['compact'] ?? null)),
 		];
 	}//end footer()
+
+	/**
+	 * The footer the own area shows on a phone: one line of text and at most
+	 * four links; null when it names neither (mijn-phone-chrome).
+	 *
+	 * @param mixed $declared The authored compact footer.
+	 *
+	 * @return array{text: string, links: list<array<string, string>>}|null
+	 *
+	 * @spec openspec/changes/mijn-phone-chrome/specs/site-chrome/spec.md#requirement-the-own-area-may-end-in-a-short-footer-on-a-phone
+	 */
+	private function compactFooter(mixed $declared): ?array {
+		if (is_array($declared) === false) {
+			return null;
+		}
+
+		$text  = $this->text(value: ($declared['text'] ?? ''));
+		$links = array_slice($this->links(entries: ($declared['links'] ?? []), extra: null), 0, 4);
+		if ($text === '' && $links === []) {
+			return null;
+		}
+
+		return ['text' => $text, 'links' => $links];
+	}//end compactFooter()
 
 	/**
 	 * The footer's contact column: a title and plain lines, a line with a

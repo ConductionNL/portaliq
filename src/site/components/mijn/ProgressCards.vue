@@ -11,7 +11,11 @@
 -->
 <template>
 	<ul class="pq-progress-cards" data-testid="mijn-progress-cards">
-		<li v-for="card in cards" :key="card.key" class="pq-progress-cards__card">
+		<li
+			v-for="card in cards"
+			:key="card.key"
+			class="pq-progress-cards__card"
+			:class="{ 'pq-progress-cards__card--link': card.route !== '' }">
 			<div
 				v-if="card.title !== '' || card.subtitle"
 				class="pq-progress-cards__head">
@@ -22,13 +26,42 @@
 					>{{ card.title.charAt(0) }}</span
 				>
 				<div>
-					<p v-if="card.title !== ''" class="pq-progress-cards__title">
+					<!-- A card that opens its row's page: the name is the link,
+					     stretched over the card (mijn-lists-follow-the-boards). -->
+					<p
+						v-if="card.title !== '' && card.route"
+						class="pq-progress-cards__title">
+						<a
+							class="utrecht-link pq-progress-cards__link"
+							:href="hrefOf(card.route)"
+							data-testid="mijn-progress-card-link"
+							@click.prevent="$emit('navigate', card.route)"
+							>{{ card.title }}</a
+						>
+					</p>
+					<p
+						v-else-if="card.title !== ''"
+						class="pq-progress-cards__title">
 						{{ card.title }}
 					</p>
 					<p v-if="card.subtitle" class="pq-progress-cards__subtitle">
 						{{ card.subtitle }}
 					</p>
 				</div>
+				<svg
+					v-if="card.route"
+					class="pq-progress-cards__chevron"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
+					focusable="false">
+					<path
+						d="M9 6l6 6-6 6"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.2"
+						stroke-linecap="round"
+						stroke-linejoin="round" />
+				</svg>
 			</div>
 			<p v-if="card.status || card.note" class="pq-progress-cards__status">
 				<DataBadge
@@ -57,7 +90,8 @@
 import DataBadge from './DataBadge.vue'
 import { cardStatus } from './cardStatus.js'
 import { cardParts } from './displays.js'
-import { mijnTranslator } from './rows.js'
+import { rowRoute } from './lists.js'
+import { mijnTranslator, siteHref } from './rows.js'
 
 /**
  * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
@@ -87,7 +121,11 @@ export default {
 		statusRows: { type: Object, default: null },
 		/** Today, from the site's clock; a test passes a fixed day. */
 		today: { type: Date, default: null },
+		/** The route of the block's `rowPage`, or '' (mijn-lists-follow-the-boards). */
+		rowPageRoute: { type: String, default: '' },
 	},
+
+	emits: ['navigate'],
 
 	computed: {
 		/**
@@ -130,6 +168,7 @@ export default {
 					...this.todayPart(row),
 					key: String(row?.id || row?.uuid || index),
 					title,
+					route: rowRoute(row, this.block, this.rowPageRoute),
 					figure: figured
 						? tr('{value} of {total} {label}', {
 								value,
@@ -146,6 +185,14 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * @param {string} route A site route.
+		 * @return {string} Its address.
+		 */
+		hrefOf(route) {
+			return siteHref(route)
+		},
+
 		/**
 		 * The status and tone a card derives for today, or nothing.
 		 *
@@ -256,6 +303,32 @@ export default {
 
 .pq-progress-cards__title {
 	font-weight: bold;
+}
+
+.pq-progress-cards__card--link {
+	position: relative;
+}
+
+.pq-progress-cards__card--link .pq-progress-cards__head > div {
+	flex: 1;
+}
+
+.pq-progress-cards__link::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+}
+
+.pq-progress-cards__card--link:focus-within {
+	outline: 2px solid var(--pq-focus-color, CanvasText);
+	outline-offset: 2px;
+}
+
+.pq-progress-cards__chevron {
+	flex: none;
+	inline-size: 1.25rem;
+	block-size: 1.25rem;
+	color: var(--utrecht-link-color, LinkText);
 }
 
 .pq-progress-cards__bar {

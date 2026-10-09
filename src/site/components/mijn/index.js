@@ -27,6 +27,8 @@ export const blocks = {
 	dateRows: () => import('./DateRows.vue'),
 	bars: () => import('./GradeBars.vue'),
 	chips: () => import('./MarkChips.vue'),
+	// mijn-lists-follow-the-boards
+	listTabs: () => import('./ListTabs.vue'),
 	segments: () => import('./SegmentedFigure.vue'),
 	greeting: () => import('./GreetingBlock.vue'),
 	calendarTiles: () => import('./CalendarTiles.vue'),

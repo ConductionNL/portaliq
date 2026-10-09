@@ -12,11 +12,11 @@
 
 import {
 	ACCOUNT_ROUTE,
-	defaultNavKey,
 	isAccountRoute,
 	navEntryForRoute,
 	routeForNav,
 } from '../../shared/portalNav.js'
+import { aliasedRoute } from './residentMenu.js'
 
 /**
  * The "logged in as" line for a session.
@@ -46,16 +46,21 @@ export function loggedInAs(session, t) {
 }
 
 /**
- * Where an account route should go instead, or '' to stay: a page the
- * navigation does not offer opens the default entry, once the navigation has
- * loaded. The bare `/mijn` stays: it is the home.
+ * Where an account route should go instead, or '' to stay, once the
+ * navigation has loaded. The bare `/mijn` stays: it is the home. A second
+ * address the portal gives an item (`residentMenu.routes`) opens that item;
+ * any other page the navigation does not offer opens the home, never the
+ * first section, which the portal may have left out of its menu
+ * (resident-menu-follows-the-boards).
  *
  * @param {Array<object>} nav The navigation.
  * @param {string} route The route on screen.
+ * @param {Record<string, string>|null} [routes] The portal's second addresses.
  * @return {string} The route to replace it with, or ''.
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/resident-menu-follows-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-give-an-item-of-the-own-area-a-second-address
  */
-export function accountRedirect(nav, route) {
+export function accountRedirect(nav, route, routes = null) {
 	if (!isAccountRoute(route) || !Array.isArray(nav) || nav.length === 0) {
 		return ''
 	}
@@ -67,9 +72,7 @@ export function accountRedirect(nav, route) {
 	if (navEntryForRoute(nav, route)) {
 		return ''
 	}
-	const key = defaultNavKey(nav)
-	const entry = nav.find((candidate) => candidate.key === key)
-	return entry ? routeForNav(entry) : ''
+	return aliasedRoute(nav, route, routes) || ACCOUNT_ROUTE
 }
 
 /**

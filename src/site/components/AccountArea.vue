@@ -13,7 +13,10 @@
 	-->
 	<section
 		class="container pq-account"
-		:class="{ 'pq-account--with-menu': withMenu }"
+		:class="{
+			'pq-account--with-menu': withMenu,
+			'pq-account--compact-phone': withMenu && compactPhone,
+		}"
 		data-testid="site-account">
 		<!-- The resident's own menu, beside the content on every page of this
 		     area once signed in (site-resident-menu REQ-SRM-002). -->
@@ -25,8 +28,11 @@
 			:label="t('My area')"
 			:showLabel="(portal && portal.accountLabel) || t('Menu of my area')"
 			:card="menuCard"
+			:person="menuPerson"
+			:signOutLabel="compactPhone ? t('Sign out') : ''"
 			:newLabel="t('{count} new')"
 			:hideLabel="t('Close the menu')"
+			@signout="$emit('signout')"
 			@navigate="$emit('navigate', $event)" />
 		<div class="pq-account__content">
 			<!-- The ask for an e-mail address, in the content column and above
@@ -257,6 +263,10 @@ export default {
 		portal: { type: Object, default: null },
 		/** The resident menu's groups, from residentMenuGroups(); empty shows none. */
 		menuGroups: { type: Array, default: () => [] },
+		/** The person block at the top of the menu, or null. */
+		menuPerson: { type: Object, default: null },
+		/** The second line of the menu's organisation card, or ''. */
+		menuSubline: { type: String, default: '' },
 		/** The route on screen, to mark the current item in the menu. */
 		currentRoute: { type: String, default: '' },
 	},
@@ -289,7 +299,14 @@ export default {
 		menuCard() {
 			const label = this.portal?.residentMenu?.cardLabel
 			const title = this.session?.organisationName
-			return label && title ? { label, title } : null
+			if (!label || !title) {
+				return null
+			}
+			// The second line from the portal's person collection
+			// (resident-menu-follows-the-boards).
+			return this.menuSubline
+				? { label, title, subline: this.menuSubline }
+				: { label, title }
 		},
 
 		/**
@@ -328,6 +345,19 @@ export default {
 		 */
 		withMenu() {
 			return Boolean(this.session) && this.menuGroups.length > 0
+		},
+
+		/**
+		 * Whether the own area wears the boards' phone chrome: the person's
+		 * initials in the header, the sign-out link in the menu, the short
+		 * footer (mijn-phone-chrome).
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/mijn-phone-chrome/specs/site-chrome/spec.md#requirement-the-own-area-may-show-the-person-in-the-phone-header
+		 */
+		compactPhone() {
+			return this.portal?.residentMenu?.phoneHeader === 'person'
 		},
 
 		/**
@@ -550,5 +580,50 @@ export default {
 	margin: 0 0 16px;
 	padding: 0;
 	list-style: none;
+}
+</style>
+
+<style>
+/*
+ * THE OWN AREA ON A PHONE AS THE SCHOOL BOARDS DRAW IT (mijn-phone-chrome),
+ * only for a portal that asks for it (`residentMenu.phoneHeader: person`):
+ * the person's initials in the header instead of "Uitloggen" (which moves
+ * into the menu), no "Home" crumb above the page, no empty room above the
+ * footer, and the short footer when the portal writes one. Not scoped: it
+ * reaches the header and the footer around this area. The doubled class
+ * outweighs the site theme's own phone rules.
+ */
+@media (max-width: 767px) {
+	.pq-site.pq-site:has(.pq-account--compact-phone)
+		.pq-site__header--designed
+		.pq-header-tools__chip {
+		display: inline-flex;
+		grid-area: account;
+		margin-inline-end: 16px;
+	}
+
+	.pq-site.pq-site:has(.pq-account--compact-phone)
+		.pq-site__header--designed
+		.pq-header-tools__signout {
+		display: none;
+	}
+
+	.pq-site.pq-site:has(.pq-account--compact-phone)
+		.ac-header__navigation-breadcrumb {
+		display: none;
+	}
+
+	.pq-site.pq-site:has(.pq-account--compact-phone) .pq-site__main {
+		padding-block-end: 24px;
+	}
+
+	.pq-site.pq-site:has(.pq-account--compact-phone)
+		.pq-site__footer:not(.pq-compact-footer):has(~ .pq-compact-footer) {
+		display: none;
+	}
+
+	.pq-site.pq-site:has(.pq-account--compact-phone) .pq-compact-footer {
+		display: block;
+	}
 }
 </style>

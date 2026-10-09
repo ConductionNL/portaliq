@@ -154,7 +154,8 @@ export function caseCard(
 	const position = stepPosition(steps)
 	const turnValue = collection?.turnField ? row?.[collection.turnField] : undefined
 	return {
-		title,
+		// Never an empty or raw-id title (mijn-messages-follow-the-boards).
+		title: title || tr('Case'),
 		typeName: typeof row?._caseTypeName === 'string' ? row._caseTypeName : '',
 		status: caseStatus(row),
 		reference: reference ? tr('Case {reference}', { reference }) : '',
