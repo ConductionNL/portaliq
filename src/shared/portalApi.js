@@ -138,6 +138,12 @@ export function createPortalApi(config, store = {}) {
 					refusal?.errors && typeof refusal.errors === 'object'
 						? refusal.errors
 						: {},
+				// A value the store refused, by field and kind
+				// (site-action-forms).
+				invalid:
+					refusal?.invalid && typeof refusal.invalid === 'object'
+						? refusal.invalid
+						: {},
 			}
 		}
 		const json = await res.json().catch(() => ({}))
@@ -739,13 +745,28 @@ export function createPortalApi(config, store = {}) {
 		 * Hand back the secret of an invitation, so the waiting account
 		 * behind it joins the signed-in person's own account.
 		 *
+		 * When the claim moved the account into the invitation's audience,
+		 * the answer carries a reissued bearer; it is stored here, so every
+		 * later request runs in the new audience.
+		 *
 		 * @param {string} secret The secret from the invitation.
 		 * @return {Promise<object>} `{ ok, status, error, data }`.
 		 *
 		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 		 */
 		async claimInvitation(secret) {
-			return answer('POST', '/identity/invitation/redeem', { secret })
+			const result = await answer('POST', '/identity/invitation/redeem', {
+				secret,
+			})
+			if (
+				result.ok
+				&& typeof result.data?.token === 'string'
+				&& result.data.token !== ''
+			) {
+				writeToken(result.data.token)
+			}
+			return result
 		},
 
 		/**

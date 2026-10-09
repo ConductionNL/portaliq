@@ -65,7 +65,7 @@
 				:variant="headerVariant"
 				:menus="headerMenus"
 				:showNavigation="!menuOnPage"
-				:currentRoute="route"
+				:currentRoute="menuRoute"
 				:breadcrumbs="breadcrumbs"
 				:session="session"
 				:sessionLabel="sessionLabel"
@@ -101,7 +101,8 @@
 				:widgets="[block]"
 				v-bind="gridContext"
 				@navigate="go"
-				@search="goSearch" />
+				@search="goSearch"
+				@subject="onSubject" />
 		</template>
 
 		<!-- The warning before an inactivity sign-out (signin-session-idle-warning-and-sso T06). -->
@@ -210,7 +211,8 @@
 					:widgets="regions.hero"
 					v-bind="gridContext"
 					@navigate="go"
-					@search="goSearch" />
+					@search="goSearch"
+					@subject="onSubject" />
 
 				<!--
 					THE SIDE MENU (site-navigation-block). When the side region
@@ -231,7 +233,8 @@
 							:widgets="regions.aside"
 							v-bind="gridContext"
 							@navigate="go"
-							@search="goSearch" />
+							@search="goSearch"
+							@subject="onSubject" />
 					</aside>
 					<div class="pq-site__content">
 						<!-- A signed link opens its one act before any page (REQ-GST-002). -->
@@ -410,7 +413,8 @@
 								:widgets="regions.main"
 								v-bind="gridContext"
 								@navigate="go"
-								@search="goSearch" />
+								@search="goSearch"
+								@subject="onSubject" />
 
 							<div v-else class="container">
 								<MarkdownBlock
@@ -437,7 +441,8 @@
 						:widgets="regions.aside"
 						v-bind="gridContext"
 						@navigate="go"
-						@search="goSearch" />
+						@search="goSearch"
+						@subject="onSubject" />
 				</aside>
 
 				<!--
@@ -488,7 +493,8 @@
 				:widgets="[block]"
 				v-bind="gridContext"
 				@navigate="go"
-				@search="goSearch" />
+				@search="goSearch"
+				@subject="onSubject" />
 		</template>
 
 		<!--
@@ -556,6 +562,7 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
+import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
@@ -588,6 +595,7 @@ import {
 	navigationGroups,
 	sideMenuOf,
 } from './lib/siteNavigation.js'
+import { menuRouteOf, subjectCrumbs, subjectOf } from './lib/subjectTrail.js'
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
@@ -749,6 +757,8 @@ export default {
 			routeParam: '',
 			// The title of the shared dossier on screen, once it is read.
 			sharedDossierTitle: '',
+			// What a block on the page shows, told by it (site-article-page-follows-the-board).
+			subject: null,
 			loading: true,
 			error: null,
 			// The editing context for the route on screen, or null for every
@@ -821,6 +831,10 @@ export default {
 		 */
 		breadcrumbs() {
 			if (this.accountRoute) {
+				// Signed out, the own area is the sign-in page.
+				if (!this.session) {
+					return signInCrumbs(this.route, this.t, this.hrefForRoute)
+				}
 				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
 			}
 			// The token is not a word and no page sits at its parent.
@@ -851,21 +865,41 @@ export default {
 
 				// The id segment of `/publicatie/<id>` is not a word; the
 				// page's own title is what a visitor recognises.
-				let label = segment.charAt(0).toUpperCase() + segment.slice(1)
+				let fromRoute = segment.charAt(0).toUpperCase() + segment.slice(1)
 				if (isLast === true && this.page && this.page.title) {
-					label = this.page.title
+					fromRoute = this.page.title
 				}
 				// The header menu's own words for a route it names, so the trail
-				// reads like the menu ("Home › Afval"), on every crumb.
-				const fromMenu = menuLabelFor(this.menus, route)
-				if (fromMenu !== '') {
-					label = fromMenu
-				}
+				// reads like the menu ("Home › Afval"), on every crumb; a portal
+				// that chooses `breadcrumb: page` names the page on screen by its
+				// own title (site-breadcrumb-follows-the-school-boards).
+				const label = crumbLabel({
+					fromRoute,
+					fromMenu: menuLabelFor(this.menus, route),
+					isLast,
+					pageTitle: this.page?.title,
+					choice: this.site.breadcrumb,
+				})
 
 				crumbs.push({ route, label, href: this.hrefForRoute(route) })
 			})
 
-			return crumbs
+			return subjectCrumbs(crumbs, this.subject, {
+				labelFor: (route) => menuLabelFor(this.menus, route),
+				hrefFor: (route) => this.hrefForRoute(route),
+			})
+		},
+
+		/**
+		 * The route the header menu marks: inside the section of the subject
+		 * on screen when a block told one, else the route.
+		 *
+		 * @return {string} The route.
+		 *
+		 * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+		 */
+		menuRoute() {
+			return menuRouteOf(this.route, this.subject)
 		},
 
 		/**
@@ -1602,6 +1636,9 @@ export default {
 				t: this.t,
 				storage: this.claimStorage(),
 			})
+			if (this.claimMessage?.claimed) {
+				await this.reloadSession()
+			}
 
 			if (this.session) {
 				await this.loadAccount()
@@ -1626,7 +1663,25 @@ export default {
 				text: this.t(codeOutcome({ ok: true }).text),
 			}
 			window.scrollTo?.({ top: 0 })
+			await this.reloadSession()
 			await this.loadAccount()
+		},
+
+		/**
+		 * Read the session again after a claim. A claim can move a person's
+		 * own account into the invitation's audience and hand back a new
+		 * bearer for it; the session read here then names that audience.
+		 *
+		 * @return {Promise<void>} Resolves when the session is read again.
+		 *
+		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+		 */
+		async reloadSession() {
+			const session = await fetchSession(authBaseFrom(resolveApiBase()))
+			if (session) {
+				this.session = session
+				this.watchIdle()
+			}
 		},
 
 		/**
@@ -1950,6 +2005,9 @@ export default {
 			if (this.sharedDossierRoute) {
 				pageName = this.sharedDossierTitle || this.t('Shared dossier')
 			}
+			if (this.subject) {
+				pageName = this.subject.title
+			}
 			document.title =
 				pageName && pageName !== portalName
 					? `${pageName} - ${portalName}`
@@ -2071,6 +2129,20 @@ export default {
 		},
 
 		/**
+		 * Take what a block on the page shows (a news article's title and
+		 * section) for the breadcrumb, the menu and the tab.
+		 *
+		 * @param {object|null} told What the block emitted.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+		 */
+		onSubject(told) {
+			this.subject = subjectOf(told)
+			this.applyDocumentTitle()
+		},
+
+		/**
 		 * Take the shared dossier's title for the tab and the breadcrumb.
 		 *
 		 * @param {string} title The dossier's title, or ''.
@@ -2095,6 +2167,7 @@ export default {
 		 */
 		async loadRoute(route, { fresh = false } = {}) {
 			this.signInNeeded = false
+			this.subject = null
 			// The signed-in area renders from the session, not from a CMS
 			// page, so no page is read for it.
 			if (isAccountRoute(route)) {

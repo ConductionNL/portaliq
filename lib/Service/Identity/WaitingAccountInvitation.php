@@ -117,6 +117,7 @@ class WaitingAccountInvitation {
 	 * @param AuditTrailService $auditor Records who joined which account.
 	 * @param ClaimLock $lock Makes the read and the write of a redeem one step.
 	 * @param WaitingAccountSecret $secrets Finds the waiting account a secret opens, and hashes a code.
+	 * @param WaitingAccountClaim $claims Joins the waiting account a secret opened, under its lock.
 	 *
 	 * @return void
 	 */
@@ -128,6 +129,7 @@ class WaitingAccountInvitation {
 		private readonly AuditTrailService $auditor,
 		private readonly ClaimLock $lock,
 		private readonly WaitingAccountSecret $secrets,
+		private readonly WaitingAccountClaim $claims,
 	) {
 	}//end __construct()
 
@@ -306,7 +308,14 @@ class WaitingAccountInvitation {
 		}
 
 		try {
-			$result = $this->claimWaiting(account: $account, waitingId: $waitingId, secret: $secret, moment: $moment, lookup: $lookup);
+			$result = $this->claims->claim(
+				account: $account,
+				waitingId: $waitingId,
+				secret: $secret,
+				moment: $moment,
+				lookup: $lookup,
+				subject: $subject
+			);
 		} finally {
 			$this->lock->release(accountId: $waitingId);
 		}
@@ -331,59 +340,26 @@ class WaitingAccountInvitation {
 	}//end redeemLocked()
 
 	/**
-	 * Read the waiting account again under its lock, refuse what may not
-	 * join before anything is spent, then spend the secret and join.
+	 * The audience the session's own account holds now, or '' when it has
+	 * none or is not in the session's organisation. A redeem can move an
+	 * unbound account into the invitation's audience; the caller then
+	 * reissues the session so its audience follows the account.
 	 *
-	 * Spent first. If the join then fails the invitation is dead and the app
-	 * invites again: a secret that worked twice would be worse.
+	 * @param array<string, mixed> $subject The session.
 	 *
-	 * @param array<string, mixed> $account The caller's account.
-	 * @param string $waitingId The waiting account the secret opened a moment ago.
-	 * @param string $secret The secret.
-	 * @param DateTimeImmutable $moment The moment.
-	 * @param PortalAccountLookup $lookup The account finder.
+	 * @return string
 	 *
-	 * @return string CLAIMED, NOT_VALID or CONFLICT.
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 */
-	private function claimWaiting(
-		array $account,
-		string $waitingId,
-		#[\SensitiveParameter] string $secret,
-		DateTimeImmutable $moment,
-		PortalAccountLookup $lookup,
-	): string {
-		// Read again inside the lock: a request that held it a moment ago
-		// may have spent this secret.
-		$waiting = $this->secrets->find(secret: $secret, organisation: (string)$account['organisation'], moment: $moment);
-		if ($waiting === null || $lookup->identifierOf(row: $waiting) !== $waitingId) {
-			return self::NOT_VALID;
+	public function audienceOf(array $subject): string {
+		$account = (new PortalAccountLookup(reader: $this->reader))->bySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));
+		$organisation = (string)($subject['organisation'] ?? '');
+		if ($organisation === '' || (($account ?? [])['organisation'] ?? null) !== $organisation) {
+			return '';
 		}
 
-		$join = new WaitingAccountJoin(lookup: $lookup, writer: $this->writer);
-		if ($join->claimsConflict(account: $account, waiting: $waiting) === true) {
-			return self::CONFLICT;
-		}
-
-		// Another audience (a supplier account redeeming a parent's
-		// invitation) and everything else the join refuses: nothing spent.
-		if ($join->isJoinable(account: $account, waiting: $waiting) === false) {
-			return self::NOT_VALID;
-		}
-
-		if ($this->write(id: $waitingId, data: ['claimTokenHash' => '', 'claimCodeHash' => '']) === false) {
-			return self::NOT_VALID;
-		}
-
-		// A link was mailed to the invited address, so following it proves the
-		// address; a code came on paper and proves only the letter. The
-		// address then arrives unverified (security review L2).
-		$byLink = $this->secrets->isCode(secret: $secret) === false;
-		if ($join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON, addressProven: $byLink) === null) {
-			return self::NOT_VALID;
-		}
-
-		return self::CLAIMED;
-	}//end claimWaiting()
+		return (string)(($account ?? [])['audience'] ?? '');
+	}//end audienceOf()
 
 	/**
 	 * The session's own account, when it may take over a waiting account:
