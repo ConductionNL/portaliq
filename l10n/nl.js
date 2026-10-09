@@ -2886,7 +2886,27 @@ OC.L10N.register(
         "Open": "Open",
         "Verlopen": "Verlopen",
         "Verstuurd": "Verstuurd",
-        "Wacht": "Wacht"
+        "Wacht": "Wacht",
+        "A favicon must be a PNG, SVG or ICO file.": "Een favicon moet een PNG-, SVG- of ICO-bestand zijn.",
+        "The favicon is not in the media library of this portal.": "De favicon staat niet in de mediabibliotheek van dit portaal.",
+        "The logo is not in the media library of this portal.": "Het logo staat niet in de mediabibliotheek van dit portaal.",
+        "The hero image is not in the media library of this portal.": "De headerafbeelding staat niet in de mediabibliotheek van dit portaal.",
+        "Pick the images from the media library of this portal. Upload a new image on the Media page first.": "Kies de afbeeldingen uit de mediabibliotheek van dit portaal. Upload een nieuwe afbeelding eerst op de pagina Media.",
+        "This portal has no published images yet.": "Dit portaal heeft nog geen gepubliceerde afbeeldingen.",
+        "Kind of organisation": "Soort organisatie",
+        "The TOOI list of organisation types is not installed in the concept register, so there is nothing to pick.": "De TOOI-lijst met soorten organisaties staat niet in het begrippenregister, dus er is niets te kiezen.",
+        "Favicon": "Favicon",
+        "The small image in the browser tab. A PNG, SVG or ICO file.": "De kleine afbeelding in het tabblad van de browser. Een PNG-, SVG- of ICO-bestand.",
+        "Shown in the header of the site.": "Staat in de kop van de site.",
+        "The large image at the top of the home page, when its hero has none.": "De grote afbeelding bovenaan de startpagina, als de header daar zelf geen heeft.",
+        "The portal could not be saved. Try again.": "Het portaal is niet opgeslagen. Probeer het opnieuw.",
+        "Logo, favicon and kind of organisation": "Logo, favicon en soort organisatie",
+        "Name of the kind of organisation": "Naam van de soort organisatie",
+        "The site logo shown in the portal header. Either a web address or media:<id>, an image from this portal's media library.": "Het logo in de kop van het portaal. Een webadres of media:<id>, een afbeelding uit de mediabibliotheek van dit portaal.",
+        "The small image in the browser tab, as media:<id>: an image from this portal's media library. It must be a PNG, SVG or ICO file. Empty uses the logo.": "De kleine afbeelding in het tabblad van de browser, als media:<id>: een afbeelding uit de mediabibliotheek van dit portaal. Het moet een PNG-, SVG- of ICO-bestand zijn. Leeg gebruikt het logo.",
+        "The large image at the top of the home page, as media:<id>: an image from this portal's media library. A hero block with its own image keeps that image.": "De grote afbeelding bovenaan de startpagina, als media:<id>: een afbeelding uit de mediabibliotheek van dit portaal. Een headerblok met een eigen afbeelding houdt die afbeelding.",
+        "What kind of organisation runs this portal, as a concept of the TOOI list of organisation types. Picked from OpenRegister's concept register; free text is not accepted.": "Wat voor organisatie dit portaal beheert, als begrip uit de TOOI-lijst met soorten organisaties. Gekozen uit het begrippenregister van OpenRegister; vrije tekst wordt niet geaccepteerd.",
+        "The name of the picked kind of organisation, stored with it, such as waterschap. The site uses it where it names the organisation: \"Van het waterschap\".": "De naam van de gekozen soort organisatie, samen ermee opgeslagen, zoals waterschap. De site gebruikt die waar het de organisatie noemt: \"Van het waterschap\"."
     },
     "nplurals=2; plural=(n != 1);"
 )

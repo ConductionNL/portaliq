@@ -2012,6 +2012,13 @@
             "content": {}
           },
           {
+            "id": "portal-identity",
+            "type": "PortalIdentity",
+            "title": "Logo, favicon and kind of organisation",
+            "icon": "OfficeBuildingOutline",
+            "content": {}
+          },
+          {
             "id": "portal-signin",
             "type": "PortalSignin",
             "title": "Sign-in",
@@ -2122,10 +2129,18 @@
             "gridHeight": 5
           },
           {
+            "id": "portal-identity",
+            "widgetId": "portal-identity",
+            "gridX": 0,
+            "gridY": 28,
+            "gridWidth": 12,
+            "gridHeight": 6
+          },
+          {
             "id": "portal-signin",
             "widgetId": "portal-signin",
             "gridX": 0,
-            "gridY": 28,
+            "gridY": 34,
             "gridWidth": 12,
             "gridHeight": 6
           },
@@ -2133,7 +2148,7 @@
             "id": "portal-registration",
             "widgetId": "portal-registration",
             "gridX": 0,
-            "gridY": 34,
+            "gridY": 40,
             "gridWidth": 12,
             "gridHeight": 7
           },
@@ -2141,7 +2156,7 @@
             "id": "portal-accessibility",
             "widgetId": "portal-accessibility",
             "gridX": 0,
-            "gridY": 41,
+            "gridY": 47,
             "gridWidth": 12,
             "gridHeight": 10
           }
