@@ -750,8 +750,14 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 		 */
 		async claimInvitation(secret) {
-			const result = await answer('POST', '/identity/invitation/redeem', { secret })
-			if (result.ok && typeof result.data?.token === 'string' && result.data.token !== '') {
+			const result = await answer('POST', '/identity/invitation/redeem', {
+				secret,
+			})
+			if (
+				result.ok
+				&& typeof result.data?.token === 'string'
+				&& result.data.token !== ''
+			) {
 				writeToken(result.data.token)
 			}
 			return result
