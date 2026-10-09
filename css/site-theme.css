@@ -2312,6 +2312,40 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	line-height: 1.5 !important;
 }
 
+/*
+ * THE LINE FOR STAFF READS AS ONE LINE (board Inloggen: "Werkt u bij De
+ * Wilgenboom? Log in op de werkplek"): the link stays in the sentence,
+ * where a bare `.utrecht-link` rule from the shared app sheet makes it a
+ * flex box on a line of its own.
+ */
+.pq-site .pq-signin__staff .utrecht-link {
+	display: inline;
+}
+
+/*
+ * ONE WAY IN READS AS ONE ROW (board Inloggen of De Wilgenboom,
+ * site-breadcrumb-follows-the-school-boards): the mark, then the title with
+ * its line under it, the button below both. Two or more cards keep the text
+ * under the mark and the title, as the other boards draw them.
+ */
+.pq-site:has(.pq-site__header--designed)
+	.pq-signin__card:only-child
+	.pq-signin__card-head
+	> div {
+	display: block;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-signin__card:only-child
+	.pq-signin__card-text.utrecht-paragraph {
+	margin-block-start: 4px;
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, currentcolor)
+	);
+	font-size: 1rem;
+}
+
 .pq-site:has(.pq-site__header--designed) .pq-signin__button.utrecht-button-link {
 	font-size: 1.125rem;
 	font-weight: 600;
