@@ -630,7 +630,7 @@ class PortalSessionServiceTest extends TestCase {
 		$service = $this->service(store: $store);
 
 		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', trust: 'substantial', provider: 'digid');
-		$reissued = $service->reissueForAudience('Bearer ' . $issued['token'], 'parent');
+		$reissued = $service->refreshSession('Bearer ' . $issued['token'], 'parent');
 		$this->assertNotNull($reissued);
 		$subject = $service->resolveFromBearer('Bearer ' . $reissued['token']);
 		$this->assertSame('parent', $subject['audience']);
@@ -643,8 +643,8 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testASessionIsReissuedForTheAudienceItsAccountTookOn()
 
 	/**
-	 * No audience, the audience the session has, the company audience and a
-	 * missing bearer reissue nothing, and the session keeps working.
+	 * The audience the session has, the company audience and a missing
+	 * bearer reissue nothing, and the session keeps working.
 	 *
 	 * @return void
 	 */
@@ -653,10 +653,9 @@ class PortalSessionServiceTest extends TestCase {
 		$service = $this->service(store: $store);
 
 		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', trust: 'substantial');
-		$this->assertNull($service->reissueForAudience('Bearer ' . $issued['token'], ''));
-		$this->assertNull($service->reissueForAudience('Bearer ' . $issued['token'], 'client'));
-		$this->assertNull($service->reissueForAudience('Bearer ' . $issued['token'], 'supplier'));
-		$this->assertNull($service->reissueForAudience(null, 'parent'));
+		$this->assertNull($service->refreshSession('Bearer ' . $issued['token'], 'client'));
+		$this->assertNull($service->refreshSession('Bearer ' . $issued['token'], 'supplier'));
+		$this->assertNull($service->refreshSession(null, 'parent'));
 		$this->assertSame('client', $service->resolveFromBearer('Bearer ' . $issued['token'])['audience']);
 
 	}//end testAReissueForNoNewAudienceIsRefused()

@@ -673,22 +673,34 @@ class PortalSessionService {
 	 * expired bearer, malformed bearer, or past the absolute cap — all
 	 * indistinguishable to the caller, exactly like `resolveFromBearer()`.
 	 *
+	 * With an audience, the rotated session carries that audience instead:
+	 * after a claim moved the account into an invitation's audience
+	 * (invitation-joins-an-unbound-account). The caller reads it from the
+	 * account, never from the request. The audience the session has, and the
+	 * company audience, are refused.
+	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 * @param string      $audience            The audience the account holds now, or '' to keep the session's.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The NEW
 	 *         bearer token, its id and when the rotated session ends, or null on any rejection.
 	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */
-	public function refreshSession(?string $authorizationHeader): ?array {
+	public function refreshSession(?string $authorizationHeader, string $audience = ''): ?array {
 		// Resolving the bearer already fails closed on: unconfigured secret,
 		// absent/malformed/forged bearer, expired bearer, and revoked/unknown
 		// jti — refresh inherits every one of those rejections for free.
 		$subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);
-		if ($subject === null) {
+		if ($subject === null || ($audience !== '' && in_array($audience, ['supplier', (string)($subject['audience'] ?? '')], true) === true)) {
 			return null;
+		}
+
+		if ($audience !== '') {
+			$subject['audience'] = $audience;
 		}
 
 		// A refresh carries the branch and its restriction unchanged: it
@@ -735,44 +747,6 @@ class PortalSessionService {
 			context: ['number' => $number, 'restricted' => false, 'provider' => (string)($subject['provider'] ?? '')]
 		);
 	}//end rebranchSession()
-
-	/**
-	 * Re-issue a session after its account took on another audience, so the
-	 * bearer's audience follows the account (invitation-joins-an-unbound-account).
-	 *
-	 * Rotates like a refresh, within the same absolute cap, and carries the
-	 * branch, its restriction and the provider unchanged. Refused (null) for
-	 * an empty audience, for the audience the session already has, for the
-	 * company audience, and on every rejection refresh has. Whether the
-	 * account holds that audience is the caller's check: it reads it from
-	 * the account, never from the request.
-	 *
-	 * @param string|null $authorizationHeader The raw Authorization header value.
-	 * @param string      $audience            The audience the account holds now.
-	 *
-	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
-	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
-	 */
-	public function reissueForAudience(?string $authorizationHeader, string $audience): ?array {
-		$subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);
-		if ($subject === null
-			|| $audience === ''
-			|| $audience === 'supplier'
-			|| $audience === (string)($subject['audience'] ?? '')
-		) {
-			return null;
-		}
-
-		return $this->rotate(
-			subject: ['audience' => $audience] + $subject,
-			context: [
-				'number' => (string)($subject['branch'] ?? ''),
-				'restricted' => (($subject['branchRestricted'] ?? false) === true),
-				'provider' => (string)($subject['provider'] ?? ''),
-			]
-		);
-	}//end reissueForAudience()
 
 	/**
 	 * Rotate a resolved session: mint a new bearer with the given context,

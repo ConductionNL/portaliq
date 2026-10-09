@@ -414,14 +414,12 @@ class WaitingAccountInvitation {
 	 */
 	public function audienceOf(array $subject): string {
 		$account = (new PortalAccountLookup(reader: $this->reader))->bySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));
-		if ($account === null
-			|| (string)($account['organisation'] ?? '') === ''
-			|| (string)($account['organisation'] ?? '') !== (string)($subject['organisation'] ?? '')
-		) {
+		$organisation = (string)($subject['organisation'] ?? '');
+		if ($organisation === '' || (($account ?? [])['organisation'] ?? null) !== $organisation) {
 			return '';
 		}
 
-		return (string)($account['audience'] ?? '');
+		return (string)(($account ?? [])['audience'] ?? '');
 	}//end audienceOf()
 
 	/**

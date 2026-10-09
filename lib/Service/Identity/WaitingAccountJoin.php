@@ -32,7 +32,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
 
 /**
  * Joins a waiting account into the account that signed in.
@@ -54,23 +53,6 @@ class WaitingAccountJoin {
 	 * The reason written on the withdrawn waiting account.
 	 */
 	public const VOID_REASON = 'Joined the account that signed in with this verified address';
-
-	/**
-	 * The identity types that name one natural person. Only an account
-	 * signed in through one of these may take on an invitation's audience.
-	 */
-	private const PERSON_IDENTITIES = ['digid', 'eidas'];
-
-	/**
-	 * The audience of a company account. A person's account never moves
-	 * into it or out of it.
-	 */
-	private const BUSINESS_AUDIENCE = 'supplier';
-
-	/**
-	 * The trust a session needs before its account takes on an audience.
-	 */
-	private const ADOPT_TRUST = 'substantial';
 
 	/**
 	 * Constructor.
@@ -163,13 +145,9 @@ class WaitingAccountJoin {
 		bool $addressProven = true,
 		?string $sessionTrust = null,
 	): ?string {
-		$adopt = false;
-		if ($this->isJoinable(account: $account, waiting: $waiting) === false) {
-			if ($sessionTrust === null || $this->mayAdoptAudience(account: $account, waiting: $waiting, trust: $sessionTrust) === false) {
-				return null;
-			}
-
-			$adopt = true;
+		$audience = $this->audienceAfterJoin(account: $account, waiting: $waiting, sessionTrust: $sessionTrust);
+		if ($audience === null) {
+			return null;
 		}
 
 		$accountId = $this->lookup->identifierOf(row: $account);
@@ -179,8 +157,8 @@ class WaitingAccountJoin {
 		}
 
 		$data = $this->joinData(account: $account, waiting: $waiting, addressProven: $addressProven);
-		if ($adopt === true) {
-			$data['audience'] = (string)$waiting['audience'];
+		if ($audience !== '') {
+			$data['audience'] = $audience;
 		}
 
 		if ($data !== [] && $this->write(id: $accountId, data: $data) === false) {
@@ -262,34 +240,32 @@ class WaitingAccountJoin {
 	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 */
 	public function mayAdoptAudience(array $account, array $waiting, mixed $trust): bool {
-		$audience = (string)($waiting['audience'] ?? '');
-
-		return $audience !== self::BUSINESS_AUDIENCE
-			&& (string)($account['audience'] ?? '') !== self::BUSINESS_AUDIENCE
-			&& in_array((string)($account['identityType'] ?? ''), self::PERSON_IDENTITIES, true) === true
-			&& (string)($account['identityRef'] ?? '') !== ''
-			&& (string)($account['provisionedBy'] ?? '') === ''
-			&& self::holdsNoClaims(account: $account) === true
-			&& PortalSessionService::trustSatisfies(subjectTrust: $trust, minTrust: self::ADOPT_TRUST) === true
-			&& $this->isJoinable(account: ['audience' => $audience] + $account, waiting: $waiting) === true;
+		return (new UnboundAccount())->mayTakeOn(account: $account, waiting: $waiting, trust: $trust)
+			&& $this->isJoinable(account: ['audience' => (string)($waiting['audience'] ?? '')] + $account, waiting: $waiting) === true;
 	}//end mayAdoptAudience()
 
 	/**
-	 * Whether an account holds no claim of any app.
+	 * The audience the receiver holds after the join: '' when it keeps its
+	 * own, the waiting account's when an unbound account takes it on, and
+	 * null when the join is refused.
 	 *
-	 * @param array<string, mixed> $account The account.
+	 * @param array<string, mixed> $account The account that receives the claims.
+	 * @param array<string, mixed> $waiting The waiting account.
+	 * @param string|null $sessionTrust The redeeming session's trust, or null.
 	 *
-	 * @return bool
+	 * @return string|null
 	 */
-	private static function holdsNoClaims(array $account): bool {
-		foreach ((array)($account['claims'] ?? []) as $appClaims) {
-			if ($appClaims !== [] && $appClaims !== null && $appClaims !== '') {
-				return false;
-			}
+	private function audienceAfterJoin(array $account, array $waiting, ?string $sessionTrust): ?string {
+		if ($this->isJoinable(account: $account, waiting: $waiting) === true) {
+			return '';
 		}
 
-		return true;
-	}//end holdsNoClaims()
+		if ($sessionTrust !== null && $this->mayAdoptAudience(account: $account, waiting: $waiting, trust: $sessionTrust) === true) {
+			return (string)$waiting['audience'];
+		}
+
+		return null;
+	}//end audienceAfterJoin()
 
 	/**
 	 * Whether the waiting account carries a claim the receiver already holds

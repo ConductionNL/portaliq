@@ -141,7 +141,7 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 				return $body;
 			}
 
-			$issued = $this->session->reissueForAudience(authorizationHeader: $this->request->getHeader('Authorization'), audience: $audience);
+			$issued = $this->session->refreshSession(authorizationHeader: $this->request->getHeader('Authorization'), audience: $audience);
 		} catch (Throwable $exception) {
 			$this->logger->warning('Portal session reissue after a claim failed', ['exception' => get_class($exception)]);
 			return $body;
