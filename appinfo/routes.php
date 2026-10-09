@@ -86,6 +86,12 @@ return [
         // T11). Admin-only.
         ['name' => 'portalSignin#index', 'url' => '/api/portals/{slug}/signin', 'verb' => 'GET'],
         ['name' => 'portalSignin#update', 'url' => '/api/portals/{slug}/signin', 'verb' => 'PUT'],
+        // The accessibility measurement and the audit its statement rests on
+        // (site-accessibility-statement). Admin, or a group the action matrix
+        // names for portal.measure-accessibility.
+        ['name' => 'accessibility#index', 'url' => '/api/portals/{slug}/accessibility', 'verb' => 'GET'],
+        ['name' => 'accessibility#update', 'url' => '/api/portals/{slug}/accessibility', 'verb' => 'PUT'],
+        ['name' => 'accessibility#store', 'url' => '/api/portals/{slug}/accessibility/measurements', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#grant', 'url' => '/api/access-requests/{id}/grant', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#refuse', 'url' => '/api/access-requests/{id}/refuse', 'verb' => 'POST'],
 
@@ -115,6 +121,8 @@ return [
         // catch-all. The page route is a catch-all over the rest of the path,
         // because an in-site route is arbitrary depth ('/beleid/2026/woo').
         ['name' => 'content#site', 'url' => '/api/content/site', 'verb' => 'GET'],
+        // The public accessibility statement of every portal (site-accessibility-statement).
+        ['name' => 'accessibility#statement', 'url' => '/api/content/accessibility', 'verb' => 'GET'],
         ['name' => 'content#menus', 'url' => '/api/content/menus', 'verb' => 'GET'],
         ['name' => 'content#pages', 'url' => '/api/content/pages', 'verb' => 'GET'],
         ['name' => 'content#glossary', 'url' => '/api/content/glossary', 'verb' => 'GET'],

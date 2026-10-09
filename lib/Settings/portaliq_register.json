@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.90.0"
+        "version": "0.91.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.90.0",
+                "version": "0.91.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -82,7 +82,8 @@
                     "portalMailLog",
                     "portalFaq",
                     "portalFinder",
-                    "sharedBlock"
+                    "sharedBlock",
+                    "accessibilityMeasurement"
                 ]
             }
         },
@@ -2514,7 +2515,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.22.0",
+                "version": "0.23.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -4507,6 +4508,59 @@
                         },
                         "default": {},
                         "example": {}
+                    },
+                    "accessibilityAudit": {
+                        "title": "Accessibility audit",
+                        "type": "object",
+                        "widget": "json",
+                        "additionalProperties": false,
+                        "description": "The independent audit the accessibility statement rests on: the party that did it, the date, the report and the result. Only an audit supports status A or B, and only for three years.",
+                        "properties": {
+                            "party": {
+                                "title": "Audited by",
+                                "type": "string",
+                                "description": "The independent party that did the audit."
+                            },
+                            "date": {
+                                "title": "Audit date",
+                                "type": "string",
+                                "format": "date",
+                                "description": "The date of the audit report."
+                            },
+                            "reportUrl": {
+                                "title": "Report",
+                                "type": "string",
+                                "description": "Where the audit report can be read, an https address."
+                            },
+                            "result": {
+                                "title": "Result",
+                                "type": "string",
+                                "enum": [
+                                    "A",
+                                    "B",
+                                    "C",
+                                    "D"
+                                ],
+                                "description": "The status the audit found, from the national model."
+                            }
+                        }
+                    },
+                    "accessibilityRegisterUrl": {
+                        "title": "Register entry",
+                        "type": "string",
+                        "description": "The address of this website's entry in the national register of accessibility statements. The statement links to it.",
+                        "example": "https://www.toegankelijkheidsverklaring.nl/register/12345"
+                    },
+                    "accessibilityPages": {
+                        "title": "Pages to measure",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The pages the accessibility measurement checks besides the home, search, publication and not-found pages, as site routes.",
+                        "example": [
+                            "/contact"
+                        ]
                     }
                 }
             },
@@ -11228,6 +11282,163 @@
                         "format": "date-time",
                         "description": "When the purge job deletes the draft.",
                         "example": "2026-11-01T12:00:00+00:00"
+                    }
+                }
+            },
+            "accessibilityMeasurement": {
+                "slug": "accessibilityMeasurement",
+                "icon": "HumanWheelchair",
+                "version": "0.1.0",
+                "title": "Accessibility measurement",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One run of the accessibility measurement on a portal's own pages (site-accessibility-statement). An administrator runs axe-core in their own browser over the home page, the search page, a publication page, the not-found page and the pages they added; portaliq stores what it found. The public accessibility statement is generated from the latest run. A page that could not be measured is kept with its reason and never counts as passing.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "measuredAt",
+                    "measuredBy",
+                    "axeVersion",
+                    "tags",
+                    "pages"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal that was measured.",
+                        "example": "open-tilburg"
+                    },
+                    "measuredAt": {
+                        "title": "Measured at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the run finished, set by portaliq.",
+                        "example": "2026-10-09T10:00:00+00:00"
+                    },
+                    "measuredBy": {
+                        "title": "Measured by",
+                        "type": "string",
+                        "description": "The user id of the administrator who ran it.",
+                        "example": "admin"
+                    },
+                    "axeVersion": {
+                        "title": "axe-core version",
+                        "type": "string",
+                        "maxLength": 40,
+                        "description": "The version of the axe-core library that measured.",
+                        "example": "4.10.3"
+                    },
+                    "tags": {
+                        "title": "Rule sets",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The axe-core rule sets the run used.",
+                        "example": [
+                            "wcag2a",
+                            "wcag2aa",
+                            "wcag21a",
+                            "wcag21aa",
+                            "wcag22aa"
+                        ]
+                    },
+                    "theme": {
+                        "title": "Theme",
+                        "type": "string",
+                        "description": "The house style the portal used during the run. The theme decides colour contrast.",
+                        "example": "vng"
+                    },
+                    "pages": {
+                        "title": "Pages",
+                        "type": "array",
+                        "description": "Per page what the run found.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "url",
+                                "measured"
+                            ],
+                            "properties": {
+                                "url": {
+                                    "title": "Page",
+                                    "type": "string",
+                                    "description": "The page's address within the site.",
+                                    "example": "/zoeken"
+                                },
+                                "measured": {
+                                    "title": "Measured",
+                                    "type": "boolean",
+                                    "description": "Whether the page could be loaded and measured.",
+                                    "example": true
+                                },
+                                "reason": {
+                                    "title": "Reason",
+                                    "type": "string",
+                                    "description": "Why the page could not be measured.",
+                                    "example": "The page refused to load in a frame."
+                                },
+                                "violations": {
+                                    "title": "Violations",
+                                    "type": "array",
+                                    "description": "The rules the page failed.",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "rule",
+                                            "impact",
+                                            "nodes"
+                                        ],
+                                        "properties": {
+                                            "rule": {
+                                                "title": "Rule",
+                                                "type": "string",
+                                                "description": "The axe-core rule id.",
+                                                "example": "color-contrast"
+                                            },
+                                            "impact": {
+                                                "title": "Impact",
+                                                "type": "string",
+                                                "enum": [
+                                                    "minor",
+                                                    "moderate",
+                                                    "serious",
+                                                    "critical"
+                                                ],
+                                                "description": "How much the failure hinders a visitor.",
+                                                "example": "serious"
+                                            },
+                                            "nodes": {
+                                                "title": "Elements",
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "description": "How many elements on the page failed the rule.",
+                                                "example": 3
+                                            },
+                                            "help": {
+                                                "title": "Help text",
+                                                "type": "string",
+                                                "description": "The rule's short description from axe-core.",
+                                                "example": "Elements must meet minimum color contrast ratio thresholds"
+                                            },
+                                            "helpUrl": {
+                                                "title": "Help link",
+                                                "type": "string",
+                                                "description": "The page that explains the rule.",
+                                                "example": "https://dequeuniversity.com/rules/axe/4.10/color-contrast"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

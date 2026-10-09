@@ -380,8 +380,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.72.0 (portal 0.15.0): `tokens` (portal-theme-blocks-and-contributed-pages). Additive.
 		// 0.71.0 (portal 0.14.0): `searchInsideDocuments` (portal-federated-search) and the
 		// `portalDraft` schema (site-multi-step-forms). Additive.
-		$this->assertSame('0.90.0', self::$register['info']['version']);
-		$this->assertSame('0.90.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.91.0 (portal 0.23.0, accessibilityMeasurement 0.1.0): `accessibilityAudit`, `accessibilityRegisterUrl`, `accessibilityPages` and the measurement schema (site-accessibility-statement). Additive.
+		$this->assertSame('0.91.0', self::$register['info']['version']);
+		$this->assertSame('0.91.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -441,7 +442,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.22.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.23.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
@@ -1193,4 +1194,29 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('integer', $daily['searchesWithoutCount']['type']);
 
 	}//end testTheDailyRecordDeclaresZeroResultSearches()
+	/**
+	 * site-accessibility-statement REQ-SAS-001 and REQ-SAS-003: the run and
+	 * the portal's audit settings are declared.
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 */
+	public function testTheMeasurementSchemaIsDeclared(): void {
+		$schemas = self::$register['components']['schemas'];
+		$this->assertContains('accessibilityMeasurement', self::$register['components']['registers']['portaliq']['schemas']);
+		$measurement = $schemas['accessibilityMeasurement'];
+		$this->assertSame(['admin'], $measurement['authorization']['read']);
+		foreach (['portal', 'measuredAt', 'measuredBy', 'axeVersion', 'tags', 'pages'] as $key) {
+			$this->assertContains($key, $measurement['required']);
+		}
+
+		$page = $measurement['properties']['pages']['items'];
+		$this->assertSame(['url', 'measured'], $page['required']);
+		$this->assertSame(['minor', 'moderate', 'serious', 'critical'], $page['properties']['violations']['items']['properties']['impact']['enum']);
+
+		$portal = $schemas['portal']['properties'];
+		$this->assertSame(['A', 'B', 'C', 'D'], $portal['accessibilityAudit']['properties']['result']['enum']);
+		$this->assertSame('string', $portal['accessibilityRegisterUrl']['type']);
+		$this->assertSame('array', $portal['accessibilityPages']['type']);
+
+	}//end testTheMeasurementSchemaIsDeclared()
 }//end class

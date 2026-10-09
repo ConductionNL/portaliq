@@ -82,6 +82,7 @@ final class SchemaTenancy {
 		'portalIntakeSubmission'  => ['scope' => self::PORTAL],
 		'portalMailTemplate'      => ['scope' => self::PORTAL],
 		'portalMailLog'           => ['scope' => self::PORTAL],
+		'accessibilityMeasurement' => ['scope' => self::PORTAL],
 		'portalFaq'               => ['scope' => self::PORTAL],
 		'portalFinder'            => ['scope' => self::PORTAL],
 		'sharedBlock'             => ['scope' => self::ORGANISATION],
