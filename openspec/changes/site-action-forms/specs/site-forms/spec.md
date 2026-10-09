@@ -26,8 +26,9 @@ it sends.
 An action needs input when it has a field the resident fills in: a field in `fields` that is not
 the `subjectField` or `rowField`, not set by the action's `set`, and not hidden. On an `action`
 block, an endpoint action that needs input MUST draw its form and send the answers to its
-endpoint through the portal. On a `cta` block, and on a greeting's button, a create or endpoint
-action that needs input MUST be a button that opens its form. Pressing that button MUST send
+endpoint through the portal. On a `cta` block, and on a greeting's button, an endpoint action, or a
+create action without a `recordField`, that needs input MUST be a button that opens its form (a
+create about a record keeps opening only with that record). Pressing that button MUST send
 nothing. An action without fields to fill in keeps its single button.
 
 #### Scenario: Petra approves a week of hours

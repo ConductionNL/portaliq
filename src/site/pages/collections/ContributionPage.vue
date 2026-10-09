@@ -1501,13 +1501,21 @@ export default {
 		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		async onRowAction(item, action, row) {
-			const asksForm = action.type === 'update' && asksInput(action)
-			if (isEndpointRowAction(action) || asksForm) {
+			if (action.type === 'update' && asksInput(action)) {
 				this.pending = {
 					collectionId: item.collection.id,
 					action,
 					row,
-					dialog: asksForm ? 'form' : dialogFor(action),
+					dialog: 'form',
+				}
+				return
+			}
+			if (isEndpointRowAction(action)) {
+				this.pending = {
+					collectionId: item.collection.id,
+					action,
+					row,
+					dialog: dialogFor(action),
 				}
 				return
 			}

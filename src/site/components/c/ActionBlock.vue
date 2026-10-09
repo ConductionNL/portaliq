@@ -197,7 +197,8 @@ export default {
 
 		/**
 		 * A cta on a create or endpoint action that needs input: a button
-		 * that opens its form.
+		 * that opens its form. A create about a record (`recordField`) opens
+		 * only with that record, above (isRecordForm).
 		 *
 		 * @return {boolean}
 		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
@@ -205,7 +206,9 @@ export default {
 		opensForm() {
 			return (
 				this.block.type === 'cta'
-				&& (this.endpoint || this.resolved.type === 'create')
+				&& (this.endpoint
+					|| (this.resolved.type === 'create'
+						&& !this.resolved.recordField))
 				&& asksInput(this.resolved)
 			)
 		},
