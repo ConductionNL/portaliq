@@ -1091,11 +1091,11 @@
                 "slug": "portalSession",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "admin"
                     ]
                 },
                 "icon": "Ticket",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Session",
                 "description": "A bearer session issued by Portaliq's auth edge. Records the minted token id (jti) so sessions can be revoked. Owned by Portaliq; never publicly readable.",
                 "type": "object",

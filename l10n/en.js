@@ -2742,7 +2742,8 @@ OC.L10N.register(
         "The statement shows status {status}, from the audit.": "The statement shows status {status}, from the audit.",
         "The statement shows status {status}. Without an audit it cannot show A or B.": "The statement shows status {status}. Without an audit it cannot show A or B.",
         "This audit is older than three years. It no longer supports status A or B.": "This audit is older than three years. It no longer supports status A or B.",
-        "This portal has not been measured yet.": "This portal has not been measured yet."
+        "This portal has not been measured yet.": "This portal has not been measured yet.",
+        "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.": "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running."
     },
     "nplurals=2; plural=(n != 1);"
 )

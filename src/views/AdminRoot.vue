@@ -89,8 +89,20 @@
 					{{ t('portaliq', 'Revoke all sessions for this organisation') }}
 				</NcButton>
 			</form>
+			<NcNoteCard
+				v-if="revokeFailed"
+				type="error"
+				data-testid="revoke-failed">
+				{{
+					t(
+						'portaliq',
+						'Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.',
+						{ count: revokeResult ?? 0 },
+					)
+				}}
+			</NcNoteCard>
 			<p
-				v-if="revokeResult !== null"
+				v-else-if="revokeResult !== null"
 				class="portaliq-admin-settings__hint"
 				role="status">
 				{{
@@ -391,6 +403,7 @@ export default {
 			organisationInput: '',
 			revoking: false,
 			revokeResult: null,
+			revokeFailed: false,
 
 			// The groups that may edit portal pages, as `{id, label}` options
 			// so the picker round-trips its own objects; the service accepts
@@ -703,7 +716,7 @@ export default {
 		 * is SessionAdminController::revokeOrganisation(), which carries this
 		 * same anchor.
 		 *
-		 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.2
+		 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 		 */
 		async revokeOrganisation() {
 			if (this.organisationInput === '') {
@@ -711,6 +724,7 @@ export default {
 			}
 			this.revoking = true
 			this.revokeResult = null
+			this.revokeFailed = false
 			try {
 				const { data } = await axios.post(
 					generateUrl(
@@ -719,8 +733,11 @@ export default {
 					{ organisation: this.organisationInput },
 				)
 				this.revokeResult = data.revoked ?? 0
-			} catch {
-				this.revokeResult = 0
+			} catch (error) {
+				// A refused or incomplete run is an error, never "0 revoked"
+				// (security review S5); a 503 still says how many were revoked.
+				this.revokeFailed = true
+				this.revokeResult = error?.response?.data?.revoked ?? 0
 			} finally {
 				this.revoking = false
 			}

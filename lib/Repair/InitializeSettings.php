@@ -26,7 +26,7 @@ namespace OCA\Portaliq\Repair;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\SettingsService;
-use OCP\IConfig;
+use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use OCP\Security\ISecureRandom;
@@ -51,7 +51,7 @@ class InitializeSettings implements IRepairStep {
 	 *
 	 * @param SettingsService $settingsService The settings service
 	 * @param LoggerInterface $logger The logger interface
-	 * @param IConfig $config App config, for the signing secret
+	 * @param IAppConfig $config App config, for the signing secret (sensitive)
 	 * @param ISecureRandom $random Cryptographically secure generator
 	 *
 	 * @return void
@@ -59,7 +59,7 @@ class InitializeSettings implements IRepairStep {
 	public function __construct(
 		private SettingsService $settingsService,
 		private LoggerInterface $logger,
-		private IConfig $config,
+		private IAppConfig $config,
 		private ISecureRandom $random,
 	) {
 	}//end __construct()
@@ -131,13 +131,21 @@ class InitializeSettings implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.2
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.2
 	 */
 	private function ensureSigningSecret(IOutput $output): void {
-		$existing = (string)$this->config->getAppValue(Application::APP_ID, 'jwt_signing_secret', '');
+		// A sensitive app value through IAppConfig (security review S4): it
+		// stays out of `occ config:list` and system reports, and Nextcloud
+		// stores it encrypted.
+		$existing = $this->config->getValueString(Application::APP_ID, 'jwt_signing_secret', '');
 		if ($existing !== '' && strlen($existing) >= 16) {
 			// Already configured — never overwrite (would invalidate every
-			// live portal session signed with it).
+			// live portal session signed with it). A secret stored before the
+			// flag keeps its value and is marked sensitive.
+			if ($this->config->isSensitive(Application::APP_ID, 'jwt_signing_secret') === false) {
+				$this->config->updateSensitive(Application::APP_ID, 'jwt_signing_secret', true);
+			}
+
 			return;
 		}
 
@@ -145,7 +153,7 @@ class InitializeSettings implements IRepairStep {
 			self::MIN_SECRET_LENGTH,
 			(ISecureRandom::CHAR_UPPER . ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS)
 		);
-		$this->config->setAppValue(Application::APP_ID, 'jwt_signing_secret', $secret);
+		$this->config->setValueString(Application::APP_ID, 'jwt_signing_secret', $secret, false, true);
 		$output->info('Portaliq: generated a dedicated portal auth-edge signing secret.');
 		$this->logger->info('Portaliq: generated a dedicated jwt_signing_secret on install/upgrade');
 	}//end ensureSigningSecret()

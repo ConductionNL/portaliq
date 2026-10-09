@@ -260,6 +260,63 @@ class PortalObjectReader {
 	}//end readCollection()
 
 	/**
+	 * One page of a scoped read, or null when OpenRegister is absent or the
+	 * read failed, so a caller that must finish a job (the admin's revoke-all)
+	 * can tell "nothing there" from "could not look". The declared filter
+	 * narrows, the scope filter always wins, and every row is verified on its
+	 * scope value and organisation like readCollection().
+	 *
+	 * @param string $register The register slug.
+	 * @param string $schema The schema slug.
+	 * @param string $scopeField The row field that must equal the scope value.
+	 * @param string $scopeValue The scope value.
+	 * @param string $organisation The tenant to constrain to (may be empty).
+	 * @param array<string, mixed> $filter A narrowing filter.
+	 * @param int $limit Rows per page.
+	 * @param int $offset Rows to skip.
+	 *
+	 * @return array{rows: array<int, array<string, mixed>>, read: int}|null The page's
+	 *         verified rows and how many rows OpenRegister returned before
+	 *         verification (the paging count), or null.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
+	 */
+	public function readScopedPage(
+		string $register,
+		string $schema,
+		string $scopeField,
+		string $scopeValue,
+		string $organisation,
+		array $filter,
+		int $limit,
+		int $offset,
+	): ?array {
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$filters = $this->scopedFilters(filter: $filter, scopeField: $scopeField, scopeValue: $scopeValue);
+		try {
+			$objectService->setRegister(register: $register);
+			$objectService->setSchema(schema: $schema);
+			$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => $offset], _rbac: false, _multitenancy: false);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR page read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (is_array($rows) === false) {
+			return null;
+		}
+
+		return [
+			'rows' => $this->verifyScope(rows: $rows, scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation, schema: $schema),
+			'read' => count($rows),
+		];
+	}//end readScopedPage()
+
+	/**
 	 * Build the OpenRegister property filters for a scoped collection read.
 	 *
 	 * A declared collection `filter` narrows the read to a subset of the

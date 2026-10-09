@@ -4,7 +4,7 @@ status: proposed
 
 # Spec: supplier-portal (auth-edge session hardening)
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Portaliq MUST authenticate suppliers via a separate bearer auth domain
 
@@ -61,7 +61,16 @@ expiry; `resolveFromBearer()` SHALL treat a revoked or unknown session id
   compromised
 - **WHEN** they trigger "revoke all sessions" for that Organisation
 - **THEN** every active `portalSession` for that Organisation is marked
-  revoked and subsequently rejected by `resolveFromBearer()`
+  revoked and subsequently rejected by `resolveFromBearer()`, however many
+  session rows the Organisation holds
+- **AND** each revocation is audited as `admin-revoke` naming the admin
+
+#### Scenario: A revoke-all that cannot finish says so
+
+- **GIVEN** OpenRegister cannot be read, or a session cannot be marked revoked
+- **WHEN** the admin triggers "revoke all sessions"
+- **THEN** the answer is an error (503) with the number revoked so far, and
+  the admin screen shows that not every session was revoked
 
 ## Notes
 

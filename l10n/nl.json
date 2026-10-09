@@ -2819,7 +2819,8 @@
         "The statement shows status {status}, from the audit.": "De verklaring toont status {status}, uit het onderzoek.",
         "The statement shows status {status}. Without an audit it cannot show A or B.": "De verklaring toont status {status}. Zonder onderzoek kan zij geen A of B tonen.",
         "This audit is older than three years. It no longer supports status A or B.": "Dit onderzoek is ouder dan drie jaar. Het onderbouwt status A of B niet meer.",
-        "This portal has not been measured yet.": "Dit portaal is nog niet gemeten."
+        "This portal has not been measured yet.": "Dit portaal is nog niet gemeten.",
+        "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.": "Niet alle sessies konden worden ingetrokken. {count} sessie(s) ingetrokken; de rest is misschien nog actief. Probeer het opnieuw en controleer of OpenRegister draait."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

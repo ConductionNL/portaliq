@@ -938,7 +938,7 @@ class SessionController extends Controller {
 	 * @return JSONResponse 200.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */

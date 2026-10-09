@@ -68,7 +68,7 @@ class AuditTrailService {
 	 * redeemed, with the old and the new audience as its detail
 	 * (invitation-joins-an-unbound-account).
 	 */
-	public const VERBS = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete', 'claim', 'audience'];
+	public const VERBS = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete', 'claim', 'audience', 'admin-revoke'];
 
 	/**
 	 * A uuid, so a target that is an object is linked to that object's history.

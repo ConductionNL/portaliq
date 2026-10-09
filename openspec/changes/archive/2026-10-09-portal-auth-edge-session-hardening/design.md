@@ -64,3 +64,14 @@ treat "OR unreachable" as "not revoked" — that would defeat the purpose. On an
 OR read failure during `resolveFromBearer()`, fail closed (treat as
 unauthenticated), matching the fail-closed posture the rest of the auth edge
 already commits to.
+
+## Security review notes (9 Oct 2026, task 4.3)
+
+The review (`security-review-4.3.md`) left six notes that need no code now:
+
+- N1: there is no secret rotation command. Rotating after a leak: `occ config:app:delete portaliq jwt_signing_secret`, then `occ maintenance:repair`; every bearer stops working at once.
+- N2: an existing secret of 16 to 31 characters is still accepted. Raising the floor to 32 is breaking for anyone running a short secret and needs a release note first.
+- N3: an assertion minted from a session stays valid up to its 60-second lifetime after revocation, and a reference session cannot be logged out (it is revocable per jti and through revoke-all). Both are bounded and accepted.
+- N4: `mintSession` does not check the write result; a failed write hands out a token that is refused on first use (fail closed).
+- N5: the session row carries a boolean `revoked`, not the `revokedAt` timestamp this design named. `PortalJwtService::validate` skips the expiry check for a token without `exp`; every mint path sets it.
+- N6: one OpenRegister query per bearer request is the accepted cost of revocation without a cache.
