@@ -274,7 +274,10 @@ test('rows open their own page with a chevron, show the big figure, the eyebrow 
 		today: MONDAY,
 		locale: 'nl',
 	})
-	assert.match(certificates, /Geldig tot (<!--\]-->)?<strong>30 november 2026<\/strong>/)
+	assert.match(
+		certificates,
+		/Geldig tot (<!--\]-->)?<strong>30 november 2026<\/strong>/,
+	)
 })
 
 test('cards open their row page', async () => {
@@ -345,4 +348,20 @@ test('table dates read as words, never d-m-yyyy or a raw stamp', () => {
 		'13 November 2025, 08:40',
 	)
 	assert.equal(formatMoment('kapot', false, 'nl'), 'kapot')
+})
+
+test('the date tile reads the month case and weight from the set', async () => {
+	const { readFileSync } = await import('node:fs')
+	const source = readFileSync(
+		new URL('../../src/site/components/mijn/DateTile.vue', import.meta.url),
+		'utf8',
+	)
+	assert.match(
+		source,
+		/text-transform: var\(--nldesign-website-date-tile-month-text-transform, none\)/,
+	)
+	assert.match(
+		source,
+		/font-weight: var\(--nldesign-website-date-tile-month-font-weight, 400\)/,
+	)
 })
