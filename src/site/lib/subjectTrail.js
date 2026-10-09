@@ -14,20 +14,6 @@
  */
 
 /**
- * A search term from a block, or '' for anything else. A native `search`
- * event bubbles out of every `<input type="search">` when Enter is pressed;
- * a block that does not declare the event lets it fall through to its root,
- * and the page then searched for "[object Event]".
- *
- * @param {string|Event} term What the block emitted.
- * @return {string|null} The term, or null when it was not one.
- * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-enter-in-a-blocks-own-search-field-searches-that-block
- */
-export function searchTermOf(term) {
-	return typeof term === 'string' ? term : null
-}
-
-/**
  * The subject a block told, made safe: a title, and a section with an
  * in-site route, or null.
  *
