@@ -231,7 +231,7 @@
     "@nextcloud/initial-state": "^3.0.0",
     "@nextcloud/l10n": "^3.4.1",
     "@nextcloud/router": "^3.1.0",
-    "@nextcloud/vue": "^9.13.0",
+    "@nextcloud/vue": "^9.13.1",
     "@nl-design-system-candidate/code-block-css": "1.2.0",
     "@utrecht/accordion-css": "4.1.0",
     "@utrecht/action-group-css": "4.0.1",
