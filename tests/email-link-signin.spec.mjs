@@ -149,6 +149,6 @@ test('every new sentence is in Dutch and English, without em-dashes', () => {
 	}
 	assert.equal(
 		nl[ways.emailLinkSentText()],
-		'Als dit adres bij ons bekend is, ontvangt u een link. De link werkt 15 minuten.',
+		'Als dit adres bij ons bekend is, ontvangt u een link.',
 	)
 })

@@ -449,7 +449,7 @@
 	"{organisation} wants everybody to be able to use {website}. This statement says how far that succeeds and what is still wrong.": "{organisation} wil dat iedereen {website} kan gebruiken. Deze verklaring zegt hoe ver dat lukt en wat nog niet goed is.",
 	"Send me a sign-in link": "Stuur mij een inloglink",
 	"The e-mail address you signed up with": "Het e-mailadres waarmee u bent ingeschreven",
-	"If this address is known to us, you will receive a link. It works for 15 minutes.": "Als dit adres bij ons bekend is, ontvangt u een link. De link werkt 15 minuten.",
+	"If this address is known to us, you will receive a link.": "Als dit adres bij ons bekend is, ontvangt u een link.",
 	"Sign in to {portal}": "Inloggen bij {portal}",
 	"You sign in as {address}.": "U logt in als {address}.",
 	"The e-mail address this link was sent to": "Het e-mailadres waar deze link naartoe is gestuurd",

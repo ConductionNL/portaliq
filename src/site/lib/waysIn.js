@@ -230,7 +230,7 @@ export function wayInRefusalText(code) {
  * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-form-reveals-nothing-about-accounts-req-iwi-007
  */
 export function emailLinkSentText() {
-	return 'If this address is known to us, you will receive a link. It works for 15 minutes.'
+	return 'If this address is known to us, you will receive a link.'
 }
 
 /**

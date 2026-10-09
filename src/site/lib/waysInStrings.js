@@ -12,8 +12,8 @@ export default {
 		'Send me a sign-in link': 'Stuur mij een inloglink',
 		'The e-mail address you signed up with':
 			'Het e-mailadres waarmee u bent ingeschreven',
-		'If this address is known to us, you will receive a link. It works for 15 minutes.':
-			'Als dit adres bij ons bekend is, ontvangt u een link. De link werkt 15 minuten.',
+		'If this address is known to us, you will receive a link.':
+			'Als dit adres bij ons bekend is, ontvangt u een link.',
 		'Sign in to {portal}': 'Inloggen bij {portal}',
 		'You sign in as {address}.': 'U logt in als {address}.',
 		'The e-mail address this link was sent to':
@@ -64,8 +64,8 @@ export default {
 		'Send me a sign-in link': 'Send me a sign-in link',
 		'The e-mail address you signed up with':
 			'The e-mail address you signed up with',
-		'If this address is known to us, you will receive a link. It works for 15 minutes.':
-			'If this address is known to us, you will receive a link. It works for 15 minutes.',
+		'If this address is known to us, you will receive a link.':
+			'If this address is known to us, you will receive a link.',
 		'Sign in to {portal}': 'Sign in to {portal}',
 		'You sign in as {address}.': 'You sign in as {address}.',
 		'The e-mail address this link was sent to':
