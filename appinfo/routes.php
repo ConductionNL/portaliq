@@ -101,6 +101,7 @@ return [
         ['name' => 'portalAccountAdmin#void', 'url' => '/api/accounts/void', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#approve', 'url' => '/api/accounts/{subjectRef}/approve', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#refuse', 'url' => '/api/accounts/{subjectRef}/refuse', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#signInAddress', 'url' => '/api/accounts/{subjectRef}/sign-in-address', 'verb' => 'POST'],
 
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
@@ -333,6 +334,7 @@ return [
         // Admin-only incident response (portal-auth-edge-session-hardening):
         // revoke every active portal session for an Organisation.
         ['name' => 'sessionAdmin#revokeOrganisation', 'url' => '/api/session-admin/revoke-organisation', 'verb' => 'POST'],
+        ['name' => 'sessionAdmin#revokeAccount', 'url' => '/api/session-admin/revoke-account', 'verb' => 'POST'],
 
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
@@ -387,6 +389,10 @@ return [
         ['name' => 'portalIdentity#challenge', 'url' => '/portal/api/identity/challenge', 'verb' => 'GET'],
         ['name' => 'portalIdentity#requestReferenceLink', 'url' => '/portal/api/identity/reference-link', 'verb' => 'POST'],
         ['name' => 'portalIdentity#redeemReferenceLink', 'url' => '/portal/api/identity/reference-link/redeem', 'verb' => 'POST'],
+        // sign-in-with-an-email-link: behind the instance switch, OFF by default.
+        ['name' => 'emailLink#request', 'url' => '/portal/api/identity/email-link', 'verb' => 'POST'],
+        ['name' => 'emailLink#describe', 'url' => '/portal/api/identity/email-link/describe', 'verb' => 'POST'],
+        ['name' => 'emailLink#redeem', 'url' => '/portal/api/identity/email-link/redeem', 'verb' => 'POST'],
         // The one case a redeemed reference link opens, read only, for the
         // short reference session it started (identity-ways-in-screens D2).
         ['name' => 'portalIdentity#referenceCase', 'url' => '/portal/api/identity/reference-case', 'verb' => 'GET'],

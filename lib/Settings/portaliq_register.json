@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.92.0"
+        "version": "0.93.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.92.0",
+                "version": "0.93.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -51,6 +51,7 @@
                     "portalPlanTemplate",
                     "portalInvitation",
                     "portalReferenceLink",
+                    "portalEmailLink",
                     "portalAccessRequest",
                     "portalFormBinding",
                     "portalIntakeSubmission",
@@ -748,7 +749,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.17.0",
+                "version": "0.18.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -778,7 +779,8 @@
                             "digid",
                             "eidas",
                             "generic",
-                            "dev"
+                            "dev",
+                            "email"
                         ],
                         "example": "eherkenning"
                     },
@@ -811,6 +813,19 @@
                         "type": "string",
                         "description": "Contact email for notifications (masked in logs).",
                         "example": "contact@example.org"
+                    },
+                    "signInAddress": {
+                        "type": "string",
+                        "title": "Sign-in address",
+                        "description": "The address an e-mail link is sent to (sign-in-with-an-email-link H2). Only an account of identity type `email` has one. Self-service never changes it; staff do, or a session at `substantial` or higher, and the old address is told. Stored lower case and trimmed.",
+                        "authorization": {
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
+                        }
                     },
                     "contactAddresses": {
                         "title": "Contact addresses",
@@ -2564,7 +2579,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.23.0",
+                "version": "0.24.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3296,7 +3311,8 @@
                                         "oidc",
                                         "digid",
                                         "eherkenning",
-                                        "eidas"
+                                        "eidas",
+                                        "email-link"
                                     ]
                                 },
                                 "example": [
@@ -7948,6 +7964,94 @@
                         "format": "date-time",
                         "description": "When it was followed.",
                         "example": "2026-09-18T10:00:00+00:00"
+                    }
+                }
+            },
+            "portalEmailLink": {
+                "slug": "portalEmailLink",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.1.0",
+                "title": "Portal Email Link",
+                "description": "A one-time sign-in link mailed to the sign-in address of an `email` portal account (sign-in-with-an-email-link, REQ-IWI-009). Only the SHA-256 of the token is stored, with the account, the requesting browser's cookie hash, the address hash and the expiry. Spent once; a newer link voids it. Readable by administrators only.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "tokenHash",
+                    "expiresAt"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Account",
+                        "type": "string",
+                        "description": "The subject reference of the account the link signs in to.",
+                        "example": "email:3f2a9c"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant of the account.",
+                        "example": "warmtepompacademie"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The slug of the portal the link was asked on.",
+                        "example": "academie"
+                    },
+                    "tokenHash": {
+                        "title": "Token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time token. The token itself is never stored.",
+                        "example": "9f86d0…"
+                    },
+                    "cookieHash": {
+                        "title": "Browser cookie hash",
+                        "type": "string",
+                        "description": "SHA-256 of the short-lived cookie the requesting browser holds.",
+                        "example": "2c26b4…"
+                    },
+                    "addressHash": {
+                        "title": "Address hash",
+                        "type": "string",
+                        "description": "SHA-256 of the normalised address the link was sent to; a browser without the cookie must type that address.",
+                        "example": "fcde2b…"
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "sent",
+                            "used",
+                            "void"
+                        ],
+                        "description": "`used` after the one sign-in, `void` when a newer link or staff revoked it.",
+                        "example": "sent"
+                    },
+                    "issuedAt": {
+                        "title": "Issued at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was issued.",
+                        "example": "2026-10-09T09:00:00+00:00"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Fifteen minutes after issue; not configurable upward.",
+                        "example": "2026-10-09T09:15:00+00:00"
+                    },
+                    "usedAt": {
+                        "title": "Used at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it signed somebody in.",
+                        "example": "2026-10-09T09:05:00+00:00"
                     }
                 }
             },

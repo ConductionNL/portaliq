@@ -302,6 +302,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#11
 	 */
 	public function issueSession(
 		string $subjectRef,
@@ -328,6 +329,14 @@ class PortalSessionService {
 			return null;
 		}
 
+		// The way in rides with the login entry, so an e-mail link sign-in
+		// is an audit entry with the account, the method and the moment
+		// (sign-in-with-an-email-link REQ-IWI-012).
+		$detail = [];
+		if ($provider !== '') {
+			$detail = ['method' => $provider];
+		}
+
 		$this->auditor->record(
 			verb: 'login',
 			subjectRef: $subjectRef,
@@ -335,7 +344,8 @@ class PortalSessionService {
 			register: self::SESSION_REGISTER,
 			schema: self::SESSION_SCHEMA,
 			id: $issued['jti'],
-			jti: $issued['jti']
+			jti: $issued['jti'],
+			detail: $detail
 		);
 
 		return $issued;
@@ -1010,6 +1020,48 @@ class PortalSessionService {
 			return ['revoked' => 0, 'failed' => 0, 'complete' => false];
 		}
 
+		$result = $this->revokeRows(rows: $rows, organisation: $organisation, admin: $admin);
+		$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: $result['revoked'], complete: $result['complete']);
+
+		return $result;
+	}//end revokeAllForOrganisation()
+
+	/**
+	 * Revoke every live session of ONE account, without touching the rest of
+	 * its organisation (sign-in-with-an-email-link REQ-IWI-013, security
+	 * review L4). Audited per session as `admin-revoke` naming the admin.
+	 *
+	 * @param string $subjectRef   The account's subject reference.
+	 * @param string $organisation The account's organisation.
+	 * @param string $admin        The acting staff member.
+	 *
+	 * @return array{revoked: int, failed: int, complete: bool}
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-staff-can-revoke-an-accounts-e-mail-links-and-sessions-req-iwi-013
+	 */
+	public function revokeAllForSubject(string $subjectRef, string $organisation, string $admin): array {
+		if ($subjectRef === '' || $organisation === '') {
+			return ['revoked' => 0, 'failed' => 0, 'complete' => true];
+		}
+
+		$rows = $this->liveSessionsOf(organisation: $organisation, subjectRef: $subjectRef);
+		if ($rows === null) {
+			return ['revoked' => 0, 'failed' => 0, 'complete' => false];
+		}
+
+		return $this->revokeRows(rows: $rows, organisation: $organisation, admin: $admin);
+	}//end revokeAllForSubject()
+
+	/**
+	 * Revoke the given live session rows, one audited write each.
+	 *
+	 * @param array<int, array<string, mixed>> $rows         The live rows.
+	 * @param string                           $organisation The tenant.
+	 * @param string                           $admin        The acting admin.
+	 *
+	 * @return array{revoked: int, failed: int, complete: bool}
+	 */
+	private function revokeRows(array $rows, string $organisation, string $admin): array {
 		$revoked = 0;
 		$failed  = 0;
 		foreach ($rows as $row) {
@@ -1045,30 +1097,36 @@ class PortalSessionService {
 			);
 		}//end foreach
 
-		$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: $revoked, complete: $failed === 0);
-
 		return ['revoked' => $revoked, 'failed' => $failed, 'complete' => $failed === 0];
-	}//end revokeAllForOrganisation()
+	}//end revokeRows()
 
 	/**
 	 * Every not-yet-revoked session row of an organisation, read to the end,
 	 * or null when OpenRegister could not be read.
 	 *
 	 * @param string $organisation The tenant.
+	 * @param string $subjectRef   One account only, or '' for the whole tenant.
 	 *
 	 * @return array<int, array<string, mixed>>|null
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 	 */
-	private function liveSessionsOf(string $organisation): ?array {
+	private function liveSessionsOf(string $organisation, string $subjectRef = ''): ?array {
+		$scopeField = 'organisation';
+		$scopeValue = $organisation;
+		if ($subjectRef !== '') {
+			$scopeField = 'subjectRef';
+			$scopeValue = $subjectRef;
+		}
+
 		$live   = [];
 		$offset = 0;
 		for ($pages = 0; $pages < self::REVOKE_MAX_PAGES; $pages++) {
 			$page = $this->reader->readScopedPage(
 				register: self::SESSION_REGISTER,
 				schema: self::SESSION_SCHEMA,
-				scopeField: 'organisation',
-				scopeValue: $organisation,
+				scopeField: $scopeField,
+				scopeValue: $scopeValue,
 				organisation: $organisation,
 				filter: ['revoked' => false],
 				limit: self::REVOKE_PAGE,
@@ -1079,8 +1137,11 @@ class PortalSessionService {
 			}
 
 			foreach ($page['rows'] as $row) {
-				// The filter narrows; the row's own flag decides (fail closed).
-				if (self::isRevoked(row: $row) === false) {
+				// The filter narrows; the row's own flag decides (fail closed),
+				// and a per-account revoke never reaches another account's row.
+				if (self::isRevoked(row: $row) === false
+					&& ($subjectRef === '' || ($row['subjectRef'] ?? null) === $subjectRef)
+				) {
 					$live[] = $row;
 				}
 			}

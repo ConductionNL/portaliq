@@ -206,7 +206,7 @@ class PortalRuntimeConfigResolver {
 
 		// The doors besides the sign-in buttons (identity-ways-in-screens
 		// D3): closed unless a portal opens them.
-		$config['waysIn'] = ['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => []];
+		$config['waysIn'] = ['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => [], 'emailLink' => false];
 		if ($portal === null) {
 			return $config;
 		}
