@@ -52,9 +52,9 @@ class ContentStartTilesController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param IRequest  The request.
-	 * @param PortalContributionRegistry  Reads the contributions.
-	 * @param PortalResolver  Resolves the serving portal.
+	 * @param IRequest $request The request.
+	 * @param PortalContributionRegistry $registry Reads the contributions.
+	 * @param PortalResolver $resolver Resolves the serving portal.
 	 */
 	public function __construct(
 		IRequest $request,
