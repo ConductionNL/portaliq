@@ -343,6 +343,13 @@ export default {
 	min-inline-size: 0;
 }
 
+/* The name and its second line stack: the Den Haag label is a flex row,
+   which put "Groep 7 · Meester Daan" beside "Vera" and broke both. */
+.pq-resident-menu__link .pq-resident-menu__label {
+	display: flex;
+	flex-direction: column;
+}
+
 /* A row's second line ("Groep 7 · Meester Daan") under its name. */
 .pq-resident-menu__subline {
 	display: block;
