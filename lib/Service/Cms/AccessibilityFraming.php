@@ -26,6 +26,7 @@ namespace OCA\Portaliq\Service\Cms;
 
 use OCA\Portaliq\Controller\AccessibilityController;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -48,6 +49,32 @@ class AccessibilityFraming {
 		private readonly ActionAuthService $actionAuth,
 	) {
 	}//end __construct()
+
+	/**
+	 * The site's content security policy: never framed unless allowsSelf(),
+	 * and the NLDS webfonts from Google's font CDN (a blocked font renders
+	 * the portal in a fallback face while every token says otherwise).
+	 *
+	 * @param IRequest $request The request for the site.
+	 *
+	 * @return ContentSecurityPolicy
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 */
+	public function sitePolicy(IRequest $request): ContentSecurityPolicy {
+		$csp = new ContentSecurityPolicy();
+		// Clear the `'self'` default first, or a site with no configured
+		// embedders still allows same-origin framing.
+		$csp->disallowFrameAncestorDomain('\'self\'');
+		if ($this->allowsSelf(request: $request) === true) {
+			$csp->addAllowedFrameAncestorDomain('\'self\'');
+		}
+
+		$csp->addAllowedFontDomain('https://fonts.gstatic.com');
+		$csp->addAllowedStyleDomain('https://fonts.googleapis.com');
+
+		return $csp;
+	}//end sitePolicy()
 
 	/**
 	 * Whether this request may be framed by the same origin.

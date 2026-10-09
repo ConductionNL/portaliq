@@ -179,13 +179,25 @@ class PortalPageControllerTest extends TestCase {
 		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();
 		$this->assertStringContainsString("frame-ancestors 'none'", $policy);
 
-		$this->framing = $this->createMock(AccessibilityFraming::class);
+		$this->framing = $this->getMockBuilder(AccessibilityFraming::class)->disableOriginalConstructor()->onlyMethods(['allowsSelf'])->getMock();
 		$this->framing->method('allowsSelf')->willReturn(true);
 		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();
 		$this->assertStringContainsString("frame-ancestors 'self'", $policy);
 		$this->assertStringNotContainsString('frame-ancestors *', $policy);
 
 	}//end testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin()
+
+	/**
+	 * The real framing rule with nobody allowed to measure.
+	 *
+	 * @return AccessibilityFraming
+	 */
+	private function noFraming(): AccessibilityFraming {
+		$framing = $this->getMockBuilder(AccessibilityFraming::class)->disableOriginalConstructor()->onlyMethods(['allowsSelf'])->getMock();
+		$framing->method('allowsSelf')->willReturn(false);
+
+		return $framing;
+	}//end noFraming()
 
 	public function testSiteRendersSiteTemplateAsBlank(): void {
 		$controller = $this->controller(orgSlug: '');
@@ -656,7 +668,7 @@ class PortalPageControllerTest extends TestCase {
 			$themeResolver,
 			new SiteHead($reader),
 			($notices ?? $this->createMock(PortalNoticeReader::class)),
-			($this->framing ?? $this->createMock(AccessibilityFraming::class))
+			($this->framing ?? $this->noFraming())
 		);
 	}//end controller()
 

@@ -59,7 +59,6 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
-use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
@@ -258,18 +257,12 @@ class PortalPageController extends Controller {
 		// Deny framing unless the resolved site says otherwise. Same posture
 		// as index(): clear the `'self'` default first, or a site with no
 		// configured embedders still allows same-origin framing.
-		$csp = new ContentSecurityPolicy();
-		$csp->disallowFrameAncestorDomain('\'self\'');
-		// The one exception: the accessibility measurement frames each page
-		// in the administrator's own browser (site-accessibility-statement
-		// REQ-SAS-001). Same origin only, and only for a user who may measure.
-		if ($this->framing->allowsSelf(request: $this->request) === true) {
-			$csp->addAllowedFrameAncestorDomain('\'self\'');
-		}
-
-		$csp->addAllowedFontDomain('https://fonts.gstatic.com');
-		$csp->addAllowedStyleDomain('https://fonts.googleapis.com');
-		$response->setContentSecurityPolicy($csp);
+		// The one exception to "never framed" is the accessibility
+		// measurement, which frames each page in the administrator's own
+		// browser (site-accessibility-statement REQ-SAS-001): same origin
+		// only, and only for a user who may measure. AccessibilityFraming
+		// builds the whole policy.
+		$response->setContentSecurityPolicy($this->framing->sitePolicy(request: $this->request));
 
 		return $response;
 	}//end site()
