@@ -578,6 +578,7 @@ export default {
 		PdfDownloadButton: defineAsyncComponent(
 			() => import('../../components/collections/PdfDownloadButton.vue'),
 		),
+
 		DetailCard,
 		KpiCards,
 		NewsBlock,

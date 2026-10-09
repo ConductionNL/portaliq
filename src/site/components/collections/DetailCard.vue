@@ -170,6 +170,7 @@ export default {
 		PdfDownloadButton: defineAsyncComponent(
 			() => import('./PdfDownloadButton.vue'),
 		),
+
 		QrValue,
 		SlotHost,
 		TimelineList,

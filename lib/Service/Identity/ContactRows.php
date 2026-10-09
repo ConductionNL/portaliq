@@ -51,6 +51,8 @@ class ContactRows {
 	 * @param array<int, string> $states The states it may be in.
 	 *
 	 * @return array<string, mixed>|null The row.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function ownRow(array $subject, string $id, array $states): ?array {
 		if ($id === '') {
@@ -73,6 +75,8 @@ class ContactRows {
 	 * @param string $organisation The tenant.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function rowsOf(string $owner, string $organisation): array {
 		if ($owner === '') {
@@ -96,6 +100,8 @@ class ContactRows {
 	 * @param string $organisation The tenant.
 	 *
 	 * @return array<string, mixed>|null The account.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function accountByEmail(string $email, string $organisation): ?array {
 		$rows = $this->reader->readCollection(
@@ -123,6 +129,8 @@ class ContactRows {
 	 * @param string $organisation The tenant.
 	 *
 	 * @return array<string, mixed>|null The row.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function byToken(string $token, string $organisation): ?array {
 		$rows = $this->reader->readCollection(
@@ -144,6 +152,8 @@ class ContactRows {
 	 * @param DateTimeImmutable $now The moment.
 	 *
 	 * @return int The count; a withdrawn invitation still counts, it was sent.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function sentToday(array $rows, DateTimeImmutable $now): int {
 		$day   = $now->format('Y-m-d');
@@ -165,6 +175,8 @@ class ContactRows {
 	 * @param array<string, mixed>|null $account The account behind the address.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function alreadyOpenOrLinked(array $rows, string $email, ?array $account): bool {
 		foreach ($rows as $row) {
@@ -191,6 +203,8 @@ class ContactRows {
 	 * @param DateTimeImmutable $now The moment.
 	 *
 	 * @return bool True when it has expired or carries no expiry.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function expired(array $row, DateTimeImmutable $now): bool {
 		$expires = (string)($row['expiresAt'] ?? '');
@@ -208,6 +222,8 @@ class ContactRows {
 	 * @param array<string, mixed> $row The row.
 	 *
 	 * @return array<string, mixed> The row to show.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function shown(array $row): array {
 		return [
@@ -229,6 +245,8 @@ class ContactRows {
 	 * @param array<string, mixed> $row The row.
 	 *
 	 * @return string The id, or ''.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function idOf(array $row): string {
 		return (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));

@@ -350,6 +350,7 @@ export default {
 		InboxReply: defineAsyncComponent(
 			() => import('../../components/inbox/InboxReply.vue'),
 		),
+
 		NotificationSettings,
 		TranslatedText,
 	},

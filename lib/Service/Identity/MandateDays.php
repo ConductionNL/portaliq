@@ -38,6 +38,8 @@ class MandateDays {
 	 * @param DateTimeImmutable $now   The moment.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
 	 */
 	public function expired(string $value, DateTimeImmutable $now): bool {
 		if ($value === '') {
@@ -56,6 +58,8 @@ class MandateDays {
 	 * @param string $day A day, `Y-m-d`, or ''.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
 	 */
 	public function endOfDay(string $day): string {
 		if ($day === '') {
@@ -75,6 +79,8 @@ class MandateDays {
 	 * @param DateTimeImmutable $now   The moment.
 	 *
 	 * @return bool Whether it is a real day after today.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
 	 */
 	public function futureDay(string $value, DateTimeImmutable $now): bool {
 		$day = date_create_immutable_from_format('!Y-m-d', $value);

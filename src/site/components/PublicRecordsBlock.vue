@@ -232,6 +232,7 @@ export default {
 				const api = this.apiOverride || {
 					list: (app, list) =>
 						fetchRecordList(resolveApiBase(), app, list),
+
 					record: (app, list, id) =>
 						fetchRecord(resolveApiBase(), app, list, id),
 				}

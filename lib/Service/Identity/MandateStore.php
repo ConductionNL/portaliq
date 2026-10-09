@@ -72,6 +72,8 @@ class MandateStore {
 	 * @param string $organisation The tenant.
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
 	 */
 	public function rows(string $schema, string $organisation): array {
 		if ($organisation === '') {
@@ -99,6 +101,8 @@ class MandateStore {
 	 * @param array<string, mixed> $row A stored row.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
 	 */
 	public function idOf(array $row): string {
 		$self = (array)($row['@self'] ?? []);
@@ -116,6 +120,8 @@ class MandateStore {
 	 * @param string $organisation The tenant.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
 	 */
 	public function mandate(string $id, string $organisation): ?array {
 		if ($id === '') {
@@ -135,6 +141,8 @@ class MandateStore {
 	 * @param string $token The invitation secret.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
 	 */
 	public function invitationByToken(string $token): ?array {
 		if ($token === '') {
@@ -165,6 +173,8 @@ class MandateStore {
 	 * @param array<string, mixed> $data   The change.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
 	 */
 	public function update(string $schema, array $row, array $data): void {
 		$organisation = (string)($row['organisation'] ?? '');
