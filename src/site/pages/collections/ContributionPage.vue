@@ -1420,9 +1420,19 @@ export default {
 		 * @spec openspec/changes/mijn-lists-follow-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-row-may-open-its-own-page
 		 */
 		rowPageRouteOf(item) {
-			return item.block?.rowPage
-				? this.tileTarget({ page: item.block.rowPage }).route
-				: ''
+			if (item.block?.rowPage) {
+				return this.tileTarget({ page: item.block.rowPage }).route
+			}
+			// On a record page the list of its records opens each one here
+			// ("Open een naam om alles daarover te zien").
+			if (
+				this.recordPage
+				&& this.currentPage
+				&& item.collection?.id === this.recordPage.collection
+			) {
+				return this.tileTarget({ page: this.currentPage.id }).route
+			}
+			return ''
 		},
 
 		/**

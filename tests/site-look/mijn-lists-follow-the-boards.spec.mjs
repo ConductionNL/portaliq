@@ -365,3 +365,21 @@ test('the date tile reads the month case and weight from the set', async () => {
 		/font-weight: var\(--nldesign-website-date-tile-month-font-weight, 400\)/,
 	)
 })
+
+test('on a record page the list of its records opens each one there', async () => {
+	const { loadSfc } = await import('../support/render-sfc.mjs')
+	const Page = await loadSfc('src/site/pages/collections/ContributionPage.vue')
+	const self = {
+		recordPage: { collection: 'employerBookings' },
+		currentPage: { id: 'employerBookings' },
+		tileTarget: ({ page }) => ({ route: `/mijn/learniq/${page}` }),
+	}
+	const route = (block, id) =>
+		Page.methods.rowPageRouteOf.call(self, { block, collection: { id } })
+	assert.equal(route({}, 'employerBookings'), '/mijn/learniq/employerBookings')
+	assert.equal(route({}, 'employerParticipants'), '')
+	assert.equal(
+		route({ rowPage: 'other' }, 'employerParticipants'),
+		'/mijn/learniq/other',
+	)
+})
