@@ -23,6 +23,7 @@ import { resolveApiBase } from './contentApi.js'
  * @param {number} [query.page] The page, from 1.
  * @param {number} [query.limit] Results per page.
  * @param {boolean} [query.upcoming] Only what is still to come.
+ * @param {{kind?: string, news?: string, audience?: string}} [query.facetsBy] Facets by kind and by a news item's audience.
  * @return {Promise<{items: Array<object>, total: number, page: number, pages: number, facets: Array<object>}>}
  */
 export async function fetchCatalogue(portal, query = {}) {
@@ -39,6 +40,12 @@ export async function fetchCatalogue(portal, query = {}) {
 		page: query.page || '',
 		limit: query.limit || '',
 		upcoming: query.upcoming ? '1' : '',
+		// The facets the block asks for besides the declared ones
+		// (site-catalogue-follows-the-school-boards).
+		facetsBy:
+			query.facetsBy && Object.keys(query.facetsBy).length > 0
+				? JSON.stringify(query.facetsBy)
+				: '',
 	}
 	for (const [key, value] of Object.entries(params)) {
 		if (value !== undefined && value !== null && value !== '') {

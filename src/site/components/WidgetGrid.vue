@@ -28,6 +28,7 @@
 				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
 				:data-widget-key="run.widget.widgetKey"
 				v-bind="propsFor(run.widget)"
+				@subject="$emit('subject', $event)"
 				@navigate="$emit('navigate', $event)"
 				@search="forwardSearch" />
 
@@ -47,6 +48,7 @@
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
 							v-bind="propsFor(widget)"
+							@subject="$emit('subject', $event)"
 							@navigate="$emit('navigate', $event)"
 							@search="forwardSearch" />
 
@@ -375,7 +377,7 @@ export default {
 	// emits the term. Without this forward the box is INERT — it submits, the
 	// event reaches this component, and nothing above ever hears it. Which route
 	// a search goes to is the host's decision, not a block's.
-	emits: ['navigate', 'search'],
+	emits: ['navigate', 'search', 'subject'],
 
 	computed: {
 		/**

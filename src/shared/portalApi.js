@@ -138,6 +138,12 @@ export function createPortalApi(config, store = {}) {
 					refusal?.errors && typeof refusal.errors === 'object'
 						? refusal.errors
 						: {},
+				// A value the store refused, by field and kind
+				// (site-action-forms).
+				invalid:
+					refusal?.invalid && typeof refusal.invalid === 'object'
+						? refusal.invalid
+						: {},
 			}
 		}
 		const json = await res.json().catch(() => ({}))

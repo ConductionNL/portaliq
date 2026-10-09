@@ -75,6 +75,7 @@ use OCA\Portaliq\Service\PortalUserDisplayNames;
 use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\SubmissionReceiptService;
+use OCA\Portaliq\Service\WriteRefusal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -247,6 +248,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param string $context Short label naming the caller, for the log line only.
 	 *
 	 * @return array<string, mixed>|JSONResponse The updated object, or the response to return.
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	private function writeScoped(
 		string $register,
@@ -274,9 +276,12 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		// Null = ownership re-verification failed OR the row does not exist —
-		// a single 404, indistinguishable, and nothing was written.
+		// a single 404, indistinguishable, and nothing was written. Only a
+		// value the store refused on the owned row names its field
+		// (site-action-forms).
 		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $data)
+				?? new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
 		return $updated;
@@ -1086,6 +1091,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -1151,7 +1157,9 @@ class ContributionController extends Controller implements PortalProtected {
 		);
 
 		if ($created === null) {
-			return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
+			// A value the store refused names its field (site-action-forms).
+			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $data)
+				?? new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
 		}
 
 		$this->auditor->record(
