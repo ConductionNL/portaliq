@@ -255,11 +255,13 @@ test.describe('what a citizen may write on their own case', () => {
 		await expect(page.getByTestId('case-input-omschrijving')).toBeVisible()
 		await expect(page.getByTestId('case-input-toelichting')).toBeVisible()
 
-		// … and the case number, which carries no flag, is not: it is text with
-		// a sentence beside it, never a control that fails on submit.
+		// … and the case number, which carries no flag, is not. Since b150def5
+		// the case screen lists only the answers the writable set names: the
+		// number stays in the case list above, and is not listed again as an
+		// answer with a sentence saying it cannot be changed.
 		await expect(page.getByTestId('case-input-reference')).toHaveCount(0)
-		await expect(page.getByTestId('case-value-reference')).toHaveText(reference)
-		await expect(page.getByTestId('case-reason-reference')).not.toHaveText('')
+		await expect(page.getByTestId('case-value-reference')).toHaveCount(0)
+		await expect(page.getByRole('button', { name: reference })).toBeVisible()
 
 		// The correction lands.
 		await page
@@ -271,10 +273,8 @@ test.describe('what a citizen may write on their own case', () => {
 		// It is on the case after a reload, so this is the stored answer and
 		// not a screen that only looks saved.
 		await page.reload()
-		await page
-			.getByRole('button', { name: /Mijn zaken/ })
-			.first()
-			.click()
+		// The menu entry is a link since the site port, as openTheCase uses.
+		await accountLink(page, 'portaliq/mijn-zaken').first().click()
 		await page.getByText(reference).first().click()
 		await expect(page.getByTestId('case-input-omschrijving')).toHaveValue(
 			'Een dakkapel aan de achterzijde',
@@ -297,9 +297,11 @@ test.describe('what a citizen may write on their own case', () => {
 			buffer: Buffer.from('%PDF-1.4 tweede aanvulling'),
 		})
 		await expect(page.getByTestId('case-document')).toHaveCount(2)
-		await expect(page.getByTestId('case-document').first()).toHaveText(
-			'aanvulling.pdf',
-		)
+		// Since 79952be7 a document is a file item: its name, then who added
+		// it, the type and the size. The name is what must not change.
+		await expect(
+			page.getByTestId('case-document').first().locator('.pq-file-item__name'),
+		).toHaveText('aanvulling.pdf')
 	})
 
 	// @e2e citizen-writes-on-their-own-case::the-window-closes
