@@ -245,8 +245,34 @@ class PortalShell {
 			'badges'      => $this->links(entries: ($footer['badges'] ?? []), extra: null),
 			'cta'         => ($cta[0] ?? null),
 			'contact'     => $this->contact(contact: ($footer['contact'] ?? null)),
+			// The short footer of the own area on a phone (mijn-phone-chrome).
+			'compact'     => $this->compactFooter(declared: ($footer['compact'] ?? null)),
 		];
 	}//end footer()
+
+	/**
+	 * The footer the own area shows on a phone: one line of text and at most
+	 * four links; null when it names neither (mijn-phone-chrome).
+	 *
+	 * @param mixed $declared The authored compact footer.
+	 *
+	 * @return array{text: string, links: list<array<string, string>>}|null
+	 *
+	 * @spec openspec/changes/mijn-phone-chrome/specs/site-chrome/spec.md#requirement-the-own-area-may-end-in-a-short-footer-on-a-phone
+	 */
+	private function compactFooter(mixed $declared): ?array {
+		if (is_array($declared) === false) {
+			return null;
+		}
+
+		$text  = $this->text(value: ($declared['text'] ?? ''));
+		$links = array_slice($this->links(entries: ($declared['links'] ?? []), extra: null), 0, 4);
+		if ($text === '' && $links === []) {
+			return null;
+		}
+
+		return ['text' => $text, 'links' => $links];
+	}//end compactFooter()
 
 	/**
 	 * The footer's contact column: a title and plain lines, a line with a

@@ -57,7 +57,7 @@ class PortalResidentMenu {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, mixed> `{cardLabel?, groups?, leaveOut?, person?, routes?}`.
+	 * @return array<string, mixed> `{cardLabel?, groups?, leaveOut?, person?, routes?, phoneHeader?}`.
 	 *
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
@@ -77,6 +77,8 @@ class PortalResidentMenu {
 				'leaveOut'  => $this->leaveOut(declared: ($menu['leaveOut'] ?? [])),
 				'person'    => $this->person(declared: ($menu['person'] ?? null)),
 				'routes'    => $this->routes(declared: ($menu['routes'] ?? null)),
+				// The phone header of the own area (mijn-phone-chrome).
+				'phoneHeader' => $this->phoneHeader(declared: ($menu['phoneHeader'] ?? null)),
 			],
 			static fn ($part): bool => $part !== '' && $part !== []
 		);
@@ -222,6 +224,24 @@ class PortalResidentMenu {
 
 		return $out;
 	}//end routes()
+
+	/**
+	 * The phone header of the own area: `person` (the initials, no sign-out
+	 * link) or '' for the site's own (mijn-phone-chrome).
+	 *
+	 * @param mixed $declared The authored value.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/mijn-phone-chrome/specs/site-chrome/spec.md#requirement-the-own-area-may-show-the-person-in-the-phone-header
+	 */
+	private function phoneHeader(mixed $declared): string {
+		if ($declared === 'person') {
+			return 'person';
+		}
+
+		return '';
+	}//end phoneHeader()
 
 	/**
 	 * Whether a value is a well-formed item name.

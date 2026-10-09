@@ -490,6 +490,13 @@
 				@navigate="go"
 				@search="goSearch" />
 		</template>
+		<!-- The own area's short footer on a phone, when the portal writes one
+		     (mijn-phone-chrome); AccountArea's phone rules swap it in. -->
+		<CompactFooter
+			v-if="accountRoute && session && site.footer && site.footer.compact"
+			:footer="site.footer.compact"
+			:title="site.title || ''"
+			@navigate="go" />
 
 		<!--
 			THE EDITING DOOR, and it is last in the document on purpose: it is
@@ -567,11 +574,11 @@ import {
 	loadPerRecordRows,
 	menuPerson,
 	menuSubline,
-	withLayoutLabel,
 	ownAreaLink as ownAreaLinkFor,
 	residentMenuGroups,
 	showsResidentMenu,
 	withAreaName,
+	withLayoutLabel,
 } from './lib/residentMenu.js'
 import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js'
 import {
@@ -606,6 +613,11 @@ import { TASK_STORAGE_KEY } from './pages/inbox/inbox.js'
  * It is imported only once the probe has said this session may edit, so a
  * reader never downloads it at all.
  */
+// The own area's short footer, loaded on demand: only an own area on a phone
+// shows it (mijn-phone-chrome).
+const CompactFooter = defineAsyncComponent(
+	() => import('./components/chrome/CompactFooter.vue'),
+)
 const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
 )
@@ -655,6 +667,7 @@ export default {
 		BranchSwitcher,
 		ContactPrompt,
 		BrandHeader,
+		CompactFooter,
 		FooterColumns,
 		GuestActionPage,
 		WayInLink,

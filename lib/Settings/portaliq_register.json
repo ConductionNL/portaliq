@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.72.0"
+        "version": "0.73.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.72.0",
+                "version": "0.73.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2448,7 +2448,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.15.0",
+                "version": "0.16.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -2596,6 +2596,38 @@
                                                     "title": "Text",
                                                     "type": "string",
                                                     "description": "What the line says."
+                                                },
+                                                "href": {
+                                                    "title": "Link",
+                                                    "type": "string",
+                                                    "description": "Where the line links to: a page of this portal, or a web, mail or phone address. Empty shows plain text."
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "compact": {
+                                "title": "Short footer on a phone",
+                                "type": "object",
+                                "description": "The short footer the own area shows on a phone instead of the full one: the logo, one line of text and a few links. Empty keeps the full footer.",
+                                "properties": {
+                                    "text": {
+                                        "title": "Text",
+                                        "type": "string",
+                                        "description": "The one line under the logo, such as Telefoon: 010 123 45 67."
+                                    },
+                                    "links": {
+                                        "title": "Links",
+                                        "type": "array",
+                                        "description": "At most four links, such as Toegankelijkheid and Privacy.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "label": {
+                                                    "title": "Label",
+                                                    "type": "string",
+                                                    "description": "The words of the link."
                                                 },
                                                 "href": {
                                                     "title": "Link",
@@ -3123,6 +3155,14 @@
                                 "example": {
                                     "berichten": "messages"
                                 }
+                            },
+                            "phoneHeader": {
+                                "title": "Phone header",
+                                "type": "string",
+                                "description": "What the header shows in the own area on a phone. person shows the initials of the signed-in person and moves the sign-out link into the menu. Empty shows the sign-out link.",
+                                "enum": [
+                                    "person"
+                                ]
                             }
                         }
                     },

@@ -133,6 +133,16 @@
 					</li>
 				</ul>
 			</div>
+			<!-- On a phone with the person in the header, signing out sits at
+			     the end of the menu (mijn-phone-chrome). -->
+			<button
+				v-if="signOutLabel"
+				type="button"
+				class="utrecht-button utrecht-button--subtle pq-resident-menu__signout"
+				data-testid="site-resident-menu-signout"
+				@click="$emit('signout')">
+				{{ signOutLabel }}
+			</button>
 		</div>
 	</nav>
 </template>
@@ -161,11 +171,13 @@ export default {
 		card: { type: Object, default: null },
 		/** `{initials, name, subline}`: the person block, or null. */
 		person: { type: Object, default: null },
+		/** The sign-out button at the end of the menu on a phone, '' for none. */
+		signOutLabel: { type: String, default: '' },
 		/** The phone button's count text, `{count}` for the number ("2 nieuw"). */
 		newLabel: { type: String, default: '{count} nieuw' },
 	},
 
-	emits: ['navigate'],
+	emits: ['navigate', 'signout'],
 
 	data() {
 		return {
@@ -487,6 +499,16 @@ export default {
 	white-space: nowrap;
 }
 
+/* Signing out at the end of the menu: on a phone only, where the header
+   shows the person instead (mijn-phone-chrome). */
+.pq-resident-menu__signout {
+	display: none;
+	align-self: flex-start;
+	padding-inline: 12px;
+	color: var(--utrecht-link-color, LinkText);
+	text-decoration: underline;
+}
+
 /* A phone: the list folds behind the button until the resident opens it. */
 @media (max-width: 767px) {
 	.pq-resident-menu {
@@ -505,6 +527,10 @@ export default {
 	.pq-resident-menu__groups--open {
 		display: flex;
 		margin-block-end: 24px;
+	}
+
+	.pq-resident-menu__signout {
+		display: inline-flex;
 	}
 }
 </style>

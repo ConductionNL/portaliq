@@ -2263,7 +2263,15 @@
         "The button that hides the prompt for now, such as Niet nu.": "The button that hides the prompt for now, such as Niet nu.",
         "The button to the account page, such as Naar mijn account.": "The button to the account page, such as Naar mijn account.",
         "The note in the own area that asks for an e-mail address while the account has none. Set show to false to leave it out, or write its words in the tone of the portal.": "The note in the own area that asks for an e-mail address while the account has none. Set show to false to leave it out, or write its words in the tone of the portal.",
-        "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert.": "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert."
+        "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert.": "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert.",
+        "At most four links, such as Toegankelijkheid and Privacy.": "At most four links, such as Toegankelijkheid and Privacy.",
+        "Links": "Links",
+        "Phone header": "Phone header",
+        "Short footer on a phone": "Short footer on a phone",
+        "The one line under the logo, such as Telefoon: 010 123 45 67.": "The one line under the logo, such as Telefoon: 010 123 45 67.",
+        "The short footer the own area shows on a phone instead of the full one: the logo, one line of text and a few links. Empty keeps the full footer.": "The short footer the own area shows on a phone instead of the full one: the logo, one line of text and a few links. Empty keeps the full footer.",
+        "The words of the link.": "The words of the link.",
+        "What the header shows in the own area on a phone. person shows the initials of the signed-in person and moves the sign-out link into the menu. Empty shows the sign-out link.": "What the header shows in the own area on a phone. person shows the initials of the signed-in person and moves the sign-out link into the menu. Empty shows the sign-out link."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

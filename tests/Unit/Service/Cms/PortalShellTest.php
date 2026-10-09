@@ -112,6 +112,33 @@ class PortalShellTest extends TestCase {
 	}//end testTheProjectionServesTheContactPrompt()
 
 	/**
+	 * The own area's short phone footer and the person in its phone header
+	 * (mijn-phone-chrome).
+	 *
+	 * @return void
+	 */
+	public function testTheProjectionServesThePhoneChrome(): void {
+		$shell     = new PortalShell();
+		$projected = $shell->project(portal: [
+			'footer'       => ['compact' => [
+				'text'  => 'Telefoon: [telefoonnummer]',
+				'links' => [
+					['label' => 'Toegankelijkheid', 'href' => '/toegankelijkheid'],
+					['label' => 'Privacy', 'href' => '/privacy'],
+					['label' => '', 'href' => '/leeg'],
+				],
+			]],
+			'residentMenu' => ['phoneHeader' => 'person'],
+		]);
+
+		$this->assertSame('Telefoon: [telefoonnummer]', $projected['footer']['compact']['text']);
+		$this->assertCount(2, $projected['footer']['compact']['links']);
+		$this->assertSame('person', $projected['residentMenu']['phoneHeader']);
+		$this->assertNull($shell->project(portal: ['footer' => ['compact' => ['text' => '']]])['footer']['compact']);
+		$this->assertArrayNotHasKey('phoneHeader', $shell->project(portal: ['residentMenu' => ['phoneHeader' => 'avatar']])['residentMenu']);
+	}//end testTheProjectionServesThePhoneChrome()
+
+	/**
 	 * The items a portal leaves out of the menu reach the site by name, well
 	 * formed only and never `overview` (resident-menu-leave-out).
 	 *
@@ -245,6 +272,7 @@ class PortalShellTest extends TestCase {
 				'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example/27001']],
 				'cta'         => null,
 				'contact'     => null,
+				'compact'     => null,
 			],
 			$footer
 		);
@@ -252,7 +280,7 @@ class PortalShellTest extends TestCase {
 
 	public function testAPortalWithoutAFooterServesTheEmptyShape(): void {
 		$this->assertSame(
-			['description' => '', 'colophon' => '', 'socials' => [], 'legalLinks' => [], 'badges' => [], 'cta' => null, 'contact' => null],
+			['description' => '', 'colophon' => '', 'socials' => [], 'legalLinks' => [], 'badges' => [], 'cta' => null, 'contact' => null, 'compact' => null],
 			(new PortalShell())->footer(portal: ['footer' => 'broken'])
 		);
 	}//end testAPortalWithoutAFooterServesTheEmptyShape()

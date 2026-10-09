@@ -2315,7 +2315,15 @@ OC.L10N.register(
         "The button that hides the prompt for now, such as Niet nu.": "De knop die de vraag voor nu verbergt, zoals Niet nu.",
         "The button to the account page, such as Naar mijn account.": "De knop naar de accountpagina, zoals Naar mijn account.",
         "The note in the own area that asks for an e-mail address while the account has none. Set show to false to leave it out, or write its words in the tone of the portal.": "De melding in de eigen omgeving die om een e-mailadres vraagt zolang het account er geen heeft. Zet show op onwaar om hem weg te laten, of schrijf de woorden in de toon van het portaal.",
-        "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert.": "De zin van de vraag, zoals Voeg je e-mailadres toe, dan hoor je het als er iets verandert."
+        "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert.": "De zin van de vraag, zoals Voeg je e-mailadres toe, dan hoor je het als er iets verandert.",
+        "At most four links, such as Toegankelijkheid and Privacy.": "Hoogstens vier links, zoals Toegankelijkheid en Privacy.",
+        "Links": "Links",
+        "Phone header": "Kop op een telefoon",
+        "Short footer on a phone": "Korte voet op een telefoon",
+        "The one line under the logo, such as Telefoon: 010 123 45 67.": "De ene regel onder het logo, zoals Telefoon: 010 123 45 67.",
+        "The short footer the own area shows on a phone instead of the full one: the logo, one line of text and a few links. Empty keeps the full footer.": "De korte voet die de eigen omgeving op een telefoon toont in plaats van de volledige: het logo, een regel tekst en een paar links. Leeg houdt de volledige voet.",
+        "The words of the link.": "De woorden van de link.",
+        "What the header shows in the own area on a phone. person shows the initials of the signed-in person and moves the sign-out link into the menu. Empty shows the sign-out link.": "Wat de kop in de eigen omgeving op een telefoon toont. person toont de voorletters van de ingelogde persoon en zet de link om uit te loggen in het menu. Leeg toont de link om uit te loggen."
     },
     "nplurals=2; plural=(n != 1);"
 )
