@@ -146,8 +146,12 @@ class PortalCaseAccessGuard {
 		try {
 			// RBAC and multitenancy ON: this read is judged against the user's
 			// own rights, unlike every other read portaliq makes.
+			// The record is named through `ids`, OpenRegister's own key for
+			// "these objects". A filter on `id` is matched against the object's
+			// properties, which carry no `id`, so it found nothing for anyone
+			// and every reviewer and handler was refused.
 			$rows = $objectService->findAll(
-				config: ['filters' => ['register' => $register, 'schema' => $schema, 'id' => $id], 'limit' => 1, 'offset' => 0],
+				config: ['filters' => ['register' => $register, 'schema' => $schema], 'ids' => [$id], 'limit' => 1, 'offset' => 0],
 				_rbac: true,
 				_multitenancy: true
 			);

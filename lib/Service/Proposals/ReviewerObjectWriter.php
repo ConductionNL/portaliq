@@ -81,11 +81,15 @@ class ReviewerObjectWriter {
 		}
 
 		try {
-			$saved = $objectService->saveObject(
-				object: $values,
+			// A patch, not a save: the accepted values are a few properties,
+			// and saveObject() takes what it is handed as the whole object,
+			// so OpenRegister refused every acceptance over the record's own
+			// required properties (`subjectRef` on a portal case).
+			$saved = $objectService->patchObject(
+				objectId: $id,
+				data: $values,
 				register: $register,
 				schema: $schema,
-				uuid: $id,
 				// As the reviewer: their rights decide, and the audit trail
 				// names them.
 				_rbac: true,

@@ -87,6 +87,18 @@ class PortalCaseAccessGuardTest extends TestCase {
 
 	}//end testTheReadRunsWithRbacAndMultitenancyOn()
 
+	public function testTheReadNamesTheRecordThroughIds(): void {
+		$guard = $this->guard(allowed: true, rows: [['id' => 'zaak-1']]);
+
+		$guard->mayAsk(user: $this->user(), register: 'dossiq', schema: 'zaak', id: 'zaak-1');
+
+		// OpenRegister matches a `filters.id` against the object's own
+		// properties, where no `id` lives, so that read found nothing.
+		$this->assertSame(['zaak-1'], $this->readFlags['config']['ids']);
+		$this->assertSame(['register' => 'dossiq', 'schema' => 'zaak'], $this->readFlags['config']['filters']);
+
+	}//end testTheReadNamesTheRecordThroughIds()
+
 	public function testACaseTheUserCannotSeeIsARefusal(): void {
 		$guard = $this->guard(allowed: true, rows: []);
 
