@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.93.0"
+        "version": "0.94.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.93.0",
+                "version": "0.94.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2585,7 +2585,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.24.0",
+                "version": "0.25.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3152,8 +3152,33 @@
                     "logo": {
                         "title": "Logo",
                         "type": "string",
-                        "description": "URL or object reference for the site logo shown in the portal header.",
+                        "description": "The site logo shown in the portal header. Either a web address or media:<id>, an image from this portal's media library.",
                         "example": "/apps/portaliq/logo/open-tilburg.svg"
+                    },
+                    "favicon": {
+                        "title": "Favicon",
+                        "type": "string",
+                        "description": "The small image in the browser tab, as media:<id>: an image from this portal's media library. It must be a PNG, SVG or ICO file. Empty uses the logo.",
+                        "example": "media:2f6d1c1e-3a52-4c55-9b3b-6a4bd0e0c111"
+                    },
+                    "heroImage": {
+                        "title": "Hero image",
+                        "type": "string",
+                        "description": "The large image at the top of the home page, as media:<id>: an image from this portal's media library. A hero block with its own image keeps that image.",
+                        "example": "media:7c1e8f40-5d2b-4d77-a1d4-0f3e5d9b2222"
+                    },
+                    "organisationType": {
+                        "title": "Kind of organisation",
+                        "type": "string",
+                        "format": "uri",
+                        "description": "What kind of organisation runs this portal, as a concept of the TOOI list of organisation types. Picked from OpenRegister's concept register; free text is not accepted.",
+                        "example": "https://identifier.overheid.nl/tooi/def/ont/Waterschap"
+                    },
+                    "organisationTypeLabel": {
+                        "title": "Name of the kind of organisation",
+                        "type": "string",
+                        "description": "The name of the picked kind of organisation, stored with it, such as waterschap. The site uses it where it names the organisation: \"Van het waterschap\".",
+                        "example": "waterschap"
                     },
                     "headerVariant": {
                         "title": "Header shape",
