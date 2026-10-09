@@ -40,3 +40,4 @@ the title.
 - GIVEN De Wilgenboom with DigiD as its only way in
 - WHEN the sign-in page renders
 - THEN "Met de DigiD-app of met een sms-code" stands under "Ouder of verzorger", beside the DigiD mark
+- AND "Werkt u bij De Wilgenboom? Log in op de werkplek" reads as one line

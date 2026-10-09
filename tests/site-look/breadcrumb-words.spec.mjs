@@ -83,3 +83,10 @@ test('a lone sign-in card puts its line beside the mark, under the title', () =>
 		/\.pq-signin__card:only-child \.pq-signin__card-text\.utrecht-paragraph \{[^}]*--thematiq-website-text-muted/,
 	)
 })
+
+test('the line for staff keeps its link in the sentence', () => {
+	assert.match(
+		css,
+		/\.pq-site \.pq-signin__staff \.utrecht-link \{ display: inline; \}/,
+	)
+})
