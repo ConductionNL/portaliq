@@ -1561,6 +1561,9 @@ export default {
 				t: this.t,
 				storage: this.claimStorage(),
 			})
+			if (this.claimMessage?.claimed) {
+				await this.reloadSession()
+			}
 
 			if (this.session) {
 				await this.loadAccount()
@@ -1585,7 +1588,25 @@ export default {
 				text: this.t(codeOutcome({ ok: true }).text),
 			}
 			window.scrollTo?.({ top: 0 })
+			await this.reloadSession()
 			await this.loadAccount()
+		},
+
+		/**
+		 * Read the session again after a claim. A claim can move a person's
+		 * own account into the invitation's audience and hand back a new
+		 * bearer for it; the session read here then names that audience.
+		 *
+		 * @return {Promise<void>} Resolves when the session is read again.
+		 *
+		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+		 */
+		async reloadSession() {
+			const session = await fetchSession(authBaseFrom(resolveApiBase()))
+			if (session) {
+				this.session = session
+				this.watchIdle()
+			}
 		},
 
 		/**
