@@ -86,8 +86,27 @@ test.describe('site renderer — landing page form submission', () => {
 		// way to send an undeclared field, so driving this through the browser
 		// would prove the UI is well-behaved, not that the server refuses a
 		// hand-crafted body.
+		// Named through the form's own action, as the site's FormBlock does
+		// (`?actionId=submit-{formId}`, 9b339884). Without it the server refuses
+		// with action_required as soon as a second active form writes this
+		// schema, which the demo data that demo-data-setup-step.spec.ts loads
+		// brings with it.
+		const forms = await request.get(
+			`${BASE}/index.php/apps/openregister/api/objects/${REGISTER}/form?externalReference=e2e-fixture-1&_limit=5`,
+			{
+				headers: {
+					Authorization: `Basic ${Buffer.from('admin:admin').toString('base64')}`,
+					'OCS-APIRequest': 'true',
+				},
+			},
+		)
+		expect(forms.ok()).toBeTruthy()
+		const fixture = ((await forms.json()).results ?? []).find(
+			(row: Record<string, unknown>) => row.externalReference === 'e2e-fixture-1',
+		)
+		expect(fixture, 'seed-cms.sh publishes the e2e fixture form').toBeTruthy()
 		const response = await request.post(
-			`${PORTAL_API}/collections/${REGISTER}/${SUBMISSION_SCHEMA}`,
+			`${PORTAL_API}/collections/${REGISTER}/${SUBMISSION_SCHEMA}?actionId=submit-${fixture.id}`,
 			{
 				data: {
 					name: 'API test',
