@@ -104,6 +104,19 @@ test('the organisation messages stand among the conversations, newest first; a r
 	assert.equal(card.isNew, true)
 })
 
+test('a receipt reads its moment in words, never a raw stamp', () => {
+	const card = noticeCard(
+		{
+			subject: 'Bevestiging van ontvangst',
+			body: 'Wij hebben uw indiening ontvangen op 2026-10-09T00:47:09Z (referentie X).',
+		},
+		'De Wilgenboom',
+		'nl',
+	)
+	assert.doesNotMatch(card.preview, /\d{4}-\d{2}-\d{2}T/)
+	assert.match(card.preview, /ontvangen op 9 oktober 2026, \d{2}\.47 uur/)
+})
+
 test('a message says when it came in the board words', () => {
 	const now = new Date(2026, 9, 5, 12, 0)
 	assert.equal(whenWords('2026-10-05T08:40:00', now, 'nl', ct), 'vandaag 8.40 uur')

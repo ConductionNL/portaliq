@@ -370,19 +370,54 @@ export function whenWords(value, today, lang, tr) {
  *
  * @param {object} message An inbox message.
  * @param {string} sender The organisation's name.
+ * @param {string} [lang] `nl` or `en`, for moments in the text.
  * @return {{title: string, who: string, initials: string, when: string, preview: string, isNew: boolean}}
  * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-page-reads-as-the-boards
  */
-export function noticeCard(message, sender) {
+export function noticeCard(message, sender, lang = 'nl') {
 	const who = String(sender || '').trim()
 	return {
 		title: String(message?.subject || '').trim(),
 		who,
 		initials: initialsOf(who).slice(0, 1),
 		when: String(message?.receivedAt || ''),
-		preview: String(message?.body || '').trim(),
+		preview: withoutStamps(String(message?.body || '').trim(), lang),
 		isNew: message?.read !== true,
 	}
+}
+
+/** A moment as a stamp in a text: `2026-10-09T00:47:09+00:00`. */
+const STAMP =
+	/\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?\b/g
+
+/**
+ * A text with every moment stamp in it written in words: a receipt's
+ * "ontvangen op 2026-10-09T00:47:09+00:00" reads "ontvangen op 9 oktober
+ * 2026, 02.47 uur" (mijn-messages-follow-the-boards).
+ *
+ * @param {string} text The text.
+ * @param {string} lang `nl` or `en`.
+ * @return {string}
+ * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-page-reads-as-the-boards
+ */
+export function withoutStamps(text, lang = 'nl') {
+	return String(text || '').replace(STAMP, (stamp) => {
+		const date = new Date(stamp)
+		if (Number.isNaN(date.getTime())) {
+			return stamp
+		}
+		const english = lang === 'en'
+		const day = new Intl.DateTimeFormat(english ? 'en-GB' : 'nl-NL', {
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric',
+		}).format(date)
+		const hours = String(date.getHours()).padStart(2, '0')
+		const minutes = String(date.getMinutes()).padStart(2, '0')
+		return english
+			? `${day}, ${hours}:${minutes}`
+			: `${day}, ${hours}.${minutes} uur`
+	})
 }
 
 /**

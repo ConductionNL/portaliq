@@ -734,7 +734,7 @@ export default {
 		 * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-page-reads-as-the-boards
 		 */
 		noticeOf(message) {
-			return noticeCard(message, this.portal?.title || '')
+			return noticeCard(message, this.portal?.title || '', this.lang)
 		},
 
 		/**
@@ -862,7 +862,7 @@ export default {
 }
 
 /* The organisation's own message: its initial on the brand colour. */
-.pq-thread__avatar--organisation {
+.pq-thread__avatar.pq-thread__avatar--organisation {
 	background: var(--nldesign-color-primary, CanvasText);
 	color: var(--nldesign-color-primary-text, Canvas);
 }
