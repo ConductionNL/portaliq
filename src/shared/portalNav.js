@@ -24,7 +24,14 @@ export const NAV_KEYS = {
  * Sections that are never the page a signed-in resident lands on: they are
  * there to visit, not to open with.
  */
-const NEVER_DEFAULT = ['inbox', 'access', 'details', 'contacts', 'samenwerken', 'account']
+const NEVER_DEFAULT = [
+	'inbox',
+	'access',
+	'details',
+	'contacts',
+	'samenwerken',
+	'account',
+]
 
 /**
  * The in-site route every signed-in section lives under. A CMS page with this
@@ -167,7 +174,10 @@ export function shellSections({ session, contributions, threads, news }) {
 		news: Array.isArray(news) && news.length > 0,
 		access: Boolean(session && contributions),
 		cases: contributions?.cases?.enabled === true,
-		pages: session && Array.isArray(contributions?.areaPages) ? contributions.areaPages : [],
+		pages:
+			session && Array.isArray(contributions?.areaPages)
+				? contributions.areaPages
+				: [],
 		themes: Array.isArray(contributions?.themes) ? contributions.themes : [],
 	}
 }

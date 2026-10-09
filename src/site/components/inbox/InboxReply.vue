@@ -21,13 +21,22 @@
 			{{ words.reply }}
 		</button>
 		<form v-else class="pq-inbox-reply__form" novalidate @submit.prevent="send">
-			<h4 :id="`${base}-heading`" ref="heading" class="utrecht-heading-4" tabindex="-1">
+			<h4
+				:id="`${base}-heading`"
+				ref="heading"
+				class="utrecht-heading-4"
+				tabindex="-1">
 				{{ words.replyTo.split('{subject}').join(message.subject || '') }}
 			</h4>
-			<div v-for="question in questions" :key="question.name" class="pq-inbox-reply__question">
-				<label class="utrecht-form-label" :for="`${base}-${question.name}`">{{
-					question.label
-				}}</label>
+			<div
+				v-for="question in questions"
+				:key="question.name"
+				class="pq-inbox-reply__question">
+				<label
+					class="utrecht-form-label"
+					:for="`${base}-${question.name}`"
+					>{{ question.label }}</label
+				>
 				<textarea
 					v-if="question.long"
 					:id="`${base}-${question.name}`"
@@ -42,11 +51,17 @@
 					class="utrecht-textbox"
 					type="text"
 					:aria-invalid="errors[question.name] ? 'true' : 'false'" />
-				<p v-if="errors[question.name]" class="utrecht-form-field-error-message" role="alert">
+				<p
+					v-if="errors[question.name]"
+					class="utrecht-form-field-error-message"
+					role="alert">
 					{{ errors[question.name] }}
 				</p>
 			</div>
-			<div v-for="field in fileFieldsOf" :key="field.name" class="pq-inbox-reply__question">
+			<div
+				v-for="field in fileFieldsOf"
+				:key="field.name"
+				class="pq-inbox-reply__question">
 				<p :id="`${base}-${field.name}-label`" class="utrecht-form-label">
 					{{ field.label }}
 				</p>
@@ -61,7 +76,11 @@
 					:disabled="sending"
 					@pick="files = { ...files, [field.name]: $event }" />
 			</div>
-			<p v-if="failed" class="utrecht-paragraph" role="alert" data-testid="inbox-reply-failed">
+			<p
+				v-if="failed"
+				class="utrecht-paragraph"
+				role="alert"
+				data-testid="inbox-reply-failed">
 				{{ words.couldNot }}
 			</p>
 			<div class="pq-inbox-reply__actions">
@@ -114,7 +133,8 @@ const STRINGS = {
 		send: 'Versturen',
 		cancel: 'Annuleren',
 		sent: 'Uw antwoord is verstuurd.',
-		partial: 'Uw antwoord is verstuurd, maar {name} kon niet worden toegevoegd. Voeg het opnieuw toe bij de zaak.',
+		partial:
+			'Uw antwoord is verstuurd, maar {name} kon niet worden toegevoegd. Voeg het opnieuw toe bij de zaak.',
 	},
 	en: {
 		reply: 'Reply',
@@ -125,7 +145,8 @@ const STRINGS = {
 		send: 'Send',
 		cancel: 'Cancel',
 		sent: 'Your reply has been sent.',
-		partial: 'Your reply has been sent, but {name} could not be added. Add it again from the case.',
+		partial:
+			'Your reply has been sent, but {name} could not be added. Add it again from the case.',
 	},
 }
 
@@ -149,7 +170,15 @@ export default {
 	},
 
 	data() {
-		return { open: false, sending: false, failed: false, notice: '', values: {}, files: {}, errors: {} }
+		return {
+			open: false,
+			sending: false,
+			failed: false,
+			notice: '',
+			values: {},
+			files: {},
+			errors: {},
+		}
 	},
 
 	computed: {
@@ -174,7 +203,9 @@ export default {
 		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
 		 */
 		words() {
-			return STRINGS[String(this.locale).toLowerCase().startsWith('en') ? 'en' : 'nl']
+			return STRINGS[
+				String(this.locale).toLowerCase().startsWith('en') ? 'en' : 'nl'
+			]
 		},
 
 		/**
@@ -215,7 +246,9 @@ export default {
 		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
 		 */
 		limitText(field) {
-			return field.maxSizeMb > 0 ? this.words.largest.split('{size}').join(String(field.maxSizeMb)) : ''
+			return field.maxSizeMb > 0
+				? this.words.largest.split('{size}').join(String(field.maxSizeMb))
+				: ''
 		},
 
 		/**
@@ -229,7 +262,13 @@ export default {
 			this.sending = true
 			this.failed = false
 			this.errors = {}
-			const result = await sendReply(this.api, this.message, this.reply, this.values, this.files)
+			const result = await sendReply(
+				this.api,
+				this.message,
+				this.reply,
+				this.values,
+				this.files,
+			)
 			this.sending = false
 			if (!result.ok) {
 				this.errors = result.errors

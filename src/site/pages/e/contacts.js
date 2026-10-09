@@ -55,7 +55,8 @@ export function initialsOf(name) {
 	if (words.length === 0) {
 		return '?'
 	}
-	const letters = words.length === 1 ? [words[0]] : [words[0], words[words.length - 1]]
+	const letters =
+		words.length === 1 ? [words[0]] : [words[0], words[words.length - 1]]
 	return letters.map((word) => word.charAt(0).toUpperCase()).join('')
 }
 
@@ -71,7 +72,8 @@ export function initialsOf(name) {
 export function inviteProblem(answer) {
 	const reasons = {
 		invalid: 'Fill in a valid e-mail address.',
-		duplicate: 'You have already invited this person, or you are already connected.',
+		duplicate:
+			'You have already invited this person, or you are already connected.',
 		limit: 'You sent the most invitations for today. Try again tomorrow.',
 	}
 	return reasons[answer?.error] || 'That did not work. Try again later.'

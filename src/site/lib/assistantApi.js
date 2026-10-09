@@ -52,12 +52,16 @@ export async function askAssistant(apiBase, ask, fetcher) {
 	const body = await response.json()
 	const sources = Array.isArray(body.sources) ? body.sources : []
 	// An answer without a source is never shown, whatever the server sent.
-	const answered = body.status === 'answered' && typeof body.answer === 'string' && sources.length > 0
+	const answered =
+		body.status === 'answered'
+		&& typeof body.answer === 'string'
+		&& sources.length > 0
 	return {
 		status: answered ? 'answered' : 'abstained',
 		answer: answered ? body.answer : null,
 		sources: answered ? sources : [],
 		removed: body.removed === true,
-		conversationId: typeof body.conversationId === 'string' ? body.conversationId : '',
+		conversationId:
+			typeof body.conversationId === 'string' ? body.conversationId : '',
 	}
 }

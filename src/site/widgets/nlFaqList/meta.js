@@ -18,9 +18,21 @@ export const metaOf = {
 	synonyms: ['faq', 'vragen', 'veelgestelde vragen', 'antwoorden', 'help'],
 	fields: [
 		{ name: 'heading', kind: 'string', label: 'Kop' },
-		{ name: 'topic', kind: 'string', label: 'Onderwerp (leeg: de vragen van deze pagina)' },
-		{ name: 'all', kind: 'boolean', label: 'Alle vragen, per onderwerp gegroepeerd' },
-		{ name: 'moreLabel', kind: 'string', label: 'Tekst van de link naar alle vragen' },
+		{
+			name: 'topic',
+			kind: 'string',
+			label: 'Onderwerp (leeg: de vragen van deze pagina)',
+		},
+		{
+			name: 'all',
+			kind: 'boolean',
+			label: 'Alle vragen, per onderwerp gegroepeerd',
+		},
+		{
+			name: 'moreLabel',
+			kind: 'string',
+			label: 'Tekst van de link naar alle vragen',
+		},
 		{ name: 'moreHref', kind: 'string', label: 'Adres van die link' },
 	],
 	defaultSize: { gridWidth: 8, gridHeight: 4 },

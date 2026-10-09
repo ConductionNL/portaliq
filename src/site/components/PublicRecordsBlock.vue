@@ -56,7 +56,10 @@
 				data-testid="public-record-table">
 				<thead>
 					<tr>
-						<th v-for="column in record.columns" :key="column.key" scope="col">
+						<th
+							v-for="column in record.columns"
+							:key="column.key"
+							scope="col">
 							{{ column.label }}
 						</th>
 					</tr>
@@ -64,9 +67,11 @@
 				<tbody>
 					<tr v-for="(row, index) in record.rows" :key="index">
 						<td v-for="column in record.columns" :key="column.key">
-							<a v-if="column.key === linkKey && row.subjectUrl" :href="row.subjectUrl">{{
-								row[column.key]
-							}}</a>
+							<a
+								v-if="column.key === linkKey && row.subjectUrl"
+								:href="row.subjectUrl"
+								>{{ row[column.key] }}</a
+							>
 							<template v-else>
 								{{ row[column.key] }}
 							</template>
@@ -74,11 +79,16 @@
 					</tr>
 				</tbody>
 			</table>
-			<p v-if="record.note" class="utrecht-paragraph" data-testid="public-record-note">
+			<p
+				v-if="record.note"
+				class="utrecht-paragraph"
+				data-testid="public-record-note">
 				{{ record.note }}
 			</p>
 			<p class="utrecht-paragraph">
-				<a :href="backHref" data-testid="public-record-back">{{ backLabel }}</a>
+				<a :href="backHref" data-testid="public-record-back">{{
+					backLabel
+				}}</a>
 			</p>
 		</article>
 		<div v-else data-testid="public-records-list">
@@ -177,7 +187,9 @@ export default {
 				return this.recordParam
 			}
 
-			return typeof window === 'undefined' ? '' : recordIdFrom(window.location.search)
+			return typeof window === 'undefined'
+				? ''
+				: recordIdFrom(window.location.search)
 		},
 
 		/**
@@ -218,8 +230,10 @@ export default {
 			this.state = 'loading'
 			try {
 				const api = this.apiOverride || {
-					list: (app, list) => fetchRecordList(resolveApiBase(), app, list),
-					record: (app, list, id) => fetchRecord(resolveApiBase(), app, list, id),
+					list: (app, list) =>
+						fetchRecordList(resolveApiBase(), app, list),
+					record: (app, list, id) =>
+						fetchRecord(resolveApiBase(), app, list, id),
 				}
 				const entries = await api.list(this.app, this.list)
 				if (entries === null) {
@@ -229,7 +243,11 @@ export default {
 
 				this.entries = entries
 				if (this.recordId) {
-					this.record = await api.record(this.app, this.list, this.recordId)
+					this.record = await api.record(
+						this.app,
+						this.list,
+						this.recordId,
+					)
 					if (this.record === null) {
 						this.state = 'gone'
 						return

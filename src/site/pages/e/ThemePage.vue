@@ -22,10 +22,7 @@
 		<p v-if="loading" class="utrecht-paragraph" role="status">
 			{{ t('Loading…') }}
 		</p>
-		<p
-			v-else-if="isEmpty"
-			class="utrecht-paragraph"
-			data-testid="theme-empty">
+		<p v-else-if="isEmpty" class="utrecht-paragraph" data-testid="theme-empty">
 			{{ t('Nothing for you at {theme} right now.', { theme: theme.title }) }}
 		</p>
 		<p
@@ -51,7 +48,9 @@
 						class="utrecht-unordered-list__item"
 						data-testid="theme-task">
 						<strong>{{ task.title }}</strong>
-						<span v-if="task.due">{{ t('Due {date}', { date: task.due }) }}</span>
+						<span v-if="task.due">{{
+							t('Due {date}', { date: task.due })
+						}}</span>
 					</li>
 				</ul>
 				<button
@@ -71,9 +70,18 @@
 					{{ t('What can I arrange') }}
 				</h2>
 				<ul class="pq-theme__cards">
-					<li v-for="entry in offered" :key="entry.action.id" class="pq-theme__card">
-						<strong>{{ entry.action.label || entry.action.title || entry.action.id }}</strong>
-						<span v-if="entry.action.description">{{ entry.action.description }}</span>
+					<li
+						v-for="entry in offered"
+						:key="entry.action.id"
+						class="pq-theme__card">
+						<strong>{{
+							entry.action.label
+							|| entry.action.title
+							|| entry.action.id
+						}}</strong>
+						<span v-if="entry.action.description">{{
+							entry.action.description
+						}}</span>
 					</li>
 				</ul>
 			</section>
@@ -83,8 +91,14 @@
 				:key="`${product.app}:${product.collection.id}`"
 				:aria-labelledby="`pq-theme-products-${product.collection.id}`"
 				data-testid="theme-products">
-				<h2 :id="`pq-theme-products-${product.collection.id}`" class="utrecht-heading-2">
-					{{ t('My {products}', { products: theme.productsLabel || t('products') }) }}
+				<h2
+					:id="`pq-theme-products-${product.collection.id}`"
+					class="utrecht-heading-2">
+					{{
+						t('My {products}', {
+							products: theme.productsLabel || t('products'),
+						})
+					}}
 				</h2>
 				<p class="utrecht-paragraph" data-testid="theme-products-count">
 					{{ countLine(product) }}
@@ -96,9 +110,13 @@
 						class="utrecht-unordered-list__item"
 						data-testid="theme-product">
 						<strong>{{ item.view.title }}</strong>
-						<span class="pq-theme__tag" :data-state="item.view.state">{{ item.view.tag }}</span>
+						<span class="pq-theme__tag" :data-state="item.view.state">{{
+							item.view.tag
+						}}</span>
 						<span v-if="item.view.meta">{{ item.view.meta }}</span>
-						<span v-if="item.view.validUntil">{{ item.view.validUntil }}</span>
+						<span v-if="item.view.validUntil">{{
+							item.view.validUntil
+						}}</span>
 						<span class="pq-theme__buttons">
 							<button
 								v-for="action in item.actions"
@@ -106,7 +124,13 @@
 								type="button"
 								class="utrecht-button utrecht-button--secondary-action"
 								data-testid="theme-product-action"
-								@click="editing = { id: item.view.id, action, row: item.row }">
+								@click="
+									editing = {
+										id: item.view.id,
+										action,
+										row: item.row,
+									}
+								">
 								{{ action.label || action.title || action.id }}
 							</button>
 						</span>
@@ -129,7 +153,9 @@
 					{{
 						showAll
 							? t('Show fewer')
-							: t('View all {products}', { products: theme.productsLabel || t('products') })
+							: t('View all {products}', {
+									products: theme.productsLabel || t('products'),
+								})
 					}}
 				</button>
 			</section>
@@ -140,7 +166,15 @@
 <script>
 import ProductUpdateForm from './ProductUpdateForm.vue'
 import { longDate, readerLocale } from './format.js'
-import { countLine, gather, offeredActions, PRODUCT_LIMIT, productView, rowActions, sortedProducts } from './themes.js'
+import {
+	countLine,
+	gather,
+	offeredActions,
+	PRODUCT_LIMIT,
+	productView,
+	rowActions,
+	sortedProducts,
+} from './themes.js'
 
 /**
  * @spec openspec/changes/life-domain-theme-pages/tasks.md#t03
@@ -183,7 +217,14 @@ export default {
 		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t03
 		 */
 		theme() {
-			return this.entry.theme || { slug: '', title: this.entry.label || '', intro: '', productsLabel: '' }
+			return (
+				this.entry.theme || {
+					slug: '',
+					title: this.entry.label || '',
+					intro: '',
+					productsLabel: '',
+				}
+			)
 		},
 
 		/**
@@ -200,7 +241,10 @@ export default {
 		 */
 		products() {
 			return this.gathered.products
-				.map((product) => ({ ...product, rows: this.rows[this.keyOf(product)] || [] }))
+				.map((product) => ({
+					...product,
+					rows: this.rows[this.keyOf(product)] || [],
+				}))
 				.filter((product) => product.rows.length > 0)
 		},
 
@@ -212,7 +256,12 @@ export default {
 			return this.gathered.tasks.flatMap((task) =>
 				(this.rows[this.keyOf(task)] || []).map((row, index) => ({
 					key: `${this.keyOf(task)}:${row.id ?? index}`,
-					title: String(row[task.collection.titleFields?.[0] ?? 'title'] ?? row.title ?? row.name ?? ''),
+					title: String(
+						row[task.collection.titleFields?.[0] ?? 'title']
+							?? row.title
+							?? row.name
+							?? '',
+					),
 					due: this.dateOf(row[task.collection.dueField]),
 				})),
 			)
@@ -231,7 +280,11 @@ export default {
 		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t03
 		 */
 		isEmpty() {
-			return this.tasks.length === 0 && this.offered.length === 0 && this.products.length === 0
+			return (
+				this.tasks.length === 0
+				&& this.offered.length === 0
+				&& this.products.length === 0
+			)
 		},
 
 		/**
@@ -273,7 +326,9 @@ export default {
 			const rows = {}
 			await Promise.all(
 				wanted.map(async (entry) => {
-					const answer = await this.api.fetchCollection(entry.collection, { orNull: true })
+					const answer = await this.api.fetchCollection(entry.collection, {
+						orNull: true,
+					})
 					rows[this.keyOf(entry)] = Array.isArray(answer) ? answer : []
 				}),
 			)
@@ -305,7 +360,19 @@ export default {
 		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t05
 		 */
 		hasMore(product) {
-			return product.rows.length > PRODUCT_LIMIT || sortedProducts(product.rows, product.collection, this.day).some((row) => productView(row, product.collection, this.day, (d) => d, this.t).state === 'expired')
+			return (
+				product.rows.length > PRODUCT_LIMIT
+				|| sortedProducts(product.rows, product.collection, this.day).some(
+					(row) =>
+						productView(
+							row,
+							product.collection,
+							this.day,
+							(d) => d,
+							this.t,
+						).state === 'expired',
+				)
+			)
 		},
 
 		/**
@@ -320,7 +387,13 @@ export default {
 			const list = this.showAll ? sorted : sorted.slice(0, PRODUCT_LIMIT)
 			return list.map((row) => ({
 				row,
-				view: productView(row, product.collection, this.day, (date) => this.dateOf(date), this.t),
+				view: productView(
+					row,
+					product.collection,
+					this.day,
+					(date) => this.dateOf(date),
+					this.t,
+				),
 				actions: rowActions(row, product, this.gathered.actions),
 			}))
 		},
@@ -335,8 +408,13 @@ export default {
 		async saved(product) {
 			this.editing = null
 			this.notice = 'Your change is saved.'
-			const answer = await this.api.fetchCollection(product.collection, { orNull: true })
-			this.rows = { ...this.rows, [this.keyOf(product)]: Array.isArray(answer) ? answer : [] }
+			const answer = await this.api.fetchCollection(product.collection, {
+				orNull: true,
+			})
+			this.rows = {
+				...this.rows,
+				[this.keyOf(product)]: Array.isArray(answer) ? answer : [],
+			}
 		},
 	},
 }
@@ -368,12 +446,14 @@ export default {
 	flex-direction: column;
 	align-items: flex-start;
 	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 }
 
 .pq-theme__tag {
 	padding: 0 var(--utrecht-space-inline-sm, 0.5rem);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 	border-radius: 999px;
 }
 

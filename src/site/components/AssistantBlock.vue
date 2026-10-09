@@ -59,7 +59,9 @@
 				data-testid="assistant-failed">
 				{{ words.failed }}
 			</p>
-			<div v-if="reply && reply.status === 'answered'" data-testid="assistant-answer">
+			<div
+				v-if="reply && reply.status === 'answered'"
+				data-testid="assistant-answer">
 				<p class="utrecht-paragraph">
 					{{ reply.answer }}
 				</p>
@@ -178,7 +180,9 @@ export default {
 			this.failed = false
 			this.reply = null
 			try {
-				const send = this.askOverride || ((body) => askAssistant(resolveApiBase(), body))
+				const send =
+					this.askOverride
+					|| ((body) => askAssistant(resolveApiBase(), body))
 				const reply = await send({
 					portal: this.portal,
 					question,
@@ -188,7 +192,8 @@ export default {
 				this.reply = reply
 				this.removed = reply.removed === true
 				this.conversationId = reply.conversationId || this.conversationId
-				const client = typeof window !== 'undefined' ? window.portaliqTraffic : null
+				const client =
+					typeof window !== 'undefined' ? window.portaliqTraffic : null
 				if (client && typeof client.track === 'function') {
 					// A count only: the question and the answer never go with it.
 					client.track('assistant_asked', {})

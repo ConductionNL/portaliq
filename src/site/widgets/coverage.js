@@ -1040,7 +1040,7 @@ export const SITE_COMPOSITIONS = [
 	{
 		key: 'nlFaqList',
 		composes: ['Accordion', 'Heading', 'Link'],
-		why: 'The portal\'s frequently asked questions, written once and shown on the pages they belong to.',
+		why: "The portal's frequently asked questions, written once and shown on the pages they belong to.",
 	},
 	{
 		key: 'nlProductFinder',

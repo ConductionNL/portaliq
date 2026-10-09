@@ -46,7 +46,10 @@
 			{{ words.missing }}
 		</p>
 
-		<div v-else-if="state === 'sent'" role="status" data-testid="contact-form-sent">
+		<div
+			v-else-if="state === 'sent'"
+			role="status"
+			data-testid="contact-form-sent">
 			<p class="utrecht-paragraph">
 				{{ words.sent }}
 			</p>

@@ -27,7 +27,11 @@
 			v-else-if="state === 'signIn'"
 			class="utrecht-paragraph"
 			data-testid="intake-form-sign-in">
-			{{ feeAmountText ? text.signInFee.split('{amount}').join(feeAmountText) : signInLabel }}
+			{{
+				feeAmountText
+					? text.signInFee.split('{amount}').join(feeAmountText)
+					: signInLabel
+			}}
 		</p>
 
 		<div v-else-if="state === 'external'" data-testid="intake-form-external">
@@ -217,7 +221,9 @@
 					:id="elementId(field)"
 					v-model="values[field.name]"
 					:houseLetter="field.houseLetter === true"
-					:lookup="render.settings && render.settings.addressLookup === true"
+					:lookup="
+						render.settings && render.settings.addressLookup === true
+					"
 					:base="apiBase"
 					:invalid="!!errors[field.name]"
 					:testid="`intake-field-${field.name}`" />
@@ -381,7 +387,11 @@ import {
 } from '../lib/intakeApi.js'
 import { addressLine, addressProblem } from './forms/address.js'
 import { calculatedValues } from './forms/calculate.js'
-import { confirmationView, introView, missingStatements } from './forms/confirmation.js'
+import {
+	confirmationView,
+	introView,
+	missingStatements,
+} from './forms/confirmation.js'
 import {
 	DUTCH,
 	explainsOptional,
@@ -583,7 +593,9 @@ export default {
 		feeAmountText() {
 			return feeAmount(
 				this.render.fee,
-				typeof document === 'undefined' ? 'nl' : document.documentElement?.lang,
+				typeof document === 'undefined'
+					? 'nl'
+					: document.documentElement?.lang,
 			)
 		},
 
@@ -822,7 +834,9 @@ export default {
 		calculated(now) {
 			for (const field of this.fields) {
 				if (field.calculate) {
-					this.values[field.name] = Object.hasOwn(now, field.name) ? String(now[field.name]) : ''
+					this.values[field.name] = Object.hasOwn(now, field.name)
+						? String(now[field.name])
+						: ''
 				}
 			}
 		},
@@ -1072,12 +1086,17 @@ export default {
 			for (const field of addresses) {
 				const block = this.values[field.name]
 				const problem = addressProblem(block)
-				if (problem !== '' && (field.required === true || addressLine(block) !== '')) {
+				if (
+					problem !== ''
+					&& (field.required === true || addressLine(block) !== '')
+				) {
 					errors[field.name] = problem
 				}
 			}
 			for (const field of asked) {
-				const address = String(this.values[field.name] ?? '').trim().toLowerCase()
+				const address = String(this.values[field.name] ?? '')
+					.trim()
+					.toLowerCase()
 				if (
 					field.type === 'email'
 					&& field.verify === true
@@ -1085,7 +1104,9 @@ export default {
 					&& !errors[field.name]
 					&& !this.verifiedEmails[address]
 				) {
-					errors[field.name] = identityWords(document.documentElement?.lang).emailVerifyFirst
+					errors[field.name] = identityWords(
+						document.documentElement?.lang,
+					).emailVerifyFirst
 				}
 			}
 			return errors
@@ -1100,12 +1121,17 @@ export default {
 		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
 		 */
 		onVerified(verified) {
-			const address = String(verified?.address ?? '').trim().toLowerCase()
+			const address = String(verified?.address ?? '')
+				.trim()
+				.toLowerCase()
 			if (address === '') {
 				return
 			}
 			if (verified.proof) {
-				this.verifiedEmails = { ...this.verifiedEmails, [address]: verified.proof }
+				this.verifiedEmails = {
+					...this.verifiedEmails,
+					[address]: verified.proof,
+				}
 				return
 			}
 			const rest = { ...this.verifiedEmails }
@@ -1134,7 +1160,10 @@ export default {
 			return plainFieldErrors(
 				this.fields
 					.filter((field) => names.includes(field.name))
-					.filter((field) => field.type !== 'group' && !this.isComputedField(field))
+					.filter(
+						(field) =>
+							field.type !== 'group' && !this.isComputedField(field),
+					)
 					.map((field) => ({
 						name: field.name,
 						label: field.label || field.name,

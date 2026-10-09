@@ -37,9 +37,21 @@ export function contactsApi(api) {
 		async contactAction(action, args = {}) {
 			const id = encodeURIComponent(args.id || '')
 			const calls = {
-				invite: ['POST', '/contacts/invite', { email: args.email, message: args.message }],
-				accept: ['POST', '/contacts/accept-invitation', { token: args.token }],
-				respond: ['POST', `/contacts/${id}/respond`, { accept: args.accept === true }],
+				invite: [
+					'POST',
+					'/contacts/invite',
+					{ email: args.email, message: args.message },
+				],
+				accept: [
+					'POST',
+					'/contacts/accept-invitation',
+					{ token: args.token },
+				],
+				respond: [
+					'POST',
+					`/contacts/${id}/respond`,
+					{ accept: args.accept === true },
+				],
 				resend: ['POST', `/contacts/${id}/resend`, {}],
 				withdraw: ['POST', `/contacts/${id}/withdraw`, {}],
 				remove: ['DELETE', `/contacts/${id}`, null],
@@ -49,7 +61,11 @@ export function contactsApi(api) {
 				return { ok: false, status: 0, error: 'unknown' }
 			}
 			const answer = await api.request(call[0], call[1], call[2])
-			return { ok: answer.ok, status: answer.status, error: String(answer.json?.error || '') }
+			return {
+				ok: answer.ok,
+				status: answer.status,
+				error: String(answer.json?.error || ''),
+			}
 		},
 	}
 }
@@ -81,7 +97,10 @@ export function plansApi(api) {
 		 * @return {Promise<object|null>} The plan.
 		 */
 		async fetchPlan(id) {
-			const answer = await api.request('GET', `/plans/${encodeURIComponent(id)}`)
+			const answer = await api.request(
+				'GET',
+				`/plans/${encodeURIComponent(id)}`,
+			)
 			return answer.ok ? answer.json : null
 		},
 
@@ -92,7 +111,9 @@ export function plansApi(api) {
 		 */
 		async fetchPlanTemplates() {
 			const answer = await api.request('GET', '/plans/templates')
-			return answer.ok && Array.isArray(answer.json?.templates) ? answer.json.templates : []
+			return answer.ok && Array.isArray(answer.json?.templates)
+				? answer.json.templates
+				: []
 		},
 
 		/**
@@ -108,17 +129,34 @@ export function plansApi(api) {
 				start: ['POST', '/plans', args.data || {}],
 				update: ['PATCH', `/plans/${id}`, args.data || {}],
 				delete: ['DELETE', `/plans/${id}`, null],
-				addParticipants: ['POST', `/plans/${id}/participants`, args.data || {}],
-				removeParticipant: ['DELETE', `/plans/${id}/participants/${encodeURIComponent(args.ref || '')}`, null],
+				addParticipants: [
+					'POST',
+					`/plans/${id}/participants`,
+					args.data || {},
+				],
+				removeParticipant: [
+					'DELETE',
+					`/plans/${id}/participants/${encodeURIComponent(args.ref || '')}`,
+					null,
+				],
 				addAction: ['POST', `/plans/${id}/actions`, args.data || {}],
-				updateAction: ['PATCH', `/plans/${id}/actions/${encodeURIComponent(args.actionId || '')}`, args.data || {}],
+				updateAction: [
+					'PATCH',
+					`/plans/${id}/actions/${encodeURIComponent(args.actionId || '')}`,
+					args.data || {},
+				],
 			}
 			const call = calls[action]
 			if (!call) {
 				return { ok: false, status: 0, error: 'unknown', id: '' }
 			}
 			const answer = await api.request(call[0], call[1], call[2])
-			return { ok: answer.ok, status: answer.status, error: String(answer.json?.error || ''), id: String(answer.json?.id || '') }
+			return {
+				ok: answer.ok,
+				status: answer.status,
+				error: String(answer.json?.error || ''),
+				id: String(answer.json?.id || ''),
+			}
 		},
 
 		/**
@@ -129,7 +167,12 @@ export function plansApi(api) {
 		 * @return {Promise<{ok: boolean, status: number}>} The outcome.
 		 */
 		async downloadPlanPdf(id, name = 'plan') {
-			const answer = await api.request('GET', `/plans/${encodeURIComponent(id)}/pdf`, null, true)
+			const answer = await api.request(
+				'GET',
+				`/plans/${encodeURIComponent(id)}/pdf`,
+				null,
+				true,
+			)
 			if (!answer.ok) {
 				return { ok: false, status: answer.status }
 			}

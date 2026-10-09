@@ -28,9 +28,11 @@
 			v-for="input in shownInputs"
 			:key="input.name"
 			class="pq-rowaction__input">
-			<label class="utrecht-form-label" :for="`rowaction-input-${input.name}`">{{
-				input.label
-			}}</label>
+			<label
+				class="utrecht-form-label"
+				:for="`rowaction-input-${input.name}`"
+				>{{ input.label }}</label
+			>
 			<input
 				:id="`rowaction-input-${input.name}`"
 				v-model="values[input.name]"
@@ -39,7 +41,9 @@
 				:required="input.required"
 				:aria-required="input.required ? 'true' : undefined"
 				:aria-invalid="errors[input.name] ? 'true' : undefined"
-				:aria-describedby="errors[input.name] ? `rowaction-error-${input.name}` : undefined"
+				:aria-describedby="
+					errors[input.name] ? `rowaction-error-${input.name}` : undefined
+				"
 				:data-testid="`rowaction-input-${input.name}`" />
 			<p
 				v-if="errors[input.name]"
@@ -256,7 +260,10 @@ export default {
 		said(errors) {
 			const out = {}
 			for (const [name, text] of Object.entries(errors)) {
-				out[name] = text === 'required' ? this.translate('This field is required.') : text
+				out[name] =
+					text === 'required'
+						? this.translate('This field is required.')
+						: text
 			}
 			return out
 		},

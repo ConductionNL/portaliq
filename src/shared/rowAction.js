@@ -113,7 +113,8 @@ export function unavailableReason(action, row) {
  */
 export function rowInputsOf(action, row) {
 	const from = action?.rowInputs?.from
-	const list = typeof from === 'string' && Array.isArray(row?.[from]) ? row[from] : []
+	const list =
+		typeof from === 'string' && Array.isArray(row?.[from]) ? row[from] : []
 	const seen = new Set()
 	const out = []
 	for (const entry of list) {
@@ -124,7 +125,8 @@ export function rowInputsOf(action, row) {
 		seen.add(name)
 		out.push({
 			name,
-			label: typeof entry.label === 'string' && entry.label ? entry.label : name,
+			label:
+				typeof entry.label === 'string' && entry.label ? entry.label : name,
 			required: entry.required === true,
 			type: entry.type === 'date' ? 'date' : 'text',
 		})
@@ -141,9 +143,14 @@ export function rowInputsOf(action, row) {
  * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-the-resident-sees-what-happened-req-rai-003
  */
 export function answerWords(result) {
-	const body = result && typeof result.body === 'object' && result.body ? result.body : {}
+	const body =
+		result && typeof result.body === 'object' && result.body ? result.body : {}
 	const errors = {}
-	if (body.errors && typeof body.errors === 'object' && !Array.isArray(body.errors)) {
+	if (
+		body.errors
+		&& typeof body.errors === 'object'
+		&& !Array.isArray(body.errors)
+	) {
 		for (const [name, value] of Object.entries(body.errors)) {
 			if (typeof value === 'string' && value !== '') {
 				errors[name] = value

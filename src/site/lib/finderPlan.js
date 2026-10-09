@@ -27,7 +27,9 @@ function excludedBy(question, answer) {
  * @return {boolean} False when neither answer would rule anything out.
  */
 function canChange(question, remaining) {
-	return ['yes', 'no'].some((answer) => excludedBy(question, answer).some((route) => remaining.has(route)))
+	return ['yes', 'no'].some((answer) =>
+		excludedBy(question, answer).some((route) => remaining.has(route)),
+	)
 }
 
 /**
@@ -45,7 +47,9 @@ export function planFinder(finder, answers) {
 	const products = Array.isArray(finder?.products) ? finder.products : []
 	const remaining = new Set(products.map((product) => product.route))
 	const steps = []
-	for (const question of Array.isArray(finder?.questions) ? finder.questions : []) {
+	for (const question of Array.isArray(finder?.questions)
+		? finder.questions
+		: []) {
 		const answer = answers[question.id]
 		if (!canChange(question, remaining)) {
 			// Neither answer could rule anything out: skipped, answered or not.

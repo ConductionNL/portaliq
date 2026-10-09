@@ -90,7 +90,10 @@ export default {
 				return
 			}
 			try {
-				const page = await fetchCatalogue(this.portal, { ...query, limit: 50 })
+				const page = await fetchCatalogue(this.portal, {
+					...query,
+					limit: 50,
+				})
 				this.items = page.items
 			} catch {
 				this.items = []

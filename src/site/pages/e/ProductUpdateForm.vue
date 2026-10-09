@@ -73,10 +73,14 @@ export default {
 	emits: ['saved', 'cancel'],
 
 	data() {
-		const fields = (this.action.fields || []).filter((field) => typeof field === 'string' && field !== 'id')
+		const fields = (this.action.fields || []).filter(
+			(field) => typeof field === 'string' && field !== 'id',
+		)
 		return {
 			fields,
-			values: Object.fromEntries(fields.map((field) => [field, String(this.row[field] ?? '')])),
+			values: Object.fromEntries(
+				fields.map((field) => [field, String(this.row[field] ?? '')]),
+			),
 			busy: false,
 			problem: '',
 			uid: `pq-pu-${String(this.row.id ?? this.row.uuid ?? '')}-${this.action.id}`,
@@ -104,7 +108,11 @@ export default {
 		async save() {
 			this.problem = ''
 			this.busy = true
-			const answer = await this.api.updateObject(this.action, String(this.row.id ?? this.row.uuid), { ...this.values })
+			const answer = await this.api.updateObject(
+				this.action,
+				String(this.row.id ?? this.row.uuid),
+				{ ...this.values },
+			)
 			this.busy = false
 			if (!answer || answer.ok !== true) {
 				this.problem = 'That did not work. Try again later.'

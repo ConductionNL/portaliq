@@ -565,7 +565,10 @@ export function actionOf(message, origin = '') {
  * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
  */
 export function inboxTabs(messages) {
-	const tabs = [{ key: 'all', kind: 'all' }, { key: 'unread', kind: 'unread' }]
+	const tabs = [
+		{ key: 'all', kind: 'all' },
+		{ key: 'unread', kind: 'unread' },
+	]
 	const seen = new Set()
 	for (const message of messages || []) {
 		const value = typeof message?.tab === 'string' ? message.tab.trim() : ''

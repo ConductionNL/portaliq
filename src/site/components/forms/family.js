@@ -16,7 +16,9 @@
  */
 export function toggleRef(chosen, ref) {
 	const list = Array.isArray(chosen) ? chosen : []
-	return list.includes(ref) ? list.filter((entry) => entry !== ref) : [...list, ref]
+	return list.includes(ref)
+		? list.filter((entry) => entry !== ref)
+		: [...list, ref]
 }
 
 /**

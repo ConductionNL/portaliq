@@ -19,14 +19,19 @@
 		<p v-else-if="state === 'failed'" class="utrecht-paragraph" role="status">
 			{{ say('failed') }}
 		</p>
-		<p v-else-if="!definition" class="utrecht-paragraph" data-testid="nl-finder-missing">
+		<p
+			v-else-if="!definition"
+			class="utrecht-paragraph"
+			data-testid="nl-finder-missing">
 			{{ say('missing') }}
 		</p>
 
 		<template v-else>
 			<header class="nl-product-finder__intro">
 				<h2 class="utrecht-heading-2">{{ definition.title }}</h2>
-				<p v-if="definition.intro" class="utrecht-paragraph">{{ definition.intro }}</p>
+				<p v-if="definition.intro" class="utrecht-paragraph">
+					{{ definition.intro }}
+				</p>
 			</header>
 
 			<div class="nl-product-finder__layout">
@@ -42,15 +47,19 @@
 									class="nl-product-finder__chip"
 									data-testid="nl-finder-chip"
 									@click="edit(step.question.id)">
-									{{ step.question.text }}: {{ answerLabel(step.answer) }}
+									{{ step.question.text }}:
+									{{ answerLabel(step.answer) }}
 								</button>
 							</li>
 						</ul>
 					</div>
 
 					<div v-if="asking" data-testid="nl-finder-question">
-						<p class="utrecht-paragraph nl-product-finder__label" data-testid="nl-finder-position">
-							{{ position }}<span v-if="!editing"> · {{ timeLeft }}</span>
+						<p
+							class="utrecht-paragraph nl-product-finder__label"
+							data-testid="nl-finder-position">
+							{{ position
+							}}<span v-if="!editing"> · {{ timeLeft }}</span>
 						</p>
 						<h3 class="utrecht-heading-3">{{ asking.question.text }}</h3>
 						<p v-if="asking.question.help" class="utrecht-paragraph">
@@ -60,7 +69,9 @@
 							<button
 								type="button"
 								class="utrecht-button utrecht-button--primary-action"
-								:aria-pressed="asking.answer === 'yes' ? 'true' : 'false'"
+								:aria-pressed="
+									asking.answer === 'yes' ? 'true' : 'false'
+								"
 								data-testid="nl-finder-yes"
 								@click="answer('yes')">
 								{{ say('yes') }}
@@ -68,7 +79,9 @@
 							<button
 								type="button"
 								class="utrecht-button utrecht-button--primary-action"
-								:aria-pressed="asking.answer === 'no' ? 'true' : 'false'"
+								:aria-pressed="
+									asking.answer === 'no' ? 'true' : 'false'
+								"
 								data-testid="nl-finder-no"
 								@click="answer('no')">
 								{{ say('no') }}
@@ -97,7 +110,9 @@
 							{{ say('restart') }}
 						</button>
 					</div>
-					<p class="utrecht-paragraph nl-product-finder__note" data-testid="nl-finder-not-kept">
+					<p
+						class="utrecht-paragraph nl-product-finder__note"
+						data-testid="nl-finder-not-kept">
 						{{ say('notKept') }}
 					</p>
 				</div>
@@ -126,10 +141,14 @@
 							</a>
 						</li>
 					</ul>
-					<details v-if="plan.excluded.length > 0" data-testid="nl-finder-excluded">
+					<details
+						v-if="plan.excluded.length > 0"
+						data-testid="nl-finder-excluded">
 						<summary>{{ fallenText }}</summary>
 						<ul class="nl-product-finder__products">
-							<li v-for="product in plan.excluded" :key="product.route">
+							<li
+								v-for="product in plan.excluded"
+								:key="product.route">
 								{{ product.title }}
 							</li>
 						</ul>
@@ -201,7 +220,12 @@ export default {
 		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
 		 */
 		editing() {
-			return this.editingId !== '' && this.plan.steps.some((step) => step.question.id === this.editingId)
+			return (
+				this.editingId !== ''
+				&& this.plan.steps.some(
+					(step) => step.question.id === this.editingId,
+				)
+			)
 		},
 
 		/**
@@ -210,7 +234,9 @@ export default {
 		 */
 		asking() {
 			if (this.editing) {
-				return this.plan.steps.find((step) => step.question.id === this.editingId)
+				return this.plan.steps.find(
+					(step) => step.question.id === this.editingId,
+				)
 			}
 			return this.plan.current >= 0 ? this.plan.steps[this.plan.current] : null
 		},
@@ -220,8 +246,12 @@ export default {
 		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
 		 */
 		position() {
-			const index = this.plan.steps.findIndex((step) => step.question.id === this.asking.question.id)
-			return this.say('position').replace('{n}', String(index + 1)).replace('{total}', String(this.plan.steps.length))
+			const index = this.plan.steps.findIndex(
+				(step) => step.question.id === this.asking.question.id,
+			)
+			return this.say('position')
+				.replace('{n}', String(index + 1))
+				.replace('{total}', String(this.plan.steps.length))
 		},
 
 		/**
@@ -229,9 +259,14 @@ export default {
 		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
 		 */
 		timeLeft() {
-			const left = this.plan.steps.filter((step) => step.answer === null).length
+			const left = this.plan.steps.filter(
+				(step) => step.answer === null,
+			).length
 			const minutes = minutesLeft(left)
-			return this.say(minutes === 1 ? 'minutes' : 'minutesMany').replace('{n}', String(minutes))
+			return this.say(minutes === 1 ? 'minutes' : 'minutesMany').replace(
+				'{n}',
+				String(minutes),
+			)
 		},
 
 		/**
@@ -240,7 +275,9 @@ export default {
 		 */
 		countText() {
 			const total = this.plan.remaining.length + this.plan.excluded.length
-			return this.say('count').replace('{n}', String(this.plan.remaining.length)).replace('{total}', String(total))
+			return this.say('count')
+				.replace('{n}', String(this.plan.remaining.length))
+				.replace('{total}', String(total))
 		},
 
 		/**
@@ -248,7 +285,10 @@ export default {
 		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
 		 */
 		fallenText() {
-			return this.say('fallenAway').replace('{n}', String(this.plan.excluded.length))
+			return this.say('fallenAway').replace(
+				'{n}',
+				String(this.plan.excluded.length),
+			)
 		},
 	},
 

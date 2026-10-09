@@ -616,7 +616,11 @@ export default {
 				|| widget.widgetKey === 'nlNewsArticle'
 				|| widget.widgetKey === 'nlPublicDetail'
 			) {
-				const news = { ...props, portal: this.portal, routeParam: this.routeParam }
+				const news = {
+					...props,
+					portal: this.portal,
+					routeParam: this.routeParam,
+				}
 				if (widget.widgetKey === 'nlNewsList') {
 					return news
 				}
@@ -652,7 +656,11 @@ export default {
 			// for the page on screen; the finder reads this portal's finder.
 			if (widget.widgetKey === 'nlFaqList') {
 				const navigation = this.navigation || {}
-				return { ...props, portal: this.portal, currentRoute: navigation.currentRoute || '' }
+				return {
+					...props,
+					portal: this.portal,
+					currentRoute: navigation.currentRoute || '',
+				}
 			}
 
 			if (widget.widgetKey === 'nlProductFinder') {

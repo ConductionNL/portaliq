@@ -547,13 +547,21 @@ export function createPortalApi(config, store = {}) {
 			try {
 				const res = await fetch(`${base}${path}`, {
 					method,
-					headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...authHeaders() },
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						...authHeaders(),
+					},
 					...(body === null ? {} : { body: JSON.stringify(body) }),
 				})
 				if (raw) {
 					return { ok: res.ok, status: res.status, res }
 				}
-				return { ok: res.ok, status: res.status, json: await res.json().catch(() => ({})) }
+				return {
+					ok: res.ok,
+					status: res.status,
+					json: await res.json().catch(() => ({})),
+				}
 			} catch {
 				return { ok: false, status: 0, json: {} }
 			}
@@ -1135,7 +1143,10 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t06
 		 */
 		async downloadPdf(collection, id) {
-			const path = id === undefined ? 'export.pdf' : `${encodeURIComponent(id)}/export.pdf`
+			const path =
+				id === undefined
+					? 'export.pdf'
+					: `${encodeURIComponent(id)}/export.pdf`
 			const url = `${base}${col(collection.register, collection.schema)}/${path}?collection=${encodeURIComponent(collection.id)}`
 			try {
 				const res = await fetch(url, { headers: { ...authHeaders() } })

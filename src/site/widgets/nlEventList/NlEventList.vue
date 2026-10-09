@@ -191,7 +191,10 @@ export default {
 			const own = sourceQuery(this.source)
 			if (own !== null) {
 				try {
-					const page = await fetchCatalogue(this.portal, { ...own, upcoming: this.source?.range !== 'schoolYear' })
+					const page = await fetchCatalogue(this.portal, {
+						...own,
+						upcoming: this.source?.range !== 'schoolYear',
+					})
 					this.fetched = eventItemsOf(page.items)
 				} catch {
 					this.fetched = null

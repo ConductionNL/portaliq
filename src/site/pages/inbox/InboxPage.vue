@@ -145,9 +145,9 @@
 						<a
 							v-if="aboutHref(message)"
 							:href="aboutHref(message)"
-							@click="onAboutClick($event, message)">{{
-								tr('About: {value}', { value: message.about })
-							}}</a>
+							@click="onAboutClick($event, message)"
+							>{{ tr('About: {value}', { value: message.about }) }}</a
+						>
 						<template v-else>
 							{{ tr('About: {value}', { value: message.about }) }}
 						</template>
@@ -347,7 +347,9 @@ export default {
 	components: {
 		BusyStatus,
 		// On demand: only a message that can be answered needs the form.
-		InboxReply: defineAsyncComponent(() => import('../../components/inbox/InboxReply.vue')),
+		InboxReply: defineAsyncComponent(
+			() => import('../../components/inbox/InboxReply.vue'),
+		),
 		NotificationSettings,
 		TranslatedText,
 	},
@@ -425,7 +427,9 @@ export default {
 		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
 		 */
 		shownMessages() {
-			return this.tabsOn ? messagesOnTab(this.messages, this.activeTab) : this.messages
+			return this.tabsOn
+				? messagesOnTab(this.messages, this.activeTab)
+				: this.messages
 		},
 
 		/**
@@ -490,7 +494,9 @@ export default {
 		 */
 		replyOf(message) {
 			const reply = message && message._source && message._source.reply
-			return reply && reply.action && typeof reply.action.id === 'string' ? reply : null
+			return reply && reply.action && typeof reply.action.id === 'string'
+				? reply
+				: null
 		},
 
 		/**
@@ -866,7 +872,9 @@ export default {
 		 */
 		async markAllRead() {
 			this.markingAll = true
-			for (const message of this.shownMessages.filter((m) => m.read !== true)) {
+			for (const message of this.shownMessages.filter(
+				(m) => m.read !== true,
+			)) {
 				const id = rowId(message)
 				if (!id) {
 					continue
@@ -904,7 +912,10 @@ export default {
 		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
 		 */
 		aboutHref(message) {
-			const link = actionOf({ action: { label: 'x', href: message?.aboutLink } }, this.origin)
+			const link = actionOf(
+				{ action: { label: 'x', href: message?.aboutLink } },
+				this.origin,
+			)
 			return link ? this.portalHref(link.href) : null
 		},
 
@@ -914,7 +925,10 @@ export default {
 		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
 		 */
 		portalHref(href) {
-			return typeof href === 'string' && href.startsWith('/') && !href.startsWith('//') && !href.startsWith(this.origin + '/')
+			return typeof href === 'string'
+				&& href.startsWith('/')
+				&& !href.startsWith('//')
+				&& !href.startsWith(this.origin + '/')
 				? siteHref(href)
 				: href
 		},
@@ -954,7 +968,12 @@ export default {
 		 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
 		 */
 		followSameSite(event, route) {
-			if (event?.ctrlKey || event?.metaKey || event?.shiftKey || (event?.button ?? 0) !== 0) {
+			if (
+				event?.ctrlKey
+				|| event?.metaKey
+				|| event?.shiftKey
+				|| (event?.button ?? 0) !== 0
+			) {
 				return
 			}
 			event?.preventDefault?.()

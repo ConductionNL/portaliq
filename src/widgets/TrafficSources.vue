@@ -98,7 +98,9 @@
 							v-if="searchLink(row.term) !== ''"
 							:href="searchLink(row.term)"
 							target="_blank"
-							rel="noopener">{{ row.term }}</a>
+							rel="noopener"
+							>{{ row.term }}</a
+						>
 						<template v-else>
 							{{ row.term }}
 						</template>

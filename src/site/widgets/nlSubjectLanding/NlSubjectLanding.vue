@@ -25,13 +25,17 @@
 			<p class="utrecht-paragraph">
 				{{ say('notFound') }}
 			</p>
-			<a v-if="backLabel" class="utrecht-link" :href="backHref">{{ backLabel }}</a>
+			<a v-if="backLabel" class="utrecht-link" :href="backHref">{{
+				backLabel
+			}}</a>
 		</div>
 		<p v-else-if="state === 'failed'" class="utrecht-paragraph" role="alert">
 			{{ say('failed') }}
 		</p>
 		<template v-else>
-			<a v-if="backLabel" class="utrecht-link" :href="backHref">{{ backLabel }}</a>
+			<a v-if="backLabel" class="utrecht-link" :href="backHref">{{
+				backLabel
+			}}</a>
 			<img
 				v-if="subject.image"
 				class="nl-subject-landing__image"
@@ -115,7 +119,9 @@ export default {
 			if (this.routeParam !== '') {
 				return this.routeParam
 			}
-			const parts = String(globalThis.window?.location?.pathname || '').split('/').filter(Boolean)
+			const parts = String(globalThis.window?.location?.pathname || '')
+				.split('/')
+				.filter(Boolean)
 			return decodeURIComponent(parts[parts.length - 1] || '')
 		},
 

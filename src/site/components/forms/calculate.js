@@ -11,7 +11,14 @@
  * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
  */
 
-export const OPERATIONS = Object.freeze(['sum', 'multiply', 'subtract', 'addDays', 'diffDays', 'count'])
+export const OPERATIONS = Object.freeze([
+	'sum',
+	'multiply',
+	'subtract',
+	'addDays',
+	'diffDays',
+	'count',
+])
 
 const GROUP_ARGUMENT = /^([A-Za-z][A-Za-z0-9_]*)\[\]\.([A-Za-z][A-Za-z0-9_]*)$/
 
@@ -24,7 +31,9 @@ const GROUP_ARGUMENT = /^([A-Za-z][A-Za-z0-9_]*)\[\]\.([A-Za-z][A-Za-z0-9_]*)$/
 function isNumeric(value) {
 	return (
 		(typeof value === 'number' && Number.isFinite(value))
-		|| (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)))
+		|| (typeof value === 'string'
+			&& value.trim() !== ''
+			&& Number.isFinite(Number(value)))
 	)
 }
 
@@ -52,7 +61,13 @@ function valuesOf(arg, answers) {
 		return [Number(arg)]
 	}
 	const value = answers[arg]
-	if (value === undefined || value === null || value === '' || Array.isArray(value) || typeof value === 'object') {
+	if (
+		value === undefined
+		|| value === null
+		|| value === ''
+		|| Array.isArray(value)
+		|| typeof value === 'object'
+	) {
 		return []
 	}
 	return [value]
@@ -71,7 +86,11 @@ function dayNumber(value) {
 	}
 	const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])]
 	const date = new Date(Date.UTC(year, month - 1, day))
-	if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+	if (
+		date.getUTCFullYear() !== year
+		|| date.getUTCMonth() !== month - 1
+		|| date.getUTCDate() !== day
+	) {
 		return null
 	}
 	return Math.round(date.getTime() / 86400000)
@@ -133,7 +152,10 @@ export function evaluate(calculate, answers) {
 	const numbers = []
 	for (const arg of args) {
 		const values = valuesOf(arg, answers)
-		if (values.length === 0 && !(typeof arg === 'string' && arg.includes('[].'))) {
+		if (
+			values.length === 0
+			&& !(typeof arg === 'string' && arg.includes('[].'))
+		) {
 			return null
 		}
 		for (const value of values) {

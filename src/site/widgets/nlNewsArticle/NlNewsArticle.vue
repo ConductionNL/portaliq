@@ -81,7 +81,11 @@
 						{{ say('eventSignInFirst', { area }) }}
 					</p>
 					<p v-if="item.event.askSeats" class="utrecht-paragraph">
-						{{ say('eventSeats', { count: item.event.maxSeatsPerAnswer || 4 }) }}
+						{{
+							say('eventSeats', {
+								count: item.event.maxSeatsPerAnswer || 4,
+							})
+						}}
 					</p>
 					<a
 						class="utrecht-button utrecht-button--primary-action"
@@ -203,12 +207,20 @@ export default {
 			const locale = this.contentLocale()
 			const deadline = longDate(event.signupDeadline, locale)
 			return [
-				{ label: this.say('eventWhen'), value: longDate(event.start, locale) },
+				{
+					label: this.say('eventWhen'),
+					value: longDate(event.start, locale),
+				},
 				{ label: this.say('eventWhere'), value: event.location || '' },
-				{ label: this.say('eventForWhom'), value: this.item?.audienceLabel || '' },
+				{
+					label: this.say('eventForWhom'),
+					value: this.item?.audienceLabel || '',
+				},
 				{
 					label: this.say('eventDeadline'),
-					value: deadline ? this.say('eventUntil', { date: deadline }) : '',
+					value: deadline
+						? this.say('eventUntil', { date: deadline })
+						: '',
 				},
 			].filter((fact) => fact.value)
 		},
@@ -218,8 +230,13 @@ export default {
 		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
 		 */
 		closedLine() {
-			const date = longDate(this.item?.event?.signupDeadline, this.contentLocale())
-			return date ? this.say('eventClosed', { date }) : this.say('eventClosedNoDate')
+			const date = longDate(
+				this.item?.event?.signupDeadline,
+				this.contentLocale(),
+			)
+			return date
+				? this.say('eventClosed', { date })
+				: this.say('eventClosedNoDate')
 		},
 
 		/**
@@ -233,9 +250,12 @@ export default {
 				heading: '',
 				buttonLabel: '',
 				signInHref: '/mijn',
-				say: (key) => (key === 'ownArea' ? this.signUpLabel : this.say('eventSignIn')),
+				say: (key) =>
+					key === 'ownArea' ? this.signUpLabel : this.say('eventSignIn'),
 			})
-			return button.route ? { ...button, href: authoredLink(button.route).href } : button
+			return button.route
+				? { ...button, href: authoredLink(button.route).href }
+				: button
 		},
 
 		/**

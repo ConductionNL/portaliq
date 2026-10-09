@@ -32,7 +32,8 @@ const WORDS = {
 		back: 'Alle plannen',
 		download: 'Download als PDF',
 		alert: 'Dit plan loopt over {days} dagen af, op {date}',
-		alertDetail: 'Er staan nog {count} acties open. Verleng het plan met uw begeleider, of rond de acties af.',
+		alertDetail:
+			'Er staan nog {count} acties open. Verleng het plan met uw begeleider, of rond de acties af.',
 		editGoal: 'Doel aanpassen',
 		actions: 'Acties',
 		addAction: 'Actie toevoegen',
@@ -91,7 +92,8 @@ const WORDS = {
 		back: 'All plans',
 		download: 'Download as PDF',
 		alert: 'This plan ends in {days} days, on {date}',
-		alertDetail: '{count} actions are still open. Extend the plan with your caseworker, or finish the actions.',
+		alertDetail:
+			'{count} actions are still open. Extend the plan with your caseworker, or finish the actions.',
 		editGoal: 'Change the goal',
 		actions: 'Actions',
 		addAction: 'Add an action',
@@ -135,7 +137,11 @@ const WORDS = {
  * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
  */
 export function planWords(locale) {
-	return String(locale || '').toLowerCase().startsWith('en') ? WORDS.en : WORDS.nl
+	return String(locale || '')
+		.toLowerCase()
+		.startsWith('en')
+		? WORDS.en
+		: WORDS.nl
 }
 
 /**
@@ -186,7 +192,11 @@ export function chipCount(counts, chip) {
 	const running = Number(c.running || 0)
 	const action = Number(c.action || 0)
 	const done = Number(c.done || 0)
-	return { all: running + action + done, running: running + action, action, done }[chip] ?? 0
+	return (
+		{ all: running + action + done, running: running + action, action, done }[
+			chip
+		] ?? 0
+	)
 }
 
 /**

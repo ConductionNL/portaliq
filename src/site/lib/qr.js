@@ -16,7 +16,8 @@
 
 /** Total codewords per version, 1 to 20. */
 export const TOTAL_CODEWORDS = [
-	26, 44, 70, 100, 134, 172, 196, 242, 292, 346, 404, 466, 532, 581, 655, 733, 815, 901, 991, 1085,
+	26, 44, 70, 100, 134, 172, 196, 242, 292, 346, 404, 466, 532, 581, 655, 733, 815,
+	901, 991, 1085,
 ]
 
 /** Level M per version: error correction codewords per block, then the blocks as [count, data codewords]. */
@@ -28,26 +29,121 @@ export const BLOCKS_M = [
 	[24, [[2, 43]]],
 	[16, [[4, 27]]],
 	[18, [[4, 31]]],
-	[22, [[2, 38], [2, 39]]],
-	[22, [[3, 36], [2, 37]]],
-	[26, [[4, 43], [1, 44]]],
-	[30, [[1, 50], [4, 51]]],
-	[22, [[6, 36], [2, 37]]],
-	[22, [[8, 37], [1, 38]]],
-	[24, [[4, 40], [5, 41]]],
-	[24, [[5, 41], [5, 42]]],
-	[28, [[7, 45], [3, 46]]],
-	[28, [[10, 46], [1, 47]]],
-	[26, [[9, 43], [4, 44]]],
-	[26, [[3, 44], [11, 45]]],
-	[26, [[3, 41], [13, 42]]],
+	[
+		22,
+		[
+			[2, 38],
+			[2, 39],
+		],
+	],
+	[
+		22,
+		[
+			[3, 36],
+			[2, 37],
+		],
+	],
+	[
+		26,
+		[
+			[4, 43],
+			[1, 44],
+		],
+	],
+	[
+		30,
+		[
+			[1, 50],
+			[4, 51],
+		],
+	],
+	[
+		22,
+		[
+			[6, 36],
+			[2, 37],
+		],
+	],
+	[
+		22,
+		[
+			[8, 37],
+			[1, 38],
+		],
+	],
+	[
+		24,
+		[
+			[4, 40],
+			[5, 41],
+		],
+	],
+	[
+		24,
+		[
+			[5, 41],
+			[5, 42],
+		],
+	],
+	[
+		28,
+		[
+			[7, 45],
+			[3, 46],
+		],
+	],
+	[
+		28,
+		[
+			[10, 46],
+			[1, 47],
+		],
+	],
+	[
+		26,
+		[
+			[9, 43],
+			[4, 44],
+		],
+	],
+	[
+		26,
+		[
+			[3, 44],
+			[11, 45],
+		],
+	],
+	[
+		26,
+		[
+			[3, 41],
+			[13, 42],
+		],
+	],
 ]
 
 /** Alignment pattern centres per version (version 1 has none). */
 const ALIGNMENT = [
-	[], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34], [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50],
-	[6, 30, 54], [6, 32, 58], [6, 34, 62], [6, 26, 46, 66], [6, 26, 48, 70], [6, 26, 50, 74],
-	[6, 30, 54, 78], [6, 30, 56, 82], [6, 30, 58, 86], [6, 34, 62, 90],
+	[],
+	[6, 18],
+	[6, 22],
+	[6, 26],
+	[6, 30],
+	[6, 34],
+	[6, 22, 38],
+	[6, 24, 42],
+	[6, 26, 46],
+	[6, 28, 50],
+	[6, 30, 54],
+	[6, 32, 58],
+	[6, 34, 62],
+	[6, 26, 46, 66],
+	[6, 26, 48, 70],
+	[6, 26, 50, 74],
+	[6, 30, 54, 78],
+	[6, 30, 56, 82],
+	[6, 30, 58, 86],
+	[6, 34, 62, 90],
 ]
 
 const EXP = new Uint8Array(512)
@@ -149,7 +245,10 @@ export function versionBits(version) {
  * @return {number} The count.
  */
 function dataCodewords(version) {
-	return BLOCKS_M[version - 1][1].reduce((sum, [count, size]) => sum + count * size, 0)
+	return BLOCKS_M[version - 1][1].reduce(
+		(sum, [count, size]) => sum + count * size,
+		0,
+	)
 }
 
 /**
@@ -194,7 +293,10 @@ export function functionModules(version) {
 	const centres = ALIGNMENT[version - 1]
 	for (const r of centres) {
 		for (const c of centres) {
-			const onFinder = (r === 6 && c === 6) || (r === 6 && c === size - 7) || (r === size - 7 && c === 6)
+			const onFinder =
+				(r === 6 && c === 6)
+				|| (r === 6 && c === size - 7)
+				|| (r === size - 7 && c === 6)
 			if (!onFinder) {
 				mark(r - 2, c - 2, 5, 5)
 			}
@@ -250,14 +352,22 @@ export function dataPositions(version) {
  */
 export function masked(mask, r, c) {
 	switch (mask) {
-		case 0: return (r + c) % 2 === 0
-		case 1: return r % 2 === 0
-		case 2: return c % 3 === 0
-		case 3: return (r + c) % 3 === 0
-		case 4: return (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0
-		case 5: return ((r * c) % 2) + ((r * c) % 3) === 0
-		case 6: return (((r * c) % 2) + ((r * c) % 3)) % 2 === 0
-		default: return (((r + c) % 2) + ((r * c) % 3)) % 2 === 0
+		case 0:
+			return (r + c) % 2 === 0
+		case 1:
+			return r % 2 === 0
+		case 2:
+			return c % 3 === 0
+		case 3:
+			return (r + c) % 3 === 0
+		case 4:
+			return (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0
+		case 5:
+			return ((r * c) % 2) + ((r * c) % 3) === 0
+		case 6:
+			return (((r * c) % 2) + ((r * c) % 3)) % 2 === 0
+		default:
+			return (((r + c) % 2) + ((r * c) % 3)) % 2 === 0
 	}
 }
 
@@ -340,7 +450,11 @@ function drawPatterns(grid, version, mask) {
 		for (let r = -1; r <= 7; r++) {
 			for (let c = -1; c <= 7; c++) {
 				const ring = Math.max(Math.abs(r - 3), Math.abs(c - 3))
-				set(r0 + r, c0 + c, r >= 0 && r <= 6 && c >= 0 && c <= 6 && ring !== 2)
+				set(
+					r0 + r,
+					c0 + c,
+					r >= 0 && r <= 6 && c >= 0 && c <= 6 && ring !== 2,
+				)
 			}
 		}
 	}
@@ -354,7 +468,11 @@ function drawPatterns(grid, version, mask) {
 	const centres = ALIGNMENT[version - 1]
 	for (const r of centres) {
 		for (const c of centres) {
-			if ((r === 6 && c === 6) || (r === 6 && c === size - 7) || (r === size - 7 && c === 6)) {
+			if (
+				(r === 6 && c === 6)
+				|| (r === 6 && c === size - 7)
+				|| (r === size - 7 && c === 6)
+			) {
 				continue
 			}
 			for (let dr = -2; dr <= 2; dr++) {
@@ -426,7 +544,10 @@ function penalty(grid) {
 			if (pattern.every((dark, k) => line[i + k] === dark)) {
 				const before = line.slice(Math.max(0, i - 4), i)
 				const after = line.slice(i + 7, i + 11)
-				if ((before.length === 4 && before.every((v) => !v)) || (after.length === 4 && after.every((v) => !v))) {
+				if (
+					(before.length === 4 && before.every((v) => !v))
+					|| (after.length === 4 && after.every((v) => !v))
+				) {
 					total += 40
 				}
 			}
@@ -440,7 +561,13 @@ function penalty(grid) {
 		score += runs(row) + runs(column) + finderLike(row) + finderLike(column)
 		for (let c = 0; c < size; c++) {
 			dark += row[c] ? 1 : 0
-			if (r + 1 < size && c + 1 < size && row[c] === row[c + 1] && row[c] === grid[r + 1][c] && row[c] === grid[r + 1][c + 1]) {
+			if (
+				r + 1 < size
+				&& c + 1 < size
+				&& row[c] === row[c + 1]
+				&& row[c] === grid[r + 1][c]
+				&& row[c] === grid[r + 1][c + 1]
+			) {
 				score += 3
 			}
 		}
@@ -470,7 +597,9 @@ export function encodeQr(text) {
 		return null
 	}
 	const words = codewords(bytes, version)
-	const bits = words.flatMap((word) => Array.from({ length: 8 }, (_, i) => (word >>> (7 - i)) & 1))
+	const bits = words.flatMap((word) =>
+		Array.from({ length: 8 }, (_, i) => (word >>> (7 - i)) & 1),
+	)
 	const positions = dataPositions(version)
 	const size = 17 + 4 * version
 	let best = null

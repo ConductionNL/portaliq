@@ -62,5 +62,7 @@ export function areaName(authored, portal) {
 		return name
 	}
 	const slug = String(portal ?? '').trim()
-	return slug === '' ? 'Mijn omgeving' : `Mijn ${slug.charAt(0).toUpperCase()}${slug.slice(1)}`
+	return slug === ''
+		? 'Mijn omgeving'
+		: `Mijn ${slug.charAt(0).toUpperCase()}${slug.slice(1)}`
 }

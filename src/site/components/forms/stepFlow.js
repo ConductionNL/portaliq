@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
 // SPDX-License-Identifier: EUPL-1.2
 
-import { firstStepWithError, flowSteps, stepErrors, stepIndexById, stepTo } from './steps.js'
+import {
+	firstStepWithError,
+	flowSteps,
+	stepErrors,
+	stepIndexById,
+	stepTo,
+} from './steps.js'
 
 /**
  * The step flow both form renderers share (site-multi-step-forms T6, T7b):
@@ -95,12 +101,18 @@ export default {
 			// its outcome names opens next. The engine being down keeps the
 			// answers and offers a retry (form-flow-repeating-groups-
 			// calculations-and-decisions REQ-FFL-003).
-			if (this.currentStep.decides === true && typeof this.decideStep === 'function') {
+			if (
+				this.currentStep.decides === true
+				&& typeof this.decideStep === 'function'
+			) {
 				this.decisionDown = false
 				this.deciding = true
 				try {
 					const decided = await this.decideStep(this.currentStep)
-					const named = stepIndexById(this.flow, decided && decided.nextStep)
+					const named = stepIndexById(
+						this.flow,
+						decided && decided.nextStep,
+					)
 					if (named >= 0 && !this.backToReview) {
 						target = named
 					}

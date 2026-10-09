@@ -78,7 +78,10 @@ export async function fetchCatalogue(portal, query = {}) {
  * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
  */
 export async function fetchCatalogueKinds(portal) {
-	const url = new URL(resolveApiBase() + '/catalogue/kinds', window.location.origin)
+	const url = new URL(
+		resolveApiBase() + '/catalogue/kinds',
+		window.location.origin,
+	)
 	if (portal) {
 		url.searchParams.set('portal', portal)
 	}
@@ -108,7 +111,10 @@ export async function fetchCatalogueKinds(portal) {
  * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-3
  */
 export async function fetchCatalogueDetail(portal, address) {
-	const url = new URL(resolveApiBase() + '/catalogue/detail', window.location.origin)
+	const url = new URL(
+		resolveApiBase() + '/catalogue/detail',
+		window.location.origin,
+	)
 	for (const [key, value] of Object.entries({ portal, ...address })) {
 		if (value !== undefined && value !== null && value !== '') {
 			url.searchParams.set(key, String(value))
@@ -124,7 +130,9 @@ export async function fetchCatalogueDetail(portal, address) {
 		return null
 	}
 	if (!response.ok) {
-		const error = new Error(`content api ${response.status} for /catalogue/detail`)
+		const error = new Error(
+			`content api ${response.status} for /catalogue/detail`,
+		)
 		error.status = response.status
 		throw error
 	}

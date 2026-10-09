@@ -40,7 +40,10 @@
 				{{ words.emailSend }}
 			</button>
 			<template v-else>
-				<p class="utrecht-paragraph" role="status" data-testid="email-code-sent">
+				<p
+					class="utrecht-paragraph"
+					role="status"
+					data-testid="email-code-sent">
 					{{ words.emailSent.replace('{email}', modelValue) }}
 				</p>
 				<label class="utrecht-form-label" :for="`${id}-code`">
@@ -122,7 +125,10 @@ export default {
 
 	data() {
 		return {
-			state: this.verifiedFor !== '' && this.verifiedFor === this.modelValue ? 'verified' : 'idle',
+			state:
+				this.verifiedFor !== '' && this.verifiedFor === this.modelValue
+					? 'verified'
+					: 'idle',
 			code: '',
 			busy: false,
 			problem: '',
@@ -189,9 +195,12 @@ export default {
 			this.code = ''
 			this.canResend = false
 			clearTimeout(this.timer)
-			this.timer = setTimeout(() => {
-				this.canResend = true
-			}, (answer.resendAfter || 60) * 1000)
+			this.timer = setTimeout(
+				() => {
+					this.canResend = true
+				},
+				(answer.resendAfter || 60) * 1000,
+			)
 		},
 
 		/**
@@ -218,7 +227,10 @@ export default {
 			}
 			clearTimeout(this.timer)
 			this.state = 'verified'
-			this.$emit('verified', { address: this.modelValue.trim().toLowerCase(), proof: answer.proof })
+			this.$emit('verified', {
+				address: this.modelValue.trim().toLowerCase(),
+				proof: answer.proof,
+			})
 		},
 	},
 }

@@ -18,7 +18,14 @@ import { normaliseFormat } from './formats.js'
  * @return {object} The block.
  */
 export function emptyAddress() {
-	return { postcode: '', number: '', letter: '', addition: '', street: '', town: '' }
+	return {
+		postcode: '',
+		number: '',
+		letter: '',
+		addition: '',
+		street: '',
+		town: '',
+	}
 }
 
 /**
@@ -64,7 +71,11 @@ export function addressLine(block) {
 	if (!block || typeof block !== 'object') {
 		return ''
 	}
-	const house = [block.number, block.letter, block.addition ? `-${block.addition}` : '']
+	const house = [
+		block.number,
+		block.letter,
+		block.addition ? `-${block.addition}` : '',
+	]
 		.join('')
 		.trim()
 	const left = [block.street, house].filter(Boolean).join(' ')

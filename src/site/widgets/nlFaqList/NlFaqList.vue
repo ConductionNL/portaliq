@@ -44,7 +44,9 @@
 				:key="group.topic"
 				class="nl-faq-list__group"
 				data-testid="nl-faq-group">
-				<h3 v-if="all" class="utrecht-heading-3">{{ group.topic || say('other') }}</h3>
+				<h3 v-if="all" class="utrecht-heading-3">
+					{{ group.topic || say('other') }}
+				</h3>
 				<div class="utrecht-accordion">
 					<section
 						v-for="entry in group.entries"

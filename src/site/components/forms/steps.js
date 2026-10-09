@@ -222,5 +222,7 @@ export function retentionDate(iso, locale) {
  * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
  */
 export function stepIndexById(flow, id) {
-	return (Array.isArray(flow) ? flow : []).findIndex((step) => step.id === id && step.review !== true)
+	return (Array.isArray(flow) ? flow : []).findIndex(
+		(step) => step.id === id && step.review !== true,
+	)
 }

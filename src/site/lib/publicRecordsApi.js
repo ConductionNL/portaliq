@@ -87,13 +87,17 @@ export function fetchRecord(apiBase, app, list, id, fetcher) {
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
  */
 export function matchingEntries(entries, text) {
-	const needle = String(text || '').trim().toLowerCase()
+	const needle = String(text || '')
+		.trim()
+		.toLowerCase()
 	if (needle === '') {
 		return entries
 	}
 
 	return entries.filter((entry) =>
-		`${entry.title || ''} ${entry.subtitle || ''}`.toLowerCase().includes(needle),
+		`${entry.title || ''} ${entry.subtitle || ''}`
+			.toLowerCase()
+			.includes(needle),
 	)
 }
 

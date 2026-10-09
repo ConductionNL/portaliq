@@ -10,7 +10,10 @@
 	too long and any other failure say so in words.
 -->
 <template>
-	<div v-if="collection.exportPdf === true && api" class="pq-pdf" data-testid="pdf-download">
+	<div
+		v-if="collection.exportPdf === true && api"
+		class="pq-pdf"
+		data-testid="pdf-download">
 		<button
 			type="button"
 			class="utrecht-button utrecht-button--secondary-action"
@@ -71,7 +74,9 @@ export default {
 		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t07
 		 */
 		words() {
-			return STRINGS[String(this.locale).toLowerCase().startsWith('en') ? 'en' : 'nl']
+			return STRINGS[
+				String(this.locale).toLowerCase().startsWith('en') ? 'en' : 'nl'
+			]
 		},
 	},
 
@@ -85,15 +90,19 @@ export default {
 		async download() {
 			this.busy = true
 			this.message = ''
-			const result = await this.api.downloadPdf(this.collection, this.id === '' ? undefined : this.id)
+			const result = await this.api.downloadPdf(
+				this.collection,
+				this.id === '' ? undefined : this.id,
+			)
 			this.busy = false
 			if (result && result.ok === true) {
 				return
 			}
 
-			this.message = result && result.status === 400
-				? this.words.tooLong
-				: this.words.failed
+			this.message =
+				result && result.status === 400
+					? this.words.tooLong
+					: this.words.failed
 		},
 	},
 }

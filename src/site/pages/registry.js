@@ -89,7 +89,14 @@ const loaders = new Map(Object.entries(BUILT_IN))
  * Sections whose page shows its own title as the page's h1, so the shell
  * leaves its heading out and the page has one title, not the same one twice.
  */
-const OWNS_HEADING = new Set(['cases', 'access', 'details', 'contacts', 'samenwerken', 'account'])
+const OWNS_HEADING = new Set([
+	'cases',
+	'access',
+	'details',
+	'contacts',
+	'samenwerken',
+	'account',
+])
 
 /**
  * Whether the page for an entry titles itself.
@@ -137,7 +144,11 @@ export function sitePageKeys(entry) {
 	if (!entry) {
 		return []
 	}
-	return [entry.key, entry.theme ? 'theme' : '', entry.special || CONTRIBUTION_PAGE].filter(Boolean)
+	return [
+		entry.key,
+		entry.theme ? 'theme' : '',
+		entry.special || CONTRIBUTION_PAGE,
+	].filter(Boolean)
 }
 
 /**

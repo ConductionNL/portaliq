@@ -212,7 +212,9 @@
 								:value="fieldValue(field)"
 								@input="onFieldInput(field, $event.target.value)" />
 							<select
-								v-else-if="field.kind === 'block' && blocks.length > 0"
+								v-else-if="
+									field.kind === 'block' && blocks.length > 0
+								"
 								:id="`field-${field.name}`"
 								class="page-grid-editor__input"
 								:data-testid="`designer-field-${field.name}`"

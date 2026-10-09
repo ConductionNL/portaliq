@@ -19,14 +19,22 @@
  */
 export function feeAmount(fee, locale) {
 	const value = Number(fee?.amount)
-	if (!fee || !Number.isFinite(value) || value <= 0 || !/^[A-Z]{3}$/.test(String(fee.currency || ''))) {
+	if (
+		!fee
+		|| !Number.isFinite(value)
+		|| value <= 0
+		|| !/^[A-Z]{3}$/.test(String(fee.currency || ''))
+	) {
 		return ''
 	}
 	try {
-		return new Intl.NumberFormat(String(locale || 'nl').startsWith('en') ? 'en-GB' : 'nl-NL', {
-			style: 'currency',
-			currency: fee.currency,
-		}).format(value)
+		return new Intl.NumberFormat(
+			String(locale || 'nl').startsWith('en') ? 'en-GB' : 'nl-NL',
+			{
+				style: 'currency',
+				currency: fee.currency,
+			},
+		).format(value)
 	} catch {
 		return `${fee.currency} ${fee.amount}`
 	}

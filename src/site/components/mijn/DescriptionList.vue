@@ -25,7 +25,9 @@
 				class="utrecht-data-list__item-value pq-description-list__value">
 				<slot :name="`value-${item.key}`" :item="item" />
 			</dd>
-			<dd v-else class="utrecht-data-list__item-value pq-description-list__value">
+			<dd
+				v-else
+				class="utrecht-data-list__item-value pq-description-list__value">
 				{{ item.value }}
 			</dd>
 		</div>

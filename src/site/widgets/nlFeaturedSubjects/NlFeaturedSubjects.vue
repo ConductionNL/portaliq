@@ -29,16 +29,26 @@
 				:key="subject.id || subject.slug"
 				class="nl-featured-subjects__item"
 				data-testid="nl-featured-subject">
-				<a class="utrecht-link nl-featured-subjects__link" :href="hrefOf(subject)">
+				<a
+					class="utrecht-link nl-featured-subjects__link"
+					:href="hrefOf(subject)">
 					<img
 						v-if="subject.image"
 						class="nl-featured-subjects__image"
 						:src="subject.image.url"
 						:alt="subject.image.alt"
 						loading="lazy" />
-					<span class="utrecht-heading-3 nl-featured-subjects__title">{{ subject.title }}</span>
-					<span v-if="subject.summary" class="utrecht-paragraph">{{ subject.summary }}</span>
-					<span v-if="subject.publicationCount !== null" class="nl-featured-subjects__count">{{ countText(subject) }}</span>
+					<span class="utrecht-heading-3 nl-featured-subjects__title">{{
+						subject.title
+					}}</span>
+					<span v-if="subject.summary" class="utrecht-paragraph">{{
+						subject.summary
+					}}</span>
+					<span
+						v-if="subject.publicationCount !== null"
+						class="nl-featured-subjects__count"
+						>{{ countText(subject) }}</span
+					>
 				</a>
 			</li>
 		</ul>
@@ -80,7 +90,9 @@ export default {
 	 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
 	 */
 	async mounted() {
-		const answer = await fetchFeatured({ count: this.count > 0 ? this.count : 6 })
+		const answer = await fetchFeatured({
+			count: this.count > 0 ? this.count : 6,
+		})
 		this.subjects = answer.subjects
 		this.state = answer.state
 	},
@@ -112,7 +124,10 @@ export default {
 		countText(subject) {
 			return subject.publicationCount === 1
 				? this.say('one')
-				: this.say('publications').replace('{count}', String(subject.publicationCount))
+				: this.say('publications').replace(
+						'{count}',
+						String(subject.publicationCount),
+					)
 		},
 	},
 }
@@ -134,7 +149,8 @@ export default {
 	gap: var(--utrecht-space-block-xs, 0.25rem);
 	block-size: 100%;
 	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 	text-decoration: none;
 }
 

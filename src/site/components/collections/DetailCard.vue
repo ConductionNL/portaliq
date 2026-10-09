@@ -43,7 +43,12 @@
 		</DescriptionList>
 
 		<!-- The record as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
-		<PdfDownloadButton v-if="collection.exportPdf === true" :id="rowId" :collection="collection" :api="api" :locale="locale" />
+		<PdfDownloadButton
+			v-if="collection.exportPdf === true"
+			:id="rowId"
+			:collection="collection"
+			:api="api"
+			:locale="locale" />
 
 		<div
 			v-if="collection.filesUpload === true && api"
@@ -162,7 +167,9 @@ export default {
 		DescriptionList,
 		ItemList,
 		// On demand: only a collection that opted in with `exportPdf` loads it.
-		PdfDownloadButton: defineAsyncComponent(() => import('./PdfDownloadButton.vue')),
+		PdfDownloadButton: defineAsyncComponent(
+			() => import('./PdfDownloadButton.vue'),
+		),
 		QrValue,
 		SlotHost,
 		TimelineList,

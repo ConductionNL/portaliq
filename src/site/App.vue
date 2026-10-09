@@ -1461,8 +1461,13 @@ export default {
 		// and handed back once the visitor is signed in.
 		keepClaimSecret(window.location, window.history, this.claimStorage())
 		if (window.location.hash.includes('#contact-invitation=')) {
-			const { keepContactInvitation } = await import('../shared/contactInvitation.js')
-			keepContactInvitation(window.location, window.history, this.claimStorage())
+			const { keepContactInvitation } =
+				await import('../shared/contactInvitation.js')
+			keepContactInvitation(
+				window.location,
+				window.history,
+				this.claimStorage(),
+			)
 		}
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
@@ -1580,8 +1585,10 @@ export default {
 
 			// A contact invitation kept from the mail is handed back the same way.
 			if (this.claimStorage()?.getItem('portaliq.contactInvitation')) {
-				const { redeemKeptContactInvitation } = await import('../shared/contactInvitation.js')
-				this.claimMessage = this.claimMessage
+				const { redeemKeptContactInvitation } =
+					await import('../shared/contactInvitation.js')
+				this.claimMessage =
+					this.claimMessage
 					|| (await redeemKeptContactInvitation({
 						api: this.api,
 						session: this.session,

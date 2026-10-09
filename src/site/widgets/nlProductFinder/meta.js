@@ -15,9 +15,19 @@ export const metaOf = {
 	group: 'content',
 	label: 'Productzoeker',
 	nlds: 'Heading, Button, Link List',
-	synonyms: ['productzoeker', 'vergunning', 'wegwijzer', 'welke past', 'ja nee vragen'],
+	synonyms: [
+		'productzoeker',
+		'vergunning',
+		'wegwijzer',
+		'welke past',
+		'ja nee vragen',
+	],
 	fields: [
-		{ name: 'finder', kind: 'string', label: 'Productzoeker (leeg: de eerste gepubliceerde)' },
+		{
+			name: 'finder',
+			kind: 'string',
+			label: 'Productzoeker (leeg: de eerste gepubliceerde)',
+		},
 	],
 	defaultSize: { gridWidth: 12, gridHeight: 6 },
 	scope: 'public',

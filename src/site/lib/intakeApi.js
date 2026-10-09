@@ -466,7 +466,9 @@ export async function lookupAddress(base, block, fetchImpl) {
 export async function fetchFamily(base, token, sameAddressOnly, fetchImpl) {
 	try {
 		const response = await fetcher(fetchImpl)(
-			intakeUrl(base, '/intake/family', { sameAddressOnly: sameAddressOnly ? '1' : '0' }),
+			intakeUrl(base, '/intake/family', {
+				sameAddressOnly: sameAddressOnly ? '1' : '0',
+			}),
 			{ headers: headersFor(token) },
 		)
 		if (!response.ok) {
@@ -494,7 +496,15 @@ export async function fetchFamily(base, token, sameAddressOnly, fetchImpl) {
  * @return {Promise<{outcome: string, output: string, nextStep: string}>} The decision.
  * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
  */
-export async function decideStep(base, route, step, answers, portal, token, fetchImpl = null) {
+export async function decideStep(
+	base,
+	route,
+	step,
+	answers,
+	portal,
+	token,
+	fetchImpl = null,
+) {
 	const body = { route, step, answers: answers || {} }
 	if (portal) {
 		body.portal = portal
@@ -540,7 +550,11 @@ export async function payIntake(base, reference, portal, token, fetchImpl) {
 		})
 		const body = await response.json().catch(() => ({}))
 		const url = typeof body?.checkoutUrl === 'string' ? body.checkoutUrl : ''
-		return { ok: response.ok && url !== '', checkoutUrl: url, status: response.status }
+		return {
+			ok: response.ok && url !== '',
+			checkoutUrl: url,
+			status: response.status,
+		}
 	} catch {
 		return { ok: false, checkoutUrl: '', status: 0 }
 	}
@@ -560,17 +574,27 @@ export async function payIntake(base, reference, portal, token, fetchImpl) {
  *
  * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
  */
-export async function requestEmailCode(base, route, email, portal, token, fetchImpl = null) {
+export async function requestEmailCode(
+	base,
+	route,
+	email,
+	portal,
+	token,
+	fetchImpl = null,
+) {
 	try {
 		const body = { route, email }
 		if (portal) {
 			body.portal = portal
 		}
-		const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/email-code'), {
-			method: 'POST',
-			headers: headersFor(token, true),
-			body: JSON.stringify(body),
-		})
+		const response = await fetcher(fetchImpl)(
+			intakeUrl(base, '/intake/email-code'),
+			{
+				method: 'POST',
+				headers: headersFor(token, true),
+				body: JSON.stringify(body),
+			},
+		)
 		const parsed = await response.json().catch(() => ({}))
 		return {
 			ok: response.ok === true,
@@ -597,19 +621,34 @@ export async function requestEmailCode(base, route, email, portal, token, fetchI
  *
  * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
  */
-export async function checkEmailCode(base, route, email, code, portal, token, fetchImpl = null) {
+export async function checkEmailCode(
+	base,
+	route,
+	email,
+	code,
+	portal,
+	token,
+	fetchImpl = null,
+) {
 	try {
 		const body = { route, email, code }
 		if (portal) {
 			body.portal = portal
 		}
-		const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/email-code/check'), {
-			method: 'POST',
-			headers: headersFor(token, true),
-			body: JSON.stringify(body),
-		})
+		const response = await fetcher(fetchImpl)(
+			intakeUrl(base, '/intake/email-code/check'),
+			{
+				method: 'POST',
+				headers: headersFor(token, true),
+				body: JSON.stringify(body),
+			},
+		)
 		const parsed = await response.json().catch(() => ({}))
-		if (response.ok && typeof parsed?.proof === 'string' && parsed.proof !== '') {
+		if (
+			response.ok
+			&& typeof parsed?.proof === 'string'
+			&& parsed.proof !== ''
+		) {
 			return { ok: true, error: '', proof: parsed.proof }
 		}
 		return { ok: false, error: String(parsed?.error || 'failed'), proof: '' }

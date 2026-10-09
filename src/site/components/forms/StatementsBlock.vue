@@ -14,7 +14,10 @@
 		<legend class="utrecht-heading-3">
 			{{ words.heading }}
 		</legend>
-		<div v-for="statement in statements" :key="statement.key" class="pq-statements__item">
+		<div
+			v-for="statement in statements"
+			:key="statement.key"
+			class="pq-statements__item">
 			<label>
 				<input
 					type="checkbox"

@@ -20,8 +20,16 @@ export const metaOf = {
 		{ name: 'kindLabel', kind: 'string', label: 'Label boven de titel' },
 		{ name: 'backLabel', kind: 'string', label: 'Tekst van de link terug' },
 		{ name: 'backHref', kind: 'string', label: 'Adres van de link terug' },
-		{ name: 'areaLabel', kind: 'string', label: 'Naam van de eigen omgeving, bijvoorbeeld Mijn Vaartveld' },
-		{ name: 'signUpLabel', kind: 'string', label: 'Tekst van de aanmeldknop voor wie is ingelogd' },
+		{
+			name: 'areaLabel',
+			kind: 'string',
+			label: 'Naam van de eigen omgeving, bijvoorbeeld Mijn Vaartveld',
+		},
+		{
+			name: 'signUpLabel',
+			kind: 'string',
+			label: 'Tekst van de aanmeldknop voor wie is ingelogd',
+		},
 	],
 	defaultSize: { gridWidth: 8, gridHeight: 6 },
 	scope: 'public',

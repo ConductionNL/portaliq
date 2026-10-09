@@ -185,7 +185,8 @@ export const DUTCH = Object.freeze({
 	change: 'Wijzigen',
 	changeStep: 'Stap {n} wijzigen',
 	notAnswered: 'Niet ingevuld',
-	mailedTo: 'Wij hebben een bevestiging gestuurd naar {email}, met een samenvatting van uw aanvraag. Geen mail gezien? Kijk ook bij uw ongewenste e-mail.',
+	mailedTo:
+		'Wij hebben een bevestiging gestuurd naar {email}, met een samenvatting van uw aanvraag. Geen mail gezien? Kijk ook bij uw ongewenste e-mail.',
 	whatNow: 'Wat gebeurt er nu?',
 	print: 'Deze pagina printen',
 	statementRequired: 'Vink deze verklaring aan voordat u verstuurt.',
@@ -199,7 +200,8 @@ export const DUTCH = Object.freeze({
 	paymentFailed: 'De betaling is mislukt',
 	paymentUnknown: 'Wij kunnen de betaling nu nog niet tonen',
 	payUnavailable: 'U kunt nu niet betalen. Probeer het later opnieuw.',
-	signInFee: 'Log in om deze aanvraag in te dienen. Er hoort een bedrag van {amount} bij.',
+	signInFee:
+		'Log in om deze aanvraag in te dienen. Er hoort een bedrag van {amount} bij.',
 })
 
 /**

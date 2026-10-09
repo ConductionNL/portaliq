@@ -22,7 +22,9 @@ import { fileFields, submitWithFiles } from '../../../shared/fileFieldSubmit.js'
  */
 export function replyOf(message) {
 	const reply = message && message._source && message._source.reply
-	return reply && reply.action && typeof reply.action.id === 'string' ? reply : null
+	return reply && reply.action && typeof reply.action.id === 'string'
+		? reply
+		: null
 }
 
 /**
@@ -42,8 +44,13 @@ export function replyQuestions(reply) {
 			const config = configs[name] || {}
 			return {
 				name,
-				label: typeof config.label === 'string' && config.label !== '' ? config.label : name,
-				long: config.type === 'textarea' || ['content', 'body', 'text', 'message'].includes(name),
+				label:
+					typeof config.label === 'string' && config.label !== ''
+						? config.label
+						: name,
+				long:
+					config.type === 'textarea'
+					|| ['content', 'body', 'text', 'message'].includes(name),
 				required: config.required === true,
 			}
 		})
@@ -60,7 +67,10 @@ export function replyFileFields(reply) {
 	const configs = reply.action.fieldConfigs || {}
 	return fileFields(reply.action).map((name) => ({
 		name,
-		label: typeof configs[name].label === 'string' && configs[name].label !== '' ? configs[name].label : name,
+		label:
+			typeof configs[name].label === 'string' && configs[name].label !== ''
+				? configs[name].label
+				: name,
 		multiple: configs[name].multiple === true,
 		accept: typeof configs[name].accept === 'string' ? configs[name].accept : '',
 		maxSizeMb: Number(configs[name].maxSizeMb) || 0,
@@ -76,10 +86,19 @@ export function replyFileFields(reply) {
  * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
  */
 export function replyStart(message, reply) {
-	const values = Object.fromEntries(replyQuestions(reply).map((question) => [question.name, '']))
+	const values = Object.fromEntries(
+		replyQuestions(reply).map((question) => [question.name, '']),
+	)
 	const from = reply.subjectFrom
-	if (from && Object.hasOwn(values, 'subject') && typeof message[from] === 'string' && message[from] !== '') {
-		values.subject = /^re:\s/i.test(message[from]) ? message[from] : `Re: ${message[from]}`
+	if (
+		from
+		&& Object.hasOwn(values, 'subject')
+		&& typeof message[from] === 'string'
+		&& message[from] !== ''
+	) {
+		values.subject = /^re:\s/i.test(message[from])
+			? message[from]
+			: `Re: ${message[from]}`
 	}
 	return values
 }
@@ -99,7 +118,8 @@ export function replyStart(message, reply) {
 export async function sendReply(api, message, reply, values, filesByField) {
 	const adapter = {
 		createObject: (action, body) => api.replyToMessage(message, body),
-		uploadFieldFile: (action, id, field, file) => api.uploadFieldFile(action, id, field, file),
+		uploadFieldFile: (action, id, field, file) =>
+			api.uploadFieldFile(action, id, field, file),
 	}
 	const result = await submitWithFiles(adapter, reply.action, values, filesByField)
 	return {
@@ -118,5 +138,7 @@ export async function sendReply(api, message, reply, values, filesByField) {
  * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t06
  */
 export function sentMessage(failed, words) {
-	return failed.length === 0 ? words.sent : words.partial.split('{name}').join(failed.join(', '))
+	return failed.length === 0
+		? words.sent
+		: words.partial.split('{name}').join(failed.join(', '))
 }

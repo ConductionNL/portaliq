@@ -20,13 +20,18 @@ import { toBuckets } from './federatedSearch.js'
 import { wooCategoryLabel } from './wooCategories.js'
 
 /** The publications search the counts are read from. */
-export const SEARCH_ENDPOINT = '/index.php/apps/opencatalogi/api/federation/publications'
+export const SEARCH_ENDPOINT =
+	'/index.php/apps/opencatalogi/api/federation/publications'
 
 /** The subjects routes. */
 export const SUBJECTS_ENDPOINT = '/index.php/apps/opencatalogi/api/themes'
 
 /** What a count can be per, and the facet field behind it. */
-export const COUNT_FIELDS = { category: 'wooCategory', subject: 'themes', year: 'publicationDate' }
+export const COUNT_FIELDS = {
+	category: 'wooCategory',
+	subject: 'themes',
+	year: 'publicationDate',
+}
 
 /**
  * A text field of a subject row, trimmed; '' when it is not text.
@@ -49,11 +54,18 @@ function text(value) {
  * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
 export function imageOf(image, title = '') {
-	const url = text(typeof image === 'object' && image !== null ? image.url ?? image.downloadUrl : image)
+	const url = text(
+		typeof image === 'object' && image !== null
+			? (image.url ?? image.downloadUrl)
+			: image,
+	)
 	if (url === '') {
 		return null
 	}
-	const alt = typeof image === 'object' && image !== null ? text(image.alt ?? image.title) : ''
+	const alt =
+		typeof image === 'object' && image !== null
+			? text(image.alt ?? image.title)
+			: ''
 	return { url, alt: alt !== '' ? alt : title }
 }
 
@@ -77,13 +89,23 @@ export function subjectFrom(row) {
 	const count = Number(row.publicationCount)
 	return {
 		id: String(row.id ?? row.uuid ?? ''),
-		slug: /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(text(row.slug)) ? text(row.slug) : '',
+		slug: /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(text(row.slug))
+			? text(row.slug)
+			: '',
 		title,
 		summary: text(row.summary),
 		description: text(row.description),
 		image: imageOf(row.image, title),
-		publicationCount: Number.isFinite(count) && String(row.publicationCount ?? '') !== '' ? count : null,
-		featuredOrder: Number.isFinite(Number(row.featuredOrder)) && row.featuredOrder !== null && row.featuredOrder !== undefined ? Number(row.featuredOrder) : Infinity,
+		publicationCount:
+			Number.isFinite(count) && String(row.publicationCount ?? '') !== ''
+				? count
+				: null,
+		featuredOrder:
+			Number.isFinite(Number(row.featuredOrder))
+			&& row.featuredOrder !== null
+			&& row.featuredOrder !== undefined
+				? Number(row.featuredOrder)
+				: Infinity,
 		featured: row.featured === true,
 	}
 }
@@ -104,8 +126,15 @@ export function featuredFrom(body, count = 6) {
 	const rows = Array.isArray(body?.results) ? body.results : []
 	return rows
 		.map(subjectFrom)
-		.filter((subject) => subject !== null && subject.featured === true && subject.slug !== '')
-		.sort((a, b) => (a.featuredOrder - b.featuredOrder) || a.title.localeCompare(b.title, 'nl'))
+		.filter(
+			(subject) =>
+				subject !== null && subject.featured === true && subject.slug !== '',
+		)
+		.sort(
+			(a, b) =>
+				a.featuredOrder - b.featuredOrder
+				|| a.title.localeCompare(b.title, 'nl'),
+		)
 		.slice(0, Math.max(0, Number(count) || 0))
 }
 
@@ -133,12 +162,22 @@ export function subjectHref(slug, route = '/onderwerp') {
  *
  * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
-export async function fetchFeatured({ count = 6, fetchImpl = null, endpoint = SUBJECTS_ENDPOINT } = {}) {
-	const url = new URL(endpoint, globalThis.window?.location?.origin || 'http://localhost')
+export async function fetchFeatured({
+	count = 6,
+	fetchImpl = null,
+	endpoint = SUBJECTS_ENDPOINT,
+} = {}) {
+	const url = new URL(
+		endpoint,
+		globalThis.window?.location?.origin || 'http://localhost',
+	)
 	url.searchParams.set('featured', 'true')
 	const read = fetchImpl || ((...args) => globalThis.window.fetch(...args))
 	try {
-		const response = await read(url.toString(), { headers: { Accept: 'application/json' }, credentials: 'omit' })
+		const response = await read(url.toString(), {
+			headers: { Accept: 'application/json' },
+			credentials: 'omit',
+		})
 		if (response.status === 404) {
 			return { state: 'absent', subjects: [] }
 		}
@@ -162,13 +201,19 @@ export async function fetchFeatured({ count = 6, fetchImpl = null, endpoint = SU
  *
  * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
-export async function fetchSubject(slug, { fetchImpl = null, endpoint = SUBJECTS_ENDPOINT } = {}) {
+export async function fetchSubject(
+	slug,
+	{ fetchImpl = null, endpoint = SUBJECTS_ENDPOINT } = {},
+) {
 	if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(String(slug || ''))) {
 		return { state: 'notFound', subject: null }
 	}
 	const read = fetchImpl || ((...args) => globalThis.window.fetch(...args))
 	try {
-		const response = await read(`${endpoint}/${encodeURIComponent(slug)}`, { headers: { Accept: 'application/json' }, credentials: 'omit' })
+		const response = await read(`${endpoint}/${encodeURIComponent(slug)}`, {
+			headers: { Accept: 'application/json' },
+			credentials: 'omit',
+		})
 		if (response.status === 404 || response.status === 403) {
 			return { state: 'notFound', subject: null }
 		}
@@ -176,7 +221,9 @@ export async function fetchSubject(slug, { fetchImpl = null, endpoint = SUBJECTS
 			return { state: 'failed', subject: null }
 		}
 		const subject = subjectFrom(await response.json())
-		return subject === null ? { state: 'notFound', subject: null } : { state: 'ok', subject }
+		return subject === null
+			? { state: 'notFound', subject: null }
+			: { state: 'ok', subject }
 	} catch {
 		return { state: 'failed', subject: null }
 	}
@@ -192,11 +239,18 @@ export async function fetchSubject(slug, { fetchImpl = null, endpoint = SUBJECTS
  *
  * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
-export function countsUrl(by, endpoint = SEARCH_ENDPOINT, origin = 'http://localhost') {
+export function countsUrl(
+	by,
+	endpoint = SEARCH_ENDPOINT,
+	origin = 'http://localhost',
+) {
 	const field = COUNT_FIELDS[by] || COUNT_FIELDS.category
 	const url = new URL(endpoint, origin)
 	url.searchParams.set('_limit', '0')
-	url.searchParams.set(`_facets[${field}][type]`, field === 'publicationDate' ? 'date_histogram' : 'terms')
+	url.searchParams.set(
+		`_facets[${field}][type]`,
+		field === 'publicationDate' ? 'date_histogram' : 'terms',
+	)
 	if (field === 'publicationDate') {
 		url.searchParams.set(`_facets[${field}][interval]`, 'year')
 	}
@@ -221,13 +275,24 @@ export function countsFrom(body, by, searchRoute = '/zoeken', locale = 'nl') {
 	return toBuckets(body?.facets, field)
 		.filter((bucket) => Number.isFinite(bucket.count) && bucket.count > 0)
 		.map((bucket) => {
-			const value = field === 'publicationDate' ? bucket.value.slice(0, 4) : bucket.value
-			const query = field === 'publicationDate'
-				? `periodFrom=${value}-01-01&periodTo=${value}-12-31`
-				: `f.${field}=${encodeURIComponent(value)}`
-			return { value, label: labelOf(field, bucket, value, locale), count: bucket.count, href: `${searchRoute}?${query}` }
+			const value =
+				field === 'publicationDate' ? bucket.value.slice(0, 4) : bucket.value
+			const query =
+				field === 'publicationDate'
+					? `periodFrom=${value}-01-01&periodTo=${value}-12-31`
+					: `f.${field}=${encodeURIComponent(value)}`
+			return {
+				value,
+				label: labelOf(field, bucket, value, locale),
+				count: bucket.count,
+				href: `${searchRoute}?${query}`,
+			}
 		})
-		.sort((a, b) => (field === 'publicationDate' ? b.value.localeCompare(a.value) : b.count - a.count))
+		.sort((a, b) =>
+			field === 'publicationDate'
+				? b.value.localeCompare(a.value)
+				: b.count - a.count,
+		)
 }
 
 /**
@@ -260,18 +325,32 @@ function labelOf(field, bucket, value, locale) {
  *
  * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
-export async function fetchCounts(by, { searchRoute = '/zoeken', fetchImpl = null, endpoint = SEARCH_ENDPOINT, locale = 'nl' } = {}) {
+export async function fetchCounts(
+	by,
+	{
+		searchRoute = '/zoeken',
+		fetchImpl = null,
+		endpoint = SEARCH_ENDPOINT,
+		locale = 'nl',
+	} = {},
+) {
 	const read = fetchImpl || ((...args) => globalThis.window.fetch(...args))
 	try {
 		const origin = globalThis.window?.location?.origin || 'http://localhost'
-		const response = await read(countsUrl(by, endpoint, origin), { headers: { Accept: 'application/json' }, credentials: 'omit' })
+		const response = await read(countsUrl(by, endpoint, origin), {
+			headers: { Accept: 'application/json' },
+			credentials: 'omit',
+		})
 		if (response.status === 404) {
 			return { state: 'absent', counts: [] }
 		}
 		if (!response.ok) {
 			return { state: 'failed', counts: [] }
 		}
-		return { state: 'ok', counts: countsFrom(await response.json(), by, searchRoute, locale) }
+		return {
+			state: 'ok',
+			counts: countsFrom(await response.json(), by, searchRoute, locale),
+		}
 	} catch {
 		return { state: 'failed', counts: [] }
 	}

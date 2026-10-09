@@ -11,9 +11,13 @@
 	scheme, `javascript:`) reads as plain text: no code, no link.
 -->
 <template>
-	<span v-if="address === ''" class="pq-qr-value" data-testid="qr-text">{{ value }}</span>
+	<span v-if="address === ''" class="pq-qr-value" data-testid="qr-text">{{
+		value
+	}}</span>
 	<span v-else class="pq-qr-value" data-testid="qr-value">
-		<a class="utrecht-link" :href="address" data-testid="qr-link">{{ linkText }}</a>
+		<a class="utrecht-link" :href="address" data-testid="qr-link">{{
+			linkText
+		}}</a>
 		<button
 			v-if="compact"
 			type="button"
@@ -29,7 +33,9 @@
 				:label="codeLabel"
 				:nameTemplate="words.name"
 				:size="compact ? 128 : 160" />
-			<span class="pq-qr-value__address" data-testid="qr-address">{{ address }}</span>
+			<span class="pq-qr-value__address" data-testid="qr-address">{{
+				address
+			}}</span>
 			<span class="pq-qr-value__caption">{{ words.caption }}</span>
 		</span>
 	</span>
@@ -97,7 +103,8 @@ export default {
 		 * @spec openspec/changes/link-field-qr-code/tasks.md#t5
 		 */
 		linkText() {
-			return typeof this.column?.linkLabel === 'string' && this.column.linkLabel.trim() !== ''
+			return typeof this.column?.linkLabel === 'string'
+				&& this.column.linkLabel.trim() !== ''
 				? this.column.linkLabel.trim()
 				: this.value.trim()
 		},
@@ -115,7 +122,11 @@ export default {
 		 * @spec openspec/changes/link-field-qr-code/tasks.md#t7
 		 */
 		words() {
-			const lang = (this.locale || globalThis.document?.documentElement?.lang || 'nl').toLowerCase()
+			const lang = (
+				this.locale
+				|| globalThis.document?.documentElement?.lang
+				|| 'nl'
+			).toLowerCase()
 			return lang.startsWith('en') ? STRINGS.en : STRINGS.nl
 		},
 	},

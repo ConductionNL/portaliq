@@ -159,7 +159,10 @@ export function groupDocuments(entries, field) {
 	const byHeading = new Map()
 	for (const entry of list) {
 		const raw = entry?.[field]
-		const heading = typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : ''
+		const heading =
+			typeof raw === 'string' || typeof raw === 'number'
+				? String(raw).trim()
+				: ''
 		if (!byHeading.has(heading)) {
 			const group = { heading, entries: [] }
 			byHeading.set(heading, group)

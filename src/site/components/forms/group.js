@@ -35,13 +35,22 @@ export const GROUP_WORDS = Object.freeze({
 export function repeatOf(field) {
 	const repeat = (field && field.repeat) || {}
 	const number = (value) => (Number.isInteger(value) && value > 0 ? value : 0)
-	const itemLabel = typeof repeat.itemLabel === 'string' && repeat.itemLabel !== '' ? repeat.itemLabel : GROUP_WORDS.item
+	const itemLabel =
+		typeof repeat.itemLabel === 'string' && repeat.itemLabel !== ''
+			? repeat.itemLabel
+			: GROUP_WORDS.item
 	return {
 		min: number(repeat.min) || (field && field.required === true ? 1 : 0),
 		max: number(repeat.max),
 		itemLabel,
-		itemsLabel: typeof repeat.itemsLabel === 'string' && repeat.itemsLabel !== '' ? repeat.itemsLabel : itemLabel,
-		addLabel: typeof repeat.addLabel === 'string' && repeat.addLabel !== '' ? repeat.addLabel : GROUP_WORDS.add,
+		itemsLabel:
+			typeof repeat.itemsLabel === 'string' && repeat.itemsLabel !== ''
+				? repeat.itemsLabel
+				: itemLabel,
+		addLabel:
+			typeof repeat.addLabel === 'string' && repeat.addLabel !== ''
+				? repeat.addLabel
+				: GROUP_WORDS.add,
 	}
 }
 
@@ -150,7 +159,10 @@ export function withItem(items, index, item) {
 export function itemErrors(field, item, template = GROUP_WORDS.required) {
 	const errors = {}
 	for (const sub of Array.isArray(field.fields) ? field.fields : []) {
-		if (sub.required === true && String((item || {})[sub.name] ?? '').trim() === '') {
+		if (
+			sub.required === true
+			&& String((item || {})[sub.name] ?? '').trim() === ''
+		) {
 			errors[sub.name] = template.split('{field}').join(sub.label || sub.name)
 		}
 	}
@@ -173,7 +185,9 @@ export function groupCountErrors(fields, values, words = GROUP_WORDS) {
 		if (!field || field.type !== 'group') {
 			continue
 		}
-		const items = Array.isArray((values || {})[field.name]) ? values[field.name] : []
+		const items = Array.isArray((values || {})[field.name])
+			? values[field.name]
+			: []
 		const missing = missingMessage(field, items, words.addMore)
 		const { max } = repeatOf(field)
 		if (missing !== '') {

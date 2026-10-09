@@ -23,13 +23,16 @@ export function fillBody(body, values) {
 		.split(/(?<=[.!?])\s+/)
 		.map((sentence) => {
 			let empty = false
-			const filled = sentence.replace(/\{(reference|deadline)\}/g, (match, name) => {
-				const value = String(values?.[name] ?? '').trim()
-				if (value === '') {
-					empty = true
-				}
-				return value
-			})
+			const filled = sentence.replace(
+				/\{(reference|deadline)\}/g,
+				(match, name) => {
+					const value = String(values?.[name] ?? '').trim()
+					if (value === '') {
+						empty = true
+					}
+					return value
+				},
+			)
 			return empty ? '' : filled
 		})
 		.filter((sentence) => sentence.trim() !== '')
@@ -51,8 +54,16 @@ export function confirmationView(confirmation, fallbackText, values, defaultTitl
 	const title = String(own.title || '').trim() || defaultTitle
 	const body = fillBody(String(own.body || '').trim() || fallbackText, values)
 	const next = (Array.isArray(own.next) ? own.next : [])
-		.filter((step) => step && (String(step.title || '').trim() || String(step.text || '').trim()))
-		.map((step) => ({ title: String(step.title || ''), text: String(step.text || '') }))
+		.filter(
+			(step) =>
+				step
+				&& (String(step.title || '').trim()
+					|| String(step.text || '').trim()),
+		)
+		.map((step) => ({
+			title: String(step.title || ''),
+			text: String(step.text || ''),
+		}))
 	return { title, body, next }
 }
 
@@ -67,7 +78,11 @@ export function confirmationView(confirmation, fallbackText, values, defaultTitl
 export function missingStatements(asked, accepted) {
 	const ticked = Array.isArray(accepted) ? accepted : []
 	return (Array.isArray(asked) ? asked : [])
-		.filter((statement) => statement.required === true && (!statement.text || !ticked.includes(statement.key)))
+		.filter(
+			(statement) =>
+				statement.required === true
+				&& (!statement.text || !ticked.includes(statement.key)),
+		)
 		.map((statement) => statement.key)
 }
 
@@ -86,7 +101,9 @@ export function introView(intro) {
 		.map((block) => ({
 			title: String(block?.title || ''),
 			text: String(block?.text || ''),
-			items: (Array.isArray(block?.items) ? block.items : []).map(String).filter(Boolean),
+			items: (Array.isArray(block?.items) ? block.items : [])
+				.map(String)
+				.filter(Boolean),
 		}))
 		.filter((block) => block.title || block.text || block.items.length > 0)
 	const lead = String(intro.lead || '')

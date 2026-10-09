@@ -373,7 +373,8 @@ function foldOutcomes(outcomes, record, sessions) {
 	list(record.zeroResultSearches).forEach((row) => {
 		const term = String(row.term || '')
 		if (term !== '') {
-			outcomes.zeroResults[term] = (outcomes.zeroResults[term] || 0) + num(row.count)
+			outcomes.zeroResults[term] =
+				(outcomes.zeroResults[term] || 0) + num(row.count)
 		}
 	})
 	outcomes.withoutCount += num(record.searchesWithoutCount)
@@ -859,7 +860,9 @@ export function searchLinkOf(portal, term, generateUrlFn) {
 	if (slug === '' || String(term || '') === '') {
 		return ''
 	}
-	const configured = String((portal.headerSearch && portal.headerSearch.route) || '')
+	const configured = String(
+		(portal.headerSearch && portal.headerSearch.route) || '',
+	)
 	const route = /^\/(?!\/)/.test(configured) ? configured : '/zoeken'
 	return `${pageSiteUrl({ route, portal: slug }, generateUrlFn)}&_search=${encodeURIComponent(term)}`
 }

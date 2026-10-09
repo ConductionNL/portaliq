@@ -17,11 +17,7 @@
 		:aria-labelledby="headingId"
 		data-testid="form-help-dialog"
 		@keydown.esc="$emit('close')">
-		<h2
-			:id="headingId"
-			ref="heading"
-			class="utrecht-heading-2"
-			tabindex="-1">
+		<h2 :id="headingId" ref="heading" class="utrecht-heading-2" tabindex="-1">
 			{{ say('title') }}
 		</h2>
 		<img
@@ -36,7 +32,9 @@
 				<dt>{{ say('phone') }}</dt>
 				<dd>
 					{{ help.phone }}
-					<span v-if="note" class="pq-form-help-modal__note">{{ note }}</span>
+					<span v-if="note" class="pq-form-help-modal__note">{{
+						note
+					}}</span>
 				</dd>
 			</div>
 			<div v-if="help.hours" data-testid="form-help-hours">
@@ -49,12 +47,9 @@
 			</div>
 		</dl>
 		<p v-if="mailto" class="utrecht-paragraph">
-			<a
-				class="utrecht-link"
-				:href="mailto"
-				data-testid="form-help-email"
-				>{{ say('email') }}</a
-			>
+			<a class="utrecht-link" :href="mailto" data-testid="form-help-email">{{
+				say('email')
+			}}</a>
 		</p>
 		<button
 			type="button"

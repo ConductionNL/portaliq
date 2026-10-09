@@ -25,7 +25,9 @@ async function get(path, query) {
 			url.searchParams.set(key, String(value))
 		}
 	}
-	const response = await fetch(url.toString(), { headers: { Accept: 'application/json' } })
+	const response = await fetch(url.toString(), {
+		headers: { Accept: 'application/json' },
+	})
 	if (!response.ok) {
 		const error = new Error(`content api ${response.status} for ${path}`)
 		error.status = response.status
@@ -42,7 +44,11 @@ async function get(path, query) {
  * @return {Promise<Array<{question: string, answer: string, topic: string, pages: Array<string>}>>} The entries.
  */
 export async function fetchFaq(portal, filter = {}) {
-	const body = await get('/faq', { portal, page: filter.page, topic: filter.topic })
+	const body = await get('/faq', {
+		portal,
+		page: filter.page,
+		topic: filter.topic,
+	})
 	return Array.isArray(body?.entries) ? body.entries : []
 }
 

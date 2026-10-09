@@ -30,7 +30,10 @@ export function gather(slug, contributions) {
 			if (collection?.theme !== slug) {
 				continue
 			}
-			out[collection.kind === 'products' ? 'products' : 'tasks'].push({ app, collection })
+			out[collection.kind === 'products' ? 'products' : 'tasks'].push({
+				app,
+				collection,
+			})
 		}
 		for (const action of contribution?.actions || []) {
 			if (action?.theme === slug) {
@@ -91,12 +94,17 @@ export function productView(row, collection, today, format, t) {
 	const state = productState(row, collection, today)
 	const from = day(row?.[collection?.validFromField])
 	const until = day(row?.[collection?.validUntilField])
-	const title = String(row?.[collection?.titleField] ?? row?.title ?? row?.name ?? '')
+	const title = String(
+		row?.[collection?.titleField] ?? row?.title ?? row?.name ?? '',
+	)
 	const meta = (collection?.metaFields || [])
 		.map((field) => {
 			const value = String(row?.[field] ?? '').trim()
-			const label = collection.fieldConfigs?.[field]?.label
-				|| (collection.columns || []).find((column) => column.field === field)?.label
+			const label =
+				collection.fieldConfigs?.[field]?.label
+				|| (collection.columns || []).find(
+					(column) => column.field === field,
+				)?.label
 				|| ''
 			return value === '' ? '' : `${label} ${value}`.trim()
 		})
@@ -115,7 +123,8 @@ export function productView(row, collection, today, format, t) {
 		state,
 		tag: tags[state],
 		meta: meta.join(' · '),
-		validUntil: until === '' ? '' : t('Valid until {date}', { date: format(until) }),
+		validUntil:
+			until === '' ? '' : t('Valid until {date}', { date: format(until) }),
 	}
 }
 
@@ -133,7 +142,11 @@ export function productView(row, collection, today, format, t) {
 export function sortedProducts(rows, collection, today) {
 	const rank = { valid: 0, upcoming: 1, expired: 2 }
 	return (Array.isArray(rows) ? rows : [])
-		.map((row, index) => ({ row, index, rank: rank[productState(row, collection, today)] }))
+		.map((row, index) => ({
+			row,
+			index,
+			rank: rank[productState(row, collection, today)],
+		}))
 		.sort((a, b) => a.rank - b.rank || a.index - b.index)
 		.map((entry) => entry.row)
 }
@@ -150,7 +163,11 @@ export function sortedProducts(rows, collection, today) {
  */
 export function countLine(count, collection, t) {
 	const label = collection?.countLabel
-	if (label && typeof label.singular === 'string' && typeof label.plural === 'string') {
+	if (
+		label
+		&& typeof label.singular === 'string'
+		&& typeof label.plural === 'string'
+	) {
 		return `${count} ${count === 1 ? label.singular : label.plural}`
 	}
 	return t('{count} in total', { count })
@@ -177,7 +194,10 @@ export function whenHolds(when, row) {
 		return String(value) !== String(when.value)
 	}
 	if (when.op === 'in') {
-		return Array.isArray(when.value) && when.value.map(String).includes(String(value))
+		return (
+			Array.isArray(when.value)
+			&& when.value.map(String).includes(String(value))
+		)
 	}
 	return false
 }
@@ -242,6 +262,11 @@ export function rowActions(row, product, actions) {
  */
 export function themesToList(themes) {
 	return (Array.isArray(themes) ? themes : [])
-		.filter((theme) => theme && typeof theme.slug === 'string' && typeof theme.title === 'string')
+		.filter(
+			(theme) =>
+				theme
+				&& typeof theme.slug === 'string'
+				&& typeof theme.title === 'string',
+		)
 		.map((theme) => ({ slug: theme.slug, title: theme.title }))
 }

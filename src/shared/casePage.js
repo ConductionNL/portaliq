@@ -37,13 +37,20 @@ export function tasksOfCase(reads, caseKeys) {
 			if (!keys.includes(String(value).trim())) {
 				continue
 			}
-			const titleFields = read.collection.titleFields || ['title', 'name', 'subject', 'onderwerp']
+			const titleFields = read.collection.titleFields || [
+				'title',
+				'name',
+				'subject',
+				'onderwerp',
+			]
 			tasks.push({
 				id: String(row.id || row['@self']?.id || ''),
 				title:
 					titleFields
 						.map((name) => row[name])
-						.find((text) => typeof text === 'string' && text.trim() !== '')
+						.find(
+							(text) => typeof text === 'string' && text.trim() !== '',
+						)
 					|| read.collection.label
 					|| '',
 				due: typeof row.due === 'string' ? row.due : '',
@@ -110,7 +117,9 @@ export function bannerSentence(tasks, legalDecisionDate, t, locale) {
 		)
 	}
 	if (due) {
-		return t('We still need documents from you. Send them before {due}.', { due })
+		return t('We still need documents from you. Send them before {due}.', {
+			due,
+		})
 	}
 	return t('We still need documents from you.')
 }

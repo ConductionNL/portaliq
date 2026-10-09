@@ -15,14 +15,16 @@ const WORDS = {
 		boxLabel: 'Tekenvak voor uw handtekening',
 		signatureSet: 'Handtekening geplaatst',
 		emailSend: 'Stuur een code',
-		emailSent: 'Wij hebben een code gestuurd naar {email}. Vul de code hieronder in. De code is 15 minuten geldig.',
+		emailSent:
+			'Wij hebben een code gestuurd naar {email}. Vul de code hieronder in. De code is 15 minuten geldig.',
 		emailCodeLabel: 'Code uit de e-mail',
 		emailCheck: 'Code controleren',
 		emailResend: 'Geen code gekregen? Stuur een nieuwe code',
 		emailWait: 'U kunt over een minuut een nieuwe code vragen.',
 		emailVerified: 'Dit e-mailadres is gecontroleerd.',
 		emailVerifyFirst: 'Controleer dit e-mailadres met de code die wij u sturen.',
-		emailWrong: 'Deze code klopt niet. Controleer de code of vraag een nieuwe aan.',
+		emailWrong:
+			'Deze code klopt niet. Controleer de code of vraag een nieuwe aan.',
 		emailExpired: 'Deze code is verlopen. Vraag een nieuwe code aan.',
 		emailTooMany: 'Te veel pogingen. Vraag een nieuwe code aan.',
 		emailThrottled: 'Er zijn te veel codes gevraagd. Probeer het later opnieuw.',
@@ -38,7 +40,8 @@ const WORDS = {
 		boxLabel: 'Box to draw your signature in',
 		signatureSet: 'Signature added',
 		emailSend: 'Send a code',
-		emailSent: 'We sent a code to {email}. Enter the code below. The code works for 15 minutes.',
+		emailSent:
+			'We sent a code to {email}. Enter the code below. The code works for 15 minutes.',
 		emailCodeLabel: 'Code from the e-mail',
 		emailCheck: 'Check code',
 		emailResend: 'No code? Send a new code',
@@ -63,7 +66,11 @@ const WORDS = {
  * @spec openspec/changes/resident-identity-in-forms/tasks.md#t02
  */
 export function identityWords(locale) {
-	return String(locale || '').toLowerCase().startsWith('en') ? WORDS.en : WORDS.nl
+	return String(locale || '')
+		.toLowerCase()
+		.startsWith('en')
+		? WORDS.en
+		: WORDS.nl
 }
 
 /**
@@ -96,5 +103,8 @@ export function emailCodeProblem(words, reason) {
  * @spec openspec/changes/resident-identity-in-forms/tasks.md#t02
  */
 export function typedSignatureName(name) {
-	return String(name || '').replace(/\s+/g, ' ').trim().slice(0, 80)
+	return String(name || '')
+		.replace(/\s+/g, ' ')
+		.trim()
+		.slice(0, 80)
 }

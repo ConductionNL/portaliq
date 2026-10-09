@@ -82,7 +82,9 @@
 						:busy="busyId === entry.id"
 						:isNew="entry.isNew === true"
 						:newLabel="tr('New')"
-						:status="typeof entry.status === 'string' ? entry.status : ''"
+						:status="
+							typeof entry.status === 'string' ? entry.status : ''
+						"
 						:statusState="stateOf(entry)"
 						@open="openDocument(entry)" />
 				</ul>

@@ -19,13 +19,20 @@
 				:key="index"
 				class="pq-group__card"
 				data-testid="group-card">
-				<h4 :ref="`card${index}`" class="utrecht-heading-4 pq-group__title" tabindex="-1">
+				<h4
+					:ref="`card${index}`"
+					class="utrecht-heading-4 pq-group__title"
+					tabindex="-1">
 					{{ titleOf(index) }}
 				</h4>
-				<p v-if="linesOf(item).first" class="utrecht-paragraph pq-group__line">
+				<p
+					v-if="linesOf(item).first"
+					class="utrecht-paragraph pq-group__line">
 					{{ linesOf(item).first }}
 				</p>
-				<p v-if="linesOf(item).rest" class="utrecht-paragraph pq-group__line">
+				<p
+					v-if="linesOf(item).rest"
+					class="utrecht-paragraph pq-group__line">
 					{{ linesOf(item).rest }}
 				</p>
 				<div class="pq-group__actions">
@@ -55,7 +62,10 @@
 			role="group"
 			:aria-label="editing < 0 ? titleOf(items.length) : titleOf(editing)"
 			data-testid="group-form">
-			<div v-for="(sub, at) in subFields" :key="sub.name" class="pq-group__question">
+			<div
+				v-for="(sub, at) in subFields"
+				:key="sub.name"
+				class="pq-group__question">
 				<label class="utrecht-form-label" :for="`${id}-sub-${sub.name}`">{{
 					sub.label || sub.name
 				}}</label>
@@ -242,11 +252,15 @@ export default {
 			this.draft = Object.fromEntries(
 				this.subFields.map((sub) => [
 					sub.name,
-					index >= 0 ? String((this.items[index] || {})[sub.name] ?? '') : '',
+					index >= 0
+						? String((this.items[index] || {})[sub.name] ?? '')
+						: '',
 				]),
 			)
 			this.$nextTick(() => {
-				const first = Array.isArray(this.$refs.first) ? this.$refs.first[0] : this.$refs.first
+				const first = Array.isArray(this.$refs.first)
+					? this.$refs.first[0]
+					: this.$refs.first
 				if (first && first.focus) {
 					first.focus()
 				}

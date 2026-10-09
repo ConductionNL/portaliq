@@ -12,7 +12,10 @@
 	offers it.
 -->
 <template>
-	<article class="pq-plan" :aria-busy="plan === null && !missing ? 'true' : undefined" data-testid="plan-page">
+	<article
+		class="pq-plan"
+		:aria-busy="plan === null && !missing ? 'true' : undefined"
+		data-testid="plan-page">
 		<button
 			type="button"
 			class="utrecht-link utrecht-link--button pq-plan__back"
@@ -20,7 +23,11 @@
 			@click="$emit('back')">
 			{{ words.back }}
 		</button>
-		<p v-if="missing" class="utrecht-paragraph" role="alert" data-testid="plan-missing">
+		<p
+			v-if="missing"
+			class="utrecht-paragraph"
+			role="alert"
+			data-testid="plan-missing">
 			{{ words.failed }}
 		</p>
 		<p v-else-if="plan === null" class="utrecht-paragraph" role="status">
@@ -31,7 +38,9 @@
 				<h1 class="utrecht-heading-2" data-testid="plan-title">
 					{{ plan.title }}
 				</h1>
-				<span class="pq-plan__tag" :data-state="plan.state">{{ words[plan.state] }}</span>
+				<span class="pq-plan__tag" :data-state="plan.state">{{
+					words[plan.state]
+				}}</span>
 				<button
 					type="button"
 					class="utrecht-button utrecht-button--secondary-action"
@@ -40,10 +49,18 @@
 					{{ words.download }}
 				</button>
 			</div>
-			<p v-if="notice !== ''" class="utrecht-paragraph" role="status" data-testid="plan-notice">
+			<p
+				v-if="notice !== ''"
+				class="utrecht-paragraph"
+				role="status"
+				data-testid="plan-notice">
 				{{ notice }}
 			</p>
-			<p v-if="problem !== ''" class="utrecht-paragraph pq-plan__error" role="alert" data-testid="plan-problem">
+			<p
+				v-if="problem !== ''"
+				class="utrecht-paragraph pq-plan__error"
+				role="alert"
+				data-testid="plan-problem">
 				{{ problem }}
 			</p>
 			<div
@@ -51,8 +68,12 @@
 				class="utrecht-alert utrecht-alert--warning"
 				role="status"
 				data-testid="plan-alert">
-				<strong>{{ fill(words.alert, { days: plan.daysLeft, date: plan.endDate }) }}</strong>
-				<span>{{ fill(words.alertDetail, { count: plan.openActions }) }}</span>
+				<strong>{{
+					fill(words.alert, { days: plan.daysLeft, date: plan.endDate })
+				}}</strong>
+				<span>{{
+					fill(words.alertDetail, { count: plan.openActions })
+				}}</span>
 			</div>
 
 			<section aria-labelledby="pq-plan-goal">
@@ -60,11 +81,22 @@
 					{{ words.goal }}
 				</h2>
 				<template v-if="editing === 'goal'">
-					<textarea v-model="draft" class="utrecht-textarea" :aria-label="words.goal" data-testid="plan-goal-input" />
-					<button type="button" class="utrecht-button utrecht-button--primary-action" data-testid="plan-goal-save" @click="saveField('goal')">
+					<textarea
+						v-model="draft"
+						class="utrecht-textarea"
+						:aria-label="words.goal"
+						data-testid="plan-goal-input" />
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--primary-action"
+						data-testid="plan-goal-save"
+						@click="saveField('goal')">
 						{{ words.save }}
 					</button>
-					<button type="button" class="utrecht-button utrecht-button--secondary-action" @click="editing = ''">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						@click="editing = ''">
 						{{ words.cancel }}
 					</button>
 				</template>
@@ -88,11 +120,24 @@
 					{{ words.actions }}
 				</h2>
 				<p class="utrecht-paragraph">
-					{{ fill(words.progress, { done: plan.doneActions, total: plan.totalActions }) }}
+					{{
+						fill(words.progress, {
+							done: plan.doneActions,
+							total: plan.totalActions,
+						})
+					}}
 				</p>
-				<table v-if="plan.actions.length > 0" class="utrecht-table" data-testid="plan-actions">
+				<table
+					v-if="plan.actions.length > 0"
+					class="utrecht-table"
+					data-testid="plan-actions">
 					<caption class="utrecht-table__caption">
-						{{ words.actions }}: {{ plan.title }}
+						{{
+							words.actions
+						}}:
+						{{
+							plan.title
+						}}
 					</caption>
 					<thead>
 						<tr>
@@ -103,7 +148,10 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="action in plan.actions" :key="action.id" data-testid="plan-action">
+						<tr
+							v-for="action in plan.actions"
+							:key="action.id"
+							data-testid="plan-action">
 							<td>{{ action.title }}</td>
 							<td>
 								<select
@@ -114,7 +162,9 @@
 									@change="setStatus(action, $event.target.value)">
 									<option value="todo">{{ words.todo }}</option>
 									<option value="doing">{{ words.doing }}</option>
-									<option value="done">{{ words.doneStatus }}</option>
+									<option value="done">
+										{{ words.doneStatus }}
+									</option>
 								</select>
 							</td>
 							<td>{{ action.endDate }}</td>
@@ -122,18 +172,47 @@
 						</tr>
 					</tbody>
 				</table>
-				<form v-if="plan.canEdit" class="pq-plan__add" novalidate @submit.prevent="addAction">
-					<label for="pq-plan-new-action" class="utrecht-form-label">{{ words.actionTitle }}</label>
-					<input id="pq-plan-new-action" v-model="newAction.title" class="utrecht-textbox" type="text" data-testid="plan-new-title" />
-					<label for="pq-plan-new-date" class="utrecht-form-label">{{ words.actionDate }}</label>
-					<input id="pq-plan-new-date" v-model="newAction.endDate" class="utrecht-textbox" type="date" data-testid="plan-new-date" />
-					<label for="pq-plan-new-who" class="utrecht-form-label">{{ words.actionWho }}</label>
-					<select id="pq-plan-new-who" v-model="newAction.assignee" data-testid="plan-new-who">
-						<option v-for="person in plan.participants" :key="person.ref" :value="person.ref">
+				<form
+					v-if="plan.canEdit"
+					class="pq-plan__add"
+					novalidate
+					@submit.prevent="addAction">
+					<label for="pq-plan-new-action" class="utrecht-form-label">{{
+						words.actionTitle
+					}}</label>
+					<input
+						id="pq-plan-new-action"
+						v-model="newAction.title"
+						class="utrecht-textbox"
+						type="text"
+						data-testid="plan-new-title" />
+					<label for="pq-plan-new-date" class="utrecht-form-label">{{
+						words.actionDate
+					}}</label>
+					<input
+						id="pq-plan-new-date"
+						v-model="newAction.endDate"
+						class="utrecht-textbox"
+						type="date"
+						data-testid="plan-new-date" />
+					<label for="pq-plan-new-who" class="utrecht-form-label">{{
+						words.actionWho
+					}}</label>
+					<select
+						id="pq-plan-new-who"
+						v-model="newAction.assignee"
+						data-testid="plan-new-who">
+						<option
+							v-for="person in plan.participants"
+							:key="person.ref"
+							:value="person.ref">
 							{{ personName(person) }}
 						</option>
 					</select>
-					<button type="submit" class="utrecht-button utrecht-button--secondary-action" data-testid="plan-add-action">
+					<button
+						type="submit"
+						class="utrecht-button utrecht-button--secondary-action"
+						data-testid="plan-add-action">
 						{{ words.addAction }}
 					</button>
 				</form>
@@ -144,11 +223,22 @@
 					{{ words.notes }}
 				</h2>
 				<template v-if="editing === 'note'">
-					<textarea v-model="draft" class="utrecht-textarea" :aria-label="words.notes" data-testid="plan-note-input" />
-					<button type="button" class="utrecht-button utrecht-button--primary-action" data-testid="plan-note-save" @click="saveField('note')">
+					<textarea
+						v-model="draft"
+						class="utrecht-textarea"
+						:aria-label="words.notes"
+						data-testid="plan-note-input" />
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--primary-action"
+						data-testid="plan-note-save"
+						@click="saveField('note')">
 						{{ words.save }}
 					</button>
-					<button type="button" class="utrecht-button utrecht-button--secondary-action" @click="editing = ''">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						@click="editing = ''">
 						{{ words.cancel }}
 					</button>
 				</template>
@@ -157,7 +247,8 @@
 						{{ plan.note.text }}
 					</p>
 					<p v-if="plan.note.editedBy" class="utrecht-paragraph">
-						{{ plan.note.editedBy }}, {{ plan.note.editedAt.slice(0, 10) }}
+						{{ plan.note.editedBy }},
+						{{ plan.note.editedAt.slice(0, 10) }}
 					</p>
 					<button
 						v-if="plan.canEdit"
@@ -175,7 +266,10 @@
 					{{ words.participants }}
 				</h2>
 				<ul class="utrecht-unordered-list">
-					<li v-for="person in plan.participants" :key="person.ref" data-testid="plan-person">
+					<li
+						v-for="person in plan.participants"
+						:key="person.ref"
+						data-testid="plan-person">
 						{{ personName(person) }}
 						<button
 							v-if="plan.isOwner && plan.canEdit && !person.isOwner"
@@ -187,15 +281,29 @@
 						</button>
 					</li>
 				</ul>
-				<div v-if="plan.isOwner && plan.canEdit && addable.length > 0" class="pq-plan__add">
-					<label for="pq-plan-add-person" class="utrecht-form-label">{{ words.addParticipant }}</label>
-					<select id="pq-plan-add-person" v-model="newPerson" data-testid="plan-add-person">
+				<div
+					v-if="plan.isOwner && plan.canEdit && addable.length > 0"
+					class="pq-plan__add">
+					<label for="pq-plan-add-person" class="utrecht-form-label">{{
+						words.addParticipant
+					}}</label>
+					<select
+						id="pq-plan-add-person"
+						v-model="newPerson"
+						data-testid="plan-add-person">
 						<option value="">-</option>
-						<option v-for="contact in addable" :key="contact.id" :value="contact.id">
+						<option
+							v-for="contact in addable"
+							:key="contact.id"
+							:value="contact.id">
 							{{ contact.displayName }}
 						</option>
 					</select>
-					<button type="button" class="utrecht-button utrecht-button--secondary-action" data-testid="plan-add-person-submit" @click="addPerson">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						data-testid="plan-add-person-submit"
+						@click="addPerson">
 						{{ words.addParticipant }}
 					</button>
 				</div>
@@ -209,15 +317,28 @@
 					{{ plan.endDate }} {{ daysText }}
 				</p>
 				<div v-if="plan.isOwner && plan.canEdit" class="pq-plan__add">
-					<input v-model="endDraft" class="utrecht-textbox" type="date" :aria-label="words.endDate" data-testid="plan-end-input" />
-					<button type="button" class="utrecht-button utrecht-button--secondary-action" data-testid="plan-end-save" @click="saveEnd">
+					<input
+						v-model="endDraft"
+						class="utrecht-textbox"
+						type="date"
+						:aria-label="words.endDate"
+						data-testid="plan-end-input" />
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						data-testid="plan-end-save"
+						@click="saveEnd">
 						{{ words.save }}
 					</button>
 				</div>
 			</section>
 
 			<section v-if="plan.isOwner && plan.canEdit" class="pq-plan__owner">
-				<button type="button" class="utrecht-button utrecht-button--secondary-action" data-testid="plan-done" @click="finish">
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action"
+					data-testid="plan-done"
+					@click="finish">
 					{{ words.markDone }}
 				</button>
 				<button
@@ -230,10 +351,17 @@
 				</button>
 				<template v-else>
 					<span>{{ words.sure }}</span>
-					<button type="button" class="utrecht-button utrecht-button--primary-action" data-testid="plan-delete-confirm" @click="destroy">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--primary-action"
+						data-testid="plan-delete-confirm"
+						@click="destroy">
 						{{ words.deletePlan }}
 					</button>
-					<button type="button" class="utrecht-button utrecht-button--secondary-action" @click="confirming = false">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						@click="confirming = false">
 						{{ words.cancel }}
 					</button>
 				</template>
@@ -286,7 +414,9 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
 		words() {
-			return planWords(this.locale || globalThis.document?.documentElement?.lang || '')
+			return planWords(
+				this.locale || globalThis.document?.documentElement?.lang || '',
+			)
 		},
 
 		/**
@@ -294,7 +424,9 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
 		daysText() {
-			return this.plan.state === 'done' ? '' : daysLine(this.plan.daysLeft, this.words)
+			return this.plan.state === 'done'
+				? ''
+				: daysLine(this.plan.daysLeft, this.words)
 		},
 
 		/**
@@ -302,8 +434,12 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
 		addable() {
-			const inPlan = new Set((this.plan?.participants || []).map((person) => person.ref))
-			return (this.plan?.contacts || []).filter((contact) => !inPlan.has(contact.ref))
+			const inPlan = new Set(
+				(this.plan?.participants || []).map((person) => person.ref),
+			)
+			return (this.plan?.contacts || []).filter(
+				(contact) => !inPlan.has(contact.ref),
+			)
 		},
 	},
 
@@ -325,7 +461,11 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
 		personName(person) {
-			return personLine(person, String(this.session?.subjectRef || ''), this.words)
+			return personLine(
+				person,
+				String(this.session?.subjectRef || ''),
+				this.words,
+			)
 		},
 
 		/**
@@ -342,7 +482,11 @@ export default {
 			}
 			this.plan = plan
 			this.endDraft = plan.endDate
-			this.newAction.assignee = this.newAction.assignee || String(this.session?.subjectRef || plan.participants[0]?.ref || '')
+			this.newAction.assignee =
+				this.newAction.assignee
+				|| String(
+					this.session?.subjectRef || plan.participants[0]?.ref || '',
+				)
 		},
 
 		/**
@@ -356,7 +500,10 @@ export default {
 		async run(action, args) {
 			this.problem = ''
 			this.notice = ''
-			const answer = await plansApi(this.api).planAction(action, { id: this.planId, ...args })
+			const answer = await plansApi(this.api).planAction(action, {
+				id: this.planId,
+				...args,
+			})
 			if (!answer.ok) {
 				this.problem = this.words.failed
 				return false
@@ -420,7 +567,9 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
 		async destroy() {
-			const answer = await plansApi(this.api).planAction('delete', { id: this.planId })
+			const answer = await plansApi(this.api).planAction('delete', {
+				id: this.planId,
+			})
 			if (!answer.ok) {
 				this.problem = this.words.failed
 				return
@@ -447,7 +596,10 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
 		async addAction() {
-			const data = { title: this.newAction.title.trim(), assignee: this.newAction.assignee }
+			const data = {
+				title: this.newAction.title.trim(),
+				assignee: this.newAction.assignee,
+			}
 			if (this.newAction.endDate !== '') {
 				data.endDate = this.newAction.endDate
 			}
@@ -468,7 +620,12 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
 		async addPerson() {
-			if (this.newPerson !== '' && (await this.run('addParticipants', { data: { contactIds: [this.newPerson] } }))) {
+			if (
+				this.newPerson !== ''
+				&& (await this.run('addParticipants', {
+					data: { contactIds: [this.newPerson] },
+				}))
+			) {
 				this.newPerson = ''
 			}
 		},
@@ -492,9 +649,15 @@ export default {
 		 */
 		async pdf() {
 			this.problem = ''
-			const answer = await plansApi(this.api).downloadPlanPdf(this.planId, this.plan.title)
+			const answer = await plansApi(this.api).downloadPlanPdf(
+				this.planId,
+				this.plan.title,
+			)
 			if (!answer.ok) {
-				this.problem = answer.status === 503 ? this.words.pdfUnavailable : this.words.failed
+				this.problem =
+					answer.status === 503
+						? this.words.pdfUnavailable
+						: this.words.failed
 			}
 		},
 	},
@@ -518,7 +681,8 @@ export default {
 
 .pq-plan__tag {
 	padding: 0 var(--utrecht-space-inline-sm, 0.5rem);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 	border-radius: 999px;
 }
 

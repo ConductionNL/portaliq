@@ -137,7 +137,10 @@ export default {
 		point(event) {
 			const box = this.$refs.canvas.getBoundingClientRect()
 			const scale = box.width > 0 ? this.$refs.canvas.width / box.width : 1
-			return { x: (event.clientX - box.left) * scale, y: (event.clientY - box.top) * scale }
+			return {
+				x: (event.clientX - box.left) * scale,
+				y: (event.clientY - box.top) * scale,
+			}
 		},
 
 		/**
@@ -189,7 +192,10 @@ export default {
 				return
 			}
 			this.drawing = false
-			this.$emit('update:modelValue', this.inked ? this.$refs.canvas.toDataURL('image/png') : '')
+			this.$emit(
+				'update:modelValue',
+				this.inked ? this.$refs.canvas.toDataURL('image/png') : '',
+			)
 		},
 
 		/**

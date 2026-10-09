@@ -30,7 +30,10 @@
 			<p class="utrecht-paragraph">
 				{{ words.intro }}
 			</p>
-			<p v-if="problem !== ''" class="utrecht-paragraph pq-plans__error" role="alert">
+			<p
+				v-if="problem !== ''"
+				class="utrecht-paragraph pq-plans__error"
+				role="alert">
 				{{ problem }}
 			</p>
 			<p v-if="loading" class="utrecht-paragraph" role="status">
@@ -40,40 +43,74 @@
 				<h2 class="utrecht-heading-3">
 					{{ words.yourPlans }}
 				</h2>
-				<div class="pq-plans__chips" role="group" :aria-label="words.yourPlans">
+				<div
+					class="pq-plans__chips"
+					role="group"
+					:aria-label="words.yourPlans">
 					<button
 						v-for="chip in chips"
 						:key="chip"
 						type="button"
 						class="utrecht-button"
-						:class="chip === chipChosen ? 'utrecht-button--primary-action' : 'utrecht-button--secondary-action'"
+						:class="
+							chip === chipChosen
+								? 'utrecht-button--primary-action'
+								: 'utrecht-button--secondary-action'
+						"
 						:aria-pressed="chip === chipChosen ? 'true' : 'false'"
 						:data-testid="`plans-chip-${chip}`"
 						@click="chipChosen = chip">
 						{{ words[chip] }} ({{ count(chip) }})
 					</button>
 				</div>
-				<p v-if="shown.length === 0" class="utrecht-paragraph" data-testid="plans-empty">
+				<p
+					v-if="shown.length === 0"
+					class="utrecht-paragraph"
+					data-testid="plans-empty">
 					{{ words.noPlans }}
 				</p>
 				<ul v-else class="pq-plans__cards">
-					<li v-for="plan in shown" :key="plan.id" class="pq-plans__card" data-testid="plan-card">
+					<li
+						v-for="plan in shown"
+						:key="plan.id"
+						class="pq-plans__card"
+						data-testid="plan-card">
 						<h3 class="utrecht-heading-4">
 							{{ plan.title }}
 						</h3>
-						<span class="pq-plans__tag" :data-state="plan.state">{{ words[plan.state] }}</span>
+						<span class="pq-plans__tag" :data-state="plan.state">{{
+							words[plan.state]
+						}}</span>
 						<span v-if="daysText(plan)">{{ daysText(plan) }}</span>
-						<span v-if="plan.goal">{{ words.goal }}: {{ plan.goal }}</span>
-						<span v-if="plan.endDate">{{ words.endDate }}: {{ plan.endDate }}</span>
-						<span>{{ fill(words.openActions, { count: plan.openActions }) }}</span>
+						<span v-if="plan.goal"
+							>{{ words.goal }}: {{ plan.goal }}</span
+						>
+						<span v-if="plan.endDate"
+							>{{ words.endDate }}: {{ plan.endDate }}</span
+						>
+						<span>{{
+							fill(words.openActions, { count: plan.openActions })
+						}}</span>
 						<span>{{ sharedText(plan) }}</span>
 						<span class="pq-plans__people">
-							<span v-for="person in plan.participants" :key="person.ref" class="pq-plans__person">
-								<span class="pq-plans__initials" aria-hidden="true">{{ initials(person.displayName) }}</span>
+							<span
+								v-for="person in plan.participants"
+								:key="person.ref"
+								class="pq-plans__person">
+								<span
+									class="pq-plans__initials"
+									aria-hidden="true"
+									>{{ initials(person.displayName) }}</span
+								>
 								{{ person.displayName }}
 							</span>
 						</span>
-						<span v-if="plan.totalActions > 0">{{ fill(words.progress, { done: plan.doneActions, total: plan.totalActions }) }}</span>
+						<span v-if="plan.totalActions > 0">{{
+							fill(words.progress, {
+								done: plan.doneActions,
+								total: plan.totalActions,
+							})
+						}}</span>
 						<button
 							type="button"
 							class="utrecht-button utrecht-button--secondary-action"
@@ -106,7 +143,13 @@
 import PlanStartModal from '../../modals/e/PlanStartModal.vue'
 import PlanPage from './PlanPage.vue'
 import { plansApi } from '../../../shared/areaApi.js'
-import { chipCount, daysLine, fill, plansOfChip, planWords } from '../../lib/plans.js'
+import {
+	chipCount,
+	daysLine,
+	fill,
+	plansOfChip,
+	planWords,
+} from '../../lib/plans.js'
 import { initialsOf } from './contacts.js'
 
 /**
@@ -144,7 +187,9 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 		 */
 		words() {
-			return planWords(this.locale || globalThis.document?.documentElement?.lang || '')
+			return planWords(
+				this.locale || globalThis.document?.documentElement?.lang || '',
+			)
 		},
 
 		/**
@@ -193,7 +238,9 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 		 */
 		sharedText(plan) {
-			return plan.role === 'owner' ? this.words.madeByYou : fill(this.words.sharedBy, { name: plan.sharedBy })
+			return plan.role === 'owner'
+				? this.words.madeByYou
+				: fill(this.words.sharedBy, { name: plan.sharedBy })
 		},
 
 		/**
@@ -272,13 +319,15 @@ export default {
 	flex-direction: column;
 	gap: var(--utrecht-space-block-xs, 0.25rem);
 	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 }
 
 .pq-plans__tag {
 	align-self: flex-start;
 	padding: 0 var(--utrecht-space-inline-sm, 0.5rem);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 	border-radius: 999px;
 }
 

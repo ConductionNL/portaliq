@@ -258,7 +258,10 @@ export function tableOf(items, columns) {
 		.map((column) =>
 			typeof column === 'string'
 				? { key: column, label: column }
-				: { key: String(column?.key ?? ''), label: String(column?.label ?? column?.key ?? '') },
+				: {
+						key: String(column?.key ?? ''),
+						label: String(column?.label ?? column?.key ?? ''),
+					},
 		)
 		.filter((column) => column.key !== '')
 	return {

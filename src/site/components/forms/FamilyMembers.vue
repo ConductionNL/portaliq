@@ -28,7 +28,10 @@
 				{{ words.found }}
 			</p>
 			<ul class="pq-family__cards">
-				<li v-for="person in people" :key="person.ref" class="pq-family__card">
+				<li
+					v-for="person in people"
+					:key="person.ref"
+					class="pq-family__card">
 					<label>
 						<input
 							type="checkbox"
@@ -68,7 +71,8 @@ const WORDS = {
 	},
 	en: {
 		loading: 'Loading…',
-		unavailable: 'We cannot fetch your family members right now. Try again later.',
+		unavailable:
+			'We cannot fetch your family members right now. Try again later.',
 		found: 'We found these people at your address. Choose who is moving with you.',
 		note: 'Is someone missing, or is a detail wrong? You cannot fix that in this form. Contact us and we will look into it.',
 		partner: 'Partner',

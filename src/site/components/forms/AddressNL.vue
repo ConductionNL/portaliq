@@ -15,7 +15,9 @@
 	<div class="pq-address" :data-testid="testid">
 		<div class="pq-address__row">
 			<div class="pq-address__cell">
-				<label class="utrecht-form-label" :for="`${id}-postcode`">{{ words.postcode }}</label>
+				<label class="utrecht-form-label" :for="`${id}-postcode`">{{
+					words.postcode
+				}}</label>
 				<input
 					:id="`${id}-postcode`"
 					:value="block.postcode"
@@ -28,7 +30,9 @@
 					@blur="find" />
 			</div>
 			<div class="pq-address__cell">
-				<label class="utrecht-form-label" :for="`${id}-number`">{{ words.number }}</label>
+				<label class="utrecht-form-label" :for="`${id}-number`">{{
+					words.number
+				}}</label>
 				<input
 					:id="`${id}-number`"
 					:value="block.number"
@@ -41,7 +45,9 @@
 					@blur="find" />
 			</div>
 			<div v-if="houseLetter" class="pq-address__cell">
-				<label class="utrecht-form-label" :for="`${id}-letter`">{{ words.letter }}</label>
+				<label class="utrecht-form-label" :for="`${id}-letter`">{{
+					words.letter
+				}}</label>
 				<input
 					:id="`${id}-letter`"
 					:value="block.letter"
@@ -52,7 +58,9 @@
 					@blur="find" />
 			</div>
 			<div class="pq-address__cell">
-				<label class="utrecht-form-label" :for="`${id}-addition`">{{ words.addition }}</label>
+				<label class="utrecht-form-label" :for="`${id}-addition`">{{
+					words.addition
+				}}</label>
 				<input
 					:id="`${id}-addition`"
 					:value="block.addition"
@@ -74,7 +82,9 @@
 
 		<div class="pq-address__row">
 			<div class="pq-address__cell">
-				<label class="utrecht-form-label" :for="`${id}-street`">{{ words.street }}</label>
+				<label class="utrecht-form-label" :for="`${id}-street`">{{
+					words.street
+				}}</label>
 				<input
 					:id="`${id}-street`"
 					:value="block.street"
@@ -85,7 +95,9 @@
 					@input="edit('street', $event.target.value)" />
 			</div>
 			<div class="pq-address__cell">
-				<label class="utrecht-form-label" :for="`${id}-town`">{{ words.town }}</label>
+				<label class="utrecht-form-label" :for="`${id}-town`">{{
+					words.town
+				}}</label>
 				<input
 					:id="`${id}-town`"
 					:value="block.town"
@@ -116,8 +128,7 @@ const WORDS = {
 		addition: 'Toevoeging (niet verplicht)',
 		street: 'Straat',
 		town: 'Plaats',
-		found:
-			'Wij vonden dit adres bij uw postcode en huisnummer. Klopt het niet? Pas de straat of plaats dan zelf aan.',
+		found: 'Wij vonden dit adres bij uw postcode en huisnummer. Klopt het niet? Pas de straat of plaats dan zelf aan.',
 	},
 	en: {
 		postcode: 'Postcode',
@@ -126,8 +137,7 @@ const WORDS = {
 		addition: 'Addition (optional)',
 		street: 'Street',
 		town: 'Town',
-		found:
-			'We found this address for your postcode and house number. Is it wrong? Change the street or town yourself.',
+		found: 'We found this address for your postcode and house number. Is it wrong? Change the street or town yourself.',
 	},
 }
 
@@ -225,7 +235,10 @@ export default {
 				return
 			}
 			this.foundNote = true
-			this.$emit('update:modelValue', withFound(this.block, found, this.touched))
+			this.$emit(
+				'update:modelValue',
+				withFound(this.block, found, this.touched),
+			)
 		},
 	},
 }

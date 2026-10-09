@@ -60,7 +60,9 @@
 					<a
 						:href="taskHref(task)"
 						data-testid="case-task"
-						@click.prevent="openTask(task)">{{ task.title }}</a>
+						@click.prevent="openTask(task)"
+						>{{ task.title }}</a
+					>
 				</li>
 			</ul>
 		</div>
@@ -102,7 +104,10 @@
 			v-if="!actionsOnly && dateRows.length > 0"
 			class="pq-case-dates"
 			data-testid="case-dates">
-			<div v-for="dateRow in dateRows" :key="dateRow.key" :data-testid="`case-date-${dateRow.key}`">
+			<div
+				v-for="dateRow in dateRows"
+				:key="dateRow.key"
+				:data-testid="`case-date-${dateRow.key}`">
 				<dt>{{ dateRow.label }}</dt>
 				<dd>{{ dateRow.value }}</dd>
 			</div>
@@ -428,10 +433,8 @@ export default {
 		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
 		 */
 		nextStep() {
-			return nextStepView(
-				this.writableSet.status,
-				this.openTasks,
-				(id) => this.actionOffered(id),
+			return nextStepView(this.writableSet.status, this.openTasks, (id) =>
+				this.actionOffered(id),
 			)
 		},
 

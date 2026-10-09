@@ -61,7 +61,9 @@ export function notFoundView({
 	return {
 		links,
 		report: contactExists
-			? t('Did you get here through a link on our website? Let us know through Contact, and we will repair the link.')
+			? t(
+					'Did you get here through a link on our website? Let us know through Contact, and we will repair the link.',
+				)
 			: '',
 		search: searchEnabled === true,
 	}

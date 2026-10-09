@@ -13,8 +13,20 @@
 
 /** The RDW side codes 1 to 14 as letter (L) and digit (D) runs. */
 const PLATES = [
-	'LLDDDD', 'DDDDLL', 'DDLLDD', 'LLDDLL', 'LLLLDD', 'DDLLLL', 'DDLLLD',
-	'DLLLDD', 'LLDDDL', 'LDDDLL', 'LLLDDL', 'LDDLLL', 'DLLDDD', 'DDDLLD',
+	'LLDDDD',
+	'DDDDLL',
+	'DDLLDD',
+	'LLDDLL',
+	'LLLLDD',
+	'DDLLLL',
+	'DDLLLD',
+	'DLLLDD',
+	'LLDDDL',
+	'LDDDLL',
+	'LLLDDL',
+	'LDDLLL',
+	'DLLDDD',
+	'DDDLLD',
 ]
 
 /** The formats a field may name. */

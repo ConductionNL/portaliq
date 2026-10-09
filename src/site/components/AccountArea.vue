@@ -298,7 +298,9 @@ export default {
 		sectionHelpText() {
 			const section = sectionOf(this.entry, this.isHome)
 			const texts = (this.portal && this.portal.sectionHelp) || {}
-			return section && typeof texts[section] === 'string' ? texts[section] : ''
+			return section && typeof texts[section] === 'string'
+				? texts[section]
+				: ''
 		},
 
 		/**

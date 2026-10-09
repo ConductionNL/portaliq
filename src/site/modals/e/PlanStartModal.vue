@@ -29,7 +29,11 @@
 					{{ words.startWhere }}
 				</legend>
 				<label class="pq-plan-start__choice">
-					<input v-model="templateId" type="radio" value="" data-testid="plan-start-empty" />
+					<input
+						v-model="templateId"
+						type="radio"
+						value=""
+						data-testid="plan-start-empty" />
 					{{ words.emptyPlan }}
 				</label>
 				<label
@@ -64,8 +68,15 @@
 				<p v-if="contacts.length === 0" class="utrecht-paragraph">
 					{{ words.noContacts }}
 				</p>
-				<label v-for="contact in contacts" :key="contact.id" class="pq-plan-start__choice">
-					<input v-model="chosen" type="checkbox" :value="contact.id" data-testid="plan-start-contact" />
+				<label
+					v-for="contact in contacts"
+					:key="contact.id"
+					class="pq-plan-start__choice">
+					<input
+						v-model="chosen"
+						type="checkbox"
+						:value="contact.id"
+						data-testid="plan-start-contact" />
 					{{ contact.displayName }}
 				</label>
 			</fieldset>
@@ -116,7 +127,15 @@ export default {
 	emits: ['started', 'cancel'],
 
 	data() {
-		return { templates: [], contacts: [], templateId: '', title: '', chosen: [], problem: '', busy: false }
+		return {
+			templates: [],
+			contacts: [],
+			templateId: '',
+			title: '',
+			chosen: [],
+			problem: '',
+			busy: false,
+		}
 	},
 
 	computed: {
@@ -125,7 +144,9 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 		 */
 		words() {
-			return planWords(this.locale || globalThis.document?.documentElement?.lang || '')
+			return planWords(
+				this.locale || globalThis.document?.documentElement?.lang || '',
+			)
 		},
 	},
 
@@ -144,7 +165,10 @@ export default {
 			dialog?.setAttribute('open', '')
 		}
 		this.$refs.heading?.focus()
-		const [templates, overview] = await Promise.all([plansApi(this.api).fetchPlanTemplates(), contactsApi(this.api).fetchContacts()])
+		const [templates, overview] = await Promise.all([
+			plansApi(this.api).fetchPlanTemplates(),
+			contactsApi(this.api).fetchContacts(),
+		])
 		this.templates = templates
 		this.contacts = Array.isArray(overview?.contacts) ? overview.contacts : []
 	},
@@ -157,7 +181,10 @@ export default {
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 	 */
 	beforeUnmount() {
-		if (this.$refs.dialog?.open && typeof this.$refs.dialog.close === 'function') {
+		if (
+			this.$refs.dialog?.open
+			&& typeof this.$refs.dialog.close === 'function'
+		) {
 			this.$refs.dialog.close()
 		}
 	},
@@ -174,7 +201,11 @@ export default {
 			this.problem = ''
 			this.busy = true
 			const answer = await plansApi(this.api).planAction('start', {
-				data: { templateId: this.templateId, title: this.title.trim(), contactIds: this.chosen },
+				data: {
+					templateId: this.templateId,
+					title: this.title.trim(),
+					contactIds: this.chosen,
+				},
 			})
 			this.busy = false
 			if (!answer.ok) {
@@ -193,7 +224,8 @@ export default {
 	padding: var(--utrecht-space-block-lg, 1.5rem);
 	color: var(--utrecht-document-color, inherit);
 	background: var(--utrecht-document-background-color, Canvas);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 }
 
 .pq-plan-start form > * + * {

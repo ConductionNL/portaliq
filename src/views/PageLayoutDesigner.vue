@@ -186,7 +186,12 @@ import { reactive } from 'vue'
 import MediaPickerDialog from '../dialogs/MediaPickerDialog.vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
 import PageGridEditor from '../editor/PageGridEditor.vue'
-import { blockToPage, createPageEditor, createPageSaver, pageToBlock } from '../editor/index.js'
+import {
+	blockToPage,
+	createPageEditor,
+	createPageSaver,
+	pageToBlock,
+} from '../editor/index.js'
 import { withMedia } from '../lib/mediaLibrary.js'
 import { pageSiteUrl } from '../lib/pageSiteUrl.js'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
@@ -285,12 +290,13 @@ export default {
 				// A shared block is edited as a page: translate at the edge.
 				get: isBlock
 					? async (url) => {
-						const response = await axios.get(url)
-						return { ...response, data: blockToPage(response.data) }
-					}
+							const response = await axios.get(url)
+							return { ...response, data: blockToPage(response.data) }
+						}
 					: (url) => axios.get(url),
 				put: isBlock
-					? (url, payload, config) => axios.put(url, pageToBlock(payload), config)
+					? (url, payload, config) =>
+							axios.put(url, pageToBlock(payload), config)
 					: (url, payload, config) => axios.put(url, payload, config),
 				url: (id) =>
 					generateUrl(

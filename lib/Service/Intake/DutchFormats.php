@@ -168,7 +168,7 @@ class DutchFormats {
 				$number = (string)(ord($char) - 55);
 			}
 
-			$remainder = (int)(((string)$remainder . $number) % 97);
+			$remainder = ((int)((string)$remainder . $number) % 97);
 		}
 
 		if ($remainder !== 1) {

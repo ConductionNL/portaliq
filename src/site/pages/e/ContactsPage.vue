@@ -61,7 +61,9 @@
 						data-testid="contacts-waiting-row"
 						:data-state="row.state">
 						<strong>{{ row.displayName || row.email }}</strong>
-						<span v-if="row.state === 'declined'">{{ t('Not accepted') }}</span>
+						<span v-if="row.state === 'declined'">{{
+							t('Not accepted')
+						}}</span>
 						<span v-else-if="sent(row) !== ''">{{
 							t('Sent on {date}', { date: sent(row) })
 						}}</span>
@@ -107,13 +109,20 @@
 				<h2 id="pq-contacts-yours" class="utrecht-heading-3">
 					{{ t('Your contacts') }}
 				</h2>
-				<div class="pq-contacts__chips" role="group" :aria-label="t('Your contacts')">
+				<div
+					class="pq-contacts__chips"
+					role="group"
+					:aria-label="t('Your contacts')">
 					<button
 						v-for="chip in filters"
 						:key="chip"
 						type="button"
 						class="utrecht-button"
-						:class="chip === role ? 'utrecht-button--primary-action' : 'utrecht-button--secondary-action'"
+						:class="
+							chip === role
+								? 'utrecht-button--primary-action'
+								: 'utrecht-button--secondary-action'
+						"
 						:aria-pressed="chip === role ? 'true' : 'false'"
 						:data-testid="`contacts-chip-${chip}`"
 						@click="role = chip">
@@ -312,7 +321,10 @@ export default {
 		async act(action, row, extra = {}) {
 			this.notice = ''
 			this.problem = ''
-			const answer = await this.client.contactAction(action, { id: row.id, ...extra })
+			const answer = await this.client.contactAction(action, {
+				id: row.id,
+				...extra,
+			})
 			if (!answer.ok) {
 				this.problem = 'That did not work. Try again later.'
 			}

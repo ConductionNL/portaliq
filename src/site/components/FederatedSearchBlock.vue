@@ -846,7 +846,10 @@ export default {
 			return Object.entries(this.locked).flatMap(([field, values]) =>
 				values.map((value) => ({
 					key: `${field}:${value}`,
-					label: this.lockedLabels[`${field}:${value}`] || this.lockedLabels[field] || value,
+					label:
+						this.lockedLabels[`${field}:${value}`]
+						|| this.lockedLabels[field]
+						|| value,
 				})),
 			)
 		},
@@ -1617,7 +1620,8 @@ export default {
 
 .pq-search__locked-chip {
 	padding: 0.125rem 0.75rem;
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 	border-radius: 999px;
 }
 

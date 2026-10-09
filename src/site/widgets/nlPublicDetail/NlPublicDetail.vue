@@ -38,13 +38,19 @@
 		</template>
 		<template v-else>
 			<h1 class="utrecht-heading-1">{{ title }}</h1>
-			<dl v-if="detail.facts.length > 0" class="nl-public-detail__facts" data-testid="nl-public-detail-facts">
+			<dl
+				v-if="detail.facts.length > 0"
+				class="nl-public-detail__facts"
+				data-testid="nl-public-detail-facts">
 				<div v-for="fact in detail.facts" :key="fact.label">
 					<dt>{{ fact.label }}</dt>
 					<dd>{{ fact.value }}</dd>
 				</div>
 			</dl>
-			<section v-for="section in detail.sections" :key="section.heading" class="nl-public-detail__section">
+			<section
+				v-for="section in detail.sections"
+				:key="section.heading"
+				class="nl-public-detail__section">
 				<h2 class="utrecht-heading-2">{{ section.heading }}</h2>
 				<MarkdownBlock :source="section.markdown" />
 			</section>
@@ -57,7 +63,9 @@
 					v-for="entry in detail.dates"
 					:key="entry.id"
 					class="nl-public-detail__date"
-					:class="{ 'nl-public-detail__date--selected': chosenDate === entry.id }">
+					:class="{
+						'nl-public-detail__date--selected': chosenDate === entry.id,
+					}">
 					<input
 						v-model="chosenDate"
 						type="radio"
@@ -65,17 +73,25 @@
 						:value="entry.id"
 						:disabled="!choosable(entry)"
 						@change="keep()" />
-					<span class="nl-public-detail__date-label">{{ dateLabel(entry) }}</span>
-					<span v-if="placesText(entry)" class="nl-public-detail__places">{{
-						placesText(entry)
+					<span class="nl-public-detail__date-label">{{
+						dateLabel(entry)
 					}}</span>
+					<span
+						v-if="placesText(entry)"
+						class="nl-public-detail__places"
+						>{{ placesText(entry) }}</span
+					>
 				</label>
 			</fieldset>
-			<section v-if="detail.documents.length > 0" class="nl-public-detail__section">
+			<section
+				v-if="detail.documents.length > 0"
+				class="nl-public-detail__section">
 				<h2 class="utrecht-heading-2">{{ say('documents') }}</h2>
 				<ul>
 					<li v-for="document in detail.documents" :key="document.href">
-						<a class="utrecht-link" :href="document.href">{{ document.label }}</a>
+						<a class="utrecht-link" :href="document.href">{{
+							document.label
+						}}</a>
 					</li>
 				</ul>
 			</section>
@@ -83,7 +99,9 @@
 				v-if="detail.action"
 				class="nl-public-detail__action"
 				data-testid="nl-public-detail-action">
-				<label v-if="detail.action.countLabel" class="nl-public-detail__count">
+				<label
+					v-if="detail.action.countLabel"
+					class="nl-public-detail__count">
 					<span>{{ detail.action.countLabel }}</span>
 					<input
 						v-model.number="count"
@@ -158,7 +176,9 @@ function sessionStore() {
  * @return {string} The path.
  */
 function pagePath() {
-	return typeof window !== 'undefined' && window.location ? window.location.pathname : ''
+	return typeof window !== 'undefined' && window.location
+		? window.location.pathname
+		: ''
 }
 
 /**
@@ -197,7 +217,13 @@ export default {
 	emits: ['navigate'],
 
 	data() {
-		return { item: null, detail: null, state: 'loading', chosenDate: '', count: 1 }
+		return {
+			item: null,
+			detail: null,
+			state: 'loading',
+			chosenDate: '',
+			count: 1,
+		}
 	},
 
 	computed: {
@@ -222,7 +248,10 @@ export default {
 		 * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-4
 		 */
 		needsSignIn() {
-			return this.detail?.action?.requiresSignIn !== false && this.signedIn !== true
+			return (
+				this.detail?.action?.requiresSignIn !== false
+				&& this.signedIn !== true
+			)
 		},
 
 		/**
@@ -240,7 +269,9 @@ export default {
 					signInHref: '/mijn',
 					say: () => this.say('signIn'),
 				})
-				return button.route ? { ...button, href: authoredLink(button.route).href } : button
+				return button.route
+					? { ...button, href: authoredLink(button.route).href }
+					: button
 			}
 			return {
 				label: action?.label || this.say('goOn', { area: this.area }),
@@ -368,7 +399,10 @@ export default {
 		 * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-4
 		 */
 		keep() {
-			keepChoice(sessionStore(), pagePath(), { date: this.chosenDate, count: clampCount(this.count, this.detail?.action?.countMax) })
+			keepChoice(sessionStore(), pagePath(), {
+				date: this.chosenDate,
+				count: clampCount(this.count, this.detail?.action?.countMax),
+			})
 		},
 
 		/**

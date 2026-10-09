@@ -16,7 +16,8 @@ export default {
 		no: 'Nee',
 		previous: 'Vorige vraag',
 		restart: 'Opnieuw beginnen',
-		notKept: 'Wij bewaren uw antwoorden niet. Sluit u deze pagina, dan begint u de volgende keer opnieuw.',
+		notKept:
+			'Wij bewaren uw antwoorden niet. Sluit u deze pagina, dan begint u de volgende keer opnieuw.',
 		products: 'Mogelijke producten',
 		count: 'Nog {n} van de {total} producten passen bij uw antwoorden',
 		fallenAway: 'Vallen af door uw antwoorden ({n})',
@@ -35,7 +36,8 @@ export default {
 		no: 'No',
 		previous: 'Previous question',
 		restart: 'Start again',
-		notKept: 'We do not keep your answers. If you close this page, you start again next time.',
+		notKept:
+			'We do not keep your answers. If you close this page, you start again next time.',
 		products: 'Possible products',
 		count: '{n} of the {total} products fit your answers',
 		fallenAway: 'Ruled out by your answers ({n})',

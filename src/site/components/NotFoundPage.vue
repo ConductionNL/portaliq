@@ -26,7 +26,11 @@
 			{{ t('Page not found') }}
 		</h2>
 		<p class="utrecht-paragraph">
-			{{ tr('This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.') }}
+			{{
+				tr(
+					'This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.',
+				)
+			}}
 		</p>
 
 		<form
@@ -60,7 +64,9 @@
 				<a
 					:href="hrefFor(link.route)"
 					:data-testid="`not-found-${link.kind}`"
-					@click.prevent="$emit('navigate', link.route)">{{ link.label }}</a>
+					@click.prevent="$emit('navigate', link.route)"
+					>{{ link.label }}</a
+				>
 			</li>
 		</ul>
 
@@ -152,7 +158,8 @@ export default {
 			return notFoundView({
 				contactRoute: contactRouteOf(this.site),
 				pages: this.pages,
-				hasResidentArea: String(this.site.accountLabel || '') !== '' || this.hasWaysIn,
+				hasResidentArea:
+					String(this.site.accountLabel || '') !== '' || this.hasWaysIn,
 				residentLabel: String(this.site.accountLabel || ''),
 				searchEnabled: this.searchEnabled,
 				t: this.tr,
@@ -182,7 +189,10 @@ export default {
 		 */
 		async loadPages() {
 			try {
-				this.pages = await fetchPages(this.portalSlug || undefined, this.locale || undefined)
+				this.pages = await fetchPages(
+					this.portalSlug || undefined,
+					this.locale || undefined,
+				)
 			} catch {
 				this.pages = null
 			}

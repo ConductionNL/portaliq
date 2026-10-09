@@ -256,7 +256,9 @@ export function residentMenuGroups(
 		title: t('Themes'),
 		items: entries
 			.filter((entry) => entry.theme)
-			.map((entry) => named(itemFor(entry, t, unread, hrefFor, recordRows), entry.key)),
+			.map((entry) =>
+				named(itemFor(entry, t, unread, hrefFor, recordRows), entry.key),
+			),
 	}
 
 	const groups = [
