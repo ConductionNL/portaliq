@@ -45,7 +45,7 @@ line in the PR body.
 
 ## 4. Verify and deliver
 
-- [ ] 4.1 `TMPDIR` set to a sibling directory beside the clone.
+- [x] 4.1 `TMPDIR` set to a sibling directory beside the clone (build round 2: `TMPDIR=../tmp` in the lane's PHPUnit runner; the 8 named PHPUnit tests and 2 node tests pass on 2594f608).
 - [x] 4.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
   touched classes and `node --test` on the touched node tests. Judge PHPUnit by the `Tests:` line.
 - [ ] 4.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,

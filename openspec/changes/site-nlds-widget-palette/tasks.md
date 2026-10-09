@@ -84,7 +84,7 @@ After `site-multi-step-forms` wave 1.
 
 ## Validation
 
-- [ ] **T12**: `openspec validate site-nlds-widget-palette --strict` — not run: openspec CLI not installed here
+- [x] **T12**: `openspec validate site-nlds-widget-palette --strict` (valid, openspec 1.12.0, 2026-10-09)
 
 ## Amendment, 2026-10-05: Woo capability programme (row 6.13)
 

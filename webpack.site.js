@@ -125,9 +125,16 @@ const site = {
 		// catalogue kind/audience facets, the news article template and the
 		// school-board blocks all render on first paint, so none of them can
 		// load on demand without delaying the content itself.
+		//
+		// 424 KiB, up from 420, with site-accessibility-statement. The page
+		// itself and its line-building (statementLines.js) load on demand; what
+		// stays in the entry is the route, the footer link, the router branch
+		// and the page's strings in the en and nl bundles the translator reads.
+		// Measured: 421 KiB locally and 423 KiB on CI before moving the lines
+		// out of the entry, about 1.7 KiB less after.
 		hints: isDev ? false : 'error',
-		maxAssetSize: 420 * 1024,
-		maxEntrypointSize: 420 * 1024,
+		maxAssetSize: 424 * 1024,
+		maxEntrypointSize: 424 * 1024,
 	},
 }
 

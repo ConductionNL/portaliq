@@ -22,4 +22,4 @@
 ## Docs, strings and validation
 
 - [x] **T07**: English and Dutch strings for the section, the three labels and descriptions, and "Only administrators"; a docs page for administrators on roles. Verification: `npm run lint`, `test:l10n`. Strings in `l10n/nl.json`; docs page `docs/operations/roles-for-content-and-actions.md`.
-- [ ] **T08**: `openspec validate operate-roles-for-content-and-actions --strict` — not run: openspec CLI not installed here
+- [x] **T08**: `openspec validate operate-roles-for-content-and-actions --strict` (valid, openspec 1.12.0, 2026-10-09)

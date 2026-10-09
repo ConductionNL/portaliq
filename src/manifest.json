@@ -1725,6 +1725,13 @@
             "type": "PortalRegistration",
             "title": "Registration",
             "icon": "AccountPlus"
+          },
+          {
+            "id": "portal-accessibility",
+            "type": "PortalAccessibility",
+            "title": "Accessibility",
+            "icon": "ShieldCheckOutline",
+            "content": {}
           }
         ],
         "layout": [
@@ -1831,6 +1838,14 @@
             "gridY": 34,
             "gridWidth": 12,
             "gridHeight": 7
+          },
+          {
+            "id": "portal-accessibility",
+            "widgetId": "portal-accessibility",
+            "gridX": 0,
+            "gridY": 41,
+            "gridWidth": 12,
+            "gridHeight": 10
           }
         ],
         "sidebar": {

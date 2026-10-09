@@ -4731,13 +4731,13 @@
 				"open-forms": "no inbox or message store: the product sends a confirmation e-mail per submission (src/openforms/emails/models.py:39 ConfirmationEmailTemplate) and keeps no messages for a resident [reached on nothing] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "grep reply/compose in src/portal: 0 hits; InboxPage.jsx (full file read) has no compose/reply control; dossiq's own citizen contribution provider explicitly defers this: 'the message reply (needs a verified case/thread linkage)' (procest lib/Portal/PortalContributionProvider.php, citizenContribution() docblock); portaliq's own leaf-integrations spec (openspec/specs/portaliq-leaf-integrations/spec.md:88 'The visitor's reply path stays the portal edge') only says an answer must arrive as a portalMessage, it does not build a compose UI",
-				"reachedOn": "citizen side: nothing reaches it, no compose control anywhere in src/portal. Staff side: no dedicated 'reply' action either, but src/manifest.json:881 PortalMessages index has no allowCreate:false, so a staff member CAN hand-create a new portalMessage row via the generic OpenRegister create dialog, which the citizen would then see appear in their inbox.",
+				"state": "built",
+				"evidence": "lib/Controller/ContributionController.php reply (POST /portal/api/inbox/{register}/{schema}/{id}/reply); lib/Service PortalInboxReader adds _files; src/site/components/inbox/InboxReply.vue, src/site/pages/inbox/reply.js, InboxPage.vue; tests/inbox-reply.spec.mjs",
+				"reachedOn": "resident: site inbox page -> open a message with a reply declaration -> Reply -> subject, text, files -> send",
 				"owner": "ConductionNL/portaliq",
-				"note": "No citizen-facing reply exists anywhere. A staff 'reply' is possible only as a manually created, unthreaded portalMessage through the generic admin object form, there is no button, no thread, no quoting of the original message. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27).",
+				"note": "No citizen-facing reply exists anywhere. A staff 'reply' is possible only as a manually created, unthreaded portalMessage through the generic admin object form, there is no button, no thread, no quoting of the original message. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27). Built and archived 2026-10-09 (2026-10-09-inbox-reply-with-attachments).",
 				"origin": "competitor",
-				"change": "inbox-reply-with-attachments"
+				"change": "2026-10-09-inbox-reply-with-attachments"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4771,13 +4771,13 @@
 				"open-forms": "no inbox or message store: the product sends a confirmation e-mail per submission (src/openforms/emails/models.py:39 ConfirmationEmailTemplate) and keeps no messages for a resident [reached on nothing] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Settings/portaliq_register.json:1024-1128 portalMessage schema has no file/attachment property; InboxPage.jsx (full file read) has no upload control or attachment renderer",
-				"reachedOn": "nothing reaches it: no attachment field, no upload UI, and no way to send a message at all (see cmp-inb-reply)",
+				"state": "built",
+				"evidence": "lib/Controller/ContributionController.php reply (POST /portal/api/inbox/{register}/{schema}/{id}/reply); lib/Service PortalInboxReader adds _files; src/site/components/inbox/InboxReply.vue, src/site/pages/inbox/reply.js, InboxPage.vue; tests/inbox-reply.spec.mjs",
+				"reachedOn": "resident: site inbox page -> open a message with a reply declaration -> Reply -> subject, text, files -> send",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq's portaalBericht declares an 'attachments' field to portaliq (see inb-dossiq-portaalbericht) but nothing renders it, so even a sibling-supplied attachment is invisible. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27).",
+				"note": "dossiq's portaalBericht declares an 'attachments' field to portaliq (see inb-dossiq-portaalbericht) but nothing renders it, so even a sibling-supplied attachment is invisible. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27). Built and archived 2026-10-09 (2026-10-09-inbox-reply-with-attachments).",
 				"origin": "competitor",
-				"change": "inbox-reply-with-attachments"
+				"change": "2026-10-09-inbox-reply-with-attachments"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10037,13 +10037,13 @@
 				"open-forms": "src/openforms/submissions/models/submission_report.py:14 SubmissionReport PDF, downloadable through src/openforms/submissions/urls.py:14 pdf/<id>/<token>/download (sdk:src/components/PostCompletionViews/ConfirmationView.tsx:53 reportDownloadUrl); only the PDF of the submission just made, not statements or a plan [reached on the confirmation page] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "grep -riE 'pdf|print|export' src/portal: only TasksPage.jsx:52 (accepted upload types); portalMessage.dataCopy (lib/Settings/portaliq_register.json:715) is a JSON copy of submitted fields, not an export",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "lib/Controller/ContributionController.php exportCollectionPdf/exportObjectPdf (GET /portal/api/collections/{register}/{schema}[/{id}]/export.pdf), rendered through OpenRegister's rows renderer, audited with the download verb; CollectionTable.vue and DetailCard.vue button; tests/Unit/Controller/ContributionExportPdfTest.php, tests/pdf-download.spec.mjs",
+				"reachedOn": "resident: site page with an exportPdf collection -> Download as PDF",
 				"owner": "ConductionNL/portaliq",
-				"note": "No PDF or print export of the resident's own data, statements or plan; the WMEBV receipt carries a field copy in the inbox message only. Specified in openspec/changes/cases-export-own-data-pdf (OpenSpec pass 2026-09-27).",
+				"note": "No PDF or print export of the resident's own data, statements or plan; the WMEBV receipt carries a field copy in the inbox message only. Specified in openspec/changes/cases-export-own-data-pdf (OpenSpec pass 2026-09-27). Built and archived 2026-10-09 (2026-10-09-cases-export-own-data-pdf).",
 				"origin": "code",
-				"change": "cases-export-own-data-pdf"
+				"change": "2026-10-09-cases-export-own-data-pdf"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

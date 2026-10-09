@@ -298,6 +298,15 @@
 							:t="t"
 							@loaded="onSharedDossierLoaded" />
 
+						<!-- Every portal's accessibility statement, generated from its
+				     latest measurement (site-accessibility-statement). -->
+						<AccessibilityStatementPage
+							v-else-if="statementRoute"
+							:portalSlug="site.slug || portalSlug"
+							:portalName="site.title || ''"
+							:locale="chosenLocale"
+							:t="t" />
+
 						<p
 							v-else-if="loading"
 							class="container"
@@ -536,6 +545,7 @@ import {
 import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
+import { isStatementRoute, withStatementLink } from './lib/accessibilityStatement.js'
 import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
 import { setAssistantAvailable } from './lib/assistantAvailable.js'
 import {
@@ -629,6 +639,9 @@ const SiteNotices = defineAsyncComponent(
 
 // Loaded only when somebody opens a shared dossier link, so every other
 // visitor pays nothing for it in the site bundle (site-shared-dossier).
+const AccessibilityStatementPage = defineAsyncComponent(
+	() => import('./components/AccessibilityStatementPage.vue'),
+)
 const SharedDossierPage = defineAsyncComponent(
 	() => import('./components/SharedDossierPage.vue'),
 )
@@ -671,6 +684,7 @@ export default {
 		MarkdownBlock,
 		NotFoundPage,
 		SharedDossierPage,
+		AccessibilityStatementPage,
 		SiteEditButton,
 		SiteNotices,
 		WidgetGrid,
@@ -837,6 +851,20 @@ export default {
 					return signInCrumbs(this.route, this.t, this.hrefForRoute)
 				}
 				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
+			}
+			if (this.statementRoute) {
+				return [
+					{
+						route: '/',
+						label: this.t('Home'),
+						href: this.hrefForRoute('/'),
+					},
+					{
+						route: this.route,
+						label: this.t('Accessibility statement'),
+						href: this.hrefForRoute(this.route),
+					},
+				]
 			}
 			// The token is not a word and no page sits at its parent.
 			if (this.sharedDossierRoute) {
@@ -1093,6 +1121,7 @@ export default {
 				&& !this.guestLink
 				&& !this.wayInLink
 				&& !this.sharedDossierRoute
+				&& !this.statementRoute
 				&& !this.error
 				&& !(this.editMode && this.editing && this.editing.pageId)
 				&& this.page !== null
@@ -1300,6 +1329,15 @@ export default {
 		},
 
 		/**
+		 * @return {boolean} Whether the route on screen is the accessibility statement.
+		 *
+		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 */
+		statementRoute() {
+			return isStatementRoute(this.route)
+		},
+
+		/**
 		 * @return {string} The share token of the route on screen, or ''.
 		 *
 		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
@@ -1388,9 +1426,15 @@ export default {
 		 * @return {Array} `{label, href}` entries.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		legalLinks() {
-			return legalLinksOf(this.site, this.menus)
+			// Every portal links its accessibility statement in the legal
+			// strip (site-accessibility-statement REQ-SAS-002).
+			return withStatementLink(
+				legalLinksOf(this.site, this.menus),
+				this.t('Accessibility'),
+			)
 		},
 
 		/**
@@ -1963,6 +2007,9 @@ export default {
 			if (this.sharedDossierRoute) {
 				pageName = this.sharedDossierTitle || this.t('Shared dossier')
 			}
+			if (this.statementRoute) {
+				pageName = this.t('Accessibility statement')
+			}
 			if (this.subject) {
 				pageName = this.subject.title
 			}
@@ -2134,6 +2181,17 @@ export default {
 				this.routeParam = ''
 				this.loading = false
 				this.followAccountRoute()
+				this.applyDocumentTitle()
+				return
+			}
+
+			// The accessibility statement is generated, not authored, so it
+			// opens on every portal without a CMS page.
+			if (isStatementRoute(route)) {
+				this.page = null
+				this.error = null
+				this.routeParam = ''
+				this.loading = false
 				this.applyDocumentTitle()
 				return
 			}

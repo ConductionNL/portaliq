@@ -169,6 +169,16 @@ export const fetchSite = (portal, locale) => get('/site', { portal, locale })
 /**
  * @param {string} [portal] Explicit portal slug.
  * @param {string} [locale] The language the visitor chose.
+ * @return {Promise<object>} The portal's accessibility statement (`{statement}`).
+ * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ */
+export function fetchAccessibilityStatement(portal, locale) {
+	return get('/accessibility', { portal, locale }, { fresh: true })
+}
+
+/**
+ * @param {string} [portal] Explicit portal slug.
+ * @param {string} [locale] The language the visitor chose.
  * @return {Promise<Array>} The portal's menus.
  * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
