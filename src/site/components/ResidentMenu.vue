@@ -31,6 +31,26 @@
 				{{ card.subline }}
 			</p>
 		</div>
+		<!-- The person the menu belongs to, with their class or role
+		     (resident-menu-follows-the-boards). The name is text, not a
+		     heading: the page's own h1 follows the menu. -->
+		<div
+			v-else-if="person"
+			class="pq-resident-menu__person"
+			data-testid="site-resident-menu-person">
+			<span class="pq-resident-menu__avatar" aria-hidden="true">{{
+				person.initials
+			}}</span>
+			<span class="pq-resident-menu__who">
+				<span class="pq-resident-menu__person-name">{{ person.name }}</span>
+				<span
+					v-if="person.subline"
+					class="pq-resident-menu__person-subline"
+					data-testid="site-resident-menu-person-subline"
+					>{{ person.subline }}</span
+				>
+			</span>
+		</div>
 		<button
 			type="button"
 			class="utrecht-button utrecht-button--secondary-action pq-resident-menu__toggle"
@@ -139,6 +159,8 @@ export default {
 		hideLabel: { type: String, default: 'Menu sluiten' },
 		/** `{label, title, subline?}`: whom the resident acts for, or null. */
 		card: { type: Object, default: null },
+		/** `{initials, name, subline}`: the person block, or null. */
+		person: { type: Object, default: null },
 		/** The phone button's count text, `{count}` for the number ("2 nieuw"). */
 		newLabel: { type: String, default: '{count} nieuw' },
 	},
@@ -239,26 +261,43 @@ export default {
 </script>
 
 <style scoped>
+/* The menu as the school boards draw it (resident-menu-follows-the-boards):
+   uppercase group labels, roomy items, the page on screen on the accent's
+   light wash, counts on the accent. Colours from the theme only. */
 .pq-resident-menu {
 	min-inline-size: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
 }
 
 .pq-resident-menu__toggle {
 	display: none;
 }
 
-.pq-resident-menu__group + .pq-resident-menu__group {
-	margin-block-start: 24px;
+.pq-resident-menu__groups {
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
 }
 
 .pq-resident-menu__title {
-	margin: 0 0 8px;
-	color: var(--utrecht-document-color, CanvasText);
-	font-size: 0.875em;
+	margin: 0 0 6px;
+	padding: 0 12px;
+	color: var(
+		--nldesign-color-text-muted,
+		var(--utrecht-document-color, CanvasText)
+	);
+	font-size: 0.8125rem;
 	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
 }
 
 .pq-resident-menu__list {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -269,11 +308,16 @@ export default {
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
-	padding: 8px 12px;
-	border-inline-start: 4px solid transparent;
+	box-sizing: border-box;
+	min-block-size: 44px;
+	padding: 6px 12px;
+	border-radius: var(--nldesign-website-border-radius, 6px);
 	color: var(--utrecht-link-color, LinkText);
+	font-weight: 500;
 	text-decoration: none;
-	overflow-wrap: anywhere;
+	/* A word breaks only when it cannot fit on a line of its own, never in
+	   the middle because a second line stood beside it. */
+	overflow-wrap: break-word;
 }
 
 .pq-resident-menu__icon {
@@ -284,24 +328,36 @@ export default {
 
 .pq-resident-menu__label {
 	flex-grow: 1;
+	min-inline-size: 0;
+}
+
+/* A row's second line ("Groep 7 · Meester Daan") under its name. */
+.pq-resident-menu__subline {
+	display: block;
+	color: var(
+		--nldesign-color-text-muted,
+		var(--utrecht-document-color, CanvasText)
+	);
+	font-size: 0.875rem;
+	font-weight: 400;
 }
 
 .pq-resident-menu__link:hover {
 	text-decoration: underline;
 }
 
-/* The page on screen: the accent colour, a bar beside it and bold text, so
-   the place never rests on colour alone. */
+/* The page on screen: the accent's light wash, its text colour and bold
+   text, and `aria-current` for a screen reader, so the place never rests on
+   colour alone. */
 .pq-resident-menu__link--current {
-	border-inline-start-color: var(
-		--utrecht-link-active-color,
-		var(--utrecht-link-color, LinkText)
-	);
 	background: var(
-		--utrecht-surface-background-color,
-		var(--utrecht-document-background-color, Canvas)
+		--thematiq-accent-light-color,
+		var(--nldesign-color-accent-light, Canvas)
 	);
-	color: var(--utrecht-link-active-color, var(--utrecht-link-color, LinkText));
+	color: var(
+		--thematiq-accent-text-color,
+		var(--nldesign-color-accent-text, CanvasText)
+	);
 	font-weight: 700;
 }
 
@@ -311,21 +367,115 @@ export default {
 }
 
 .pq-resident-menu__badge {
-	display: inline-block;
-	min-inline-size: 1.5em;
-	padding: 0 6px;
-	border-radius: 999px;
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-inline-size: 24px;
+	block-size: 24px;
+	padding: 0 7px;
+	border-radius: 12px;
 	background: var(
-		--utrecht-badge-counter-background-color,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-badge-background-color,
+		var(
+			--utrecht-badge-counter-background-color,
+			var(--utrecht-document-color, CanvasText)
+		)
 	);
 	color: var(
-		--utrecht-badge-counter-color,
-		var(--utrecht-document-background-color, Canvas)
+		--thematiq-badge-color,
+		var(
+			--utrecht-badge-counter-color,
+			var(--utrecht-document-background-color, Canvas)
+		)
 	);
-	font-size: 0.85em;
-	line-height: 1.5;
-	text-align: center;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	line-height: 1;
+}
+
+/* The phone button's count ("2 nieuw"): a pill on the accent. */
+.pq-resident-menu__toggle-badge {
+	margin-inline-start: 8px;
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: var(--thematiq-badge-background-color, CanvasText);
+	color: var(--thematiq-badge-color, Canvas);
+	font-size: 0.8125rem;
+	font-weight: 700;
+}
+
+/* The person block: initials in a circle, the name and the class. */
+.pq-resident-menu__person {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 0 12px 4px;
+}
+
+.pq-resident-menu__avatar {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	inline-size: 44px;
+	block-size: 44px;
+	border-radius: 50%;
+	background: var(--nldesign-color-primary-light, Canvas);
+	color: var(--nldesign-color-primary-hover, CanvasText);
+	font-size: 0.9375rem;
+	font-weight: 700;
+}
+
+.pq-resident-menu__who {
+	display: flex;
+	flex-direction: column;
+	min-inline-size: 0;
+	line-height: 1.25;
+}
+
+.pq-resident-menu__person-name {
+	font-size: 1.0625rem;
+	font-weight: 700;
+}
+
+.pq-resident-menu__person-subline,
+.pq-resident-menu__card-subline {
+	color: var(
+		--nldesign-color-text-muted,
+		var(--utrecht-document-color, CanvasText)
+	);
+	font-size: 0.9375rem;
+}
+
+/* The card of whom the resident acts for: a tinted panel. */
+.pq-resident-menu__card {
+	padding: 14px 16px;
+	border-radius: var(--nldesign-website-border-radius-large, 8px);
+	background: var(
+		--nldesign-component-content-surface-background-color,
+		var(--nldesign-color-primary-light, Canvas)
+	);
+}
+
+.pq-resident-menu__card p {
+	margin: 0;
+}
+
+.pq-resident-menu__card-label {
+	color: var(
+		--nldesign-color-text-muted,
+		var(--utrecht-document-color, CanvasText)
+	);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+
+.pq-resident-menu__card-title {
+	font-weight: 700;
 }
 
 .pq-resident-menu__sr {
@@ -339,9 +489,13 @@ export default {
 
 /* A phone: the list folds behind the button until the resident opens it. */
 @media (max-width: 767px) {
+	.pq-resident-menu {
+		gap: 12px;
+	}
+
 	.pq-resident-menu__toggle {
 		display: inline-flex;
-		margin-block-end: 16px;
+		align-self: flex-start;
 	}
 
 	.pq-resident-menu__groups {
@@ -349,7 +503,7 @@ export default {
 	}
 
 	.pq-resident-menu__groups--open {
-		display: block;
+		display: flex;
 		margin-block-end: 24px;
 	}
 }
