@@ -151,8 +151,8 @@
 </template>
 
 <script>
-import { statementLines } from '../lib/accessibilityStatement.js'
 import { fetchAccessibilityStatement } from '../lib/contentApi.js'
+import { statementLines } from '../lib/statementLines.js'
 
 export default {
 	name: 'AccessibilityStatementPage',
