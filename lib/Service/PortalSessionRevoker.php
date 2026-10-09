@@ -233,6 +233,8 @@ class PortalSessionRevoker {
 	 * @param array<string, mixed>|null $row The normalised row.
 	 *
 	 * @return string|null
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 	 */
 	public function rowId(?array $row): ?string {
 		if ($row === null) {
