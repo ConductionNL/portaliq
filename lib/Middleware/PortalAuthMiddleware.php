@@ -61,6 +61,12 @@ use Throwable;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+ * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the gate is where a read
+ * without a session ends, so it is also where that read is counted per IP
+ * (portal-subject-rate-limit); a second middleware would never see the
+ * refusal this one answers first.
  */
 class PortalAuthMiddleware extends Middleware {
 	/**
