@@ -28,9 +28,9 @@
 				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
 				:data-widget-key="run.widget.widgetKey"
 				v-bind="propsFor(run.widget)"
+				@subject="$emit('subject', $event)"
 				@navigate="$emit('navigate', $event)"
-				@search="forwardSearch"
-				@subject="$emit('subject', $event)" />
+				@search="$emit('search', $event)" />
 
 			<!-- A RUN of ordinary widgets: one grid, inside one container. The
 			     container is here rather than around the whole component so a
@@ -48,9 +48,9 @@
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
 							v-bind="propsFor(widget)"
+							@subject="$emit('subject', $event)"
 							@navigate="$emit('navigate', $event)"
-							@search="forwardSearch"
-							@subject="$emit('subject', $event)" />
+							@search="$emit('search', $event)" />
 
 						<!-- Anything not public, or not known, degrades to an inert
 						     placeholder. It does NOT throw: a public page with one bad
@@ -76,7 +76,6 @@ import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { withoutStyling } from '../lib/blockProps.js'
 import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
-import { searchTermOf } from '../lib/subjectTrail.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
 
 /**
@@ -406,21 +405,6 @@ export default {
 	},
 
 	methods: {
-		/**
-		 * Hand a block's search on, but only a term: a native `search` event
-		 * from a block's own field (Enter in the catalogue) is not one.
-		 *
-		 * @param {string|Event} term What the block emitted.
-		 * @return {void}
-		 * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-enter-in-a-blocks-own-search-field-searches-that-block
-		 */
-		forwardSearch(term) {
-			const words = searchTermOf(term)
-			if (words !== null) {
-				this.$emit('search', words)
-			}
-		},
-
 		/**
 		 * Whether a block is a full-bleed band that owns its own container.
 		 *

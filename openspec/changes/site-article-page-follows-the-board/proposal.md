@@ -11,9 +11,8 @@ Artikel. Four differences are portaliq's, the same on all four portals:
 - the facts under a heading ("**Wanneer:** ...", "**Waar:** ...") show as a bold bullet list, where
   the board draws a grey block of labels and values.
 
-The same run found that pressing Enter in the catalogue's search field gives
-`0 resultaten voor "[object Event]"`: the browser's native `search` event bubbles out of the
-`<input type="search">`, falls through the block to its root, and the grid hands it on as a term.
+The same run found that Enter in the catalogue's search field searches for "[object Event]"; lane
+FIX-A fixes that in `WidgetGrid.vue` (`portal-subject-rate-limit`), so this change does not.
 
 ## What Changes
 
@@ -25,7 +24,6 @@ The same run found that pressing Enter in the catalogue's search field gives
 - `src/site/widgets/nlNewsArticle/article.js` `articleParts()`: a list whose every item opens with a
   bold label is a set of facts; the article renders it as a `<dl>` on the muted surface
   (`--thematiq-surface-color`, then `--nldesign-color-background-hover`).
-- `WidgetGrid.vue` forwards a `search` only when it is a string (`searchTermOf`).
 - `tests/site-look/article-page.spec.mjs`.
 
 ## What learniq declares (lane L3)

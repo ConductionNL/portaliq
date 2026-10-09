@@ -4,9 +4,8 @@
 //
 // article-page.spec.mjs: a news article reads like the board Artikel. One
 // title (the article's), a trail that ends on it and runs through its
-// section, the section marked in the menu, the facts as a grey block, and
-// Enter in a block's own search field no longer searches for
-// "[object Event]" (site-article-page-follows-the-board).
+// section, the section marked in the menu, and the facts as a grey block
+// (site-article-page-follows-the-board).
 //
 // Usage:
 //   node --test tests/site-look/article-page.spec.mjs
@@ -20,7 +19,6 @@ import { menuCurrent } from '../../src/site/lib/menuCurrent.js'
 import { blocksOwnHeading } from '../../src/site/lib/pageHeading.js'
 import {
 	menuRouteOf,
-	searchTermOf,
 	subjectCrumbs,
 	subjectOf,
 } from '../../src/site/lib/subjectTrail.js'
@@ -181,12 +179,4 @@ test('the page listens for the subject and the header menu follows it', () => {
 		(grid.match(/@subject="\$emit\('subject', \$event\)"/g) || []).length,
 		2,
 	)
-	assert.equal((grid.match(/@search="forwardSearch"/g) || []).length, 2)
-})
-
-test('Enter in a block search field hands on no event as a search term', () => {
-	assert.equal(searchTermOf('ouderavond'), 'ouderavond')
-	assert.equal(searchTermOf(''), '')
-	assert.equal(searchTermOf({ type: 'search', target: {} }), null)
-	assert.equal(searchTermOf(undefined), null)
 })
