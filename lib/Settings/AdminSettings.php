@@ -40,7 +40,7 @@ use OCP\Settings\ISettings;
  * https://docs.nextcloud.com/server/latest/developer_manual/app_development/settings.html
  * for usage guidance. For most apps, ISettings is the correct choice.
  *
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
  */
 class AdminSettings implements ISettings {
 	/**
@@ -65,7 +65,7 @@ class AdminSettings implements ISettings {
 	 *
 	 * @return TemplateResponse
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function getForm(): TemplateResponse {
 		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
@@ -89,7 +89,7 @@ class AdminSettings implements ISettings {
 	 *
 	 * @return string The settings section ID.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function getSection(): string {
 		return 'portaliq';
@@ -100,7 +100,7 @@ class AdminSettings implements ISettings {
 	 *
 	 * @return int The ordering priority within the section.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function getPriority(): int {
 		return 10;

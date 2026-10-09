@@ -3996,6 +3996,138 @@
         "message": "Kom je ook?",
         "sentAt": "2026-10-01T10:00:00+02:00",
         "expiresAt": "2026-10-15T10:00:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "accessibilityMeasurement",
+          "slug": "accessibility-zuiddrecht-2026-09-01"
+        },
+        "portal": "zuiddrecht",
+        "measuredAt": "2026-09-01T09:00:00+00:00",
+        "measuredBy": "admin",
+        "axeVersion": "4.10.3",
+        "tags": [
+          "wcag2a",
+          "wcag2aa",
+          "wcag21a",
+          "wcag21aa",
+          "wcag22aa"
+        ],
+        "theme": "zuiddrecht",
+        "pages": [
+          {
+            "url": "/",
+            "measured": true,
+            "violations": [
+              {
+                "rule": "color-contrast",
+                "impact": "serious",
+                "nodes": 3,
+                "help": "Elements must meet minimum color contrast ratio thresholds",
+                "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast"
+              }
+            ]
+          },
+          {
+            "url": "/zoeken",
+            "measured": true,
+            "violations": [
+              {
+                "rule": "color-contrast",
+                "impact": "serious",
+                "nodes": 3,
+                "help": "Elements must meet minimum color contrast ratio thresholds",
+                "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast"
+              }
+            ]
+          },
+          {
+            "url": "/deze-pagina-bestaat-niet",
+            "measured": true,
+            "violations": []
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "accessibilityMeasurement",
+          "slug": "accessibility-zuiddrecht-2026-10-01"
+        },
+        "portal": "zuiddrecht",
+        "measuredAt": "2026-10-01T09:00:00+00:00",
+        "measuredBy": "admin",
+        "axeVersion": "4.10.3",
+        "tags": [
+          "wcag2a",
+          "wcag2aa",
+          "wcag21a",
+          "wcag21aa",
+          "wcag22aa"
+        ],
+        "theme": "zuiddrecht",
+        "pages": [
+          {
+            "url": "/",
+            "measured": true,
+            "violations": []
+          },
+          {
+            "url": "/zoeken",
+            "measured": true,
+            "violations": []
+          },
+          {
+            "url": "/deze-pagina-bestaat-niet",
+            "measured": true,
+            "violations": []
+          },
+          {
+            "url": "/extern",
+            "measured": false,
+            "reason": "The page refused to load in a frame."
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "accessibilityMeasurement",
+          "slug": "accessibility-wilgenboom-2026-10-02"
+        },
+        "portal": "wilgenboom",
+        "measuredAt": "2026-10-02T14:30:00+00:00",
+        "measuredBy": "admin",
+        "axeVersion": "4.10.3",
+        "tags": [
+          "wcag2a",
+          "wcag2aa",
+          "wcag21a",
+          "wcag21aa",
+          "wcag22aa"
+        ],
+        "theme": "wilgenboom",
+        "pages": [
+          {
+            "url": "/",
+            "measured": true,
+            "violations": [
+              {
+                "rule": "image-alt",
+                "impact": "critical",
+                "nodes": 1,
+                "help": "Images must have alternative text",
+                "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/image-alt"
+              }
+            ]
+          },
+          {
+            "url": "/zoeken",
+            "measured": true,
+            "violations": []
+          }
+        ]
       }
     ]
   }

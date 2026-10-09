@@ -152,6 +152,92 @@ class PortalContributionRegistryTest extends TestCase {
 
 	}//end testProviderExercisingTheV2VocabularyIsFilteredByTrust()
 
+	/**
+	 * A start tile's audiences are bounded by what the provider serves, in
+	 * both aggregates, and the served list itself never leaves the registry.
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
+	 */
+	public function testAStartTileKeepsOnlyAudiencesTheProviderServes(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['citizen', 'business'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'actions' => [
+						[
+							'id'        => 'createBezwaar',
+							'endpoint'  => '/apps/portaliq/api/health',
+							'method'    => 'POST',
+							'anonymous' => true,
+							'summary'   => 'Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar.',
+							'audiences' => ['citizen', 'alien'],
+						],
+					],
+				];
+			}
+		};
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->anyContainer($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$signedIn = $registry->aggregateFor(['audience' => 'citizen', 'organisation' => 'org-1', 'trust' => 'high'])['contributions'][0];
+		$this->assertSame(['citizen'], $signedIn['actions'][0]['audiences']);
+		$this->assertArrayNotHasKey('servedAudiences', $signedIn);
+
+		$anonymous = $registry->aggregateAnonymous()['contributions'][0];
+		$this->assertSame(['citizen'], $anonymous['actions'][0]['audiences']);
+		$this->assertArrayNotHasKey('servedAudiences', $anonymous);
+	}//end testAStartTileKeepsOnlyAudiencesTheProviderServes()
+
+	/**
+	 * The public start tiles read every audience the provider serves, keep
+	 * the audiences it serves, and drop an unknown one.
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
+	 */
+	public function testStartTilesListEveryActionWithASummaryOnAPage(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['citizen', 'business'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'actions' => [
+						[
+							'id'        => 'createBezwaar',
+							'label'     => 'Bezwaar maken',
+							'endpoint'  => '/apps/portaliq/api/health',
+							'method'    => 'POST',
+							'summary'   => 'Maak binnen zes weken bezwaar.',
+							'audiences' => [$subject['audience'], 'alien'],
+						],
+					],
+					'pages'   => [['id' => 'bezwaar', 'label' => 'Bezwaar', 'blocks' => [['type' => 'action', 'action' => 'createBezwaar']]]],
+				];
+			}
+		};
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->anyContainer($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$this->assertSame(
+			[['label' => 'Bezwaar maken', 'summary' => 'Maak binnen zes weken bezwaar.', 'audiences' => ['citizen', 'business'], 'route' => '/mijn/portaliq/bezwaar']],
+			$registry->startTiles()
+		);
+	}//end testStartTilesListEveryActionWithASummaryOnAPage()
+
 	public function testMinTrustFiltersCollectionsAndActionsFailClosed(): void {
 		$provider = new class {
 

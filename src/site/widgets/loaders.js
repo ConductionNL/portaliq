@@ -67,4 +67,5 @@ export const loaders = {
 	nlFeaturedSubjects: () => import('./nlFeaturedSubjects/NlFeaturedSubjects.vue'),
 	nlPortalCounts: () => import('./nlPortalCounts/NlPortalCounts.vue'),
 	nlSubjectLanding: () => import('./nlSubjectLanding/NlSubjectLanding.vue'),
+	nlStartTiles: () => import('./nlStartTiles/NlStartTiles.vue'),
 }

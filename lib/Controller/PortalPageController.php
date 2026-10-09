@@ -52,13 +52,13 @@ use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Service\Cms\AccessibilityFraming;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
-use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
@@ -98,6 +98,7 @@ class PortalPageController extends Controller {
 	 *                                           token stylesheet.
 	 * @param SiteHead $siteHead The head of the page a site request asks for.
 	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
+	 * @param AccessibilityFraming $framing Whether the accessibility measurement may frame this request.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -107,6 +108,7 @@ class PortalPageController extends Controller {
 		PortalThemeResolver $themeResolver,
 		SiteHead $siteHead,
 		PortalNoticeReader $notices,
+		private readonly AccessibilityFraming $framing,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 		$this->shell = new SiteShell(
@@ -255,11 +257,12 @@ class PortalPageController extends Controller {
 		// Deny framing unless the resolved site says otherwise. Same posture
 		// as index(): clear the `'self'` default first, or a site with no
 		// configured embedders still allows same-origin framing.
-		$csp = new ContentSecurityPolicy();
-		$csp->disallowFrameAncestorDomain('\'self\'');
-		$csp->addAllowedFontDomain('https://fonts.gstatic.com');
-		$csp->addAllowedStyleDomain('https://fonts.googleapis.com');
-		$response->setContentSecurityPolicy($csp);
+		// The one exception to "never framed" is the accessibility
+		// measurement, which frames each page in the administrator's own
+		// browser (site-accessibility-statement REQ-SAS-001): same origin
+		// only, and only for a user who may measure. AccessibilityFraming
+		// builds the whole policy.
+		$response->setContentSecurityPolicy($this->framing->sitePolicy(request: $this->request));
 
 		return $response;
 	}//end site()

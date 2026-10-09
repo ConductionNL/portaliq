@@ -54,7 +54,19 @@ class AttachedActionResolver {
 	 * `rowWhen` is listed so a renderer can leave the action off a row it does
 	 * not apply to; the forward checks it again on the row it read.
 	 */
-	private const LISTED = ['label', 'fields', 'fieldConfigs', 'submitLabel', 'successMessage', 'rowWhen', 'steps', 'confirmation', 'draft', 'summary'];
+	private const LISTED = [
+		'label',
+		'fields',
+		'fieldConfigs',
+		'submitLabel',
+		'successMessage',
+		'rowWhen',
+		'steps',
+		'confirmation',
+		'draft',
+		'summary',
+		'answerSummary',
+	];
 
 	/**
 	 * Add each attaching action to the collections it names.

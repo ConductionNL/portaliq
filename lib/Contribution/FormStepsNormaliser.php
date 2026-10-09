@@ -64,22 +64,28 @@ class FormStepsNormaliser {
 		$flows = (($action['type'] ?? '') === 'create')
 			|| (isset($action['endpoint']) === true && $whitelist !== []);
 		$declared = [
-			'steps'        => ($action['steps'] ?? null),
-			'draft'        => ($action['draft'] ?? null),
-			'confirmation' => ($action['confirmation'] ?? null),
-			'summary'      => ($action['summary'] ?? null),
+			'steps'         => ($action['steps'] ?? null),
+			'draft'         => ($action['draft'] ?? null),
+			'confirmation'  => ($action['confirmation'] ?? null),
+			'answerSummary' => $this->declaredAnswerSummary(action: $action),
 		];
-		unset($action['steps'], $action['draft'], $action['confirmation'], $action['summary']);
+		unset($action['steps'], $action['draft'], $action['confirmation'], $action['answerSummary']);
+		// `summary` is the start tile's string now (decision 127); an object
+		// there is the old sentence shape, read above as `answerSummary`.
+		if (is_array(($action['summary'] ?? null)) === true) {
+			unset($action['summary']);
+		}
+
 		if ($flows === false) {
 			return $action;
 		}
 
 		$clean = [
-			'steps'        => $this->steps(steps: $declared['steps'], known: $whitelist),
-			'draft'        => $this->draft(draft: $declared['draft']),
-			'confirmation' => $this->confirmation(confirmation: $declared['confirmation']),
+			'steps'         => $this->steps(steps: $declared['steps'], known: $whitelist),
+			'draft'         => $this->draft(draft: $declared['draft']),
+			'confirmation'  => $this->confirmation(confirmation: $declared['confirmation']),
 			// One sentence from the answers (action-summary-sentence).
-			'summary'      => (new ActionSummaryNormaliser())->summary(summary: $declared['summary'], whitelist: $whitelist),
+			'answerSummary' => (new ActionSummaryNormaliser())->summary(summary: $declared['answerSummary'], whitelist: $whitelist),
 		];
 		foreach ($clean as $key => $value) {
 			if ($value !== null && $value !== []) {
@@ -89,6 +95,24 @@ class FormStepsNormaliser {
 
 		return $action;
 	}//end applyToAction()
+
+	/**
+	 * The answer sentence an action declares: `answerSummary`, or the object
+	 * an app still declares under `summary` (the shape before decision 127).
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return mixed The declared sentence object, or null.
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function declaredAnswerSummary(array $action): mixed {
+		if (array_key_exists('answerSummary', $action) === true) {
+			return $action['answerSummary'];
+		}
+
+		return ($action['summary'] ?? null);
+	}//end declaredAnswerSummary()
 
 	/**
 	 * The steps of a form or action whose fields are `$known`.

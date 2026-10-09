@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.90.0"
+        "version": "0.92.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.90.0",
+                "version": "0.92.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -82,7 +82,8 @@
                     "portalMailLog",
                     "portalFaq",
                     "portalFinder",
-                    "sharedBlock"
+                    "sharedBlock",
+                    "accessibilityMeasurement"
                 ]
             }
         },
@@ -1090,11 +1091,11 @@
                 "slug": "portalSession",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "admin"
                     ]
                 },
                 "icon": "Ticket",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Session",
                 "description": "A bearer session issued by Portaliq's auth edge. Records the minted token id (jti) so sessions can be revoked. Owned by Portaliq; never publicly readable.",
                 "type": "object",
@@ -1681,7 +1682,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.7.0",
+                "version": "0.8.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -2108,6 +2109,61 @@
                                     "title": "Options providers",
                                     "type": "object",
                                     "description": "Per-field value sources for select inputs, keyed by property name (contribution-manifest-v3). Each provider declares a `type` from the normaliser's allowed provider kinds; an unrecognised kind is dropped rather than rendered."
+                                },
+                                "summary": {
+                                    "title": "Start tile summary",
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "description": "One sentence that offers this create or endpoint action as a start tile (site-nlds-widget-palette D6). Plain text, at most 200 characters. Until decision 127 this key held the answer sentence, which now lives under answerSummary.",
+                                    "example": "Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar."
+                                },
+                                "audiences": {
+                                    "title": "Start tile audiences",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "The audiences a start tile is meant for, a subset of the provider's own audiences; the hint for the way in when a signed-out visitor picks the tile.",
+                                    "example": [
+                                        "citizen"
+                                    ]
+                                },
+                                "answerSummary": {
+                                    "title": "Answer sentence",
+                                    "type": "object",
+                                    "required": [
+                                        "template"
+                                    ],
+                                    "properties": {
+                                        "label": {
+                                            "title": "Sentence lead-in",
+                                            "description": "The words that open the sentence, for example You report. Optional.",
+                                            "type": "string",
+                                            "maxLength": 120
+                                        },
+                                        "template": {
+                                            "title": "Sentence template",
+                                            "description": "The sentence with the action's own fields named as {field}. At most 300 characters.",
+                                            "type": "string",
+                                            "maxLength": 300
+                                        },
+                                        "phrases": {
+                                            "title": "Sentence phrases",
+                                            "description": "Per field, the words shown for each answer value instead of the raw value.",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "description": "One sentence from the resident's own answers, shown above the send button and on the confirmation (action-summary-sentence). The template names only the action's own fields as {field}.",
+                                    "example": {
+                                        "label": "U meldt",
+                                        "template": "{learner} is {when} {reason}.",
+                                        "phrases": {
+                                            "when": {
+                                                "today": "vandaag de hele dag"
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2514,7 +2570,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.22.0",
+                "version": "0.23.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -4507,6 +4563,59 @@
                         },
                         "default": {},
                         "example": {}
+                    },
+                    "accessibilityAudit": {
+                        "title": "Accessibility audit",
+                        "type": "object",
+                        "widget": "json",
+                        "additionalProperties": false,
+                        "description": "The independent audit the accessibility statement rests on: the party that did it, the date, the report and the result. Only an audit supports status A or B, and only for three years.",
+                        "properties": {
+                            "party": {
+                                "title": "Audited by",
+                                "type": "string",
+                                "description": "The independent party that did the audit."
+                            },
+                            "date": {
+                                "title": "Audit date",
+                                "type": "string",
+                                "format": "date",
+                                "description": "The date of the audit report."
+                            },
+                            "reportUrl": {
+                                "title": "Report",
+                                "type": "string",
+                                "description": "Where the audit report can be read, an https address."
+                            },
+                            "result": {
+                                "title": "Result",
+                                "type": "string",
+                                "enum": [
+                                    "A",
+                                    "B",
+                                    "C",
+                                    "D"
+                                ],
+                                "description": "The status the audit found, from the national model."
+                            }
+                        }
+                    },
+                    "accessibilityRegisterUrl": {
+                        "title": "Register entry",
+                        "type": "string",
+                        "description": "The address of this website's entry in the national register of accessibility statements. The statement links to it.",
+                        "example": "https://www.toegankelijkheidsverklaring.nl/register/12345"
+                    },
+                    "accessibilityPages": {
+                        "title": "Pages to measure",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The pages the accessibility measurement checks besides the home, search and not-found pages, as site routes. Add a publication page here.",
+                        "example": [
+                            "/contact"
+                        ]
                     }
                 }
             },
@@ -11228,6 +11337,163 @@
                         "format": "date-time",
                         "description": "When the purge job deletes the draft.",
                         "example": "2026-11-01T12:00:00+00:00"
+                    }
+                }
+            },
+            "accessibilityMeasurement": {
+                "slug": "accessibilityMeasurement",
+                "icon": "ShieldCheckOutline",
+                "version": "0.1.0",
+                "title": "Accessibility measurement",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One run of the accessibility measurement on a portal's own pages (site-accessibility-statement). An administrator runs axe-core in their own browser over the home page, the search page, a publication page, the not-found page and the pages they added; portaliq stores what it found. The public accessibility statement is generated from the latest run. A page that could not be measured is kept with its reason and never counts as passing.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "measuredAt",
+                    "measuredBy",
+                    "axeVersion",
+                    "tags",
+                    "pages"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal that was measured.",
+                        "example": "open-tilburg"
+                    },
+                    "measuredAt": {
+                        "title": "Measured at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the run finished, set by portaliq.",
+                        "example": "2026-10-09T10:00:00+00:00"
+                    },
+                    "measuredBy": {
+                        "title": "Measured by",
+                        "type": "string",
+                        "description": "The user id of the administrator who ran it.",
+                        "example": "admin"
+                    },
+                    "axeVersion": {
+                        "title": "axe-core version",
+                        "type": "string",
+                        "maxLength": 40,
+                        "description": "The version of the axe-core library that measured.",
+                        "example": "4.10.3"
+                    },
+                    "tags": {
+                        "title": "Rule sets",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The axe-core rule sets the run used.",
+                        "example": [
+                            "wcag2a",
+                            "wcag2aa",
+                            "wcag21a",
+                            "wcag21aa",
+                            "wcag22aa"
+                        ]
+                    },
+                    "theme": {
+                        "title": "Theme",
+                        "type": "string",
+                        "description": "The house style the portal used during the run. The theme decides colour contrast.",
+                        "example": "vng"
+                    },
+                    "pages": {
+                        "title": "Pages",
+                        "type": "array",
+                        "description": "Per page what the run found.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "url",
+                                "measured"
+                            ],
+                            "properties": {
+                                "url": {
+                                    "title": "Page",
+                                    "type": "string",
+                                    "description": "The page's address within the site.",
+                                    "example": "/zoeken"
+                                },
+                                "measured": {
+                                    "title": "Measured",
+                                    "type": "boolean",
+                                    "description": "Whether the page could be loaded and measured.",
+                                    "example": true
+                                },
+                                "reason": {
+                                    "title": "Reason",
+                                    "type": "string",
+                                    "description": "Why the page could not be measured.",
+                                    "example": "The page refused to load in a frame."
+                                },
+                                "violations": {
+                                    "title": "Violations",
+                                    "type": "array",
+                                    "description": "The rules the page failed.",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "rule",
+                                            "impact",
+                                            "nodes"
+                                        ],
+                                        "properties": {
+                                            "rule": {
+                                                "title": "Rule",
+                                                "type": "string",
+                                                "description": "The axe-core rule id.",
+                                                "example": "color-contrast"
+                                            },
+                                            "impact": {
+                                                "title": "Impact",
+                                                "type": "string",
+                                                "enum": [
+                                                    "minor",
+                                                    "moderate",
+                                                    "serious",
+                                                    "critical"
+                                                ],
+                                                "description": "How much the failure hinders a visitor.",
+                                                "example": "serious"
+                                            },
+                                            "nodes": {
+                                                "title": "Elements",
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "description": "How many elements on the page failed the rule.",
+                                                "example": 3
+                                            },
+                                            "help": {
+                                                "title": "Help text",
+                                                "type": "string",
+                                                "description": "The rule's short description from axe-core.",
+                                                "example": "Elements must meet minimum color contrast ratio thresholds"
+                                            },
+                                            "helpUrl": {
+                                                "title": "Help link",
+                                                "type": "string",
+                                                "description": "The page that explains the rule.",
+                                                "example": "https://dequeuniversity.com/rules/axe/4.10/color-contrast"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

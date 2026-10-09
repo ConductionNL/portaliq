@@ -69,6 +69,13 @@
       ],
       "label": "Create polls",
       "description": "Ask guardians a question and collect their answers."
+    },
+    "portal.measure-accessibility": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Measure accessibility",
+      "description": "Run the accessibility measurement on a portal and record the audit its statement rests on."
     }
   }
 }
