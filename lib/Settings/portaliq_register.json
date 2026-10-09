@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.73.0"
+        "version": "0.74.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.73.0",
+                "version": "0.74.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2448,7 +2448,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.16.0",
+                "version": "0.17.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3046,6 +3046,16 @@
                         "type": "string",
                         "description": "The text of one button in the header that opens the visitor's own area, where they choose how to sign in. Empty shows a link for each way to sign in instead.",
                         "example": "Mijn Wilgenboom"
+                    },
+                    "breadcrumb": {
+                        "title": "Words of the breadcrumb",
+                        "type": "string",
+                        "description": "Which words name the page on screen in the breadcrumb. `menu` uses the header menu's words when the menu links to the page. `page` uses the page's own title. Empty or unknown means `menu`.",
+                        "enum": [
+                            "menu",
+                            "page"
+                        ],
+                        "example": "page"
                     },
                     "residentMenu": {
                         "title": "Menu of the own area",

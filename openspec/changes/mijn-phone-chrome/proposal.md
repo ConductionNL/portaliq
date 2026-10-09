@@ -8,7 +8,7 @@ links.
 
 ## What Changes
 
-- Portal schema 0.16.0 (register 0.73.0), additive:
+- Portal schema 0.17.0 (register 0.74.0), additive:
   - `residentMenu.phoneHeader: "person"`: inside the own area on a phone the header shows the person's
     initials instead of "Uitloggen", "Uitloggen" moves to the end of the resident menu, the crumb trail is left
     out, and the room under the page shrinks to 24px;

@@ -206,6 +206,8 @@ import {
 	fieldLabel,
 	formBody,
 	formFields,
+	invalidFieldErrors,
+	refusalKey,
 	serverFieldErrors,
 	staticOptions,
 	translatorOr,
@@ -253,6 +255,11 @@ export default {
 		 * `recordField` (case-actions-on-the-case-page).
 		 */
 		preset: { type: Object, default: () => ({}) },
+		/**
+		 * Values the form starts from and the resident may change, by field:
+		 * the row's own values on an update (site-action-forms).
+		 */
+		initial: { type: Object, default: () => ({}) },
 	},
 
 	emits: ['submitted'],
@@ -457,16 +464,26 @@ export default {
 	methods: {
 		/**
 		 * One empty string per whitelisted field, or the value the page gives
-		 * for it (`preset`).
+		 * for it (`preset`), or the value the form starts from (`initial`).
 		 *
 		 * @return {Record<string, string>} The values.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		emptyValues() {
 			const values = {}
 			for (const field of formFields(this.action)) {
 				values[field] =
 					field in this.preset ? String(this.preset[field]) : ''
+				const start = this.initial[field]
+				if (
+					!(field in this.preset)
+					&& start !== undefined
+					&& start !== null
+					&& typeof start !== 'object'
+				) {
+					values[field] = String(start)
+				}
 			}
 			return values
 		},
@@ -677,6 +694,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 */
 		async submit() {
 			this.error = ''
@@ -706,12 +724,17 @@ export default {
 			if (!result.ok) {
 				// A refusal that names fields (a required field left empty)
 				// lands in the summary, on its step; anything else in words.
-				const refused = serverFieldErrors(this.action, result.errors, this.t)
+				// A value the server refused (`invalid`, site-action-forms) gets
+				// plain words on its field too.
+				const refused = {
+					...invalidFieldErrors(this.action, result.invalid, this.t),
+					...serverFieldErrors(this.action, result.errors, this.t),
+				}
 				if (Object.keys(refused).length > 0) {
 					this.showErrors(refused)
 					return
 				}
-				this.error = this.translate('Saving did not work.')
+				this.error = this.translate(refusalKey(result.status || 0))
 				return
 			}
 
@@ -735,18 +758,21 @@ export default {
 		 * as a create.
 		 *
 		 * @param {object} body The body.
-		 * @return {Promise<{ok: boolean, object: object|null, id: string, failed: Array, errors: object}>} The result.
+		 * @return {Promise<{ok: boolean, status: number, object: object|null, id: string, failed: Array, errors: object, invalid: object}>} The result.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 */
 		async sendBody(body) {
 			const answer = (await this.send(body)) || {}
 			return {
 				ok: answer.ok === true,
+				status: answer.status || 0,
 				object: answer.object || null,
 				id: '',
 				failed: [],
 				errors: answer.errors || {},
+				invalid: answer.invalid || {},
 			}
 		},
 

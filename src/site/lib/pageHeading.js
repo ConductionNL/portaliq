@@ -10,8 +10,12 @@
  * it: the proof of 06 Oct showed "Uw kind afwezig melden" twice.
  */
 
-/** Blocks that state the page's subject as its heading. */
-const HEADING_BLOCKS = ['hero', 'publicationDetail']
+/**
+ * Blocks that state the page's subject as its heading. A news article
+ * prints its own title as the h1, so the page's "Nieuws" is not printed above
+ * it (site-article-page-follows-the-board).
+ */
+const HEADING_BLOCKS = ['hero', 'publicationDetail', 'nlNewsArticle']
 
 /**
  * The level an `nlHeading` renders at, as `NlHeading.vue` clamps it.

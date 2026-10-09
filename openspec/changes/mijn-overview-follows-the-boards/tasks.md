@@ -5,7 +5,7 @@
 - [x] 1.2 `pageLayout.js` places, `BlockShell.vue` draws the grid, frames and links only when declared.
 - [x] 1.3 `greeting.showWeek`, `kpi` `display: strip` with `stripLabel`.
 - [x] 1.4 Tinted data badges.
-- [x] 1.5 Portal schema 0.15.0, register 0.72.0: `contactPrompt`; `PortalShell` projects it; `App.vue` and `ContactPrompt.vue` follow it.
+- [x] 1.5 Portal schema 0.16.0, register 0.73.0: `contactPrompt`; `PortalShell` projects it; `App.vue` and `ContactPrompt.vue` follow it.
 - [x] 1.6 Tests: `tests/site-look/mijn-overview-follows-the-boards.spec.mjs`, `PortalShellTest`.
 
 ## 2. learniq declares (lane LQ). Labels in English go through learniq's own Dutch labels.
