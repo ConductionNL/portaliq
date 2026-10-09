@@ -2316,7 +2316,14 @@
         "The words that name that record, copied when the thread is started, such as Vera, Groep 7.": "De woorden die dat record noemen, overgenomen als het gesprek begint, zoals Vera, Groep 7.",
         "With": "Met",
         "You are not allowed to do this. Ask an administrator for access.": "Je mag dit niet doen. Vraag een beheerder om toegang.",
-        "Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd."
+        "Only on this demo. No password is asked.": "Alleen op deze demo. Er wordt geen wachtwoord gevraagd.",
+        "A second address under /mijn/ for an item of the own area, by name, so /mijn/berichten opens the conversations. Letters, digits and hyphens only. Empty adds none.": "Een tweede adres onder /mijn/ voor een onderdeel van de eigen omgeving, bij naam, zodat /mijn/berichten de gesprekken opent. Alleen letters, cijfers en streepjes. Leeg voegt er geen toe.",
+        "At most four fields of that row, joined by a dot in the second line.": "Hoogstens vier velden van die rij, met een punt ertussen in de tweede regel.",
+        "Person block": "Persoonsblok",
+        "Second addresses": "Tweede adressen",
+        "Shows the signed-in person at the top of the menu: initials in a circle, the name, and a second line from the first row of a collection, such as the class. With an organisation card the second line goes under the organisation's name. Empty shows no person block.": "Toont de ingelogde persoon boven in het menu: de voorletters in een cirkel, de naam en een tweede regel uit de eerste rij van een verzameling, zoals de klas. Met een organisatiekaart staat de tweede regel onder de naam van de organisatie. Leeg toont geen persoonsblok.",
+        "The collection whose first row gives the second line, as app:collection, such as learniq:studentEnrolments.": "De verzameling waarvan de eerste rij de tweede regel geeft, als app:verzameling, zoals learniq:studentEnrolments.",
+        "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page. An item may also be an object with item (the name) and label (the word the menu shows for it, such as Berichten).": "De onderdelen in deze groep, op volgorde, elk bij naam: een deel van de eigen omgeving of een bijgedragen pagina als app:pagina. Een onderdeel mag ook een object zijn met item (de naam) en label (het woord dat het menu ervoor toont, zoals Berichten)."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

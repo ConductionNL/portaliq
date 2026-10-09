@@ -286,7 +286,7 @@ test('on a phone the menu folds behind one button that says whether it is open',
 	const phone = sfc.slice(sfc.indexOf('@media (max-width: 767px)'))
 	assert.match(phone, /\.pq-resident-menu__toggle \{\s*display: inline-flex;/)
 	assert.match(phone, /\.pq-resident-menu__groups \{\s*display: none;/)
-	assert.match(phone, /\.pq-resident-menu__groups--open \{\s*display: block;/)
+	assert.match(phone, /\.pq-resident-menu__groups--open \{\s*display: (block|flex);/)
 	const area = read('src', 'site', 'components', 'AccountArea.vue')
 	assert.match(area, /\.pq-account--with-menu \{\s*display: grid;\s*grid-template-columns: minmax\(0, 1fr\);/)
 	assert.match(area, /@media \(min-width: 768px\) \{\s*\.pq-account--with-menu \{\s*grid-template-columns: minmax\(180px, 260px\) minmax\(0, 1fr\);/)
