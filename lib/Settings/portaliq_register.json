@@ -3043,9 +3043,21 @@
                                             "type": "array",
                                             "description": "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page. An item may also be an object with item (the name) and label (the word the menu shows for it, such as Berichten).",
                                             "items": {
-                                                "type": [
-                                                    "string",
-                                                    "object"
+                                                "oneOf": [
+                                                    {
+                                                        "type": "string"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "item": {
+                                                                "type": "string"
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    }
                                                 ]
                                             }
                                         }
