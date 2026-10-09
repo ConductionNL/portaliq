@@ -17,12 +17,14 @@ import AccountBoxOutline from 'vue-material-design-icons/AccountBoxOutline.vue'
 import AccountKey from 'vue-material-design-icons/AccountKey.vue'
 import AccountLock from 'vue-material-design-icons/AccountLock.vue'
 import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
+import AccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 import AccountPlus from 'vue-material-design-icons/AccountPlus.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
 import BookOpenVariant from 'vue-material-design-icons/BookOpenVariant.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
+import BullhornOutline from 'vue-material-design-icons/BullhornOutline.vue'
 // The three integration-leaf widget icons the manifest names (leaf-integrations):
 // Calendar on PortalAccountDetail, ChatOutline on PortalMessageDetail,
 // ClipboardText on PortalSubmissionDetail. A leaf widget whose icon is not
@@ -33,11 +35,14 @@ import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
 import ChatOutline from 'vue-material-design-icons/ChatOutline.vue'
 import Check from 'vue-material-design-icons/Check.vue'
+import CheckboxMarkedOutline from 'vue-material-design-icons/CheckboxMarkedOutline.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import ClipboardListOutline from 'vue-material-design-icons/ClipboardListOutline.vue'
 import ClipboardText from 'vue-material-design-icons/ClipboardText.vue'
 import Close from 'vue-material-design-icons/Close.vue'
+import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultClickOutline.vue'
+import Download from 'vue-material-design-icons/Download.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailEditOutline from 'vue-material-design-icons/EmailEditOutline.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
@@ -53,9 +58,11 @@ import FileFindOutline from 'vue-material-design-icons/FileFindOutline.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
+import HeartOutline from 'vue-material-design-icons/HeartOutline.vue'
 import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
 import History from 'vue-material-design-icons/History.vue'
 import Home from 'vue-material-design-icons/Home.vue'
+import HomeOutline from 'vue-material-design-icons/HomeOutline.vue'
 import Login from 'vue-material-design-icons/Login.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
@@ -63,7 +70,9 @@ import MessageText from 'vue-material-design-icons/MessageText.vue'
 import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
 import MotionPlayOutline from 'vue-material-design-icons/MotionPlayOutline.vue'
 import NewspaperVariantOutline from 'vue-material-design-icons/NewspaperVariantOutline.vue'
+import OfficeBuildingOutline from 'vue-material-design-icons/OfficeBuildingOutline.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
+import PackageVariantClosed from 'vue-material-design-icons/PackageVariantClosed.vue'
 import Palette from 'vue-material-design-icons/Palette.vue'
 import Pencil from 'vue-material-design-icons/Pencil.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
@@ -75,7 +84,9 @@ import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
 import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
 import Sitemap from 'vue-material-design-icons/Sitemap.vue'
 import StoreOutline from 'vue-material-design-icons/StoreOutline.vue'
+import Tablet from 'vue-material-design-icons/Tablet.vue'
 import Ticket from 'vue-material-design-icons/Ticket.vue'
+import Upload from 'vue-material-design-icons/Upload.vue'
 import ViewDashboardOutline from 'vue-material-design-icons/ViewDashboardOutline.vue'
 import Web from 'vue-material-design-icons/Web.vue'
 import WebBox from 'vue-material-design-icons/WebBox.vue'
@@ -149,6 +160,17 @@ export default {
 	Sitemap,
 	StoreOutline,
 	Ticket,
+	HomeOutline,
+	OfficeBuildingOutline,
+	PackageVariantClosed,
+	BullhornOutline,
+	HeartOutline,
+	AccountMultipleOutline,
+	CheckboxMarkedOutline,
+	Tablet,
+	Download,
+	Upload,
+	ContentCopy,
 	ViewDashboardOutline,
 	Web,
 	WebBox,

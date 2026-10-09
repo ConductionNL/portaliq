@@ -1,5 +1,6 @@
 {
   "$schema": "https://github.com/ConductionNL/nextcloud-vue/raw/main/src/schemas/app-manifest-v2.schema.json",
+  "look": "board",
   "setup": {
     "version": 1,
     "completionConfigKey": "setup_completed_version",
@@ -49,9 +50,15 @@
       "order": 10
     },
     {
+      "id": "CapWebsite",
+      "type": "caption",
+      "label": "Website",
+      "order": 15
+    },
+    {
       "id": "Portals",
       "label": "Portals",
-      "icon": "Web",
+      "icon": "OfficeBuildingOutline",
       "route": "Portals",
       "order": 20,
       "visibleIf": {
@@ -61,7 +68,7 @@
     {
       "id": "MediaMenu",
       "label": "Media",
-      "icon": "FolderOutline",
+      "icon": "PackageVariantClosed",
       "route": "Media",
       "order": 25,
       "visibleIf": {
@@ -71,7 +78,7 @@
     {
       "id": "NoticesMenu",
       "label": "Notices",
-      "icon": "AlertCircleOutline",
+      "icon": "BullhornOutline",
       "route": "Notices",
       "order": 26,
       "visibleIf": {
@@ -81,14 +88,30 @@
     {
       "id": "NewsMenu",
       "label": "News",
-      "icon": "NewspaperVariantOutline",
+      "icon": "FileDocumentOutline",
       "route": "News",
       "order": 27
     },
     {
+      "id": "Themes",
+      "label": "Themes",
+      "icon": "HeartOutline",
+      "route": "Themes",
+      "order": 28,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "CapMijn",
+      "type": "caption",
+      "label": "My Zuiddrecht",
+      "order": 29
+    },
+    {
       "id": "PortalAccounts",
       "label": "Accounts",
-      "icon": "Account",
+      "icon": "AccountMultipleOutline",
       "route": "PortalAccounts",
       "order": 30,
       "visibleIf": {
@@ -108,17 +131,25 @@
     {
       "id": "AccessRequestsMenu",
       "label": "Access requests",
-      "icon": "AccountKey",
+      "icon": "CheckboxMarkedOutline",
       "route": "AccessRequests",
       "order": 32,
       "visibleIf": {
         "access.accessRequests": true
-      }
+      },
+      "count": {
+        "register": "portaliq",
+        "schema": "portalAccessRequest",
+        "filter": {
+          "state": "pending"
+        }
+      },
+      "counterVariant": "attention"
     },
     {
       "id": "PortalSubmissionsMenu",
       "label": "Submissions",
-      "icon": "FileCheckOutline",
+      "icon": "Tablet",
       "route": "PortalSubmissions",
       "order": 35,
       "visibleIf": {
@@ -128,19 +159,9 @@
     {
       "id": "FormBindingsMenu",
       "label": "Request forms",
-      "icon": "FormSelect",
+      "icon": "ChartLine",
       "route": "FormBindings",
       "order": 36,
-      "visibleIf": {
-        "access.admin": true
-      }
-    },
-    {
-      "id": "Themes",
-      "label": "Themes",
-      "icon": "Palette",
-      "route": "Themes",
-      "order": 40,
       "visibleIf": {
         "access.admin": true
       }
@@ -290,10 +311,24 @@
       "config": {
         "widgets": [
           {
-            "id": "active-accounts",
+            "id": "kpi-portals",
+            "title": "Portals",
+            "type": "stats-block",
+            "dataSource": {
+              "register": "portaliq",
+              "schema": "portal",
+              "filter": {},
+              "aggregate": "count"
+            },
+            "props": {
+              "countLabel": "",
+              "variant": "default"
+            }
+          },
+          {
+            "id": "kpi-accounts",
             "title": "Active accounts",
             "type": "stats-block",
-            "iconClass": "icon-user",
             "dataSource": {
               "register": "portaliq",
               "schema": "portalAccount",
@@ -303,15 +338,46 @@
               "aggregate": "count"
             },
             "props": {
-              "countLabel": "accounts",
-              "variant": "primary"
+              "countLabel": "",
+              "variant": "default"
             }
           },
           {
-            "id": "active-sessions",
+            "id": "kpi-requests",
+            "title": "Open access requests",
+            "type": "stats-block",
+            "dataSource": {
+              "register": "portaliq",
+              "schema": "portalAccessRequest",
+              "filter": {
+                "state": "pending"
+              },
+              "aggregate": "count"
+            },
+            "props": {
+              "countLabel": "",
+              "variant": "warning"
+            }
+          },
+          {
+            "id": "kpi-submissions",
+            "title": "Submissions",
+            "type": "stats-block",
+            "dataSource": {
+              "register": "portaliq",
+              "schema": "portalSubmission",
+              "filter": {},
+              "aggregate": "count"
+            },
+            "props": {
+              "countLabel": "",
+              "variant": "default"
+            }
+          },
+          {
+            "id": "now-sessions",
             "title": "Active sessions",
             "type": "stats-block",
-            "iconClass": "icon-category-security",
             "dataSource": {
               "register": "portaliq",
               "schema": "portalSession",
@@ -321,15 +387,14 @@
               "aggregate": "count"
             },
             "props": {
-              "countLabel": "sessions",
-              "variant": "success"
+              "countLabel": "",
+              "variant": "default"
             }
           },
           {
-            "id": "unread-messages",
+            "id": "now-messages",
             "title": "Unread messages",
             "type": "stats-block",
-            "iconClass": "icon-mail",
             "dataSource": {
               "register": "portaliq",
               "schema": "portalMessage",
@@ -339,37 +404,69 @@
               "aggregate": "count"
             },
             "props": {
-              "countLabel": "messages",
-              "variant": "warning"
+              "countLabel": "",
+              "variant": "default"
             }
           }
         ],
         "layout": [
           {
             "id": 1,
-            "widgetId": "active-accounts",
+            "widgetId": "kpi-portals",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 4,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
             "id": 2,
-            "widgetId": "active-sessions",
-            "gridX": 4,
+            "widgetId": "kpi-accounts",
+            "gridX": 3,
             "gridY": 0,
-            "gridWidth": 4,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
             "id": 3,
-            "widgetId": "unread-messages",
-            "gridX": 8,
+            "widgetId": "kpi-requests",
+            "gridX": 6,
             "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 1
+          },
+          {
+            "id": 4,
+            "widgetId": "kpi-submissions",
+            "gridX": 9,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 1
+          },
+          {
+            "id": 5,
+            "widgetId": "now-sessions",
+            "gridX": 0,
+            "gridY": 1,
+            "gridWidth": 4,
+            "gridHeight": 1
+          },
+          {
+            "id": 6,
+            "widgetId": "now-messages",
+            "gridX": 4,
+            "gridY": 1,
             "gridWidth": 4,
             "gridHeight": 1
           }
-        ]
+        ],
+        "kpiRow": [
+          "kpi-portals",
+          "kpi-accounts",
+          "kpi-requests",
+          "kpi-submissions"
+        ],
+        "showWidgetActions": false,
+        "description": "What needs attention today"
       }
     },
     {
@@ -777,15 +874,27 @@
       "id": "PortalAccounts",
       "route": "/accounts",
       "type": "index",
-      "title": "Portal Accounts",
+      "title": "Accounts",
       "config": {
         "register": "portaliq",
         "schema": "portalAccount",
         "columns": [
-          "displayName",
-          "audience",
-          "identityType",
-          "organisation",
+          {
+            "key": "displayName",
+            "label": "Name"
+          },
+          {
+            "key": "audience",
+            "label": "Audience"
+          },
+          {
+            "key": "identityType",
+            "label": "Sign-in"
+          },
+          {
+            "key": "organisation",
+            "label": "Organisation"
+          },
           {
             "key": "status",
             "label": "Status",
@@ -797,12 +906,11 @@
               }
             }
           },
-          "lastLoginAt"
+          {
+            "key": "lastLoginAt",
+            "label": "Last signed in"
+          }
         ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        },
         "showAdd": false,
         "headerActions": [
           {
@@ -818,7 +926,49 @@
             "handler": "inviteSomeone"
           }
         ],
-        "_note": "identity-staff-account-screens T04: the generic Add is hidden, because a portal account made through the object form skips the identity de-duplication of the provision route. 'Issue an account' and 'Invite someone' are handlers that post PortalAccountAdminController behind portal.provision; see src/lib/staffAccountActions.js."
+        "_note": "identity-staff-account-screens T04: the generic Add is hidden, because a portal account made through the object form skips the identity de-duplication of the provision route. 'Issue an account' and 'Invite someone' are handlers that post PortalAccountAdminController behind portal.provision; see src/lib/staffAccountActions.js.",
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} accounts",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          },
+          {
+            "action": "issue-account",
+            "variant": "primary"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Actief",
+            "filter": {
+              "status": "active"
+            },
+            "showCount": true
+          },
+          {
+            "label": "In afwachting",
+            "filter": {
+              "status": "pending"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Geschorst",
+            "filter": {
+              "status": "suspended"
+            },
+            "showCount": true
+          }
+        ]
       }
     },
     {
@@ -832,10 +982,13 @@
         "_note": "identity-staff-account-screens T05: the invitations staff sent, with their state and expiry. The secret is never on the row (tokenHash only, not a column). 'Withdraw invitation' posts /api/invitations/{id}/revoke behind portal.provision, which refuses an accepted invitation; 'Invite someone' opens InviteDialog. No generic Add: an invitation made through the object form would never be mailed.",
         "showAdd": false,
         "columns": [
-          "email",
+          {
+            "key": "email",
+            "label": "Email"
+          },
           {
             "key": "state",
-            "label": "State",
+            "label": "Status",
             "widget": "badge",
             "widgetProps": {
               "colorMap": {
@@ -847,10 +1000,22 @@
               }
             }
           },
-          "sentAt",
-          "expiresAt",
-          "invitedBy",
-          "organisation"
+          {
+            "key": "sentAt",
+            "label": "Sent"
+          },
+          {
+            "key": "expiresAt",
+            "label": "Expires"
+          },
+          {
+            "key": "invitedBy",
+            "label": "Invited by"
+          },
+          {
+            "key": "organisation",
+            "label": "Organisation"
+          }
         ],
         "headerActions": [
           {
@@ -872,6 +1037,48 @@
               "op": "neq",
               "value": "accepted"
             }
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} invitations",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          },
+          {
+            "action": "invite-someone",
+            "variant": "primary"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Verstuurd",
+            "filter": {
+              "state": "sent"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Geaccepteerd",
+            "filter": {
+              "state": "accepted"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Verlopen",
+            "filter": {
+              "state": "expired"
+            },
+            "showCount": true
           }
         ]
       }
@@ -1314,14 +1521,23 @@
       "id": "PortalSubmissions",
       "route": "/submissions",
       "type": "index",
-      "title": "Portal Submissions",
+      "title": "Submissions",
       "config": {
         "register": "portaliq",
         "schema": "portalSubmission",
         "columns": [
-          "appId",
-          "actionId",
-          "submittedAt",
+          {
+            "key": "submittedAt",
+            "label": "Submitted"
+          },
+          {
+            "key": "appId",
+            "label": "App"
+          },
+          {
+            "key": "actionId",
+            "label": "Action"
+          },
           {
             "key": "deliveryStatus",
             "label": "Receipt",
@@ -1335,10 +1551,44 @@
             }
           }
         ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        }
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} submissions",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Bevestigd",
+            "filter": {
+              "deliveryStatus": "delivered"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Wacht",
+            "filter": {
+              "deliveryStatus": "pending"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Mislukt",
+            "filter": {
+              "deliveryStatus": "failed"
+            },
+            "showCount": true
+          }
+        ]
       }
     },
     {
@@ -1423,8 +1673,22 @@
         "register": "portaliq",
         "schema": "portal",
         "columns": [
-          "title",
-          "slug",
+          {
+            "key": "title",
+            "label": "Portal"
+          },
+          {
+            "key": "kind",
+            "label": "Type"
+          },
+          {
+            "key": "theme",
+            "label": "Theme"
+          },
+          {
+            "key": "organisation",
+            "label": "Organisation"
+          },
           {
             "key": "status",
             "label": "Status",
@@ -1435,14 +1699,8 @@
                 "draft": "warning"
               }
             }
-          },
-          "theme",
-          "organisation"
+          }
         ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        },
         "actions": [
           {
             "id": "open-site",
@@ -1450,6 +1708,46 @@
             "icon": "OpenInNew",
             "type": "handler",
             "handler": "openPortalSite"
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} portals",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          },
+          {
+            "action": "import",
+            "label": "Import"
+          },
+          {
+            "action": "add",
+            "variant": "primary",
+            "label": "New portal"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Gepubliceerd",
+            "filter": {
+              "status": "published"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Concept",
+            "filter": {
+              "status": "draft"
+            },
+            "showCount": true
           }
         ]
       }
@@ -2186,12 +2484,30 @@
         "schema": "portalAccessRequest",
         "_note": "The owner's side of an access request (identity-access-requests, #797). Grant and Refuse are handlers, not object-op patches: an answer goes through AccessRequestAdminController behind portal.answer-access-request, a grant also records the portalMandate that opens the cases, and a refusal asks for the reason the asker reads. See src/lib/accessRequestActions.js.",
         "columns": [
-          "displayName",
-          "onBehalfOf",
-          "organisation",
-          "reason",
-          "state",
-          "requestedAt"
+          {
+            "key": "displayName",
+            "label": "Name"
+          },
+          {
+            "key": "onBehalfOf",
+            "label": "On behalf of"
+          },
+          {
+            "key": "organisation",
+            "label": "Organisation"
+          },
+          {
+            "key": "reason",
+            "label": "Reason"
+          },
+          {
+            "key": "state",
+            "label": "Status"
+          },
+          {
+            "key": "requestedAt",
+            "label": "Requested"
+          }
         ],
         "actions": [
           {
@@ -2208,6 +2524,44 @@
             "type": "handler",
             "handler": "refuseAccessRequest"
           }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} requests",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Open",
+            "filter": {
+              "state": "pending"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Goedgekeurd",
+            "filter": {
+              "state": "granted"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Afgewezen",
+            "filter": {
+              "state": "refused"
+            },
+            "showCount": true
+          }
         ]
       }
     },
@@ -2221,11 +2575,26 @@
         "schema": "portalFormBinding",
         "_note": "Which form each portal entry opens (portal-intake-form-as-an-object T03). The row shows the binding as configured, which reads the same whether its form is published or not; Check form asks FormBindingAdminController for the form it resolves to today. See src/lib/formBindingPreview.js.",
         "columns": [
-          "portal",
-          "route",
-          "audience",
-          "formName",
-          "intakeKind",
+          {
+            "key": "formName",
+            "label": "Form"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
+          {
+            "key": "route",
+            "label": "Route"
+          },
+          {
+            "key": "audience",
+            "label": "Audience"
+          },
+          {
+            "key": "intakeKind",
+            "label": "Kind"
+          },
           {
             "key": "status",
             "label": "Status",
@@ -2238,10 +2607,6 @@
             }
           }
         ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        },
         "actions": [
           {
             "id": "check-form",
@@ -2249,6 +2614,37 @@
             "icon": "FormSelect",
             "type": "handler",
             "handler": "previewFormBinding"
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} request forms",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Gepubliceerd",
+            "filter": {
+              "status": "published"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Concept",
+            "filter": {
+              "status": "draft"
+            },
+            "showCount": true
           }
         ]
       }
@@ -2296,9 +2692,18 @@
         "schema": "media",
         "_note": "A portal's media library (site-page-seo-history-and-media T06-T09). An editor creates an item here and uploads its file on the item's page (the sidebar's Files tab, OpenRegister's object files); the newest file is the one served, so uploading a new one replaces the image on every page using it. Pages refer to an item as media:<id>, picked in the page designer's Media dialog. Deleting an item a published page uses is refused by MediaWriteGuardListener, which names the pages.",
         "columns": [
-          "title",
-          "kind",
-          "portal",
+          {
+            "key": "title",
+            "label": "Title"
+          },
+          {
+            "key": "kind",
+            "label": "Type"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
           {
             "key": "status",
             "label": "Status",
@@ -2311,10 +2716,42 @@
             }
           }
         ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        }
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} media",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          },
+          {
+            "action": "add",
+            "variant": "primary",
+            "label": "New media item"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Gepubliceerd",
+            "filter": {
+              "status": "published"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Concept",
+            "filter": {
+              "status": "draft"
+            },
+            "showCount": true
+          }
+        ]
       }
     },
     {
@@ -2341,10 +2778,22 @@
         "schema": "portalNotice",
         "_note": "Maintenance and warning notices shown above every page of a portal (operate-maintenance-notice). A notice shows while it is published and its window runs, on the public site, the signed-in portal or both. Written by the page editor groups; NoticeWriteGuardListener refuses an end that is not after the start.",
         "columns": [
-          "message",
-          "portal",
-          "startsAt",
-          "endsAt",
+          {
+            "key": "message",
+            "label": "Notice"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
+          {
+            "key": "startsAt",
+            "label": "Starts"
+          },
+          {
+            "key": "endsAt",
+            "label": "Ends"
+          },
           {
             "key": "status",
             "label": "Status",
@@ -2357,10 +2806,42 @@
             }
           }
         ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        }
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} notices",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          },
+          {
+            "action": "add",
+            "variant": "primary",
+            "label": "New notice"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Gepubliceerd",
+            "filter": {
+              "status": "published"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Concept",
+            "filter": {
+              "status": "draft"
+            },
+            "showCount": true
+          }
+        ]
       }
     },
     {
@@ -2390,10 +2871,13 @@
         "showEditAction": false,
         "showCopyAction": false,
         "columns": [
-          "title",
+          {
+            "key": "title",
+            "label": "Title"
+          },
           {
             "key": "target",
-            "label": "For",
+            "label": "Audience",
             "widget": "news-target"
           },
           {
@@ -2409,9 +2893,12 @@
           },
           {
             "key": "publishedAt",
-            "label": "Published on"
+            "label": "Published"
           },
-          "authorRef"
+          {
+            "key": "authorRef",
+            "label": "Author"
+          }
         ],
         "headerActions": [
           {
@@ -2452,6 +2939,41 @@
               "op": "eq",
               "value": "published"
             }
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} news items",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          },
+          {
+            "action": "new-news-item",
+            "variant": "primary"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Gepubliceerd",
+            "filter": {
+              "status": "published"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Concept",
+            "filter": {
+              "status": "draft"
+            },
+            "showCount": true
           }
         ]
       }
@@ -2816,5 +3338,117 @@
         ]
       }
     ]
+  },
+  "nav": {
+    "includePersonalSettings": true,
+    "settingsLabel": "Advanced",
+    "primaryAction": {
+      "id": "new-page",
+      "label": "New page",
+      "icon": "Plus",
+      "solid": true,
+      "route": "Pages"
+    },
+    "help": {
+      "label": "Help and guidance",
+      "href": "https://www.conduction.nl/academy"
+    },
+    "footer": [
+      "help",
+      "settings"
+    ]
+  },
+  "i18n": {
+    "sourceLanguage": "en",
+    "languages": [
+      "nl"
+    ],
+    "labels": {
+      "nl": {
+        "Advanced": "Geavanceerd",
+        "New page": "Nieuwe pagina",
+        "Help and guidance": "Hulp en uitleg",
+        "Dashboard": "Dashboard",
+        "Website": "Website",
+        "Portals": "Portals",
+        "Media": "Media",
+        "Notices": "Mededelingen",
+        "News": "Nieuws",
+        "Themes": "Thema's",
+        "My Zuiddrecht": "Mijn Zuiddrecht",
+        "Accounts": "Accounts",
+        "Invitations": "Uitnodigingen",
+        "Access requests": "Toegangsverzoeken",
+        "Submissions": "Inzendingen",
+        "Request forms": "Aanvraagformulieren",
+        "Documentation": "Documentatie",
+        "Store": "Store",
+        "Reports": "Rapporten",
+        "Features & roadmap": "Functies en roadmap",
+        "Flows": "Flows",
+        "Integrations": "Integraties",
+        "Mail templates": "E-mailsjablonen",
+        "Sent mail": "Verzonden e-mail",
+        "Frequently asked questions": "Veelgestelde vragen",
+        "Product finders": "Productzoekers",
+        "Shared blocks": "Gedeelde blokken",
+        "Open portal": "Portal openen",
+        "Status": "Status",
+        "Title": "Titel",
+        "Active accounts": "Actieve accounts",
+        "Open access requests": "Open toegangsverzoeken",
+        "Active sessions": "Actieve sessies",
+        "Unread messages": "Ongelezen berichten",
+        "What needs attention today": "Wat vandaag aandacht vraagt",
+        "{shown} of {total} portals": "{shown} van {total} portals",
+        "Download": "Downloaden",
+        "Import": "Importeren",
+        "New portal": "Nieuwe portal",
+        "Portal": "Portal",
+        "Type": "Soort",
+        "Theme": "Thema",
+        "Organisation": "Organisatie",
+        "{shown} of {total} media": "{shown} van {total} mediabestanden",
+        "New media item": "Nieuw mediabestand",
+        "{shown} of {total} notices": "{shown} van {total} mededelingen",
+        "New notice": "Nieuwe mededeling",
+        "Notice": "Mededeling",
+        "Starts": "Begint",
+        "Ends": "Eindigt",
+        "{shown} of {total} news items": "{shown} van {total} nieuwsberichten",
+        "Audience": "Doelgroep",
+        "Published": "Gepubliceerd op",
+        "Author": "Auteur",
+        "{shown} of {total} accounts": "{shown} van {total} accounts",
+        "Name": "Naam",
+        "Sign-in": "Inloggen",
+        "Last signed in": "Laatst ingelogd",
+        "{shown} of {total} invitations": "{shown} van {total} uitnodigingen",
+        "Email": "E-mailadres",
+        "Sent": "Verstuurd",
+        "Expires": "Verloopt",
+        "Invited by": "Uitgenodigd door",
+        "{shown} of {total} requests": "{shown} van {total} verzoeken",
+        "On behalf of": "Namens",
+        "Reason": "Reden",
+        "Requested": "Aangevraagd",
+        "{shown} of {total} submissions": "{shown} van {total} inzendingen",
+        "Submitted": "Ingezonden",
+        "App": "App",
+        "Action": "Actie",
+        "Receipt": "Ontvangstbevestiging",
+        "{shown} of {total} request forms": "{shown} van {total} aanvraagformulieren",
+        "Form": "Formulier",
+        "Route": "Pad",
+        "Kind": "Soort",
+        "Issue an account": "Account uitgeven",
+        "Invite someone": "Iemand uitnodigen",
+        "New news item": "Nieuw nieuwsbericht",
+        "Withdraw invitation": "Uitnodiging intrekken",
+        "Change": "Wijzigen",
+        "Publish": "Publiceren",
+        "Take back": "Terugnemen"
+      }
+    }
   }
 }
