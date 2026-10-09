@@ -111,11 +111,7 @@ class FormStepsNormaliser {
 			return $action['answerSummary'];
 		}
 
-		if (is_array(($action['summary'] ?? null)) === true) {
-			return $action['summary'];
-		}
-
-		return null;
+		return ($action['summary'] ?? null);
 	}//end declaredAnswerSummary()
 
 	/**

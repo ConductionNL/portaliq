@@ -2806,7 +2806,19 @@ OC.L10N.register(
         "The statement shows status {status}. Without an audit it cannot show A or B.": "De verklaring toont status {status}. Zonder onderzoek kan zij geen A of B tonen.",
         "This audit is older than three years. It no longer supports status A or B.": "Dit onderzoek is ouder dan drie jaar. Het onderbouwt status A of B niet meer.",
         "This portal has not been measured yet.": "Dit portaal is nog niet gemeten.",
-        "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.": "Niet alle sessies konden worden ingetrokken. {count} sessie(s) ingetrokken; de rest is misschien nog actief. Probeer het opnieuw en controleer of OpenRegister draait."
+        "Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.": "Niet alle sessies konden worden ingetrokken. {count} sessie(s) ingetrokken; de rest is misschien nog actief. Probeer het opnieuw en controleer of OpenRegister draait.",
+        "Answer sentence": "Antwoordzin",
+        "One sentence from the resident's own answers, shown above the send button and on the confirmation (action-summary-sentence). The template names only the action's own fields as {field}.": "Eén zin uit de eigen antwoorden van de inwoner, getoond boven de verzendknop en op de bevestiging (action-summary-sentence). Het sjabloon noemt alleen de eigen velden van de actie als {field}.",
+        "One sentence that offers this create or endpoint action as a start tile (site-nlds-widget-palette D6). Plain text, at most 200 characters. Until decision 127 this key held the answer sentence, which now lives under answerSummary.": "Eén zin die deze aanmaak- of endpointactie aanbiedt als starttegel (site-nlds-widget-palette D6). Gewone tekst, hoogstens 200 tekens. Tot besluit 127 bevatte deze sleutel de antwoordzin, die nu onder answerSummary staat.",
+        "Start tile audiences": "Doelgroepen van de starttegel",
+        "Start tile summary": "Samenvatting van de starttegel",
+        "The audiences a start tile is meant for, a subset of the provider's own audiences; the hint for the way in when a signed-out visitor picks the tile.": "De doelgroepen voor wie een starttegel bedoeld is, een deelverzameling van de eigen doelgroepen van de aanbieder; de aanwijzing voor de weg naar binnen als een uitgelogde bezoeker de tegel kiest.",
+        "Sentence lead-in": "Aanloop van de zin",
+        "The words that open the sentence, for example You report. Optional.": "De woorden waarmee de zin opent, bijvoorbeeld U meldt. Optioneel.",
+        "Sentence template": "Sjabloon van de zin",
+        "The sentence with the action's own fields named as {field}. At most 300 characters.": "De zin met de eigen velden van de actie als {field}. Hoogstens 300 tekens.",
+        "Sentence phrases": "Formuleringen in de zin",
+        "Per field, the words shown for each answer value instead of the raw value.": "Per veld de woorden die bij elke antwoordwaarde getoond worden in plaats van de ruwe waarde."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -90,23 +90,12 @@ class PortalSessionService {
 	/**
 	 * The OpenRegister register the `portalSession` schema lives in.
 	 */
-	private const SESSION_REGISTER = 'portaliq';
+	public const SESSION_REGISTER = 'portaliq';
 
 	/**
 	 * The OpenRegister schema recording issued sessions for revocation.
 	 */
-	private const SESSION_SCHEMA = 'portalSession';
-
-	/**
-	 * Session rows read per page by revoke-all.
-	 */
-	private const REVOKE_PAGE = 500;
-
-	/**
-	 * The most pages revoke-all reads (one million rows) before it reports
-	 * itself incomplete.
-	 */
-	private const REVOKE_MAX_PAGES = 2000;
+	public const SESSION_SCHEMA = 'portalSession';
 
 	/**
 	 * The app config key for the absolute maximum session lifetime override
@@ -193,7 +182,12 @@ class PortalSessionService {
 		// The secret is a sensitive app value (security review S4): read it
 		// through IAppConfig, which decrypts it, never through IConfig.
 		$secret = $appConfig->getValueString(Application::APP_ID, 'jwt_signing_secret', '');
-		$this->jwt = self::buildJwtService(secret: $secret);
+		$jwt = null;
+		if ($secret !== '') {
+			$jwt = self::buildJwtService(secret: $secret);
+		}
+
+		$this->jwt = $jwt;
 	}//end __construct()
 
 	/**
@@ -851,28 +845,8 @@ class PortalSessionService {
 			return false;
 		}
 
-		return self::isRevoked(row: $row) === false;
+		return $this->revoker()->isRevoked(row: $row) === false;
 	}//end isJtiActive()
-
-	/**
-	 * Whether a session row is revoked. Any truthy flag (true, 1, "1",
-	 * "true") counts, so a storage layer that hands the boolean back in
-	 * another shape fails closed (security review S2).
-	 *
-	 * @param array<string, mixed> $row The session row.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
-	 */
-	private static function isRevoked(array $row): bool {
-		$flag = ($row['revoked'] ?? false);
-		if (is_bool($flag) === true) {
-			return $flag;
-		}
-
-		return in_array(strtolower(trim((string)$flag)), ['1', 'true', 'yes', 'on'], true);
-	}//end isRevoked()
 
 	/**
 	 * Find the `portalSession` row for a `jti`, or null when absent/unreachable.
@@ -957,7 +931,7 @@ class PortalSessionService {
 		}
 
 		$row = $this->findSessionByJti(jti: $jti);
-		$uuid = $this->rowId(row: $row);
+		$uuid = $this->revoker()->rowId(row: $row);
 		if ($row === null || $uuid === null) {
 			return null;
 		}
@@ -1000,158 +974,22 @@ class PortalSessionService {
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 */
 	public function revokeAllForOrganisation(string $organisation, string $admin): array {
-		if ($organisation === '') {
-			return ['revoked' => 0, 'failed' => 0, 'complete' => true];
-		}
-
-		$rows = $this->liveSessionsOf(organisation: $organisation);
-		if ($rows === null) {
-			$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: 0, complete: false);
-			return ['revoked' => 0, 'failed' => 0, 'complete' => false];
-		}
-
-		$revoked = 0;
-		$failed  = 0;
-		foreach ($rows as $row) {
-			$uuid = $this->rowId(row: $row);
-			$updated = null;
-			if ($uuid !== null) {
-				$updated = $this->writer->updateObject(
-					register: self::SESSION_REGISTER,
-					schema: self::SESSION_SCHEMA,
-					scopeField: '',
-					subjectRef: '',
-					organisation: '',
-					id: $uuid,
-					data: ['revoked' => true]
-				);
-			}
-
-			if ($updated === null) {
-				$failed++;
-				continue;
-			}
-
-			$revoked++;
-			$this->auditor->record(
-				verb: 'admin-revoke',
-				subjectRef: (string)($row['subjectRef'] ?? ''),
-				organisation: $organisation,
-				register: self::SESSION_REGISTER,
-				schema: self::SESSION_SCHEMA,
-				id: (string)($row['jti'] ?? ''),
-				jti: (string)($row['jti'] ?? ''),
-				detail: ['admin' => $admin]
-			);
-		}//end foreach
-
-		$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: $revoked, complete: $failed === 0);
-
-		return ['revoked' => $revoked, 'failed' => $failed, 'complete' => $failed === 0];
+		return $this->revoker()->revokeAll(organisation: $organisation, admin: $admin);
 	}//end revokeAllForOrganisation()
 
 	/**
-	 * Every not-yet-revoked session row of an organisation, read to the end,
-	 * or null when OpenRegister could not be read.
+	 * The revoker over this service's OpenRegister and audit collaborators.
 	 *
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<int, array<string, mixed>>|null
-	 *
-	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
+	 * @return PortalSessionRevoker
 	 */
-	private function liveSessionsOf(string $organisation): ?array {
-		$live   = [];
-		$offset = 0;
-		for ($pages = 0; $pages < self::REVOKE_MAX_PAGES; $pages++) {
-			$page = $this->reader->readScopedPage(
-				register: self::SESSION_REGISTER,
-				schema: self::SESSION_SCHEMA,
-				scopeField: 'organisation',
-				scopeValue: $organisation,
-				organisation: $organisation,
-				filter: ['revoked' => false],
-				limit: self::REVOKE_PAGE,
-				offset: $offset
-			);
-			if ($page === null) {
-				return null;
-			}
-
-			foreach ($page['rows'] as $row) {
-				// The filter narrows; the row's own flag decides (fail closed).
-				if (self::isRevoked(row: $row) === false) {
-					$live[] = $row;
-				}
-			}
-
-			$offset += $page['read'];
-			if ($page['read'] < self::REVOKE_PAGE) {
-				return $live;
-			}
-		}
-
-		// More pages than the cap: report it as incomplete rather than done.
-		$this->logger->warning('Portaliq: revoke-all stopped at the page cap', ['organisation' => $organisation]);
-		return null;
-	}//end liveSessionsOf()
-
-	/**
-	 * Record one `admin-revoke` entry for a revoke-all call.
-	 *
-	 * @param string $admin The acting admin's user id.
-	 * @param string $organisation The tenant.
-	 * @param int $revoked How many sessions were revoked.
-	 * @param bool $complete Whether every live session was reached and revoked.
-	 *
-	 * @return void
-	 */
-	private function recordAdminRevoke(string $admin, string $organisation, int $revoked, bool $complete): void {
-		$state = 'no';
-		if ($complete === true) {
-			$state = 'yes';
-		}
-
-		$this->auditor->record(
-			verb: 'admin-revoke',
-			subjectRef: $admin,
-			organisation: $organisation,
-			register: self::SESSION_REGISTER,
-			schema: self::SESSION_SCHEMA,
-			id: '',
-			detail: ['admin' => $admin, 'revoked' => (string)$revoked, 'complete' => $state]
+	private function revoker(): PortalSessionRevoker {
+		return new PortalSessionRevoker(
+			reader: $this->reader,
+			writer: $this->writer,
+			auditor: $this->auditor,
+			logger: $this->logger
 		);
-	}//end recordAdminRevoke()
-
-	/**
-	 * Extract a row's identifier (`id`/`uuid`, flat or in `@self`), or null.
-	 *
-	 * @param array<string, mixed>|null $row The normalised row.
-	 *
-	 * @return string|null
-	 */
-	private function rowId(?array $row): ?string {
-		if ($row === null) {
-			return null;
-		}
-
-		$self = ($row['@self'] ?? null);
-		$selfUuid = null;
-		$selfId = null;
-		if (is_array($self) === true) {
-			$selfUuid = ($self['uuid'] ?? null);
-			$selfId = ($self['id'] ?? null);
-		}
-
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), $selfUuid, $selfId];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
-	}//end rowId()
+	}//end revoker()
 
 	/**
 	 * Mint a short-lived `X-Portal-Subject` assertion for a resolved subject.
