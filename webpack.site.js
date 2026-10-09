@@ -119,9 +119,15 @@ const site = {
 		// and mounting the notices adds 1,274 B (420,932 B). The notice
 		// component and its alert styles load on demand, only when a notice
 		// runs; what stays in the entry is the mount point and its loader.
+		//
+		// 420 KiB, up from 412, with the build-all merge of development. The
+		// entry measured 415 KiB on CI (the budget failed at 412 KiB): the
+		// catalogue kind/audience facets, the news article template and the
+		// school-board blocks all render on first paint, so none of them can
+		// load on demand without delaying the content itself.
 		hints: isDev ? false : 'error',
-		maxAssetSize: 412 * 1024,
-		maxEntrypointSize: 412 * 1024,
+		maxAssetSize: 420 * 1024,
+		maxEntrypointSize: 420 * 1024,
 	},
 }
 

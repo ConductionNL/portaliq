@@ -8,6 +8,7 @@ use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
+use OCA\Portaliq\Service\DerivedCatalogueFacets;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -21,6 +22,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(ContentCatalogueController::class)]
 #[UsesClass(PublicCatalogueQuery::class)]
+#[UsesClass(DerivedCatalogueFacets::class)]
 #[UsesClass(PortalSessionService::class)]
 class ContentCatalogueControllerTest extends TestCase {
 	/**

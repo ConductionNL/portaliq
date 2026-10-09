@@ -296,7 +296,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// value the store refused on the owned row names its field
 		// (site-action-forms).
 		if ($updated === null) {
-			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $data)
+			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: (is_array($data) === true) ? $data : [])
 				?? new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
