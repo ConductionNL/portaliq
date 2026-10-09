@@ -18,9 +18,9 @@ import { fileURLToPath } from 'node:url'
 import {
 	isStatementRoute,
 	STATEMENT_ROUTE,
-	statementLines,
 	withStatementLink,
 } from '../src/site/lib/accessibilityStatement.js'
+import { statementLines } from '../src/site/lib/statementLines.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (path) => readFileSync(join(root, path), 'utf8')
@@ -137,7 +137,7 @@ test('the shell renders the statement page on its route and puts the link in the
 test('every string of the statement page is in the Dutch bundle', () => {
 	const sources =
 		read('src/site/components/AccessibilityStatementPage.vue')
-		+ read('src/site/lib/accessibilityStatement.js')
+		+ read('src/site/lib/statementLines.js')
 	const keys = [...sources.matchAll(/\bt\(\s*(['"])((?:(?!\1).)+)\1/gs)].map(
 		(match) => match[2],
 	)

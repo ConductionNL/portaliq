@@ -16,6 +16,7 @@ use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Cms\AccessibilityMeasurements;
 use OCA\Portaliq\Service\Cms\AccessibilityRun;
 use OCA\Portaliq\Service\Cms\AccessibilityStatement;
+use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use OCP\AppFramework\Http;
@@ -42,6 +43,9 @@ class AccessibilityControllerTest extends TestCase {
 
 	private const NOW = '2026-10-09T12:00:00+00:00';
 
+	/** @var bool Whether the store refuses every write. */
+	private bool $writesFail = false;
+
 	/** @var bool Whether the signed-in user is an administrator. */
 	private bool $admin = true;
 
@@ -52,6 +56,7 @@ class AccessibilityControllerTest extends TestCase {
 		$this->rows   = [];
 		$this->admin  = true;
 		$this->groups = [];
+		$this->writesFail = false;
 		$this->seedRow('portal', [
 			'title' => 'Open Tilburg',
 			'slug' => 'open-tilburg',
@@ -169,6 +174,42 @@ class AccessibilityControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller(signedIn: false)->store(slug: 'open-tilburg', axeVersion: '4', tags: [], theme: '', pages: [])->getStatus());
 	}//end testTheStatementIsPublicAndAnUnknownPortalIsNotFound()
 
+	public function testTheAdminWidgetReadsTheSettingsAndAnUnknownPortalIsNotFound(): void {
+		$controller = $this->controller();
+
+		$index = $controller->index(slug: 'open-tilburg');
+		$this->assertSame(Http::STATUS_OK, $index->getStatus());
+		$this->assertSame(['/', '/zoeken', AccessibilityMeasurements::NOT_FOUND_PROBE], $index->getData()['pages']);
+		$this->assertNull($index->getData()['statement']['status']);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->index(slug: 'nergens')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->update(slug: 'nergens', audit: [], registerUrl: '', pages: [])->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->store(slug: 'nergens', axeVersion: '4.10.3', tags: [], theme: '', pages: [['url' => '/', 'measured' => true]])->getStatus());
+	}//end testTheAdminWidgetReadsTheSettingsAndAnUnknownPortalIsNotFound()
+
+	public function testAMalformedRunIsRefusedAndAFailedWriteIsABadGateway(): void {
+		$controller = $this->controller();
+		$bad        = $controller->store(slug: 'open-tilburg', axeVersion: '', tags: [], theme: '', pages: [['url' => '/', 'measured' => true]]);
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $bad->getStatus());
+		$this->assertSame('axe_version_missing', $bad->getData()['error']);
+		$this->assertSame([], $this->storedRows('accessibilityMeasurement'));
+
+		$this->writesFail = true;
+		$failing          = $this->controller();
+		$stored           = $failing->store(slug: 'open-tilburg', axeVersion: '4.10.3', tags: [], theme: 'vng', pages: [['url' => '/', 'measured' => true]]);
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $stored->getStatus());
+		$this->assertSame('save_failed', $stored->getData()['error']);
+
+		$updated = $failing->update(slug: 'open-tilburg', audit: [], registerUrl: '', pages: ['/contact']);
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $updated->getStatus());
+		$this->assertSame('save_failed', $updated->getData()['error']);
+
+		$this->writesFail = false;
+		$invalid          = $this->controller()->update(slug: 'open-tilburg', audit: [], registerUrl: 'http://geen-https.nl/register', pages: []);
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $invalid->getStatus());
+		$this->assertSame('register_url_invalid', $invalid->getData()['error']);
+	}//end testAMalformedRunIsRefusedAndAFailedWriteIsABadGateway()
+
 	/**
 	 * @param array<string, list<string>> $matrix   The action matrix.
 	 * @param bool                        $signedIn Whether a user is signed in.
@@ -188,7 +229,14 @@ class AccessibilityControllerTest extends TestCase {
 		$clock = $this->createMock(ITimeFactory::class);
 		$clock->method('now')->willReturn(new DateTimeImmutable(self::NOW));
 
-		$measurements = new AccessibilityMeasurements($this->fakeReader(), $this->fakeWriter());
+		$writer = $this->fakeWriter();
+		if ($this->writesFail === true) {
+			$writer = $this->createMock(PortalObjectWriter::class);
+			$writer->method('createObject')->willReturn(null);
+			$writer->method('updateObject')->willReturn(null);
+		}
+
+		$measurements = new AccessibilityMeasurements($this->fakeReader(), $writer);
 
 		return new AccessibilityController(
 			$this->createMock(IRequest::class),
