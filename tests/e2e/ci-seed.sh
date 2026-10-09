@@ -135,6 +135,14 @@ if [ -n "$OCC" ]; then
 		echo "[ci-seed]          portaliq ships no tokens of its own since css/themes/ was removed."
 	fi
 
+	# A MAILER THAT ACCEPTS. The runner has no SMTP server, so Nextcloud's
+	# default (smtp on localhost:25) refused every mail and each flow that
+	# sends one answered 503 mail_not_sent: identity-staff-account-screens
+	# could not send the invitation it then withdraws. The null transport
+	# accepts and discards, which is what a test instance wants.
+	$OCC config:system:set mail_smtpmode --value=null >/dev/null
+	echo "[ci-seed] mail_smtpmode = $($OCC config:system:get mail_smtpmode 2>/dev/null || echo '<unset>')"
+
 	echo "[ci-seed] enabling portaliq/dev_login_enabled"
 	$OCC config:app:set portaliq dev_login_enabled --value=yes
 	echo "[ci-seed] dev_login_enabled = $($OCC config:app:get portaliq dev_login_enabled 2>/dev/null || echo '<unset>')"
