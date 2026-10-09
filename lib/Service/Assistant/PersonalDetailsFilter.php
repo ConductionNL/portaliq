@@ -53,7 +53,7 @@ class PersonalDetailsFilter {
 		$count   = 0;
 
 		$text    = (string)preg_replace('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', self::REPLACEMENT, $text, -1, $count);
-		$removed = $removed || $count > 0;
+		$removed = $count > 0;
 
 		$phone   = '/(?<![\d])(?:\+31|0031|0)[\s\-]?(?:\(0\))?[\s\-]?[1-9](?:[\s\-]?\d){8}(?![\d])/';
 		$text    = (string)preg_replace($phone, self::REPLACEMENT, $text, -1, $count);

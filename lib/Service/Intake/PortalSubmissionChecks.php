@@ -70,7 +70,7 @@ class PortalSubmissionChecks {
 	 *     computed: array<int, string>,
 	 *     decisions: array<string, string>,
 	 *     statements: array<int, array<string, string>>,
-	 *     verified: array<string, mixed>
+	 *     verified: array<int, array{address: string, verifiedAt: string}>
 	 * }|JSONResponse The checked submission, or the refusal.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
