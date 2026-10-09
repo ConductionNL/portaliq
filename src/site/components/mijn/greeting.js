@@ -50,9 +50,7 @@ export function greetingFor(session, now, tr) {
  * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-greeting-may-name-the-week
  */
 export function isoWeek(day) {
-	const date = new Date(
-		Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()),
-	)
+	const date = new Date(Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()))
 	const weekday = date.getUTCDay() || 7
 	date.setUTCDate(date.getUTCDate() + 4 - weekday)
 	const yearStart = Date.UTC(date.getUTCFullYear(), 0, 1)

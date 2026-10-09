@@ -97,4 +97,28 @@ class BlockLayoutKeysTest extends TestCase {
 			$this->assertArrayNotHasKey('more', $block);
 		}
 	}//end testWhatDoesNotFitIsDropped()
+
+	/**
+	 * A greeting may name the week, a kpi block may draw its figures as a
+	 * strip with words after each figure.
+	 *
+	 * @return void
+	 */
+	public function testGreetingWeekAndKpiStrip(): void {
+		$blocks = $this->blocks([
+			['type' => 'greeting', 'showWeek' => true],
+			['type' => 'greeting', 'showWeek' => 'ja'],
+			[
+				'type'       => 'kpi',
+				'collection' => 'cijfers',
+				'display'    => 'strip',
+				'cards'      => [['field' => 'cijfer', 'label' => 'Afwezig', 'stripLabel' => ' ziek ']],
+			],
+		]);
+
+		$this->assertTrue($blocks[0]['showWeek']);
+		$this->assertArrayNotHasKey('showWeek', $blocks[1]);
+		$this->assertSame('strip', $blocks[2]['display']);
+		$this->assertSame('ziek', $blocks[2]['cards'][0]['stripLabel']);
+	}//end testGreetingWeekAndKpiStrip()
 }//end class

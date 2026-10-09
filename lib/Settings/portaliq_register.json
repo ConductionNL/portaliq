@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.71.0"
+        "version": "0.72.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.71.0",
+                "version": "0.72.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2448,7 +2448,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.14.0",
+                "version": "0.15.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3112,6 +3112,36 @@
                                     "berichten": "messages"
                                 }
                             }
+                        }
+                    },
+                    "contactPrompt": {
+                        "title": "E-mail address prompt",
+                        "type": "object",
+                        "description": "The note in the own area that asks for an e-mail address while the account has none. Set show to false to leave it out, or write its words in the tone of the portal.",
+                        "properties": {
+                            "show": {
+                                "title": "Show the prompt",
+                                "type": "boolean",
+                                "description": "False leaves the prompt out on this portal."
+                            },
+                            "text": {
+                                "title": "Prompt text",
+                                "type": "string",
+                                "description": "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert."
+                            },
+                            "button": {
+                                "title": "Button text",
+                                "type": "string",
+                                "description": "The button to the account page, such as Naar mijn account."
+                            },
+                            "dismiss": {
+                                "title": "Dismiss text",
+                                "type": "string",
+                                "description": "The button that hides the prompt for now, such as Niet nu."
+                            }
+                        },
+                        "example": {
+                            "show": false
                         }
                     },
                     "myCases": {

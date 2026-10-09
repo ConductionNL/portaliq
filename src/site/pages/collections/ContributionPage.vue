@@ -326,6 +326,7 @@
 					:loading="loadedOf(item.collection).loading"
 					:label="item.block.label || ''"
 					:caption="item.block.caption || null"
+				:display="item.block.display || ''"
 					:level="sectionLevel"
 					:t="tr"
 					:locale="lang" />

@@ -2306,7 +2306,16 @@ OC.L10N.register(
         "Second addresses": "Tweede adressen",
         "Shows the signed-in person at the top of the menu: initials in a circle, the name, and a second line from the first row of a collection, such as the class. With an organisation card the second line goes under the organisation's name. Empty shows no person block.": "Toont de ingelogde persoon boven in het menu: de voorletters in een cirkel, de naam en een tweede regel uit de eerste rij van een verzameling, zoals de klas. Met een organisatiekaart staat de tweede regel onder de naam van de organisatie. Leeg toont geen persoonsblok.",
         "The collection whose first row gives the second line, as app:collection, such as learniq:studentEnrolments.": "De verzameling waarvan de eerste rij de tweede regel geeft, als app:verzameling, zoals learniq:studentEnrolments.",
-        "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page. An item may also be an object with item (the name) and label (the word the menu shows for it, such as Berichten).": "De onderdelen in deze groep, op volgorde, elk bij naam: een deel van de eigen omgeving of een bijgedragen pagina als app:pagina. Een onderdeel mag ook een object zijn met item (de naam) en label (het woord dat het menu ervoor toont, zoals Berichten)."
+        "The items in this group, in order, each by name: a section of the own area or a contributed page as app:page. An item may also be an object with item (the name) and label (the word the menu shows for it, such as Berichten).": "De onderdelen in deze groep, op volgorde, elk bij naam: een deel van de eigen omgeving of een bijgedragen pagina als app:pagina. Een onderdeel mag ook een object zijn met item (de naam) en label (het woord dat het menu ervoor toont, zoals Berichten).",
+        "Dismiss text": "Tekst om te sluiten",
+        "E-mail address prompt": "Vraag om een e-mailadres",
+        "False leaves the prompt out on this portal.": "Onwaar laat de vraag weg op dit portaal.",
+        "Prompt text": "Tekst van de vraag",
+        "Show the prompt": "De vraag tonen",
+        "The button that hides the prompt for now, such as Niet nu.": "De knop die de vraag voor nu verbergt, zoals Niet nu.",
+        "The button to the account page, such as Naar mijn account.": "De knop naar de accountpagina, zoals Naar mijn account.",
+        "The note in the own area that asks for an e-mail address while the account has none. Set show to false to leave it out, or write its words in the tone of the portal.": "De melding in de eigen omgeving die om een e-mailadres vraagt zolang het account er geen heeft. Zet show op onwaar om hem weg te laten, of schrijf de woorden in de toon van het portaal.",
+        "The sentence of the prompt, such as Voeg je e-mailadres toe, dan hoor je het als er iets verandert.": "De zin van de vraag, zoals Voeg je e-mailadres toe, dan hoor je het als er iets verandert."
     },
     "nplurals=2; plural=(n != 1);"
 )

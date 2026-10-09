@@ -59,7 +59,7 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `residentMenu`, `footer` and `regions`.
+	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `residentMenu`, `myCases`, `contactPrompt`, `footer` and `regions`.
 	 *
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 *
@@ -75,6 +75,9 @@ class PortalShell {
 			'residentMenu'   => $this->residentMenu->project(portal: $portal),
 			// How Mijn zaken draws its list (zuiddrecht-resident-pages-match-the-boards).
 			'myCases'        => $this->myCases(portal: $portal),
+			// The ask for an e-mail address in the portal's own words, or off
+			// (mijn-overview-follows-the-boards).
+			'contactPrompt'  => $this->contactPrompt(portal: $portal),
 			'footer'         => $this->footer(portal: $portal),
 			'regions'        => $this->publicRegions(portal: $portal),
 		];
@@ -98,6 +101,38 @@ class PortalShell {
 
 		return [];
 	}//end myCases()
+
+	/**
+	 * The ask for an e-mail address: `{show: false}` when the portal turns it
+	 * off, else the texts it writes for it (`text`, `button`, `dismiss`, each
+	 * at most 200 characters), else [] for the site's own words.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array<string, string|bool>
+	 *
+	 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-e-mail-ask-speaks-the-portals-words-or-stays-away
+	 */
+	private function contactPrompt(array $portal): array {
+		$prompt = $portal['contactPrompt'] ?? [];
+		if (is_array($prompt) === false) {
+			return [];
+		}
+
+		if (($prompt['show'] ?? true) === false) {
+			return ['show' => false];
+		}
+
+		$out = [];
+		foreach (['text', 'button', 'dismiss'] as $key) {
+			$text = $this->text(value: ($prompt[$key] ?? ''));
+			if ($text !== '' && mb_strlen($text) <= 200) {
+				$out[$key] = $text;
+			}
+		}
+
+		return $out;
+	}//end contactPrompt()
 
 	/**
 	 * The search box in the header: whether it shows (a declared box shows

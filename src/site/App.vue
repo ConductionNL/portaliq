@@ -150,6 +150,7 @@
 			<ContactPrompt
 				:t="t"
 				:navigate="goSection"
+				:texts="site.contactPrompt || {}"
 				@dismiss="contactPrompt = false" />
 		</div>
 
@@ -284,6 +285,7 @@
 								<ContactPrompt
 									:t="t"
 									:navigate="goSection"
+									:texts="site.contactPrompt || {}"
 									@dismiss="contactPrompt = false" />
 							</template>
 						</AccountArea>
@@ -1680,7 +1682,10 @@ export default {
 				this.api.fetchNewsFeed(),
 			])
 			this.unreadOverride = null
-			this.contactPrompt = await contactPromptWanted(this.session)
+			// A portal may leave the ask out (mijn-overview-follows-the-boards).
+			this.contactPrompt =
+				this.site?.contactPrompt?.show !== false
+				&& (await contactPromptWanted(this.session))
 			this.account = {
 				loading: false,
 				contributions,
