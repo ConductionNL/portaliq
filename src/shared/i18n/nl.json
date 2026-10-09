@@ -411,5 +411,9 @@
 	"This field is required.": "Dit veld is verplicht.",
 	"My contacts": "Mijn contacten",
 	"You are now connected with the person who invited you.": "U bent nu verbonden met de persoon die u heeft uitgenodigd.",
-	"Collaborate": "Samenwerken"
+	"Collaborate": "Samenwerken",
+	"{field}: enter a number, for example 8 or 7.5.": "{field}: vul een getal in, bijvoorbeeld 8 of 7,5.",
+	"{field}: enter a whole number, for example 8.": "{field}: vul een heel getal in, bijvoorbeeld 8.",
+	"{field} is not filled in correctly. Check it.": "{field} is niet goed ingevuld. Kijk het nog eens na.",
+	"Not everything is filled in correctly. Check your answers.": "Niet alles is goed ingevuld. Kijk uw antwoorden na."
 }

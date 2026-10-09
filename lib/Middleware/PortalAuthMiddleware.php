@@ -44,6 +44,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -60,6 +61,12 @@ use Throwable;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+ * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the gate is where a read
+ * without a session ends, so it is also where that read is counted per IP
+ * (portal-subject-rate-limit); a second middleware would never see the
+ * refusal this one answers first.
  */
 class PortalAuthMiddleware extends Middleware {
 	/**
@@ -79,12 +86,15 @@ class PortalAuthMiddleware extends Middleware {
 	 *                                             surface
 	 *                                             (portal-page-provisioning).
 	 * @param IL10N $l10n Localises the message of a refused staff action.
+	 * @param PortalRateLimit|null $rateLimit Counts a collection read without a session
+	 *                                        per IP (portal-subject-rate-limit).
 	 */
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly PortalContributionRegistry $registry,
 		private readonly IL10N $l10n,
+		private readonly ?PortalRateLimit $rateLimit = null,
 	) {
 	}//end __construct()
 
@@ -223,12 +233,21 @@ class PortalAuthMiddleware extends Middleware {
 	 * @throws Throwable Re-thrown when it is not a portal auth failure or a refused action.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	public function afterException($controller, $methodName, \Throwable $exception): Response {
 		if ($exception instanceof PortalUnauthorizedException) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+			// A collection read without a session keeps the tight limit per IP
+			// (portal-subject-rate-limit): the endpoint's own attribute is
+			// wide enough for the blocks of signed-in pages.
+			$limited = null;
+			if ($methodName === 'collection') {
+				$limited = $this->rateLimit?->refusal(endpoint: 'collection', subject: null);
+			}
+
+			return $limited ?? new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
 		if ($exception instanceof PortalReadOnlySessionException) {

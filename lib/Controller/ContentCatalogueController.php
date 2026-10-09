@@ -94,10 +94,13 @@ class ContentCatalogueController extends Controller {
 	 * @param string      $app        Only items of this app's index ('' for all).
 	 * @param string      $categories Comma-separated categories ('' for all).
 	 * @param string      $range      `schoolYear` for only the school year that holds today.
+	 * @param string      $facetsBy The facets to add, as JSON `{kind, news, audience}`: a facet by kind ("Soort"),
+	 *                              a news item's kind in it ("Nieuws"), a facet by a news item's audience ("Voor wie").
 	 *
 	 * @return JSONResponse `{items, total, page, pages, facets}`, or 401 / 403 / 404.
 	 *
 	 * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
+	 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -114,6 +117,7 @@ class ContentCatalogueController extends Controller {
 		string $app = '',
 		string $categories = '',
 		string $range = '',
+		string $facetsBy = '',
 	): JSONResponse {
 		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
 		if ($resolved === null) {
@@ -133,6 +137,11 @@ class ContentCatalogueController extends Controller {
 		$chosen = json_decode($filters, true);
 		if (is_array($chosen) === false) {
 			$chosen = [];
+		}
+
+		$derive = json_decode($facetsBy, true);
+		if (is_array($derive) === false) {
+			$derive = [];
 		}
 
 		if (in_array($sort, PublicCatalogueQuery::SORTS, true) === false) {
@@ -158,7 +167,10 @@ class ContentCatalogueController extends Controller {
 				'app'      => $appKey,
 				'categories' => array_values(array_filter(array_map('trim', explode(',', $categories)), static fn (string $category): bool => $category !== '')),
 				'range'    => $rangeKey,
-				'today'    => date('Y-m-d'),
+				'today'         => date('Y-m-d'),
+				'kindFacet'     => ($derive['kind'] ?? ''),
+				'kindNews'      => ($derive['news'] ?? ''),
+				'audienceFacet' => ($derive['audience'] ?? ''),
 			]
 		);
 

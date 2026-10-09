@@ -58,6 +58,14 @@ class PortalObjectWriter {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
+	 * Why the last create or update was refused, as the store said it; ''
+	 * when it was not (site-action-forms). Read by WriteRefusal, never sent.
+	 *
+	 * @var string
+	 */
+	private string $lastFailure = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister services.
@@ -104,6 +112,7 @@ class PortalObjectWriter {
 		string $organisation,
 		array $data,
 	): ?array {
+		$this->lastFailure = '';
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return null;
@@ -129,6 +138,7 @@ class PortalObjectWriter {
 			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR write failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			$this->lastFailure = $e->getMessage();
 			return null;
 		}
 
@@ -250,6 +260,7 @@ class PortalObjectWriter {
 		string $id,
 		array|\Closure $data,
 	): ?array {
+		$this->lastFailure = '';
 		if ($id === '') {
 			return null;
 		}
@@ -320,11 +331,25 @@ class PortalObjectWriter {
 			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR update failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			$this->lastFailure = $e->getMessage();
 			return null;
 		}
 
 		return $this->normalise(row: $saved);
 	}//end updateObject()
+
+	/**
+	 * Why the last create or update was refused, as the store said it, or ''
+	 * (site-action-forms). The text stays on the server: WriteRefusal reads
+	 * only a field name and a kind from it.
+	 *
+	 * @return string The refusal, or ''.
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	public function lastFailure(): string {
+		return $this->lastFailure;
+	}//end lastFailure()
 
 	/**
 	 * Delete ONE row, only when it is the subject's alone: the same ownership

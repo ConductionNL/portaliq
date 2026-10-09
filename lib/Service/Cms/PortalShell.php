@@ -39,6 +39,11 @@ class PortalShell {
 	 */
 	public const HEADER_VARIANTS = ['double', 'single'];
 
+	/**
+	 * The words a breadcrumb may name the page on screen by. The first is the default.
+	 */
+	public const BREADCRUMB_WORDS = ['menu', 'page'];
+
 
 	/**
 	 * Constructor.
@@ -61,12 +66,14 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `residentMenu`, `footer` and `regions`.
+	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `breadcrumb`,
+	 *                              `residentMenu`, `footer` and `regions`.
 	 *
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
 	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 * @spec openspec/changes/site-breadcrumb-follows-the-school-boards/specs/site-look/spec.md#requirement-a-portal-chooses-the-words-of-the-last-crumb
 	 */
 	public function project(array $portal): array {
 		return [
@@ -74,6 +81,7 @@ class PortalShell {
 			'headerVariant'  => $this->headerVariant(portal: $portal),
 			'headerSearch'   => $this->headerSearch(portal: $portal),
 			'accountLabel'   => $this->text(value: ($portal['accountLabel'] ?? '')),
+			'breadcrumb'     => $this->breadcrumb(portal: $portal),
 			'residentMenu'   => $this->residentMenu->project(portal: $portal),
 			// How Mijn zaken draws its list (zuiddrecht-resident-pages-match-the-boards).
 			'myCases'        => $this->myCases(portal: $portal),
@@ -139,6 +147,25 @@ class PortalShell {
 			'route'       => $route,
 		];
 	}//end headerSearch()
+
+	/**
+	 * The words of the breadcrumb's last crumb: the portal's choice when it
+	 * is known, else `menu` (site-breadcrumb-follows-the-school-boards).
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return string `menu` or `page`.
+	 *
+	 * @spec openspec/changes/site-breadcrumb-follows-the-school-boards/specs/site-look/spec.md#requirement-a-portal-chooses-the-words-of-the-last-crumb
+	 */
+	public function breadcrumb(array $portal): string {
+		$chosen = $portal['breadcrumb'] ?? null;
+		if (is_string($chosen) === true && in_array($chosen, self::BREADCRUMB_WORDS, true) === true) {
+			return $chosen;
+		}
+
+		return self::BREADCRUMB_WORDS[0];
+	}//end breadcrumb()
 
 	/**
 	 * The header variant: the portal's choice when it is known, else `double`.

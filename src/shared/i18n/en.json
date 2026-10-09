@@ -411,5 +411,9 @@
 	"This field is required.": "This field is required.",
 	"My contacts": "My contacts",
 	"You are now connected with the person who invited you.": "You are now connected with the person who invited you.",
-	"Collaborate": "Collaborate"
+	"Collaborate": "Collaborate",
+	"{field}: enter a number, for example 8 or 7.5.": "{field}: enter a number, for example 8 or 7.5.",
+	"{field}: enter a whole number, for example 8.": "{field}: enter a whole number, for example 8.",
+	"{field} is not filled in correctly. Check it.": "{field} is not filled in correctly. Check it.",
+	"Not everything is filled in correctly. Check your answers.": "Not everything is filled in correctly. Check your answers."
 }

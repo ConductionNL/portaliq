@@ -79,8 +79,10 @@ use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\VisibleFromGate;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
+use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\SubmissionReceiptService;
+use OCA\Portaliq\Service\WriteRefusal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -181,6 +183,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                                     a create whose action asks for it; fail-safe.
 	 * @param PortalPdfExport|null $pdf Renders a list or a record the resident can see as a PDF through
 	 *                                  OpenRegister (cases-export-own-data-pdf). Absent offers no export.
+	 * @param PortalRateLimit|null $rateLimit Limits a portal session per subject and a call
+	 *                                        without one per IP (portal-subject-rate-limit).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -207,6 +211,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?PortalResolver $portals = null,
 		private readonly ?ContactConfirmationMailer $confirmation = null,
 		private readonly ?PortalPdfExport $pdf = null,
+		private readonly ?PortalRateLimit $rateLimit = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -259,6 +264,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param string $context Short label naming the caller, for the log line only.
 	 *
 	 * @return array<string, mixed>|JSONResponse The updated object, or the response to return.
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	private function writeScoped(
 		string $register,
@@ -286,9 +292,12 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		// Null = ownership re-verification failed OR the row does not exist —
-		// a single 404, indistinguishable, and nothing was written.
+		// a single 404, indistinguishable, and nothing was written. Only a
+		// value the store refused on the owned row names its field
+		// (site-action-forms).
 		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $data)
+				?? new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
 		return $updated;
@@ -851,12 +860,21 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
 	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T2
+	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 60, period: 60)]
+	#[AnonRateLimit(limit: 600, period: 60)]
 	public function collection(string $register, string $schema): JSONResponse {
 		$subject = $this->subject();
+		// A page reads many collections at once: a session is limited per
+		// subject, a call without one per IP (portal-subject-rate-limit). The
+		// attribute above is only the outer bound per IP.
+		$limited = $this->rateLimit?->refusal(endpoint: 'collection', subject: $subject);
+		if ($limited !== null) {
+			return $limited;
+		}
+
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
@@ -1417,6 +1435,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -1510,7 +1529,9 @@ class ContributionController extends Controller implements PortalProtected {
 		);
 
 		if ($created === null) {
-			return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
+			// A value the store refused names its field (site-action-forms).
+			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $data)
+				?? new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
 		}
 
 		$this->auditor->record(

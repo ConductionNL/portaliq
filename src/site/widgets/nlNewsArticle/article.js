@@ -66,3 +66,48 @@ export function areaName(authored, portal) {
 		? 'Mijn omgeving'
 		: `Mijn ${slug.charAt(0).toUpperCase()}${slug.slice(1)}`
 }
+
+/** A list item that is a fact: `- **Wanneer:** woensdag 14 oktober`. */
+const FACT = /^[-*+]\s+\*\*([^*]+?):?\*\*:?\s+(.+)$/
+
+/**
+ * The body in parts: markdown, and the fact lists in it. A list whose every
+ * item opens with a bold label ("**Wanneer:** ...") is a set of facts, which
+ * the boards draw as a grey block of labels and values rather than as
+ * bullets. Any other list, and every other block, stays markdown.
+ *
+ * @param {string} body The markdown after the lead.
+ * @return {Array<{kind: 'markdown', source: string}|{kind: 'facts', items: Array<{term: string, value: string}>}>} The parts, in order.
+ * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+ */
+export function articleParts(body) {
+	const parts = []
+	const push = (block) => {
+		const last = parts[parts.length - 1]
+		if (last && last.kind === 'markdown') {
+			last.source = `${last.source}\n\n${block}`
+		} else {
+			parts.push({ kind: 'markdown', source: block })
+		}
+	}
+	for (const raw of String(body ?? '').split(/\n\s*\n/)) {
+		const block = raw.trim()
+		if (block === '') {
+			continue
+		}
+		const lines = block.split('\n').map((line) => line.trim())
+		const facts = lines.map((line) => FACT.exec(line))
+		if (facts.every(Boolean)) {
+			parts.push({
+				kind: 'facts',
+				items: facts.map((match) => ({
+					term: match[1].trim(),
+					value: match[2].trim(),
+				})),
+			})
+		} else {
+			push(block)
+		}
+	}
+	return parts
+}

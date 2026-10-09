@@ -133,6 +133,8 @@ class PublicCatalogue {
 
 			if (trim((string)($row['audienceLabel'] ?? '')) !== '') {
 				$item['meta'] = [trim((string)$row['audienceLabel'])];
+				// The audience as a facet, when a block asks for one (site-catalogue-follows-the-school-boards).
+				$item['audience'] = trim((string)$row['audienceLabel']);
 			}
 
 			$out[] = $item;

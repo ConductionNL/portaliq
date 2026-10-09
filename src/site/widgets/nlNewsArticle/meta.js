@@ -30,6 +30,12 @@ export const metaOf = {
 			kind: 'string',
 			label: 'Tekst van de aanmeldknop voor wie is ingelogd',
 		},
+		{
+			name: 'sectionHref',
+			kind: 'string',
+			label: 'Pagina waar het bericht onder valt, zoals /zoeken',
+		},
+		{ name: 'sectionLabel', kind: 'string', label: 'Woorden van die kruimel' },
 	],
 	defaultSize: { gridWidth: 8, gridHeight: 6 },
 	scope: 'public',

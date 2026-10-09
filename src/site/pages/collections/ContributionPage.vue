@@ -139,6 +139,18 @@
 				</template>
 			</GreetingBlock>
 
+			<!-- A list or a figure whose read failed (a 429, a 5xx) says so in
+			     one sentence with a retry, never an empty block
+			     (portal-subject-rate-limit). -->
+			<LoadError
+				v-else-if="
+					(item.kind === 'table' || item.kind === 'kpi')
+					&& loadedOf(item.collection).failed === true
+				"
+				:text="tr('The items could not be loaded.')"
+				:retryLabel="tr('Try again')"
+				@retry="reload(item.collection)" />
+
 			<!-- Rows as cards with a progress figure (REQ-SMO-028), and the
 			     status, note and coming-up parts (site-school-blocks). -->
 			<ProgressCards
@@ -495,6 +507,8 @@ import KpiCards from '../../components/collections/KpiCards.vue'
 import NewsBlock from '../../components/collections/NewsBlock.vue'
 import RichTextBlock from '../../components/collections/RichTextBlock.vue'
 import SlotHost from '../../components/collections/SlotHost.vue'
+import LoadError from '../../components/mijn/LoadError.vue'
+import { asksInput } from '../../../shared/actionInput.js'
 import {
 	anyGrouped,
 	groupFieldOf,
@@ -581,6 +595,7 @@ export default {
 
 		DetailCard,
 		KpiCards,
+		LoadError,
 		NewsBlock,
 		RichTextBlock,
 		SlotHost,
@@ -1514,14 +1529,26 @@ export default {
 
 		/**
 		 * A row button: an endpoint action opens its step below the table, a
-		 * `type: update` transition runs at once with no field data.
+		 * `type: update` action with fields to fill in opens its form there
+		 * (site-action-forms), and a transition without fields runs at once
+		 * with no field data.
 		 *
 		 * @param {object} item The resolved table block.
 		 * @param {object} action The action.
 		 * @param {object} row The row.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		async onRowAction(item, action, row) {
+			if (action.type === 'update' && asksInput(action)) {
+				this.pending = {
+					collectionId: item.collection.id,
+					action,
+					row,
+					dialog: 'form',
+				}
+				return
+			}
 			if (isEndpointRowAction(action)) {
 				this.pending = {
 					collectionId: item.collection.id,

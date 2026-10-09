@@ -28,8 +28,9 @@
 				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
 				:data-widget-key="run.widget.widgetKey"
 				v-bind="propsFor(run.widget)"
+				@subject="$emit('subject', $event)"
 				@navigate="$emit('navigate', $event)"
-				@search="$emit('search', $event)" />
+				@search="forwardSearch" />
 
 			<!-- A RUN of ordinary widgets: one grid, inside one container. The
 			     container is here rather than around the whole component so a
@@ -47,8 +48,9 @@
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
 							v-bind="propsFor(widget)"
+							@subject="$emit('subject', $event)"
 							@navigate="$emit('navigate', $event)"
-							@search="$emit('search', $event)" />
+							@search="forwardSearch" />
 
 						<!-- Anything not public, or not known, degrades to an inert
 						     placeholder. It does NOT throw: a public page with one bad
@@ -418,7 +420,7 @@ export default {
 	// emits the term. Without this forward the box is INERT — it submits, the
 	// event reaches this component, and nothing above ever hears it. Which route
 	// a search goes to is the host's decision, not a block's.
-	emits: ['navigate', 'search'],
+	emits: ['navigate', 'search', 'subject'],
 
 	computed: {
 		/**
@@ -446,6 +448,23 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Hand a widget's search to the host, only when it is the typed
+		 * words. A widget that does not declare `search` among its emits gets
+		 * this listener on its root element, where the browser's own `search`
+		 * event of an `<input type="search">` (fired on Enter) reached it and
+		 * the site searched for "[object Event]".
+		 *
+		 * @param {*} query The words, or a browser event.
+		 * @return {void}
+		 * @spec openspec/changes/portal-subject-rate-limit/specs/site-search/spec.md#requirement-enter-in-a-search-field-must-search-for-the-typed-words
+		 */
+		forwardSearch(query) {
+			if (typeof query === 'string') {
+				this.$emit('search', query)
+			}
+		},
+
 		/**
 		 * Whether a block is a full-bleed band that owns its own container.
 		 *

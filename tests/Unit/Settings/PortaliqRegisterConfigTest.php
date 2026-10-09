@@ -361,6 +361,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.70.0 (portal 0.13.0): `residentMenu.leaveOut` (resident-menu-leave-out). Additive.
 		// 0.74.0 (portal 0.16.0, form 0.2.0, page 0.7.0): help details and section help texts (help-texts-and-form-help). Additive.
 		// 0.82.0 (portalMailTemplate 0.1.0, portalMailLog 0.1.0 new): mail texts per portal and the send log (mail-templates-admin-screen). Additive.
+		// 0.90.0 (portal 0.22.0): `breadcrumb` (site-breadcrumb-follows-the-school-boards). Additive.
 		// 0.89.0 (portalTrafficDaily 0.7.0): zeroResultSearches and searchesWithoutCount (portal-traffic-zero-result-searches). Additive.
 		// 0.88.0 (portalPlan 0.1.0, portalPlanTemplate 0.1.0, portalAction 0.2.0, portal 0.21.0: plansEnabled): shared plans with a caseworker. Additive.
 		// 0.87.0 (portal 0.20.0): themes, the life domains a portal groups a resident's items by (life-domain-theme-pages). Additive.
@@ -379,8 +380,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.72.0 (portal 0.15.0): `tokens` (portal-theme-blocks-and-contributed-pages). Additive.
 		// 0.71.0 (portal 0.14.0): `searchInsideDocuments` (portal-federated-search) and the
 		// `portalDraft` schema (site-multi-step-forms). Additive.
-		$this->assertSame('0.89.0', self::$register['info']['version']);
-		$this->assertSame('0.89.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.90.0', self::$register['info']['version']);
+		$this->assertSame('0.90.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -440,7 +441,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.21.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.22.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
@@ -882,6 +883,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		]));
 		$this->assertFalse($valid(['title' => 'X', 'headerSearch' => 'ja']), 'the search box is an object');
 		$this->assertFalse($valid(['title' => 'X', 'footer' => ['contact' => ['lines' => 'Wilgenlaan 12']]]), 'contact lines are a list');
+		// site-breadcrumb-follows-the-school-boards: the words of the last crumb.
+		$this->assertTrue($valid(['title' => 'X', 'breadcrumb' => 'page']));
+		$this->assertFalse($valid(['title' => 'X', 'breadcrumb' => 'title']), 'menu or page only');
 	}//end testThePortalDeclaresItsChrome()
 
 	/**

@@ -54,10 +54,24 @@
 				class="nl-news-article__photo"
 				:src="item.image.url"
 				:alt="item.image.alt" />
-			<MarkdownBlock
-				v-if="parts.rest"
-				class="nl-news-article__body"
-				:source="parts.rest" />
+			<template v-for="(part, index) in bodyParts" :key="index">
+				<dl
+					v-if="part.kind === 'facts'"
+					class="nl-news-article__facts"
+					data-testid="nl-news-article-facts">
+					<div
+						v-for="fact in part.items"
+						:key="fact.term"
+						class="nl-news-article__fact">
+						<dt>{{ fact.term }}</dt>
+						<dd>{{ fact.value }}</dd>
+					</div>
+				</dl>
+				<MarkdownBlock
+					v-else
+					class="nl-news-article__body"
+					:source="part.source" />
+			</template>
 			<section
 				v-if="cardState !== 'none'"
 				class="nl-news-article__event"
@@ -108,7 +122,12 @@ import { fetchPublicNewsItem } from '../../lib/publicNews.js'
 import { interpolate, pageLocale } from '../../pages/inbox/translate.js'
 import strings from '../nlNewsList/strings.js'
 import { cardButton, safeWays } from '../nlSignIn/signIn.js'
-import { areaName, eventCardState, splitLead } from './article.js'
+import {
+	areaName,
+	articleParts,
+	eventCardState,
+	splitLead,
+} from './article.js'
 
 import '@utrecht/heading-1-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
@@ -137,6 +156,14 @@ export default {
 		backLabel: { type: String, default: '' },
 		/** Where that link goes. */
 		backHref: { type: String, default: '/nieuws' },
+		/**
+		 * The page the article sits under, such as `/zoeken` for "Nieuws en
+		 * documenten": the breadcrumb runs through it and the menu marks its
+		 * item. Empty keeps the trail of the article page's own route.
+		 */
+		sectionHref: { type: String, default: '' },
+		/** The words of that crumb; empty reads the menu's or the route's. */
+		sectionLabel: { type: String, default: '' },
 		/** The serving portal, from the host. */
 		portal: { type: String, default: '' },
 		/** The item id, from the route, from the host. */
@@ -151,7 +178,7 @@ export default {
 		signUpLabel: { type: String, default: 'Aanmelden' },
 	},
 
-	emits: ['navigate'],
+	emits: ['navigate', 'subject'],
 
 	data() {
 		return { item: null, state: 'loading' }
@@ -164,6 +191,14 @@ export default {
 		 */
 		parts() {
 			return splitLead(this.item?.body)
+		},
+
+		/**
+		 * @return {Array<object>} The body after the lead, its fact lists apart.
+		 * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+		 */
+		bodyParts() {
+			return articleParts(this.parts.rest)
 		},
 
 		/**
@@ -307,6 +342,31 @@ export default {
 			} catch {
 				this.state = 'failed'
 			}
+			this.tellSubject()
+		},
+
+		/**
+		 * Tell the page what it shows: the article's title ends the
+		 * breadcrumb, and the section, when declared, stands before it and
+		 * marks its menu item. Nothing found tells nothing, so the trail keeps
+		 * the page's own words.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+		 */
+		tellSubject() {
+			const section = authoredLink(this.sectionHref)
+			this.$emit(
+				'subject',
+				this.state === 'ready' && this.item?.title
+					? {
+							title: String(this.item.title),
+							section: section?.route
+								? { route: section.route, label: this.sectionLabel }
+								: null,
+						}
+					: null,
+			)
 		},
 
 		/**
@@ -424,6 +484,47 @@ export default {
 	margin: 0;
 	font-size: 1.3125rem;
 	line-height: 1.6;
+}
+
+/* THE FACTS (board Artikel): a grey block, the label bold in its own
+   column, the value beside it. */
+.nl-news-article__facts {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr);
+	gap: 0.375rem 1.5rem;
+	margin: 0;
+	padding: 1.25rem 1.5rem;
+	border-radius: var(
+		--nldesign-website-border-radius-large,
+		var(--utrecht-border-radius-md, 0.75rem)
+	);
+	background: var(
+		--thematiq-surface-color,
+		var(--nldesign-color-background-hover, Canvas)
+	);
+}
+
+.nl-news-article__fact {
+	display: contents;
+}
+
+.nl-news-article__fact dt {
+	font-weight: 700;
+}
+
+.nl-news-article__fact dd {
+	margin: 0;
+}
+
+@media (max-width: 480px) {
+	.nl-news-article__facts {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
+	}
+
+	.nl-news-article__fact dd {
+		margin-block-end: 0.5rem;
+	}
 }
 
 .nl-news-article__photo {

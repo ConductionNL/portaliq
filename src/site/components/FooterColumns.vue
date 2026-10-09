@@ -81,14 +81,16 @@
 							class="ac-footer__menu-title">
 							{{ content.contact.title }}
 						</h3>
+						<!-- Only the address is the link: "E-mail: " stays text
+						     (board Voet, site-home-follows-the-school-boards). -->
 						<p v-for="line in content.contact.lines" :key="line.text">
-							<a
-								v-if="line.href"
+							{{ lineParts(line).before
+							}}<a
+								v-if="lineParts(line).linked"
 								:href="line.href"
 								@click="onLink($event, line.href)"
-								>{{ line.text }}</a
+								>{{ lineParts(line).linked }}</a
 							>
-							<template v-else>{{ line.text }}</template>
 						</p>
 					</div>
 					<nav
@@ -172,6 +174,7 @@
 
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
+import { contactLineParts } from '../lib/footerLine.js'
 import { footerContentOf } from '../lib/shellData.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
@@ -260,6 +263,15 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * @param {{text: string, href?: string}} line A contact line.
+		 * @return {{before: string, linked: string}} Its plain words and its linked words.
+		 * @spec openspec/changes/site-home-follows-the-school-boards/specs/site-look/spec.md#requirement-only-the-address-of-a-footer-contact-line-is-a-link
+		 */
+		lineParts(line) {
+			return contactLineParts(line)
+		},
+
 		/**
 		 * Whether a link leaves this portal.
 		 *

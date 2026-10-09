@@ -239,6 +239,10 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		'nlFeaturedSubjects',
 		'nlPortalCounts',
 		'nlSubjectLanding',
+		// site-callouts-steps-and-tables-follow-the-boards: a button and a
+		// warning mark inside the melding, and a plain white card, which
+		// Utrecht's alert does not draw. Layout and theme tokens only.
+		'nlAlert',
 	]
 
 	for (const { key, source } of components()) {
