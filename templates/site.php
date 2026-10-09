@@ -319,6 +319,9 @@ if ($favicon === '') {
     <meta property="og:description" content="<?php p($head['description']); ?>">
     <?php } ?>
     <meta name="robots" content="<?php p(($head['robots'] ?? '') !== '' ? $head['robots'] : 'noindex'); ?>">
+    <?php if ((string)($_['creator'] ?? '') !== '') { ?>
+    <meta name="DCTERMS.creator" content="<?php p((string)$_['creator']); ?>">
+    <?php } ?>
     <meta property="og:title" content="<?php p($headTitle); ?>">
     <meta property="og:type" content="website">
     <?php if (($head['canonical'] ?? '') !== '') { ?>

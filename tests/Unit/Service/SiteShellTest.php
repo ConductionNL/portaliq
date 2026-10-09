@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(PortalThemeParents::class)]
 #[UsesClass(PortalTokenCss::class)]
 #[UsesClass(SiteIcon::class)]
+#[UsesClass(\OCA\Portaliq\Service\Cms\PortalShell::class)]
 #[UsesClass(MediaReferences::class)]
 class SiteShellTest extends TestCase {
 	/**
@@ -122,7 +123,21 @@ class SiteShellTest extends TestCase {
 		$this->assertSame('/apps/nldesign/img/child.css.svg', $params['themeLogoUrl']);
 		// No favicon or logo on this portal: the theme's icon is the tab icon.
 		$this->assertSame('/apps/nldesign/img/child.css.svg', $params['siteIcon']);
+		// No kind of organisation picked: the creator is the name alone.
+		$this->assertSame('Zuid', $params['creator']);
 	}//end testTemplateParamsForThemedPortal()
+
+	/**
+	 * DCTERMS.creator names the organisation and its kind
+	 * (portal-identity-from-the-admin REQ-PIA-003).
+	 *
+	 * @return void
+	 */
+	public function testTheCreatorNamesTheKindOfOrganisation(): void {
+		[$shell] = $this->shell([], '', ['slug' => 'ws', 'title' => 'Waterschap Rivierenland', 'organisationType' => 'https://identifier.overheid.nl/tooi/def/ont/Waterschap', 'organisationTypeLabel' => 'waterschap']);
+
+		$this->assertSame('Waterschap Rivierenland (waterschap)', $shell->templateParams()['creator']);
+	}//end testTheCreatorNamesTheKindOfOrganisation()
 
 	/**
 	 * No portal means empty theme output, a default locale and no notices.

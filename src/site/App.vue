@@ -489,6 +489,7 @@
 				v-bind="authoredProps(block)"
 				:title="site.title || ''"
 				:tagline="site.tagline || ''"
+				:organisationKind="(site.organisation && site.organisation.label) || ''"
 				:menus="footerMenus"
 				:legalLinks="legalLinks"
 				:footer="site.footer || {}"
@@ -699,7 +700,11 @@ export default {
 	 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
 	 */
 	provide() {
-		return { siteContentLocale: () => this.contentLocale }
+		return {
+			siteContentLocale: () => this.contentLocale,
+			// The portal's kind of organisation (portal-identity-from-the-admin REQ-PIA-003).
+			siteOrganisation: () => this.site.organisation || null,
+		}
 	},
 
 	props: {
@@ -1002,6 +1007,8 @@ export default {
 				contributions: this.contributions,
 				routeParam: this.routeParam,
 				portal: this.site.slug || '',
+				// The portal's hero image (portal-identity-from-the-admin REQ-PIA-002).
+				portalHero: this.site.heroImage || null,
 				signedIn: this.session !== null,
 				searchInsideDocuments: this.site.searchInsideDocuments !== false,
 				navigation: this.navigation,

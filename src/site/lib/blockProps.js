@@ -103,3 +103,23 @@ export function heroPopularLinks(links) {
 		.map((link) => ({ label: String(link.label), href: String(link.href) }))
 		.slice(0, 6)
 }
+
+/**
+ * A hero block's props with the portal's hero image as its background when
+ * the block sets none of its own (portal-identity-from-the-admin REQ-PIA-002).
+ *
+ * @param {object} props The authored props, styling already removed.
+ * @param {{url: string, alt: string}|null} portalHero The portal's hero image.
+ * @return {object} The props to hand the block.
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+ */
+export function heroPropsOf(props, portalHero) {
+	const own = String(props?.backgroundImage || '').trim()
+	const url = String(portalHero?.url || '')
+	if (own !== '' || url === '') {
+		return props
+	}
+
+	return { ...props, backgroundImage: url }
+}

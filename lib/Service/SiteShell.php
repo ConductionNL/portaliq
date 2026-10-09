@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCP\IRequest;
@@ -118,6 +119,8 @@ class SiteShell {
 			'themeLogoUrl' => $theme->logoUrl(),
 			// The one tab icon (portal-identity-from-the-admin REQ-PIA-002).
 			'siteIcon' => $this->siteIcon->url(portal: $this->sitePortal(), themeIcon: $theme->logoUrl()),
+			// Who runs the site, for DCTERMS.creator (portal-identity-from-the-admin REQ-PIA-003).
+			'creator' => $this->creator(),
 			'themeAppSheets' => $theme->appSheets(),
 			// The NLDS token set this app ships for the serving portal's
 			// theme, when it has one. Separate from the line above because
@@ -318,6 +321,28 @@ class SiteShell {
 			return [];
 		}
 	}//end sitePortalNotices()
+
+	/**
+	 * The DCTERMS.creator of the serving portal: its name, with the kind of
+	 * organisation behind it when one is picked; '' without a portal.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	private function creator(): string {
+		$portal = $this->sitePortal();
+		if ($portal === null) {
+			return '';
+		}
+
+		$organisation = (new PortalShell())->organisation(portal: $portal);
+		if ($organisation['name'] === '' || $organisation['label'] === '') {
+			return $organisation['name'];
+		}
+
+		return $organisation['name'].' ('.$organisation['label'].')';
+	}//end creator()
 
 	/**
 	 * The serving portal, or null when the request resolves to none.

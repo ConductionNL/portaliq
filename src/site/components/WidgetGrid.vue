@@ -75,7 +75,7 @@ import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { assistantAvailable } from '../lib/assistantAvailable.js'
-import { withoutStyling } from '../lib/blockProps.js'
+import { heroPropsOf, withoutStyling } from '../lib/blockProps.js'
 import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
 
@@ -322,6 +322,15 @@ export default {
 		},
 
 		/**
+		 * The portal's hero image, `{url, alt}` or null, for a hero block
+		 * without an image of its own (portal-identity-from-the-admin).
+		 */
+		portalHero: {
+			type: Object,
+			default: null,
+		},
+
+		/**
 		 * The portal's glossary rows, for a page that places a `glossary`
 		 * block. Fetched once by the host over the public contract; see
 		 * `propsFor()` for why the block does not fetch its own.
@@ -518,6 +527,12 @@ export default {
 
 			if (widget.widgetKey === 'markdown') {
 				return { source: props.markdown || '' }
+			}
+
+			// The portal's hero image fills a hero without its own
+			// (portal-identity-from-the-admin REQ-PIA-002).
+			if (widget.widgetKey === 'hero') {
+				return heroPropsOf(props, this.portalHero)
 			}
 
 			// The menu block: the host supplies the groups and the route on

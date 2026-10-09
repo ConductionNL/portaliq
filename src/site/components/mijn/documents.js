@@ -120,18 +120,49 @@ export function momentInWords(value, tr, locale = 'nl') {
 }
 
 /**
+ * Kinds of organisation whose Dutch noun takes "het". Every other kind takes
+ * "de" (portal-identity-from-the-admin REQ-PIA-003).
+ *
+ * @type {Array<string>}
+ */
+const NEUTER_KINDS = ['waterschap', 'ministerie', 'agentschap']
+
+/**
+ * "Van het waterschap": who sent something, named by the kind of organisation
+ * the portal picked from TOOI. Without a kind it reads "Van de organisatie";
+ * it never assumes a municipality.
+ *
+ * @param {{label: string}|null} organisation The portal's kind of organisation.
+ * @param {(key: string, vars?: object) => string} tr The translator.
+ * @return {string}
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ */
+export function organisationFrom(organisation, tr) {
+	const label = String(organisation?.label || '').trim()
+	if (label === '') {
+		return tr('From the organisation')
+	}
+	const neuter = NEUTER_KINDS.includes(label.toLowerCase().split(' ')[0])
+	return tr(neuter ? 'From the {organisation} (het)' : 'From the {organisation}', {
+		organisation: label,
+	})
+}
+
+/**
  * The line under a document's name: who added it and when, then its type
- * and size. "Van de gemeente, 2 oktober 2026. PDF, 84 kB".
+ * and size. "Van het waterschap, 2 oktober 2026. PDF, 84 kB".
  *
  * @param {object} entry The document (`kind`, `date?`, `mimeType?`, `size?`, `title`).
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
+ * @param {{label: string}|null} [organisation] The portal's kind of organisation (site `organisation`).
  * @return {string}
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
-export function fileLine(entry, tr, locale = 'nl') {
+export function fileLine(entry, tr, locale = 'nl', organisation = null) {
 	const from =
-		entry?.kind === 'yours' ? tr('From you') : tr('From the municipality')
+		entry?.kind === 'yours' ? tr('From you') : organisationFrom(organisation, tr)
 	const day = fullDay(entry?.date, locale)
 	const who = day ? `${from}, ${day}` : from
 	const facts = [fileType(entry), sizeInWords(entry?.size, locale)]
