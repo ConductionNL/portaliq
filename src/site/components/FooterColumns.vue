@@ -81,9 +81,9 @@
 							class="ac-footer__menu-title">
 							{{ content.contact.title }}
 						</h3>
+						<!-- Only the address is the link: "E-mail: " stays text
+						     (board Voet, site-home-follows-the-school-boards). -->
 						<p v-for="line in content.contact.lines" :key="line.text">
-							<!-- Only the address is the link: "E-mail: " stays text
-							     (board Voet, site-home-follows-the-school-boards). -->
 							{{ lineParts(line).before
 							}}<a
 								v-if="lineParts(line).linked"
