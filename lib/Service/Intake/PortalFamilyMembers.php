@@ -61,20 +61,46 @@ class PortalFamilyMembers {
 	}//end __construct()
 
 	/**
-	 * The resident's partner and children, or null when the register cannot be asked.
+	 * The resident's partner and children living at the resident's address,
+	 * or null when the register cannot be asked.
 	 *
 	 * Null covers: no account, a login that is not DigiD, no BSN, a provider
 	 * that is missing or down. An empty list means the BRP answered and holds
 	 * nobody on that address.
 	 *
-	 * @param string $subjectRef      The session's subject.
-	 * @param bool   $sameAddressOnly Keep only members living at the resident's address.
+	 * @param string $subjectRef The session's subject.
 	 *
 	 * @return array<int, array{ref: string, name: string, relation: string, birthYear: string}>|null
 	 *
 	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
 	 */
-	public function forSubject(string $subjectRef, bool $sameAddressOnly=true): ?array {
+	public function forSubject(string $subjectRef): ?array {
+		return $this->membersOf(subjectRef: $subjectRef, atHomeOnly: true);
+	}//end forSubject()
+
+	/**
+	 * The resident's partner and children wherever they live, or null when the
+	 * register cannot be asked.
+	 *
+	 * @param string $subjectRef The session's subject.
+	 *
+	 * @return array<int, array{ref: string, name: string, relation: string, birthYear: string}>|null
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	public function allForSubject(string $subjectRef): ?array {
+		return $this->membersOf(subjectRef: $subjectRef, atHomeOnly: false);
+	}//end allForSubject()
+
+	/**
+	 * The resident's partner and children, optionally only those at the resident's address.
+	 *
+	 * @param string $subjectRef The session's subject.
+	 * @param bool   $atHomeOnly Keep only members living at the resident's address.
+	 *
+	 * @return array<int, array{ref: string, name: string, relation: string, birthYear: string}>|null
+	 */
+	private function membersOf(string $subjectRef, bool $atHomeOnly): ?array {
 		$bsn = $this->bsnOf(subjectRef: $subjectRef);
 		if ($bsn === null) {
 			return null;
@@ -89,31 +115,47 @@ class PortalFamilyMembers {
 		$members = [];
 		foreach (['partners' => 'partner', 'kinderen' => 'child'] as $key => $relation) {
 			foreach ((array)($person[$key] ?? []) as $index => $member) {
-				if (is_array($member) === false) {
-					continue;
+				$context = ['subjectRef' => $subjectRef, 'relation' => $relation, 'index' => (int)$index, 'home' => $home, 'atHomeOnly' => $atHomeOnly];
+				$entry   = $this->entryOf(member: $member, context: $context);
+				if ($entry !== null) {
+					$members[] = $entry;
 				}
-
-				if ($sameAddressOnly === true && ($home === '' || $this->addressKey(person: $member) !== $home)) {
-					// An address that cannot be compared is not "the same".
-					continue;
-				}
-
-				$name = trim((string)($member['naam']['volledigeNaam'] ?? ''));
-				if ($name === '') {
-					continue;
-				}
-
-				$members[] = [
-					'ref' => $this->refOf(subjectRef: $subjectRef, relation: $relation, member: $member, index: (int)$index),
-					'name' => $name,
-					'relation' => $relation,
-					'birthYear' => substr((string)($member['geboorte']['datum']['datum'] ?? $member['geboorte']['datum']['jaar'] ?? ''), 0, 4),
-				];
 			}
 		}
 
 		return $members;
-	}//end forSubject()
+	}//end membersOf()
+
+	/**
+	 * One member as the form offers it, or null when it is not to be offered.
+	 *
+	 * @param mixed                $member  The BRP's member.
+	 * @param array<string, mixed> $context The `subjectRef`, `relation`, `index`, `home` address key and `atHomeOnly` flag.
+	 *
+	 * @return array{ref: string, name: string, relation: string, birthYear: string}|null
+	 */
+	private function entryOf(mixed $member, array $context): ?array {
+		if (is_array($member) === false) {
+			return null;
+		}
+
+		// An address that cannot be compared is not "the same".
+		if ($context['atHomeOnly'] === true && ($context['home'] === '' || $this->addressKey(person: $member) !== $context['home'])) {
+			return null;
+		}
+
+		$name = trim((string)($member['naam']['volledigeNaam'] ?? ''));
+		if ($name === '') {
+			return null;
+		}
+
+		return [
+			'ref' => $this->refOf(subjectRef: $context['subjectRef'], relation: $context['relation'], member: $member, index: $context['index']),
+			'name' => $name,
+			'relation' => $context['relation'],
+			'birthYear' => substr((string)($member['geboorte']['datum']['datum'] ?? $member['geboorte']['datum']['jaar'] ?? ''), 0, 4),
+		];
+	}//end entryOf()
 
 	/**
 	 * The references among those given that are NOT the resident's family now.
@@ -129,7 +171,7 @@ class PortalFamilyMembers {
 	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
 	 */
 	public function forged(string $subjectRef, array $refs): array {
-		$family = $this->forSubject(subjectRef: $subjectRef, sameAddressOnly: false);
+		$family = $this->allForSubject(subjectRef: $subjectRef);
 		$known  = [];
 		foreach ((array)$family as $member) {
 			$known[$member['ref']] = true;

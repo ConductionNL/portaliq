@@ -107,34 +107,45 @@ class PortalDraftStore {
 			'expiresAt' => $expiresAt,
 		];
 
-		$existing = $this->find(subjectRef: $subjectRef, actionKey: $actionKey);
-		if ($existing !== null) {
-			$saved = $this->writer->updateObject(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				scopeField: 'subjectRef',
-				subjectRef: $subjectRef,
-				organisation: '',
-				id: self::idOf(row: $existing),
-				data: $data
-			);
-		} else {
-			$saved = $this->writer->createObject(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				scopeField: 'subjectRef',
-				subjectRef: $subjectRef,
-				organisation: '',
-				data: $data
-			);
-		}
-
+		$saved = $this->store(existing: $this->find(subjectRef: $subjectRef, actionKey: $actionKey), subjectRef: $subjectRef, data: $data);
 		if ($saved === null) {
 			return null;
 		}
 
 		return ['step' => $step, 'expiresAt' => $expiresAt, 'answers' => $answers];
 	}//end save()
+
+	/**
+	 * Update the subject's existing draft, or create it.
+	 *
+	 * @param array<string, mixed>|null $existing   The stored draft, or null for none.
+	 * @param string                    $subjectRef The signed-in subject.
+	 * @param array<string, mixed>      $data       The draft's data.
+	 *
+	 * @return array<string, mixed>|null The stored row, or null when it could not be stored.
+	 */
+	private function store(?array $existing, string $subjectRef, array $data): ?array {
+		if ($existing === null) {
+			return $this->writer->createObject(
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				scopeField: 'subjectRef',
+				subjectRef: $subjectRef,
+				organisation: '',
+				data: $data
+			);
+		}
+
+		return $this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: '',
+			id: self::idOf(row: $existing),
+			data: $data
+		);
+	}//end store()
 
 	/**
 	 * The subject's own draft of an action, unless it has expired.
@@ -303,8 +314,8 @@ class PortalDraftStore {
 			return true;
 		}
 
-		$ts = strtotime($expiresAt);
-		return $ts === false || $ts <= $now->getTimestamp();
+		$expiry = strtotime($expiresAt);
+		return $expiry === false || $expiry <= $now->getTimestamp();
 	}//end expired()
 
 	/**

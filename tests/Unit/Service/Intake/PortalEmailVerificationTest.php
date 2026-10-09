@@ -209,7 +209,7 @@ class PortalEmailVerificationTest extends TestCase {
 		];
 		$errors = $service->unverified(fields: $fields, answers: ['mail' => 'a@example.nl', 'other' => 'b@example.nl'], proofs: [], portal: 'z', route: 'a');
 		$this->assertSame(['mail'], array_keys($errors));
-		$record = $service->record(fields: $fields, answers: ['mail' => 'A@example.nl', 'other' => 'b@example.nl'], at: '2026-10-08T10:00:00+00:00');
+		$record = $service->record(fields: $fields, answers: ['mail' => 'A@example.nl', 'other' => 'b@example.nl'], verifiedAt: '2026-10-08T10:00:00+00:00');
 		$this->assertSame([['address' => 'a@example.nl', 'verifiedAt' => '2026-10-08T10:00:00+00:00']], $record);
 	}//end testOnlyVerifyFieldsNeedAProof()
 }//end class

@@ -44,6 +44,13 @@ class PortalFormValidator {
 	public const MAX_SIGNATURE_BYTES = 200000;
 
 	/**
+	 * The checks of a single answer against its field.
+	 *
+	 * @var PortalFieldChecks
+	 */
+	private readonly PortalFieldChecks $checks;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IL10N            $l10n        The sentences a refusal is given with.
@@ -53,8 +60,9 @@ class PortalFormValidator {
 	public function __construct(
 		private readonly IL10N $l10n,
 		private readonly VisibleWhenLocal $visibleWhen=new VisibleWhenLocal(),
-		private readonly DutchFormats $formats=new DutchFormats(),
+		DutchFormats $formats=new DutchFormats(),
 	) {
+		$this->checks = new PortalFieldChecks(l10n: $l10n, formats: $formats);
 	}//end __construct()
 
 	/**
@@ -80,24 +88,19 @@ class PortalFormValidator {
 		// the screen's form data holds every answer at once.
 		$shown = $answers;
 		foreach ($fields as $field) {
-			if (is_array($field) === false) {
-				continue;
+			$name = '';
+			if (is_array($field) === true) {
+				$name = (string)($field['name'] ?? '');
 			}
 
-			$name = (string)($field['name'] ?? '');
 			if ($name === '') {
 				continue;
 			}
 
-			if ($this->visibleWhen->isVisible(condition: ($field['visibleWhen'] ?? null), answers: $shown) === false) {
-				// Not shown, so neither required nor accepted (REQ-ICQ-002).
-				unset($shown[$name]);
-				continue;
-			}
-
-			// A calculated or decided field is the server's to fill, never the browser's
-			// (form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002).
-			if (isset($field['calculate']) === true || ($field['computed'] ?? false) === true) {
+			if ($this->isHiddenOrComputed(field: $field, shown: $shown) === true) {
+				// Not shown, so neither required nor accepted (REQ-ICQ-002); a
+				// calculated or decided field is the server's to fill, never
+				// the browser's (REQ-FFL-002).
 				unset($shown[$name]);
 				continue;
 			}
@@ -112,26 +115,64 @@ class PortalFormValidator {
 				continue;
 			}
 
-			$value = ($answers[$name] ?? null);
-			if ($this->wasAnswered(value: $value) === false) {
-				if (($field['required'] ?? false) === true) {
-					$errors[$name] = $this->l10n->t('This answer is required.');
-				}
-
+			$single = $this->single(field: $field, value: ($answers[$name] ?? null));
+			if ($single['error'] !== null) {
+				$errors[$name] = $single['error'];
 				continue;
 			}
 
-			$error = $this->checkValue(field: $field, value: $value);
-			if ($error !== null) {
-				$errors[$name] = $error;
-				continue;
+			if ($single['kept'] === true) {
+				$accepted[$name] = $single['value'];
 			}
-
-			$accepted[$name] = $this->stored(field: $field, value: $value);
 		}//end foreach
 
 		return ['valid' => ($errors === []), 'errors' => $errors, 'answers' => $accepted];
 	}//end validate()
+
+	/**
+	 * Whether a field is not shown by its condition, or is one the server fills.
+	 *
+	 * A calculated or decided field is the server's to fill, never the
+	 * browser's (form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002).
+	 *
+	 * @param array<string, mixed> $field The field.
+	 * @param array<string, mixed> $shown The answers a condition reads.
+	 *
+	 * @return bool
+	 */
+	private function isHiddenOrComputed(array $field, array $shown): bool {
+		if ($this->visibleWhen->isVisible(condition: ($field['visibleWhen'] ?? null), answers: $shown) === false) {
+			return true;
+		}
+
+		return isset($field['calculate']) === true || ($field['computed'] ?? false) === true;
+	}//end isHiddenOrComputed()
+
+	/**
+	 * Validate a plain field's answer.
+	 *
+	 * @param array<string, mixed> $field The field.
+	 * @param mixed                $value What the browser sent for it.
+	 *
+	 * @return array{error: string|null, kept: bool, value: mixed} The refusal, or whether the answer is kept and its stored value.
+	 */
+	private function single(array $field, mixed $value): array {
+		if ($this->wasAnswered(value: $value) === false) {
+			$error = null;
+			if (($field['required'] ?? false) === true) {
+				$error = $this->l10n->t('This answer is required.');
+			}
+
+			return ['error' => $error, 'kept' => false, 'value' => null];
+		}
+
+		$error = $this->checks->checkValue(field: $field, value: $value);
+		if ($error !== null) {
+			return ['error' => $error, 'kept' => false, 'value' => null];
+		}
+
+		return ['error' => null, 'kept' => true, 'value' => $this->checks->stored(field: $field, value: $value)];
+	}//end single()
 
 	/**
 	 * Validate a repeating group: a list whose count fits `repeat.min` and
@@ -172,6 +213,19 @@ class PortalFormValidator {
 			return ['errors' => [$name => $this->l10n->t('You can add at most %s.', [(string)$max])], 'items' => null];
 		}
 
+		return $this->groupItems(field: $field, name: $name, items: $items);
+	}//end group()
+
+	/**
+	 * Validate the items of a repeating group against its sub-fields.
+	 *
+	 * @param array<string, mixed> $field The group's declaration.
+	 * @param string               $name  The group's name.
+	 * @param array<int, mixed>    $items The items the browser sent.
+	 *
+	 * @return array{errors: array<string, string>, items: array<int, array<string, mixed>>|null}
+	 */
+	private function groupItems(array $field, string $name, array $items): array {
 		$errors   = [];
 		$accepted = [];
 		foreach ($items as $index => $item) {
@@ -193,7 +247,7 @@ class PortalFormValidator {
 		}
 
 		return ['errors' => $errors, 'items' => $accepted];
-	}//end group()
+	}//end groupItems()
 
 	/**
 	 * Whether the visitor answered this field at all.
@@ -217,279 +271,4 @@ class PortalFormValidator {
 		return (trim((string)$value) !== '');
 	}//end wasAnswered()
 
-	/**
-	 * The error one value carries, or null when it is fine.
-	 *
-	 * One rule per helper, asked in declaration order, so the visitor reads
-	 * the first thing wrong with their answer rather than the last.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function checkValue(array $field, mixed $value): ?string {
-		$error = $this->typeError(type: (string)($field['type'] ?? 'string'), value: $value);
-		if ($error !== null) {
-			return $error;
-		}
-
-		$error = $this->formatError(field: $field, value: $value);
-		if ($error !== null) {
-			return $error;
-		}
-
-		$error = $this->patternError(field: $field, value: $value);
-		if ($error !== null) {
-			return $error;
-		}
-
-		$error = $this->optionsError(field: $field, value: $value);
-		if ($error !== null) {
-			return $error;
-		}
-
-		return $this->lengthError(field: $field, value: $value);
-	}//end checkValue()
-
-	/**
-	 * Whether the value is of the type the field declares.
-	 *
-	 * @param string $type The declared type.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function typeError(string $type, mixed $value): ?string {
-		if ($type === 'number' && is_numeric($value) === false) {
-			return $this->l10n->t('This answer must be a number.');
-		}
-
-		if ($type === 'familyMembers') {
-			return $this->familyShapeError(value: $value);
-		}
-
-		if ($type === 'addressNL') {
-			return $this->addressError(value: $value);
-		}
-
-		if ($type === 'signature') {
-			return $this->signatureError(value: $value);
-		}
-
-		if ($type === 'email' && filter_var((string)$value, FILTER_VALIDATE_EMAIL) === false) {
-			return $this->l10n->t('This does not look like an email address.');
-		}
-
-		return null;
-	}//end typeError()
-
-	/**
-	 * Whether a signature is a PNG image of at most 200 kB, sent as a data address.
-	 *
-	 * @param mixed $value The submitted signature.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t02
-	 */
-	private function signatureError(mixed $value): ?string {
-		$prefix = 'data:image/png;base64,';
-		if (is_string($value) === false || str_starts_with($value, $prefix) === false) {
-			return $this->l10n->t('The signature must be an image.');
-		}
-
-		$bytes = base64_decode(substr($value, strlen($prefix)), true);
-		if ($bytes === false || str_starts_with($bytes, "\x89PNG\r\n\x1a\n") === false) {
-			return $this->l10n->t('The signature must be an image.');
-		}
-
-		if (strlen($bytes) > self::MAX_SIGNATURE_BYTES) {
-			return $this->l10n->t('The signature is too large. Draw it again, smaller.');
-		}
-
-		return null;
-	}//end signatureError()
-
-	/**
-	 * Whether a family answer is a list of references. Whether they ARE the
-	 * resident's family is the controller's check, against the BRP.
-	 *
-	 * @param mixed $value The submitted list.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
-	 */
-	private function familyShapeError(mixed $value): ?string {
-		if (is_array($value) === false || array_is_list($value) === false) {
-			return $this->l10n->t('Choose the people from the list we found.');
-		}
-
-		foreach ($value as $ref) {
-			if (is_string($ref) === false || preg_match('/^(partner|child)-[a-f0-9]{20}$/', $ref) !== 1) {
-				return $this->l10n->t('Choose the people from the list we found.');
-			}
-		}
-
-		return null;
-	}//end familyShapeError()
-
-	/**
-	 * Whether an address block holds a real postcode, a house number, a street and a town.
-	 *
-	 * @param mixed $value The submitted block.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
-	 */
-	private function addressError(mixed $value): ?string {
-		$block = [];
-		if (is_array($value) === true) {
-			$block = $value;
-		}
-
-		$complete = $this->formats->normalise(format: 'postcode', value: (string)($block['postcode'] ?? '')) !== null
-			&& preg_match('/^[1-9]\d{0,4}$/', (string)($block['number'] ?? '')) === 1
-			&& trim((string)($block['street'] ?? '')) !== ''
-			&& trim((string)($block['town'] ?? '')) !== '';
-		if ($complete === false) {
-			return $this->l10n->t('Fill in the postcode, the house number, the street and the town.');
-		}
-
-		return null;
-	}//end addressError()
-
-	/**
-	 * Whether the value fits the Dutch format the field names (`format`).
-	 *
-	 * A name this server does not know checks nothing; a known one is checked
-	 * here whatever the screen did, because the screen can be bypassed.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
-	 */
-	private function formatError(array $field, mixed $value): ?string {
-		$format = (string)($field['format'] ?? '');
-		if ($this->formats->knows(format: $format) === false) {
-			return null;
-		}
-
-		if (is_string($value) === true && $this->formats->normalise(format: $format, value: $value) !== null) {
-			return null;
-		}
-
-		$messages = [
-			'bsn' => $this->l10n->t('This citizen service number does not look right. Check the digits.'),
-			'iban' => $this->l10n->t('This IBAN does not look right. Check the digits.'),
-			'nl-licence-plate' => $this->l10n->t('This licence plate does not look right. You may fill it in with or without dashes.'),
-			'phone-nl' => $this->l10n->t('This is not a Dutch phone number. Fill it in as 06 12345678 or +31 6 12345678.'),
-			'phone-international' => $this->l10n->t('This is not an international phone number. Start with + and the country code.'),
-			'postcode' => $this->l10n->t('This postcode does not look right. Fill it in as 1234 AB.'),
-			'kvk' => $this->l10n->t('A KvK number has 8 digits.'),
-			'kvk-branch' => $this->l10n->t('A branch number has 12 digits.'),
-		];
-
-		return $messages[$format];
-	}//end formatError()
-
-	/**
-	 * The value as it is stored: normalised when the field names a format.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The accepted value.
-	 *
-	 * @return mixed
-	 */
-	private function stored(array $field, mixed $value): mixed {
-		$format = (string)($field['format'] ?? '');
-		if ($this->formats->knows(format: $format) === true && is_string($value) === true) {
-			return ($this->formats->normalise(format: $format, value: $value) ?? $value);
-		}
-
-		return $value;
-	}//end stored()
-
-	/**
-	 * Whether the value matches the pattern the field declares.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function patternError(array $field, mixed $value): ?string {
-		$pattern = (string)($field['pattern'] ?? '');
-		if ($pattern === '' || is_string($value) === false) {
-			return null;
-		}
-
-		if (preg_match('/' . str_replace('/', '\\/', $pattern) . '/', $value) !== 1) {
-			return $this->l10n->t('This answer is not in the expected format.');
-		}
-
-		return null;
-	}//end patternError()
-
-	/**
-	 * Whether the value is one of the options the field offers.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function optionsError(array $field, mixed $value): ?string {
-		if (($field['referenceListEmpty'] ?? false) === true) {
-			// A list that could not be read offers nothing, so nothing is accepted.
-			return $this->l10n->t('Choose one of the options offered.');
-		}
-
-		$options = ($field['options'] ?? null);
-		if (is_array($options) === false || $options === []) {
-			return null;
-		}
-
-		$values = array_map(
-			static function ($option) {
-				if (is_array($option) === true && array_key_exists('value', $option) === true) {
-					return $option['value'];
-				}
-
-				return $option;
-			},
-			$options
-		);
-		if (in_array($value, $values, true) === false) {
-			return $this->l10n->t('Choose one of the options offered.');
-		}
-
-		return null;
-	}//end optionsError()
-
-	/**
-	 * Whether the value fits the length the field allows.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function lengthError(array $field, mixed $value): ?string {
-		$maxLength = (int)($field['maxLength'] ?? 0);
-		if ($maxLength <= 0 || is_string($value) === false) {
-			return null;
-		}
-
-		if (mb_strlen($value) > $maxLength) {
-			return $this->l10n->t('This answer is too long.');
-		}
-
-		return null;
-	}//end lengthError()
 }//end class

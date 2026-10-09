@@ -427,9 +427,18 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		// Cast as the framework casts a bound bool; absent means only the resident's own address.
-		$raw      = $this->request->getParam('sameAddressOnly', true);
-		$sameOnly = ($raw !== 'false' && (bool)$raw === true);
-		$members  = $this->family?->forSubject(subjectRef: (string)($subject['subjectRef'] ?? ''), sameAddressOnly: $sameOnly);
+		$raw      = $this->request->getParam('sameAddressOnly');
+		$sameOnly = ($raw === null || ($raw !== 'false' && (bool)$raw === true));
+		$ref      = (string)($subject['subjectRef'] ?? '');
+		$members  = null;
+		if ($this->family !== null && $sameOnly === true) {
+			$members = $this->family->forSubject(subjectRef: $ref);
+		}
+
+		if ($this->family !== null && $sameOnly === false) {
+			$members = $this->family->allForSubject(subjectRef: $ref);
+		}
+
 		if ($members === null) {
 			return new JSONResponse(['error' => 'family_unavailable'], Http::STATUS_NOT_FOUND);
 		}

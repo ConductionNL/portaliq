@@ -75,6 +75,13 @@ class PortalFormBindingResolver {
 	private const DEFAULT_FORM_SCHEMA = 'registrationForm';
 
 	/**
+	 * Reads the fields of a published form.
+	 *
+	 * @var PortalFormFields
+	 */
+	private readonly PortalFormFields $fields;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads the binding and the form.
@@ -93,10 +100,11 @@ class PortalFormBindingResolver {
 		private readonly PortalObjectReader $reader,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
-		private readonly ?PortalReferenceLists $lists = null,
+		?PortalReferenceLists $lists = null,
 		private readonly PortalFormCalculator $calculator = new PortalFormCalculator(),
 		private readonly ?PortalFee $fees = null,
 	) {
+		$this->fields = new PortalFormFields(lists: $lists);
 	}//end __construct()
 
 	/**
@@ -273,13 +281,7 @@ class PortalFormBindingResolver {
 		if ($this->caseTypes?->hidesBinding(binding: $binding) === true) {
 			// The portal does not show this case type, so its form does not
 			// open (operate-show-per-case-type REQ-OSC-002).
-			return [
-				'kind' => (string)($binding['intakeKind'] ?? self::KIND_HOSTED),
-				'resolvesToNoForm' => true,
-				'reason' => 'hiddenCaseType',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return $this->noForm(kind: (string)($binding['intakeKind'] ?? self::KIND_HOSTED), reason: 'hiddenCaseType', settings: $settings);
 		}
 
 		if ((string)($binding['intakeKind'] ?? self::KIND_HOSTED) === self::KIND_EXTERNAL) {
@@ -298,38 +300,20 @@ class PortalFormBindingResolver {
 
 		$form = $this->publishedForm(binding: $binding);
 		if ($form === null) {
-			return [
-				'kind' => self::KIND_HOSTED,
-				'resolvesToNoForm' => true,
-				'reason' => 'no_published_form_for_audience',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return $this->noForm(kind: self::KIND_HOSTED, reason: 'no_published_form_for_audience', settings: $settings);
 		}
 
-		$fields = $this->fieldsOf(form: $form);
+		$fields = $this->fields->fieldsOf(form: $form);
 		if ($this->visibleWhen->decidesEveryField(fields: $fields) === false) {
 			// The server could not repeat on submit what the screen decided,
 			// so the form is refused rather than half checked (REQ-ICQ-003).
-			return [
-				'kind' => self::KIND_HOSTED,
-				'resolvesToNoForm' => true,
-				'reason' => 'unsupportedCondition',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return $this->noForm(kind: self::KIND_HOSTED, reason: 'unsupportedCondition', settings: $settings);
 		}
 
 		if ($this->calculator->knowsEveryOperation(fields: $fields) === false) {
 			// The server could not work the value out again on submit, so the
 			// form does not open (form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002).
-			return [
-				'kind' => self::KIND_HOSTED,
-				'resolvesToNoForm' => true,
-				'reason' => 'unsupportedCalculation',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return $this->noForm(kind: self::KIND_HOSTED, reason: 'unsupportedCalculation', settings: $settings);
 		}
 		$fee = $this->fees?->forBinding(binding: $binding);
 
@@ -361,6 +345,25 @@ class PortalFormBindingResolver {
 			'minTrust' => ($form['minTrust'] ?? null),
 		];
 	}//end render()
+
+	/**
+	 * The render of a binding that resolves to no form.
+	 *
+	 * @param string               $kind     The binding's intake kind.
+	 * @param string               $reason   Why, as the admin surface prints it.
+	 * @param array<string, mixed> $settings The intake settings.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function noForm(string $kind, string $reason, array $settings): array {
+		return [
+			'kind' => $kind,
+			'resolvesToNoForm' => true,
+			'reason' => $reason,
+			'fields' => [],
+			'settings' => $settings,
+		];
+	}//end noForm()
 
 	/**
 	 * The sign-in level a submission of this form needs, or null for none.
@@ -448,48 +451,6 @@ class PortalFormBindingResolver {
 	}//end formAnswersTheBinding()
 
 	/**
-	 * The form's fields, in the order the form declares, with its presets.
-	 *
-	 * @param array<string, mixed> $form The published form.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function fieldsOf(array $form): array {
-		$fields = ($form['fields'] ?? []);
-		if (is_array($fields) === false) {
-			return [];
-		}
-
-		$presets = (array)($form['presets'] ?? []);
-		$out = [];
-		foreach ($fields as $field) {
-			if (is_array($field) === false) {
-				continue;
-			}
-
-			$name = (string)($field['name'] ?? '');
-			if ($name === '') {
-				continue;
-			}
-
-			if (array_key_exists($name, $presets) === true) {
-				$field['preset'] = $presets[$name];
-			}
-
-			$out[] = $this->withReferenceList(field: $field);
-		}
-
-		usort(
-			$out,
-			static function (array $first, array $second): int {
-				return ((int)($first['order'] ?? 0) <=> (int)($second['order'] ?? 0));
-			}
-		);
-
-		return $out;
-	}//end fieldsOf()
-
-	/**
 	 * A value when it is an array, otherwise null.
 	 *
 	 * @param mixed $value The value.
@@ -503,36 +464,6 @@ class PortalFormBindingResolver {
 
 		return null;
 	}//end arrayOrNull()
-
-	/**
-	 * A field that names a reference list gets that list's active items as
-	 * its options. A list that comes back empty marks the field closed, so
-	 * the validator refuses every value instead of accepting any.
-	 *
-	 * @param array<string, mixed> $field The field.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t03
-	 */
-	private function withReferenceList(array $field): array {
-		$options = ($field['options'] ?? null);
-		if (is_array($options) === false || is_string($options['referenceList'] ?? null) === false) {
-			return $field;
-		}
-
-		$items = [];
-		if ($this->lists !== null) {
-			$items = $this->lists->items(list: $options['referenceList']);
-		}
-
-		$field['options'] = $items;
-		if ($items === []) {
-			$field['referenceListEmpty'] = true;
-		}
-
-		return $field;
-	}//end withReferenceList()
 
 	/**
 	 * The host a URL names, for the card the visitor reads before leaving.

@@ -83,14 +83,7 @@ class PortalAddressLookup {
 			return null;
 		}
 
-		$filters = ['postcode' => str_replace(' ', '', $normalised), 'huisnummer' => (int)$number];
-		if ($letter !== '') {
-			$filters['huisletter'] = strtoupper(substr($letter, 0, 1));
-		}
-
-		if ($addition !== '') {
-			$filters['huisnummertoevoeging'] = substr($addition, 0, 4);
-		}
+		$filters = $this->filters(postcode: $normalised, number: $number, letter: $letter, addition: $addition);
 
 		try {
 			$service = $this->container->get(self::OBJECT_SERVICE);
@@ -124,4 +117,27 @@ class PortalAddressLookup {
 
 		return ['street' => $street, 'town' => $town];
 	}//end find()
+
+	/**
+	 * The register filters for a normalised postcode and a house number.
+	 *
+	 * @param string $postcode The normalised postcode.
+	 * @param string $number   The house number, digits only.
+	 * @param string $letter   The house letter, or ''.
+	 * @param string $addition The house number addition, or ''.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function filters(string $postcode, string $number, string $letter, string $addition): array {
+		$filters = ['postcode' => str_replace(' ', '', $postcode), 'huisnummer' => (int)$number];
+		if ($letter !== '') {
+			$filters['huisletter'] = strtoupper(substr($letter, 0, 1));
+		}
+
+		if ($addition !== '') {
+			$filters['huisnummertoevoeging'] = substr($addition, 0, 4);
+		}
+
+		return $filters;
+	}//end filters()
 }//end class

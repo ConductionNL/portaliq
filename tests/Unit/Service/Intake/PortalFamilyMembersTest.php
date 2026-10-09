@@ -71,7 +71,7 @@ class PortalFamilyMembersTest extends TestCase {
 	}//end testOnlyMembersOnTheSameAddressComeBackWithTheMinimalFields()
 
 	public function testAllMembersComeBackWhenTheAddressIsNotRequired(): void {
-		$this->assertCount(4, $this->members()->forSubject('sub-1', false));
+		$this->assertCount(4, $this->members()->allForSubject('sub-1'));
 	}//end testAllMembersComeBackWhenTheAddressIsNotRequired()
 
 	public function testWhatIsNotADigidSessionWithABsnGetsNothing(): void {

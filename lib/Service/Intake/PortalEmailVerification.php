@@ -284,13 +284,13 @@ class PortalEmailVerification {
 	 *
 	 * @param array<int, array<string, mixed>> $fields The form's fields.
 	 * @param array<string, mixed> $answers The accepted answers, all of them verified.
-	 * @param string $at The moment, as an ISO 8601 date-time.
+	 * @param string $verifiedAt The moment, as an ISO 8601 date-time.
 	 *
 	 * @return array<int, array{address: string, verifiedAt: string}> One line per verify field that was answered.
 	 *
 	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
 	 */
-	public function record(array $fields, array $answers, string $at): array {
+	public function record(array $fields, array $answers, string $verifiedAt): array {
 		$lines = [];
 		foreach ($fields as $field) {
 			$name = (string)($field['name'] ?? '');
@@ -300,7 +300,7 @@ class PortalEmailVerification {
 
 			$address = strtolower(trim((string)($answers[$name] ?? '')));
 			if ($address !== '') {
-				$lines[] = ['address' => $address, 'verifiedAt' => $at];
+				$lines[] = ['address' => $address, 'verifiedAt' => $verifiedAt];
 			}
 		}
 

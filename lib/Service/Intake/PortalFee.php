@@ -106,20 +106,7 @@ class PortalFee {
 	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
 	 */
 	public function checkoutAllowed(mixed $url, array $hosts): bool {
-		if (is_string($url) === false || preg_match('/[[:cntrl:]\s\\\\]/', $url) === 1) {
-			return false;
-		}
-
-		$parts = parse_url($url);
-		if ($parts === false || strtolower((string)($parts['scheme'] ?? '')) !== 'https') {
-			return false;
-		}
-
-		if (isset($parts['user']) === true || isset($parts['pass']) === true) {
-			return false;
-		}
-
-		$host = strtolower((string)($parts['host'] ?? ''));
+		$host = $this->secureHost(url: $url);
 		if ($host === '') {
 			return false;
 		}
@@ -132,6 +119,30 @@ class PortalFee {
 
 		return false;
 	}//end checkoutAllowed()
+
+	/**
+	 * The lower-case host of an https address without credentials or odd characters, or ''.
+	 *
+	 * @param mixed $url The address.
+	 *
+	 * @return string The host, or '' when the address is not one to send a resident to.
+	 */
+	private function secureHost(mixed $url): string {
+		if (is_string($url) === false || preg_match('/[[:cntrl:]\s\\\\]/', $url) === 1) {
+			return '';
+		}
+
+		$parts = parse_url($url);
+		if ($parts === false || strtolower((string)($parts['scheme'] ?? '')) !== 'https') {
+			return '';
+		}
+
+		if (isset($parts['user']) === true || isset($parts['pass']) === true) {
+			return '';
+		}
+
+		return strtolower((string)($parts['host'] ?? ''));
+	}//end secureHost()
 
 	/**
 	 * What the resident is told about a payment, from the provider's status.

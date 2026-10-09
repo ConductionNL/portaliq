@@ -350,7 +350,7 @@ class PortalSubmissionChecks {
 			return [];
 		}
 
-		return $this->emailVerification->record(fields: (array)($render['fields'] ?? []), answers: $answers, at: gmdate(DATE_ATOM));
+		return $this->emailVerification->record(fields: (array)($render['fields'] ?? []), answers: $answers, verifiedAt: gmdate(DATE_ATOM));
 	}//end verifiedRecord()
 
 	/**
