@@ -256,3 +256,47 @@ test('the site hands the person block and the second addresses on', () => {
 	assert.match(app, /this\.site\?\.residentMenu\?\.routes/)
 	assert.match(app, /this\.site\?\.residentMenu\?\.person\?\.collection/)
 })
+
+test('a layout that names overview does not list the home page a second time', () => {
+	const withHome = structuredClone(LEARNIQ)
+	withHome.pages.push({
+		id: 'home',
+		label: 'Overzicht',
+		home: true,
+		blocks: [{ type: 'richText', markdown: 'x' }],
+	})
+	const groups = residentMenuGroups(
+		buildNav([withHome], t, { messages: true }),
+		t,
+		0,
+		href,
+		ROWS,
+		LAYOUT,
+	)
+	const names = groups.flatMap((group) => group.items.map((item) => item.link))
+	assert.equal(names.filter((link) => link === '/mijn').length, 1)
+	assert.equal(names.includes('/mijn/learniq/home'), false)
+	// Without overview in the layout the home page keeps its item.
+	const plain = residentMenuGroups(buildNav([withHome], t, {}), t, 0, href, ROWS)
+	assert.ok(
+		plain
+			.flatMap((group) => group.items)
+			.some((item) => item.link === '/mijn/learniq/home'),
+	)
+})
+
+test('the site theme reads the menu row height, bar and text colour from tokens, Zuiddrecht values as defaults', () => {
+	const theme = readFileSync(join(ROOT, 'css/site-theme.css'), 'utf8')
+	assert.match(
+		theme,
+		/min-block-size: var\(--nldesign-website-menu-item-min-block-size, 60px\)/,
+	)
+	assert.match(
+		theme,
+		/inset var\(--nldesign-website-menu-current-bar-width, 4px\) 0 0/,
+	)
+	assert.match(
+		theme,
+		/--nldesign-website-menu-current-color,\s*var\(--nldesign-color-text/,
+	)
+})

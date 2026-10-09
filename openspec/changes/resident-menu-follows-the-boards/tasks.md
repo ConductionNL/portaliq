@@ -7,6 +7,8 @@
 - [x] 1.4 `accountRedirect()` opens a second address, else the home.
 - [x] 1.5 `ResidentMenu.vue` person block and board look; `AccountArea.vue` and `App.vue` pass it on.
 - [x] 1.6 Tests: `tests/site-look/resident-menu-follows-the-boards.spec.mjs`.
+- [x] 1.7 `overview` stands for the home page; menu row height, bar and current colour as set tokens in `css/site-theme.css`.
+- [ ] 1.8 thematiq: the four school sets name the three menu tokens (thematiq PR).
 
 ## 2. learniq declares (lane LQ, per portal record in `lib/Settings/portals/<set>.json`)
 - [ ] 2.1 po.json (De Wilgenboom): `residentMenu.groups` =
