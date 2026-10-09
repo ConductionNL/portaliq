@@ -105,7 +105,11 @@
 				@navigate="$emit('navigate', $event)">
 				<!-- Tabs over a list (mijn-lists-follow-the-boards). -->
 				<ListTabs
-					v-if="item.kind === 'table' && hasTabs(item)"
+					v-if="
+						item.kind === 'table'
+						&& hasTabs(item)
+						&& item.block.display !== 'chips'
+					"
 					:tabs="item.block.tabs"
 					:chosen="tabOf(item)"
 					:label="headingOf(item)"
@@ -202,7 +206,19 @@
 					:today="today || undefined"
 					:t="tr"
 					:locale="lang"
-					@navigate="$emit('navigate', $event)" />
+					@navigate="$emit('navigate', $event)">
+					<!-- Grouped marks take their tabs under the summary, as the
+					     board draws them (mijn-lists-follow-the-boards). -->
+					<template
+						v-if="hasTabs(item) && item.block.display === 'chips'"
+						#tabs>
+						<ListTabs
+							:tabs="item.block.tabs"
+							:chosen="tabOf(item)"
+							:label="headingOf(item)"
+							@choose="tabs = { ...tabs, [item.index]: $event }" />
+					</template>
+				</component>
 
 				<div
 					v-else-if="item.kind === 'table'"

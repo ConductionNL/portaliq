@@ -36,6 +36,8 @@
 				{{ summaryText }}
 			</p>
 		</div>
+		<!-- The tabs over the marks, under the summary (mijn-lists-follow-the-boards). -->
+		<slot name="tabs" />
 		<Skeleton v-if="loading && entries.length === 0" :label="tr('Loading')" />
 		<EmptyState
 			v-else-if="entries.length === 0"
