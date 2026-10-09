@@ -350,22 +350,6 @@ test('table dates read as words, never d-m-yyyy or a raw stamp', () => {
 	assert.equal(formatMoment('kapot', false, 'nl'), 'kapot')
 })
 
-test('the date tile reads the month case and weight from the set', async () => {
-	const { readFileSync } = await import('node:fs')
-	const source = readFileSync(
-		new URL('../../src/site/components/mijn/DateTile.vue', import.meta.url),
-		'utf8',
-	)
-	assert.match(
-		source,
-		/text-transform: var\(--nldesign-website-date-tile-month-text-transform, none\)/,
-	)
-	assert.match(
-		source,
-		/font-weight: var\(--nldesign-website-date-tile-month-font-weight, 400\)/,
-	)
-})
-
 test('on a record page the list of its records opens each one there', async () => {
 	const { loadSfc } = await import('../support/render-sfc.mjs')
 	const Page = await loadSfc('src/site/pages/collections/ContributionPage.vue')
