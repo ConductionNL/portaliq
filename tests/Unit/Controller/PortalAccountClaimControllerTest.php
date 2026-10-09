@@ -41,6 +41,13 @@ class PortalAccountClaimControllerTest extends TestCase {
 	 */
 	private mixed $logger = null;
 
+	/**
+	 * The session double of the last controller built.
+	 *
+	 * @var mixed
+	 */
+	private mixed $session = null;
+
 	public function testWithoutASessionNothingIsRedeemed(): void {
 		$controller = $this->controller(subject: null);
 		$this->invitations->expects($this->never())->method('redeem');
@@ -78,6 +85,65 @@ class PortalAccountClaimControllerTest extends TestCase {
 		}
 
 	}//end testSubstantialAndHighMayRedeemForTheBearersOwnAccount()
+
+	/**
+	 * invitation-joins-an-unbound-account: the claim moved the account from
+	 * the sign-in route's audience into the invitation's. The session is
+	 * reissued for the audience read from the account, and the new bearer
+	 * goes back with the answer.
+	 *
+	 * @return void
+	 */
+	public function testAClaimThatMovedTheAudienceHandsBackABearerForIt(): void {
+		$subject    = ['audience' => 'client'] + $this->subject(trust: 'substantial');
+		$controller = $this->controller(subject: $subject);
+		$this->invitations->method('redeem')->willReturn(WaitingAccountInvitation::CLAIMED);
+		$this->invitations->method('audienceOf')->with($subject)->willReturn('parent');
+		$this->session->expects($this->once())->method('reissueForAudience')->with('Bearer old', 'parent')
+			->willReturn(['token' => 'new-bearer', 'jti' => 'jti-2', 'expiresAt' => 1700, 'hardExpiresAt' => 2700, 'idleTimeout' => 900]);
+
+		$response = $controller->redeem(secret: 'secret-abc');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['claimed' => true, 'audience' => 'parent', 'token' => 'new-bearer', 'expiresAt' => 1700], $response->getData());
+
+	}//end testAClaimThatMovedTheAudienceHandsBackABearerForIt()
+
+	/**
+	 * A claim within the session's own audience, a refused claim and a
+	 * reissue that fails or throws hand back no bearer; the claim still
+	 * answers as it did.
+	 *
+	 * @return void
+	 */
+	public function testNoNewAudienceNoBearer(): void {
+		$subject    = ['audience' => 'parent'] + $this->subject(trust: 'substantial');
+		$controller = $this->controller(subject: $subject);
+		$this->invitations->method('redeem')->willReturn(WaitingAccountInvitation::CLAIMED);
+		$this->invitations->method('audienceOf')->willReturn('parent');
+		$this->session->expects($this->never())->method('reissueForAudience');
+		$this->assertSame(['claimed' => true], $controller->redeem(secret: 'secret-abc')->getData());
+
+		$controller = $this->controller(subject: $subject);
+		$this->invitations->method('redeem')->willReturn(WaitingAccountInvitation::NOT_VALID);
+		$this->invitations->expects($this->never())->method('audienceOf');
+		$this->session->expects($this->never())->method('reissueForAudience');
+		$this->assertSame(['error' => 'invitation_not_valid'], $controller->redeem(secret: 'secret-abc')->getData());
+
+		$controller = $this->controller(subject: ['audience' => 'client'] + $subject);
+		$this->invitations->method('redeem')->willReturn(WaitingAccountInvitation::CLAIMED);
+		$this->invitations->method('audienceOf')->willReturn('parent');
+		$this->session->method('reissueForAudience')->willReturn(null);
+		$this->assertSame(['claimed' => true], $controller->redeem(secret: 'secret-abc')->getData());
+
+		$controller = $this->controller(subject: ['audience' => 'client'] + $subject);
+		$this->invitations->method('redeem')->willReturn(WaitingAccountInvitation::CLAIMED);
+		$this->invitations->method('audienceOf')->willReturn('parent');
+		$this->session->method('reissueForAudience')->willThrowException(new RuntimeException('store down'));
+		$this->logger->expects($this->once())->method('warning');
+		$this->assertSame(['claimed' => true], $controller->redeem(secret: 'secret-abc')->getData());
+
+	}//end testNoNewAudienceNoBearer()
 
 	public function testEveryDeadSecretGetsTheSameAnswer(): void {
 		$controller = $this->controller(subject: $this->subject(trust: 'substantial'));
@@ -189,12 +255,14 @@ class PortalAccountClaimControllerTest extends TestCase {
 	 * @return PortalAccountClaimController
 	 */
 	private function controller(?array $subject): PortalAccountClaimController {
-		$session = $this->getMockBuilder(PortalSessionService::class)->disableOriginalConstructor()->onlyMethods(['resolveFromBearer'])->getMock();
-		$session->method('resolveFromBearer')->willReturn($subject);
-		$this->invitations = $this->getMockBuilder(WaitingAccountInvitation::class)->disableOriginalConstructor()->onlyMethods(['redeem'])->getMock();
+		$this->session = $this->getMockBuilder(PortalSessionService::class)->disableOriginalConstructor()->onlyMethods(['resolveFromBearer', 'reissueForAudience'])->getMock();
+		$this->session->method('resolveFromBearer')->willReturn($subject);
+		$this->invitations = $this->getMockBuilder(WaitingAccountInvitation::class)->disableOriginalConstructor()->onlyMethods(['redeem', 'audienceOf'])->getMock();
 
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => $name === 'Authorization' ? 'Bearer old' : '');
 
-		return new PortalAccountClaimController($this->createMock(IRequest::class), $session, $this->invitations, $this->logger);
+		return new PortalAccountClaimController($request, $this->session, $this->invitations, $this->logger);
 	}//end controller()
 }//end class

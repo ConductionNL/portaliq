@@ -364,6 +364,113 @@ class WaitingAccountInvitationTest extends TestCase {
 	}//end testAnAccountOfAnotherAudienceCannotTakeOverTheInvitation()
 
 	/**
+	 * invitation-joins-an-unbound-account (proof run 3): a guardian signed
+	 * in once with DigiD before the school invited her, so her own account
+	 * has the sign-in route's audience. Her invitation still joins it, and
+	 * her account takes on the invitation's audience with its claims.
+	 *
+	 * @return void
+	 */
+	public function testAPersonWhoSignedInBeforeSheWasInvitedTakesOnTheInvitationsAudience(): void {
+		$waiting = $this->seedWaiting();
+		$account = $this->seedSignedIn(['audience' => 'client']);
+		$service = $this->service();
+		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+
+		$this->assertSame(WaitingAccountInvitation::CLAIMED, $service->redeem(subject: $this->subject(), secret: $issued['token']));
+
+		$this->assertSame('parent', $this->rows[$account]['audience']);
+		$this->assertSame('parent', $service->audienceOf(subject: $this->subject()));
+		$this->assertSame('guardian-7', $this->rows[$account]['claims']['learniq']['guardianRef']);
+		$this->assertSame('ouder@example.org', $this->rows[$account]['email']);
+		$this->assertSame('void', $this->rows[$waiting]['status']);
+		$this->assertSame('', $this->rows[$waiting]['claimTokenHash']);
+		$this->assertSame([['claim', 'subject-1', 'gemeente-x', 'portaliq', 'portalAccount', $waiting, 'jti-1']], $this->audited);
+
+	}//end testAPersonWhoSignedInBeforeSheWasInvitedTakesOnTheInvitationsAudience()
+
+	/**
+	 * The attack cases of invitation-joins-an-unbound-account. Each one holds
+	 * the right secret and is still refused with the answer every dead secret
+	 * gets: nothing is spent, no audience moves, no claim is added.
+	 *
+	 * @return void
+	 */
+	public function testOnlyAPersonsOwnUnboundAccountTakesOnAnotherAudience(): void {
+		$cases = [
+			'a company identity' => [['identityType' => 'eherkenning', 'identityRef' => 'kvk-1'], [], []],
+			'a company account' => [['audience' => 'supplier'], [], []],
+			'an invitation into a company audience' => [[], ['audience' => 'supplier'], []],
+			'low trust' => [[], [], ['trust' => 'low']],
+			'no trust at all' => [[], [], ['trust' => '']],
+			'an account that already holds claims' => [['claims' => ['dossiq' => ['caseRef' => 'case-1']]], [], []],
+			'an account an app or a clerk provisioned' => [['provisionedBy' => 'dossiq'], [], []],
+			'an invitation already bound to another person\'s identity' => [[], ['identityType' => 'digid', 'identityRef' => 'bsn-somebody'], []],
+		];
+
+		foreach ($cases as $case => [$accountFields, $waitingFields, $sessionFields]) {
+			$this->setUp();
+			$waiting = $this->seedWaiting($waitingFields);
+			$account = $this->seedSignedIn(array_merge(['audience' => 'client'], $accountFields));
+			$service = $this->service();
+			$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+			$secret  = ($issued['token'] ?? 'secret-x');
+			if ($issued === null) {
+				// An invitation for a bound account is never issued; plant
+				// the hash the way a stale invitation would have left it.
+				$this->rows[$waiting]['claimTokenHash'] = hash('sha256', $secret);
+				$this->rows[$waiting]['claimExpiresAt'] = (new DateTimeImmutable('+1 day'))->format(DATE_ATOM);
+			}
+
+			$before = $this->rows[$account];
+
+			$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject($sessionFields), secret: $secret), $case);
+			$this->assertSame($before['audience'], $this->rows[$account]['audience'], $case);
+			$this->assertSame($before['claims'] ?? null, $this->rows[$account]['claims'] ?? null, $case);
+			$this->assertSame('pending', $this->rows[$waiting]['status'], $case);
+			$this->assertSame(hash('sha256', $secret), $this->rows[$waiting]['claimTokenHash'], $case);
+			$this->assertSame([], $this->audited, $case);
+		}
+
+	}//end testOnlyAPersonsOwnUnboundAccountTakesOnAnotherAudience()
+
+	/**
+	 * Another organisation's invitation never moves an audience, even when
+	 * the store answers rows of every organisation.
+	 *
+	 * @return void
+	 */
+	public function testAnInvitationOfAnotherOrganisationMovesNoAudience(): void {
+		$this->readerIgnoresOrganisation = true;
+		$waiting = $this->seedWaiting(['organisation' => 'gemeente-y']);
+		$account = $this->seedSignedIn(['audience' => 'client']);
+		$service = $this->service();
+		$issued  = $service->issue(subjectRef: 'waiting-1', appId: 'learniq');
+
+		$this->assertSame(WaitingAccountInvitation::NOT_VALID, $service->redeem(subject: $this->subject(), secret: $issued['token']));
+		$this->assertSame('client', $this->rows[$account]['audience']);
+		$this->assertArrayNotHasKey('claims', $this->rows[$account]);
+		$this->assertSame('pending', $this->rows[$waiting]['status']);
+
+	}//end testAnInvitationOfAnotherOrganisationMovesNoAudience()
+
+	/**
+	 * The audience a session's account holds is read from the account, and
+	 * only in the session's own organisation.
+	 *
+	 * @return void
+	 */
+	public function testTheAudienceOfTheSessionsAccountIsReadInItsOwnOrganisation(): void {
+		$this->seedSignedIn(['audience' => 'parent']);
+		$service = $this->service();
+
+		$this->assertSame('parent', $service->audienceOf(subject: $this->subject()));
+		$this->assertSame('', $service->audienceOf(subject: $this->subject(['organisation' => 'gemeente-y'])));
+		$this->assertSame('', $service->audienceOf(subject: $this->subject(['subjectRef' => 'nobody'])));
+
+	}//end testTheAudienceOfTheSessionsAccountIsReadInItsOwnOrganisation()
+
+	/**
 	 * Security review M2: two people post the same secret at the same moment.
 	 * The second request runs entirely between the first one's read and its
 	 * write. Exactly one join happens: the first request reads the waiting

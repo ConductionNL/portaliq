@@ -306,7 +306,14 @@ class WaitingAccountInvitation {
 		}
 
 		try {
-			$result = $this->claimWaiting(account: $account, waitingId: $waitingId, secret: $secret, moment: $moment, lookup: $lookup);
+			$result = $this->claimWaiting(
+				account: $account,
+				waitingId: $waitingId,
+				secret: $secret,
+				moment: $moment,
+				lookup: $lookup,
+				trust: (string)($subject['trust'] ?? '')
+			);
 		} finally {
 			$this->lock->release(accountId: $waitingId);
 		}
@@ -342,8 +349,11 @@ class WaitingAccountInvitation {
 	 * @param string $secret The secret.
 	 * @param DateTimeImmutable $moment The moment.
 	 * @param PortalAccountLookup $lookup The account finder.
+	 * @param string $trust The session's trust level.
 	 *
 	 * @return string CLAIMED, NOT_VALID or CONFLICT.
+	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 */
 	private function claimWaiting(
 		array $account,
@@ -351,6 +361,7 @@ class WaitingAccountInvitation {
 		#[\SensitiveParameter] string $secret,
 		DateTimeImmutable $moment,
 		PortalAccountLookup $lookup,
+		string $trust,
 	): string {
 		// Read again inside the lock: a request that held it a moment ago
 		// may have spent this secret.
@@ -366,7 +377,11 @@ class WaitingAccountInvitation {
 
 		// Another audience (a supplier account redeeming a parent's
 		// invitation) and everything else the join refuses: nothing spent.
-		if ($join->isJoinable(account: $account, waiting: $waiting) === false) {
+		// The one exception is a person's own unbound account, which takes
+		// on the invitation's audience (invitation-joins-an-unbound-account).
+		if ($join->isJoinable(account: $account, waiting: $waiting) === false
+			&& $join->mayAdoptAudience(account: $account, waiting: $waiting, trust: $trust) === false
+		) {
 			return self::NOT_VALID;
 		}
 
@@ -378,12 +393,36 @@ class WaitingAccountInvitation {
 		// address; a code came on paper and proves only the letter. The
 		// address then arrives unverified (security review L2).
 		$byLink = $this->secrets->isCode(secret: $secret) === false;
-		if ($join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON, addressProven: $byLink) === null) {
+		if ($join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON, addressProven: $byLink, sessionTrust: $trust) === null) {
 			return self::NOT_VALID;
 		}
 
 		return self::CLAIMED;
 	}//end claimWaiting()
+
+	/**
+	 * The audience the session's own account holds now, or '' when it has
+	 * none or is not in the session's organisation. A redeem can move an
+	 * unbound account into the invitation's audience; the caller then
+	 * reissues the session so its audience follows the account.
+	 *
+	 * @param array<string, mixed> $subject The session.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 */
+	public function audienceOf(array $subject): string {
+		$account = (new PortalAccountLookup(reader: $this->reader))->bySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));
+		if ($account === null
+			|| (string)($account['organisation'] ?? '') === ''
+			|| (string)($account['organisation'] ?? '') !== (string)($subject['organisation'] ?? '')
+		) {
+			return '';
+		}
+
+		return (string)($account['audience'] ?? '');
+	}//end audienceOf()
 
 	/**
 	 * The session's own account, when it may take over a waiting account:

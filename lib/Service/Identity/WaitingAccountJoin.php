@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalSessionService;
 
 /**
  * Joins a waiting account into the account that signed in.
@@ -53,6 +54,23 @@ class WaitingAccountJoin {
 	 * The reason written on the withdrawn waiting account.
 	 */
 	public const VOID_REASON = 'Joined the account that signed in with this verified address';
+
+	/**
+	 * The identity types that name one natural person. Only an account
+	 * signed in through one of these may take on an invitation's audience.
+	 */
+	private const PERSON_IDENTITIES = ['digid', 'eidas'];
+
+	/**
+	 * The audience of a company account. A person's account never moves
+	 * into it or out of it.
+	 */
+	private const BUSINESS_AUDIENCE = 'supplier';
+
+	/**
+	 * The trust a session needs before its account takes on an audience.
+	 */
+	private const ADOPT_TRUST = 'substantial';
 
 	/**
 	 * Constructor.
@@ -121,6 +139,11 @@ class WaitingAccountJoin {
 	 * @param bool $addressProven Whether the way in proved the invited
 	 *                            address (an address or a mailed link did; a
 	 *                            code on paper did not).
+	 * @param string|null $sessionTrust The trust of the session that handed in
+	 *                                  an invitation's secret, or null for
+	 *                                  every other way in. Only with it may
+	 *                                  an unbound account take on the waiting
+	 *                                  account's audience, see mayAdoptAudience().
 	 *
 	 * @return string|null The identifier of the waiting account that was
 	 *                     joined, or null when nothing was.
@@ -128,13 +151,25 @@ class WaitingAccountJoin {
 	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- one field of the write
 	 * depends on it; two methods would differ in that value only.
 	 */
-	public function joinWaiting(array $account, array $waiting, string $reason = self::VOID_REASON, bool $addressProven = true): ?string {
+	public function joinWaiting(
+		array $account,
+		array $waiting,
+		string $reason = self::VOID_REASON,
+		bool $addressProven = true,
+		?string $sessionTrust = null,
+	): ?string {
+		$adopt = false;
 		if ($this->isJoinable(account: $account, waiting: $waiting) === false) {
-			return null;
+			if ($sessionTrust === null || $this->mayAdoptAudience(account: $account, waiting: $waiting, trust: $sessionTrust) === false) {
+				return null;
+			}
+
+			$adopt = true;
 		}
 
 		$accountId = $this->lookup->identifierOf(row: $account);
@@ -144,6 +179,10 @@ class WaitingAccountJoin {
 		}
 
 		$data = $this->joinData(account: $account, waiting: $waiting, addressProven: $addressProven);
+		if ($adopt === true) {
+			$data['audience'] = (string)$waiting['audience'];
+		}
+
 		if ($data !== [] && $this->write(id: $accountId, data: $data) === false) {
 			return null;
 		}
@@ -187,6 +226,70 @@ class WaitingAccountJoin {
 			&& $audience === (string)($account['audience'] ?? '')
 			&& $this->claimsConflict(account: $account, waiting: $waiting) === false;
 	}//end isJoinable()
+
+	/**
+	 * Whether an account of another audience may still take over a waiting
+	 * account by its invitation's secret, and take on its audience.
+	 *
+	 * 🔑 A GUARDIAN WHO SIGNED IN BEFORE SHE WAS INVITED. Her first DigiD
+	 * sign-in made an account with the sign-in route's audience (`client`).
+	 * The school's invitation then made a `parent` account, and the audience
+	 * check (security review M3) refused every join between the two, so she
+	 * stood on an empty page with an invitation she could never accept
+	 * (proof run 3, 09 Oct 2026). This lets exactly that account through:
+	 *
+	 * - it names one natural person (DigiD or eIDAS) and carries its
+	 *   identity reference: the session's own sign-in, never an address;
+	 * - nobody provisioned it: no app and no clerk gave it an audience;
+	 * - it holds no claims yet, so no access is moved from one audience to
+	 *   another;
+	 * - neither account is a company account (`supplier`), so a supplier
+	 *   still never takes over a parent's invitation (M3);
+	 * - the session is at substantial or higher;
+	 * - everything else isJoinable() asks holds, with the waiting account's
+	 *   audience in place of the account's own: pending, no identity
+	 *   reference, the same organisation, no conflicting claim (M1).
+	 *
+	 * Only the redeem of a secret passes a trust, so an address alone (the
+	 * join at sign-in, a confirmed address) never moves an audience.
+	 *
+	 * @param array<string, mixed> $account The account that would receive the claims.
+	 * @param array<string, mixed> $waiting The account that would be withdrawn.
+	 * @param mixed $trust The session's trust level.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 */
+	public function mayAdoptAudience(array $account, array $waiting, mixed $trust): bool {
+		$audience = (string)($waiting['audience'] ?? '');
+
+		return $audience !== self::BUSINESS_AUDIENCE
+			&& (string)($account['audience'] ?? '') !== self::BUSINESS_AUDIENCE
+			&& in_array((string)($account['identityType'] ?? ''), self::PERSON_IDENTITIES, true) === true
+			&& (string)($account['identityRef'] ?? '') !== ''
+			&& (string)($account['provisionedBy'] ?? '') === ''
+			&& self::holdsNoClaims(account: $account) === true
+			&& PortalSessionService::trustSatisfies(subjectTrust: $trust, minTrust: self::ADOPT_TRUST) === true
+			&& $this->isJoinable(account: ['audience' => $audience] + $account, waiting: $waiting) === true;
+	}//end mayAdoptAudience()
+
+	/**
+	 * Whether an account holds no claim of any app.
+	 *
+	 * @param array<string, mixed> $account The account.
+	 *
+	 * @return bool
+	 */
+	private static function holdsNoClaims(array $account): bool {
+		foreach ((array)($account['claims'] ?? []) as $appClaims) {
+			if ($appClaims !== [] && $appClaims !== null && $appClaims !== '') {
+				return false;
+			}
+		}
+
+		return true;
+	}//end holdsNoClaims()
 
 	/**
 	 * Whether the waiting account carries a claim the receiver already holds
