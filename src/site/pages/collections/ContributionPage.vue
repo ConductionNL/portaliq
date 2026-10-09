@@ -485,6 +485,7 @@ import KpiCards from '../../components/collections/KpiCards.vue'
 import NewsBlock from '../../components/collections/NewsBlock.vue'
 import RichTextBlock from '../../components/collections/RichTextBlock.vue'
 import SlotHost from '../../components/collections/SlotHost.vue'
+import { asksInput } from '../../../shared/actionInput.js'
 import {
 	anyGrouped,
 	groupFieldOf,
@@ -1489,20 +1490,24 @@ export default {
 
 		/**
 		 * A row button: an endpoint action opens its step below the table, a
-		 * `type: update` transition runs at once with no field data.
+		 * `type: update` action with fields to fill in opens its form there
+		 * (site-action-forms), and a transition without fields runs at once
+		 * with no field data.
 		 *
 		 * @param {object} item The resolved table block.
 		 * @param {object} action The action.
 		 * @param {object} row The row.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		async onRowAction(item, action, row) {
-			if (isEndpointRowAction(action)) {
+			const asksForm = action.type === 'update' && asksInput(action)
+			if (isEndpointRowAction(action) || asksForm) {
 				this.pending = {
 					collectionId: item.collection.id,
 					action,
 					row,
-					dialog: dialogFor(action),
+					dialog: asksForm ? 'form' : dialogFor(action),
 				}
 				return
 			}
