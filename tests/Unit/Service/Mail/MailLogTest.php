@@ -33,6 +33,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Portaliq\Service\Mail\MailLog
  * @covers \OCA\Portaliq\BackgroundJob\MailLogRetentionJob
+ * @uses   \OCA\Portaliq\Service\Mail\RecipientMask
  */
 class MailLogTest extends TestCase {
 	/**

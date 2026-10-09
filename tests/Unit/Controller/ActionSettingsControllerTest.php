@@ -12,6 +12,7 @@ use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -22,6 +23,7 @@ use ReflectionMethod;
  * @spec openspec/changes/operate-roles-for-content-and-actions/tasks.md#t04
  */
 #[CoversClass(ActionSettingsController::class)]
+#[UsesClass(\OCA\Portaliq\Service\ActionAuthService::class)]
 class ActionSettingsControllerTest extends TestCase {
 	private string $stored = '{}';
 

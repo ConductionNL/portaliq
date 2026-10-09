@@ -11,6 +11,7 @@ use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,6 +21,7 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
  */
 #[CoversClass(PortalDraftController::class)]
+#[UsesClass(\OCA\Portaliq\Service\Intake\PortalDraftStore::class)]
 class PortalDraftControllerTest extends TestCase {
 	use PortalIdentityStoreTrait;
 
