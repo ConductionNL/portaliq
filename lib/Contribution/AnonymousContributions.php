@@ -55,12 +55,13 @@ class AnonymousContributions {
 	 * @param object $provider The resolved provider.
 	 * @param string $appId The app id (for logging + the `app` tag).
 	 * @param string $audience The audience to consult the provider for.
+	 * @param array<int, string> $served Every audience the provider serves (bounds a start tile's `audiences`).
 	 *
 	 * @return array<int, array<string, mixed>> Zero or one contribution.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
-	public function forAudience(object $provider, string $appId, string $audience): array {
+	public function forAudience(object $provider, string $appId, string $audience, array $served = []): array {
 		try {
 			$contribution = $this->locator->contributionOf(provider: $provider, subject: ['audience' => $audience]);
 		} catch (Throwable $e) {
@@ -82,6 +83,8 @@ class AnonymousContributions {
 			return [];
 		}
 
+		// The provider's audiences bound a start tile's `audiences`; input only.
+		$anonymousOnly['servedAudiences'] = $served;
 		try {
 			$anonymousOnly = $this->normaliser->normalise(contribution: $anonymousOnly);
 		} catch (Throwable $e) {
@@ -90,6 +93,8 @@ class AnonymousContributions {
 				['app' => $appId, 'audience' => $audience, 'reason' => $e->getMessage()]
 			);
 		}
+
+		unset($anonymousOnly['servedAudiences']);
 
 		// The normaliser may have dropped `anonymous` from an entry that ALSO
 		// declared a non-low minTrust (fail-closed mutual exclusion) — filter

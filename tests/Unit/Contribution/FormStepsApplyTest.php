@@ -30,7 +30,7 @@ class FormStepsApplyTest extends TestCase {
 	}//end testNonFormActionsAreStripped()
 
 	/**
-	 * A create action keeps sound steps, draft, confirmation and summary.
+	 * A create action keeps sound steps, draft, confirmation and answer sentence.
 	 *
 	 * @return void
 	 */
@@ -54,7 +54,8 @@ class FormStepsApplyTest extends TestCase {
 		$this->assertTrue($out['steps'][2]['review']);
 		$this->assertSame(['retentionDays' => 90], $out['draft']);
 		$this->assertSame(['title' => 'Thanks', 'body' => 'Done'], $out['confirmation']);
-		$this->assertSame('You said {a}', $out['summary']['template']);
+		$this->assertSame('You said {a}', $out['answerSummary']['template'], 'the old object shape moves to answerSummary');
+		$this->assertArrayNotHasKey('summary', $out);
 	}//end testCreateActionKeepsSoundDeclarations()
 
 	/**

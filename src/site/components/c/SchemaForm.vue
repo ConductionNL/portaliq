@@ -26,8 +26,8 @@
 			v-if="confirmed.summary"
 			class="pq-schema-form__summary"
 			data-testid="schema-form-confirmation-summary">
-			<p v-if="action.summary.label" class="pq-schema-form__summary-label">
-				{{ action.summary.label }}
+			<p v-if="action.answerSummary.label" class="pq-schema-form__summary-label">
+				{{ action.answerSummary.label }}
 			</p>
 			<p class="utrecht-paragraph pq-schema-form__summary-text">
 				{{ confirmed.summary }}
@@ -131,8 +131,8 @@
 			class="pq-schema-form__summary"
 			aria-live="polite"
 			data-testid="schema-form-summary">
-			<p v-if="action.summary.label" class="pq-schema-form__summary-label">
-				{{ action.summary.label }}
+			<p v-if="action.answerSummary.label" class="pq-schema-form__summary-label">
+				{{ action.answerSummary.label }}
 			</p>
 			<p class="utrecht-paragraph pq-schema-form__summary-text">
 				{{ summaryText }}
@@ -310,7 +310,7 @@ export default {
 				(typeof document !== 'undefined' && document.documentElement?.lang)
 				|| 'nl'
 			return summarySentence(
-				this.action?.summary || null,
+				this.action?.answerSummary || null,
 				this.values,
 				this.options,
 				{ locale },

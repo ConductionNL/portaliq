@@ -161,11 +161,16 @@ class PortalContributionRegistry {
 			// normaliser is fail-closed and never throws; guard anyway so a
 			// provider config bug degrades to the un-normalised (but trust-
 			// filtered) manifest rather than a 500.
+			// The audiences the provider serves bound a start tile's
+			// `audiences` (site-nlds-widget-palette D6); input only.
+			$filtered['servedAudiences'] = $this->providerAudiences(provider: $provider);
 			try {
 				$filtered = $this->normaliser->normalise(contribution: $filtered);
 			} catch (Throwable $e) {
 				$this->logger->error('Portaliq: manifest normalisation failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 			}
+
+			unset($filtered['servedAudiences']);
 
 			// A row action's `rowWhen` (update-row-action-condition): an
 			// unknown operator or a malformed update condition is dropped and
@@ -237,10 +242,11 @@ class PortalContributionRegistry {
 				continue;
 			}
 
-			foreach ($this->providerAudiences(provider: $provider) as $audience) {
+			$served = $this->providerAudiences(provider: $provider);
+			foreach ($served as $audience) {
 				$contributions = array_merge(
 					$contributions,
-					$this->anonymous->forAudience(provider: $provider, appId: (string)$appId, audience: $audience)
+					$this->anonymous->forAudience(provider: $provider, appId: (string)$appId, audience: $audience, served: $served)
 				);
 			}
 		}//end foreach

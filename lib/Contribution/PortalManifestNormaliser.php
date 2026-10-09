@@ -138,7 +138,15 @@ class PortalManifestNormaliser {
 		// A field the app did not label reads under its schema title, never
 		// its key (collection-column-labels).
 		$collections = $this->schemaLabels->apply(collections: $collections);
-		$actions = $this->actions->normaliseActions(actions: (array)($contribution['actions'] ?? []));
+		// The audiences the provider serves arrive beside the manifest (the
+		// registry stamps them) and bound a start tile's `audiences`.
+		$served = null;
+		if (is_array(($contribution['servedAudiences'] ?? null)) === true) {
+			$served = array_values(array_filter($contribution['servedAudiences'], static fn ($a) => is_string($a) === true && $a !== ''));
+		}
+
+		unset($contribution['servedAudiences']);
+		$actions = $this->actions->normaliseActions(actions: (array)($contribution['actions'] ?? []), served: $served);
 
 		// Resolve each collection's `rowActions` against the update actions in
 		// THIS contribution — a per-row transition button (approve/reject/close)
