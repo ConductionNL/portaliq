@@ -117,8 +117,41 @@ class AccessibilityStatement {
 			'issues' => $this->issues(measurement: $measurement, locale: $locale),
 			'notMeasured' => $this->notMeasured(measurement: $measurement),
 			'registerUrl' => self::httpsOrEmpty(url: (string)($portal['accessibilityRegisterUrl'] ?? '')),
+			'contact' => $this->contactOf(portal: $portal),
 		];
 	}//end build()
+
+	/**
+	 * Where a visitor reports a barrier: the e-mail address and phone number
+	 * of the portal's help details, each only when set.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array{email: string, phone: string}
+	 */
+	private function contactOf(array $portal): array {
+		$help = (array)($portal['help'] ?? []);
+
+		return [
+			'email' => self::text(value: ($help['email'] ?? '')),
+			'phone' => self::text(value: ($help['phone'] ?? '')),
+		];
+	}//end contactOf()
+
+	/**
+	 * A trimmed string, or '' for anything else.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return string
+	 */
+	private static function text(mixed $value): string {
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		return trim($value);
+	}//end text()
 
 	/**
 	 * The audit verdict, for callers that hold a builder.

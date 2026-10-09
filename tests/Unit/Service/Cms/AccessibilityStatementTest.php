@@ -125,6 +125,7 @@ class AccessibilityStatementTest extends TestCase {
 		$this->assertSame('color-contrast', $statement['issues'][0]['rule']);
 		$this->assertSame('https://www.toegankelijkheidsverklaring.nl/register/1', $statement['registerUrl']);
 		$this->assertSame('Open Tilburg', $statement['website']);
+		$this->assertSame(['email' => 'toegankelijkheid@tilburg.nl', 'phone' => '14 013'], $statement['contact']);
 	}//end testAnUnmeasuredPageIsListedAndAnUnknownRuleFallsBackToAxe()
 
 	/**
@@ -136,7 +137,7 @@ class AccessibilityStatementTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function build(?array $measurement, ?array $audit = null, string $locale = 'en', string $registerUrl = ''): array {
-		$portal = ['slug' => 'open-tilburg', 'title' => 'Open Tilburg', 'organisation' => 'tilburg', 'theme' => 'vng'];
+		$portal = ['slug' => 'open-tilburg', 'title' => 'Open Tilburg', 'organisation' => 'tilburg', 'theme' => 'vng', 'help' => ['email' => 'toegankelijkheid@tilburg.nl', 'phone' => '14 013']];
 		if ($audit !== null) {
 			$portal['accessibilityAudit'] = $audit;
 		}
