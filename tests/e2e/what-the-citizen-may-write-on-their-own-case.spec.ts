@@ -45,6 +45,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SeededPortalPages } from './lib/seeded-portal-pages.ts'
 import {
 	accountLink,
 	PORTAL_API,
@@ -68,6 +69,9 @@ const CLOSED_REASON = 'De aanvraag is in behandeling genomen.'
 const DOCUMENTS_CLOSED_REASON = 'De zaak neemt geen stukken meer aan.'
 const PUBLIC_LABEL = 'Wij hebben uw aanvraag ontvangen'
 
+/** The portalPage rows this file seeded; see lib/seeded-portal-pages.ts. */
+const seededPages = new SeededPortalPages()
+
 /**
  * Create one object through OpenRegister's own object API as the dev admin.
  * This stands in for the case app having written the row server-side.
@@ -87,6 +91,7 @@ async function seed(
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
 	const body = await res.json()
+	seededPages.track(schema, body)
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
 	return id
@@ -213,6 +218,10 @@ async function openTheCase(page: Page, reference: string): Promise<void> {
 	await page.getByText(reference).first().click()
 	await expect(page.getByTestId('citizen-case')).toBeVisible()
 }
+
+test.afterEach(async ({ request }) => {
+	await seededPages.removeAll(request)
+})
 
 test.describe('what a citizen may write on their own case', () => {
 	// @e2e citizen-writes-on-their-own-case::only-the-declared-fields-are-editable

@@ -12,6 +12,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SeededPortalPages } from './lib/seeded-portal-pages.ts'
 import { pageFixture } from './mijn-fixtures.ts'
 import { PORTAL_API, seedSiteSession, siteAddress } from './portal-nav.ts'
 
@@ -20,7 +21,23 @@ const ADMIN = Buffer.from('admin:admin').toString('base64')
 // A demo instance names its own organisation and audience (see
 // site-mijn-omgeving-live.spec.ts for the variables).
 const ORGANISATION = process.env.PORTALIQ_E2E_ORG || 'e2e-org'
-const AUDIENCE = process.env.PORTALIQ_E2E_AUDIENCE || 'supplier'
+const AUDIENCE_BASE = process.env.PORTALIQ_E2E_AUDIENCE || 'supplier'
+
+/**
+ * This run's own audience. The seed gives `supplier` a page of its own (the
+ * Voorbeeld contribution) and the provider serves one page per audience, the
+ * one with the lowest row id, so on the shared audience this file's page lost
+ * to the seed's about half the time (see lib/seeded-portal-pages.ts).
+ *
+ * @param stamp this run's stamp
+ * @return the audience to seed and sign in with
+ */
+function audienceFor(stamp: number): string {
+	return `${AUDIENCE_BASE}-rows-${stamp}`
+}
+
+/** The portalPage rows this file seeded; see lib/seeded-portal-pages.ts. */
+const seededPages = new SeededPortalPages()
 
 /**
  * Create one object through OpenRegister's own object API, as the dev admin.
@@ -43,6 +60,7 @@ async function seed(
 		res.ok(),
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
+	seededPages.track(schema, await res.json())
 }
 
 /**
@@ -61,7 +79,8 @@ async function openOverview(
 ): Promise<void> {
 	const stamp = Date.now()
 	const label = `Overzicht ${stamp}`
-	await seed(request, 'portalPage', pageFixture('action-rows', stamp, AUDIENCE))
+	const audience = audienceFor(stamp)
+	await seed(request, 'portalPage', pageFixture('action-rows', stamp, audience))
 	const subjectRef = `e2e-rows-${stamp}`
 	for (const message of messages) {
 		await seed(request, 'portalMessage', {
@@ -71,7 +90,7 @@ async function openOverview(
 		})
 	}
 	const login = await request.post(`${PORTAL_API}/session/dev-login`, {
-		data: { subjectRef, audience: AUDIENCE, organisation: ORGANISATION },
+		data: { subjectRef, audience, organisation: ORGANISATION },
 	})
 	expect(
 		login.ok(),
@@ -87,6 +106,10 @@ async function openOverview(
 		.click()
 	await expect(page.getByTestId('mijn-inbox-block')).toBeVisible()
 }
+
+test.afterEach(async ({ request }) => {
+	await seededPages.removeAll(request)
+})
 
 test.describe('site-mijn-action-rows', () => {
 	// @e2e site-mijn-omgeving::an-unread-message

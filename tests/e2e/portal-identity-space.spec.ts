@@ -33,12 +33,16 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, request as playwrightRequest, test } from '@playwright/test'
+import { SeededPortalPages } from './lib/seeded-portal-pages.ts'
 
 const API_BASE = '/apps/portaliq/portal/api'
 const APP_API_BASE = '/apps/portaliq/api'
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 
 const ADMIN = Buffer.from('admin:admin').toString('base64')
+
+/** The portalPage rows this file seeded; see lib/seeded-portal-pages.ts. */
+const seededPages = new SeededPortalPages()
 
 /**
  * Create one object through OpenRegister's own object API as the dev admin,
@@ -58,6 +62,7 @@ async function seed(
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
 	const body = await res.json()
+	seededPages.track(schema, body)
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
 	return id
@@ -122,6 +127,10 @@ async function provisionAtTheDesk(
 	expect(body.subjectRef).toBeTruthy()
 	return body as { subjectRef: string; status: string }
 }
+
+test.afterEach(async ({ request }) => {
+	await seededPages.removeAll(request)
+})
 
 test.describe('portal-identity-space', () => {
 	test('a clerk provisions a citizen at the desk, and the account waits pending', async ({
