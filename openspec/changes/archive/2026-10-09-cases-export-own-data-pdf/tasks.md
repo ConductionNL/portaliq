@@ -26,4 +26,4 @@
 ## Docs and strings
 
 - [x] **T08**: Dutch and English strings for the button and the two messages; the contract docs page gains `exportPdf`
-- [ ] **T09**: `openspec validate cases-export-own-data-pdf --strict` — not run: the openspec CLI is not installed here.
+- [x] **T09**: `openspec validate cases-export-own-data-pdf --strict` (valid, openspec 1.12.0, 2026-10-09)

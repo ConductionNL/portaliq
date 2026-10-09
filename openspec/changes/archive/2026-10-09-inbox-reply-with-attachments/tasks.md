@@ -25,4 +25,4 @@
 ## Docs and strings
 
 - [x] **T08**: Dutch and English strings for the button, the form, the confirmation and the partial failure; the contract docs page gains `reply` and explains why a reply goes to the case app
-- [ ] **T09**: `openspec validate inbox-reply-with-attachments --strict` — not run: the openspec CLI is not installed here.
+- [x] **T09**: `openspec validate inbox-reply-with-attachments --strict` (valid, openspec 1.12.0, 2026-10-09)
