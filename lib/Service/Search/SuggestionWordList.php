@@ -173,10 +173,14 @@ class SuggestionWordList {
 	 */
 	public static function tokens(string $text): array {
 		$parts = preg_split('/[^\p{L}]+/u', mb_strtolower($text), -1, PREG_SPLIT_NO_EMPTY);
+		if ($parts === false) {
+			// Text that is not valid UTF-8 lends no words.
+			return [];
+		}
 
 		return array_values(
 			array_filter(
-				(array)$parts,
+				$parts,
 				static fn (string $word): bool => mb_strlen($word) >= self::MIN_LENGTH
 			)
 		);
