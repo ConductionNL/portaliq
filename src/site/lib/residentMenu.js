@@ -152,6 +152,12 @@ const NAMES = new WeakMap()
 /** The items that are one row of a page listed once per row. */
 const ROW_ITEMS = new WeakSet()
 
+/**
+ * The row items of a per-row page WITHOUT a declared group: each heads a
+ * group of its own and is named after the page ("Vera: Oudergesprekken").
+ */
+const SPLIT_ROW_ITEMS = new WeakSet()
+
 /** The items of a contribution's home page, which `overview` stands for. */
 const HOME_ITEMS = new WeakSet()
 
@@ -386,8 +392,25 @@ export function laidOut(groups, layout, t, hrefFor) {
 				})
 				continue
 			}
-			// A page listed once per row places all its rows here.
-			for (const item of byName.get(name) || []) {
+			// A page listed once per row places all its rows here; one whose
+			// rows each head a group of their own ("Vera: Oudergesprekken")
+			// stands once, as the page, which lets the resident choose
+			// (resident-menu-follows-the-boards).
+			const found = byName.get(name) || []
+			if (found.length > 0 && SPLIT_ROW_ITEMS.has(found[0])) {
+				found.forEach((item) => placed.add(item))
+				const link = found[0].link.slice(0, found[0].link.lastIndexOf('/'))
+				const copy = plain(found[0])
+				items.push({
+					...copy,
+					key: `${copy.key.slice(0, copy.key.lastIndexOf(':'))}`,
+					name: label || copy.name,
+					link,
+					href: hrefFor(link),
+				})
+				continue
+			}
+			for (const item of found) {
 				if (placed.has(item)) {
 					continue
 				}
@@ -686,6 +709,9 @@ function addPerRecordItems(
 		// (resident-menu-follows-the-boards).
 		NAMES.set(rowItem, `${app}:${entry.page?.id || ''}`)
 		ROW_ITEMS.add(rowItem)
+		if (!grouped) {
+			SPLIT_ROW_ITEMS.add(rowItem)
+		}
 		group.items.push(rowItem)
 	}
 }
