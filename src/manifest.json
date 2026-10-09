@@ -190,7 +190,7 @@
       "label": "Reports",
       "icon": "ChartBoxOutline",
       "route": "Reports",
-      "section": "footer",
+      "section": "settings",
       "order": 95,
       "visibleIf": {
         "access.admin": true
