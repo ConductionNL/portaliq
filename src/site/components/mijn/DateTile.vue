@@ -77,6 +77,10 @@ export default {
 
 .pq-date-tile__month {
 	font-size: 0.8125rem;
+	/* "OKT" in capitals where a set's board writes it so (the academy),
+	   "okt" elsewhere (mijn-lists-follow-the-boards). */
+	font-weight: var(--nldesign-website-date-tile-month-font-weight, 400);
+	text-transform: var(--nldesign-website-date-tile-month-text-transform, none);
 }
 
 .pq-date-tile__full {
