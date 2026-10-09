@@ -139,6 +139,18 @@
 				</template>
 			</GreetingBlock>
 
+			<!-- A list or a figure whose read failed (a 429, a 5xx) says so in
+			     one sentence with a retry, never an empty block
+			     (portal-subject-rate-limit). -->
+			<LoadError
+				v-else-if="
+					(item.kind === 'table' || item.kind === 'kpi')
+					&& loadedOf(item.collection).failed === true
+				"
+				:text="tr('The items could not be loaded.')"
+				:retryLabel="tr('Try again')"
+				@retry="reload(item.collection)" />
+
 			<!-- Rows as cards with a progress figure (REQ-SMO-028), and the
 			     status, note and coming-up parts (site-school-blocks). -->
 			<ProgressCards
@@ -485,6 +497,7 @@ import KpiCards from '../../components/collections/KpiCards.vue'
 import NewsBlock from '../../components/collections/NewsBlock.vue'
 import RichTextBlock from '../../components/collections/RichTextBlock.vue'
 import SlotHost from '../../components/collections/SlotHost.vue'
+import LoadError from '../../components/mijn/LoadError.vue'
 import { asksInput } from '../../../shared/actionInput.js'
 import {
 	anyGrouped,
@@ -567,6 +580,7 @@ export default {
 		CollectionTable,
 		DetailCard,
 		KpiCards,
+		LoadError,
 		NewsBlock,
 		RichTextBlock,
 		SlotHost,
