@@ -56,6 +56,7 @@ import { staysInSite } from '../../components/mijn/links.js'
 import { alertAction, alertKind, boldParts } from './alert.js'
 
 import '@utrecht/alert-css/dist/index.css'
+import '@utrecht/button-link-css/dist/index.css'
 import '@utrecht/heading-3-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 
