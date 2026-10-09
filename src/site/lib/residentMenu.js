@@ -152,6 +152,9 @@ const NAMES = new WeakMap()
 /** The items that are one row of a page listed once per row. */
 const ROW_ITEMS = new WeakSet()
 
+/** The items of a contribution's home page, which `overview` stands for. */
+const HOME_ITEMS = new WeakSet()
+
 /**
  * The resident menu in groups: cases and tasks first, then the groups of the
  * contributed pages (a page's declared `group`, shared across apps, else one
@@ -242,15 +245,17 @@ export function residentMenuGroups(
 			group = { key, title, items: [] }
 			appGroups.push(group)
 		}
-		group.items.push(
-			named(
-				{
-					...itemFor(entry, t, unread, hrefFor, recordRows),
-					source: appNameOf(entry),
-				},
-				`${entry.contribution?.app || ''}:${entry.page?.id || ''}`,
-			),
+		const pageItem = named(
+			{
+				...itemFor(entry, t, unread, hrefFor, recordRows),
+				source: appNameOf(entry),
+			},
+			`${entry.contribution?.app || ''}:${entry.page?.id || ''}`,
 		)
+		if (entry.page?.home === true) {
+			HOME_ITEMS.add(pageItem)
+		}
+		group.items.push(pageItem)
 	}
 
 	const groups = [
@@ -347,6 +352,24 @@ export function laidOut(groups, layout, t, hrefFor) {
 	}
 	const placed = new Set()
 	const out = []
+	// A layout that names `overview` stands for the home pages too: they are
+	// what `/mijn` shows, so they are not listed a second time
+	// (resident-menu-follows-the-boards).
+	if (
+		layout.some((group) =>
+			(Array.isArray(group?.items) ? group.items : []).some(
+				(declared) => layoutItem(declared).name === 'overview',
+			),
+		)
+	) {
+		for (const group of groups) {
+			for (const item of group.items) {
+				if (HOME_ITEMS.has(item)) {
+					placed.add(item)
+				}
+			}
+		}
+	}
 	layout.forEach((group, index) => {
 		const title = String(group?.title ?? '').trim()
 		const items = []
