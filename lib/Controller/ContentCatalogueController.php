@@ -47,6 +47,8 @@ use OCP\IRequest;
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
  * the one trust ordering every portal gate shares.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- index() takes one query parameter per catalogue
+ * filter, bound by name from the route.
  */
 class ContentCatalogueController extends Controller {
 	/**

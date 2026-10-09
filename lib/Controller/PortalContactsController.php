@@ -106,7 +106,9 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 * Accept or decline a request from another account.
 	 *
 	 * @param string $id The request row.
-	 * @param bool $accept Whether to accept.
+	 *
+	 * The request carries `accept` (accept when true, decline otherwise); it is read from the
+	 * request, not bound, so the method takes no flag argument.
 	 *
 	 * @return JSONResponse `{sent: true}`, 404 or 401.
 	 *
@@ -115,11 +117,15 @@ class PortalContactsController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
-	public function respond(string $id, bool $accept=false): JSONResponse {
+	public function respond(string $id): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return $this->unauthenticated();
 		}
+
+		// Cast as the framework casts a bound bool: the text "false" and anything falsy decline.
+		$raw    = $this->request->getParam('accept', false);
+		$accept = ($raw !== 'false' && (bool)$raw === true);
 
 		return $this->answer(result: $this->contacts->respond(subject: $subject, id: $id, accept: $accept));
 	}//end respond()

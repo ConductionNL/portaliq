@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateAdminService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -182,7 +183,7 @@ class MandateController extends Controller implements PortalProtected {
 		}
 
 		return $this->noContentOrMissing(
-			result: $this->mandates->revoke(party: $party, organisation: (string)$subject['organisation'], id: $id, by: (string)$subject['subjectRef'])
+			result: $this->mandates->revoke(party: $party, organisation: (string)$subject['organisation'], id: $id, actor: (string)$subject['subjectRef'])
 		);
 	}//end revoke()
 
@@ -235,7 +236,7 @@ class MandateController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$holders = PortalMandateAdminService::holdersOf(subject: $subject);
+		$holders = (new MandateParties())->holdersOf(subject: $subject);
 
 		return new JSONResponse(['items' => $this->mandates->held(holders: $holders, organisation: (string)($subject['organisation'] ?? ''))]);
 	}//end held()
@@ -260,10 +261,10 @@ class MandateController extends Controller implements PortalProtected {
 
 		return $this->noContentOrMissing(
 			result: $this->mandates->stop(
-				holders: PortalMandateAdminService::holdersOf(subject: $subject),
+				holders: (new MandateParties())->holdersOf(subject: $subject),
 				organisation: (string)($subject['organisation'] ?? ''),
 				id: $id,
-				by: (string)($subject['subjectRef'] ?? '')
+				actor: (string)($subject['subjectRef'] ?? '')
 			)
 		);
 	}//end stop()
@@ -281,7 +282,7 @@ class MandateController extends Controller implements PortalProtected {
 
 		// A session acting under a mandate carries `mandate`: it manages nothing
 		// on the represented party's behalf (design D1).
-		$party = PortalMandateAdminService::partyOf(subject: $subject);
+		$party = (new MandateParties())->partyOf(subject: $subject);
 		if ($party === null || (string)($subject['organisation'] ?? '') === '' || ($subject['actingUnderMandate'] ?? false) === true) {
 			return [$subject, '', new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN)];
 		}

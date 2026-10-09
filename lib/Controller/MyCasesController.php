@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\Identity\PortalMandateAdminService;
+use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\CaseTypeVisibility;
@@ -118,7 +118,7 @@ class MyCasesController extends Controller implements PortalProtected {
 		$held = $this->mandates->mandatesFor(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			holders: PortalMandateAdminService::holdersOf(subject: $subject)
+			holders: (new MandateParties())->holdersOf(subject: $subject)
 		);
 		$requested = (string)$this->request->getParam('mandate', '');
 		$active = null;

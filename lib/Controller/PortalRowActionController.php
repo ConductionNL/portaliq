@@ -126,38 +126,38 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if ((new RowActionResolver())->rowMatches(action: $match['action'], row: $row) === false) {
-			return new JSONResponse(['error' => 'not_offered'], Http::STATUS_CONFLICT);
+		$inputs  = new RowActionInputs();
+		$refusal = $this->notOffered(inputs: $inputs, match: $match, row: $row);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		// Offered only on the rows its `availableWhen` names; the button's
-		// absence is a convenience, this is the rule
-		// (case-actions-row-inputs-and-conditions REQ-RAI-004).
-		$inputs = new RowActionInputs();
-		$availability = $inputs->availability(action: $match['action'], row: $row);
-		if ($availability['available'] === false) {
-			return new JSONResponse(['error' => 'not_available', 'message' => $availability['reason']], Http::STATUS_CONFLICT);
-		}
-
-		$rowId = $this->rowId(row: $row, fallback: $id);
+		$rowId = (new RowActionResolver())->rowIdOf(row: $row, fallback: $id);
 		$body = $this->forwardBody(match: $match, subject: $subject, rowId: $rowId);
 		if ($body === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		// The inputs this row declares, for exactly the names it declares
-		// (REQ-RAI-002): a name it does not declare is dropped here, and a
-		// required one left empty is a 422 that forwards nothing.
-		$into = ($match['action']['rowInputs']['into'] ?? null);
-		if (is_string($into) === true) {
-			$collected = $inputs->collect(action: $match['action'], row: $row, submitted: $this->request->getParam($into));
-			if ($collected['errors'] !== []) {
-				return new JSONResponse(['error' => 'invalid', 'errors' => $collected['errors']], Http::STATUS_UNPROCESSABLE_ENTITY);
-			}
-
-			$body['body'][$into] = $collected['values'];
+		$body = $this->withRowInputs(inputs: $inputs, match: $match, row: $row, body: $body);
+		if ($body instanceof JSONResponse) {
+			return $body;
 		}
 
+		return $this->relay(match: $match, subject: $subject, body: $body, ids: ['row' => $rowId, 'action' => $actionId]);
+	}//end forward()
+
+	/**
+	 * Refuse a body without the action's required fields, audit the forward and
+	 * relay the leaf app's answer.
+	 *
+	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string} $match The authorised row action.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{body: array<string, mixed>, scopeValue: string} $body The forward body and assertion scope value.
+	 * @param array{row: string, action: string} $ids The proven row id and the action id, for the audit.
+	 *
+	 * @return JSONResponse The relayed answer, or 422 / 502.
+	 */
+	private function relay(array $match, array $subject, array $body, array $ids): JSONResponse {
 		// The action's required fields (REQ-SMF-024): refused before the audit
 		// and the forward.
 		$missing = (new RequiredFieldsGuard())->refusal(action: $match['action'], body: $body['body']);
@@ -173,8 +173,8 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
 			register: $match['app'],
-			schema: $actionId,
-			id: $rowId,
+			schema: $ids['action'],
+			id: $ids['row'],
 			jti: (string)($subject['jti'] ?? '')
 		);
 
@@ -184,7 +184,62 @@ class PortalRowActionController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse($this->forwarder->decodeBody(response: $response), $response->getStatusCode());
-	}//end forward()
+	}//end relay()
+
+	/**
+	 * The refusal when the row does not offer the action: not among the rows
+	 * its `rowWhen` names, or not available by its `availableWhen`.
+	 *
+	 * Offered only on the rows its `availableWhen` names; the button's
+	 * absence is a convenience, this is the rule
+	 * (case-actions-row-inputs-and-conditions REQ-RAI-004).
+	 *
+	 * @param RowActionInputs      $inputs The row-action input rules.
+	 * @param array<string, mixed> $match  The authorised collection, action and app.
+	 * @param array<string, mixed> $row    The row.
+	 *
+	 * @return JSONResponse|null The 409, or null when the row offers the action.
+	 */
+	private function notOffered(RowActionInputs $inputs, array $match, array $row): ?JSONResponse {
+		if ((new RowActionResolver())->rowMatches(action: $match['action'], row: $row) === false) {
+			return new JSONResponse(['error' => 'not_offered'], Http::STATUS_CONFLICT);
+		}
+
+		$availability = $inputs->availability(action: $match['action'], row: $row);
+		if ($availability['available'] === false) {
+			return new JSONResponse(['error' => 'not_available', 'message' => $availability['reason']], Http::STATUS_CONFLICT);
+		}
+
+		return null;
+	}//end notOffered()
+
+	/**
+	 * Add the inputs this row declares to the forward body, for exactly the
+	 * names it declares (REQ-RAI-002): a name it does not declare is dropped
+	 * here, and a required one left empty is a 422 that forwards nothing.
+	 *
+	 * @param RowActionInputs      $inputs The row-action input rules.
+	 * @param array<string, mixed> $match  The authorised collection, action and app.
+	 * @param array<string, mixed> $row    The row.
+	 * @param array<string, mixed> $body   The forward body and scope value.
+	 *
+	 * @return array<string, mixed>|JSONResponse The body, or the 422.
+	 */
+	private function withRowInputs(RowActionInputs $inputs, array $match, array $row, array $body): array|JSONResponse {
+		$into = ($match['action']['rowInputs']['into'] ?? null);
+		if (is_string($into) === false) {
+			return $body;
+		}
+
+		$collected = $inputs->collect(action: $match['action'], row: $row, submitted: $this->request->getParam($into));
+		if ($collected['errors'] !== []) {
+			return new JSONResponse(['error' => 'invalid', 'errors' => $collected['errors']], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$body['body'][$into] = $collected['values'];
+
+		return $body;
+	}//end withRowInputs()
 
 	/**
 	 * The subject's collection on this register and schema that offers the
@@ -390,27 +445,4 @@ class PortalRowActionController extends Controller implements PortalProtected {
 		return (new ActionScopeResolver(reader: $this->reader))
 			->prepare(action: $action, subject: $subject, appId: $match['app'], body: $body);
 	}//end forwardBody()
-
-	/**
-	 * The row's own identifier, else the path id it was read by.
-	 *
-	 * @param array<string, mixed> $row The proven row.
-	 * @param string $fallback The path id.
-	 *
-	 * @return string
-	 */
-	private function rowId(array $row, string $fallback): string {
-		$self = ($row['@self'] ?? []);
-		if (is_array($self) === false) {
-			$self = [];
-		}
-
-		foreach ([($row['id'] ?? null), ($row['uuid'] ?? null), ($self['uuid'] ?? null), ($self['id'] ?? null)] as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return $fallback;
-	}//end rowId()
 }//end class

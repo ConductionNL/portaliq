@@ -24,6 +24,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\RecipientMask;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Settings\PortaliqAdmin;
 use OCP\AppFramework\Controller;
@@ -162,7 +163,7 @@ class MailTemplateAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_sent'], Http::STATUS_BAD_GATEWAY);
 		}
 
-		return new JSONResponse(['sent' => true, 'to' => MailLog::mask(email: $email)]);
+		return new JSONResponse(['sent' => true, 'to' => (new RecipientMask())->mask(email: $email)]);
 	}//end test()
 
 	/**

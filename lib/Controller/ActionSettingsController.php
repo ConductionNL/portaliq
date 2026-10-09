@@ -109,12 +109,7 @@ class ActionSettingsController extends Controller {
 				continue;
 			}
 
-			$kept = [];
-			foreach ($groups as $group) {
-				if (is_string($group) === true && in_array($group, $existing, true) === true && in_array($group, $kept, true) === false) {
-					$kept[] = $group;
-				}
-			}
+			$kept = $this->keptGroups(groups: $groups, existing: $existing);
 
 			// Administrators always pass; an empty list reads "only administrators".
 			if ($kept === []) {
@@ -134,12 +129,35 @@ class ActionSettingsController extends Controller {
 	}//end update()
 
 	/**
+	 * The groups that exist, without duplicates.
+	 *
+	 * @param array<int|string, mixed> $groups   The declared groups.
+	 * @param array<int, mixed>        $existing The ids of the groups that exist.
+	 *
+	 * @return array<int, string>
+	 */
+	private function keptGroups(array $groups, array $existing): array {
+		$kept = [];
+		foreach ($groups as $group) {
+			if (is_string($group) === true && in_array($group, $existing, true) === true && in_array($group, $kept, true) === false) {
+				$kept[] = $group;
+			}
+		}
+
+		return $kept;
+	}//end keptGroups()
+
+	/**
 	 * The seed's catalogue: action to label, description and default groups.
 	 *
 	 * @return array<string, array{label: string, description: string, groups: array<int, string>}>
 	 */
 	private function catalogue(): array {
-		$raw = @file_get_contents($this->seedPath);
+		if (is_file($this->seedPath) === false || is_readable($this->seedPath) === false) {
+			return [];
+		}
+
+		$raw = file_get_contents($this->seedPath);
 		if ($raw === false) {
 			return [];
 		}
@@ -160,17 +178,29 @@ class ActionSettingsController extends Controller {
 				continue;
 			}
 
-			// The old bare list form has no label; the action name stands in.
-			$out[$action] = ['label' => $action, 'description' => '', 'groups' => (array)$entry];
-			if (is_array($entry) === true && array_key_exists('groups', $entry) === true) {
-				$out[$action] = [
-					'label' => (string)($entry['label'] ?? $action),
-					'description' => (string)($entry['description'] ?? ''),
-					'groups' => (array)$entry['groups'],
-				];
-			}
+			$out[$action] = $this->catalogueEntry(action: $action, entry: $entry);
 		}
 
 		return $out;
 	}//end catalogue()
+
+	/**
+	 * One catalogue entry: the old bare list form has no label, so the action name stands in.
+	 *
+	 * @param string $action The action name.
+	 * @param mixed  $entry  The seed's entry.
+	 *
+	 * @return array{label: string, description: string, groups: array<int, string>}
+	 */
+	private function catalogueEntry(string $action, mixed $entry): array {
+		if (is_array($entry) === true && array_key_exists('groups', $entry) === true) {
+			return [
+				'label' => (string)($entry['label'] ?? $action),
+				'description' => (string)($entry['description'] ?? ''),
+				'groups' => (array)$entry['groups'],
+			];
+		}
+
+		return ['label' => $action, 'description' => '', 'groups' => (array)$entry];
+	}//end catalogueEntry()
 }//end class

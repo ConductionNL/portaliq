@@ -34,7 +34,6 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
-use OCA\Portaliq\Service\Intake\FormConfirmationSummary;
 use OCA\Portaliq\Service\Intake\FormStatements;
 use OCA\Portaliq\Service\Intake\PortalAddressLookup;
 use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
@@ -50,7 +49,10 @@ use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormCalculator;
 use OCA\Portaliq\Service\Intake\PortalFormDecision;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
+use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
+use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
+use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -60,7 +62,6 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use Throwable;
 
 /**
  * Renders the intake form, takes the submission and reports on it.
@@ -74,6 +75,26 @@ use Throwable;
  * the one trust ordering every portal gate shares.
  */
 class PortalIntakeController extends Controller implements PortalProtected {
+	/**
+	 * The checks between a validated form and a recorded submission.
+	 *
+	 * @var PortalSubmissionChecks
+	 */
+	private readonly PortalSubmissionChecks $checks;
+
+	/**
+	 * Takes the payment for a submission and reads its state.
+	 *
+	 * @var PortalIntakePayments
+	 */
+	private readonly PortalIntakePayments $payments;
+
+	/**
+	 * Mails the resident the confirmation of a submission.
+	 *
+	 * @var PortalIntakeConfirmation
+	 */
+	private readonly PortalIntakeConfirmation $confirmation;
 
 	/**
 	 * Constructor.
@@ -106,24 +127,42 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly PortalSessionService $session,
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly PortalApplicantPrefill $prefill,
-		private readonly PortalFormValidator $validator,
+		PortalFormValidator $validator,
 		private readonly PortalIntakeQueue $queue,
 		private readonly PortalChallengeService $challenge,
 		private readonly PortalCatalogueReader $catalogue,
 		private readonly ?PortalAddressLookup $addresses = null,
 		private readonly ?PortalFamilyMembers $family = null,
-		private readonly ?FormStatements $statements = null,
-		private readonly ?FormConfirmationMailer $confirmationMail = null,
-		private readonly ?PortalFormCalculator $calculator = null,
-		private readonly ?PortalFormDecision $decision = null,
-		private readonly ?PortalFee $fees = null,
-		private readonly ?PortalPaymentIntents $intents = null,
-		private readonly ?PortalContributionRegistry $registry = null,
-		private readonly ?PortalActionForwarder $forwarder = null,
-		private readonly ?PortalDeepLinkBuilder $deepLinks = null,
-		private readonly ?PortalEmailVerification $emailVerification = null,
+		?FormStatements $statements = null,
+		?FormConfirmationMailer $confirmationMail = null,
+		?PortalFormCalculator $calculator = null,
+		?PortalFormDecision $decision = null,
+		?PortalFee $fees = null,
+		?PortalPaymentIntents $intents = null,
+		?PortalContributionRegistry $registry = null,
+		?PortalActionForwarder $forwarder = null,
+		?PortalDeepLinkBuilder $deepLinks = null,
+		?PortalEmailVerification $emailVerification = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
+		$this->checks       = new PortalSubmissionChecks(
+			validator: $validator,
+			family: $family,
+			statements: $statements,
+			calculator: $calculator,
+			decision: $decision,
+			emailVerification: $emailVerification
+		);
+		$this->payments     = new PortalIntakePayments(
+			queue: $queue,
+			bindings: $bindings,
+			fees: $fees,
+			intents: $intents,
+			registry: $registry,
+			forwarder: $forwarder,
+			deepLinks: $deepLinks
+		);
+		$this->confirmation = new PortalIntakeConfirmation(queue: $queue, confirmationMail: $confirmationMail);
 	}//end __construct()
 
 	/**
@@ -215,8 +254,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			fields: (array)($render['fields'] ?? [])
 		);
 
-		$render['statements'] = $this->askedStatements(render: $render, site: $site);
-		$render['steps']      = $this->stepsForTheBrowser(steps: (array)($render['steps'] ?? []));
+		$render['statements'] = $this->checks->askedStatements(render: $render, site: $site);
+		$render['steps']      = $this->checks->stepsForTheBrowser(steps: (array)($render['steps'] ?? []));
 
 		if (($render['settings']['challenge'] ?? false) === true) {
 			$render['challenge'] = $this->challenge->issue(site: $site, surface: 'form');
@@ -288,75 +327,35 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			}
 		}
 
-		// Validation happens here, before anything is recorded and long before
-		// any case app is called: an invalid submission never reaches one.
-		$validated = $this->validator->validate(fields: (array)($render['fields'] ?? []), answers: $answers);
-		if ($validated['valid'] === false) {
-			return new JSONResponse(['errors' => $validated['errors']], Http::STATUS_BAD_REQUEST);
-		}
-
-		// A chosen family member is checked against the BRP again here, so a
-		// reference the browser invented or kept from another day never
-		// reaches a case (data-lookups-and-checks-in-forms REQ-DIF-004).
-		$familyErrors = $this->familyErrors(fields: (array)($render['fields'] ?? []), answers: $validated['answers'], subject: $subject);
-		if ($familyErrors !== []) {
-			return new JSONResponse(['errors' => $familyErrors], Http::STATUS_BAD_REQUEST);
-		}
-
-		// An address the form asks to verify is refused without the proof of its code
-		// (resident-identity-in-forms REQ-RIF-002).
-		$unverified = $this->unverifiedEmails(render: $render, answers: $validated['answers'], proofs: $verifiedEmails, site: $site, route: $route);
-		if ($unverified !== []) {
-			return new JSONResponse(['errors' => $unverified], Http::STATUS_BAD_REQUEST);
-		}
-
-		// A calculated value is worked out again here and a decision is asked of the
-		// rule engine again, whatever the browser sent (form-flow-repeating-groups-
-		// calculations-and-decisions REQ-FFL-002, REQ-FFL-003).
-		$worked = $this->workedOut(render: $render, answers: $validated['answers']);
-		if ($worked === null) {
-			return new JSONResponse(['error' => 'decision_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
-
-		$validated['answers'] = $worked['answers'];
-
-		// The statements the form asks are accepted before anything is
-		// recorded, and each accepted one is recorded with the version of its
-		// text (form-statements-intro-and-confirmation-mail REQ-FCI-002).
-		$asked = $this->askedStatements(render: $render, site: $site);
-		$checked = ['errors' => [], 'record' => []];
-		if ($asked !== []) {
-			if ($this->statements === null) {
-				return new JSONResponse(['error' => 'statements_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
-			}
-
-			$checked = $this->statements->check(asked: $asked, accepted: $statements);
-			if ($checked['errors'] !== []) {
-				$errors = [];
-				foreach ($checked['errors'] as $key => $message) {
-					$errors['statement-' . $key] = $message;
-				}
-
-				return new JSONResponse(['errors' => $errors], Http::STATUS_BAD_REQUEST);
-			}
+		$prepared = $this->checks->prepare(
+			render: $render,
+			site: $site,
+			route: $route,
+			answers: $answers,
+			subject: $subject,
+			statements: $statements,
+			verifiedEmails: $verifiedEmails
+		);
+		if ($prepared instanceof JSONResponse) {
+			return $prepared;
 		}
 
 		$accepted = $this->queue->accept(
 			portal: (string)($site['slug'] ?? ''),
 			route: $route,
-			answers: $validated['answers'],
+			answers: $prepared['answers'],
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			origin: (string)$this->request->getHeader('Origin'),
-			statements: $checked['record'],
-			computed: $worked['computed'],
-			decisions: $worked['decisions'],
-			verifiedEmails: $this->verifiedRecord(render: $render, answers: $validated['answers'])
+			statements: $prepared['statements'],
+			computed: $prepared['computed'],
+			decisions: $prepared['decisions'],
+			verifiedEmails: $prepared['verified']
 		);
 		if ($accepted === null) {
 			return new JSONResponse(['error' => 'not_accepted'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
-		$mailedTo = $this->sendConfirmation(site: $site, render: $render, answers: $validated['answers'], reference: $accepted['reference']);
+		$mailedTo = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $accepted['reference']);
 
 		return new JSONResponse([
 			'reference' => $accepted['reference'],
@@ -401,104 +400,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $refusal;
 		}
 
-		$declared = null;
-		foreach ((array)($render['steps'] ?? []) as $candidate) {
-			if (($candidate['id'] ?? null) === $step && is_array($candidate['decision'] ?? null) === true) {
-				$declared = $candidate['decision'];
-			}
-		}
-
-		if ($declared === null || $this->decision === null) {
-			return new JSONResponse(['error' => 'step_not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$names = array_map(static fn (array $field): string => (string)($field['name'] ?? ''), (array)($render['fields'] ?? []));
-		$known = array_intersect_key($answers, array_flip($names));
-		if ($this->calculator !== null) {
-			$known = $this->calculator->apply(fields: (array)($render['fields'] ?? []), answers: $known)['answers'];
-		}
-
-		$decided = $this->decision->decide(decision: $declared, answers: $known);
-		if ($decided['status'] === PortalFormDecision::UNAVAILABLE) {
-			return new JSONResponse(['error' => 'decision_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
-
-		return new JSONResponse(['outcome' => $decided['outcome'], 'output' => $decided['output'], 'nextStep' => $decided['nextStep']]);
+		return $this->checks->decideStep(render: $render, step: $step, answers: $answers);
 	}//end decide()
-
-	/**
-	 * The steps as the browser may see them: a decision is reduced to the fact
-	 * that the step decides, so the rule, its inputs and its outcomes stay here.
-	 *
-	 * @param array<int, array<string, mixed>> $steps The form's steps.
-	 *
-	 * @return array<int, array<string, mixed>> The steps for the browser.
-	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
-	 */
-	private function stepsForTheBrowser(array $steps): array {
-		foreach ($steps as $index => $step) {
-			if (is_array($step) === true && array_key_exists('decision', $step) === true) {
-				unset($steps[$index]['decision']);
-				$steps[$index]['decides'] = true;
-			}
-		}
-
-		return $steps;
-	}//end stepsForTheBrowser()
-
-	/**
-	 * Work out the calculated fields and the decided ones for a submission.
-	 *
-	 * @param array<string, mixed> $render What render() returned for the form.
-	 * @param array<string, mixed> $answers The validated answers.
-	 *
-	 * @return array{answers: array<string, mixed>, computed: array<int, string>, decisions: array<string, string>}|null
-	 *         Null when a decision the form declares could not be asked.
-	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
-	 */
-	private function workedOut(array $render, array $answers): ?array {
-		$fields   = (array)($render['fields'] ?? []);
-		$computed = [];
-		if ($this->calculator !== null) {
-			$first    = $this->calculator->apply(fields: $fields, answers: $answers);
-			$answers  = $first['answers'];
-			$computed = $first['computed'];
-		}
-
-		$decisions = [];
-		foreach ((array)($render['steps'] ?? []) as $step) {
-			if (is_array($step['decision'] ?? null) === false) {
-				continue;
-			}
-
-			if ($this->decision === null) {
-				return null;
-			}
-
-			$decided = $this->decision->decide(decision: $step['decision'], answers: $answers);
-			if ($decided['status'] === PortalFormDecision::UNAVAILABLE) {
-				return null;
-			}
-
-			if ($decided['status'] === PortalFormDecision::DECIDED) {
-				$answers[$decided['output']]   = $decided['outcome'];
-				$decisions[(string)$step['id']] = $decided['outcome'];
-				$computed[]                    = $decided['output'];
-			}
-		}//end foreach
-
-		if ($decisions !== [] && $this->calculator !== null) {
-			// A calculation may read a decided field.
-			$again    = $this->calculator->apply(fields: $fields, answers: $answers);
-			$answers  = $again['answers'];
-			$computed = array_merge($computed, $again['computed']);
-		}
-
-		return ['answers' => $answers, 'computed' => array_values(array_unique($computed)), 'decisions' => $decisions];
-	}//end workedOut()
 
 	/**
 	 * The resident's partner and children to choose from, DigiD only.
@@ -507,7 +410,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * A visitor without a DigiD session, and a BRP that cannot be asked, get
 	 * the same answer: nothing to choose from here.
 	 *
-	 * @param bool $sameAddressOnly Keep only members living at the resident's address.
+	 * The request may carry `sameAddressOnly` (default true): keep only members living at the
+	 * resident's address. It is read from the request, not bound, so the method takes no flag.
 	 *
 	 * @return JSONResponse `{members: [...]}`, 401 without a session, 404 when nothing can be offered.
 	 *
@@ -516,134 +420,22 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function family(bool $sameAddressOnly=true): JSONResponse {
+	public function family(): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$members = $this->family?->forSubject(subjectRef: (string)($subject['subjectRef'] ?? ''), sameAddressOnly: $sameAddressOnly);
+		// Cast as the framework casts a bound bool; absent means only the resident's own address.
+		$raw      = $this->request->getParam('sameAddressOnly', true);
+		$sameOnly = ($raw !== 'false' && (bool)$raw === true);
+		$members  = $this->family?->forSubject(subjectRef: (string)($subject['subjectRef'] ?? ''), sameAddressOnly: $sameOnly);
 		if ($members === null) {
 			return new JSONResponse(['error' => 'family_unavailable'], Http::STATUS_NOT_FOUND);
 		}
 
 		return new JSONResponse(['members' => $members]);
 	}//end family()
-
-	/**
-	 * The errors of `familyMembers` answers that are not the resident's family.
-	 *
-	 * @param array<int, array<string, mixed>> $fields  The form's fields.
-	 * @param array<string, mixed>             $answers The validated answers.
-	 * @param array<string, mixed>|null        $subject The session's subject.
-	 *
-	 * @return array<string, string>
-	 *
-	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
-	 */
-	private function familyErrors(array $fields, array $answers, ?array $subject): array {
-		$errors = [];
-		foreach ($fields as $field) {
-			$name = (string)($field['name'] ?? '');
-			if (($field['type'] ?? '') !== 'familyMembers' || $name === '' || empty($answers[$name]) === true) {
-				continue;
-			}
-
-			$refs   = (array)$answers[$name];
-			$forged = [];
-			if ($this->family === null || $subject === null) {
-				$forged = $refs;
-			} else {
-				$forged = $this->family->forged(subjectRef: (string)($subject['subjectRef'] ?? ''), refs: $refs);
-			}
-
-			if ($forged !== []) {
-				$errors[$name] = 'Choose the people from the list we found.';
-			}
-		}
-
-		return $errors;
-	}//end familyErrors()
-
-	/**
-	 * The statements this form asks, with the portal's wording.
-	 *
-	 * @param array<string, mixed> $render What the binding renders to.
-	 * @param array<string, mixed> $site   The portal.
-	 *
-	 * @return array<int, array{key: string, required: bool, text: string, version: string}>
-	 *
-	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
-	 */
-	private function askedStatements(array $render, array $site): array {
-		$declared = ($render['settings']['statementsDeclared'] ?? null);
-		if ($declared === null) {
-			return [];
-		}
-
-		if ($this->statements === null) {
-			// A form that asks for statements this server cannot show is not sent.
-			return array_map(
-				static fn (string $key): array => ['key' => $key, 'required' => true, 'text' => '', 'version' => ''],
-				array_keys(array_intersect_key((array)$declared, array_flip(FormStatements::KEYS)))
-			);
-		}
-
-		return $this->statements->asked(declared: $declared, site: $site);
-	}//end askedStatements()
-
-	/**
-	 * Mail the confirmation when the form asks for it, and record the outcome.
-	 *
-	 * @param array<string, mixed> $site      The portal.
-	 * @param array<string, mixed> $render    What the binding renders to.
-	 * @param array<string, mixed> $answers   The accepted answers.
-	 * @param string               $reference The submission's reference.
-	 *
-	 * @return string The address the mail went to, or '' when none went.
-	 *
-	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
-	 */
-	private function sendConfirmation(array $site, array $render, array $answers, string $reference): string {
-		if (($render['settings']['confirmationMail'] ?? false) !== true || $this->confirmationMail === null) {
-			return '';
-		}
-
-		$fields = (array)($render['fields'] ?? []);
-		$email  = $this->confirmationMail->addressIn(fields: $fields, answers: $answers);
-		if ($email === '') {
-			return '';
-		}
-
-		$sent = $this->confirmationMail->send(
-			email: $email,
-			site: $site,
-			reference: $reference,
-			formName: (string)($render['formName'] ?? ''),
-			summary: (new FormConfirmationSummary())->build(fields: $fields, answers: $answers)
-		);
-		$this->queue->markConfirmationMail(reference: $reference, portal: (string)($site['slug'] ?? ''), state: $this->mailState(sent: $sent));
-		if ($sent === true) {
-			return $email;
-		}
-
-		return '';
-	}//end sendConfirmation()
-
-	/**
-	 * The state word recorded for a mail.
-	 *
-	 * @param bool $sent Whether the mail server took it.
-	 *
-	 * @return string
-	 */
-	private function mailState(bool $sent): string {
-		if ($sent === true) {
-			return 'sent';
-		}
-
-		return 'failed';
-	}//end mailState()
 
 	/**
 	 * What became of a submission.
@@ -671,7 +463,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		// The payment state is read from the payment record the portal stored
 		// the id of, never from the address the resident returned on.
-		$payment = $this->paymentOf(reference: $reference, portal: (string)($site['slug'] ?? ''));
+		$payment = $this->payments->paymentOf(reference: $reference, portal: (string)($site['slug'] ?? ''));
 		if ($payment !== null) {
 			$status['payment'] = $payment;
 		}
@@ -705,142 +497,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$site = $this->site(portal: $portal);
-		if ($site === null || $this->fees === null || $this->forwarder === null || $this->registry === null) {
-			return new JSONResponse(['error' => 'payment_unavailable'], Http::STATUS_BAD_GATEWAY);
-		}
-
-		$slug       = (string)($site['slug'] ?? '');
-		$submission = $this->findSubmission(reference: $reference, portal: $slug);
-		$owner = (string)($submission['subjectRef'] ?? '');
-		if ($submission === null || $owner === '' || $owner !== (string)($subject['subjectRef'] ?? '')) {
-			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$binding = $this->bindings->bindingFor(portal: $slug, route: (string)($submission['route'] ?? ''));
-		$fee     = null;
-		if ($binding !== null) {
-			$fee = $this->fees->forBinding(binding: $binding);
-		}
-
-		$paid = (($this->paymentOf(reference: $reference, portal: $slug)['state'] ?? '') === 'paid');
-		if ($fee === null || $paid === true) {
-			return new JSONResponse(['error' => 'nothing_to_pay'], Http::STATUS_CONFLICT);
-		}
-
-		$action = $this->payAction(subject: $subject, actionId: $fee['payAction']);
-		if ($action === null) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		$response = $this->forwarder->forward(
-			action: $action,
-			subject: $subject,
-			whitelisted: [
-				'reference' => $reference,
-				'amount' => $fee['amount'],
-				'currency' => $fee['currency'],
-				'description' => $fee['description'],
-				'returnUrl' => $this->returnUrl(slug: $slug, route: (string)($submission['route'] ?? ''), reference: $reference),
-			]
-		);
-		if ($response === null || $response->getStatusCode() < 200 || $response->getStatusCode() > 299) {
-			return new JSONResponse(['error' => 'payment_unavailable'], Http::STATUS_BAD_GATEWAY);
-		}
-
-		$answer   = $this->forwarder->decodeBody($response);
-		$checkout = ($answer['checkoutUrl'] ?? null);
-		$intentId = trim((string)($answer['paymentIntentId'] ?? ''));
-		if ($intentId === '' || $this->fees->checkoutAllowed(url: $checkout, hosts: (array)($site['paymentHosts'] ?? [])) === false) {
-			return new JSONResponse(['error' => 'payment_unavailable'], Http::STATUS_BAD_GATEWAY);
-		}
-
-		$this->queue->markPaymentIntent(submission: $submission, paymentIntentId: $intentId);
-
-		return new JSONResponse(['checkoutUrl' => $checkout]);
+		return $this->payments->start(subject: $subject, site: $this->site(portal: $portal), reference: $reference);
 	}//end pay()
-
-	/**
-	 * A submission by its reference, or null when it is not there or cannot be read.
-	 *
-	 * @param string $reference The submission's reference.
-	 * @param string $portal    The portal's slug.
-	 *
-	 * @return array<string, mixed>|null
-	 *
-	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
-	 */
-	private function findSubmission(string $reference, string $portal): ?array {
-		try {
-			return $this->queue->find(reference: $reference, portal: $portal);
-		} catch (Throwable) {
-			return null;
-		}
-	}//end findSubmission()
-
-	/**
-	 * The payment state of a submission, or null when none was started.
-	 *
-	 * @param string $reference The submission's reference.
-	 * @param string $portal    The portal's slug.
-	 *
-	 * @return array{state: string}|null
-	 *
-	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t05
-	 */
-	private function paymentOf(string $reference, string $portal): ?array {
-		$submission = $this->findSubmission(reference: $reference, portal: $portal);
-		$intentId   = trim((string)($submission['paymentIntentId'] ?? ''));
-		if ($intentId === '' || $this->intents === null || $this->fees === null) {
-			return null;
-		}
-
-		$status = $this->intents->status(id: $intentId);
-		if ($status === null) {
-			return ['state' => 'unknown'];
-		}
-
-		return ['state' => $this->fees->stateOf(status: $status)];
-	}//end paymentOf()
-
-	/**
-	 * The case app's pay action in the subject's own manifest, or null.
-	 *
-	 * @param array<string, mixed> $subject  The resolved subject.
-	 * @param string               $actionId The `payAction` the case type declares.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function payAction(array $subject, string $actionId): ?array {
-		$aggregate = $this->registry?->aggregateFor($subject);
-		foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
-			foreach ((array)($contribution['actions'] ?? []) as $action) {
-				if (is_array($action) === true && ($action['id'] ?? '') === $actionId && $this->forwarder?->isForwardable($action) === true) {
-					return $action;
-				}
-			}
-		}
-
-		return null;
-	}//end payAction()
-
-	/**
-	 * The page the resident comes back to from the payment page.
-	 *
-	 * @param string $slug      The portal.
-	 * @param string $route     The form's route.
-	 * @param string $reference The submission's reference.
-	 *
-	 * @return string
-	 */
-	private function returnUrl(string $slug, string $route, string $reference): string {
-		$base = '';
-		if ($this->deepLinks !== null) {
-			$base = $this->deepLinks->forSite(portalSlug: $slug);
-		}
-
-		return $base . '&route=' . rawurlencode('/' . ltrim($route, '/')) . '&reference=' . rawurlencode($reference);
-	}//end returnUrl()
 
 	/**
 	 * Why this form accepts no submission from this visitor, or null.
@@ -902,51 +560,6 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	private function subject(): ?array {
 		return $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
 	}//end subject()
-
-	/**
-	 * The verified addresses to record with the submission.
-	 *
-	 * @param array<string, mixed> $render The rendered form.
-	 * @param array<string, mixed> $answers The accepted answers.
-	 *
-	 * @return array<int, array{address: string, verifiedAt: string}>
-	 *
-	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
-	 */
-	private function verifiedRecord(array $render, array $answers): array {
-		if ($this->emailVerification === null) {
-			return [];
-		}
-
-		return $this->emailVerification->record(fields: (array)($render['fields'] ?? []), answers: $answers, at: gmdate(DATE_ATOM));
-	}//end verifiedRecord()
-
-	/**
-	 * The errors for e-mail fields that must be verified and are not.
-	 *
-	 * @param array<string, mixed> $render The rendered form.
-	 * @param array<string, mixed> $answers The accepted answers.
-	 * @param array<string, mixed> $proofs The proofs the browser sent, by address.
-	 * @param array<string, mixed> $site The portal.
-	 * @param string $route The form page.
-	 *
-	 * @return array<string, string> The errors by field name.
-	 *
-	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
-	 */
-	private function unverifiedEmails(array $render, array $answers, array $proofs, array $site, string $route): array {
-		if ($this->emailVerification === null) {
-			return [];
-		}
-
-		return $this->emailVerification->unverified(
-			fields: (array)($render['fields'] ?? []),
-			answers: $answers,
-			proofs: $proofs,
-			portal: (string)($site['slug'] ?? ''),
-			route: $route
-		);
-	}//end unverifiedEmails()
 
 	/**
 	 * The portal being visited, or null.

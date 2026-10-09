@@ -676,19 +676,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$message = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
-		);
+		$message = $this->readReplyMessage(subject: $subject, match: $match, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
 		// Not the resident's, or not there: one 404, and nothing is written.
 		if ($message === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
@@ -703,17 +691,25 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$carried = [];
-		foreach ((array)($declared['carry'] ?? []) as $replyField => $messageField) {
-			$value = ($message[$messageField] ?? null);
-			if (is_string($value) === true || is_int($value) === true) {
-				$carried[(string)$replyField] = $value;
-			}
-		}
+		$carried = $this->carriedFields(declared: $declared, message: $message);
 
+		return $this->createReply(subject: $subject, match: ['action' => $action, 'app' => $match['app']], carried: $carried);
+	}//end reply()
+
+	/**
+	 * Write the reply through the create pipeline and name it in the answer.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{action: array<string, mixed>, app: string} $match The reply action and its app.
+	 * @param array<string, string|int> $carried The values set from the original message.
+	 *
+	 * @return JSONResponse The created reply with its action, register and schema, or the pipeline's refusal.
+	 */
+	private function createReply(array $subject, array $match, array $carried): JSONResponse {
+		$action   = $match['action'];
 		$response = $this->createFrom(
 			subject: $subject,
-			match: ['action' => $action, 'app' => $match['app']],
+			match: $match,
 			register: (string)($action['register'] ?? ''),
 			schema: (string)($action['schema'] ?? ''),
 			carried: $carried
@@ -729,7 +725,54 @@ class ContributionController extends Controller implements PortalProtected {
 		];
 
 		return new JSONResponse($response->getData() + $named);
-	}//end reply()
+	}//end createReply()
+
+	/**
+	 * The resident's inbox message, read through the scope of its collection.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $match The authorised inbox collection and its app.
+	 * @param array{register: string, schema: string, id: string} $target The requested register, schema and message id.
+	 *
+	 * @return array<string, mixed>|null The message, or null when it is not the resident's or not there.
+	 */
+	private function readReplyMessage(array $subject, array $match, array $target): ?array {
+		$collection = $match['collection'];
+
+		return $this->reader->readObject(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $target['id'],
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			via: ($collection['via'] ?? null),
+			audience: (string)($subject['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null)
+		);
+	}//end readReplyMessage()
+
+	/**
+	 * The reply fields set from the original message, as the declaration carries them.
+	 *
+	 * @param array<string, mixed> $declared The collection's `reply` declaration.
+	 * @param array<string, mixed> $message The original message.
+	 *
+	 * @return array<string, string|int> The values to set on the reply.
+	 */
+	private function carriedFields(array $declared, array $message): array {
+		$carried = [];
+		foreach ((array)($declared['carry'] ?? []) as $replyField => $messageField) {
+			$value = ($message[$messageField] ?? null);
+			if (is_string($value) === true || is_int($value) === true) {
+				$carried[(string)$replyField] = $value;
+			}
+		}
+
+		return $carried;
+	}//end carriedFields()
 
 	/**
 	 * The create action of one contribution the subject holds, by id.
