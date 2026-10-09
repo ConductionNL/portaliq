@@ -432,7 +432,7 @@ test("a hero without its own image uses the portal's", async () => {
 	assert.deepEqual(heroPropsOf({ heading: 'Welkom' }, null), { heading: 'Welkom' })
 
 	const grid = readFileSync(join(ROOT, 'src/site/components/WidgetGrid.vue'), 'utf8')
-	assert.match(grid, /widget\.widgetKey === 'hero'\) \{\s*return \{ \.\.\.heroPropsOf\(props, this\.portalHero\), portal: this\.portal \}/)
+	assert.match(grid, /widget\.widgetKey === 'hero'\) \{\s*return \{\s*\.\.\.heroPropsOf\(props, this\.portalHero\),\s*portal: this\.portal,?\s*\}/)
 	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
 	assert.match(app, /portalHero: this\.site\.heroImage \|\| null/)
 })

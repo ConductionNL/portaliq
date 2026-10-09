@@ -95,7 +95,7 @@ class SiteIcon {
 			return '';
 		}
 
-		if (MediaReferences::isReference(value: $value) === true) {
+		if (str_starts_with($value, MediaReferences::PREFIX) === true) {
 			if ($slug === '') {
 				return '';
 			}

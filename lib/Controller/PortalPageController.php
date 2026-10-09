@@ -47,14 +47,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\SiteShell;
-use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
-use OCA\Portaliq\Service\PortalThemeResolver;
-use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\Cms\AccessibilityFraming;
-use OCA\Portaliq\Service\Cms\SiteHead;
-use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -77,53 +71,23 @@ class PortalPageController extends Controller {
 	private const STATUS_FOUND = 302;
 
 	/**
-	 * Builds what the site shell template renders.
-	 *
-	 * @var SiteShell
-	 */
-	private readonly SiteShell $shell;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param IRequest $request The request
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the serving
-	 *                                                    portal and the runtime
-	 *                                                    config built from it.
-	 * @param IURLGenerator $urlGenerator Builds the content API base handed to
-	 *                                    the site renderer.
-	 * @param PortalResolver $portalResolver Resolves the serving portal, so the
-	 *                                       shell knows whose theme to load.
-	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
-	 *                                           reference to a real themiq
-	 *                                           token stylesheet.
-	 * @param SiteHead $siteHead The head of the page a site request asks for.
-	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
-	 * @param AccessibilityFraming $framing Whether the accessibility measurement may frame this request.
-	 * @param SiteIcon $siteIcon The tab icon of the serving portal.
+	 * @param IRequest             $request      The request
+	 * @param IURLGenerator        $urlGenerator Builds the content API base handed to
+	 *                                           the site renderer.
+	 * @param SiteShell            $shell        Builds what the site shell template renders:
+	 *                                           the serving portal, its theme, its head,
+	 *                                           its notices and its tab icon.
+	 * @param AccessibilityFraming $framing      Whether the accessibility measurement may frame this request.
 	 */
 	public function __construct(
 		IRequest $request,
-		PortalRuntimeConfigResolver $configResolver,
 		private readonly IURLGenerator $urlGenerator,
-		PortalResolver $portalResolver,
-		PortalThemeResolver $themeResolver,
-		SiteHead $siteHead,
-		PortalNoticeReader $notices,
+		private readonly SiteShell $shell,
 		private readonly AccessibilityFraming $framing,
-		SiteIcon $siteIcon,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
-		$this->shell = new SiteShell(
-			request: $request,
-			portalResolver: $portalResolver,
-			themeResolver: $themeResolver,
-			urlGenerator: $urlGenerator,
-			siteHead: $siteHead,
-			notices: $notices,
-			configResolver: $configResolver,
-			siteIcon: $siteIcon
-		);
 	}//end __construct()
 
 	/**

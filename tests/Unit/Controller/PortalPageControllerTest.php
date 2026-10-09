@@ -15,6 +15,7 @@ use OCA\Portaliq\Service\Cms\SiteHead;
 use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Service\SiteShell;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -665,14 +666,18 @@ class PortalPageControllerTest extends TestCase {
 
 		return new PortalPageController(
 			$request,
-			$runtimeConfigResolver,
 			$urlGenerator,
-			$portalResolver,
-			$themeResolver,
-			new SiteHead($reader),
-			($notices ?? $this->createMock(PortalNoticeReader::class)),
-			($this->framing ?? $this->noFraming()),
-			new SiteIcon(new MediaReferences($urlGenerator, $this->library()), $urlGenerator)
+			new SiteShell(
+				request: $request,
+				portalResolver: $portalResolver,
+				themeResolver: $themeResolver,
+				urlGenerator: $urlGenerator,
+				siteHead: new SiteHead($reader),
+				notices: ($notices ?? $this->createMock(PortalNoticeReader::class)),
+				configResolver: $runtimeConfigResolver,
+				siteIcon: new SiteIcon(new MediaReferences($urlGenerator, $this->library()), $urlGenerator)
+			),
+			($this->framing ?? $this->noFraming())
 		);
 	}//end controller()
 

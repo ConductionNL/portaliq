@@ -91,7 +91,7 @@ class PortalIdentityImages {
 		$slug = (string)($portal['slug'] ?? '');
 		foreach (self::FIELDS as $field) {
 			$value = ($portal[$field] ?? null);
-			if (MediaReferences::isReference(value: $value) === false) {
+			if (is_string($value) === false || str_starts_with($value, MediaReferences::PREFIX) === false) {
 				continue;
 			}
 
