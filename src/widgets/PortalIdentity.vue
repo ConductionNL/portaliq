@@ -28,7 +28,10 @@
 			<p v-if="images.length === 0" data-testid="portal-identity-no-images">
 				{{ t('portaliq', 'This portal has no published images yet.') }}
 			</p>
-			<div v-for="field in fields" :key="field.key" class="portal-identity__field">
+			<div
+				v-for="field in fields"
+				:key="field.key"
+				class="portal-identity__field">
 				<NcSelect
 					v-model="chosen[field.key]"
 					:inputLabel="field.label"
@@ -123,7 +126,9 @@ export default {
 		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 		 */
 		portalId() {
-			return String(this.objectData?.id || this.objectData?.['@self']?.id || '')
+			return String(
+				this.objectData?.id || this.objectData?.['@self']?.id || '',
+			)
 		},
 
 		/**
@@ -147,7 +152,10 @@ export default {
 				{
 					key: 'favicon',
 					label: t('portaliq', 'Favicon'),
-					hint: t('portaliq', 'The small image in the browser tab. A PNG, SVG or ICO file.'),
+					hint: t(
+						'portaliq',
+						'The small image in the browser tab. A PNG, SVG or ICO file.',
+					),
 				},
 				{
 					key: 'logo',
@@ -157,7 +165,10 @@ export default {
 				{
 					key: 'heroImage',
 					label: t('portaliq', 'Hero image'),
-					hint: t('portaliq', 'The large image at the top of the home page, when its hero has none.'),
+					hint: t(
+						'portaliq',
+						'The large image at the top of the home page, when its hero has none.',
+					),
 				},
 			]
 		},
@@ -204,7 +215,11 @@ export default {
 		 */
 		async save() {
 			this.saving = true
-			const result = await this.api.save(this.portalId, this.chosen, this.types)
+			const result = await this.api.save(
+				this.portalId,
+				this.chosen,
+				this.types,
+			)
 			this.saving = false
 			this.notice = result.message
 			this.noticeType = result.ok ? 'success' : 'error'

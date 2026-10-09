@@ -489,7 +489,9 @@
 				v-bind="authoredProps(block)"
 				:title="site.title || ''"
 				:tagline="site.tagline || ''"
-				:organisationKind="(site.organisation && site.organisation.label) || ''"
+				:organisationKind="
+					(site.organisation && site.organisation.label) || ''
+				"
 				:menus="footerMenus"
 				:legalLinks="legalLinks"
 				:footer="site.footer || {}"

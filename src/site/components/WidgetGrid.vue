@@ -529,12 +529,6 @@ export default {
 				return { source: props.markdown || '' }
 			}
 
-			// The portal's hero image fills a hero without its own
-			// (portal-identity-from-the-admin REQ-PIA-002).
-			if (widget.widgetKey === 'hero') {
-				return heroPropsOf(props, this.portalHero)
-			}
-
 			// The menu block: the host supplies the groups and the route on
 			// screen, after the authored props, so a placement can rename the
 			// landmark but cannot change where the links lead
@@ -708,8 +702,13 @@ export default {
 
 			// The hero hands the portal on to the list beside it, which reads
 			// this portal's catalogue or news (hero-on-the-school-boards).
+			// The portal's hero image fills a hero without its own
+			// (portal-identity-from-the-admin REQ-PIA-002).
 			if (widget.widgetKey === 'hero') {
-				return { ...props, portal: this.portal }
+				return {
+					...heroPropsOf(props, this.portalHero),
+					portal: this.portal,
+				}
 			}
 
 			// The host names the portal, the session and the ways in; the

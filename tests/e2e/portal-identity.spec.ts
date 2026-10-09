@@ -12,9 +12,13 @@
 import { expect, test } from '@playwright/test'
 import { siteAddress } from './portal-nav.ts'
 
-test('an anonymous visitor gets one tab icon that loads without a session', async ({ browser }) => {
+test('an anonymous visitor gets one tab icon that loads without a session', async ({
+	browser,
+}) => {
 	// A fresh context: no cookies, no Nextcloud session.
-	const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+	const context = await browser.newContext({
+		storageState: { cookies: [], origins: [] },
+	})
 	const page = await context.newPage()
 	await page.goto(siteAddress('/'))
 
@@ -23,7 +27,9 @@ test('an anonymous visitor gets one tab icon that loads without a session', asyn
 	const href = await icons.first().getAttribute('href')
 	expect(href).toBeTruthy()
 
-	const answer = await context.request.get(new URL(String(href), page.url()).toString())
+	const answer = await context.request.get(
+		new URL(String(href), page.url()).toString(),
+	)
 	expect(answer.status()).toBe(200)
 
 	await context.close()
