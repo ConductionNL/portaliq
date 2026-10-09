@@ -161,7 +161,7 @@ test.describe('case-actions-withdraw-screen', () => {
 		await openCase(request, page, OPEN, 'ontvangen')
 		await page.getByTestId('case-withdraw').click()
 		await expect(
-			page.getByTestId('case-withdraw-confirm').locator('h4'),
+			page.getByTestId('case-withdraw-confirm').locator('h2'),
 		).toBeFocused()
 		await page
 			.getByTestId('case-withdraw-reason')

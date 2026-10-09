@@ -208,6 +208,7 @@ async function signInAsEmployee(
 			{
 				id: 'amend-case',
 				type: 'update',
+				label: 'Mijn aanvraag wijzigen',
 				register: 'portaliq',
 				schema: 'portalCase',
 				scopeField: 'subjectRef',
