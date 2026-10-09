@@ -142,6 +142,11 @@ class FieldWidgetNormaliser {
 				continue;
 			}
 
+			// Check cards are fitted by EntryFormKeys (action-form-day-entry).
+			if ($config['widget'] === EntryFormKeys::CHECKS) {
+				continue;
+			}
+
 			if (($config['input'] ?? null) !== 'date') {
 				unset($config['widget'], $config['dateChoices']);
 				$configs[$field] = $config;

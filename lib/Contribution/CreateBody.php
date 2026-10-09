@@ -38,20 +38,34 @@ class CreateBody {
 	/**
 	 * The whitelisted body with the action's defaults stamped over it.
 	 *
+	 * With `saveForLater` the action's `saveForLater.defaults` are stamped
+	 * after its defaults, so the entry waits until it is sent; a computed
+	 * value is worked out again from the times (action-form-day-entry).
+	 *
 	 * @param array<string, mixed> $action The create action.
 	 * @param array<string, mixed> $whitelisted The whitelisted client body.
+	 * @param bool $saveForLater Whether the resident saved the entry for later.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/claim-scoped-create-stamps-the-claim/tasks.md#T1
+	 * @spec openspec/changes/action-form-day-entry/specs/site-forms/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- one more set of defaults
+	 * depends on it; two methods would differ in that line only.
 	 */
-	public function build(array $action, array $whitelisted): array {
-		foreach ((array)($action['defaults'] ?? []) as $key => $value) {
+	public function build(array $action, array $whitelisted, bool $saveForLater = false): array {
+		$defaults = (array)($action['defaults'] ?? []);
+		if ($saveForLater === true) {
+			$defaults = array_merge($defaults, (array)($action['saveForLater']['defaults'] ?? []));
+		}
+
+		foreach ($defaults as $key => $value) {
 			if (is_string($key) === true && $key !== '') {
 				$whitelisted[$key] = $value;
 			}
 		}
 
-		return $whitelisted;
+		return (new EntryFormKeys())->stamp(action: $action, body: $whitelisted);
 	}//end build()
 }//end class

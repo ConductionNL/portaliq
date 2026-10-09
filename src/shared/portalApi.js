@@ -1347,17 +1347,26 @@ export function createPortalApi(config, store = {}) {
 		 * through the subject-scoped endpoint, it can only ever offer values the
 		 * subject may already read.
 		 *
-		 * @param {object} provider optionsProvider: `{ register, schema, valueField, labelField }`.
-		 * @return {Promise<Array<object>>} `{ value, label }` pairs.
+		 * @param {object} provider optionsProvider: `{ register, schema, valueField, labelField, noteField? }`.
+		 * @return {Promise<Array<object>>} `{ value, label, note? }` entries.
+		 * @spec openspec/changes/action-form-day-entry/specs/site-forms/spec.md
 		 */
 		async fetchOptions(provider) {
 			const body = await get(`${col(provider.register, provider.schema)}`)
 			const rows = body && Array.isArray(body.objects) ? body.objects : []
 			return rows
-				.map((r) => ({
-					value: r[provider.valueField] ?? r.id ?? r['@self']?.id,
-					label: r[provider.labelField] ?? r.title ?? r.name ?? r.id,
-				}))
+				.map((r) => {
+					const option = {
+						value: r[provider.valueField] ?? r.id ?? r['@self']?.id,
+						label: r[provider.labelField] ?? r.title ?? r.name ?? r.id,
+					}
+					// A second line, such as a work process code (action-form-day-entry).
+					const note = provider.noteField ? r[provider.noteField] : undefined
+					if (typeof note === 'string' && note !== '') {
+						option.note = note
+					}
+					return option
+				})
 				.filter((o) => o.value !== undefined && o.value !== null)
 		},
 

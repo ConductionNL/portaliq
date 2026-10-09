@@ -164,6 +164,17 @@
 				data-testid="schema-form-submit">
 				{{ submitting ? translate('Please wait…') : submitLabel }}
 			</button>
+			<!-- A second way to send: the entry is written, but waits until it
+			     is sent (action-form-day-entry). -->
+			<button
+				v-if="action.saveForLater && !hasSteps"
+				type="button"
+				class="utrecht-button utrecht-button--subtle-action pq-schema-form__later"
+				:disabled="submitting"
+				data-testid="schema-form-save-for-later"
+				@click="submit({ later: true })">
+				{{ action.saveForLater.label }}
+			</button>
 			<button
 				v-if="pending !== null"
 				type="button"
@@ -174,6 +185,13 @@
 				{{ translate('Try these files again') }}
 			</button>
 		</div>
+
+		<p
+			v-if="action.footnote"
+			class="utrecht-paragraph pq-schema-form__footnote"
+			data-testid="schema-form-footnote">
+			{{ action.footnote }}
+		</p>
 
 		<p
 			class="utrecht-paragraph pq-schema-form__done"
@@ -198,6 +216,7 @@ import { explainsOptional, summaryEntries } from '../forms/fields.js'
 import stepFlow from '../forms/stepFlow.js'
 import { confirmationText, stepHeading } from '../forms/steps.js'
 import { summarySentence } from '../forms/summary.js'
+import { withComputed } from '../forms/dayEntry.js'
 import {
 	collectionProviders,
 	fieldConfig,
@@ -455,6 +474,23 @@ export default {
 			this.values = this.startValues()
 			this.loadOptions()
 		},
+
+		/**
+		 * Work a computed total out again whenever an answer changes
+		 * (action-form-day-entry).
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/action-form-day-entry/specs/site-forms/spec.md
+		 */
+		values: {
+			deep: true,
+			handler() {
+				const next = withComputed(this.action, this.values)
+				if (next !== this.values) {
+					this.values = next
+				}
+			},
+		},
 	},
 
 	mounted() {
@@ -689,14 +725,20 @@ export default {
 		},
 
 		/**
-		 * Check, create the record, then upload its files.
+		 * Check, create the record, then upload its files. With `later`, the
+		 * record is written with the action's `saveForLater` defaults
+		 * (action-form-day-entry).
 		 *
+		 * @param {object} [options] The options.
+		 * @param {boolean} [options.later] Whether the resident saves the entry for later.
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/action-form-day-entry/specs/site-forms/spec.md
 		 *
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
 		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 */
-		async submit() {
+		async submit({ later = false } = {}) {
 			this.error = ''
 			this.done = ''
 			const wrong = this.checkFields(
@@ -717,6 +759,11 @@ export default {
 
 			this.submitting = true
 			const body = formBody(this.action, this.values, this.options)
+			// The server stamps the action's own defaults for a saved entry;
+			// the flag only says which set (action-form-day-entry).
+			if (later && this.action.saveForLater) {
+				body.saveForLater = true
+			}
 			const result = this.send
 				? await this.sendBody(body)
 				: await submitWithFiles(this.api, this.action, body, this.files)
@@ -813,6 +860,10 @@ export default {
 	flex-wrap: wrap;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-schema-form__footnote {
+	margin-block-start: var(--utrecht-space-block-sm, 0.75rem);
 }
 
 .pq-schema-form__intro {

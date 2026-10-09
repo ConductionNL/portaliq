@@ -51,6 +51,7 @@ class SchemaInputHintNormaliser {
 		'date'      => 'date',
 		'date-time' => 'datetime',
 		'email'     => 'email',
+		'time'      => 'time',
 	];
 
 	/**

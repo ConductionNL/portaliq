@@ -4,7 +4,10 @@
   -->
 
 <template>
-	<div class="pq-choice-cards" data-testid="choice-cards">
+	<div
+		class="pq-choice-cards"
+		:class="{ 'pq-choice-cards--inline': inline }"
+		data-testid="choice-cards">
 		<label
 			v-for="(option, index) in split.cards"
 			:key="String(option.value)"
@@ -107,6 +110,8 @@ export default {
 		modelValue: { type: String, default: '' },
 		/** The option values to show as cards; empty shows every option. */
 		choiceOptions: { type: Array, default: () => [] },
+		/** Whether short cards sit side by side (action-form-day-entry). */
+		inline: { type: Boolean, default: false },
 		/** The label of the card that reveals the other options. */
 		otherLabel: { type: String, default: '' },
 		/** Whether an answer is required. */
@@ -218,6 +223,19 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: var(--utrecht-space-block-xs, 0.5rem);
+}
+
+.pq-choice-cards--inline {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.pq-choice-cards--inline .pq-choice-card {
+	flex: 1 1 6rem;
+}
+
+.pq-choice-card--checked {
+	background-color: var(--nldesign-color-primary-light, transparent);
 }
 
 .pq-choice-card {

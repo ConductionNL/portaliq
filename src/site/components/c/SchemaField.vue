@@ -4,7 +4,18 @@
   -->
 
 <template>
+	<!-- A total the form works out itself is a line, not a field
+	     (action-form-day-entry). -->
+	<DurationTotal
+		v-if="config.computed"
+		:id="id"
+		:label="label"
+		:modelValue="modelValue"
+		:locale="dayLocale"
+		:t="translate"
+		:data-testid="`schema-field-${field}`" />
 	<FieldShell
+		v-else
 		:id="id"
 		class="pq-field"
 		:class="`pq-field--${size}`"
@@ -28,7 +39,7 @@
 			:disabled="config.disabled === true"
 			:labelledBy="`${id}-label`"
 			:describedBy="shellDescribedBy"
-			:buttonLabel="translate('Choose a file or photo')"
+			:buttonLabel="config.buttonLabel || translate('Choose a file or photo')"
 			:limitText="
 				translate('Up to {size} MB per file', {
 					size: config.maxSizeMb || defaultMaxSize,
@@ -79,12 +90,23 @@
 			:fewerLabel="translate('One less')"
 			:moreLabel="translate('One more')"
 			@update:modelValue="(value) => $emit('update:modelValue', value)" />
+		<CheckCards
+			v-else-if="input === 'select' && config.widget === 'checks'"
+			:id="id"
+			:options="options"
+			:modelValue="modelValue"
+			:shown="config.shown || 0"
+			:showAllLabel="translate('Show all {n}', { n: options.length })"
+			:invalid="error !== ''"
+			:disabled="config.disabled === true"
+			@update:modelValue="(value) => $emit('update:modelValue', value)" />
 		<ChoiceCards
 			v-else-if="input === 'select' && config.widget === 'choices'"
 			:id="id"
 			:options="options"
 			:modelValue="modelValue"
 			:choiceOptions="config.choiceOptions || []"
+			:inline="config.inline === true"
 			:otherLabel="config.otherLabel || ''"
 			:required="required"
 			:invalid="error !== ''"
@@ -144,10 +166,12 @@
 </template>
 
 <script>
+import CheckCards from '../forms/CheckCards.vue'
 import ChoiceCards from '../forms/ChoiceCards.vue'
 import CountStepper from '../forms/CountStepper.vue'
 import DateChoices from '../forms/DateChoices.vue'
 import DateInputGroup from '../forms/DateInputGroup.vue'
+import DurationTotal from '../forms/DurationTotal.vue'
 import FieldShell from '../forms/FieldShell.vue'
 import FileUpload from '../forms/FileUpload.vue'
 import { DEFAULT_MAX_SIZE_MB } from '../../../shared/fileFieldSubmit.js'
@@ -171,10 +195,12 @@ export default {
 	name: 'SchemaField',
 
 	components: {
+		CheckCards,
 		ChoiceCards,
 		CountStepper,
 		DateChoices,
 		DateInputGroup,
+		DurationTotal,
 		FieldShell,
 		FileUpload,
 	},
@@ -192,8 +218,8 @@ export default {
 		input: { type: String, default: 'text' },
 		/** The options of a select. */
 		options: { type: Array, default: () => [] },
-		/** The value. */
-		modelValue: { type: String, default: '' },
+		/** The value: text, or the ticked values of check cards. */
+		modelValue: { type: [String, Array], default: '' },
 		/** The files picked for a file field. */
 		files: { type: Array, default: () => [] },
 		/** Bumped by the form to clear a file input. */
@@ -318,7 +344,8 @@ export default {
 		group() {
 			return (
 				this.input === 'date'
-				|| (this.input === 'select' && this.config.widget === 'choices')
+				|| (this.input === 'select'
+					&& ['choices', 'checks'].includes(this.config.widget))
 			)
 		},
 

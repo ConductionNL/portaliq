@@ -146,6 +146,8 @@ class ActionOptionsNormaliser {
 	 * frontend through the SUBJECT-SCOPED collection endpoint, so it can only
 	 * ever offer values the subject may already read.
 	 *
+	 * @spec openspec/changes/action-form-day-entry/specs/site-forms/spec.md
+	 *
 	 * @param array<string, mixed> $provider The provider config.
 	 *
 	 * @return array<string, mixed>|null
@@ -160,6 +162,13 @@ class ActionOptionsNormaliser {
 			}
 
 			$out[$key] = $value;
+		}
+
+		// A second line per option, such as a work process code above its
+		// name (action-form-day-entry).
+		$note = ($provider['noteField'] ?? null);
+		if (is_string($note) === true && preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $note) === 1) {
+			$out['noteField'] = $note;
 		}
 
 		return $out;

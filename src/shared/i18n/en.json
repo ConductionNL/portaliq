@@ -402,5 +402,8 @@
 	"{field}: enter a number, for example 8 or 7.5.": "{field}: enter a number, for example 8 or 7.5.",
 	"{field}: enter a whole number, for example 8.": "{field}: enter a whole number, for example 8.",
 	"{field} is not filled in correctly. Check it.": "{field} is not filled in correctly. Check it.",
-	"Not everything is filled in correctly. Check your answers.": "Not everything is filled in correctly. Check your answers."
+	"Not everything is filled in correctly. Check your answers.": "Not everything is filled in correctly. Check your answers.",
+	"{hours} hours": "{hours} hours",
+	"Show all {n}": "Show all {n}",
+	"Fill in the start and end time": "Fill in the start and end time"
 }

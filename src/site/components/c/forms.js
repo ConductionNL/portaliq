@@ -13,6 +13,7 @@
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  */
 
+import { checkedValues } from '../forms/dayEntry.js'
 import { fileFields } from '../../../shared/fileFieldSubmit.js'
 import { dateProblem } from '../forms/fields.js'
 
@@ -125,6 +126,8 @@ export function fieldInput(action, field, options) {
 			return 'number'
 		case 'email':
 			return 'email'
+		case 'time':
+			return 'time'
 		default:
 			return 'text'
 	}
@@ -316,11 +319,18 @@ export function formBody(action, values, options = {}) {
 		if (files.includes(field)) {
 			continue
 		}
+		const config = fieldConfig(action, field)
+		// Check cards send the ticked values as a list (action-form-day-entry).
+		if (config.widget === 'checks') {
+			body[field] = checkedValues((values || {})[field])
+			continue
+		}
 		const text = sentValue(
 			fieldInput(action, field, options[field]),
 			(values || {})[field],
 		)
-		const type = valueTypeOf(action, field)
+		// A computed total is a number; the server works it out again.
+		const type = config.computed ? 'number' : valueTypeOf(action, field)
 		if (type === 'string') {
 			body[field] = text
 		} else if (text.trim() !== '') {
@@ -386,8 +396,15 @@ export function fieldErrors(action, values, files, t) {
 			continue
 		}
 		const value = (values || {})[field]
+		// A computed total is never typed, so it never gets an error of its
+		// own; its times do (action-form-day-entry).
+		if (config.computed) {
+			continue
+		}
 		const empty =
-			value === undefined || value === null || String(value).trim() === ''
+			value === undefined
+			|| value === null
+			|| (Array.isArray(value) ? value.length === 0 : String(value).trim() === '')
 		if (empty) {
 			if (required) {
 				errors[field] =

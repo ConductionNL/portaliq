@@ -1109,7 +1109,8 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
-		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+		// "Save for later" writes the entry with its own defaults (action-form-day-entry).
+		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted, saveForLater: $this->request->getParam('saveForLater') === true);
 
 		// The body's own checks, before the stamp and any write. First the
 		// action's required fields (REQ-SMF-024): an empty one answers 400

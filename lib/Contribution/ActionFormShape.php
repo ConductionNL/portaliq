@@ -48,7 +48,9 @@ class ActionFormShape {
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 */
 	public function fieldWidget(array $entry, array $config): array {
-		return (new FieldWidgetNormaliser())->apply(entry: $entry, source: $config);
+		// Check cards, a computed total and a file button's words
+		// (action-form-day-entry).
+		return (new EntryFormKeys())->field(entry: (new FieldWidgetNormaliser())->apply(entry: $entry, source: $config), source: $config);
 	}//end fieldWidget()
 
 	/**
@@ -78,7 +80,7 @@ class ActionFormShape {
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 */
 	public function fitWidgets(array $action): array {
-		return (new FieldWidgetNormaliser())->reconcile(action: $action);
+		return (new EntryFormKeys())->fit(action: (new FieldWidgetNormaliser())->reconcile(action: $action));
 	}//end fitWidgets()
 
 	/**
@@ -93,6 +95,7 @@ class ActionFormShape {
 	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 	 */
 	public function flow(array $action, array $whitelist): array {
-		return (new FormStepsNormaliser())->applyToAction(action: $action, whitelist: $whitelist);
+		// A line under the buttons and a "save for later" button (action-form-day-entry).
+		return (new EntryFormKeys())->action(action: (new FormStepsNormaliser())->applyToAction(action: $action, whitelist: $whitelist));
 	}//end flow()
 }//end class
