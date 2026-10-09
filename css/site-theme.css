@@ -1046,6 +1046,51 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 /*
+ * A HERO ACTION AS A TEXT LINK, A BUTTON WITH A CHEVRON (boards Home of
+ * Vaartveld and the academy, site-home-follows-the-school-boards): "Lees wat
+ * er speelt op school" underlined beside the button, "Kom kennismaken ›".
+ */
+.pq-site .ac-hero .pq-hero__action:has(.pq-hero__action-chevron) {
+	display: inline-flex;
+	gap: 0.375rem;
+	align-items: center;
+}
+
+.pq-site .ac-hero .pq-hero__action.pq-hero__action--link {
+	border-color: transparent;
+	background-color: transparent;
+	padding-inline: 0.25rem;
+	color: var(--utrecht-link-color, LinkText);
+	text-decoration: underline;
+}
+
+.pq-hero__action-chevron {
+	flex: none;
+	inline-size: 1.25rem;
+	block-size: 1.25rem;
+}
+
+/*
+ * THE MONTH OF A DATE TILE in the set's case: capitals on the academy's
+ * boards ("OKT"), as typed elsewhere (school-sets-type-scale in thematiq).
+ */
+.pq-site .pq-date-tile .pq-date-tile__month {
+	text-transform: var(--thematiq-date-month-text-transform, none);
+}
+
+/*
+ * ONE FRAME IN THE HERO'S ASIDE (board Home of the academy): the aside is
+ * the card, so a framed list in it loses its own line and padding.
+ */
+.pq-site .pq-hero__aside-card .nl-event-list--framed {
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+}
+
+/*
  * THE SIGN-IN PAGE AS ROLE CARDS (G-18).
  */
 .pq-signin {
