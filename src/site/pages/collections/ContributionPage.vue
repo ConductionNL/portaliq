@@ -103,6 +103,13 @@
 				:more="moreOf(item)"
 				:type="item.block.type || ''"
 				@navigate="$emit('navigate', $event)">
+				<!-- Tabs over a list (mijn-lists-follow-the-boards). -->
+				<ListTabs
+					v-if="item.kind === 'table' && hasTabs(item)"
+					:tabs="item.block.tabs"
+					:chosen="tabOf(item)"
+					:label="headingOf(item)"
+					@choose="tabs = { ...tabs, [item.index]: $event }" />
 				<RichTextBlock
 					v-if="item.kind === 'richText'"
 					:markdown="item.block.markdown || ''" />
@@ -174,8 +181,10 @@
 							: null
 					"
 					:today="today || undefined"
+					:rowPageRoute="rowPageRouteOf(item)"
 					:t="tr"
-					:locale="lang" />
+					:locale="lang"
+					@navigate="$emit('navigate', $event)" />
 
 				<!-- Dated rows, bars and mark chips (site-school-blocks). -->
 				<component
@@ -186,11 +195,14 @@
 					:rows="tableWindow(item).rows"
 					:block="item.block"
 					:collection="item.collection"
-					:label="item.block.label || item.collection.label || ''"
+					:label="showsHeading(item) ? headingOf(item) : ''"
 					:level="sectionLevel"
 					:loading="loadedOf(item.collection).loading"
+					:rowPageRoute="rowPageRouteOf(item)"
+					:today="today || undefined"
 					:t="tr"
-					:locale="lang" />
+					:locale="lang"
+					@navigate="$emit('navigate', $event)" />
 
 				<div
 					v-else-if="item.kind === 'table'"
@@ -326,7 +338,7 @@
 					:loading="loadedOf(item.collection).loading"
 					:label="item.block.label || ''"
 					:caption="item.block.caption || null"
-				:display="item.block.display || ''"
+					:display="item.block.display || ''"
 					:level="sectionLevel"
 					:t="tr"
 					:locale="lang" />
@@ -550,6 +562,7 @@ import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.
 import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
 import { blocks as mijnBlocks } from '../../components/mijn/index.js'
+import { rowsForTab } from '../../components/mijn/lists.js'
 import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
 import { ctaLabel, fillTemplate } from '../../components/mijn/template.js'
 import { keepRecordToOpen, sessionStore as tabStore } from '../inbox/inbox.js'
@@ -623,6 +636,8 @@ export default {
 		GreetingBlock: defineAsyncComponent(mijnBlocks.greeting),
 		CalendarTiles: defineAsyncComponent(mijnBlocks.calendarTiles),
 		TimetableDay: defineAsyncComponent(mijnBlocks.timetable),
+		// mijn-lists-follow-the-boards
+		ListTabs: defineAsyncComponent(mijnBlocks.listTabs),
 	},
 
 	// The shell hands every page the whole contract (session, portal, nav, …);
@@ -673,6 +688,8 @@ export default {
 			pending: null,
 			busyRow: null,
 			recordNotFound: false,
+			/** The chosen tab of each list block, by its index. */
+			tabs: {},
 			target: this.openRecord,
 			// The limited tables a resident asked to see whole, by block index.
 			expanded: {},
@@ -1342,14 +1359,54 @@ export default {
 		 */
 		tableWindow(item) {
 			const sort = listOrder(item.block, item.collection)
+			// The rows of the chosen tab (mijn-lists-follow-the-boards).
+			const rows = this.hasTabs(item)
+				? rowsForTab(this.rowsOf(item), item.block.tabs[this.tabOf(item)])
+				: this.rowsOf(item)
 			if (this.expanded[item.index]) {
 				return {
 					// Without the rows a highlight already shows (collection-skip).
-					rows: skipRows(sortRows(this.rowsOf(item), sort), item.block),
+					rows: skipRows(sortRows(rows, sort), item.block),
 					more: false,
 				}
 			}
-			return windowRows(this.rowsOf(item), { ...item.block, sort })
+			return windowRows(rows, { ...item.block, sort })
+		},
+
+		/**
+		 * Whether a list block shows tabs (mijn-lists-follow-the-boards).
+		 *
+		 * @param {object} item The page block.
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/mijn-lists-follow-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-list-may-show-its-rows-under-tabs
+		 */
+		hasTabs(item) {
+			return Array.isArray(item.block?.tabs) && item.block.tabs.length > 1
+		},
+
+		/**
+		 * @param {object} item The page block.
+		 * @return {number} The index of its chosen tab, the first at first.
+		 *
+		 * @spec openspec/changes/mijn-lists-follow-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-list-may-show-its-rows-under-tabs
+		 */
+		tabOf(item) {
+			return this.tabs[item.index] || 0
+		},
+
+		/**
+		 * The route of the page a block's rows open (`rowPage`), or ''.
+		 *
+		 * @param {object} item The page block.
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/mijn-lists-follow-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-row-may-open-its-own-page
+		 */
+		rowPageRouteOf(item) {
+			return item.block?.rowPage
+				? this.tileTarget({ page: item.block.rowPage }).route
+				: ''
 		},
 
 		/**

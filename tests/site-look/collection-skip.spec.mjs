@@ -47,6 +47,6 @@ test('the whole list, when opened, still leaves the first row out', () => {
 	)
 	assert.match(
 		source,
-		/rows: skipRows\(sortRows\(this\.rowsOf\(item\), sort\), item\.block\)/,
+		/rows: skipRows\(sortRows\(rows, sort\), item\.block\)/,
 	)
 })
