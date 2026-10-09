@@ -15,7 +15,9 @@ Found on the proof instance (portal-proof run 3, De Wilgenboom, 9 October 2026):
 
 - `PortalRateLimit`: a call with a portal session counts per subject (300 a minute, one bucket
   per subject whatever the IP); a call without one counts per IP at 60 a minute. `collection()`
-  asks it first. The `#[AnonRateLimit]` on `collection()` goes from 60 to 600 a minute: it stays
+  asks it first, and `PortalAuthMiddleware` asks it for a collection read it refuses for want of
+  a session (that read never reaches the controller), so it answers 429 instead of 401 over the
+  limit. The `#[AnonRateLimit]` on `collection()` goes from 60 to 600 a minute: it stays
   as the outer bound per IP.
 - The site page shows "De inhoud kon niet worden geladen." with "Opnieuw proberen" for a table
   or figure block whose read failed, instead of an empty block.
@@ -23,8 +25,8 @@ Found on the proof instance (portal-proof run 3, De Wilgenboom, 9 October 2026):
 
 ## Impact
 
-- Server: new `PortalRateLimit`, `ContributionController::collection` (optional constructor
-  argument, autowired). Other portal endpoints keep their limits; the same service can take them
+- Server: new `PortalRateLimit`, `ContributionController::collection` and `PortalAuthMiddleware`
+  (optional constructor arguments, autowired). Other portal endpoints keep their limits; the same service can take them
   over one by one.
 - Site: `ContributionPage.vue` (load error), `WidgetGrid.vue` (`forwardSearch`).
-- Tests: `PortalRateLimitTest`, `tests/portal-subject-rate-limit.spec.mjs`.
+- Tests: `PortalRateLimitTest`, `PortalAuthMiddlewareTest`, `tests/portal-subject-rate-limit.spec.mjs`.
