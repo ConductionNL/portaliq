@@ -113,8 +113,46 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 			$result = WaitingAccountInvitation::BUSY;
 		}
 
+		if ($result === WaitingAccountInvitation::CLAIMED) {
+			return new JSONResponse($this->claimed(subject: $subject));
+		}
+
 		return $this->answer(result: $result);
 	}//end redeem()
+
+	/**
+	 * The body of a successful redeem. When the redeem moved the account into
+	 * the invitation's audience, the session is reissued for it and the new
+	 * bearer goes back with the answer, so the pages of that audience open
+	 * without a second sign-in. A reissue that fails costs nothing: the next
+	 * sign-in carries the account's audience.
+	 *
+	 * @param array<string, mixed> $subject The session.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 */
+	private function claimed(array $subject): array {
+		$body = ['claimed' => true];
+		try {
+			$audience = $this->invitations->audienceOf(subject: $subject);
+			if ($audience === '' || $audience === (string)($subject['audience'] ?? '')) {
+				return $body;
+			}
+
+			$issued = $this->session->refreshSession(authorizationHeader: $this->request->getHeader('Authorization'), audience: $audience);
+		} catch (Throwable $exception) {
+			$this->logger->warning('Portal session reissue after a claim failed', ['exception' => get_class($exception)]);
+			return $body;
+		}
+
+		if ($issued === null) {
+			return $body;
+		}
+
+		return $body + ['audience' => $audience, 'token' => $issued['token'], 'expiresAt' => $issued['expiresAt']];
+	}//end claimed()
 
 	/**
 	 * The answer for what the redeem came to.

@@ -77,6 +77,29 @@ class PortalIdentityMailerTest extends TestCase {
 
 	}//end testTheReferenceLinkIsMailedWithTheSecretInTheFragment()
 
+	/**
+	 * invitation-joins-an-unbound-account (second review M1): when an
+	 * account took on an invitation's audience, the invited address is told
+	 * when, and who to contact. The mail carries no secret and no link.
+	 *
+	 * @return void
+	 */
+	public function testTheInvitedAddressIsToldItsInvitationWasAccepted(): void {
+		$mailer = $this->mailer(byOrganisation: ['slug' => 'vaartveld', 'title' => 'Vaartveld College', 'locales' => ['nl']]);
+
+		$sent = $mailer->sendClaimNotice(email: 'ouder@example.org', organisation: 'vaartveld', moment: new \DateTimeImmutable('2026-10-09T10:00:00+00:00'));
+
+		$this->assertTrue($sent);
+		$this->assertSame(['ouder@example.org'], $this->mailed['to']);
+		$this->assertSame([], $this->mailed['buttons'], 'A notice has no link.');
+		$this->assertStringContainsString('Vaartveld College', $this->mailed['subject']);
+		$this->assertContains('Your invitation to the portal of Vaartveld College was accepted on 9 October 2026.', $this->mailed['texts']);
+		$this->assertContains('Was this not you? Then contact Vaartveld College.', $this->mailed['texts']);
+		$this->assertFalse($mailer->sendClaimNotice(email: 'not-an-address', organisation: 'vaartveld', moment: new \DateTimeImmutable()));
+		$this->assertSame(1, $this->mailed['sent']);
+
+	}//end testTheInvitedAddressIsToldItsInvitationWasAccepted()
+
 	public function testEachTemplateHasItsOwnFragment(): void {
 		$expected = [
 			PortalIdentityMailer::TEMPLATE_REFERENCE_LINK => '#reference=secret-abc',
@@ -230,6 +253,7 @@ class PortalIdentityMailerTest extends TestCase {
 			$this->mailed['languages'][] = (string)$lang;
 			$l10n = $this->createMock(IL10N::class);
 			$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []): string => vsprintf($text, (array)$parameters));
+			$l10n->method('l')->willReturnCallback(static fn (string $type, $value): string => $value->format('j F Y'));
 			return $l10n;
 		});
 
