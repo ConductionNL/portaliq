@@ -67,7 +67,7 @@ class PlanRules {
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 	 */
-	public static function expand(array $template, string $today): array {
+	public function expand(array $template, string $today): array {
 		$duration = (int)($template['durationDays'] ?? 56);
 		if ($duration < 1) {
 			$duration = 56;
@@ -95,10 +95,10 @@ class PlanRules {
 			}
 
 			$offset    = max(0, (int)($action['offsetDays'] ?? 0));
-			$actions[] = ['title' => mb_substr($title, 0, 200), 'kind' => $kind, 'endDate' => self::addDays(day: $today, days: $offset)];
+			$actions[] = ['title' => mb_substr($title, 0, 200), 'kind' => $kind, 'endDate' => $this->addDays(day: $today, days: $offset)];
 		}
 
-		return ['endDate' => self::addDays(day: $today, days: $duration), 'actions' => $actions];
+		return ['endDate' => $this->addDays(day: $today, days: $duration), 'actions' => $actions];
 	}//end expand()
 
 	/**
@@ -111,7 +111,7 @@ class PlanRules {
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 	 */
-	public static function addDays(string $day, int $days): string {
+	public function addDays(string $day, int $days): string {
 		return (new DateTimeImmutable($day, new DateTimeZone('UTC')))->modify('+'.$days.' days')->format('Y-m-d');
 	}//end addDays()
 
@@ -126,7 +126,7 @@ class PlanRules {
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t05
 	 */
-	public static function daysLeft(string $endDate, string $today): ?int {
+	public function daysLeft(string $endDate, string $today): ?int {
 		$end = substr($endDate, 0, 10);
 		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $end) !== 1 || preg_match('/^\d{4}-\d{2}-\d{2}$/', $today) !== 1) {
 			return null;
@@ -150,8 +150,8 @@ class PlanRules {
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t05
 	 */
-	public static function needsAction(array $plan, int $openActions, string $today): bool {
-		$left = self::daysLeft(endDate: (string)($plan['endDate'] ?? ''), today: $today);
+	public function needsAction(array $plan, int $openActions, string $today): bool {
+		$left = $this->daysLeft(endDate: (string)($plan['endDate'] ?? ''), today: $today);
 
 		return ($plan['status'] ?? 'running') === 'running' && $openActions > 0 && $left !== null && $left >= 0 && $left <= self::WARN_DAYS;
 	}//end needsAction()
@@ -168,8 +168,10 @@ class PlanRules {
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t05
 	 */
-	public static function reminderDue(array $plan, int $openActions, string $today): bool {
-		return self::needsAction(plan: $plan, openActions: $openActions, today: $today) === true && trim((string)($plan['endReminderSentAt'] ?? '')) === '';
+	public function reminderDue(array $plan, int $openActions, string $today): bool {
+		$near = $this->needsAction(plan: $plan, openActions: $openActions, today: $today);
+
+		return $near === true && trim((string)($plan['endReminderSentAt'] ?? '')) === '';
 	}//end reminderDue()
 
 	/**
@@ -182,12 +184,12 @@ class PlanRules {
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
 	 */
-	public static function visible(array $plan, string $today): bool {
+	public function visible(array $plan, string $today): bool {
 		if (($plan['status'] ?? 'running') !== 'done') {
 			return true;
 		}
 
-		$ago = self::daysLeft(endDate: substr((string)($plan['doneAt'] ?? ''), 0, 10), today: $today);
+		$ago = $this->daysLeft(endDate: substr((string)($plan['doneAt'] ?? ''), 0, 10), today: $today);
 		if ($ago === null) {
 			return true;
 		}
@@ -206,15 +208,28 @@ class PlanRules {
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 	 */
-	public static function stateOf(array $plan, int $openActions, string $today): string {
+	public function stateOf(array $plan, int $openActions, string $today): string {
 		if (($plan['status'] ?? 'running') === 'done') {
 			return 'done';
 		}
 
-		if (self::needsAction(plan: $plan, openActions: $openActions, today: $today) === true) {
+		if ($this->needsAction(plan: $plan, openActions: $openActions, today: $today) === true) {
 			return 'action';
 		}
 
 		return 'running';
 	}//end stateOf()
+
+	/**
+	 * The identifier of a stored row.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The id, or ''.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
+	 */
+	public function idOf(array $row): string {
+		return (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));
+	}//end idOf()
 }//end class

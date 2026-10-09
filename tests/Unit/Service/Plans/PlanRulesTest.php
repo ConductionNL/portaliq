@@ -47,7 +47,7 @@ class PlanRulesTest extends TestCase {
 			['title' => 'Zonder offset'],
 			['title' => 'Terug in de tijd', 'offsetDays' => -5],
 		]];
-		$out = PlanRules::expand(template: $template, today: '2026-09-01');
+		$out = (new PlanRules())->expand(template: $template, today: '2026-09-01');
 		$this->assertSame('2026-10-27', $out['endDate'], '1 September plus 56 days');
 		$this->assertSame(
 			[
@@ -58,9 +58,9 @@ class PlanRulesTest extends TestCase {
 			],
 			$out['actions']
 		);
-		$this->assertSame('2026-02-28', PlanRules::expand(template: ['durationDays' => 0], today: '2026-01-03')['endDate'], 'no duration: 56 days');
+		$this->assertSame('2026-02-28', (new PlanRules())->expand(template: ['durationDays' => 0], today: '2026-01-03')['endDate'], 'no duration: 56 days');
 		$many = ['actions' => array_fill(0, 30, ['title' => 'x'])];
-		$this->assertCount(PlanRules::MAX_TEMPLATE_ACTIONS, PlanRules::expand(template: $many, today: '2026-09-01')['actions']);
+		$this->assertCount(PlanRules::MAX_TEMPLATE_ACTIONS, (new PlanRules())->expand(template: $many, today: '2026-09-01')['actions']);
 	}//end testATemplateBecomesDatesFromTheStartDay()
 
 	/**
@@ -69,11 +69,11 @@ class PlanRulesTest extends TestCase {
 	 * @return void
 	 */
 	public function testDaysLeft(): void {
-		$this->assertSame(12, PlanRules::daysLeft(endDate: '2026-10-20', today: '2026-10-08'));
-		$this->assertSame(0, PlanRules::daysLeft(endDate: '2026-10-08T23:00:00+02:00', today: '2026-10-08'));
-		$this->assertSame(-3, PlanRules::daysLeft(endDate: '2026-10-05', today: '2026-10-08'));
-		$this->assertNull(PlanRules::daysLeft(endDate: '', today: '2026-10-08'));
-		$this->assertNull(PlanRules::daysLeft(endDate: '2026-10-20', today: 'today'));
+		$this->assertSame(12, (new PlanRules())->daysLeft(endDate: '2026-10-20', today: '2026-10-08'));
+		$this->assertSame(0, (new PlanRules())->daysLeft(endDate: '2026-10-08T23:00:00+02:00', today: '2026-10-08'));
+		$this->assertSame(-3, (new PlanRules())->daysLeft(endDate: '2026-10-05', today: '2026-10-08'));
+		$this->assertNull((new PlanRules())->daysLeft(endDate: '', today: '2026-10-08'));
+		$this->assertNull((new PlanRules())->daysLeft(endDate: '2026-10-20', today: 'today'));
 	}//end testDaysLeft()
 
 	/**
@@ -83,16 +83,16 @@ class PlanRulesTest extends TestCase {
 	 */
 	public function testAPlanAsksForActionInItsLastFourteenDays(): void {
 		$plan = ['status' => 'running', 'endDate' => '2026-10-20'];
-		$this->assertTrue(PlanRules::needsAction(plan: $plan, openActions: 3, today: '2026-10-08'), 'twelve days left');
-		$this->assertTrue(PlanRules::needsAction(plan: $plan, openActions: 1, today: '2026-10-06'), 'exactly fourteen');
-		$this->assertFalse(PlanRules::needsAction(plan: $plan, openActions: 1, today: '2026-10-05'), 'fifteen');
-		$this->assertFalse(PlanRules::needsAction(plan: $plan, openActions: 0, today: '2026-10-08'), 'nothing open');
-		$this->assertFalse(PlanRules::needsAction(plan: $plan, openActions: 3, today: '2026-10-21'), 'past the end');
-		$this->assertFalse(PlanRules::needsAction(plan: ['status' => 'done'] + $plan, openActions: 3, today: '2026-10-08'));
-		$this->assertFalse(PlanRules::needsAction(plan: ['status' => 'running'], openActions: 3, today: '2026-10-08'), 'no end date');
-		$this->assertSame('action', PlanRules::stateOf(plan: $plan, openActions: 3, today: '2026-10-08'));
-		$this->assertSame('running', PlanRules::stateOf(plan: $plan, openActions: 3, today: '2026-09-01'));
-		$this->assertSame('done', PlanRules::stateOf(plan: ['status' => 'done'] + $plan, openActions: 3, today: '2026-10-08'));
+		$this->assertTrue((new PlanRules())->needsAction(plan: $plan, openActions: 3, today: '2026-10-08'), 'twelve days left');
+		$this->assertTrue((new PlanRules())->needsAction(plan: $plan, openActions: 1, today: '2026-10-06'), 'exactly fourteen');
+		$this->assertFalse((new PlanRules())->needsAction(plan: $plan, openActions: 1, today: '2026-10-05'), 'fifteen');
+		$this->assertFalse((new PlanRules())->needsAction(plan: $plan, openActions: 0, today: '2026-10-08'), 'nothing open');
+		$this->assertFalse((new PlanRules())->needsAction(plan: $plan, openActions: 3, today: '2026-10-21'), 'past the end');
+		$this->assertFalse((new PlanRules())->needsAction(plan: ['status' => 'done'] + $plan, openActions: 3, today: '2026-10-08'));
+		$this->assertFalse((new PlanRules())->needsAction(plan: ['status' => 'running'], openActions: 3, today: '2026-10-08'), 'no end date');
+		$this->assertSame('action', (new PlanRules())->stateOf(plan: $plan, openActions: 3, today: '2026-10-08'));
+		$this->assertSame('running', (new PlanRules())->stateOf(plan: $plan, openActions: 3, today: '2026-09-01'));
+		$this->assertSame('done', (new PlanRules())->stateOf(plan: ['status' => 'done'] + $plan, openActions: 3, today: '2026-10-08'));
 	}//end testAPlanAsksForActionInItsLastFourteenDays()
 
 	/**
@@ -102,10 +102,10 @@ class PlanRulesTest extends TestCase {
 	 */
 	public function testOneReminderPerEndDate(): void {
 		$plan = ['status' => 'running', 'endDate' => '2026-10-20'];
-		$this->assertTrue(PlanRules::reminderDue(plan: $plan, openActions: 3, today: '2026-10-08'));
+		$this->assertTrue((new PlanRules())->reminderDue(plan: $plan, openActions: 3, today: '2026-10-08'));
 		$sent = $plan + ['endReminderSentAt' => '2026-10-08T07:00:00+00:00'];
-		$this->assertFalse(PlanRules::reminderDue(plan: $sent, openActions: 3, today: '2026-10-09'));
-		$this->assertTrue(PlanRules::reminderDue(plan: ['endDate' => '2026-11-01', 'endReminderSentAt' => null] + $sent, openActions: 3, today: '2026-10-20'), 'a new end date, a cleared mark');
+		$this->assertFalse((new PlanRules())->reminderDue(plan: $sent, openActions: 3, today: '2026-10-09'));
+		$this->assertTrue((new PlanRules())->reminderDue(plan: ['endDate' => '2026-11-01', 'endReminderSentAt' => null] + $sent, openActions: 3, today: '2026-10-20'), 'a new end date, a cleared mark');
 	}//end testOneReminderPerEndDate()
 
 	/**
@@ -115,9 +115,9 @@ class PlanRulesTest extends TestCase {
 	 */
 	public function testADonePlanStaysAYear(): void {
 		$done = ['status' => 'done', 'doneAt' => '2026-01-10T12:00:00+01:00'];
-		$this->assertTrue(PlanRules::visible(plan: $done, today: '2027-01-10'));
-		$this->assertFalse(PlanRules::visible(plan: $done, today: '2027-01-11'));
-		$this->assertTrue(PlanRules::visible(plan: ['status' => 'running'], today: '2030-01-01'));
-		$this->assertTrue(PlanRules::visible(plan: ['status' => 'done'], today: '2030-01-01'), 'no done date: kept');
+		$this->assertTrue((new PlanRules())->visible(plan: $done, today: '2027-01-10'));
+		$this->assertFalse((new PlanRules())->visible(plan: $done, today: '2027-01-11'));
+		$this->assertTrue((new PlanRules())->visible(plan: ['status' => 'running'], today: '2030-01-01'));
+		$this->assertTrue((new PlanRules())->visible(plan: ['status' => 'done'], today: '2030-01-01'), 'no done date: kept');
 	}//end testADonePlanStaysAYear()
 }//end class

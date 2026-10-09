@@ -54,10 +54,12 @@ class PlanEndReminderService {
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister's ObjectService.
 	 * @param LoggerInterface $logger The logger.
+	 * @param PlanRules $rules The rules that say when a plan is near its end.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly PlanRules $rules = new PlanRules(),
 	) {
 	}//end __construct()
 
@@ -93,12 +95,12 @@ class PlanEndReminderService {
 		foreach ($plans as $row) {
 			$plan = $this->asArray(row: $row);
 			$id   = $this->idOf(row: $plan);
-			if ($id === '' || PlanRules::needsAction(plan: $plan, openActions: 1, today: $today) === false) {
+			if ($id === '' || $this->rules->needsAction(plan: $plan, openActions: 1, today: $today) === false) {
 				continue;
 			}
 
 			$open = $this->openActions(objectService: $objectService, planId: $id);
-			if ($open === 0 || PlanRules::reminderDue(plan: $plan, openActions: $open, today: $today) === false) {
+			if ($open === 0 || $this->rules->reminderDue(plan: $plan, openActions: $open, today: $today) === false) {
 				continue;
 			}
 
@@ -191,7 +193,7 @@ class PlanEndReminderService {
 	 */
 	private function remind(object $objectService, array $plan, string $id, int $open, string $today): bool {
 		$end    = substr((string)$plan['endDate'], 0, 10);
-		$left   = PlanRules::daysLeft(endDate: $end, today: $today);
+		$left   = $this->rules->daysLeft(endDate: $end, today: $today);
 		$members = array_filter((array)($plan['participants'] ?? []), 'is_string');
 		$people  = array_values(array_unique(array_merge([(string)($plan['owner'] ?? '')], $members)));
 		try {

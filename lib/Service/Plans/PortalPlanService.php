@@ -57,7 +57,40 @@ class PortalPlanService {
 
 	public const FAILED = 'failed';
 
-	private const STATUSES = ['todo', 'doing', 'done'];
+	/**
+	 * The statuses an action may have.
+	 *
+	 * @var string[]
+	 */
+	public const STATUSES = ['todo', 'doing', 'done'];
+
+	/**
+	 * The published plan templates of a portal.
+	 *
+	 * @var PlanTemplates
+	 */
+	private readonly PlanTemplates $templates;
+
+	/**
+	 * A plan as the screen shows it.
+	 *
+	 * @var PlanViews
+	 */
+	private readonly PlanViews $views;
+
+	/**
+	 * Checks one requested change to a plan.
+	 *
+	 * @var PlanFieldChanges
+	 */
+	private readonly PlanFieldChanges $changes;
+
+	/**
+	 * Holds what was sent for an action to the fields a participant may write.
+	 *
+	 * @var PlanActionFields
+	 */
+	private readonly PlanActionFields $actionFields;
 
 	/**
 	 * Constructor.
@@ -67,14 +100,20 @@ class PortalPlanService {
 	 * @param PortalContactService $contacts The approved contacts of the owner.
 	 * @param PortalAccountLookup $accounts Reads a participant's name.
 	 * @param IL10N $l10n The words of the PDF.
+	 * @param PlanRules $rules The plan rules: dates, states and row ids.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalContactService $contacts,
-		private readonly PortalAccountLookup $accounts,
+		PortalAccountLookup $accounts,
 		private readonly IL10N $l10n,
+		private readonly PlanRules $rules = new PlanRules(),
 	) {
+		$this->templates    = new PlanTemplates(reader: $reader, rules: $rules);
+		$this->views        = new PlanViews(accounts: $accounts, rules: $rules);
+		$this->changes      = new PlanFieldChanges(rules: $rules);
+		$this->actionFields = new PlanActionFields();
 	}//end __construct()
 
 	/**
@@ -88,13 +127,13 @@ class PortalPlanService {
 	 */
 	public function templates(string $portal): array {
 		$out = [];
-		foreach ($this->publishedTemplates(portal: $portal) as $row) {
+		foreach ($this->templates->published(portal: $portal) as $row) {
 			$out[] = [
 				'id'          => $this->idOf(row: $row),
 				'title'       => (string)($row['title'] ?? ''),
 				'summary'     => (string)($row['summary'] ?? ''),
 				'durationDays' => (int)($row['durationDays'] ?? 0),
-				'actionCount' => count(PlanRules::expand(template: $row, today: '2000-01-01')['actions']),
+				'actionCount' => count($this->rules->expand(template: $row, today: '2000-01-01')['actions']),
 			];
 		}
 
@@ -115,12 +154,12 @@ class PortalPlanService {
 		$cards  = [];
 		$counts = ['running' => 0, 'action' => 0, 'done' => 0];
 		foreach ($this->plansOf(subject: $subject) as $plan) {
-			if (PlanRules::visible(plan: $plan, today: $today) === false) {
+			if ($this->rules->visible(plan: $plan, today: $today) === false) {
 				continue;
 			}
 
 			$actions = $this->actionsOf(planId: $this->idOf(row: $plan), organisation: (string)($subject['organisation'] ?? ''));
-			$card    = $this->card(plan: $plan, actions: $actions, subject: $subject, today: $today);
+			$card    = $this->views->card(plan: $plan, participants: $this->participantsOf(plan: $plan), actions: $actions, subject: $subject, today: $today);
 			$counts[$card['state']]++;
 			$cards[] = $card;
 		}
@@ -150,10 +189,10 @@ class PortalPlanService {
 		}
 
 		$actions = $this->actionsOf(planId: $id, organisation: (string)($subject['organisation'] ?? ''));
-		$view    = $this->card(plan: $plan, actions: $actions, subject: $subject, today: $today);
+		$view    = $this->views->card(plan: $plan, participants: $this->participantsOf(plan: $plan), actions: $actions, subject: $subject, today: $today);
 		$view['goalDetail'] = (string)($plan['goalDetail'] ?? '');
-		$view['note']       = $this->noteOf(plan: $plan);
-		$view['actions']    = array_map(fn (array $action): array => $this->actionView(action: $action), $actions);
+		$view['note']       = $this->views->note(plan: $plan);
+		$view['actions']    = array_map(fn (array $action): array => $this->views->action(action: $action), $actions);
 		$view['canEdit']    = ($view['state'] !== 'done');
 		$view['isOwner']    = ($view['role'] === 'owner');
 		if ($view['isOwner'] === true) {
@@ -187,25 +226,21 @@ class PortalPlanService {
 
 		$template = null;
 		if ($templateId !== '') {
-			$template = $this->templateById(portal: $portal, id: $templateId);
+			$template = $this->templates->byId(portal: $portal, id: $templateId);
 			if ($template === null) {
 				return ['status' => self::INVALID, 'id' => ''];
 			}
 		}
 
-		$title = trim($title);
-		if ($title === '' && $template !== null) {
-			$title = (string)($template['title'] ?? '');
-		}
-
-		if ($title === '' || mb_strlen($title) > 200 || $owner === '') {
+		$title = $this->templates->startTitle(template: $template, title: $title);
+		if ($title === '' || $owner === '') {
 			return ['status' => self::INVALID, 'id' => ''];
 		}
 
 		$plan = ['owner' => $owner, 'participants' => $participants, 'title' => $title, 'status' => 'running', 'template' => $templateId];
 		$expanded = ['endDate' => '', 'actions' => []];
 		if ($template !== null) {
-			$expanded = PlanRules::expand(template: $template, today: $today);
+			$expanded = $this->rules->expand(template: $template, today: $today);
 			$plan['goal']       = (string)($template['goal'] ?? '');
 			$plan['goalDetail'] = (string)($template['goalDetail'] ?? '');
 			$plan['endDate']    = $expanded['endDate'];
@@ -257,7 +292,8 @@ class PortalPlanService {
 
 		$data = [];
 		foreach ($changes as $field => $value) {
-			$result = $this->changeOne(plan: $plan, subject: $subject, isOwner: $isOwner, field: (string)$field, value: $value, today: $today);
+			$editor = $this->refOf(subject: $subject);
+			$result = $this->changes->change(plan: $plan, editor: $editor, isOwner: $isOwner, field: (string)$field, value: $value, today: $today);
 			if ($result['status'] !== self::OK) {
 				return $result['status'];
 			}
@@ -398,7 +434,8 @@ class PortalPlanService {
 			return self::FORBIDDEN;
 		}
 
-		$clean = $this->cleanAction(plan: $plan, data: $data, requireTitle: true);
+		$members = array_merge([(string)($plan['owner'] ?? '')], $this->participantsOf(plan: $plan));
+		$clean   = $this->actionFields->clean(data: $data, members: $members, requireTitle: true);
 		if ($clean === null) {
 			return self::INVALID;
 		}
@@ -429,10 +466,8 @@ class PortalPlanService {
 	public function updateAction(array $subject, string $id, string $actionId, array $data): string {
 		$plan = $this->planFor(subject: $subject, id: $id);
 		$organisation = (string)($subject['organisation'] ?? '');
-		$known = false;
-		foreach ($this->actionsOf(planId: $id, organisation: $organisation) as $action) {
-			$known = ($known || $this->idOf(row: $action) === $actionId);
-		}
+		$ids   = array_map(fn (array $action): string => $this->idOf(row: $action), $this->actionsOf(planId: $id, organisation: $organisation));
+		$known = in_array($actionId, $ids, true);
 
 		if ($plan === null || $known === false) {
 			return self::NOT_FOUND;
@@ -442,7 +477,8 @@ class PortalPlanService {
 			return self::FORBIDDEN;
 		}
 
-		$clean = $this->cleanAction(plan: $plan, data: $data, requireTitle: false);
+		$members = array_merge([(string)($plan['owner'] ?? '')], $this->participantsOf(plan: $plan));
+		$clean   = $this->actionFields->clean(data: $data, members: $members, requireTitle: false);
 		if ($clean === null || $clean === []) {
 			return self::INVALID;
 		}
@@ -622,69 +658,6 @@ class PortalPlanService {
 	}//end participantRefs()
 
 	/**
-	 * Check one requested change and say what to write.
-	 *
-	 * @param array<string, mixed> $plan The plan row.
-	 * @param array<string, mixed> $subject The session subject.
-	 * @param bool $isOwner Whether the viewer made the plan.
-	 * @param string $field The field.
-	 * @param mixed $value The new value.
-	 * @param string $today Today, `Y-m-d`.
-	 *
-	 * @return array{status: string, data: array<string, mixed>}
-	 */
-	private function changeOne(array $plan, array $subject, bool $isOwner, string $field, mixed $value, string $today): array {
-		$invalid = ['status' => self::INVALID, 'data' => []];
-		if (in_array($field, ['title', 'endDate', 'status'], true) === true && $isOwner === false) {
-			return ['status' => self::FORBIDDEN, 'data' => []];
-		}
-
-		switch ($field) {
-			case 'goal':
-			case 'goalDetail':
-				if (is_string($value) === false || mb_strlen($value) > 2000) {
-					return $invalid;
-				}
-
-				return ['status' => self::OK, 'data' => [$field => trim($value)]];
-			case 'title':
-				if (is_string($value) === false || trim($value) === '' || mb_strlen($value) > 200) {
-					return $invalid;
-				}
-
-				return ['status' => self::OK, 'data' => ['title' => trim($value)]];
-			case 'note':
-				if (is_string($value) === false || mb_strlen($value) > 5000) {
-					return $invalid;
-				}
-
-				$note = ['text' => trim($value), 'editedBy' => $this->refOf(subject: $subject), 'editedAt' => gmdate(DATE_ATOM)];
-
-				return ['status' => self::OK, 'data' => ['note' => $note]];
-			case 'endDate':
-				if (is_string($value) === false || PlanRules::daysLeft(endDate: $value, today: $today) === null || strlen($value) !== 10) {
-					return $invalid;
-				}
-
-				$data = ['endDate' => $value];
-				if ($value !== substr((string)($plan['endDate'] ?? ''), 0, 10)) {
-					// A new end date earns a new reminder.
-					$data['endReminderSentAt'] = null;
-				}
-
-				return ['status' => self::OK, 'data' => $data];
-			case 'status':
-				if ($value !== 'done') {
-					return $invalid;
-				}
-
-				return ['status' => self::OK, 'data' => ['status' => 'done', 'doneAt' => gmdate(DATE_ATOM)]];
-			default:
-				return $invalid;
-		}//end switch
-	}//end changeOne()
-
-	/**
 	 * Save fields on a plan as the viewer: the owner by owner, a participant by membership.
 	 *
 	 * @param array<string, mixed> $subject The session subject.
@@ -736,70 +709,6 @@ class PortalPlanService {
 	}//end actionsOf()
 
 	/**
-	 * The fields of an action a participant may write, or null when one is wrong.
-	 *
-	 * @param array<string, mixed> $plan The plan row.
-	 * @param array<string, mixed> $data What was sent.
-	 * @param bool $requireTitle Whether a title is needed (a new action).
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function cleanAction(array $plan, array $data, bool $requireTitle): ?array {
-		$clean = [];
-		if (array_key_exists('title', $data) === true || $requireTitle === true) {
-			$title = $this->text(value: ($data['title'] ?? null));
-			if ($title === '' || mb_strlen($title) > 200) {
-				return null;
-			}
-
-			$clean['title'] = $title;
-		}
-
-		if (array_key_exists('status', $data) === true) {
-			if (in_array($data['status'], self::STATUSES, true) === false) {
-				return null;
-			}
-
-			$clean['status'] = $data['status'];
-		}
-
-		if (array_key_exists('kind', $data) === true) {
-			if (in_array($data['kind'], ['once', 'recurring'], true) === false) {
-				return null;
-			}
-
-			$clean['kind'] = $data['kind'];
-		}
-
-		if (array_key_exists('description', $data) === true) {
-			if (is_string($data['description']) === false || mb_strlen($data['description']) > 2000) {
-				return null;
-			}
-
-			$clean['description'] = trim($data['description']);
-		}
-
-		if (array_key_exists('endDate', $data) === true) {
-			if (is_string($data['endDate']) === false || preg_match('/^\d{4}-\d{2}-\d{2}$/', $data['endDate']) !== 1) {
-				return null;
-			}
-
-			$clean['endDate'] = $data['endDate'];
-		}
-
-		if (array_key_exists('assignee', $data) === true) {
-			$members = array_merge([(string)($plan['owner'] ?? '')], $this->participantsOf(plan: $plan));
-			if (is_string($data['assignee']) === false || in_array($data['assignee'], $members, true) === false) {
-				return null;
-			}
-
-			$clean['assignee'] = $data['assignee'];
-		}
-
-		return $clean;
-	}//end cleanAction()
-
-	/**
 	 * Create one action of a plan.
 	 *
 	 * @param array<string, mixed> $subject The session subject, who writes it.
@@ -820,172 +729,6 @@ class PortalPlanService {
 
 		return $row !== null;
 	}//end createAction()
-
-	/**
-	 * The card of a plan: the numbers and the words of the list and the page.
-	 *
-	 * @param array<string, mixed> $plan The plan row.
-	 * @param array<int, array<string, mixed>> $actions Its actions.
-	 * @param array<string, mixed> $subject The session subject.
-	 * @param string $today Today, `Y-m-d`.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function card(array $plan, array $actions, array $subject, string $today): array {
-		$done  = count(array_filter($actions, static fn (array $action): bool => ($action['status'] ?? '') === 'done'));
-		$open  = (count($actions) - $done);
-		$owner = (string)($plan['owner'] ?? '');
-		$role  = 'participant';
-		if ($owner === (string)($subject['subjectRef'] ?? '')) {
-			$role = 'owner';
-		}
-
-		$end      = substr((string)($plan['endDate'] ?? ''), 0, 10);
-		$sharedBy = '';
-		if ($role !== 'owner') {
-			$sharedBy = $this->nameOf(ref: $owner);
-		}
-
-		$names = [];
-		foreach (array_merge([$owner], $this->participantsOf(plan: $plan)) as $ref) {
-			$names[] = ['ref' => $ref, 'displayName' => $this->nameOf(ref: $ref), 'isOwner' => ($ref === $owner)];
-		}
-
-		return [
-			'id'            => $this->idOf(row: $plan),
-			'title'         => (string)($plan['title'] ?? ''),
-			'goal'          => (string)($plan['goal'] ?? ''),
-			'endDate'       => $end,
-			'daysLeft'      => PlanRules::daysLeft(endDate: $end, today: $today),
-			'state'         => PlanRules::stateOf(plan: $plan, openActions: $open, today: $today),
-			'role'          => $role,
-			'sharedBy'      => $sharedBy,
-			'openActions'   => $open,
-			'doneActions'   => $done,
-			'totalActions'  => count($actions),
-			'participants'  => $names,
-		];
-	}//end card()
-
-	/**
-	 * The note of a plan with its last editor's name.
-	 *
-	 * @param array<string, mixed> $plan The plan row.
-	 *
-	 * @return array{text: string, editedBy: string, editedAt: string}
-	 */
-	private function noteOf(array $plan): array {
-		$note = $plan['note'] ?? [];
-		if (is_array($note) === false) {
-			$note = [];
-		}
-
-		$editor = (string)($note['editedBy'] ?? '');
-		if ($editor !== '') {
-			$editor = $this->nameOf(ref: $editor);
-		}
-
-
-		return [
-			'text'     => (string)($note['text'] ?? ''),
-			'editedBy' => $editor,
-			'editedAt' => (string)($note['editedAt'] ?? ''),
-		];
-	}//end noteOf()
-
-	/**
-	 * An action as the page shows it.
-	 *
-	 * @param array<string, mixed> $action The action row.
-	 *
-	 * @return array<string, string>
-	 */
-	private function actionView(array $action): array {
-		return [
-			'id'          => $this->idOf(row: $action),
-			'title'       => (string)($action['title'] ?? ''),
-			'description' => (string)($action['description'] ?? ''),
-			'kind'        => (string)($action['kind'] ?? 'once'),
-			'status'      => (string)($action['status'] ?? 'todo'),
-			'endDate'     => substr((string)($action['endDate'] ?? ''), 0, 10),
-			'assignee'    => (string)($action['assignee'] ?? ''),
-			'assigneeName' => $this->nameOf(ref: (string)($action['assignee'] ?? '')),
-		];
-	}//end actionView()
-
-	/**
-	 * A person's name, or '' when the account is unknown.
-	 *
-	 * @param string $ref The subject reference.
-	 *
-	 * @return string
-	 */
-	private function nameOf(string $ref): string {
-		if ($ref === '') {
-			return '';
-		}
-
-		$account = $this->accounts->bySubjectRef(subjectRef: $ref);
-
-		return (string)($account['displayName'] ?? '');
-	}//end nameOf()
-
-	/**
-	 * The published templates of a portal.
-	 *
-	 * @param string $portal The portal's slug.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function publishedTemplates(string $portal): array {
-		if ($portal === '') {
-			return [];
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: 'portalPlanTemplate',
-			scopeField: 'portal',
-			subjectRef: $portal,
-			organisation: '',
-			limit: 100
-		);
-
-		return array_values(array_filter($rows, static fn (array $row): bool => ($row['published'] ?? false) === true));
-	}//end publishedTemplates()
-
-	/**
-	 * One published template of a portal.
-	 *
-	 * @param string $portal The portal's slug.
-	 * @param string $id The template.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function templateById(string $portal, string $id): ?array {
-		foreach ($this->publishedTemplates(portal: $portal) as $row) {
-			if ($this->idOf(row: $row) === $id) {
-				return $row;
-			}
-		}
-
-		return null;
-	}//end templateById()
-
-	/**
-	 * A value as trimmed text, or ''.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string
-	 */
-	private function text(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		return '';
-	}//end text()
 
 	/**
 	 * The session subject's reference.
@@ -1017,6 +760,6 @@ class PortalPlanService {
 	 * @return string
 	 */
 	private function idOf(array $row): string {
-		return (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));
+		return $this->rules->idOf(row: $row);
 	}//end idOf()
 }//end class
