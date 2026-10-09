@@ -28,6 +28,11 @@ declaration, but three things a portal cannot declare today:
   accent's light wash in the accent's text colour and bold, counts on the theme's badge colours, a
   row's second line under its name (no mid-word break), the person block, a tinted organisation card.
   Colours come from the theme's `--thematiq-accent-*` and `--thematiq-badge-*` roles only.
+- A layout that names `overview` does not list the contribution's home page a second time.
+- The site theme reads three new set tokens with the Zuiddrecht values as defaults:
+  `--nldesign-website-menu-item-min-block-size` (60px), `--nldesign-website-menu-current-bar-width` (4px)
+  and `--nldesign-website-menu-current-color` (the text colour). The school sets name 44 to 48px, no bar
+  and their accent's text colour (thematiq change `school-menus-follow-their-boards`).
 
 ## For learniq
 
