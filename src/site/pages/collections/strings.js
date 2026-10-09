@@ -34,6 +34,7 @@ export default {
 			'Dit staat niet in uw lijst, dus we tonen er niets van.',
 		'In this dossier': 'In dit dossier',
 		'The items could not be loaded.': 'De inhoud kon niet worden geladen.',
+		'Try again': 'Opnieuw proberen',
 		'Removed.': 'Verwijderd.',
 		'This can no longer be done for this item.':
 			'Dit kan voor dit item niet meer.',
@@ -79,6 +80,7 @@ export default {
 			'This record is not in your list, so nothing of it is shown.',
 		'In this dossier': 'In this dossier',
 		'The items could not be loaded.': 'The items could not be loaded.',
+		'Try again': 'Try again',
 		'Removed.': 'Removed.',
 		'This can no longer be done for this item.':
 			'This can no longer be done for this item.',
