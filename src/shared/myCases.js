@@ -80,7 +80,6 @@ export function caseTitle(row) {
 	return UUID.test(id) ? '' : id
 }
 
-
 /**
  * What a case's status reads as in the list: the words the server stamped as
  * `_statusLabel` from the collection's `statusLabelField`, else the status's

@@ -567,11 +567,11 @@ import {
 	loadPerRecordRows,
 	menuPerson,
 	menuSubline,
-	withLayoutLabel,
 	ownAreaLink as ownAreaLinkFor,
 	residentMenuGroups,
 	showsResidentMenu,
 	withAreaName,
+	withLayoutLabel,
 } from './lib/residentMenu.js'
 import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js'
 import {
