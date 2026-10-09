@@ -44,6 +44,7 @@ import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import AvailabilityReport from './widgets/AvailabilityReport.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
+import PortalAccessibility from './widgets/PortalAccessibility.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
@@ -259,6 +260,17 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "How residents sign in to the portal's organisation: per provider its own OIDC broker or integriq, and the integriq broker settings (signin-integriq-broker-login T11). Custom because the secret is write-only and the server refuses a broker route whose settings are incomplete.",
+	},
+	// @custom-widget-ratchet exclude the measurement frames each page in this browser and runs axe-core inside it, then posts the run to a guarded controller, which no built-in widget does
+	PortalAccessibility: {
+		kind: 'widget',
+		component: PortalAccessibility,
+		defaultSize: { w: 12, h: 10 },
+		minSize: { w: 6, h: 6 },
+		maxSize: { w: 12, h: 14 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "The accessibility measurement and the audit the public statement rests on (site-accessibility-statement). Custom because axe-core runs in a frame of each page in the administrator's browser and the server refuses an A or B claim without an audit.",
 	},
 	// @custom-widget-ratchet exclude the three states are a classification over the portal's pages read through an admin controller, and a built-in widget has no way to say "no page at the root" rather than show an empty list
 	PortalHomePage: {

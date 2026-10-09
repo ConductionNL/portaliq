@@ -4557,7 +4557,7 @@
                         "items": {
                             "type": "string"
                         },
-                        "description": "The pages the accessibility measurement checks besides the home, search, publication and not-found pages, as site routes.",
+                        "description": "The pages the accessibility measurement checks besides the home, search and not-found pages, as site routes. Add a publication page here.",
                         "example": [
                             "/contact"
                         ]
