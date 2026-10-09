@@ -149,6 +149,18 @@ export function badgeRows(entry, recordRows) {
 /** The name a portal's layout calls each item by: a section, or `app:page`. */
 const NAMES = new WeakMap()
 
+/** The items that are one row of a page listed once per row. */
+const ROW_ITEMS = new WeakSet()
+
+/**
+ * The row items of a per-row page WITHOUT a declared group: each heads a
+ * group of its own and is named after the page ("Vera: Oudergesprekken").
+ */
+const SPLIT_ROW_ITEMS = new WeakSet()
+
+/** The items of a contribution's home page, which `overview` stands for. */
+const HOME_ITEMS = new WeakSet()
+
 /**
  * The resident menu in groups: cases and tasks first, then the groups of the
  * contributed pages (a page's declared `group`, shared across apps, else one
@@ -239,15 +251,17 @@ export function residentMenuGroups(
 			group = { key, title, items: [] }
 			appGroups.push(group)
 		}
-		group.items.push(
-			named(
-				{
-					...itemFor(entry, t, unread, hrefFor, recordRows),
-					source: appNameOf(entry),
-				},
-				`${entry.contribution?.app || ''}:${entry.page?.id || ''}`,
-			),
+		const pageItem = named(
+			{
+				...itemFor(entry, t, unread, hrefFor, recordRows),
+				source: appNameOf(entry),
+			},
+			`${entry.contribution?.app || ''}:${entry.page?.id || ''}`,
 		)
+		if (entry.page?.home === true) {
+			HOME_ITEMS.add(pageItem)
+		}
+		group.items.push(pageItem)
 	}
 
 	const groups = [
@@ -325,8 +339,15 @@ export function laidOut(groups, layout, t, hrefFor) {
 	for (const group of groups) {
 		for (const item of group.items) {
 			const name = NAMES.get(item)
-			if (name && !byName.has(name)) {
-				byName.set(name, item)
+			if (!name) {
+				continue
+			}
+			if (!byName.has(name)) {
+				byName.set(name, [])
+			}
+			// One item per name, except a page listed once per row.
+			if (byName.get(name).length === 0 || ROW_ITEMS.has(item)) {
+				byName.get(name).push(item)
 			}
 		}
 	}
@@ -337,23 +358,68 @@ export function laidOut(groups, layout, t, hrefFor) {
 	}
 	const placed = new Set()
 	const out = []
+	// A layout that names `overview` stands for the home pages too: they are
+	// what `/mijn` shows, so they are not listed a second time
+	// (resident-menu-follows-the-boards).
+	if (
+		layout.some((group) =>
+			(Array.isArray(group?.items) ? group.items : []).some(
+				(declared) => layoutItem(declared).name === 'overview',
+			),
+		)
+	) {
+		for (const group of groups) {
+			for (const item of group.items) {
+				if (HOME_ITEMS.has(item)) {
+					placed.add(item)
+				}
+			}
+		}
+	}
 	layout.forEach((group, index) => {
 		const title = String(group?.title ?? '').trim()
 		const items = []
-		for (const name of Array.isArray(group?.items) ? group.items : []) {
+		for (const declared of Array.isArray(group?.items) ? group.items : []) {
+			// An item is a name, or `{item, label}` to give it the board's
+			// word ("Berichten" for the conversations), resident-menu-follows-the-boards.
+			const { name, label } = layoutItem(declared)
 			if (name === 'overview') {
 				items.push({
 					key: '__overview__',
-					name: t('Overview'),
+					name: label || t('Overview'),
 					link: ACCOUNT_ROUTE,
 					href: hrefFor(ACCOUNT_ROUTE),
 				})
 				continue
 			}
-			const item = byName.get(String(name))
-			if (item && !placed.has(item)) {
+			// A page listed once per row places all its rows here; one whose
+			// rows each head a group of their own ("Vera: Oudergesprekken")
+			// stands once, as the page, which lets the resident choose
+			// (resident-menu-follows-the-boards).
+			const found = byName.get(name) || []
+			if (found.length > 0 && SPLIT_ROW_ITEMS.has(found[0])) {
+				found.forEach((item) => placed.add(item))
+				const link = found[0].link.slice(0, found[0].link.lastIndexOf('/'))
+				const copy = plain(found[0])
+				items.push({
+					...copy,
+					key: `${copy.key.slice(0, copy.key.lastIndexOf(':'))}`,
+					name: label || copy.name,
+					link,
+					href: hrefFor(link),
+				})
+				continue
+			}
+			for (const item of found) {
+				if (placed.has(item)) {
+					continue
+				}
 				placed.add(item)
-				items.push(plain(item))
+				const copy = plain(item)
+				if (label && !ROW_ITEMS.has(item)) {
+					copy.name = label
+				}
+				items.push(copy)
 			}
 		}
 		if (items.length > 0) {
@@ -378,6 +444,112 @@ export function laidOut(groups, layout, t, hrefFor) {
 }
 
 /**
+ * One item of a declared group: its name, and the label the portal gives
+ * it, if any (resident-menu-follows-the-boards).
+ *
+ * @param {string|{item: string, label?: string}} declared The declared item.
+ * @return {{name: string, label: string}} The name and the label ('' for none).
+ * @spec openspec/changes/resident-menu-follows-the-boards/specs/site-resident-menu/spec.md#requirement-a-declared-menu-item-may-carry-the-boards-word
+ */
+export function layoutItem(declared) {
+	if (declared && typeof declared === 'object') {
+		return {
+			name: String(declared.item ?? ''),
+			label: String(declared.label ?? '').trim(),
+		}
+	}
+	return { name: String(declared ?? ''), label: '' }
+}
+
+/**
+ * The person block at the top of the menu: the initials, the name from the
+ * session and a second line from the first row of the collection the portal
+ * names (`residentMenu.person`: `{collection: 'app:id', fields: [...]}`),
+ * joined by " · " ("4 havo · klas H4b"). Null when the portal declares no
+ * person block or the session carries no name.
+ *
+ * @param {object|null} session The session.
+ * @param {object|null} declared The portal's `residentMenu.person`.
+ * @param {Record<string, Array<object>>} [recordRows] The rows loaded for the menu.
+ * @return {{initials: string, name: string, subline: string}|null} The person.
+ * @spec openspec/changes/resident-menu-follows-the-boards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-the-person-and-their-class
+ */
+export function menuPerson(session, declared, recordRows = {}) {
+	if (!session || !declared || typeof declared !== 'object') {
+		return null
+	}
+	const name = String(session.displayName || session.name || '').trim()
+	if (
+		name === ''
+		|| name === String(session.subjectRef || '')
+		|| /^\d+$/.test(name)
+	) {
+		return null
+	}
+	const words = name.split(/\s+/)
+	const initials = (
+		words[0][0] + (words.length > 1 ? words[words.length - 1][0] : '')
+	).toUpperCase()
+	return { initials, name, subline: menuSubline(declared, recordRows) }
+}
+
+/**
+ * The second line of the person block or the organisation card: the declared
+ * fields of the first row of the declared collection, joined by " · ".
+ *
+ * @param {object|null} declared The portal's `residentMenu.person`.
+ * @param {Record<string, Array<object>>} [recordRows] The rows loaded for the menu.
+ * @return {string} The line, or ''.
+ * @spec openspec/changes/resident-menu-follows-the-boards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-the-person-and-their-class
+ */
+export function menuSubline(declared, recordRows = {}) {
+	const key = String(declared?.collection ?? '')
+	const row = (recordRows?.[key] || [])[0]
+	if (!row || !Array.isArray(declared?.fields)) {
+		return ''
+	}
+	return declared.fields
+		.map((field) => row[field])
+		.filter(
+			(value) =>
+				(typeof value === 'string' && value.trim() !== '')
+				|| typeof value === 'number',
+		)
+		.map((value) => String(value).trim())
+		.join(' · ')
+}
+
+/**
+ * The route an address of the own area stands for, when the portal gives the
+ * item a second address (`residentMenu.routes`: `{"berichten": "messages"}`),
+ * so `/mijn/berichten` opens the conversations. '' when the route is no such
+ * address or the item it names is not in the navigation.
+ *
+ * @param {Array<object>} nav The navigation.
+ * @param {string} route The route on screen.
+ * @param {Record<string, string>|null} routes The portal's addresses.
+ * @return {string} The route to open instead, or ''.
+ * @spec openspec/changes/resident-menu-follows-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-give-an-item-of-the-own-area-a-second-address
+ */
+export function aliasedRoute(nav, route, routes) {
+	if (!routes || typeof routes !== 'object') {
+		return ''
+	}
+	const match = /^\/mijn\/([a-z0-9-]+)$/.exec(String(route || ''))
+	const target = match ? routes[match[1]] : undefined
+	if (typeof target !== 'string' || target === '') {
+		return ''
+	}
+	const entry = (Array.isArray(nav) ? nav : []).find((candidate) =>
+		candidate.special
+			? candidate.special === target
+			: `${candidate.contribution?.app || ''}:${candidate.page?.id || ''}`
+				=== target,
+	)
+	return entry ? routeForNav(entry) : ''
+}
+
+/**
  * Read the rows of every collection a page lists itself per row of
  * (`perRecord`), scoped to the resident, by `<app>:<collection>`. A
  * collection that cannot be read is left out, and its pages are then listed
@@ -385,12 +557,24 @@ export function laidOut(groups, layout, t, hrefFor) {
  *
  * @param {Array<object>|null} contributions The aggregate's `contributions`.
  * @param {object} api The portal api (`fetchCollection`).
+ * @param {Array<string>} [extra] More collections to read, as `app:id`.
  * @return {Promise<Record<string, Array<object>>>} The rows.
  * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
-export async function loadPerRecordRows(contributions, api) {
+export async function loadPerRecordRows(contributions, api, extra = []) {
 	const wanted = new Map()
 	for (const contribution of Array.isArray(contributions) ? contributions : []) {
+		// A collection the portal names for the menu itself, as `app:id`
+		// (`residentMenu.person`, resident-menu-follows-the-boards).
+		for (const key of Array.isArray(extra) ? extra : []) {
+			const collection = (contribution?.collections || []).find(
+				(candidate) =>
+					candidate && `${contribution.app}:${candidate.id}` === key,
+			)
+			if (collection) {
+				wanted.set(key, collection)
+			}
+		}
 		for (const page of contribution?.pages || []) {
 			// The rows of a `perRecord` collection, and of a `badge` one to count.
 			for (const id of [page?.perRecord, page?.badge?.collection]) {
@@ -512,7 +696,7 @@ function addPerRecordItems(
 			}
 		}
 		const link = `${item.link}/${encodeURIComponent(id)}`
-		group.items.push({
+		const rowItem = {
 			...item,
 			key: `${entry.key}:${id}`,
 			link,
@@ -520,7 +704,15 @@ function addPerRecordItems(
 			// One page per row reads the same under each row's heading on
 			// purpose; it never makes another item take its app's name.
 			perRecord: true,
-		})
+		}
+		// A declared group names the page once and gets every row
+		// (resident-menu-follows-the-boards).
+		NAMES.set(rowItem, `${app}:${entry.page?.id || ''}`)
+		ROW_ITEMS.add(rowItem)
+		if (!grouped) {
+			SPLIT_ROW_ITEMS.add(rowItem)
+		}
+		group.items.push(rowItem)
 	}
 }
 
@@ -571,4 +763,32 @@ export function pageGroupOf(entry) {
 		key: `app:${entry.contribution?.app || ''}`,
 		title: appNameOf(entry),
 	}
+}
+
+/**
+ * A navigation entry with the label the portal's menu layout gives its item
+ * (`{item, label}` in `residentMenu.groups`), so the page's heading and
+ * breadcrumb read what the menu reads. The entry as it is without one.
+ *
+ * @param {object|null} entry The navigation entry.
+ * @param {Array<{title: string, items: Array}>|null} layout The portal's groups.
+ * @return {object|null} The entry.
+ * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-the-messages-item-opens-the-conversations-under-the-boards-title
+ */
+export function withLayoutLabel(entry, layout) {
+	if (!entry || !Array.isArray(layout)) {
+		return entry
+	}
+	const name = entry.special
+		? entry.special
+		: `${entry.contribution?.app || ''}:${entry.page?.id || ''}`
+	for (const group of layout) {
+		for (const declared of Array.isArray(group?.items) ? group.items : []) {
+			const { name: item, label } = layoutItem(declared)
+			if (item === name && label !== '') {
+				return { ...entry, label }
+			}
+		}
+	}
+	return entry
 }

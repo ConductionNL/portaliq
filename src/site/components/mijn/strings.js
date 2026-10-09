@@ -14,6 +14,17 @@
 
 export default {
 	nl: {
+		// mijn-overview-follows-the-boards
+		'week {number}': 'week {number}',
+		// mijn-lists-follow-the-boards
+		Today: 'Vandaag',
+		Tomorrow: 'Morgen',
+		Yesterday: 'Gisteren',
+		'Below {mark}': 'Onder {mark}',
+		'on average over {count} subjects': 'gemiddeld over {count} vakken',
+		'on average over 1 subject': 'gemiddeld over 1 vak',
+		// mijn-messages-follow-the-boards: a case without a readable name
+		Case: 'Zaak',
 		// calendar-timetable-display
 		'Choose a day': 'Kies een dag',
 		'Nothing on the timetable this day.':
@@ -105,6 +116,17 @@ export default {
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		// mijn-overview-follows-the-boards
+		'week {number}': 'week {number}',
+		// mijn-lists-follow-the-boards
+		Today: 'Today',
+		Tomorrow: 'Tomorrow',
+		Yesterday: 'Yesterday',
+		'Below {mark}': 'Below {mark}',
+		'on average over {count} subjects': 'on average over {count} subjects',
+		'on average over 1 subject': 'on average over 1 subject',
+		// mijn-messages-follow-the-boards: a case without a readable name
+		Case: 'Case',
 		// calendar-timetable-display
 		'Choose a day': 'Choose a day',
 		'Nothing on the timetable this day.': 'Nothing on the timetable this day.',

@@ -295,7 +295,8 @@ export default {
 						openable && typeof this.caseRoute === 'function'
 							? this.caseRoute(target) || ''
 							: '',
-					title: caseTitle(row),
+					// Never an empty or raw-id title (mijn-messages-follow-the-boards).
+					title: caseTitle(row) || this.mt('Case'),
 					source,
 					mandate: row._mandate?.label || '',
 					status: caseStatus(row),

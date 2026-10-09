@@ -49,26 +49,36 @@ export function caseTarget(row) {
 	}
 }
 
+/** A uuid: an identifier, never words a resident reads. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 /**
- * What a case is called in the list: its title, else its reference, else its id.
+ * What a case is called in the list: its title, else its reference, else its
+ * case type's name, else its id when that is no uuid. A uuid is never a
+ * title: a card would read "3f2a9c1e-…" (mijn-messages-follow-the-boards).
  *
  * @param {object} row The case row.
- * @return {string} The name.
+ * @return {string} The name, or '' when the case has none a person can read.
  *
  * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+ * @spec openspec/changes/mijn-messages-follow-the-boards/specs/site-mijn-omgeving/spec.md#requirement-no-title-is-a-raw-identifier
  */
 export function caseTitle(row) {
-	for (const field of ['title', 'name', 'reference', 'identifier']) {
+	for (const field of [
+		'title',
+		'name',
+		'reference',
+		'identifier',
+		'_caseTypeName',
+	]) {
 		const value = row?.[field]
 		if (typeof value === 'string' && value.trim() !== '') {
 			return value
 		}
 	}
-	return String(row?.id || row?.uuid || row?.['@self']?.id || '')
+	const id = String(row?.id || row?.uuid || row?.['@self']?.id || '')
+	return UUID.test(id) ? '' : id
 }
-
-/** A uuid: an identifier, never words a resident reads. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * What a case's status reads as in the list: the words the server stamped as

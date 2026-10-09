@@ -12,6 +12,7 @@
 <template>
 	<section
 		class="pq-kpi"
+		:class="{ 'pq-kpi--strip': display === 'strip' }"
 		:aria-labelledby="label ? headingId : undefined"
 		data-testid="kpi-block">
 		<component
@@ -40,6 +41,19 @@
 			data-testid="kpi-empty">
 			<em>{{ t('No figures yet.') }}</em>
 		</p>
+		<!-- The figures on one line beside the heading: "1 dag ziek, 2 keer
+		     te laat" (mijn-overview-follows-the-boards, display strip). -->
+		<ul v-else-if="display === 'strip'" class="pq-kpi__strip">
+			<li
+				v-for="card in cards"
+				:key="card.field"
+				class="pq-kpi__strip-item"
+				:data-field="card.field"
+				data-testid="kpi-strip-item">
+				<strong>{{ stripFigure(card) }}</strong>
+				{{ card.stripLabel || card.label }}
+			</li>
+		</ul>
 		<ul v-else class="pq-kpi__cards">
 			<li
 				v-for="card in cards"
@@ -100,6 +114,8 @@ export default {
 		label: { type: String, default: '' },
 		/** The line under the heading: `{field, label}`, e.g. the school year shown. */
 		caption: { type: Object, default: null },
+		/** `strip` for the figures on one line, else cards. */
+		display: { type: String, default: '' },
 		/** The translator. */
 		t: { type: Function, required: true },
 		/** The page language. */
@@ -148,6 +164,17 @@ export default {
 		},
 
 		/**
+		 * A strip's figure with its unit: "1 dag", "2 keer".
+		 *
+		 * @param {object} card The card.
+		 * @return {string}
+		 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-figure-block-may-stand-as-one-line
+		 */
+		stripFigure(card) {
+			return `${figure(this.row, card.field, this.locale)} ${this.unitOf(card)}`.trim()
+		},
+
+		/**
 		 * Whether a highlighted card holds a figure above zero.
 		 *
 		 * @param {object} card The card.
@@ -164,6 +191,28 @@ export default {
 <style scoped>
 .pq-kpi {
 	margin-block-end: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+/* The strip: heading and figures on one line, wrapping on a phone. */
+.pq-kpi--strip {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 8px 24px;
+}
+
+.pq-kpi--strip > :is(h2, h3, h4) {
+	margin: 0;
+	font-size: 1.125rem;
+}
+
+.pq-kpi__strip {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 20px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
 }
 
 .pq-kpi__cards {

@@ -218,7 +218,7 @@ test('the render formatters follow the column', () => {
 	)
 	assert.equal(
 		formatCell('2026-09-21', 'date', { locale: 'nl', t }),
-		new Date('2026-09-21').toLocaleDateString('nl'),
+		'21 september 2026',
 	)
 	assert.equal(formatCell(null, 'text', en), '')
 	assert.equal(

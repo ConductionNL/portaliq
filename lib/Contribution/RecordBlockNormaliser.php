@@ -107,6 +107,11 @@ class RecordBlockNormaliser {
 		$out = $this->withLabel(declared: $block, entry: ['type' => 'kpi', 'collection' => $collection]);
 		$out = (new RecordScopeNormaliser())->scope(declared: $block, entry: $out);
 		$out['cards'] = $cards;
+		// The figures on one line, as a strip (mijn-overview-follows-the-boards).
+		if ($segmented === [] && $cards !== [] && ($block['display'] ?? null) === 'strip') {
+			$out['display'] = 'strip';
+		}
+
 		return $this->withPickAndCaption(declared: $block, entry: $out) + $segmented;
 	}//end kpiBlock()
 
@@ -211,6 +216,13 @@ class RecordBlockNormaliser {
 
 		if (($card['highlight'] ?? null) === true || ($card['highlight'] ?? null) === 'true') {
 			$out['highlight'] = true;
+		}
+
+		// The words after the figure in a strip, "ziek" in "1 dag ziek"
+		// (mijn-overview-follows-the-boards).
+		$strip = ($card['stripLabel'] ?? null);
+		if (is_string($strip) === true && trim($strip) !== '' && mb_strlen(trim($strip)) <= 40) {
+			$out['stripLabel'] = trim($strip);
 		}
 
 		return $out;

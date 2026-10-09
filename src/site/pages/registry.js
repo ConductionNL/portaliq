@@ -86,7 +86,14 @@ const loaders = new Map(Object.entries(BUILT_IN))
  * Sections whose page shows its own title as the page's h1, so the shell
  * leaves its heading out and the page has one title, not the same one twice.
  */
-const OWNS_HEADING = new Set(['cases', 'access', 'details', 'account'])
+const OWNS_HEADING = new Set([
+	'cases',
+	'access',
+	'details',
+	'account',
+	// The title beside the "Nieuw bericht" button (mijn-messages-follow-the-boards).
+	'messages',
+])
 
 /**
  * Whether the page for an entry titles itself.

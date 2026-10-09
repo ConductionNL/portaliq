@@ -444,7 +444,7 @@ test('the messages page opens a thread when asked and reloads it in the picked l
 	// longer draws the action rows of REQ-SMO-004).
 	assert.match(
 		html,
-		/<h3 class="utrecht-heading-4 pq-thread__title">Group conversation<\/h3>/,
+		/<h2 class="utrecht-heading-4 pq-thread__title">Group conversation<\/h2>/,
 	)
 	assert.match(html, /aria-expanded="true" data-testid="messages-open"/)
 	assert.match(html, /data-testid="messages-reply"/)
