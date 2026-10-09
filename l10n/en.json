@@ -2784,7 +2784,21 @@
         "Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.": "Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.",
         "Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.": "Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.",
         "Allow sign-in with an e-mail link": "Allow sign-in with an e-mail link",
-        "The setting could not be saved. Try again.": "The setting could not be saved. Try again."
+        "The setting could not be saved. Try again.": "The setting could not be saved. Try again.",
+        "Address hash": "Address hash",
+        "Browser cookie hash": "Browser cookie hash",
+        "Fifteen minutes after issue; not configurable upward.": "Fifteen minutes after issue; not configurable upward.",
+        "Portal Email Link": "Portal Email Link",
+        "SHA-256 of the normalised address the link was sent to; a browser without the cookie must type that address.": "SHA-256 of the normalised address the link was sent to; a browser without the cookie must type that address.",
+        "SHA-256 of the one-time token. The token itself is never stored.": "SHA-256 of the one-time token. The token itself is never stored.",
+        "SHA-256 of the short-lived cookie the requesting browser holds.": "SHA-256 of the short-lived cookie the requesting browser holds.",
+        "Sign-in address": "Sign-in address",
+        "The address an e-mail link is sent to (sign-in-with-an-email-link H2). Only an account of identity type `email` has one. Self-service never changes it; staff do, or a session at `substantial` or higher, and the old address is told. Stored lower case and trimmed.": "The address an e-mail link is sent to (sign-in-with-an-email-link H2). Only an account of identity type `email` has one. Self-service never changes it; staff do, or a session at `substantial` or higher, and the old address is told. Stored lower case and trimmed.",
+        "The slug of the portal the link was asked on.": "The slug of the portal the link was asked on.",
+        "The subject reference of the account the link signs in to.": "The subject reference of the account the link signs in to.",
+        "The tenant of the account.": "The tenant of the account.",
+        "When it signed somebody in.": "When it signed somebody in.",
+        "`used` after the one sign-in, `void` when a newer link or staff revoked it.": "`used` after the one sign-in, `void` when a newer link or staff revoked it."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

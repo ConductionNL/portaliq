@@ -164,7 +164,7 @@
 </template>
 
 <script>
-import EmailLinkForm from '../EmailLinkForm.vue'
+import { defineAsyncComponent } from 'vue'
 import icons from '../../lib/menuIcons.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
@@ -179,7 +179,10 @@ import '@utrecht/button-link-css/dist/index.css'
 export default {
 	name: 'SignInPage',
 
-	components: { EmailLinkForm },
+	// On demand: the form only shows when the instance switch is on.
+	components: {
+		EmailLinkForm: defineAsyncComponent(() => import('../EmailLinkForm.vue')),
+	},
 
 	props: {
 		/** The sign-in routes, each with its `card` (authApi signInRoutes). */

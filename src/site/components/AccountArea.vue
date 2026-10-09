@@ -176,7 +176,6 @@
 <script>
 import { defineAsyncComponent, markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
-import EmailLinkForm from './EmailLinkForm.vue'
 import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
 import { ACTING_FOR_SELF } from '../../shared/myCases.js'
@@ -228,7 +227,8 @@ export default {
 		SignInPage: defineAsyncComponent(() => import('./chrome/SignInPage.vue')),
 		ResidentMenu,
 		WaysIn,
-		EmailLinkForm,
+		// On demand: the form only shows when the instance switch is on.
+		EmailLinkForm: defineAsyncComponent(() => import('./EmailLinkForm.vue')),
 	},
 
 	props: {

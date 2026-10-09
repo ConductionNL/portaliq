@@ -2847,7 +2847,21 @@
         "Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.": "Laat een deelnemer met een e-mailaccount inloggen met een eenmalige link die 15 minuten werkt. Een portaal biedt dit alleen aan als het ook de inlogmanier email-link noemt.",
         "Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.": "Zet dit niet aan voordat de beveiligingsreview van deze manier van inloggen is goedgekeurd. Wie de mailbox kan lezen, kan inloggen zolang de link werkt.",
         "Allow sign-in with an e-mail link": "Inloggen met een e-maillink toestaan",
-        "The setting could not be saved. Try again.": "De instelling is niet opgeslagen. Probeer het opnieuw."
+        "The setting could not be saved. Try again.": "De instelling is niet opgeslagen. Probeer het opnieuw.",
+        "Address hash": "Adreshash",
+        "Browser cookie hash": "Hash van de browsercookie",
+        "Fifteen minutes after issue; not configurable upward.": "Vijftien minuten na uitgifte; niet naar boven aan te passen.",
+        "Portal Email Link": "Inloglink per e-mail van het portaal",
+        "SHA-256 of the normalised address the link was sent to; a browser without the cookie must type that address.": "SHA-256 van het genormaliseerde adres waarnaar de link is gestuurd; een browser zonder het cookie moet dat adres intypen.",
+        "SHA-256 of the one-time token. The token itself is never stored.": "SHA-256 van het eenmalige token. Het token zelf wordt nooit opgeslagen.",
+        "SHA-256 of the short-lived cookie the requesting browser holds.": "SHA-256 van het kortlevende cookie dat de aanvragende browser bewaart.",
+        "Sign-in address": "Inlogadres",
+        "The address an e-mail link is sent to (sign-in-with-an-email-link H2). Only an account of identity type `email` has one. Self-service never changes it; staff do, or a session at `substantial` or higher, and the old address is told. Stored lower case and trimmed.": "Het adres waarnaar een e-maillink wordt gestuurd (sign-in-with-an-email-link H2). Alleen een account met identiteitstype `email` heeft er een. De bewoner past het zelf nooit aan; medewerkers wel, of een sessie op niveau `substantial` of hoger, en het oude adres krijgt bericht. Opgeslagen in kleine letters en zonder spaties aan de randen.",
+        "The slug of the portal the link was asked on.": "De slug van het portaal waarop de link is aangevraagd.",
+        "The subject reference of the account the link signs in to.": "De subjectverwijzing van het account waarop de link inlogt.",
+        "The tenant of the account.": "De tenant van het account.",
+        "When it signed somebody in.": "Wanneer het iemand heeft ingelogd.",
+        "`used` after the one sign-in, `void` when a newer link or staff revoked it.": "`used` na de ene keer inloggen, `void` als een nieuwere link of een medewerker hem introk."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

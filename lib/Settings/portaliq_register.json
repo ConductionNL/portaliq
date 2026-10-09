@@ -7975,6 +7975,7 @@
             },
             "portalEmailLink": {
                 "slug": "portalEmailLink",
+                "x-openregister-demo-data": "a one-time sign-in token ledger the app writes when a link is sent; a demo row would be a live credential, so none ships",
                 "authorization": {
                     "read": [
                         "admin"
