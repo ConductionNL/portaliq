@@ -18,7 +18,7 @@
 		:class="
 			kind === 'grid' ? ['pq-contribution-page__grid', ...classes] : classes
 		"
-		:style="place"
+		:style="style"
 		:data-block="kind === 'block' && type ? type : undefined"
 		:data-testid="
 			kind === 'grid' ? 'contribution-page-grid' : 'contribution-page-block'
@@ -63,6 +63,26 @@ export default {
 	},
 
 	emits: ['navigate'],
+
+	computed: {
+		/**
+		 * The wrapper's custom properties: its place in the grid, and the room
+		 * its heading keeps free for the link, by the link's length.
+		 *
+		 * @return {object|undefined}
+		 * @spec openspec/changes/mijn-overview-follows-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-block-may-carry-a-link-to-all-of-it
+		 */
+		style() {
+			const label = this.more?.label || ''
+			if (!label) {
+				return this.place
+			}
+			return {
+				...(this.place || {}),
+				'--pq-more-chars': String(label.length + 2),
+			}
+		},
+	},
 
 	methods: {
 		/**
@@ -172,12 +192,12 @@ export default {
 
 /* A strip keeps room for the link at the end of its line. */
 .pq-block--more-heading > .pq-kpi--strip {
-	padding-inline-end: 6em;
+	padding-inline-end: calc(var(--pq-more-chars, 12) * 0.55rem);
 }
 
 /* The block's heading leaves room for the link at its end. */
 .pq-block--more-heading > * > :is(h2, h3, h4):first-child,
 .pq-block--more-heading > :is(h2, h3, h4):first-child {
-	padding-inline-end: 9em;
+	padding-inline-end: calc(var(--pq-more-chars, 12) * 0.55rem);
 }
 </style>
