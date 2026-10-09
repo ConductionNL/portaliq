@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Repair;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Repair\InitializeSettings;
 use OCA\Portaliq\Service\SettingsService;
-use OCP\IConfig;
+use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
@@ -20,22 +20,29 @@ use Psr\Log\LoggerInterface;
  * re-running the step (upgrades) never overwrites an already-configured
  * secret, which would invalidate every live portal session.
  *
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.2
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#4.2
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.2
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#4.2
  */
 class InitializeSettingsTest extends TestCase {
 
 	public function testGeneratesADedicatedSecretWhenUnset(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturn('');
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('');
 
 		$stored = null;
+		// Security review S4: stored as a SENSITIVE app value through IAppConfig.
 		$config->expects($this->once())
-			->method('setAppValue')
-			->with(Application::APP_ID, 'jwt_signing_secret', $this->callback(function (string $secret) use (&$stored) {
-				$stored = $secret;
-				return strlen($secret) >= 32;
-			}));
+			->method('setValueString')
+			->with(
+				Application::APP_ID,
+				'jwt_signing_secret',
+				$this->callback(function (string $secret) use (&$stored) {
+					$stored = $secret;
+					return strlen($secret) >= 32;
+				}),
+				false,
+				true
+			);
 
 		$this->repair(config: $config)->run($this->repairOutput());
 
@@ -44,22 +51,42 @@ class InitializeSettingsTest extends TestCase {
 	}//end testGeneratesADedicatedSecretWhenUnset()
 
 	public function testIdempotentOnRerunWithAnAlreadyConfiguredSecret(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturn('already-configured-dedicated-secret-000');
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('already-configured-dedicated-secret-000');
+		$config->method('isSensitive')->willReturn(true);
 
 		// Re-running the repair step (e.g. on upgrade) must NEVER overwrite an
 		// existing secret — that would invalidate every live session.
-		$config->expects($this->never())->method('setAppValue');
+		$config->expects($this->never())->method('setValueString');
+		$config->expects($this->never())->method('updateSensitive');
 
 		$this->repair(config: $config)->run($this->repairOutput());
 
 	}//end testIdempotentOnRerunWithAnAlreadyConfiguredSecret()
 
-	public function testTooShortExistingSecretIsRegenerated(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturn('short');
+	/**
+	 * Security review S4: a secret stored before the sensitive flag keeps
+	 * its value (live sessions stay valid) and is marked sensitive.
+	 *
+	 * @return void
+	 */
+	public function testAnExistingSecretKeepsItsValueAndBecomesSensitive(): void {
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('already-configured-dedicated-secret-000');
+		$config->method('isSensitive')->willReturn(false);
 
-		$config->expects($this->once())->method('setAppValue');
+		$config->expects($this->never())->method('setValueString');
+		$config->expects($this->once())->method('updateSensitive')->with(Application::APP_ID, 'jwt_signing_secret', true);
+
+		$this->repair(config: $config)->run($this->repairOutput());
+
+	}//end testAnExistingSecretKeepsItsValueAndBecomesSensitive()
+
+	public function testTooShortExistingSecretIsRegenerated(): void {
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('short');
+
+		$config->expects($this->once())->method('setValueString');
 
 		$this->repair(config: $config)->run($this->repairOutput());
 
@@ -231,12 +258,13 @@ class InitializeSettingsTest extends TestCase {
 	}//end testAThrowingImportLogsTheThrowableInstanceNotItsMessage()
 
 	/**
-	 * An IConfig whose signing secret is already set, so `ensureSigningSecret()`
+	 * An IAppConfig whose signing secret is already set, so `ensureSigningSecret()`
 	 * is a no-op and does not colour the assertions of the tests above.
 	 */
-	private function configWithSecret(): IConfig {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturn('already-configured-dedicated-secret-000');
+	private function configWithSecret(): IAppConfig {
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('already-configured-dedicated-secret-000');
+		$config->method('isSensitive')->willReturn(true);
 		return $config;
 	}//end configWithSecret()
 
@@ -257,7 +285,7 @@ class InitializeSettingsTest extends TestCase {
 
 	}//end repairWith()
 
-	private function repair(IConfig $config): InitializeSettings {
+	private function repair(IAppConfig $config): InitializeSettings {
 		$settingsService = $this->createMock(SettingsService::class);
 		$settingsService->method('isOpenRegisterAvailable')->willReturn(false);
 

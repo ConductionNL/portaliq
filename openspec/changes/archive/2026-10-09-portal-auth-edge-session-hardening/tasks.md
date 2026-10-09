@@ -47,8 +47,18 @@
       signature; logout revokes only the caller's own session.
 - [x] 4.2 PHPUnit: install-time repair step generates a secret exactly once
       (idempotent on re-run).
-- [ ] 4.3 Security review (ADR-005) of the new secret-generation + revocation
-      paths before merge; Hydra gates green (spdx-headers, forbidden-patterns,
-      unsafe-auth-resolver, spec-coverage). — Hydra gates not run as part of
-      this apply pass (process/review step, not implementation); flag for the
-      PR review stage. — not run: the ADR-005 security review is a human step and the hydra-gates package is not available here
+- [x] 4.3 Security review (ADR-005) of the new secret-generation + revocation
+      paths: done by the coordinator-run security review (decision 127),
+      report `~/memcap-work/build-all/portaliq/security-review-4.3.md` (9 Oct
+      2026, ref eefb090d), verdict 1 blocking finding. Fixed on build/openspecs-3,
+      each with a test that failed first (PortalSessionServiceTest,
+      InitializeSettingsTest, SessionAdminControllerTest, PortaliqRegisterConfigTest):
+      B1 revoke-all pages to the end over unrevoked rows (readScopedPage);
+      S1 a refresh re-checks the old session after minting; S2 any truthy
+      `revoked` counts; S3 portalSession read by admins only (register 0.92.0,
+      portalSession 0.4.0); S4 secret is a sensitive IAppConfig value, an
+      existing one keeps its value and is flagged; S5 an incomplete revoke-all
+      answers 503 and the admin screen shows an error; S6 audited as
+      `admin-revoke` naming the admin. Notes N1-N6 recorded in design.md.
+      Hydra gates (spdx-headers, forbidden-patterns, unsafe-auth-resolver,
+      spec-coverage) run in the checkpoint gate run of the PR.

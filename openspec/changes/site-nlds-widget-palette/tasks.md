@@ -72,9 +72,9 @@ After `site-mijn-omgeving-components` waves 2 to 5.
 
 - [ ] **T9** (not run in this batch: nine widgets over the shell's signed-in data, left for its own pass): `nlCases`, `nlTasks`, `nlInbox`, `nlTimeline`, `nlFigures`, `nlCalendar`, `nlSteps`, `nlFileList`, `nlRecordSwitcher` as placeable widgets over the shell's signed-in data.
   - e2e: signed out, each shows a sign-in prompt and sends no subject request
-- [ ] **T10** (not run in this batch: `summary` is already an object on an action (`action-summary-sentence`), so the string form this task asks for needs a decision on the shared key first): `summary` and `audiences` on actions (`ActionConfigNormaliser`, `AttachedActionResolver`); a public start tiles endpoint; `nlStartTiles` (design D6).
-  - PHPUnit `ActionConfigNormaliserTest::testSummaryIsKeptUpTo200Characters`, `::testUnknownAudiencesAreDropped`; a controller test that the endpoint returns label, summary, audiences and route only
-  - Route auth gate green on the new public route
+- [x] **T10** (decision 127 made `summary` the string; Q-portaliq-2): `summary` and `audiences` on actions (`StartTileNormaliser`, bounded by the provider's served audiences), a public start tiles endpoint (`GET /api/content/start-tiles`, `ContentStartTilesController`, `PortalContributionRegistry::startTiles`, `StartTileCollector`); `nlStartTiles` drawn as the Home board's "Direct regelen" list (design D6, amended to the board).
+  - PHPUnit `ActionConfigNormaliserTest::testSummaryIsKeptUpTo200Characters`, `::testUnknownAudiencesAreDropped`, `PortalContributionRegistryTest::testStartTilesListEveryActionWithASummaryOnAPage`, `StartTileCollectorTest`, `ContentStartTilesControllerTest` (only label, summary, audiences and route; public, CSRF-free, rate limited); node `check:start-tiles`
+  - Route auth gate: runs in the checkpoint gate run
 
 ## Wave 6: form fields (REQ-SNW-003)
 

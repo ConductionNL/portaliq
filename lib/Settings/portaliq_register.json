@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.91.0"
+        "version": "0.92.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.91.0",
+                "version": "0.92.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1091,11 +1091,11 @@
                 "slug": "portalSession",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "admin"
                     ]
                 },
                 "icon": "Ticket",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Session",
                 "description": "A bearer session issued by Portaliq's auth edge. Records the minted token id (jti) so sessions can be revoked. Owned by Portaliq; never publicly readable.",
                 "type": "object",
@@ -1682,7 +1682,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.7.0",
+                "version": "0.8.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -2109,6 +2109,61 @@
                                     "title": "Options providers",
                                     "type": "object",
                                     "description": "Per-field value sources for select inputs, keyed by property name (contribution-manifest-v3). Each provider declares a `type` from the normaliser's allowed provider kinds; an unrecognised kind is dropped rather than rendered."
+                                },
+                                "summary": {
+                                    "title": "Start tile summary",
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "description": "One sentence that offers this create or endpoint action as a start tile (site-nlds-widget-palette D6). Plain text, at most 200 characters. Until decision 127 this key held the answer sentence, which now lives under answerSummary.",
+                                    "example": "Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar."
+                                },
+                                "audiences": {
+                                    "title": "Start tile audiences",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "The audiences a start tile is meant for, a subset of the provider's own audiences; the hint for the way in when a signed-out visitor picks the tile.",
+                                    "example": [
+                                        "citizen"
+                                    ]
+                                },
+                                "answerSummary": {
+                                    "title": "Answer sentence",
+                                    "type": "object",
+                                    "required": [
+                                        "template"
+                                    ],
+                                    "properties": {
+                                        "label": {
+                                            "title": "Sentence lead-in",
+                                            "description": "The words that open the sentence, for example You report. Optional.",
+                                            "type": "string",
+                                            "maxLength": 120
+                                        },
+                                        "template": {
+                                            "title": "Sentence template",
+                                            "description": "The sentence with the action's own fields named as {field}. At most 300 characters.",
+                                            "type": "string",
+                                            "maxLength": 300
+                                        },
+                                        "phrases": {
+                                            "title": "Sentence phrases",
+                                            "description": "Per field, the words shown for each answer value instead of the raw value.",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "description": "One sentence from the resident's own answers, shown above the send button and on the confirmation (action-summary-sentence). The template names only the action's own fields as {field}.",
+                                    "example": {
+                                        "label": "U meldt",
+                                        "template": "{learner} is {when} {reason}.",
+                                        "phrases": {
+                                            "when": {
+                                                "today": "vandaag de hele dag"
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

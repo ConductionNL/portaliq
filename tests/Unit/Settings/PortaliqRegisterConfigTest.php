@@ -381,8 +381,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.71.0 (portal 0.14.0): `searchInsideDocuments` (portal-federated-search) and the
 		// `portalDraft` schema (site-multi-step-forms). Additive.
 		// 0.91.0 (portal 0.23.0, accessibilityMeasurement 0.1.0): `accessibilityAudit`, `accessibilityRegisterUrl`, `accessibilityPages` and the measurement schema (site-accessibility-statement). Additive.
-		$this->assertSame('0.91.0', self::$register['info']['version']);
-		$this->assertSame('0.91.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.92.0 (portalPage 0.8.0): an action's `summary` is the start tile's string, the answer sentence moves to `answerSummary`, plus `audiences` (decision 127, site-nlds-widget-palette D6). Tightens `summary`; MoveActionSummarySentence moves the stored object shape first. portalSession 0.4.0: read by admins only (security review S3).
+		$this->assertSame('0.92.0', self::$register['info']['version']);
+		$this->assertSame('0.92.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame(200, self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['summary']['maxLength']);
+		$this->assertSame('object', self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['answerSummary']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
@@ -448,10 +452,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
 		$this->assertContains('portalDraft', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.17.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
 		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalSession']['version']);
+		// Security review S3: session rows (subject, tenant, trust, jti) are read by admins only.
+		$this->assertSame(['admin'], self::$register['components']['schemas']['portalSession']['authorization']['read']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()
 

@@ -348,7 +348,7 @@ class ActionConfigNormaliserTest extends TestCase {
 	public function testASummaryNamesOnlyTheActionsOwnFields(): void {
 		$create = $this->absenceAction(
 			[
-				'summary' => [
+				'answerSummary' => [
 					'label'    => 'U meldt',
 					'template' => 'Uw kind is {dateFrom} {reason}.',
 					'phrases'  => [
@@ -361,14 +361,71 @@ class ActionConfigNormaliserTest extends TestCase {
 		);
 		$this->assertSame(
 			['template' => 'Uw kind is {dateFrom} {reason}.', 'label' => 'U meldt', 'phrases' => ['reason' => ['sick' => 'ziek']]],
-			$create['summary']
+			$create['answerSummary']
 		);
 
-		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => ['template' => '{reason} door {bsn}.']]), 'a placeholder for a field the action does not send drops the summary');
-		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => ['template' => 'Geen antwoord erin.']]), 'a sentence without an answer is no summary');
-		$this->assertArrayNotHasKey('summary', $this->absenceAction(['type' => 'update', 'summary' => ['template' => '{reason}.']]));
-		$this->assertSame('Over {onderwerp}.', $this->wooAction(['summary' => ['template' => 'Over {onderwerp}.']])['summary']['template']);
+		$this->assertArrayNotHasKey('answerSummary', $this->absenceAction(['answerSummary' => ['template' => '{reason} door {bsn}.']]), 'a placeholder for a field the action does not send drops the summary');
+		$this->assertArrayNotHasKey('answerSummary', $this->absenceAction(['answerSummary' => ['template' => 'Geen antwoord erin.']]), 'a sentence without an answer is no summary');
+		$this->assertArrayNotHasKey('answerSummary', $this->absenceAction(['type' => 'update', 'answerSummary' => ['template' => '{reason}.']]));
+		$this->assertSame('Over {onderwerp}.', $this->wooAction(['answerSummary' => ['template' => 'Over {onderwerp}.']])['answerSummary']['template']);
 	}//end testASummaryNamesOnlyTheActionsOwnFields()
+
+	/**
+	 * An app that still declares the sentence under `summary` (the object
+	 * shape before decision 127) keeps it, moved to `answerSummary`; the
+	 * object never stays under `summary`, which is now a string.
+	 *
+	 * @return void
+	 */
+	public function testTheOldObjectSummaryMovesToAnswerSummary(): void {
+		$create = $this->absenceAction(['summary' => ['label' => 'U meldt', 'template' => 'Uw kind is {reason}.']]);
+
+		$this->assertSame(['template' => 'Uw kind is {reason}.', 'label' => 'U meldt'], $create['answerSummary']);
+		$this->assertArrayNotHasKey('summary', $create);
+
+		$both = $this->absenceAction(
+			[
+				'summary'       => ['template' => 'Oud {reason}.'],
+				'answerSummary' => ['template' => 'Nieuw {reason}.'],
+			]
+		);
+		$this->assertSame('Nieuw {reason}.', $both['answerSummary']['template'], 'the new key wins');
+		$this->assertArrayNotHasKey('summary', $both);
+	}//end testTheOldObjectSummaryMovesToAnswerSummary()
+
+	/**
+	 * `summary` is one sentence for a start tile: a string of 1 to 200
+	 * characters on a create or endpoint action; anything else is dropped.
+	 *
+	 * @return void
+	 */
+	public function testSummaryIsKeptUpTo200Characters(): void {
+		$sentence = 'Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar.';
+		$this->assertSame($sentence, $this->wooAction(['summary' => '  ' . $sentence . ' '])['summary']);
+		$this->assertSame(str_repeat('a', 200), $this->absenceAction(['summary' => str_repeat('a', 200)])['summary']);
+
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => str_repeat('a', 201)]), 'over 200 characters is dropped');
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => '   ']), 'an empty sentence is dropped');
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => 42]));
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['type' => 'update', 'summary' => 'Wijzig iets.']), 'an update action is no start tile');
+	}//end testSummaryIsKeptUpTo200Characters()
+
+	/**
+	 * `audiences` keeps only audiences the provider serves; none left, or no
+	 * served audiences known, drops the key.
+	 *
+	 * @return void
+	 */
+	public function testUnknownAudiencesAreDropped(): void {
+		$served = ['servedAudiences' => ['citizen', 'business']];
+		$this->assertSame(['citizen'], $this->wooAction(['audiences' => ['citizen', 'alien', 'citizen', 7]], $served)['audiences']);
+		$this->assertArrayNotHasKey('audiences', $this->wooAction(['audiences' => ['alien']], $served));
+		$this->assertArrayNotHasKey('audiences', $this->wooAction(['audiences' => 'citizen'], $served));
+		$this->assertArrayNotHasKey('audiences', $this->wooAction(['audiences' => ['citizen']]), 'without the served audiences nothing can be checked');
+
+		$out = (new PortalManifestNormaliser($this->schemaReader()))->normalise(['actions' => [], 'servedAudiences' => ['citizen']]);
+		$this->assertArrayNotHasKey('servedAudiences', $out, 'the served audiences are input, never output');
+	}//end testUnknownAudiencesAreDropped()
 
 	/**
 	 * Steps, draft and confirmation live on a create action and an endpoint
@@ -397,12 +454,13 @@ class ActionConfigNormaliserTest extends TestCase {
 	 * dossiq's Woo endpoint action, normalised.
 	 *
 	 * @param array<string, mixed> $overrides Keys to declare.
+	 * @param array<string, mixed> $contribution Contribution keys beside the action.
 	 *
 	 * @return array<string, mixed> The normalised action.
 	 */
-	private function wooAction(array $overrides): array {
+	private function wooAction(array $overrides, array $contribution = []): array {
 		$out = (new PortalManifestNormaliser($this->schemaReader()))->normalise(
-			[
+			$contribution + [
 				'collections' => [],
 				'actions'     => [
 					array_merge(

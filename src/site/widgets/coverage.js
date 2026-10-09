@@ -992,6 +992,11 @@ export const SITE_COMPOSITIONS = [
 		why: 'The tasks a portal is visited for, as one card of tiles ("Direct regelen").',
 	},
 	{
+		key: 'nlStartTiles',
+		composes: ['Link List', 'Card as Link'],
+		why: 'The actions the contributing apps offer with a summary, as the "Direct regelen" tiles, each opening its page.',
+	},
+	{
 		key: 'nlNewsList',
 		composes: ['Link List', 'Card as Link', 'Image'],
 		why: 'The news staff put on the website, the newest as a card, the rest as rows.',
