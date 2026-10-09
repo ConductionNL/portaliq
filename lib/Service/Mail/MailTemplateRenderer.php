@@ -241,19 +241,36 @@ class MailTemplateRenderer {
 			limit: 50
 		);
 		foreach ($rows as $row) {
-			if (is_array($row) === false || (string)($row['templateKey'] ?? '') !== $key || ($row['active'] ?? true) === false) {
-				continue;
-			}
-
-			$subject = trim((string)($row['subject'] ?? ''));
-			$body    = trim((string)($row['body'] ?? ''));
-			if ($subject !== '' && $body !== '' && $this->undeclared(key: $key, texts: [$subject, $body]) === []) {
-				return ['subject' => $subject, 'body' => $body];
+			$usable = $this->usable(row: $row, key: $key);
+			if ($usable !== null) {
+				return $usable;
 			}
 		}
 
 		return null;
 	}//end stored()
+
+	/**
+	 * The subject and body of a stored row, or null when it is not for this kind, inactive or not usable.
+	 *
+	 * @param mixed  $row The stored row.
+	 * @param string $key The template key.
+	 *
+	 * @return array{subject: string, body: string}|null
+	 */
+	private function usable(mixed $row, string $key): ?array {
+		if (is_array($row) === false || (string)($row['templateKey'] ?? '') !== $key || ($row['active'] ?? true) === false) {
+			return null;
+		}
+
+		$subject = trim((string)($row['subject'] ?? ''));
+		$body    = trim((string)($row['body'] ?? ''));
+		if ($subject !== '' && $body !== '' && $this->undeclared(key: $key, texts: [$subject, $body]) === []) {
+			return ['subject' => $subject, 'body' => $body];
+		}
+
+		return null;
+	}//end usable()
 
 	/**
 	 * Replace the variables a kind declares; leave anything else as written.

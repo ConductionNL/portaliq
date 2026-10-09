@@ -177,13 +177,7 @@ class MailLog {
 	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
 	 */
 	public static function mask(string $email): string {
-		$email = trim($email);
-		$at    = strrpos($email, '@');
-		if ($at === false || $at === 0) {
-			return '***';
-		}
-
-		return substr($email, 0, 1) . '***' . substr($email, $at);
+		return (new RecipientMask())->mask(email: $email);
 	}//end mask()
 
 	/**
