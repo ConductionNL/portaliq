@@ -64,7 +64,8 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `breadcrumb`, `residentMenu`, `footer` and `regions`.
+	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `breadcrumb`,
+	 *                              `residentMenu`, `footer` and `regions`.
 	 *
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 *
