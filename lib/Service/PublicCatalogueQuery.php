@@ -72,7 +72,7 @@ class PublicCatalogueQuery {
 	 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
 	 */
 	public function run(array $items, array $params): array {
-		$items   = $this->withDerivedFacets(items: $items, params: $params);
+		$items   = (new DerivedCatalogueFacets())->apply(items: $items, params: $params);
 		$types   = array_values(array_filter((array)($params['types'] ?? []), 'is_string'));
 		$words   = $this->words(text: (string)($params['q'] ?? ''));
 		$filters = $this->filters(declared: ($params['filters'] ?? []));
@@ -121,84 +121,6 @@ class PublicCatalogueQuery {
 			&& ($scope['categories'] === [] || in_array((string)($item['category'] ?? ''), $scope['categories'], true) === true)
 			&& ($scope['range'] !== 'schoolYear' || $this->inSchoolYear(item: $item, today: $scope['today']) === true);
 	}//end inScope()
-
-	/**
-	 * The items with the facets the block asks for besides the declared ones:
-	 * the kind of each item under `kindFacet` (a news item's kind is
-	 * `kindNews`, the word the page uses for news), and a news item's
-	 * audience under `audienceFacet`. A label the item already declares is
-	 * left as it is; an empty label asks for nothing.
-	 *
-	 * @param array<int, array<string, mixed>> $items  The portal's items.
-	 * @param array<string, mixed>             $params The query.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 *
-	 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
-	 */
-	private function withDerivedFacets(array $items, array $params): array {
-		$kindLabel     = $this->label(value: ($params['kindFacet'] ?? ''));
-		$kindNews      = $this->label(value: ($params['kindNews'] ?? ''));
-		$audienceLabel = $this->label(value: ($params['audienceFacet'] ?? ''));
-		if ($kindLabel === '' && $audienceLabel === '') {
-			return $items;
-		}
-
-		return array_map(
-			function (array $item) use ($kindLabel, $kindNews, $audienceLabel): array {
-				$isNews = (($item['type'] ?? '') === PublicCatalogue::TYPE_NEWS);
-				$kind   = trim((string)($item['kind'] ?? ''));
-				if ($isNews === true) {
-					$kind = $kindNews;
-				}
-
-				$item = $this->withFacet(item: $item, label: $kindLabel, value: $kind);
-				if ($isNews === true) {
-					$item = $this->withFacet(item: $item, label: $audienceLabel, value: trim((string)($item['audience'] ?? '')));
-				}
-
-				return $item;
-			},
-			$items
-		);
-	}//end withDerivedFacets()
-
-	/**
-	 * The item with one more facet, unless the label or the value is empty or
-	 * the item declares that label itself.
-	 *
-	 * @param array<string, mixed> $item  The item.
-	 * @param string               $label The facet.
-	 * @param string               $value Its value.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function withFacet(array $item, string $label, string $value): array {
-		if ($label === '' || $value === '' || isset($item['facets'][$label]) === true) {
-			return $item;
-		}
-
-		$item['facets']         = (array)($item['facets'] ?? []);
-		$item['facets'][$label] = [$value];
-
-		return $item;
-	}//end withFacet()
-
-	/**
-	 * A facet label or value from the address: a string, trimmed, at most 60
-	 * characters; anything else is empty.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string
-	 */
-	private function label(mixed $value): string {
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return mb_substr(trim($value), 0, 60);
-	}//end label()
 
 	/**
 	 * The words of a text, lower case and without accents.
