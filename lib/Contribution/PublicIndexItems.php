@@ -54,29 +54,24 @@ class PublicIndexItems {
 	public const MAX_ITEMS = 500;
 
 	/**
-	 * The longest title, kind, label or short text.
-	 */
-	private const MAX_SHORT = 200;
-
-	/**
 	 * The longest summary.
 	 */
 	private const MAX_SUMMARY = 600;
 
 	/**
-	 * The most meta lines and facets one item carries.
-	 */
-	private const MAX_PARTS = 6;
-
-	/**
-	 * The most cells one row may carry.
-	 */
-	private const MAX_CELLS = 12;
-
-	/**
 	 * The tones a note may have.
 	 */
 	private const TONES = ['neutral', 'positive', 'warning'];
+
+	/**
+	 * Constructor.
+	 *
+	 * @param PublicIndexText $clean The text and list cleaning.
+	 */
+	public function __construct(
+		private readonly PublicIndexText $clean = new PublicIndexText(),
+	) {
+	}//end __construct()
 
 	/**
 	 * Every item of one app's answer that fits, each prefixed with the app's
@@ -126,10 +121,10 @@ class PublicIndexItems {
 			return null;
 		}
 
-		$id    = $this->short(value: ($entry['id'] ?? null));
+		$id    = $this->clean->short(value: ($entry['id'] ?? null));
 		$type  = ($entry['type'] ?? null);
-		$kind  = $this->short(value: ($entry['kind'] ?? null));
-		$title = $this->short(value: ($entry['title'] ?? null));
+		$kind  = $this->clean->short(value: ($entry['kind'] ?? null));
+		$title = $this->clean->short(value: ($entry['title'] ?? null));
 		if ($id === null || is_string($type) === false || preg_match('/^[a-z][A-Za-z0-9]{0,39}$/', $type) !== 1 || $kind === null || $title === null) {
 			return null;
 		}
@@ -151,30 +146,15 @@ class PublicIndexItems {
 	 * @return array<string, mixed>
 	 */
 	private function withText(array $item, array $entry): array {
-		// The address part of the item's detail page: a plain slug, else none.
-		$slug = ($entry['slug'] ?? null);
-		if (is_string($slug) === true && preg_match('/^[a-z0-9][a-z0-9-]{0,99}$/', $slug) === 1) {
-			$item['slug'] = $slug;
-		}
+		$item = $this->withAddress(item: $item, entry: $entry);
 
-		// One category and the cells of a table row (editor-blocks-read-public-app-data).
-		$category = $this->short(value: ($entry['category'] ?? null));
-		if ($category !== null) {
-			$item['category'] = $category;
-		}
-
-		$cells = $this->cells(declared: ($entry['cells'] ?? null));
-		if ($cells !== []) {
-			$item['cells'] = $cells;
-		}
-
-		$summary = $this->text(value: ($entry['summary'] ?? null), max: self::MAX_SUMMARY);
+		$summary = $this->clean->text(value: ($entry['summary'] ?? null), max: self::MAX_SUMMARY);
 		if ($summary !== null) {
 			$item['summary'] = $summary;
 		}
 
 		foreach (['note', 'badge', 'dateLabel'] as $key) {
-			$value = $this->short(value: ($entry[$key] ?? null));
+			$value = $this->clean->short(value: ($entry[$key] ?? null));
 			if ($value !== null) {
 				$item[$key] = $value;
 			}
@@ -189,6 +169,35 @@ class PublicIndexItems {
 
 		return $item;
 	}//end withText()
+
+	/**
+	 * The slug, category and table cells of an item, each when it fits.
+	 *
+	 * @param array<string, mixed> $item  The item so far.
+	 * @param array<string, mixed> $entry The entry.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withAddress(array $item, array $entry): array {
+		// The address part of the item's detail page: a plain slug, else none.
+		$slug = ($entry['slug'] ?? null);
+		if (is_string($slug) === true && preg_match('/^[a-z0-9][a-z0-9-]{0,99}$/', $slug) === 1) {
+			$item['slug'] = $slug;
+		}
+
+		// One category and the cells of a table row (editor-blocks-read-public-app-data).
+		$category = $this->clean->short(value: ($entry['category'] ?? null));
+		if ($category !== null) {
+			$item['category'] = $category;
+		}
+
+		$cells = $this->clean->cells(declared: ($entry['cells'] ?? null));
+		if ($cells !== []) {
+			$item['cells'] = $cells;
+		}
+
+		return $item;
+	}//end withAddress()
 
 	/**
 	 * `date` and `endDate`: an ISO day or moment, kept only when it parses.
@@ -221,27 +230,12 @@ class PublicIndexItems {
 	 * @return array<string, mixed>
 	 */
 	private function withLists(array $item, array $entry): array {
-		$meta = $this->shortList(values: (array)($entry['meta'] ?? []));
+		$meta = $this->clean->meta(declared: ($entry['meta'] ?? []));
 		if ($meta !== []) {
-			$item['meta'] = array_slice($meta, 0, self::MAX_PARTS);
+			$item['meta'] = $meta;
 		}
 
-		$facets   = [];
-		$declared = [];
-		if (is_array($entry['facets'] ?? null) === true) {
-			$declared = $entry['facets'];
-		}
-
-		foreach ($declared as $label => $value) {
-			$label  = $this->short(value: $label);
-			$values = $this->shortList(values: (array)$value);
-			if ($label === null || $values === [] || count($facets) >= self::MAX_PARTS) {
-				continue;
-			}
-
-			$facets[$label] = array_slice(array_values(array_unique($values)), 0, self::MAX_PARTS);
-		}
-
+		$facets = $this->clean->facets(declared: ($entry['facets'] ?? null));
 		if ($facets !== []) {
 			$item['facets'] = $facets;
 		}
@@ -259,7 +253,7 @@ class PublicIndexItems {
 	 * @return array<string, mixed>
 	 */
 	private function withLink(array $item, array $entry): array {
-		$href = $this->short(value: ($entry['href'] ?? null));
+		$href = $this->clean->short(value: ($entry['href'] ?? null));
 		if ($href !== null && (preg_match('#^/(?!/)[^\s]*$#', $href) === 1 || preg_match('#^https?://[^\s/]+[^\s]*$#i', $href) === 1)) {
 			$item['href'] = $href;
 		}
@@ -267,93 +261,4 @@ class PublicIndexItems {
 		return $item;
 	}//end withLink()
 
-	/**
-	 * The cells of a table row: a column key and its text. A key that is not
-	 * a plain word, or a value that is not text, is dropped.
-	 *
-	 * @param mixed $declared The entry's cells.
-	 *
-	 * @return array<string, string>
-	 *
-	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-1
-	 */
-	private function cells(mixed $declared): array {
-		if (is_array($declared) === false) {
-			return [];
-		}
-
-		$out = [];
-		foreach ($declared as $key => $value) {
-			$text = $this->short(value: $value);
-			if (is_string($key) === true && preg_match('/^[a-z][A-Za-z0-9]{0,29}$/', $key) === 1 && $text !== null && count($out) < self::MAX_CELLS) {
-				$out[$key] = $text;
-			}
-		}
-
-		return $out;
-	}//end cells()
-
-	/**
-	 * The values of a list that are short one-line strings.
-	 *
-	 * @param array<int|string, mixed> $values The values.
-	 *
-	 * @return array<int, string>
-	 */
-	private function shortList(array $values): array {
-		$out = [];
-		foreach ($values as $value) {
-			$short = $this->short(value: $value);
-			if ($short !== null) {
-				$out[] = $short;
-			}
-		}
-
-		return $out;
-	}//end shortList()
-
-	/**
-	 * A trimmed one-line string of at most MAX_SHORT characters, or null.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string|null
-	 */
-	private function short(mixed $value): ?string {
-		if (is_int($value) === true) {
-			$value = (string)$value;
-		}
-
-		$text = $this->text(value: $value, max: self::MAX_SHORT);
-		if ($text === null) {
-			return null;
-		}
-
-		return preg_replace('/\s+/', ' ', $text);
-	}//end short()
-
-	/**
-	 * A trimmed string of at most `max` characters with no markup, or null.
-	 *
-	 * @param mixed $value The value.
-	 * @param int   $max   The longest.
-	 *
-	 * @return string|null
-	 */
-	private function text(mixed $value, int $max): ?string {
-		if (is_string($value) === false) {
-			return null;
-		}
-
-		$value = trim(strip_tags($value));
-		if ($value === '') {
-			return null;
-		}
-
-		if (mb_strlen($value) > $max) {
-			$value = rtrim(mb_substr($value, 0, $max - 1)) . '…';
-		}
-
-		return $value;
-	}//end text()
 }//end class

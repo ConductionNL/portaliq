@@ -86,20 +86,52 @@ class InboxReplyConfigNormaliser {
 			return null;
 		}
 
-		$action = null;
-		foreach ($actions as $candidate) {
-			if (is_array($candidate) === true && ($candidate['id'] ?? null) === $declared['action'] && ($candidate['type'] ?? '') === 'create') {
-				$action = $candidate;
-			}
-		}
-
+		$action = $this->createAction(actions: $actions, id: $declared['action']);
 		if ($action === null) {
 			return null;
 		}
 
 		$whitelist = array_values(array_filter((array)($action['fields'] ?? []), 'is_string'));
 		$projected = ($collection['fields'] ?? null);
-		$carry     = [];
+		$kept      = ['action' => $declared['action'], 'carry' => $this->carry(declared: $declared, whitelist: $whitelist, projected: $projected)];
+		$from      = ($declared['subjectFrom'] ?? null);
+		if ($this->name(value: $from) === true && $this->projects(projected: $projected, field: $from) === true) {
+			$kept['subjectFrom'] = $from;
+		}
+
+		return $kept;
+	}//end reply()
+
+	/**
+	 * The last `create` action with the given id, or null.
+	 *
+	 * @param array<int, array<string, mixed>> $actions The contribution's actions.
+	 * @param string $id The action id the declaration names.
+	 *
+	 * @return array<string, mixed>|null The action.
+	 */
+	private function createAction(array $actions, string $id): ?array {
+		$found = null;
+		foreach ($actions as $candidate) {
+			if (is_array($candidate) === true && ($candidate['id'] ?? null) === $id && ($candidate['type'] ?? '') === 'create') {
+				$found = $candidate;
+			}
+		}
+
+		return $found;
+	}//end createAction()
+
+	/**
+	 * The reply-field to message-field pairs that are named, whitelisted and projected.
+	 *
+	 * @param array<string, mixed> $declared The declared `reply`.
+	 * @param array<int, string> $whitelist The reply action's `fields`.
+	 * @param mixed $projected The collection's `fields`.
+	 *
+	 * @return array<string, string> The kept pairs.
+	 */
+	private function carry(array $declared, array $whitelist, mixed $projected): array {
+		$carry = [];
 		foreach ((array)($declared['carry'] ?? []) as $replyField => $messageField) {
 			$named = ($this->name(value: $replyField) === true && $this->name(value: $messageField) === true);
 			if ($named === true && in_array($replyField, $whitelist, true) === true && $this->projects(projected: $projected, field: $messageField) === true) {
@@ -107,14 +139,8 @@ class InboxReplyConfigNormaliser {
 			}
 		}
 
-		$kept = ['action' => $declared['action'], 'carry' => $carry];
-		$from = ($declared['subjectFrom'] ?? null);
-		if ($this->name(value: $from) === true && $this->projects(projected: $projected, field: $from) === true) {
-			$kept['subjectFrom'] = $from;
-		}
-
-		return $kept;
-	}//end reply()
+		return $carry;
+	}//end carry()
 
 	/**
 	 * Whether a value is a plain field name.

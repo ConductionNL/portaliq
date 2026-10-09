@@ -75,22 +75,38 @@ class ThemeTagKeys {
 			}
 		}
 
-		if (array_key_exists('metaFields', $collection) === true) {
-			$declared = $collection['metaFields'];
-			if (is_array($declared) === false) {
-				$declared = [];
-			}
-
-			$meta = array_values(array_filter($declared, fn ($field): bool => is_string($field) === true && preg_match(self::FIELD, $field) === 1));
-			if ($meta === []) {
-				unset($collection['metaFields']);
-			} else {
-				$collection['metaFields'] = $meta;
-			}
-		}
+		$collection = $this->metaFields(collection: $collection);
 
 		return $this->countLabel(collection: $collection);
 	}//end collection()
+
+	/**
+	 * Keep `metaFields` as a list of plain field names; drop it when none is left.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function metaFields(array $collection): array {
+		if (array_key_exists('metaFields', $collection) === false) {
+			return $collection;
+		}
+
+		$declared = $collection['metaFields'];
+		if (is_array($declared) === false) {
+			$declared = [];
+		}
+
+		$meta = array_values(array_filter($declared, fn ($field): bool => is_string($field) === true && preg_match(self::FIELD, $field) === 1));
+		if ($meta === []) {
+			unset($collection['metaFields']);
+			return $collection;
+		}
+
+		$collection['metaFields'] = $meta;
+
+		return $collection;
+	}//end metaFields()
 
 	/**
 	 * Normalise an action: `theme` and `when`.
@@ -108,12 +124,12 @@ class ThemeTagKeys {
 		}
 
 		$when = $action['when'];
-		$ok   = is_array($when) === true
+		$valid = is_array($when) === true
 			&& is_string($when['field'] ?? null) === true && preg_match(self::FIELD, $when['field']) === 1
 			&& in_array($when['op'] ?? null, self::OPERATORS, true) === true
 			&& array_key_exists('value', $when) === true
 			&& $this->valueFits(op: $when['op'], value: $when['value']) === true;
-		if ($ok === false) {
+		if ($valid === false) {
 			unset($action['when']);
 			return $action;
 		}

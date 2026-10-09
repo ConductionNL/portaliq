@@ -60,39 +60,91 @@ class PublicRecordsNormaliser {
 		$kept    = [];
 		$seen    = [];
 		foreach ($entries as $entry) {
-			if (is_array($entry) === false) {
+			$clean = $this->entry(entry: $entry, seen: $seen, provider: $provider, methods: $methods);
+			if ($clean === null) {
 				continue;
 			}
 
-			$id    = $entry['id'] ?? null;
-			$label = $entry['label'] ?? null;
-			$list  = $entry['listProvider'] ?? null;
-			$one   = $entry['recordProvider'] ?? null;
-			if (is_string($id) === false || preg_match(self::ID_PATTERN, $id) !== 1 || isset($seen[$id]) === true) {
-				continue;
-			}
-
-			if (is_string($label) === false || trim($label) === '') {
-				continue;
-			}
-
-			$listCallable = $methods->callableOn(provider: $provider, method: (string)$list);
-			$oneCallable  = $methods->callableOn(provider: $provider, method: (string)$one);
-			if ($listCallable === false || $oneCallable === false) {
-				continue;
-			}
-
-			$group = $entry['group'] ?? '';
-			if (is_string($group) === false) {
-				$group = '';
-			}
-
-			$seen[$id] = true;
-			$kept[]    = ['id' => $id, 'label' => trim($label), 'group' => $group, 'listProvider' => (string)$list, 'recordProvider' => (string)$one];
-		}//end foreach
+			$seen[$clean['id']] = true;
+			$kept[]             = $clean;
+		}
 
 		return $kept;
 	}//end normalise()
+
+	/**
+	 * One declared entry, or null when it is malformed, a duplicate or names a provider method that is not callable.
+	 *
+	 * @param mixed $entry The declared entry.
+	 * @param array<string, bool> $seen The ids kept so far.
+	 * @param object $provider The contributing app's provider.
+	 * @param TimelineProviderMethod $methods The provider method check.
+	 *
+	 * @return array<string, string>|null The kept entry.
+	 */
+	private function entry(mixed $entry, array $seen, object $provider, TimelineProviderMethod $methods): ?array {
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$id    = $entry['id'] ?? null;
+		$label = $entry['label'] ?? null;
+		$list  = $entry['listProvider'] ?? null;
+		$one   = $entry['recordProvider'] ?? null;
+		if (is_string($id) === false || preg_match(self::ID_PATTERN, $id) !== 1 || isset($seen[$id]) === true) {
+			return null;
+		}
+
+		if (is_string($label) === false || trim($label) === '') {
+			return null;
+		}
+
+		$listCallable = $methods->callableOn(provider: $provider, method: (string)$list);
+		$oneCallable  = $methods->callableOn(provider: $provider, method: (string)$one);
+		if ($listCallable === false || $oneCallable === false) {
+			return null;
+		}
+
+		$group = $this->group(value: ($entry['group'] ?? ''));
+
+		return ['id' => $id, 'label' => trim($label), 'group' => $group, 'listProvider' => (string)$list, 'recordProvider' => (string)$one];
+	}//end entry()
+
+	/**
+	 * The group of an entry, empty when it is not text.
+	 *
+	 * @param mixed $value The declared group.
+	 *
+	 * @return string The group.
+	 */
+	private function group(mixed $value): string {
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		return $value;
+	}//end group()
+
+	/**
+	 * Replace the declared `publicRecords` of a contribution with the validated view.
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param object $provider The app's provider.
+	 * @param string $appId The app id.
+	 *
+	 * @return array<string, mixed> The contribution with the sanitised list.
+	 *
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t1
+	 */
+	public function attach(array $contribution, object $provider, string $appId): array {
+		$kept = $this->normalise(entries: ($contribution['publicRecords'] ?? null), provider: $provider);
+		unset($contribution['publicRecords']);
+		if ($kept !== []) {
+			$contribution['publicRecords'] = $this->view(kept: $kept, app: $appId);
+		}
+
+		return $contribution;
+	}//end attach()
 
 	/**
 	 * What an aggregate carries: id, label, group and app, never a provider name.

@@ -108,7 +108,7 @@ class PageChoice {
 
 		$order = array_keys($aggregate['contributions']);
 		usort($order, static fn (int $a, int $b): int => [$best[$a], $a] <=> [$best[$b], $b]);
-		$aggregate['contributions'] = array_values(array_map(static fn (int $i): array => $aggregate['contributions'][$i], $order));
+		$aggregate['contributions'] = array_values(array_map(static fn (int $position): array => $aggregate['contributions'][$position], $order));
 
 		return $aggregate;
 	}//end arrange()
@@ -135,42 +135,56 @@ class PageChoice {
 			return $aggregate;
 		}
 
-		foreach ($aggregate['contributions'] as $i => $contribution) {
-			$app     = (string)($contribution['app'] ?? '');
-			$kept    = [];
-			$closing = [];
-			foreach ((array)($contribution['pages'] ?? []) as $page) {
-				if (isset($keys[self::keyOf(app: $app, pageId: (string)($page['id'] ?? ''))]) === true) {
-					$closing = array_merge($closing, $this->collectionsOf(page: $page));
-					continue;
-				}
-
-				$kept[] = $page;
-			}
-
-			if (count($kept) === count((array)($contribution['pages'] ?? []))) {
-				continue;
-			}
-
-			$stillShown = [];
-			foreach ($kept as $page) {
-				$stillShown = array_merge($stillShown, $this->collectionsOf(page: $page));
-			}
-
-			$closed = array_diff($closing, $stillShown);
-			$aggregate['contributions'][$i]['pages'] = $kept;
-			if ($closed !== [] && is_array($contribution['collections'] ?? null) === true) {
-				$aggregate['contributions'][$i]['collections'] = array_values(
-					array_filter(
-						$contribution['collections'],
-						static fn (mixed $collection): bool => in_array((string)($collection['id'] ?? ''), $closed, true) === false
-					)
-				);
-			}
+		foreach ($aggregate['contributions'] as $index => $contribution) {
+			$aggregate['contributions'][$index] = $this->withoutHiddenPages(contribution: $contribution, keys: $keys);
 		}
 
 		return $aggregate;
 	}//end withoutHidden()
+
+	/**
+	 * One contribution without its hidden pages and the collections only those pages showed.
+	 *
+	 * @param array<string, mixed> $contribution The contribution.
+	 * @param array<string, int> $keys The hidden `<app>:<pageId>` keys, flipped.
+	 *
+	 * @return array<string, mixed> The contribution, unchanged when no page of it is hidden.
+	 */
+	private function withoutHiddenPages(array $contribution, array $keys): array {
+		$app     = (string)($contribution['app'] ?? '');
+		$kept    = [];
+		$closing = [];
+		foreach ((array)($contribution['pages'] ?? []) as $page) {
+			if (isset($keys[self::keyOf(app: $app, pageId: (string)($page['id'] ?? ''))]) === true) {
+				$closing = array_merge($closing, $this->collectionsOf(page: $page));
+				continue;
+			}
+
+			$kept[] = $page;
+		}
+
+		if (count($kept) === count((array)($contribution['pages'] ?? []))) {
+			return $contribution;
+		}
+
+		$stillShown = [];
+		foreach ($kept as $page) {
+			$stillShown = array_merge($stillShown, $this->collectionsOf(page: $page));
+		}
+
+		$closed                = array_diff($closing, $stillShown);
+		$contribution['pages'] = $kept;
+		if ($closed !== [] && is_array($contribution['collections'] ?? null) === true) {
+			$contribution['collections'] = array_values(
+				array_filter(
+					$contribution['collections'],
+					static fn (mixed $collection): bool => in_array((string)($collection['id'] ?? ''), $closed, true) === false
+				)
+			);
+		}
+
+		return $contribution;
+	}//end withoutHiddenPages()
 
 	/**
 	 * The collections a page shows: those of its blocks and its record pages.

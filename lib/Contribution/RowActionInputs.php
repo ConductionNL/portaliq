@@ -244,17 +244,8 @@ class RowActionInputs {
 	 * @return array<string, mixed>
 	 */
 	private function availabilityKeys(array $action): array {
-		$when = ($action['availableWhen'] ?? null);
 		if (array_key_exists('availableWhen', $action) === true) {
-			if (is_array($when) === true
-				&& $this->isName(value: ($when['field'] ?? null)) === true
-				&& array_key_exists('equals', $when) === true
-				&& is_scalar($when['equals']) === true
-			) {
-				$action['availableWhen'] = ['field' => $when['field'], 'equals' => $when['equals']];
-			} else {
-				unset($action['availableWhen']);
-			}
+			$action = $this->keepAvailableWhen(action: $action);
 		}
 
 		if (array_key_exists('unavailableReasonField', $action) === true
@@ -265,6 +256,29 @@ class RowActionInputs {
 
 		return $action;
 	}//end availabilityKeys()
+
+	/**
+	 * Keep `availableWhen` as `{field, equals}` with a scalar value; drop it otherwise.
+	 *
+	 * @param array<string, mixed> $action The action, declaring `availableWhen`.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function keepAvailableWhen(array $action): array {
+		$when = ($action['availableWhen'] ?? null);
+		if (is_array($when) === true
+			&& $this->isName(value: ($when['field'] ?? null)) === true
+			&& array_key_exists('equals', $when) === true
+			&& is_scalar($when['equals']) === true
+		) {
+			$action['availableWhen'] = ['field' => $when['field'], 'equals' => $when['equals']];
+			return $action;
+		}
+
+		unset($action['availableWhen']);
+
+		return $action;
+	}//end keepAvailableWhen()
 
 	/**
 	 * @param mixed $value A candidate field name.
