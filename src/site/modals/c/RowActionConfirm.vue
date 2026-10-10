@@ -54,6 +54,38 @@
 				{{ errors[input.name] }}
 			</p>
 		</div>
+		<div
+			v-if="fileSlot"
+			class="pq-rowaction__input"
+			data-testid="rowaction-files-field">
+			<label
+				class="utrecht-form-label"
+				:for="`rowaction-files-${action.id}`"
+				>{{ translate('Add files') }}</label
+			>
+			<p
+				:id="`rowaction-files-hint-${action.id}`"
+				class="utrecht-form-field-description">
+				{{ translate('Add up to {max} files.', { max: fileSlot.max }) }}
+			</p>
+			<input
+				:id="`rowaction-files-${action.id}`"
+				type="file"
+				multiple
+				class="pq-rowaction__files"
+				:aria-describedby="fileHintIds"
+				:aria-invalid="fileError ? 'true' : undefined"
+				data-testid="rowaction-files"
+				@change="pickFiles" />
+			<p
+				v-if="fileError"
+				:id="`rowaction-files-error-${action.id}`"
+				class="utrecht-form-field-error-message"
+				role="alert"
+				data-testid="rowaction-files-error">
+				{{ fileError }}
+			</p>
+		</div>
 		<div class="pq-rowaction__buttons">
 			<button
 				v-if="message === ''"
@@ -149,6 +181,8 @@ export default {
 			link: '',
 			values: {},
 			errors: {},
+			files: [],
+			fileError: '',
 		}
 	},
 
@@ -180,6 +214,26 @@ export default {
 		shownInputs() {
 			return this.message === '' ? this.inputs : []
 		},
+
+		/**
+		 * @return {object|null} The action's `files` declaration while the dialog asks, else null.
+		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 */
+		fileSlot() {
+			const files = this.action.files
+			return this.message === '' && files && files.field ? files : null
+		},
+
+		/**
+		 * @return {string} The hint id, and the error id when there is an error.
+		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 */
+		fileHintIds() {
+			const hint = `rowaction-files-hint-${this.action.id}`
+			return this.fileError
+				? `${hint} rowaction-files-error-${this.action.id}`
+				: hint
+		},
 	},
 
 	mounted() {
@@ -197,6 +251,9 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
 		 */
 		async confirm() {
+			if (this.fileSlot && this.checkFiles() === false) {
+				return
+			}
 			this.busy = true
 			this.errors = {}
 			const answers = this.answers()
@@ -207,6 +264,7 @@ export default {
 					this.row,
 					this.action,
 					answers,
+					this.fileSlot ? this.files : [],
 				)
 			if (redirect) {
 				this.navigate(redirect)
@@ -226,6 +284,41 @@ export default {
 				|| this.translate(messageKey)
 			this.link = link || ''
 			this.$emit('done')
+		},
+
+		/**
+		 * Keep the files the resident chose.
+		 *
+		 * @param {Event} event The change event of the file input.
+		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 */
+		pickFiles(event) {
+			this.files = Array.from(event?.target?.files || [])
+			this.fileError = ''
+		},
+
+		/**
+		 * Check the number and size of the chosen files before anything is sent.
+		 *
+		 * @return {boolean} True when the files may go.
+		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 */
+		checkFiles() {
+			const { max, maxBytes } = this.fileSlot
+			if (this.files.length > max) {
+				this.fileError = this.translate('Add no more than {max} files.', {
+					max,
+				})
+				return false
+			}
+			if (this.files.some((file) => file.size > maxBytes)) {
+				this.fileError = this.translate('A file is larger than {size} MB.', {
+					size: Math.floor(maxBytes / 1048576),
+				})
+				return false
+			}
+			this.fileError = ''
+			return true
 		},
 
 		/**

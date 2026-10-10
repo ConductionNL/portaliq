@@ -2906,7 +2906,11 @@ OC.L10N.register(
         "Umbrella": "Overkoepelend",
         "Ingetrokken": "Ingetrokken",
         "Visible from": "Zichtbaar van",
-        "Until": "Tot"
+        "Until": "Tot",
+        "Add up to {max} files.": "Voeg tot {max} bestanden toe.",
+        "Add no more than {max} files.": "Voeg niet meer dan {max} bestanden toe.",
+        "A file is larger than {size} MB.": "Een bestand is groter dan {size} MB.",
+        "Add files": "Bestanden toevoegen"
     },
     "nplurals=2; plural=(n != 1);"
 )

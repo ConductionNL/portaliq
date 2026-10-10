@@ -94,6 +94,76 @@ class PortalActionForwarderTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A row action that declares `files` forwards its uploads multipart beside the fields (REQ-RAF-001).
+	 *
+	 * @return void
+	 */
+	public function testFilesGoMultipartBesideTheFields(): void {
+		$tmp = tempnam(sys_get_temp_dir(), 'raf');
+		file_put_contents($tmp, 'scan bytes');
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('issueAssertion')->willReturn('minted-assertion');
+		$seen = [];
+
+		$loopback = $this->getMockBuilder(InstanceLoopback::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['request'])
+			->getMock();
+		$loopback->expects($this->once())->method('request')->willReturnCallback(
+			function (string $method, string $path, array $options) use (&$seen): IResponse {
+				$seen = $options;
+				return $this->createMock(IResponse::class);
+			}
+		);
+
+		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $session);
+		$forwarder->forward(
+			action: ['endpoint' => '/apps/dossiq/api/portal/woo/answer', 'files' => ['field' => 'attachments', 'max' => 5, 'maxBytes' => 1000]],
+			subject: ['subjectRef' => 's-1'],
+			whitelisted: ['answer' => 'Zie bijlage', 'requestId' => 'r-1', 'extra' => ['a' => 1]],
+			files: [['name' => 'scan.pdf', 'type' => 'application/pdf', 'tmp_name' => $tmp, 'size' => 10]]
+		);
+		unlink($tmp);
+
+		$this->assertArrayNotHasKey('body', $seen);
+		$this->assertArrayNotHasKey('Content-Type', $seen['headers']);
+		$this->assertSame('minted-assertion', $seen['headers']['X-Portal-Subject']);
+		$this->assertSame(['answer', 'requestId', 'extra', 'attachments[]'], array_column($seen['multipart'], 'name'));
+		$this->assertSame('{"a":1}', $seen['multipart'][2]['contents']);
+		$this->assertSame('scan.pdf', $seen['multipart'][3]['filename']);
+		$this->assertSame('application/pdf', $seen['multipart'][3]['headers']['Content-Type']);
+		$this->assertIsResource($seen['multipart'][3]['contents']);
+	}//end testFilesGoMultipartBesideTheFields()
+
+	/**
+	 * Without files, or on an action without `files`, the forward stays JSON.
+	 *
+	 * @return void
+	 */
+	public function testWithoutFilesTheForwardStaysJson(): void {
+		$seen = [];
+		$loopback = $this->getMockBuilder(InstanceLoopback::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['request'])
+			->getMock();
+		$loopback->method('request')->willReturnCallback(
+			function (string $method, string $path, array $options) use (&$seen): IResponse {
+				$seen[] = $options;
+				return $this->createMock(IResponse::class);
+			}
+		);
+		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+
+		$forwarder->forward(action: ['endpoint' => '/apps/x/api/y', 'files' => ['field' => 'attachments']], subject: [], whitelisted: ['a' => 1]);
+		$forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: ['a' => 1], files: [['name' => 'n', 'type' => 't', 'tmp_name' => '/nonexistent', 'size' => 1]]);
+
+		foreach ($seen as $options) {
+			$this->assertSame('{"a":1}', $options['body']);
+			$this->assertArrayNotHasKey('multipart', $options);
+		}
+	}//end testWithoutFilesTheForwardStaysJson()
+
 	public function testAForwardThatReachesNoAddressDegradesToNull(): void {
 		$loopback = $this->getMockBuilder(InstanceLoopback::class)
 			->disableOriginalConstructor()

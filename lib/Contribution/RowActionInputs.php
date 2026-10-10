@@ -66,7 +66,7 @@ class RowActionInputs {
 	 */
 	public function normaliseAction(array $action): array {
 		$isEndpoint = ((new RowActionResolver())->isEndpointRowAction(action: $action) === true);
-		$keys       = ['rowInputs', 'availableWhen', 'unavailableReasonField', 'confirmText', 'successText'];
+		$keys       = ['rowInputs', 'availableWhen', 'unavailableReasonField', 'confirmText', 'successText', 'files'];
 		if ($isEndpoint === false) {
 			return array_diff_key($action, array_flip($keys));
 		}
@@ -75,6 +75,8 @@ class RowActionInputs {
 
 		$action = $this->rowInputs(action: $action, whitelist: $whitelist);
 		$action = $this->availabilityKeys(action: $action);
+		// The files the resident may add (row-action-carries-files REQ-RAF-001).
+		$action = (new RowActionFiles())->normalise(action: $action, whitelist: $whitelist);
 		foreach (['confirmText', 'successText'] as $textKey) {
 			if (array_key_exists($textKey, $action) === true) {
 				$text = $action[$textKey];

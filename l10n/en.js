@@ -2784,7 +2784,11 @@ OC.L10N.register(
         "The subject reference of the account the link signs in to.": "The subject reference of the account the link signs in to.",
         "The tenant of the account.": "The tenant of the account.",
         "When it signed somebody in.": "When it signed somebody in.",
-        "`used` after the one sign-in, `void` when a newer link or staff revoked it.": "`used` after the one sign-in, `void` when a newer link or staff revoked it."
+        "`used` after the one sign-in, `void` when a newer link or staff revoked it.": "`used` after the one sign-in, `void` when a newer link or staff revoked it.",
+        "Add up to {max} files.": "Add up to {max} files.",
+        "Add no more than {max} files.": "Add no more than {max} files.",
+        "A file is larger than {size} MB.": "A file is larger than {size} MB.",
+        "Add files": "Add files"
     },
     "nplurals=2; plural=(n != 1);"
 )
