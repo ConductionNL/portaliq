@@ -13,6 +13,35 @@
  */
 
 /**
+ * THE RANKING THE SEARCH ASKS FOR, declared once (REQ-SSR-006).
+ * `buildRequestUrl()` reads it, and the portal admin's "How search ranks"
+ * renders it, so the explanation cannot drift from the request.
+ *
+ * - `termOrder`: the order a new search with a term uses.
+ * - `fuzzy`: whether `_fuzzy=true` goes with every term.
+ * - `fuzzyFields` / `exactFields`: what OpenRegister matches fuzzily and what
+ *   only exactly (its trigram similarity reads the title alone).
+ * - `unscoredFederated`: where a federated row without a score sorts.
+ *
+ * @type {{termOrder: string, fuzzy: boolean, fuzzyFields: Array<string>, exactFields: Array<string>, unscoredFederated: string}}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-publisher-can-read-how-search-ranks-req-ssr-006
+ */
+export const RANKING = {
+	termOrder: '_relevance:DESC',
+	fuzzy: true,
+	fuzzyFields: ['title'],
+	exactFields: ['summary', 'documentText'],
+	unscoredFederated: 'after',
+}
+
+/**
+ * The relevance order's value in the sort control.
+ *
+ * @type {string}
+ */
+export const RELEVANCE = RANKING.termOrder
+
+/**
  * The request URL for one search state.
  *
  * The query-parameter names are OpenCatalogi's own (`_search`, `_page`,
@@ -47,6 +76,13 @@ export function buildRequestUrl(state) {
 	// something this portal should be betting on.
 	if (state.query) {
 		url.searchParams.set('_search', state.query)
+
+		// FUZZY FOR EVERY TERM (search-sort-by-relevance REQ-SSR-004), as the
+		// ranking declaration says: a misspelt title is still found, whatever
+		// the order. No term, no flag.
+		if (RANKING.fuzzy === true) {
+			url.searchParams.set('_fuzzy', 'true')
+		}
 
 		// THE TEXT INSIDE PUBLIC DOCUMENTS (REQ-PFS-CONTENT-001). The opt-in
 		// opencatalogi's document content search defines; sent whenever there
@@ -99,10 +135,10 @@ export function buildRequestUrl(state) {
 	// 2026-08-20: title ASC/DESC and publicationDate ASC/DESC each return a
 	// different first row, so the control changes something.
 	//
-	// NO "most relevant" OPTION. The reference portal offers one; nothing in
-	// this API implements relevance ordering, and a sort option that silently
-	// does nothing is the same class of defect as the directory filter that
-	// answers `total: 0`.
+	// "Most relevant" is `_relevance:DESC` (search-sort-by-relevance): the
+	// trigram ranking OpenRegister applies with `_fuzzy`. The block checks the
+	// answer carries a score and drops the option when it does not, so the
+	// order is never one that was not applied.
 	if (state.sort) {
 		const [field, direction] = String(state.sort).split(':')
 		if (field && direction) {
@@ -176,6 +212,8 @@ function baseResult(row) {
 		// component omits the chip rather than showing a number nobody can
 		// read; a page that knows its corpus supplies `typeLabel` instead.
 		type: self.schemaTitle || '',
+		// The match, for assistive technology only (REQ-SSR-003).
+		match: matchPercent(row),
 	}
 }
 
@@ -586,4 +624,148 @@ export function lockedFiltersOf(state) {
  */
 export function withoutLocked(fields, locked) {
 	return (fields || []).filter((field) => !Object.hasOwn(locked || {}, field))
+}
+
+/**
+ * The orders the sort control offers: "Meest relevant" first when there is a
+ * term and relevance was not found missing, then the orders that always work.
+ *
+ * @param {string} query The searched term.
+ * @param {boolean} relevanceOff Whether this visit found relevance not applied.
+ * @return {Array<{value: string, label: string}>}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-with-a-term-can-be-sorted-by-relevance-req-ssr-001
+ */
+export function sortOptionsFor(query, relevanceOff = false) {
+	const options = [
+		{ value: '', label: 'Standaardvolgorde' },
+		{ value: 'publicationDate:DESC', label: 'Datum - nieuw naar oud' },
+		{ value: 'publicationDate:ASC', label: 'Datum - oud naar nieuw' },
+		{ value: 'title:ASC', label: 'Naam - A naar Z' },
+		{ value: 'title:DESC', label: 'Naam - Z naar A' },
+	]
+	if (String(query || '').trim() !== '' && relevanceOff !== true) {
+		options.unshift({ value: RELEVANCE, label: 'Meest relevant' })
+	}
+	return options
+}
+
+/**
+ * The order of a NEW search: relevance when there is a term (and it was not
+ * found missing), else the backend's default.
+ *
+ * @param {string} query The searched term.
+ * @param {boolean} relevanceOff Whether this visit found relevance not applied.
+ * @return {string}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-with-a-term-can-be-sorted-by-relevance-req-ssr-001
+ */
+export function defaultSortFor(query, relevanceOff = false) {
+	return String(query || '').trim() !== '' && relevanceOff !== true
+		? RELEVANCE
+		: ''
+}
+
+/**
+ * Whether the backend applied the relevance order: its first row carries a
+ * numeric `@self.relevance`. An empty list proves nothing either way.
+ *
+ * @param {object} body The search answer.
+ * @return {boolean|null} null when there are no rows to tell by.
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-block-never-shows-a-relevance-order-that-was-not-applied-req-ssr-002
+ */
+export function relevanceApplied(body) {
+	const first = Array.isArray(body?.results) ? body.results[0] : undefined
+	if (!first) {
+		return null
+	}
+	return typeof first?.['@self']?.relevance === 'number'
+}
+
+/**
+ * A row's match as a whole percent, or null without a score. OpenRegister's
+ * trigram similarity runs 0 to 1; a score above 1 is already a percent.
+ *
+ * @param {object} row One result row.
+ * @return {number|null}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-match-score-is-available-to-assistive-technology-only-req-ssr-003
+ */
+export function matchPercent(row) {
+	const score = row?.['@self']?.relevance
+	if (typeof score !== 'number' || Number.isFinite(score) === false) {
+		return null
+	}
+	const percent = score <= 1 ? score * 100 : score
+	return Math.max(0, Math.min(100, Math.round(percent)))
+}
+
+/**
+ * Whether a finished search should ask for a "Bedoelde u" correction.
+ *
+ * @param {string} query The searched term.
+ * @param {number} total How many results it found.
+ * @return {boolean}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+ */
+export function wantsSuggestion(query, total) {
+	return String(query || '').trim() !== '' && Number(total) < 3
+}
+
+/**
+ * The suggest route's address for a portal and a term.
+ *
+ * @param {string} origin The page's origin.
+ * @param {string} portal The portal slug.
+ * @param {string} term The searched term.
+ * @return {string}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+ */
+export function suggestUrl(origin, portal, term) {
+	const url = new URL('/index.php/apps/portaliq/api/site/search/suggest', origin)
+	url.searchParams.set('portal', String(portal || ''))
+	url.searchParams.set('q', String(term || ''))
+	return url.toString()
+}
+
+/**
+ * The "How search ranks" text, sentence by sentence, from the declaration.
+ *
+ * @param {object} ranking The declaration (RANKING).
+ * @param {(key: string) => string} t The translator.
+ * @return {Array<string>}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-publisher-can-read-how-search-ranks-req-ssr-006
+ */
+export function rankingExplanation(ranking, t) {
+	const field = {
+		title: t('the title'),
+		summary: t('the summary'),
+		documentText: t('the text inside documents'),
+	}
+	const names = (list) => (list || []).map((key) => field[key] || key).join(', ')
+	const lines = []
+	if (ranking.termOrder === RELEVANCE) {
+		lines.push(t('A search with a term shows the best matches first.'))
+	}
+	if (ranking.fuzzy === true && (ranking.fuzzyFields || []).length > 0) {
+		lines.push(
+			t('A misspelling is still found in {fields}.').replace(
+				'{fields}',
+				names(ranking.fuzzyFields),
+			),
+		)
+	}
+	if ((ranking.exactFields || []).length > 0) {
+		lines.push(
+			t('Only exact words are found in {fields}.').replace(
+				'{fields}',
+				names(ranking.exactFields),
+			),
+		)
+	}
+	if (ranking.unscoredFederated === 'after') {
+		lines.push(
+			t(
+				'Results from other catalogues without a score come after the scored results.',
+			),
+		)
+	}
+	return lines
 }

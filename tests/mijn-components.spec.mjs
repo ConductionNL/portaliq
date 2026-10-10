@@ -521,3 +521,43 @@ test("the components take only the Den Haag CSS, at thematiq's pinned versions, 
 		'@gemeente-denhaag/step-marker/index.css',
 	])
 })
+
+// portal-identity-from-the-admin REQ-PIA-003: the site names the kind of
+// organisation the portal picked, with its Dutch article.
+test('a water authority is not called a municipality', async () => {
+	const { fileLine, organisationFrom } = await import('../src/site/components/mijn/documents.js')
+	const { mijnTranslator } = await import('../src/site/components/mijn/rows.js')
+	const nl = mijnTranslator(null, 'nl')
+	const en = mijnTranslator(null, 'en')
+	const waterschap = { type: 'https://identifier.overheid.nl/tooi/def/ont/Waterschap', label: 'waterschap' }
+
+	assert.equal(organisationFrom(waterschap, nl), 'Van het waterschap')
+	assert.equal(organisationFrom({ type: 'x', label: 'ministerie' }, nl), 'Van het ministerie')
+	assert.equal(organisationFrom({ type: 'x', label: 'provincie' }, nl), 'Van de provincie')
+	assert.equal(organisationFrom(waterschap, en), 'From the waterschap')
+	const line = fileLine({ title: 'brief', kind: 'decision' }, nl, 'nl', waterschap)
+	assert.equal(line, 'Van het waterschap.')
+	assert.equal(line.includes('gemeente'), false)
+})
+
+test('no type reads van de organisatie', async () => {
+	const { fileLine, organisationFrom } = await import('../src/site/components/mijn/documents.js')
+	const { mijnTranslator } = await import('../src/site/components/mijn/rows.js')
+	const nl = mijnTranslator(null, 'nl')
+
+	assert.equal(organisationFrom(null, nl), 'Van de organisatie')
+	assert.equal(organisationFrom({ type: '', label: '' }, nl), 'Van de organisatie')
+	assert.equal(fileLine({ title: 'zonder' }, nl, 'nl'), 'Van de organisatie.')
+	assert.equal(organisationFrom(null, mijnTranslator(null, 'en')), 'From the organisation')
+})
+
+test('the documents of a case name the portal organisation, injected by the site', () => {
+	const documents = readFileSync(join(ROOT, 'src/site/components/mijn/DocumentsBlock.vue'), 'utf8')
+	const citizenCase = readFileSync(join(ROOT, 'src/site/components/e/CitizenCase.vue'), 'utf8')
+	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
+	assert.match(app, /siteOrganisation: \(\) => this\.site\.organisation/)
+	for (const source of [documents, citizenCase]) {
+		assert.match(source, /siteOrganisation/)
+		assert.match(source, /fileLine\([\s\S]*?this\.siteOrganisation\(\)/)
+	}
+})

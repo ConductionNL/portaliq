@@ -52,6 +52,7 @@ use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Listener\GlossaryRelationGuardListener;
 use OCA\Portaliq\Listener\MediaWriteGuardListener;
 use OCA\Portaliq\Listener\NoticeWriteGuardListener;
+use OCA\Portaliq\Listener\PortalIdentityGuardListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
@@ -239,6 +240,11 @@ class Application extends App implements IBootstrap {
 		// A notice ends after it starts (operate-maintenance-notice REQ-OMN-003).
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, NoticeWriteGuardListener::class);
+		}
+
+		// A portal's favicon, logo and hero image are its own media (portal-identity-from-the-admin REQ-PIA-001).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, PortalIdentityGuardListener::class);
 		}
 	}//end registerCmsListeners()
 

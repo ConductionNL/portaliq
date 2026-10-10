@@ -74,6 +74,7 @@ return [
         ['name' => 'portalCaseTypes#update', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'PUT'],
         // A portal's house style, picked from the theme app's catalogue with a
         // contrast verdict per set (nldesign-theme-integration). Admin-only.
+        ['name' => 'organisationType#index', 'url' => '/api/organisation-types', 'verb' => 'GET'],
         ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
         ['name' => 'portalTheme#update', 'url' => '/api/portals/{slug}/theme', 'verb' => 'PUT'],
         // Whether the portal has a published page at its root, for the "Home
@@ -235,6 +236,8 @@ return [
         ['name' => 'publicRecord#record', 'url' => '/api/public-records/{app}/{list}/{id}', 'verb' => 'GET'],
         // search-assistant-from-public-content: the anonymous, tool-free assistant.
         ['name' => 'publicAssistant#ask', 'url' => '/api/assistant/ask', 'verb' => 'POST'],
+        // search-sort-by-relevance: the anonymous, rate-limited "Bedoelde u" correction.
+        ['name' => 'searchSuggest#suggest', 'url' => '/api/site/search/suggest', 'verb' => 'GET'],
         ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
         ['name' => 'traffic#pixel', 'url' => '/api/traffic/pixel.gif', 'verb' => 'GET'],
         ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],
