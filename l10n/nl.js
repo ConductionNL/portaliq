@@ -1926,7 +1926,7 @@ OC.L10N.register(
         "Anyone, after a staff member approves": "Iedereen, na goedkeuring door een medewerker",
         "Approve": "Goedkeuren",
         "E-mail address": "E-mailadres",
-        "For example client or supplier.": "Bijvoorbeeld client of supplier.",
+        "For example client or supplier.": "Bijvoorbeeld klant of leverancier.",
         "Give a reason.": "Geef een reden.",
         "Give an identity reference or an e-mail address.": "Geef een identiteitsnummer of een e-mailadres.",
         "Give the address and the organisation.": "Geef het adres en de organisatie.",
