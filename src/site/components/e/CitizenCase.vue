@@ -296,6 +296,13 @@ export default {
 
 	components: { CaseField, FileItem, WithdrawCaseConfirm },
 
+	// The portal's kind of organisation, for "Van het waterschap"
+	// (portal-identity-from-the-admin REQ-PIA-003). Provided by the site's
+	// App; a block rendered elsewhere reads "Van de organisatie".
+	inject: {
+		siteOrganisation: { default: () => () => null },
+	},
+
 	props: {
 		/** The manifest collection the case lives in (`{id, register, schema, ...}`). */
 		collection: { type: Object, required: true },
@@ -638,6 +645,7 @@ export default {
 				entry,
 				mijnTranslator(this.t, readerLocale(this.locale)),
 				readerLocale(this.locale),
+				this.siteOrganisation(),
 			)
 		},
 

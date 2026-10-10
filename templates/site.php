@@ -262,13 +262,15 @@ foreach ($tokenStylesheets as $href) {
     $stylesheets[] = $href;
 }
 
-// The tab icon. A portal's declared logo wins; otherwise the theme app's own
-// favicon, which every NLDS theme ships.
+// The tab icon (portal-identity-from-the-admin REQ-PIA-002): SiteIcon resolves
+// the portal's favicon, then its logo, then the theme's icon, then this app's
+// own mark, and SiteShell hands the answer in as `siteIcon`. The lines below
+// stay as the fallback for a render without it.
 // The theme app ships a per-brand logo under `img/logos/<theme>.svg`; the
 // reference application serves an SVG favicon the same way. `img/favicon.ico`
 // does NOT exist there — linking it would have traded a 404 on
 // /favicon.ico for a 404 on a path of our own invention, which is not a fix.
-$favicon = (string)($portalConfig['logo'] ?? '');
+$favicon = (string)($_['siteIcon'] ?? '');
 if ($favicon === '' && $themeStylesheet !== '' && $themeApp !== null) {
     $themeName = basename($themeStylesheet);
     try {
@@ -317,6 +319,9 @@ if ($favicon === '') {
     <meta property="og:description" content="<?php p($head['description']); ?>">
     <?php } ?>
     <meta name="robots" content="<?php p(($head['robots'] ?? '') !== '' ? $head['robots'] : 'noindex'); ?>">
+    <?php if ((string)($_['creator'] ?? '') !== '') { ?>
+    <meta name="DCTERMS.creator" content="<?php p((string)$_['creator']); ?>">
+    <?php } ?>
     <meta property="og:title" content="<?php p($headTitle); ?>">
     <meta property="og:type" content="website">
     <?php if (($head['canonical'] ?? '') !== '') { ?>

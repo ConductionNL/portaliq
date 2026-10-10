@@ -75,7 +75,7 @@ import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { assistantAvailable } from '../lib/assistantAvailable.js'
-import { withoutStyling } from '../lib/blockProps.js'
+import { heroPropsOf, withoutStyling } from '../lib/blockProps.js'
 import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
 
@@ -319,6 +319,15 @@ export default {
 		portal: {
 			type: String,
 			default: '',
+		},
+
+		/**
+		 * The portal's hero image, `{url, alt}` or null, for a hero block
+		 * without an image of its own (portal-identity-from-the-admin).
+		 */
+		portalHero: {
+			type: Object,
+			default: null,
 		},
 
 		/**
@@ -693,8 +702,13 @@ export default {
 
 			// The hero hands the portal on to the list beside it, which reads
 			// this portal's catalogue or news (hero-on-the-school-boards).
+			// The portal's hero image fills a hero without its own
+			// (portal-identity-from-the-admin REQ-PIA-002).
 			if (widget.widgetKey === 'hero') {
-				return { ...props, portal: this.portal }
+				return {
+					...heroPropsOf(props, this.portalHero),
+					portal: this.portal,
+				}
 			}
 
 			// The host names the portal, the session and the ways in; the

@@ -34,6 +34,11 @@
 							<span v-if="tagline" data-testid="site-footer-tagline">
 								{{ tagline }}
 							</span>
+							<span
+								v-if="organisationKind"
+								data-testid="site-footer-organisation-kind">
+								{{ organisationKind }}
+							</span>
 						</span>
 						<p
 							v-if="content.description"
@@ -198,6 +203,11 @@ export default {
 		title: { type: String, default: '' },
 		/** The line under the name. */
 		tagline: { type: String, default: '' },
+		/**
+		 * The kind of organisation that runs the portal, such as waterschap
+		 * (portal-identity-from-the-admin REQ-PIA-003). Empty shows nothing.
+		 */
+		organisationKind: { type: String, default: '' },
 		/** The footer's link columns. */
 		menus: { type: Array, default: () => [] },
 		/** `{label, href}` legal links. */

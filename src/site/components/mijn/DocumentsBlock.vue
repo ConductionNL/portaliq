@@ -118,6 +118,13 @@ export default {
 
 	components: { EmptyState, FileItem, LoadError, Skeleton },
 
+	// The portal's kind of organisation, for "Van het waterschap"
+	// (portal-identity-from-the-admin REQ-PIA-003). Provided by the site's
+	// App; a block rendered elsewhere reads "Van de organisatie".
+	inject: {
+		siteOrganisation: { default: () => () => null },
+	},
+
 	props: {
 		/** The normalised block: `collection`, `label?`. */
 		block: { type: Object, required: true },
@@ -259,7 +266,7 @@ export default {
 			// The provider's own line is shown as written.
 			return typeof entry?.meta === 'string' && entry.meta !== ''
 				? entry.meta
-				: fileLine(entry, this.tr, this.locale)
+				: fileLine(entry, this.tr, this.locale, this.siteOrganisation())
 		},
 
 		/**

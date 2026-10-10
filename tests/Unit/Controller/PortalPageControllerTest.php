@@ -9,9 +9,13 @@ use OCA\Portaliq\Service\Cms\AccessibilityFraming;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\Cms\MediaLibraryReader;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Service\SiteShell;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -662,15 +666,34 @@ class PortalPageControllerTest extends TestCase {
 
 		return new PortalPageController(
 			$request,
-			$runtimeConfigResolver,
 			$urlGenerator,
-			$portalResolver,
-			$themeResolver,
-			new SiteHead($reader),
-			($notices ?? $this->createMock(PortalNoticeReader::class)),
+			new SiteShell(
+				request: $request,
+				portalResolver: $portalResolver,
+				themeResolver: $themeResolver,
+				urlGenerator: $urlGenerator,
+				siteHead: new SiteHead($reader),
+				notices: ($notices ?? $this->createMock(PortalNoticeReader::class)),
+				configResolver: $runtimeConfigResolver,
+				siteIcon: new SiteIcon(new MediaReferences($urlGenerator, $this->library()), $urlGenerator)
+			),
 			($this->framing ?? $this->noFraming())
 		);
 	}//end controller()
+
+	/**
+	 * A media library holding one published image, `fav`, on `wilgenboom`.
+	 *
+	 * @return MediaLibraryReader
+	 */
+	private function library(): MediaLibraryReader {
+		$library = $this->getMockBuilder(MediaLibraryReader::class)->disableOriginalConstructor()->onlyMethods(['item'])->getMock();
+		$library->method('item')->willReturnCallback(
+			static fn (string $portal, string $id) => ($portal === 'wilgenboom' && $id === 'fav') ? ['id' => 'fav', 'title' => 'Icoon', 'alt' => 'Icoon', 'kind' => 'image'] : null
+		);
+
+		return $library;
+	}//end library()
 
 
 	/**
@@ -700,6 +723,27 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertStringContainsString('img/logos/opencatalogi.svg', $params['themeLogoUrl']);
 
 	}//end testSiteEmitsAnAbsoluteLogoUrlForAThemedPortal()
+
+
+	/**
+	 * The portal's own favicon is the tab icon, ahead of the theme's logo,
+	 * as the public media address (portal-identity-from-the-admin REQ-PIA-002).
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testSiteEmitsThePortalsFaviconAsTheTabIcon(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['slug' => 'wilgenboom', 'theme' => 'opencatalogi', 'favicon' => 'media:fav'],
+			themeStylesheet: 'tokens/opencatalogi',
+			logoFile: 'img/logos/opencatalogi.svg'
+		);
+
+		$params = $controller->site()->getParams();
+
+		$this->assertStringContainsString('fav', $params['siteIcon']);
+		$this->assertNotSame($params['themeLogoUrl'], $params['siteIcon']);
+	}//end testSiteEmitsThePortalsFaviconAsTheTabIcon()
 
 
 	/**

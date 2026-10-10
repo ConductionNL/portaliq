@@ -418,3 +418,28 @@ test('App.vue imports every shell and block-prop helper it calls', () => {
 		}
 	}
 })
+
+// portal-identity-from-the-admin REQ-PIA-002 and REQ-PIA-003.
+test("a hero without its own image uses the portal's", async () => {
+	const { heroPropsOf } = await import('../src/site/lib/blockProps.js')
+	const portalHero = { url: 'https://site.example/media/h1?portal=ws', alt: 'De dijk' }
+
+	assert.equal(heroPropsOf({ heading: 'Welkom' }, portalHero).backgroundImage, portalHero.url)
+	assert.equal(heroPropsOf({ backgroundImage: '' }, portalHero).backgroundImage, portalHero.url)
+	// The block's own image wins.
+	assert.equal(heroPropsOf({ backgroundImage: 'https://x.example/eigen.jpg' }, portalHero).backgroundImage, 'https://x.example/eigen.jpg')
+	// No portal image: the props stay as authored.
+	assert.deepEqual(heroPropsOf({ heading: 'Welkom' }, null), { heading: 'Welkom' })
+
+	const grid = readFileSync(join(ROOT, 'src/site/components/WidgetGrid.vue'), 'utf8')
+	assert.match(grid, /widget\.widgetKey === 'hero'\) \{\s*return \{\s*\.\.\.heroPropsOf\(props, this\.portalHero\),\s*portal: this\.portal,?\s*\}/)
+	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
+	assert.match(app, /portalHero: this\.site\.heroImage \|\| null/)
+})
+
+test('the footer names the kind of organisation when the portal picked one', async () => {
+	const html = await renderSfc('src/site/components/FooterColumns.vue', { title: 'Waterschap Rivierenland', organisationKind: 'waterschap' }, LIBRARY)
+	assert.match(html, /data-testid="site-footer-organisation-kind">\s*waterschap\s*</)
+	const none = await renderSfc('src/site/components/FooterColumns.vue', { title: 'Open Tilburg' }, LIBRARY)
+	assert.equal(none.includes('site-footer-organisation-kind'), false)
+})
