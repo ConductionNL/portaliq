@@ -25,6 +25,7 @@ use ReflectionClass;
  * concept register holds (portal-identity-from-the-admin REQ-PIA-003).
  *
  * @covers \OCA\Portaliq\Controller\OrganisationTypeController
+ * @covers \OCA\Portaliq\Service\OrganisationTypeOptions
  *
  * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
