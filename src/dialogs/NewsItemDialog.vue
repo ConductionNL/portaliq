@@ -32,7 +32,7 @@
 			<NcTextArea
 				v-model="form.body"
 				:label="t('portaliq', 'Text')"
-				:helperText="t('portaliq', 'Parents read this text in the portal.')"
+				:helperText="t('portaliq', 'Readers see this text on the portal.')"
 				resize="vertical"
 				data-testid="news-item-body" />
 
@@ -46,7 +46,7 @@
 					value="school"
 					name="news-item-audience"
 					data-testid="news-item-audience-school">
-					{{ t('portaliq', 'The whole school') }}
+					{{ t('portaliq', 'Everyone on the portal') }}
 				</NcCheckboxRadioSwitch>
 				<NcCheckboxRadioSwitch
 					v-model="form.audience"
@@ -61,7 +61,7 @@
 				{{
 					t(
 						'portaliq',
-						'This news item is for specific children. You can change the text, not who it is for.',
+						'This news item is for specific people. You can change the text, not who it is for.',
 					)
 				}}
 			</NcNoteCard>
@@ -72,17 +72,17 @@
 					v-model="school"
 					:options="options.schools"
 					label="label"
-					:inputLabel="t('portaliq', 'School')"
+					:inputLabel="t('portaliq', 'Portal')"
 					:clearable="false"
 					data-testid="news-item-school" />
 				<NcTextField
 					v-else
 					v-model="form.schoolRef"
-					:label="t('portaliq', 'School reference')"
+					:label="t('portaliq', 'Portal reference')"
 					:helperText="
 						t(
 							'portaliq',
-							'The school app offers no list of schools. Enter the school\'s reference.',
+							'There is no list of portals to choose from. Enter the portal\'s reference.',
 						)
 					"
 					data-testid="news-item-school-ref" />
@@ -102,6 +102,14 @@
 				"
 				data-testid="news-item-groups" />
 
+			<p class="news-item__hint">
+				{{
+					t(
+						'portaliq',
+						'Save keeps the item as a draft. You publish it in the list, with Publish in the row menu.',
+					)
+				}}
+			</p>
 			<ul v-if="missing.length > 0" class="news-item__missing" role="alert">
 				<li v-for="sentence in missing" :key="sentence">
 					{{ t('portaliq', sentence) }}
@@ -306,6 +314,11 @@ export default {
 .news-item__audience legend {
 	font-weight: bold;
 	margin-bottom: var(--default-grid-baseline);
+}
+
+.news-item__hint {
+	color: var(--color-text-maxcontrast);
+	margin: 0;
 }
 
 .news-item__missing {

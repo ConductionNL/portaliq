@@ -18,27 +18,28 @@
 		size="normal"
 		data-testid="issue-account"
 		@closing="$emit('close', null)">
-		<p class="issue__intro">
-			{{
-				t(
-					'portaliq',
-					'The account waits until its owner signs in for the first time. Give an identity reference or a checked e-mail address.',
-				)
-			}}
-		</p>
-		<NcTextField
-			v-model="fields.organisation"
-			:label="t('portaliq', 'Organisation')"
-			data-testid="issue-account-organisation" />
-		<NcTextField
-			v-model="fields.audience"
-			:label="t('portaliq', 'Audience')"
-			:helperText="t('portaliq', 'For example client or supplier.')"
-			data-testid="issue-account-audience" />
 		<NcTextField
 			v-model="fields.displayName"
 			:label="t('portaliq', 'Name')"
 			data-testid="issue-account-name" />
+		<NcTextField
+			v-model="fields.email"
+			type="email"
+			:label="t('portaliq', 'E-mail address')"
+			data-testid="issue-account-email" />
+		<NcCheckboxRadioSwitch
+			v-model="fields.verifiedEmail"
+			data-testid="issue-account-verified">
+			{{ t('portaliq', 'I checked this address with its owner') }}
+		</NcCheckboxRadioSwitch>
+		<p class="issue__intro">
+			{{
+				t(
+					'portaliq',
+					'The account gets this address as confirmed, without a confirmation e-mail.',
+				)
+			}}
+		</p>
 		<NcSelect
 			v-model="identityType"
 			:options="identityTypes"
@@ -56,15 +57,22 @@
 			"
 			data-testid="issue-account-identity-ref" />
 		<NcTextField
-			v-model="fields.email"
-			type="email"
-			:label="t('portaliq', 'E-mail address')"
-			data-testid="issue-account-email" />
-		<NcCheckboxRadioSwitch
-			v-model="fields.verifiedEmail"
-			data-testid="issue-account-verified">
-			{{ t('portaliq', 'I checked this address with its owner') }}
-		</NcCheckboxRadioSwitch>
+			v-model="fields.organisation"
+			:label="t('portaliq', 'Organisation')"
+			data-testid="issue-account-organisation" />
+		<NcTextField
+			v-model="fields.audience"
+			:label="t('portaliq', 'Audience')"
+			:helperText="t('portaliq', 'For example client or supplier.')"
+			data-testid="issue-account-audience" />
+		<p class="issue__intro">
+			{{
+				t(
+					'portaliq',
+					'If an account already exists for this identity, portaliq does not create a second one but tells you. The first sign-in links the account to the person.',
+				)
+			}}
+		</p>
 		<p
 			v-if="refusal"
 			class="issue__refusal"

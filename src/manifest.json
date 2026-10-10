@@ -407,6 +407,114 @@
               "countLabel": "",
               "variant": "default"
             }
+          },
+          {
+            "id": "attention-first",
+            "type": "banner",
+            "title": "Vandaag eerst",
+            "content": {
+              "layout": "attention",
+              "variant": "warning",
+              "kicker": "Vandaag eerst",
+              "title": "Een toegangsverzoek wacht op antwoord",
+              "reason": "Zolang u niet beslist, ziet de aanvrager niets.",
+              "visibleWhen": {
+                "source": {
+                  "register": "portaliq",
+                  "schema": "portalAccessRequest",
+                  "filter": {
+                    "state": "pending"
+                  }
+                },
+                "op": "gt",
+                "value": 0
+              },
+              "actions": [
+                {
+                  "label": "Verzoek beoordelen",
+                  "route": "AccessRequests",
+                  "primary": true
+                }
+              ]
+            }
+          },
+          {
+            "id": "list-requests",
+            "type": "table",
+            "title": "Open toegangsverzoeken",
+            "content": {
+              "register": "portaliq",
+              "schema": "portalAccessRequest",
+              "filter": {
+                "state": "pending"
+              },
+              "sort": {
+                "field": "requestedAt",
+                "dir": "asc"
+              },
+              "limit": 5,
+              "columns": [
+                {
+                  "key": "displayName",
+                  "label": "Naam"
+                },
+                {
+                  "key": "onBehalfOf",
+                  "label": "Namens"
+                },
+                {
+                  "key": "reason",
+                  "label": "Reden"
+                },
+                {
+                  "key": "requestedAt",
+                  "label": "Aangevraagd"
+                }
+              ],
+              "viewAllRoute": "AccessRequests",
+              "viewAllLabel": "Alle verzoeken",
+              "rowRoute": "AccessRequests",
+              "emptyText": "Geen open toegangsverzoeken",
+              "allowCreate": false
+            }
+          },
+          {
+            "id": "list-submissions",
+            "type": "table",
+            "title": "Recente inzendingen",
+            "content": {
+              "register": "portaliq",
+              "schema": "portalSubmission",
+              "filter": {},
+              "sort": {
+                "field": "submittedAt",
+                "dir": "desc"
+              },
+              "limit": 5,
+              "columns": [
+                {
+                  "key": "submittedAt",
+                  "label": "Ingediend"
+                },
+                {
+                  "key": "actionId",
+                  "label": "Handeling"
+                },
+                {
+                  "key": "appId",
+                  "label": "App"
+                },
+                {
+                  "key": "deliveryStatus",
+                  "label": "Ontvangst"
+                }
+              ],
+              "viewAllRoute": "PortalSubmissions",
+              "viewAllLabel": "Alle inzendingen",
+              "rowRoute": "PortalSubmissionDetail",
+              "emptyText": "Nog geen inzendingen",
+              "allowCreate": false
+            }
           }
         ],
         "layout": [
@@ -457,6 +565,30 @@
             "gridY": 1,
             "gridWidth": 4,
             "gridHeight": 1
+          },
+          {
+            "id": "attention-first",
+            "widgetId": "attention-first",
+            "gridX": 0,
+            "gridY": 2,
+            "gridWidth": 12,
+            "gridHeight": 2
+          },
+          {
+            "id": "list-requests",
+            "widgetId": "list-requests",
+            "gridX": 0,
+            "gridY": 4,
+            "gridWidth": 7,
+            "gridHeight": 5
+          },
+          {
+            "id": "list-submissions",
+            "widgetId": "list-submissions",
+            "gridX": 7,
+            "gridY": 4,
+            "gridWidth": 5,
+            "gridHeight": 5
           }
         ],
         "kpiRow": [
@@ -936,8 +1068,13 @@
             "label": "Download"
           },
           {
+            "action": "invite-someone",
+            "label": "Iemand uitnodigen"
+          },
+          {
             "action": "issue-account",
-            "variant": "primary"
+            "variant": "primary",
+            "label": "Account uitgeven"
           }
         ],
         "quickFilters": [
@@ -1049,7 +1186,8 @@
           },
           {
             "action": "invite-someone",
-            "variant": "primary"
+            "variant": "primary",
+            "label": "Iemand uitnodigen"
           }
         ],
         "quickFilters": [
@@ -1092,7 +1230,7 @@
         "register": "portaliq",
         "schema": "portalAccount",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Identity/access-holder archetype: a portalAccount links one external IdP identity (eHerkenning/DigiD/eIDAS) to the subjectRef domain apps scope data by, so its detail page answers 'who is this and what sessions have they used to access the portal'. ADR-062 rev3 update: the summaryAggregates header chips are retired in favour of an in-grid stats-block card (account-stats) placed top-right of the lead account-data widget, both sized h5 so the row closes together; account-sessions moves below as its own full-width row. account-sessions gets allowCreate:false — sessions are IdP-minted at login time, never hand-created — plus a viewAllRoute to the fleet-wide PortalSessions index (the only session-listing page; no per-account filtered page exists) with a token-resolved viewAllQuery so the link at least carries the account's id. CORRECTION (measured): every filter on this page addressed `accountRef`, a property NO portalSession carries — the objects link to their account by `subjectRef`. A filter naming a property the rows do not have matches nothing and reports it as an honest zero, so the two session stats read 0 and the session list read 'No sessions issued yet' for every account, always, while looking perfectly configured. Now filtered on `subjectRef: @object.subjectRef`. Verified against the API before and after: `?accountRef=<id>` returned 0 of 100 sessions, `?subjectRef=e2e-smoke` returned 3 — the positive control that proves the mechanism works and the property was the fault. The same correction admits the messages list this note previously ruled out: subjectRef is not an object id, so `@objectId` indeed cannot filter it, but `@object.<field>` can and does (2 messages for dev-supplier). No Related panel: portalAccount declares no object-reference properties of its own (organisation is a plain tenant string, not an OR ref). CORRECTION (leaf-integrations): the calendar leaf is now adopted. The earlier note ruled out every leaf on the grounds that an auth-edge identity record bears no documents, which holds for files and contacts and still does, but an appointment is not a document: staff had sessions and messages for this subject and nowhere to see or plan a meeting with them. The Meetings leaf renders in the Nextcloud shell only (ADR-046); any visitor-facing appointment view must be portal-rendered from OpenRegister objects and never embed or link the Calendar app. Still no files/contacts leaves. status is a genuine two-state lifecycle (active/suspended) so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
+        "_note": "Detail in the v2 shape: the body is the grid below and the facts beside it are the sideColumn, History last (the board has no tab strip on this record).",
         "widgets": [
           {
             "id": "account-data",
@@ -1117,7 +1255,7 @@
             "content": {
               "entries": [
                 {
-                  "title": "Sessions issued",
+                  "title": "Totaal",
                   "register": "portaliq",
                   "schema": "portalSession",
                   "metric": "count",
@@ -1136,7 +1274,7 @@
             "content": {
               "entries": [
                 {
-                  "title": "Active sessions",
+                  "title": "Nu actief",
                   "register": "portaliq",
                   "schema": "portalSession",
                   "metric": "count",
@@ -1236,64 +1374,54 @@
             "integrationId": "calendar",
             "title": "Meetings",
             "icon": "Calendar"
+          },
+          {
+            "id": "account-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
           }
         ],
         "layout": [
           {
-            "id": "1",
+            "id": "account-data",
             "widgetId": "account-data",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 8,
-            "gridHeight": 5
+            "gridWidth": 12,
+            "gridHeight": 4
           },
           {
             "id": "account-stats-sessions-issued",
             "widgetId": "account-stats-sessions-issued",
-            "gridX": 8,
-            "gridY": 0,
-            "gridWidth": 4,
+            "gridX": 0,
+            "gridY": 4,
+            "gridWidth": 6,
             "gridHeight": 2
           },
           {
             "id": "account-stats-active-sessions",
             "widgetId": "account-stats-active-sessions",
-            "gridX": 8,
-            "gridY": 2,
-            "gridWidth": 4,
-            "gridHeight": 3
-          },
-          {
-            "id": "account-withdraw",
-            "widgetId": "account-withdraw",
-            "gridX": 0,
-            "gridY": 5,
-            "gridWidth": 12,
+            "gridX": 6,
+            "gridY": 4,
+            "gridWidth": 6,
             "gridHeight": 2
           },
           {
-            "id": "3",
+            "id": "account-sessions",
             "widgetId": "account-sessions",
             "gridX": 0,
-            "gridY": 7,
+            "gridY": 6,
             "gridWidth": 12,
             "gridHeight": 4
           },
           {
-            "id": "4",
+            "id": "account-messages",
             "widgetId": "account-messages",
             "gridX": 0,
-            "gridY": 11,
+            "gridY": 10,
             "gridWidth": 12,
             "gridHeight": 4
-          },
-          {
-            "id": "account-calendar",
-            "widgetId": "account-calendar",
-            "gridX": 0,
-            "gridY": 15,
-            "gridWidth": 12,
-            "gridHeight": 3
           }
         ],
         "lifecycleActions": {
@@ -1335,7 +1463,12 @@
             "suspended": "Suspended"
           }
         },
-        "headerMeta": "{identityType} - on behalf of {organisation}"
+        "headerMeta": "{identityType} - on behalf of {organisation}",
+        "sideColumn": [
+          "account-withdraw",
+          "account-calendar",
+          "account-history"
+        ]
       }
     },
     {
@@ -1422,7 +1555,7 @@
         "register": "portaliq",
         "schema": "portalSession",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Security-token archetype: a portalSession is a bearer session minted for one portalAccount, so what matters when opening it is 'who does this belong to, what trust level, is it still valid'. The body leads with the session's own fields (audience, organisation, jti, trustLevel, issuedAt, expiresAt, revoked) in an 8-wide data card beside a 4-wide Related panel that resolves the accountRef FK back to the issuing portalAccount — the schema's only outbound object reference, now expressed as a canonical $ref+format:uuid property (ADR-062 rule 7) so the Related panel can resolve it to a display name instead of a raw uuid. No child object-list: nothing in this register points AT a portalSession. No files/calendar/contacts/talk leaves: a session is a pure auth-edge token, not content-bearing. No lifecycleActions: revoked is a one-way flag flipped by logout/admin action, not a modeled multi-state lifecycle. Audit history stays a sidebar tab.",
+        "_note": "Security-token archetype: a portalSession is a bearer session minted for one portalAccount, so what matters when opening it is 'who does this belong to, what trust level, is it still valid'. The body leads with the session's own fields (audience, organisation, jti, trustLevel, issuedAt, expiresAt, revoked) in an 8-wide data card beside a 4-wide Related panel that resolves the accountRef FK back to the issuing portalAccount — the schema's only outbound object reference, now expressed as a canonical $ref+format:uuid property (ADR-062 rule 7) so the Related panel can resolve it to a display name instead of a raw uuid. No child object-list: nothing in this register points AT a portalSession. No files/calendar/contacts/talk leaves: a session is a pure auth-edge token, not content-bearing. No lifecycleActions: revoked is a one-way flag flipped by logout/admin action, not a modeled multi-state lifecycle. Audit history stays a sidebar tab. Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once.",
         "widgets": [
           {
             "id": "session-data",
@@ -1438,24 +1571,40 @@
             "type": "related",
             "title": "Issuing account",
             "icon": "AccountBoxOutline"
+          },
+          {
+            "id": "session-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "session-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van de sessie",
+            "content": {
+              "ariaLabel": "Onderdelen van de sessie",
+              "tabs": [
+                {
+                  "widgetId": "session-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "session-history",
+                  "label": "Historie"
+                }
+              ]
+            }
           }
         ],
         "layout": [
           {
-            "id": "1",
-            "widgetId": "session-data",
+            "id": "session-tabs",
+            "widgetId": "session-tabs",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 8,
-            "gridHeight": 4
-          },
-          {
-            "id": "2",
-            "widgetId": "session-related",
-            "gridX": 8,
-            "gridY": 0,
-            "gridWidth": 4,
-            "gridHeight": 4
+            "gridWidth": 12,
+            "gridHeight": 8
           }
         ],
         "sidebar": {
@@ -1473,7 +1622,11 @@
               ]
             }
           ]
-        }
+        },
+        "sideColumn": [
+          "session-related"
+        ],
+        "tabsLabel": "Onderdelen van de sessie"
       }
     },
     {
@@ -1526,7 +1679,7 @@
         "register": "portaliq",
         "schema": "portalMessage",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Inbox-item archetype: a portalMessage is a single notification delivered to a subject's portal inbox, so the whole record is small enough to read at a glance — the body is one full-width data card with all fields (subject, body, read, receivedAt, subjectRef, organisation). No Related panel: subjectRef is the plain pseudonymous identity string the IdP/domain app returned, NOT an OR object reference (portalMessage has no accountRef FK), so there is nothing to resolve. No child object-list: nothing in this register points at a portalMessage. CORRECTION (leaf-integrations): the talk leaf is now adopted. The earlier note reasoned about the message as a document and concluded it carried nothing to chat about, but the thing staff need a conversation for is not the text, it is the answer: two employees deciding how to reply to a citizen did that in an unlinked room or in email, off the record. The talk leaf attaches that conversation to the message object, on the internal side only (ADR-046): the citizen's half of the exchange stays a portalMessage served through the portal edge, and no join link is ever written into an edge-served field. Still no files/contacts leaves, for the original reason. No lifecycleActions: read is a one-way flag toggled by the portal UI, not a modeled lifecycle. Audit history stays a sidebar tab.",
+        "_note": "Detail in the v2 shape: the body is the grid below and the facts beside it are the sideColumn, History last (the board has no tab strip on this record).",
         "widgets": [
           {
             "id": "message-data",
@@ -1543,11 +1696,17 @@
             "integrationId": "talk",
             "title": "Staff conversation",
             "icon": "ChatOutline"
+          },
+          {
+            "id": "message-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
           }
         ],
         "layout": [
           {
-            "id": "1",
+            "id": "message-data",
             "widgetId": "message-data",
             "gridX": 0,
             "gridY": 0,
@@ -1597,7 +1756,10 @@
             "false": "Unread"
           }
         },
-        "headerMeta": "in the inbox of {subjectRef}"
+        "headerMeta": "in the inbox of {subjectRef}",
+        "sideColumn": [
+          "message-history"
+        ]
       }
     },
     {
@@ -1683,7 +1845,7 @@
         "register": "portaliq",
         "schema": "portalSubmission",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Proof-of-receipt archetype, following the PortalMessages / PortalMessageDetail pair. The schema has carried the WMEBV burden of proof since the receipts change and had no page at all: staff triaging a failed delivery read the database or nothing. The index projects the facts a triage list needs (appId, actionId, submittedAt, deliveryStatus as a badge) and deliberately leaves payloadCopy off, because payloadCopy is whatever a citizen typed and a list renders many rows at once; it belongs on the detail page, where reading one record is the intent. Adding these pages changes who RENDERS the record, not who may read it: access stays OpenRegister RBAC exactly as for account-messages. The forms leaf sits beside the data card so a handler can link the Nextcloud Form behind a submission or a follow-up form to it. That leaf is internal-only (ADR-046): the visitor's form experience is the portal edge's own submission flow and its receipt message, and a portal visitor is never shown or invited into the Forms app. No lifecycleActions: deliveryStatus is a retriability signal the receipt service writes, not a lifecycle a person drives. Audit history stays a sidebar tab.",
+        "_note": "Detail in the v2 shape: the body is the grid below and the facts beside it are the sideColumn, History last (the board has no tab strip on this record).",
         "widgets": [
           {
             "id": "submission-data",
@@ -1700,11 +1862,17 @@
             "integrationId": "forms",
             "title": "Forms",
             "icon": "ClipboardText"
+          },
+          {
+            "id": "submission-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
           }
         ],
         "layout": [
           {
-            "id": "1",
+            "id": "submission-data",
             "widgetId": "submission-data",
             "gridX": 0,
             "gridY": 0,
@@ -1756,7 +1924,10 @@
             "failed": "Receipt failed"
           }
         },
-        "headerMeta": "via {appId}"
+        "headerMeta": "via {appId}",
+        "sideColumn": [
+          "submission-history"
+        ]
       }
     },
     {
@@ -1864,7 +2035,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portal",
-        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the picker opens on its `default`, 30 days, and the card sends the picked preset as `days` through the `@range.preset` token. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing. portal-home-page sits DIRECTLY under the KPI row and above the portal's own fields, because it reports a configuration error and an error nobody scrolls to is not reported. It is the only widget on this page whose subject is a route rather than a record: a portal with no published page at `/` serves not-found at its own address, which no other widget here can show. Its placement, not its registration, is what puts it in front of an administrator, and tests/portal-home-page.spec.mjs asserts both.",
+        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the picker opens on its `default`, 30 days, and the card sends the picked preset as `days` through the `@range.preset` token. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing. portal-home-page sits DIRECTLY under the KPI row and above the portal's own fields, because it reports a configuration error and an error nobody scrolls to is not reported. It is the only widget on this page whose subject is a route rather than a record: a portal with no published page at `/` serves not-found at its own address, which no other widget here can show. Its placement, not its registration, is what puts it in front of an administrator, and tests/portal-home-page.spec.mjs asserts both. Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once.",
         "widgets": [
           {
             "id": "portal-kpi-page-views",
@@ -2134,6 +2305,46 @@
             "title": "Accessibility",
             "icon": "ShieldCheckOutline",
             "content": {}
+          },
+          {
+            "id": "portal-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "portal-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van de portal",
+            "content": {
+              "ariaLabel": "Onderdelen van de portal",
+              "tabs": [
+                {
+                  "widgetId": "portal-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "portal-pages",
+                  "label": "Pagina's"
+                },
+                {
+                  "widgetId": "portal-menus",
+                  "label": "Menu's"
+                },
+                {
+                  "widgetId": "portal-glossary",
+                  "label": "Begrippen"
+                },
+                {
+                  "widgetId": "portal-case-types",
+                  "label": "Zaaktypen"
+                },
+                {
+                  "widgetId": "portal-history",
+                  "label": "Historie"
+                }
+              ]
+            }
           }
         ],
         "layout": [
@@ -2178,76 +2389,12 @@
             "gridHeight": 2
           },
           {
-            "id": "1",
-            "widgetId": "portal-data",
+            "id": "portal-tabs",
+            "widgetId": "portal-tabs",
             "gridX": 0,
             "gridY": 4,
             "gridWidth": 12,
-            "gridHeight": 5
-          },
-          {
-            "id": "2",
-            "widgetId": "portal-pages",
-            "gridX": 0,
-            "gridY": 9,
-            "gridWidth": 12,
-            "gridHeight": 5
-          },
-          {
-            "id": "3",
-            "widgetId": "portal-menus",
-            "gridX": 0,
-            "gridY": 14,
-            "gridWidth": 6,
-            "gridHeight": 4
-          },
-          {
-            "id": "4",
-            "widgetId": "portal-glossary",
-            "gridX": 6,
-            "gridY": 14,
-            "gridWidth": 6,
-            "gridHeight": 4
-          },
-          {
-            "id": "5",
-            "widgetId": "portal-case-types",
-            "gridX": 0,
-            "gridY": 18,
-            "gridWidth": 12,
-            "gridHeight": 5
-          },
-          {
-            "id": "portal-theme",
-            "widgetId": "portal-theme",
-            "gridX": 0,
-            "gridY": 23,
-            "gridWidth": 12,
-            "gridHeight": 5
-          },
-          {
-            "id": "portal-signin",
-            "widgetId": "portal-signin",
-            "gridX": 0,
-            "gridY": 28,
-            "gridWidth": 12,
-            "gridHeight": 6
-          },
-          {
-            "id": "portal-registration",
-            "widgetId": "portal-registration",
-            "gridX": 0,
-            "gridY": 34,
-            "gridWidth": 12,
-            "gridHeight": 7
-          },
-          {
-            "id": "portal-accessibility",
-            "widgetId": "portal-accessibility",
-            "gridX": 0,
-            "gridY": 41,
-            "gridWidth": 12,
-            "gridHeight": 10
+            "gridHeight": 8
           }
         ],
         "sidebar": {
@@ -2282,7 +2429,14 @@
             "site": "Website",
             "external": "Umbrella"
           }
-        }
+        },
+        "sideColumn": [
+          "portal-theme",
+          "portal-signin",
+          "portal-registration",
+          "portal-accessibility"
+        ],
+        "tabsLabel": "Onderdelen van de portal"
       }
     },
     {
@@ -2315,7 +2469,54 @@
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "widgets": [
+          {
+            "id": "menu-data",
+            "type": "data",
+            "title": "Gegevens",
+            "icon": "InformationOutline",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "menu-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "menu-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van het menu",
+            "content": {
+              "ariaLabel": "Onderdelen van het menu",
+              "tabs": [
+                {
+                  "widgetId": "menu-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "menu-history",
+                  "label": "Historie"
+                }
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "menu-tabs",
+            "widgetId": "menu-tabs",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 8
+          }
+        ],
+        "tabsLabel": "Onderdelen van het menu",
+        "_note": "Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once."
       }
     },
     {
@@ -2368,7 +2569,7 @@
       "config": {
         "register": "portaliq",
         "schema": "page",
-        "_note": "portal-page-traffic: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions) for this one page, then the page details, then Incoming and Outgoing traffic side by side. The cards are the portal page's PortalTrafficKpi with scope 'page': they read GET /api/traffic/page with the page's `portal` slug and `route`, each with its own period picker, and open the Traffic page with the portal selected. A page is matched to its traffic by its route within its portal; see openspec/changes/portal-page-traffic/proposal.md. Adding widgets replaces the default detail body, so the page details are a `data` widget here, as on PortalDetail.",
+        "_note": "portal-page-traffic: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions) for this one page, then the page details, then Incoming and Outgoing traffic side by side. The cards are the portal page's PortalTrafficKpi with scope 'page': they read GET /api/traffic/page with the page's `portal` slug and `route`, each with its own period picker, and open the Traffic page with the portal selected. A page is matched to its traffic by its route within its portal; see openspec/changes/portal-page-traffic/proposal.md. Adding widgets replaces the default detail body, so the page details are a `data` widget here, as on PortalDetail. Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once.",
         "layout": [
           {
             "id": "kpi-page-views",
@@ -2403,28 +2604,12 @@
             "gridHeight": 2
           },
           {
-            "id": "1",
-            "widgetId": "page-data",
+            "id": "page-tabs",
+            "widgetId": "page-tabs",
             "gridX": 0,
             "gridY": 2,
             "gridWidth": 12,
-            "gridHeight": 5
-          },
-          {
-            "id": "2",
-            "widgetId": "page-traffic-incoming",
-            "gridX": 0,
-            "gridY": 7,
-            "gridWidth": 6,
-            "gridHeight": 6
-          },
-          {
-            "id": "3",
-            "widgetId": "page-traffic-outgoing",
-            "gridX": 6,
-            "gridY": 7,
-            "gridWidth": 6,
-            "gridHeight": 6
+            "gridHeight": 8
           }
         ],
         "headerActions": [
@@ -2595,8 +2780,41 @@
               "direction": "outgoing",
               "testId": "page-traffic-outgoing"
             }
+          },
+          {
+            "id": "page-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "page-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van de pagina",
+            "content": {
+              "ariaLabel": "Onderdelen van de pagina",
+              "tabs": [
+                {
+                  "widgetId": "page-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "page-traffic-incoming",
+                  "label": "Binnenkomend verkeer"
+                },
+                {
+                  "widgetId": "page-traffic-outgoing",
+                  "label": "Uitgaand verkeer"
+                },
+                {
+                  "widgetId": "page-history",
+                  "label": "Historie"
+                }
+              ]
+            }
           }
-        ]
+        ],
+        "tabsLabel": "Onderdelen van de pagina"
       }
     },
     {
@@ -2843,7 +3061,54 @@
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "widgets": [
+          {
+            "id": "glossary-data",
+            "type": "data",
+            "title": "Gegevens",
+            "icon": "InformationOutline",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "glossary-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "glossary-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van het begrip",
+            "content": {
+              "ariaLabel": "Onderdelen van het begrip",
+              "tabs": [
+                {
+                  "widgetId": "glossary-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "glossary-history",
+                  "label": "Historie"
+                }
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "glossary-tabs",
+            "widgetId": "glossary-tabs",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 8
+          }
+        ],
+        "tabsLabel": "Onderdelen van het begrip",
+        "_note": "Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once."
       }
     },
     {
@@ -2929,7 +3194,54 @@
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "widgets": [
+          {
+            "id": "media-data",
+            "type": "data",
+            "title": "Gegevens",
+            "icon": "InformationOutline",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "media-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "media-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van het mediabestand",
+            "content": {
+              "ariaLabel": "Onderdelen van het mediabestand",
+              "tabs": [
+                {
+                  "widgetId": "media-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "media-history",
+                  "label": "Historie"
+                }
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "media-tabs",
+            "widgetId": "media-tabs",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 8
+          }
+        ],
+        "tabsLabel": "Onderdelen van het mediabestand",
+        "_note": "Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once."
       }
     },
     {
@@ -3015,7 +3327,54 @@
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "widgets": [
+          {
+            "id": "notice-data",
+            "type": "data",
+            "title": "Gegevens",
+            "icon": "InformationOutline",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "notice-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "notice-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van de mededeling",
+            "content": {
+              "ariaLabel": "Onderdelen van de mededeling",
+              "tabs": [
+                {
+                  "widgetId": "notice-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "notice-history",
+                  "label": "Historie"
+                }
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "notice-tabs",
+            "widgetId": "notice-tabs",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 8
+          }
+        ],
+        "tabsLabel": "Onderdelen van de mededeling",
+        "_note": "Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once."
       }
     },
     {
@@ -3111,7 +3470,8 @@
           },
           {
             "action": "new-news-item",
-            "variant": "primary"
+            "variant": "primary",
+            "label": "Nieuw nieuwsbericht"
           }
         ],
         "quickFilters": [
