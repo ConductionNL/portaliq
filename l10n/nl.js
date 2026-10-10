@@ -2965,7 +2965,11 @@ OC.L10N.register(
         "Een account uitgeven": "Een account uitgeven",
         "Nieuw nieuwsbericht": "Nieuw nieuwsbericht",
         "Iemand uitnodigen": "Iemand uitnodigen",
-        "Account uitgeven": "Account uitgeven"
+        "Account uitgeven": "Account uitgeven",
+        "Withdraw account": "Account intrekken",
+        "Account intrekken": "Account intrekken",
+        "Portaliq": "Portaliq",
+        "Gemeente Zuiddrecht": "Gemeente Zuiddrecht"
     },
     "nplurals=2; plural=(n != 1);"
 )

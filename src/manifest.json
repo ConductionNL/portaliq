@@ -1244,7 +1244,7 @@
           {
             "id": "account-withdraw",
             "type": "PortalAccountWithdraw",
-            "title": "Withdraw this account",
+            "title": "Account intrekken",
             "icon": "Account"
           },
           {
@@ -1372,7 +1372,7 @@
             "id": "account-calendar",
             "type": "integration",
             "integrationId": "calendar",
-            "title": "Meetings",
+            "title": "Agenda",
             "icon": "Calendar"
           },
           {
@@ -3902,7 +3902,12 @@
     "footer": [
       "help",
       "settings"
-    ]
+    ],
+    "brand": {
+      "emblem": true,
+      "name": "Portaliq",
+      "caption": "Gemeente Zuiddrecht"
+    }
   },
   "i18n": {
     "sourceLanguage": "en",
