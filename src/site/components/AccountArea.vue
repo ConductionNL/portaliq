@@ -65,7 +65,13 @@
 					</p>
 					<ul v-if="signInRoutes.length" class="pq-account__ways-in">
 						<li v-for="way in signInRoutes" :key="way.mode">
+							<EmailLinkForm
+								v-if="way.form === 'email-link'"
+								:authBase="way.authBase"
+								:portal="way.portal"
+								:label="way.label" />
 							<a
+								v-else
 								class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
 								:href="way.href"
 								:data-mode="way.mode"
@@ -221,6 +227,8 @@ export default {
 		SignInPage: defineAsyncComponent(() => import('./chrome/SignInPage.vue')),
 		ResidentMenu,
 		WaysIn,
+		// On demand: the form only shows when the instance switch is on.
+		EmailLinkForm: defineAsyncComponent(() => import('./EmailLinkForm.vue')),
 	},
 
 	props: {

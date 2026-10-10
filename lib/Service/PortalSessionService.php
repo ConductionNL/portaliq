@@ -296,6 +296,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#11
 	 */
 	public function issueSession(
 		string $subjectRef,
@@ -322,6 +323,14 @@ class PortalSessionService {
 			return null;
 		}
 
+		// The way in rides with the login entry, so an e-mail link sign-in
+		// is an audit entry with the account, the method and the moment
+		// (sign-in-with-an-email-link REQ-IWI-012).
+		$detail = [];
+		if ($provider !== '') {
+			$detail = ['method' => $provider];
+		}
+
 		$this->auditor->record(
 			verb: 'login',
 			subjectRef: $subjectRef,
@@ -329,7 +338,8 @@ class PortalSessionService {
 			register: self::SESSION_REGISTER,
 			schema: self::SESSION_SCHEMA,
 			id: $issued['jti'],
-			jti: $issued['jti']
+			jti: $issued['jti'],
+			detail: $detail
 		);
 
 		return $issued;
@@ -967,14 +977,16 @@ class PortalSessionService {
 	 *
 	 * @param string $organisation The tenant to revoke every session for.
 	 * @param string $admin The Nextcloud user id of the acting admin.
+	 * @param string $subjectRef One account only (sign-in-with-an-email-link), or ''.
 	 *
 	 * @return array{revoked: int, failed: int, complete: bool}
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#12
 	 */
-	public function revokeAllForOrganisation(string $organisation, string $admin): array {
-		return $this->revoker()->revokeAll(organisation: $organisation, admin: $admin);
+	public function revokeAllForOrganisation(string $organisation, string $admin, string $subjectRef = ''): array {
+		return $this->revoker()->revokeAll(organisation: $organisation, admin: $admin, subjectRef: $subjectRef);
 	}//end revokeAllForOrganisation()
 
 	/**

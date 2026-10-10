@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
 use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Service\PageEditorService;
 use OCA\Portaliq\Service\SettingsService;
@@ -42,6 +43,7 @@ class SettingsController extends Controller {
 	 * @param IRequest $request The request object
 	 * @param SettingsService $settingsService The settings service
 	 * @param InternalBaseUrl|null $internalBaseUrl The internal address for calls to this instance.
+	 * @param EmailLinkSetting|null $emailLinks The e-mail link switch, OFF by default (sign-in-with-an-email-link).
 	 *
 	 * @return void
 	 */
@@ -49,6 +51,7 @@ class SettingsController extends Controller {
 		IRequest $request,
 		private SettingsService $settingsService,
 		private ?InternalBaseUrl $internalBaseUrl = null,
+		private ?EmailLinkSetting $emailLinks = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -65,6 +68,7 @@ class SettingsController extends Controller {
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-001
 	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
 	 */
 	public function index(): JSONResponse {
 		$settings = $this->settingsService->getSettings();
@@ -87,6 +91,12 @@ class SettingsController extends Controller {
 		// server reaches itself: administrators only.
 		if ($isAdmin === true && $this->internalBaseUrl !== null) {
 			$settings[InternalBaseUrl::CONFIG_KEY] = $this->internalBaseUrl->stored();
+		}
+
+		// The e-mail link switch (decision 127): off until an administrator
+		// turns it on after the security review. Administrators only.
+		if ($isAdmin === true && $this->emailLinks !== null) {
+			$settings[EmailLinkSetting::SETTINGS_KEY] = $this->emailLinks->isEnabled();
 		}
 
 		return new JSONResponse($settings);
@@ -134,6 +144,7 @@ class SettingsController extends Controller {
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-002
 	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
 	 */
 	public function update(): JSONResponse {
 		$data = $this->request->getParams();
@@ -148,6 +159,12 @@ class SettingsController extends Controller {
 			}
 
 			$config[InternalBaseUrl::CONFIG_KEY] = $this->internalBaseUrl->stored();
+		}
+
+		// Only a real boolean switches the e-mail link sign-in.
+		if ($this->emailLinks !== null && is_bool($data[EmailLinkSetting::SETTINGS_KEY] ?? null) === true) {
+			$this->emailLinks->setEnabled(enabled: $data[EmailLinkSetting::SETTINGS_KEY]);
+			$config[EmailLinkSetting::SETTINGS_KEY] = $this->emailLinks->isEnabled();
 		}
 
 		return new JSONResponse(

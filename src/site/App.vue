@@ -1490,6 +1490,8 @@ export default {
 				this.signinConfig.exampleResident || '',
 				// Its way in stays out while the demo switch is off.
 				this.signinConfig.exampleResidentWayIn || '',
+				// The e-mail link, behind the instance switch (sign-in-with-an-email-link).
+				this.waysIn.emailLink === true,
 			)
 		},
 

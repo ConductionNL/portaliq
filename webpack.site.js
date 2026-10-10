@@ -132,9 +132,18 @@ const site = {
 		// and the page's strings in the en and nl bundles the translator reads.
 		// Measured: 421 KiB locally and 423 KiB on CI before moving the lines
 		// out of the entry, about 1.7 KiB less after.
+		//
+		// 428 KiB, up from 424, with sign-in-with-an-email-link. Measured
+		// 426.4 KiB (436,666 B) with the form, the link page (WayInLink) and
+		// the sign-in form already loading on demand. What stays in the entry
+		// is first-paint by design: `captureEmailLink` has to run before
+		// anything reads the address bar (the mailed link leaves it at once,
+		// M4), the ways-in resolver's e-mail-link branch decides which sign-in
+		// the first screen offers, and its strings sit in the translator the
+		// first screen reads.
 		hints: isDev ? false : 'error',
-		maxAssetSize: 424 * 1024,
-		maxEntrypointSize: 424 * 1024,
+		maxAssetSize: 428 * 1024,
+		maxEntrypointSize: 428 * 1024,
 	},
 }
 

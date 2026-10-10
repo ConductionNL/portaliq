@@ -98,6 +98,23 @@ class PortalSessionRevokerTest extends TestCase {
 		$this->assertSame(['revoked' => 2, 'failed' => 0, 'complete' => true], $this->revoker->revokeAll('org-1', 'admin'));
 	}//end testEveryLiveSessionIsRevokedAndAnAlreadyRevokedOneIsSkipped()
 
+	public function testOneAccountsRevokeTouchesOnlyItsOwnSessionsAndKeepsTheOrganisationAuditOut(): void {
+		$this->reader->method('readScopedPage')->willReturn(
+			[
+				'rows' => [
+					['uuid' => 'a', 'jti' => 'ja', 'subjectRef' => 'email:tom'],
+					['uuid' => 'b', 'jti' => 'jb', 'subjectRef' => 'email:ann'],
+				],
+				'read' => 2,
+			]
+		);
+		$this->writer->expects($this->once())->method('updateObject')->willReturn(['ok' => true]);
+		// Only the one session's own entry; the organisation-wide entry is not written.
+		$this->auditor->expects($this->once())->method('record');
+
+		$this->assertSame(['revoked' => 1, 'failed' => 0, 'complete' => true], $this->revoker->revokeAll('org-1', 'admin', 'email:tom'));
+	}//end testOneAccountsRevokeTouchesOnlyItsOwnSessionsAndKeepsTheOrganisationAuditOut()
+
 	public function testAFailedWriteAndARowWithoutAnIdentifierMakeTheResultIncomplete(): void {
 		$this->reader->method('readScopedPage')->willReturn(
 			[

@@ -635,7 +635,7 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		$config = $this->waysInResolver(providers: [['provider' => 'generic', 'label' => 'E-mail']])
 			->runtimeConfigFor(portal: null, orgValue: 'gemeente-x', locale: 'nl');
 
-		$this->assertSame(['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => []], $config['waysIn']);
+		$this->assertSame(['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => [], 'emailLink' => false], $config['waysIn']);
 	}//end testNoPortalNoDoors()
 
 

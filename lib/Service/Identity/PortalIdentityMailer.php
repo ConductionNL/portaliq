@@ -87,6 +87,21 @@ class PortalIdentityMailer {
 	public const TEMPLATE_CONTACT_INVITATION = 'contact-invitation';
 
 	/**
+	 * The one-time sign-in link of an `email` account (sign-in-with-an-email-link).
+	 */
+	public const TEMPLATE_EMAIL_LINK = 'email-link';
+
+	/**
+	 * The notice after each e-mail link sign-in (security review L4).
+	 */
+	public const NOTICE_SIGNED_IN = 'email-link-signed-in';
+
+	/**
+	 * The notice to the old address after the sign-in address changed (H2).
+	 */
+	public const NOTICE_ADDRESS_CHANGED = 'sign-in-address-changed';
+
+	/**
 	 * Per template: the fragment key the portal consumes, and the English
 	 * source keys of the mail (l10n/nl.json carries the Dutch). `%1$s` is the
 	 * portal's name in every line that takes one. `site` sends the link to
@@ -124,6 +139,14 @@ class PortalIdentityMailer {
 			'heading' => 'You are invited',
 			'intro' => 'Someone you know wants to work with you in the portal of %1$s. Open the link to create your account or sign in.',
 			'button' => 'Open the invitation',
+		],
+		self::TEMPLATE_EMAIL_LINK => [
+			'fragment' => 'email-link',
+			'site' => true,
+			'subject' => 'Your sign-in link for %1$s',
+			'heading' => 'Sign in',
+			'intro' => 'You asked for a link to sign in to %1$s. The link works for 15 minutes.',
+			'button' => 'Sign in',
 		],
 		self::TEMPLATE_EMAIL_CONFIRMATION => [
 			'fragment' => 'confirm-email',
@@ -293,6 +316,13 @@ class PortalIdentityMailer {
 			$lines[] = $l10n->t('Their message: %1$s', [$message]);
 		}
 
+		// The e-mail link names the address it was asked for (security
+		// review L7), so a look-alike mail without it stands out.
+		$address = trim((string)($details['address'] ?? ''));
+		if ($address !== '') {
+			$lines[] = $l10n->t('This link was asked for %1$s.', [$address]);
+		}
+
 		return $lines;
 	}//end detailLines()
 
@@ -400,6 +430,111 @@ class PortalIdentityMailer {
 
 		return count($failed) === 0;
 	}//end sendClaimNotice()
+
+	/**
+	 * Tell an `email` account's address that it was just used to sign in
+	 * (security review L4): the portal, the moment, and who to contact when
+	 * it was not them. No secret and no link.
+	 *
+	 * Never throws.
+	 *
+	 * @param string            $email        The account's sign-in address.
+	 * @param string            $organisation The tenant.
+	 * @param array<string, mixed>|null $portal The portal signed in to.
+	 * @param DateTimeInterface $moment       When.
+	 *
+	 * @return bool True when the mail left.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-never-reaches-a-log-an-answer-or-the-traffic-store-req-iwi-012
+	 */
+	public function sendSignedInNotice(string $email, string $organisation, ?array $portal, DateTimeInterface $moment): bool {
+		return $this->notice(
+			template: self::NOTICE_SIGNED_IN,
+			email: $email,
+			organisation: $organisation,
+			portal: $portal,
+			keys: [
+				'subject' => 'You signed in to %1$s',
+				'heading' => 'You signed in',
+				'line' => 'Your account at %1$s was signed in to with an e-mail link on %2$s.',
+			],
+			moment: $moment
+		);
+	}//end sendSignedInNotice()
+
+	/**
+	 * Tell the OLD sign-in address that it no longer signs in (H2).
+	 *
+	 * Never throws.
+	 *
+	 * @param string            $email        The old sign-in address.
+	 * @param string            $organisation The tenant.
+	 * @param DateTimeInterface $moment       When it changed.
+	 *
+	 * @return bool True when the mail left.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	public function sendSignInAddressChanged(string $email, string $organisation, DateTimeInterface $moment): bool {
+		return $this->notice(
+			template: self::NOTICE_ADDRESS_CHANGED,
+			email: $email,
+			organisation: $organisation,
+			portal: null,
+			keys: [
+				'subject' => 'Your sign-in address for %1$s was changed',
+				'heading' => 'Your sign-in address was changed',
+				'line' => 'From %2$s, sign-in links for your account at %1$s go to another address.',
+			],
+			moment: $moment
+		);
+	}//end sendSignInAddressChanged()
+
+	/**
+	 * One informing mail: a heading, one line with the portal and the day,
+	 * and whom to contact. Never throws; never logs the address.
+	 *
+	 * @param string                    $template     The notice key, for the log.
+	 * @param string                    $email        The recipient.
+	 * @param string                    $organisation The tenant.
+	 * @param array<string, mixed>|null $portal       The portal, or null to look it up.
+	 * @param array<string, string>     $keys         `subject`, `heading`, `line` source keys.
+	 * @param DateTimeInterface         $moment       The moment the line names.
+	 *
+	 * @return bool
+	 */
+	private function notice(string $template, string $email, string $organisation, ?array $portal, array $keys, DateTimeInterface $moment): bool {
+		if ($this->mailer->validateMailAddress($email) === false) {
+			$this->logger->warning('Portaliq: identity mail not sent, the call was incomplete', ['template' => $template]);
+			return false;
+		}
+
+		$portal = ($portal ?? $this->portalOf(organisation: $organisation));
+		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+
+		try {
+			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
+			$day  = (string)$l10n->l('datetime', $moment, ['width' => 'long']);
+
+			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $template, []);
+			$mail->setSubject($l10n->t($keys['subject'], [$name]));
+			$mail->addHeader();
+			$mail->addHeading($l10n->t($keys['heading']));
+			$mail->addBodyText($l10n->t($keys['line'], [$name, $day]));
+			$mail->addBodyText($l10n->t('Was this not you? Then contact %1$s.', [$name]));
+			$mail->addFooter();
+
+			$message = $this->mailer->createMessage();
+			$message->setTo([$email]);
+			$message->useTemplate($mail);
+			$failed = $this->mailer->send($message);
+		} catch (Throwable $failure) {
+			$this->logger->warning('Portaliq: identity mail not sent', ['template' => $template, 'exception' => get_class($failure)]);
+			return false;
+		}
+
+		return count($failed) === 0;
+	}//end notice()
 
 	/**
 	 * The page a template's link opens. Every link opens the site: the ways
