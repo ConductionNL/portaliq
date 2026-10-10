@@ -7,7 +7,7 @@
 
 ### Requirement: A form binding names its destination and is valid against it (REQ-PIFO-007)
 
-A `portalFormBinding` SHALL store `destination { register, schema }`. Saving or publishing a binding SHALL run OpenRegister's form destination validator over the bound form. A binding with findings SHALL NOT be published once the validator is in refuse mode.
+A `portalFormBinding` SHALL store `destination { register, schema }`. Saving or publishing a binding SHALL run OpenRegister's form destination validator over the bound form. A binding with findings SHALL NOT be saved or published, from the first release (decision 181).
 
 #### Scenario: A binding to a case type missing a required field is refused
 - **GIVEN** a form that does not ask for `communicationChannel`, bound to a case type requiring it before creation
