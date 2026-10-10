@@ -100,6 +100,56 @@ class PortalIdentityMailerTest extends TestCase {
 
 	}//end testTheInvitedAddressIsToldItsInvitationWasAccepted()
 
+	/**
+	 * The e-mail link mail names the portal and the address, carries one link
+	 * to the portal's own site with the secret in the fragment, and the
+	 * ignore line (sign-in-with-an-email-link T13).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#13
+	 */
+	public function testTheEmailLinkNamesThePortalAndTheAddressAndHasOneLink(): void {
+		$mailer = $this->mailer();
+
+		$sent = $mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_EMAIL_LINK,
+			email: 'tom@example.nl',
+			secret: 'secret-abc',
+			organisation: 'academie',
+			portal: ['slug' => 'academie', 'title' => 'Mijn academie', 'locales' => ['nl']],
+			details: ['address' => 'tom@example.nl']
+		);
+
+		$this->assertTrue($sent);
+		$this->assertSame(['https://portal.example.test/apps/portaliq/site?portal=academie#email-link=secret-abc'], $this->mailed['buttons']);
+		$this->assertStringContainsString('Mijn academie', $this->mailed['subject']);
+		$this->assertContains('This link was asked for tom@example.nl.', $this->mailed['texts']);
+		$this->assertStringContainsString('Did you not ask for this? Then you can ignore this mail.', implode(' ', $this->mailed['texts']));
+
+	}//end testTheEmailLinkNamesThePortalAndTheAddressAndHasOneLink()
+
+	/**
+	 * After each e-mail link sign-in the address is told, without a link; a
+	 * changed sign-in address tells the old one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#11
+	 */
+	public function testTheSignInAndTheAddressChangeAreToldWithoutALink(): void {
+		$mailer = $this->mailer(byOrganisation: ['slug' => 'academie', 'title' => 'Mijn academie', 'locales' => ['nl']]);
+
+		$this->assertTrue($mailer->sendSignedInNotice(email: 'tom@example.nl', organisation: 'academie', portal: null, moment: new \DateTimeImmutable('2026-10-09T10:00:00+00:00')));
+		$this->assertTrue($mailer->sendSignInAddressChanged(email: 'old@example.nl', organisation: 'academie', moment: new \DateTimeImmutable('2026-10-09T10:00:00+00:00')));
+
+		$this->assertSame(2, $this->mailed['sent']);
+		$this->assertSame(['old@example.nl'], $this->mailed['to'], 'The last mail goes to the old address.');
+		$this->assertSame([], $this->mailed['buttons'], 'A notice has no link.');
+		$this->assertContains('Was this not you? Then contact Mijn academie.', $this->mailed['texts']);
+
+	}//end testTheSignInAndTheAddressChangeAreToldWithoutALink()
+
 	public function testEachTemplateHasItsOwnFragment(): void {
 		$expected = [
 			PortalIdentityMailer::TEMPLATE_REFERENCE_LINK => '#reference=secret-abc',

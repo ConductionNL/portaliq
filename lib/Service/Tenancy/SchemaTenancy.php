@@ -63,6 +63,7 @@ final class SchemaTenancy {
 		'portalMandate'           => ['scope' => self::ORGANISATION],
 		'portalInvitation'        => ['scope' => self::ORGANISATION],
 		'portalReferenceLink'     => ['scope' => self::ORGANISATION],
+		'portalEmailLink'         => ['scope' => self::ORGANISATION],
 		'portalAccessRequest'     => ['scope' => self::ORGANISATION],
 		'portalPoll'              => ['scope' => self::ORGANISATION],
 		'portalAction'            => ['scope' => self::ORGANISATION],

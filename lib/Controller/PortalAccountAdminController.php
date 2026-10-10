@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Service\Identity\EmailLink\SignInAddressChange;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -60,6 +61,7 @@ class PortalAccountAdminController extends Controller {
 	 * @param IUserSession $userSession The staff user making the request.
 	 * @param PortalInvitationService $invitations Invitations into the portal.
 	 * @param PortalIdentityMailer $mailer Mails the invitation to its address.
+	 * @param SignInAddressChange|null $signInAddresses Changes an e-mail account's sign-in address (sign-in-with-an-email-link H2).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -68,6 +70,7 @@ class PortalAccountAdminController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly PortalInvitationService $invitations,
 		private readonly PortalIdentityMailer $mailer,
+		private readonly ?SignInAddressChange $signInAddresses = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -342,4 +345,44 @@ class PortalAccountAdminController extends Controller {
 		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
 	}//end refuse()
 
+	/**
+	 * Staff change the sign-in address of an `email` account (security review
+	 * H2). The unspent links are voided and the old address is told.
+	 *
+	 * @param string $subjectRef The account.
+	 * @param string $address    The new sign-in address.
+	 *
+	 * @return JSONResponse `{signInAddress}` or a refusal.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	#[NoAdminRequired]
+	public function signInAddress(string $subjectRef, string $address = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		if ($account === null || $this->signInAddresses === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$outcome = $this->signInAddresses->change(account: $account, newAddress: $address, byStaff: true);
+		if ($outcome === SignInAddressChange::FAILED) {
+			return new JSONResponse(['error' => 'save_failed'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		if ($outcome !== SignInAddressChange::CHANGED) {
+			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['signInAddress' => strtolower(trim($address))]);
+	}//end signInAddress()
 }//end class

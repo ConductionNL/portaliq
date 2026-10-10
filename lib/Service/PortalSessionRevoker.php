@@ -77,20 +77,24 @@ class PortalSessionRevoker {
 	 *
 	 * @param string $organisation The tenant to revoke every session for.
 	 * @param string $admin The Nextcloud user id of the acting admin.
+	 * @param string $subjectRef One account only (sign-in-with-an-email-link
+	 *                           REQ-IWI-013), or '' for the whole organisation.
+	 *                           A per-account run records no organisation entry.
 	 *
 	 * @return array{revoked: int, failed: int, complete: bool}
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-staff-can-revoke-an-accounts-e-mail-links-and-sessions-req-iwi-013
 	 */
-	public function revokeAll(string $organisation, string $admin): array {
+	public function revokeAll(string $organisation, string $admin, string $subjectRef = ''): array {
 		if ($organisation === '') {
 			return ['revoked' => 0, 'failed' => 0, 'complete' => true];
 		}
 
-		$rows = $this->liveSessionsOf(organisation: $organisation);
+		$rows = $this->liveSessionsOf(organisation: $organisation, subjectRef: $subjectRef);
 		if ($rows === null) {
-			$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: 0, complete: false);
+			$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: 0, complete: false, subjectRef: $subjectRef);
 			return ['revoked' => 0, 'failed' => 0, 'complete' => false];
 		}
 
@@ -129,7 +133,7 @@ class PortalSessionRevoker {
 			);
 		}//end foreach
 
-		$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: $revoked, complete: $failed === 0);
+		$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: $revoked, complete: $failed === 0, subjectRef: $subjectRef);
 
 		return ['revoked' => $revoked, 'failed' => $failed, 'complete' => $failed === 0];
 	}//end revokeAll()
@@ -139,20 +143,26 @@ class PortalSessionRevoker {
 	 * or null when OpenRegister could not be read.
 	 *
 	 * @param string $organisation The tenant.
+	 * @param string $subjectRef   One account only, or ''.
 	 *
 	 * @return array<int, array<string, mixed>>|null
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 	 */
-	private function liveSessionsOf(string $organisation): ?array {
+	private function liveSessionsOf(string $organisation, string $subjectRef = ''): ?array {
+		$scope  = ['organisation', $organisation];
+		if ($subjectRef !== '') {
+			$scope = ['subjectRef', $subjectRef];
+		}
+
 		$live   = [];
 		$offset = 0;
 		for ($pages = 0; $pages < self::REVOKE_MAX_PAGES; $pages++) {
 			$page = $this->reader->readScopedPage(
 				register: PortalSessionService::SESSION_REGISTER,
 				schema: PortalSessionService::SESSION_SCHEMA,
-				scopeField: 'organisation',
-				scopeValue: $organisation,
+				scopeField: $scope[0],
+				scopeValue: $scope[1],
 				organisation: $organisation,
 				filter: ['revoked' => false],
 				limit: self::REVOKE_PAGE,
@@ -163,8 +173,9 @@ class PortalSessionRevoker {
 			}
 
 			foreach ($page['rows'] as $row) {
-				// The filter narrows; the row's own flag decides (fail closed).
-				if ($this->isRevoked(row: $row) === false) {
+				// The filter narrows; the row's own flag decides (fail closed),
+				// and a per-account run never reaches another account's row.
+				if ($this->isRevoked(row: $row) === false && ($subjectRef === '' || ($row['subjectRef'] ?? null) === $subjectRef)) {
 					$live[] = $row;
 				}
 			}
@@ -187,10 +198,16 @@ class PortalSessionRevoker {
 	 * @param string $organisation The tenant.
 	 * @param int $revoked How many sessions were revoked.
 	 * @param bool $complete Whether every live session was reached and revoked.
+	 * @param string $subjectRef The one account of a per-account run, or ''.
 	 *
 	 * @return void
 	 */
-	private function recordAdminRevoke(string $admin, string $organisation, int $revoked, bool $complete): void {
+	private function recordAdminRevoke(string $admin, string $organisation, int $revoked, bool $complete, string $subjectRef = ''): void {
+		// A per-account revoke is audited per session only.
+		if ($subjectRef !== '') {
+			return;
+		}
+
 		$state = 'no';
 		if ($complete === true) {
 			$state = 'yes';

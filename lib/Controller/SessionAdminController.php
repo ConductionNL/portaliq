@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkTokens;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,11 +56,13 @@ class SessionAdminController extends Controller {
 	 * @param IRequest $request The request object.
 	 * @param PortalSessionService $session The session service.
 	 * @param IUserSession $userSession The signed-in admin (named in the audit trail).
+	 * @param EmailLinkTokens|null $emailLinks Voids one account's unspent e-mail links (sign-in-with-an-email-link).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly IUserSession $userSession,
+		private readonly ?EmailLinkTokens $emailLinks = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -98,4 +101,35 @@ class SessionAdminController extends Controller {
 
 		return new JSONResponse($result);
 	}//end revokeOrganisation()
+
+	/**
+	 * Revoke one account's unspent e-mail links and every live session of it,
+	 * without touching the rest of its organisation.
+	 *
+	 * @param string $subjectRef   The account.
+	 * @param string $organisation The account's organisation.
+	 *
+	 * @return JSONResponse `{links, revoked, failed, complete}`; 503 when not
+	 *                      every session could be revoked; 400 when a field is empty.
+	 *
+	 * @auth admin-only Incident response on one portal account, the same
+	 *       posture as revokeOrganisation(): instance admin + CSRF, expressed
+	 *       by the absence of an opt-out attribute.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-staff-can-revoke-an-accounts-e-mail-links-and-sessions-req-iwi-013
+	 */
+	public function revokeAccount(string $subjectRef = '', string $organisation = ''): JSONResponse {
+		if ($subjectRef === '' || $organisation === '') {
+			return new JSONResponse(['error' => 'account_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$admin  = (string)$this->userSession->getUser()?->getUID();
+		$links  = (int)$this->emailLinks?->voidFor(subjectRef: $subjectRef, organisation: $organisation);
+		$result = ['links' => $links] + $this->session->revokeAllForOrganisation($organisation, $admin, $subjectRef);
+		if ($result['complete'] === false) {
+			return new JSONResponse(['error' => 'revoke_incomplete'] + $result, Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new JSONResponse($result);
+	}//end revokeAccount()
 }//end class

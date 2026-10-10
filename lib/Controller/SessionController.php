@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
@@ -973,10 +974,12 @@ class SessionController extends Controller {
 	 * @return string
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
 	 */
 	private function brokerLogoutUrl(array $subject): string {
 		$provider = (string)($subject['provider'] ?? '');
-		if ($provider === '') {
+		// An e-mail link session has no broker to sign out of (REQ-IWI-011).
+		if ($provider === '' || $provider === EmailLinkSetting::MODE) {
 			return '';
 		}
 
