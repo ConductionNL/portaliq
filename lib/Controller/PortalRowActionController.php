@@ -39,6 +39,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\AttachedActionResolver;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Contribution\RowActionFiles;
 use OCA\Portaliq\Contribution\RowActionInputs;
 use OCA\Portaliq\Contribution\RowActionResolver;
 use OCA\Portaliq\Contribution\RowIdentifier;
@@ -144,6 +145,15 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return $body;
 		}
 
+		// The files the action lets the resident add, checked before the
+		// audit and the forward (row-action-carries-files REQ-RAF-001).
+		$files = (new RowActionFiles())->collect(action: $match['action'], request: $this->request);
+		if ($files['error'] !== null) {
+			return new JSONResponse(['error' => $files['error']], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$body['files'] = $files['files'];
+
 		return $this->relay(match: $match, subject: $subject, body: $body, ids: ['row' => $rowId, 'action' => $actionId]);
 	}//end forward()
 
@@ -179,7 +189,13 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			jti: (string)($subject['jti'] ?? '')
 		);
 
-		$response = $this->forwarder->forward(action: $match['action'], subject: $subject, whitelisted: $body['body'], scopeValue: $body['scopeValue']);
+		$response = $this->forwarder->forward(
+			action: $match['action'],
+			subject: $subject,
+			whitelisted: $body['body'],
+			scopeValue: $body['scopeValue'],
+			files: ($body['files'] ?? [])
+		);
 		if ($response === null) {
 			return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
 		}

@@ -299,10 +299,18 @@ export function answerLink(result, origin = pageOrigin()) {
  * @param {object} collection The collection the row belongs to.
  * @param {object} row The row.
  * @param {object} action The endpoint row action.
- * @param answers
+ * @param {object} answers The typed row inputs, under the action's `into` key.
+ * @param {Array<File>} files The files the resident chose, for an action that declares `files`.
  * @return {Promise<{redirect: string|null, messageKey: string, link: string}>}
  */
-export async function runRowAction(api, collection, row, action, answers = {}) {
+export async function runRowAction(
+	api,
+	collection,
+	row,
+	action,
+	answers = {},
+	files = [],
+) {
 	const rowId = row && (row.id || row['@self']?.id)
 	if (!rowId || !api) {
 		return {
@@ -310,7 +318,20 @@ export async function runRowAction(api, collection, row, action, answers = {}) {
 			messageKey: outcomeKey({ ok: false, status: 0, body: {} }),
 		}
 	}
-	const result = await api.forwardRowAction(collection, rowId, action.id, answers)
+	const upload =
+		action.files && action.files.field && files.length > 0
+			? { field: action.files.field, files }
+			: null
+	const result = upload
+		? await api.forwardRowAction(
+				collection,
+				rowId,
+				action.id,
+				answers,
+				'',
+				upload,
+			)
+		: await api.forwardRowAction(collection, rowId, action.id, answers)
 	const redirect = redirectTarget(result)
 	const link = answerLink(result)
 	const words = answerWords(result)
