@@ -14,6 +14,26 @@ A `portalFormBinding` SHALL store `destination { register, schema }`. Saving or 
 - **WHEN** an administrator publishes the binding
 - **THEN** the publish is refused and the preview names `communicationChannel` as `required-unmapped`
 
+### Requirement: A saved form is a draft of its destination object (REQ-PIFO-008)
+
+"Save and carry on later" SHALL save the destination object with OpenRegister metadata status `draft` (decision 180). The draft MAY miss required answers. It SHALL NOT hold a type-invalid answer; such an answer SHALL be refused on its field. Sending SHALL move the object out of `draft` through OpenRegister's submit service, with full validation; only then SHALL it get its reference and received moment. portaliq SHALL keep no draft store of its own.
+
+#### Scenario: A resident saves half a form
+- **GIVEN** a form into a dossiq case type whose description is required
+- **WHEN** a signed-in resident saves it with the description still empty
+- **THEN** a case exists in status `draft`, without a case reference shown to the resident and without a received moment
+- **AND** no `portalDraft` object is written
+
+#### Scenario: A wrong value is refused even in a draft
+- **GIVEN** a date field mapped to a date-time property
+- **WHEN** the resident saves a draft with a phone number in it
+- **THEN** that field shows the error and nothing is saved
+
+#### Scenario: Sending the draft makes it a received case
+- **GIVEN** a saved draft that now holds every required answer
+- **WHEN** the resident sends it
+- **THEN** the case leaves `draft`, and the confirmation names its reference, received moment, term start and deadline
+
 ## RENAMED Requirements
 
 - FROM: `### Requirement: A submission is validated against the form's schema before any create (REQ-PIFO-004)`
