@@ -1037,7 +1037,8 @@ class PortalSessionService {
 			trust: self::normaliseTrust(trust: ($subject['trust'] ?? '')),
 			jti: (string)($subject['jti'] ?? ''),
 			scopeClaim: $scopeClaim,
-			scopeValue: $scopeValue
+			scopeValue: $scopeValue,
+			branch: (string)($subject['branch'] ?? '')
 		);
 	}//end issueAssertion()
 }//end class
