@@ -2887,7 +2887,6 @@ OC.L10N.register(
         "Verlopen": "Verlopen",
         "Verstuurd": "Verstuurd",
         "Wacht": "Wacht",
-<<<<<<< HEAD
         "{shown} of {total} sessions": "{shown} van {total} sessies",
         "Signed in": "Ingelogd",
         "New term": "Nieuw begrip",
@@ -2908,8 +2907,6 @@ OC.L10N.register(
         "Ingetrokken": "Ingetrokken",
         "Visible from": "Zichtbaar van",
         "Until": "Tot",
-=======
->>>>>>> origin/build/openspecs-6
         "A favicon must be a PNG, SVG or ICO file.": "Een favicon moet een PNG-, SVG- of ICO-bestand zijn.",
         "The favicon is not in the media library of this portal.": "De favicon staat niet in de mediabibliotheek van dit portaal.",
         "The logo is not in the media library of this portal.": "Het logo staat niet in de mediabibliotheek van dit portaal.",
@@ -2938,7 +2935,6 @@ OC.L10N.register(
         "A misspelling is still found in {fields}.": "Een tikfout wordt nog gevonden in {fields}.",
         "Only exact words are found in {fields}.": "Alleen exacte woorden worden gevonden in {fields}.",
         "Results from other catalogues without a score come after the scored results.": "Resultaten uit andere catalogi zonder score komen na de resultaten met een score.",
-<<<<<<< HEAD
         "%s: this part only works with JavaScript.": "%s: dit onderdeel werkt alleen met JavaScript.",
         "Information category": "Informatiecategorie",
         "Main menu": "Hoofdmenu",
@@ -2956,28 +2952,6 @@ OC.L10N.register(
         "Untitled": "Zonder titel",
         "We cannot show the publications here right now.": "We kunnen de publicaties hier nu niet tonen.",
         "_%n result_::_%n results_": ["%n resultaat","%n resultaten"]
-=======
-        "{shown} of {total} sessions": "{shown} van {total} sessies",
-        "Signed in": "Ingelogd",
-        "New term": "Nieuw begrip",
-        "{shown} of {total} terms": "{shown} van {total} begrippen",
-        "{shown} of {total} templates": "{shown} van {total} sjablonen",
-        "Kind of notice": "Soort melding",
-        "Pending": "In afwachting",
-        "Suspended": "Geschorst",
-        "{identityType} - on behalf of {organisation}": "{identityType} · namens {organisation}",
-        "Receipt confirmed": "Bevestigd",
-        "Receipt pending": "Wacht",
-        "Receipt failed": "Ontvangstbevestiging mislukt",
-        "via {appId}": "via {appId}",
-        "Unread": "Ongelezen",
-        "in the inbox of {subjectRef}": "in de inbox van {subjectRef}",
-        "Draft": "Concept",
-        "Umbrella": "Overkoepelend",
-        "Ingetrokken": "Ingetrokken",
-        "Visible from": "Zichtbaar van",
-        "Until": "Tot"
->>>>>>> origin/build/openspecs-6
     },
     "nplurals=2; plural=(n != 1);"
 )
