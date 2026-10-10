@@ -203,6 +203,8 @@ class PortalActionForwarder {
 	 * @param string $path The upload's temporary path.
 	 *
 	 * @return resource|null
+	 *
+	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
 	protected function open(string $path) {
 		if ($path === '' || is_readable($path) === false) {
