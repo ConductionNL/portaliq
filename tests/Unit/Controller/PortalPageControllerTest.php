@@ -552,11 +552,12 @@ class PortalPageControllerTest extends TestCase {
 		?array $byOrganisation = null,
 		bool $byOrganisationThrows = false,
 		?PortalNoticeReader $notices = null,
-		string $acceptLanguage = ''
+		string $acceptLanguage = '',
+		array $params = []
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
-			fn (string $key, $default = null) => match ($key) {
+			fn (string $key, $default = null) => array_key_exists($key, $params) ? $params[$key] : match ($key) {
 				'org' => $orgSlug,
 				'portal' => ($portalParam !== '' ? $portalParam : $default),
 				'route' => ($route !== '' ? $route : $default),
@@ -611,7 +612,8 @@ class PortalPageControllerTest extends TestCase {
 			->willReturnCallback(
 				static fn (string $name, array $params = []): string => match ($name) {
 					'portaliq.content.site' => '/index.php/apps/portaliq/api/content/site',
-					'portaliq.portalPage.site' => '/index.php/apps/portaliq/site',
+					'portaliq.portalPage.site' => '/index.php/apps/portaliq/site'.($params === [] ? '' : '?'.http_build_query($params)),
+					'portaliq.portalPage.plain' => '/index.php/apps/portaliq/site/plain'.($params === [] ? '' : '?'.http_build_query($params)),
 					default => ('/index.php/apps/portaliq/route/' . $name . '?' . http_build_query($params)),
 				}
 			);
@@ -677,7 +679,8 @@ class PortalPageControllerTest extends TestCase {
 				configResolver: $runtimeConfigResolver,
 				siteIcon: new SiteIcon(new MediaReferences($urlGenerator, $this->library()), $urlGenerator)
 			),
-			($this->framing ?? $this->noFraming())
+			($this->framing ?? $this->noFraming()),
+			PlainRendererFactory::make(reader: $reader, urlGenerator: $urlGenerator)
 		);
 	}//end controller()
 
@@ -695,6 +698,32 @@ class PortalPageControllerTest extends TestCase {
 		return $library;
 	}//end library()
 
+
+	/**
+	 * Every site page links a visitor without JavaScript to the plain page of
+	 * the same route, search and portal included (site-honest-without-javascript
+	 * REQ-SHJ-001), with the notice in the document language.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-every-site-page-says-so-when-javascript-is-off-req-shj-001
+	 */
+	public function testThePlainUrlCarriesTheRouteAndTheSearch(): void {
+		$params = $this->controller(
+			orgSlug: '',
+			route: '/zoeken',
+			portalParam: 'wilgenboom',
+			params: ['_search' => 'afval', '_page' => '2']
+		)->site()->getParams();
+
+		$this->assertSame(
+			'/index.php/apps/portaliq/site/plain?'.http_build_query(['route' => '/zoeken', 'portal' => 'wilgenboom', '_search' => 'afval', '_page' => '2']),
+			$params['plainUrl']
+		);
+		$this->assertSame('This website uses JavaScript for the parts where you do something.', $params['noscript']['text']);
+		$this->assertSame('Read the plain version of this page', $params['noscript']['linkText']);
+
+		$bare = $this->controller(orgSlug: '')->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=%2F', $bare['plainUrl']);
+	}//end testThePlainUrlCarriesTheRouteAndTheSearch()
 
 	/**
 	 * A themed portal whose set ships a logo gets an ABSOLUTE url for it.
