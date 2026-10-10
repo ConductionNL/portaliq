@@ -132,6 +132,34 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testAssertionCarriesUseClaimSessionJtiAndShortTtl()
 
+	/**
+	 * Decision 173: the resolved subject's branch reaches the assertion, and a
+	 * subject without one mints the nine claims only.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne(): void {
+		$service = $this->service();
+		$subject = [
+			'subjectRef' => 's1',
+			'audience' => 'business',
+			'organisation' => 'org-1',
+			'trust' => 'substantial',
+			'jti' => 'session-jti-1',
+		];
+
+		$withBranch = (new PortalJwtService(self::SECRET))->validate(
+			$service->issueAssertion(array_merge($subject, ['branch' => '000012345678']))
+		);
+		$this->assertSame('000012345678', $withBranch['branch']);
+
+		$without = (new PortalJwtService(self::SECRET))->validate($service->issueAssertion($subject));
+		$this->assertArrayNotHasKey('branch', $without);
+
+	}//end testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne()
+
 	public function testAssertionPresentedAsBearerFailsClosed(): void {
 		$service = $this->service();
 		$assertion = $service->issueAssertion(
