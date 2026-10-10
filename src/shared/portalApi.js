@@ -138,6 +138,12 @@ export function createPortalApi(config, store = {}) {
 					refusal?.errors && typeof refusal.errors === 'object'
 						? refusal.errors
 						: {},
+				// A value the store refused, by field and kind
+				// (site-action-forms).
+				invalid:
+					refusal?.invalid && typeof refusal.invalid === 'object'
+						? refusal.invalid
+						: {},
 			}
 		}
 		const json = await res.json().catch(() => ({}))
@@ -181,6 +187,9 @@ export function createPortalApi(config, store = {}) {
 	// The guardian message routes live beside the portal API, not under it
 	// (guardian-direct-messages): `/apps/portaliq/api/messages/...`.
 	const appRoot = String(base).replace(/\/portal\/api\/?$/, '')
+
+	const draftUrl = (app, actionId) =>
+		`${base}/drafts/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`
 
 	const col = (register, schema) =>
 		`/collections/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
@@ -395,6 +404,26 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Answer one of the resident's inbox messages through the create action its
+		 * collection declares (inbox-reply-with-attachments). The server proves the
+		 * message is theirs and sets the carried fields (such as the case) from it.
+		 *
+		 * @param {object} message The message, with its `_source`.
+		 * @param {object} data The fields the resident filled in, files left out.
+		 * @return {Promise<object>} `{ ok, status, object, error, errors }`.
+		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 */
+		async replyToMessage(message, data) {
+			const source = message._source || {}
+			const id = message.id || message['@self']?.id
+			if (!id || !source.register || !source.schema) {
+				return { ok: false, status: 0, object: null, error: '', errors: {} }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/reply?collection=${encodeURIComponent(source.collection || '')}`
+			return send('POST', path, data)
+		},
+
+		/**
 		 * The guardian's own message threads (guardian-direct-messages). An
 		 * answer the server refuses reads as no threads, never as an error.
 		 *
@@ -505,6 +534,42 @@ export function createPortalApi(config, store = {}) {
 				return { ok: false, error: String(json?.error || res.status) }
 			} catch {
 				return { ok: false, error: 'network' }
+			}
+		},
+
+		/**
+		 * One call to the portal api, answered as `{ok, status, json}` (or the
+		 * response itself with `raw`), never thrown. The pages of the resident's
+		 * own area (contacts, plans) build their calls on it in
+		 * src/shared/areaApi.js, which loads with them.
+		 *
+		 * @param {string} method The verb.
+		 * @param {string} path The path under the api base.
+		 * @param {object|null} [body] The JSON body, or none.
+		 * @param {boolean} [raw] Answer `{ok, status, res}` and leave the body unread.
+		 * @return {Promise<{ok: boolean, status: number, json?: object, res?: Response}>} The answer.
+		 */
+		async request(method, path, body = null, raw = false) {
+			try {
+				const res = await fetch(`${base}${path}`, {
+					method,
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						...authHeaders(),
+					},
+					...(body === null ? {} : { body: JSON.stringify(body) }),
+				})
+				if (raw) {
+					return { ok: res.ok, status: res.status, res }
+				}
+				return {
+					ok: res.ok,
+					status: res.status,
+					json: await res.json().catch(() => ({})),
+				}
+			} catch {
+				return { ok: false, status: 0, json: {} }
 			}
 		},
 
@@ -739,13 +804,28 @@ export function createPortalApi(config, store = {}) {
 		 * Hand back the secret of an invitation, so the waiting account
 		 * behind it joins the signed-in person's own account.
 		 *
+		 * When the claim moved the account into the invitation's audience,
+		 * the answer carries a reissued bearer; it is stored here, so every
+		 * later request runs in the new audience.
+		 *
 		 * @param {string} secret The secret from the invitation.
 		 * @return {Promise<object>} `{ ok, status, error, data }`.
 		 *
 		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 		 */
 		async claimInvitation(secret) {
-			return answer('POST', '/identity/invitation/redeem', { secret })
+			const result = await answer('POST', '/identity/invitation/redeem', {
+				secret,
+			})
+			if (
+				result.ok
+				&& typeof result.data?.token === 'string'
+				&& result.data.token !== ''
+			) {
+				writeToken(result.data.token)
+			}
+			return result
 		},
 
 		/**
@@ -856,6 +936,74 @@ export function createPortalApi(config, store = {}) {
 				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/items?collection=${encodeURIComponent(collection.id)}`,
 			)
 			return body && Array.isArray(body.items) ? body : null
+		},
+
+		/**
+		 * The resident's saved draft of an action, or null (site-multi-step-forms T8).
+		 *
+		 * @param {string} app The contributing app, or the action's register.
+		 * @param {string} actionId The action id.
+		 * @return {Promise<{step: string, expiresAt: string, answers: object}|null>} The draft.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 */
+		async getDraft(app, actionId) {
+			try {
+				const res = await fetch(draftUrl(app, actionId), {
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				return res.ok ? await res.json() : null
+			} catch {
+				return null
+			}
+		},
+
+		/**
+		 * Save the resident's draft of an action.
+		 *
+		 * @param {string} app The contributing app, or the action's register.
+		 * @param {string} actionId The action id.
+		 * @param {{answers: object, step: string, retentionDays: number}} draft The draft.
+		 * @return {Promise<{step: string, expiresAt: string, answers: object}|null>} What was kept, or null.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 */
+		async saveDraft(app, actionId, draft) {
+			try {
+				const res = await fetch(draftUrl(app, actionId), {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						...authHeaders(),
+					},
+					body: JSON.stringify(draft),
+				})
+				return res.ok ? await res.json() : null
+			} catch {
+				return null
+			}
+		},
+
+		/**
+		 * Delete the draft once the action was sent.
+		 *
+		 * @param {string} app The contributing app, or the action's register.
+		 * @param {string} actionId The action id.
+		 * @return {Promise<boolean>} True when the request went through.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 */
+		async discardDraft(app, actionId) {
+			try {
+				const res = await fetch(draftUrl(app, actionId), {
+					method: 'DELETE',
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				return res.ok
+			} catch {
+				return false
+			}
 		},
 
 		/**
@@ -1003,6 +1151,44 @@ export function createPortalApi(config, store = {}) {
 				}
 			}
 			return { ok: true, status: res.status, case: json.case || null }
+		},
+
+		/**
+		 * Download the resident's own list, or one record, as a PDF. The server
+		 * reads exactly what the screen reads and renders it through OpenRegister;
+		 * the file is saved client-side through a Blob URL, as downloadFile().
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema, id, label }`.
+		 * @param {string} [id] The record id; none exports the whole list.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }` (400: the list is too long).
+		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t06
+		 */
+		async downloadPdf(collection, id) {
+			const path =
+				id === undefined
+					? 'export.pdf'
+					: `${encodeURIComponent(id)}/export.pdf`
+			const url = `${base}${col(collection.register, collection.schema)}/${path}?collection=${encodeURIComponent(collection.id)}`
+			try {
+				const res = await fetch(url, { headers: { ...authHeaders() } })
+				if (!res.ok) {
+					return { ok: false, status: res.status }
+				}
+				const blob = await res.blob()
+				const objectUrl = window.URL.createObjectURL(blob)
+				const link = document.createElement('a')
+				link.href = objectUrl
+				link.download = `${(collection.label || 'export').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`
+				document.body.appendChild(link)
+				link.click()
+				setTimeout(() => {
+					link.remove()
+					window.URL.revokeObjectURL(objectUrl)
+				}, 10000)
+				return { ok: true }
+			} catch {
+				return { ok: false, status: 0 }
+			}
 		},
 
 		/**

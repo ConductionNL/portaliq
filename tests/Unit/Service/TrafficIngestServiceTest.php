@@ -195,6 +195,38 @@ class TrafficIngestServiceTest extends TestCase {
 
 
 	/**
+	 * The assistant counts a use and never what was asked: a text sent along
+	 * with the event is not stored. A portal that did not list the event refuses it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t06
+	 */
+	public function testAnAssistantAskedEventIsStoredWithoutAText(): void {
+		$service = $this->service(portals: [$this->portal(['enabled' => true, 'events' => ['page_view', 'assistant_asked']])]);
+		$event   = [
+			'name' => 'assistant_asked',
+			'sequence' => 1,
+			'pageLocation' => 'https://open-tilburg.nl/vragen',
+			'params' => ['question' => 'Wat is mijn bsn 111222333?', 'text' => 'geheim'],
+		];
+
+		$result = $service->ingest(portalSlug: 'open-tilburg', events: [$event], context: $this->browser());
+
+		$this->assertSame(1, $result['accepted']);
+		$this->assertSame('assistant_asked', $this->stored[0]['name']);
+		$this->assertStringNotContainsString('111222333', json_encode($this->stored[0]));
+		$this->assertStringNotContainsString('geheim', json_encode($this->stored[0]));
+
+		$this->stored = [];
+		$off          = $this->service(portals: [$this->portal(['enabled' => true])]);
+		$refused      = $off->ingest(portalSlug: 'open-tilburg', events: [$event], context: $this->browser());
+		$this->assertSame(0, $refused['accepted']);
+		$this->assertSame([], $this->stored);
+	}//end testAnAssistantAskedEventIsStoredWithoutAText()
+
+
+	/**
 	 * A surface the portal declared off-limits leaves no row at all, while an
 	 * ordinary page in the same batch still does.
 	 *

@@ -251,7 +251,7 @@ class PortalObjectReaderTest extends TestCase {
 		$objectService = $this->objectService(
 			[
 				'portalAccount' => [
-					['subjectRef' => 's1', 'claims' => ['otherapp' => ['contactId' => 'uuid-x']]],
+					['subjectRef' => 's1', 'organisation' => 'org-1', 'claims' => ['otherapp' => ['contactId' => 'uuid-x']]],
 				],
 				'crmDeal' => [
 					['contact' => 'uuid-x', 'title' => 'Cross-app'],
@@ -265,7 +265,7 @@ class PortalObjectReaderTest extends TestCase {
 			schema: 'crmDeal',
 			scopeField: 'contact',
 			subjectRef: 's1',
-			organisation: '',
+			organisation: 'org-1',
 			limit: 200,
 			scopeClaim: 'otherapp.contactId',
 			contributingApp: 'pipelinq',
@@ -1227,7 +1227,7 @@ class PortalObjectReaderTest extends TestCase {
 		$objectService = $this->objectService(
 			[
 				'portalAccount' => [
-					['subjectRef' => 's1', 'claims' => ['pipelinq' => ['linkedContactId' => 'uuid-c1']]],
+					['subjectRef' => 's1', 'organisation' => 'org-1', 'claims' => ['pipelinq' => ['linkedContactId' => 'uuid-c1']]],
 				],
 				'crmDeal' => [
 					['id' => 'd-1', 'contact' => 'uuid-c1', 'title' => 'Mine'],
@@ -1242,7 +1242,7 @@ class PortalObjectReaderTest extends TestCase {
 			scopeField: 'contact',
 			subjectRef: 's1',
 			id: 'd-1',
-			organisation: '',
+			organisation: 'org-1',
 			scopeClaim: 'linkedContactId',
 			contributingApp: 'pipelinq',
 			audience: 'supplier'
@@ -1423,6 +1423,75 @@ class PortalObjectReaderTest extends TestCase {
 	}//end testEmptyListScopeFieldIsDropped()
 
 	/**
+	 * operate-portals-per-organisation REQ-OPO-002: for a schema declared
+	 * organisation-scoped, a row without an organisation belongs to no tenant.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
+	 */
+	public function testRowWithoutOrganisationIsDropped(): void {
+		$objectService = $this->objectService(
+			[
+				'portalMessage' => [
+					['id' => 'm-1', 'subjectRef' => 's1', 'organisation' => 'org-a'],
+					['id' => 'm-2', 'subjectRef' => 's1'],
+					['id' => 'm-3', 'subjectRef' => 's1', 'organisation' => 'org-b'],
+				],
+			]
+		);
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$ids = array_column($reader->readCollection('portaliq', 'portalMessage', 'subjectRef', 's1', 'org-a'), 'id');
+
+		$this->assertSame(['m-1'], $ids, 'neither the row without a tenant nor another tenant\'s row');
+
+	}//end testRowWithoutOrganisationIsDropped()
+
+	/**
+	 * A read that names no tenant is a system lookup (by subject reference or secret)
+	 * and is left as it was: the account lookup that runs before the tenant is
+	 * known must keep working.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
+	 */
+	public function testALookupThatNamesNoTenantIsLeftAsItWas(): void {
+		$objectService = $this->objectService(
+			[
+				'portalAccount' => [
+					['id' => 'a-1', 'subjectRef' => 's1'],
+				],
+			]
+		);
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame(['a-1'], array_column($reader->readCollection('portaliq', 'portalAccount', 'subjectRef', 's1', ''), 'id'));
+		$this->assertNotNull($reader->readObject('portaliq', 'portalAccount', 'subjectRef', 's1', 'a-1', ''));
+		$this->assertSame([], $reader->readCollection('portaliq', 'portalAccount', 'subjectRef', 's1', 'org-a'), 'but with a tenant named, a row without one is dropped');
+
+	}//end testALookupThatNamesNoTenantIsLeftAsItWas()
+
+	/**
+	 * A subject-scoped schema keeps today\'s behaviour: the subject reference is
+	 * globally unique, so a row without an organisation still reads.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
+	 */
+	public function testSubjectScopedSchemaUnchanged(): void {
+		$objectService = $this->objectService(
+			[
+				'pushSubscription' => [
+					['id' => 'p-1', 'subjectRef' => 's1'],
+					['id' => 'p-2', 'subjectRef' => 's1', 'organisation' => 'org-b'],
+				],
+			]
+		);
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame(['p-1'], array_column($reader->readCollection('portaliq', 'pushSubscription', 'subjectRef', 's1', 'org-a'), 'id'));
+		$this->assertSame(['p-1', 'p-2'], array_column($reader->readCollection('portaliq', 'pushSubscription', 'subjectRef', 's1', ''), 'id'), 'no tenant named, as before');
+
+	}//end testSubjectScopedSchemaUnchanged()
+
+	/**
 	 * UNCHANGED: a single-value scope field matches exactly as before, an
 	 * integer value still matches its decimal string, and a foreign value is
 	 * still dropped.
@@ -1431,8 +1500,8 @@ class PortalObjectReaderTest extends TestCase {
 		$objectService = $this->objectService(
 			[
 				'exampleDocument' => [
-					['id' => 'd-1', 'subjectRef' => 's1'],
-					['id' => 'd-2', 'subjectRef' => 's2'],
+					['id' => 'd-1', 'subjectRef' => 's1', 'organisation' => 'org-1'],
+					['id' => 'd-2', 'subjectRef' => 's2', 'organisation' => 'org-1'],
 				],
 				'counter' => [
 					['id' => 'c-1', 'ownerNumber' => 42],
@@ -1443,7 +1512,7 @@ class PortalObjectReaderTest extends TestCase {
 
 		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
 
-		$this->assertSame(['d-1'], array_column($reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1'), 'id'));
+		$this->assertSame(['d-1'], array_column($reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1'), 'id'));
 		$this->assertSame(['c-1'], array_column($reader->readCollection('portaliq', 'counter', 'ownerNumber', '42'), 'id'));
 
 	}//end testSingleValueScopeFieldStillMatches()

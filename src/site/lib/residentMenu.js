@@ -175,10 +175,13 @@ const NAMES = new WeakMap()
  *   `perRecord` collection, by `<app>:<collection>`.
  * @param {Array<{title: string, items: Array<string>}>|null} [layout] The
  *   portal's own groups (`residentMenu.groups`), or none.
+ * @param {Array<string>|null} [leaveOut] Items the portal leaves out of the
+ *   menu by name (`residentMenu.leaveOut`, resident-menu-leave-out).
  * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
  * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+ * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
  */
 export function residentMenuGroups(
 	nav,
@@ -187,6 +190,7 @@ export function residentMenuGroups(
 	hrefFor,
 	recordRows = {},
 	layout = null,
+	leaveOut = null,
 ) {
 	const entries = Array.isArray(nav) ? nav : []
 	const named = (item, name) => {
@@ -246,8 +250,20 @@ export function residentMenuGroups(
 		)
 	}
 
+	// The life domains the portal groups the resident's items by (life-domain-theme-pages).
+	const themeGroup = {
+		key: 'themes',
+		title: t('Themes'),
+		items: entries
+			.filter((entry) => entry.theme)
+			.map((entry) =>
+				named(itemFor(entry, t, unread, hrefFor, recordRows), entry.key),
+			),
+	}
+
 	const groups = [
 		sectionGroup('cases', t('Cases and tasks'), CASE_SECTIONS),
+		themeGroup,
 		...appGroups,
 		...recordGroups,
 		sectionGroup('messages', t('Messages and news'), MESSAGE_SECTIONS),
@@ -274,7 +290,29 @@ export function residentMenuGroups(
 			}
 		}
 	}
-	return laidOut(groups, layout, t, hrefFor)
+	return laidOut(withoutLeftOut(groups, leaveOut), layout, t, hrefFor)
+}
+
+/**
+ * The groups without the items the portal leaves out by name, and without a
+ * group that is empty then (resident-menu-leave-out).
+ *
+ * @param {Array<{key: string, title: string, items: Array<object>}>} groups The groups.
+ * @param {Array<string>|null} leaveOut The names to leave out.
+ * @return {Array<{key: string, title: string, items: Array<object>}>}
+ * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
+ */
+export function withoutLeftOut(groups, leaveOut) {
+	const names = new Set(Array.isArray(leaveOut) ? leaveOut : [])
+	if (names.size === 0) {
+		return groups
+	}
+	return groups
+		.map((group) => ({
+			...group,
+			items: group.items.filter((item) => !names.has(NAMES.get(item))),
+		}))
+		.filter((group) => group.items.length > 0)
 }
 
 /**

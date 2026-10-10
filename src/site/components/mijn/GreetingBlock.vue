@@ -22,9 +22,21 @@
 				id="site-account-title"
 				class="utrecht-heading-1 pq-greeting__title"
 				data-testid="site-account-title">
-				{{ words }}
+				<template v-if="marked"
+					>{{ marked.before }}<NoTranslate :value="marked.value" />{{
+						marked.after
+					}}</template
+				>
+				<template v-else>{{ words }}</template>
 			</h1>
-			<h2 v-else class="utrecht-heading-2 pq-greeting__title">{{ words }}</h2>
+			<h2 v-else class="utrecht-heading-2 pq-greeting__title">
+				<template v-if="marked"
+					>{{ marked.before }}<NoTranslate :value="marked.value" />{{
+						marked.after
+					}}</template
+				>
+				<template v-else>{{ words }}</template>
+			</h2>
 		</div>
 		<!-- An action opens where the page opens actions: the host fills this. -->
 		<div v-if="$slots.action" class="pq-greeting__action">
@@ -42,7 +54,9 @@
 </template>
 
 <script>
-import { greetingFor } from './greeting.js'
+import NoTranslate from '../NoTranslate.vue'
+import { markAround } from '../../lib/markAround.js'
+import { firstNameOf, greetingFor } from './greeting.js'
 import { mijnTranslator, siteHref } from './rows.js'
 
 /**
@@ -50,6 +64,8 @@ import { mijnTranslator, siteHref } from './rows.js'
  */
 export default {
 	name: 'GreetingBlock',
+
+	components: { NoTranslate },
 
 	props: {
 		/** The greeting block. */
@@ -85,6 +101,14 @@ export default {
 		 */
 		words() {
 			return greetingFor(this.session, this.now || new Date(), this.tr)
+		},
+
+		/**
+		 * @return {{before: string, value: string, after: string}|null} The greeting split around the first name, so the name can be left untranslated.
+		 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
+		 */
+		marked() {
+			return markAround(this.words, firstNameOf(this.session))
 		},
 
 		/**

@@ -108,6 +108,7 @@ class ActionConfigNormaliser {
 	 * Sanitise the form-configuration keys on every action.
 	 *
 	 * @param array<int, mixed> $actions The action list.
+	 * @param array<int, string>|null $served The audiences the provider serves (for a start tile's `audiences`), or null when unknown.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
@@ -115,8 +116,9 @@ class ActionConfigNormaliser {
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-an-action-may-name-its-required-fields-req-smf-023
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
 	 */
-	public function normaliseActions(array $actions): array {
+	public function normaliseActions(array $actions, ?array $served = null): array {
 		$out = [];
 		foreach ($actions as $action) {
 			if (is_array($action) === false) {
@@ -144,10 +146,18 @@ class ActionConfigNormaliser {
 			$action = $this->form->fitWidgets(action: $action);
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
+			// The mail a create sends the resident, and the field it names (contact-page-question-form-and-not-found).
+			// What an endpoint row action asks for and when it is offered
+			// (case-actions-row-inputs-and-conditions).
+			$action = $this->form->mailAndRowInputs(action: $action, whitelist: $whitelist);
 			// Steps, a draft and a confirmation on a create or endpoint action
 			// (site-multi-step-forms REQ-SMF-020, -021, -022).
 			$action = $this->form->flow(action: $action, whitelist: $whitelist);
+			// A start tile's sentence and audiences (site-nlds-widget-palette D6).
+			$action = (new StartTileNormaliser())->apply(action: $action, served: $served);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
+			// The life domain an action belongs to, and when it is offered (life-domain-theme-pages).
+			$action = $this->form->themeTags(action: $action);
 			// The citizen write declaration (what-the-citizen-may-write-on-their-
 			// own-case). An absent normaliser drops the key, which closes the
 			// surface rather than opening it.

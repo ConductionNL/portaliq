@@ -44,6 +44,8 @@ export function collectionIdsFor(page) {
 		for (const lookup of block?.lookups || []) {
 			add(lookup?.collection)
 		}
+		// A cards block's status reads another collection (card-status-today).
+		add(block?.status?.collection)
 		if (block?.type === 'calendar') {
 			for (const source of block.sources || []) {
 				add(source?.collection)

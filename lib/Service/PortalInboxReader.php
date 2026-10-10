@@ -122,44 +122,17 @@ class PortalInboxReader {
 	 */
 	public function aggregateInbox(array $subject, array $aggregate): array {
 		$rows = [];
-		$messageFields = new InboxMessageFields();
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			if (is_array($contribution) === false) {
 				continue;
 			}
-
-			$appId = (string)($contribution['app'] ?? '');
-			$label = (string)($contribution['label'] ?? $appId);
 
 			foreach (($contribution['collections'] ?? []) as $collection) {
 				if (is_array($collection) === false || ($collection['kind'] ?? '') !== 'inbox') {
 					continue;
 				}
 
-				foreach ($this->readInboxCollection(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
-					// The app's own field names onto the inbox's (portaliq#702),
-					// before the sort and the unread count below read them.
-					$row = $messageFields->apply(row: $row, collection: $collection);
-					$row = $this->withFiles(row: $row, collection: $collection);
-
-					// Provenance envelope: appId/label per spec, plus the
-					// register/schema/collection id the SPA needs to address
-					// this exact row through the mark-read endpoint (which is
-					// parametrised on register/schema, disambiguated the SAME
-					// way as every other scoped endpoint via `?collection=`).
-					$row['_source'] = [
-						'appId' => $appId,
-						'label' => $label,
-						'register' => (string)($collection['register'] ?? ''),
-						'schema' => (string)($collection['schema'] ?? ''),
-						'collection' => (string)($collection['id'] ?? ''),
-					];
-					if (self::residentMayDelete(collection: $collection) === true) {
-						$row['_source']['deletable'] = true;
-					}
-
-					$rows[] = $row;
-				}
+				$rows = array_merge($rows, $this->collectionRows(subject: $subject, collection: $collection, contribution: $contribution));
 			}//end foreach
 		}//end foreach
 
@@ -178,6 +151,102 @@ class PortalInboxReader {
 
 		return $rows;
 	}//end aggregateInbox()
+
+	/**
+	 * The rows of one inbox collection, in the inbox's field names and with
+	 * their provenance envelope.
+	 *
+	 * @param array<string, mixed> $subject      The resolved subject.
+	 * @param array<string, mixed> $collection   The inbox collection.
+	 * @param array<string, mixed> $contribution The contribution it belongs to.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T01
+	 */
+	private function collectionRows(array $subject, array $collection, array $contribution): array {
+		$appId         = (string)($contribution['app'] ?? '');
+		$label         = (string)($contribution['label'] ?? $appId);
+		$messageFields = new InboxMessageFields();
+		$rows          = [];
+		foreach ($this->readInboxCollection(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
+			// The app's own field names onto the inbox's (portaliq#702),
+			// before the sort and the unread count read them.
+			$row = $messageFields->apply(row: $row, collection: $collection);
+			$row = $this->withFiles(row: $row, collection: $collection);
+
+			// Provenance envelope: appId/label per spec, plus the
+			// register/schema/collection id the SPA needs to address
+			// this exact row through the mark-read endpoint (which is
+			// parametrised on register/schema, disambiguated the SAME
+			// way as every other scoped endpoint via `?collection=`).
+			$row['_source'] = [
+				'appId' => $appId,
+				'label' => $label,
+				'register' => (string)($collection['register'] ?? ''),
+				'schema' => (string)($collection['schema'] ?? ''),
+				'collection' => (string)($collection['id'] ?? ''),
+			];
+			if (self::residentMayDelete(collection: $collection) === true) {
+				$row['_source']['deletable'] = true;
+			}
+
+			$reply = $this->replyOf(collection: $collection, contribution: $contribution);
+			if ($reply !== null) {
+				$row['_source']['reply'] = $reply;
+			}
+
+			$rows[] = $row;
+		}
+
+		return $rows;
+	}//end collectionRows()
+
+	/**
+	 * What the screen needs to offer a reply under a message: the reply action
+	 * (its fields and file fields), the field that prefills the subject and the
+	 * fields the server carries over, which the form does not ask. Null when the
+	 * collection declares no reply the contribution can serve.
+	 *
+	 * @param array<string, mixed> $collection The inbox collection.
+	 * @param array<string, mixed> $contribution The contribution it belongs to.
+	 *
+	 * @return array<string, mixed>|null The reply, or null.
+	 *
+	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+	 */
+	private function replyOf(array $collection, array $contribution): ?array {
+		$declared = ($collection['reply'] ?? null);
+		if (is_array($declared) === false) {
+			return null;
+		}
+
+		foreach (($contribution['actions'] ?? []) as $action) {
+			if (is_array($action) === false || ($action['id'] ?? null) !== ($declared['action'] ?? '') || ($action['type'] ?? '') !== 'create') {
+				continue;
+			}
+
+			$reply = [
+				'action' => [
+					'id' => (string)$action['id'],
+					'label' => (string)($action['label'] ?? ''),
+					'register' => (string)($action['register'] ?? ''),
+					'schema' => (string)($action['schema'] ?? ''),
+					'fields' => array_values((array)($action['fields'] ?? [])),
+					'fieldConfigs' => (object)(array)($action['fieldConfigs'] ?? []),
+					'submitLabel' => (string)($action['submitLabel'] ?? ''),
+				],
+				'carried' => array_keys((array)($declared['carry'] ?? [])),
+			];
+			if (is_string($declared['subjectFrom'] ?? null) === true) {
+				$reply['subjectFrom'] = $declared['subjectFrom'];
+			}
+
+			return $reply;
+		}
+
+		return null;
+	}//end replyOf()
 
 	/**
 	 * Whether a resident may delete their own messages from an inbox

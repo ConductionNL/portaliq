@@ -134,7 +134,7 @@ class PortalIntakeDeliveryJob extends TimedJob {
 			$created = $this->writer->createAnonymousObject(
 				register: $register,
 				schema: $schema,
-				data: (array)($submission['answers'] ?? [])
+				data: $this->payloadOf(submission: $submission)
 			);
 		} catch (Throwable $exception) {
 			$this->logger->error('Portal intake delivery failed', ['exception' => $exception]);
@@ -192,4 +192,32 @@ class PortalIntakeDeliveryJob extends TimedJob {
 
 		$this->queue->markFailed(submission: $submission, reason: 'The Woo request could not be received: ' . $result['message']);
 	}//end deliverWooRequest()
+
+	/**
+	 * What the case is created with: the answers, and when the portal worked
+	 * some out or a decision filled them, `fieldMeta` marking each `computed`
+	 * so a case app can tell them from typed answers.
+	 *
+	 * @param array<string, mixed> $submission The queued submission.
+	 *
+	 * @return array<string, mixed> The case data.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t07
+	 */
+	public function payloadOf(array $submission): array {
+		$data     = (array)($submission['answers'] ?? []);
+		$computed = array_filter((array)($submission['computed'] ?? []), 'is_string');
+		if ($computed === []) {
+			return $data;
+		}
+
+		$meta = [];
+		foreach ($computed as $name) {
+			$meta[$name] = ['computed' => true];
+		}
+
+		$data['fieldMeta'] = $meta;
+
+		return $data;
+	}//end payloadOf()
 }//end class

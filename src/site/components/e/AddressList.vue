@@ -27,7 +27,7 @@
 				:key="entry.value"
 				class="utrecht-unordered-list__item"
 				:data-testid="`address-${kind}`">
-				<span>{{ entry.value }}</span>
+				<NoTranslate :value="entry.value" />
 				<strong v-if="entry.preferred"> ({{ t('Preferred') }})</strong>
 				<em v-if="email && !entry.confirmed">
 					({{ t('Waiting for confirmation') }})</em
@@ -77,8 +77,12 @@
 </template>
 
 <script>
+import NoTranslate from '../NoTranslate.vue'
+
 export default {
 	name: 'AddressList',
+
+	components: { NoTranslate },
 
 	props: {
 		/** `email` or `phone`. */

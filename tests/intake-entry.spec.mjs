@@ -239,6 +239,8 @@ test('a valid submission answers with a reference, an invalid one with the field
 	assert.deepEqual(accepted, {
 		reference: 'AANVRAAG-7',
 		confirmationText: 'Bedankt.',
+		confirmation: null,
+		mailedTo: '',
 		errors: {},
 	})
 	assert.equal(calls[0].init.method, 'POST')

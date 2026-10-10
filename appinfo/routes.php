@@ -19,6 +19,9 @@ return [
         // to be declared locally — without it PUT /api/settings answers 405.
         ['name' => 'settings#update', 'url' => '/api/settings', 'verb' => 'PUT'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
+        // Which groups may do which action (operate-roles-for-content-and-actions). Admin-only.
+        ['name' => 'actionSettings#index', 'url' => '/api/settings/actions', 'verb' => 'GET'],
+        ['name' => 'actionSettings#update', 'url' => '/api/settings/actions', 'verb' => 'PUT'],
 
         // Generic per-user preferences (used by shared nextcloud-vue widgets, e.g. CnSupportDialog).
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
@@ -58,6 +61,12 @@ return [
         ['name' => 'accessRequestAdmin#index', 'url' => '/api/access-requests', 'verb' => 'GET'],
         // Which form a form binding resolves to today, for the admin's Form
         // bindings page (portal-intake-form-as-an-object T03). Admin-only.
+        // The mail templates screen: kinds, preview, test mail, resend
+        // (mail-templates-admin-screen T04). Admin-only.
+        ['name' => 'mailTemplateAdmin#kinds', 'url' => '/api/mail-templates', 'verb' => 'GET'],
+        ['name' => 'mailTemplateAdmin#preview', 'url' => '/api/mail-templates/preview', 'verb' => 'POST'],
+        ['name' => 'mailTemplateAdmin#test', 'url' => '/api/mail-templates/test', 'verb' => 'POST'],
+        ['name' => 'mailTemplateAdmin#resend', 'url' => '/api/mail-log/{id}/resend', 'verb' => 'POST'],
         ['name' => 'formBindingAdmin#preview', 'url' => '/api/form-bindings/preview', 'verb' => 'POST'],
         // A portal's "Case types" page: which case types residents see
         // (operate-show-per-case-type). Admin-only.
@@ -77,6 +86,12 @@ return [
         // T11). Admin-only.
         ['name' => 'portalSignin#index', 'url' => '/api/portals/{slug}/signin', 'verb' => 'GET'],
         ['name' => 'portalSignin#update', 'url' => '/api/portals/{slug}/signin', 'verb' => 'PUT'],
+        // The accessibility measurement and the audit its statement rests on
+        // (site-accessibility-statement). Admin, or a group the action matrix
+        // names for portal.measure-accessibility.
+        ['name' => 'accessibility#index', 'url' => '/api/portals/{slug}/accessibility', 'verb' => 'GET'],
+        ['name' => 'accessibility#update', 'url' => '/api/portals/{slug}/accessibility', 'verb' => 'PUT'],
+        ['name' => 'accessibility#store', 'url' => '/api/portals/{slug}/accessibility/measurements', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#grant', 'url' => '/api/access-requests/{id}/grant', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#refuse', 'url' => '/api/access-requests/{id}/refuse', 'verb' => 'POST'],
 
@@ -86,6 +101,7 @@ return [
         ['name' => 'portalAccountAdmin#void', 'url' => '/api/accounts/void', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#approve', 'url' => '/api/accounts/{subjectRef}/approve', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#refuse', 'url' => '/api/accounts/{subjectRef}/refuse', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#signInAddress', 'url' => '/api/accounts/{subjectRef}/sign-in-address', 'verb' => 'POST'],
 
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
@@ -106,9 +122,15 @@ return [
         // catch-all. The page route is a catch-all over the rest of the path,
         // because an in-site route is arbitrary depth ('/beleid/2026/woo').
         ['name' => 'content#site', 'url' => '/api/content/site', 'verb' => 'GET'],
+        // The public accessibility statement of every portal (site-accessibility-statement).
+        ['name' => 'contentAccessibility#statement', 'url' => '/api/content/accessibility', 'verb' => 'GET'],
+        // The public start tiles of every portal (site-nlds-widget-palette D6).
+        ['name' => 'contentStartTiles#index', 'url' => '/api/content/start-tiles', 'verb' => 'GET'],
         ['name' => 'content#menus', 'url' => '/api/content/menus', 'verb' => 'GET'],
         ['name' => 'content#pages', 'url' => '/api/content/pages', 'verb' => 'GET'],
         ['name' => 'content#glossary', 'url' => '/api/content/glossary', 'verb' => 'GET'],
+        ['name' => 'content#faq', 'url' => '/api/content/faq', 'verb' => 'GET'],
+        ['name' => 'content#finder', 'url' => '/api/content/finder', 'verb' => 'GET'],
         // The contribution bridge (ADR-046 + ADR-086 §1). Anonymous surfaces
         // only; a visitor with a session reads their own aggregate through
         // `/api/contributions`, which is subject-scoped and never cacheable.
@@ -122,6 +144,10 @@ return [
         ['name' => 'contentNews#show', 'url' => '/api/content/news/{id}', 'verb' => 'GET'],
         // A portal's public catalogue: its news and every app's public index (portal-public-catalogue).
         ['name' => 'contentCatalogue#index', 'url' => '/api/content/catalogue', 'verb' => 'GET'],
+        // The kinds an app's public index declares, for the editor's block forms (editor-blocks-read-public-app-data).
+        ['name' => 'contentCatalogue#kinds', 'url' => '/api/content/catalogue/kinds', 'verb' => 'GET'],
+        // One item of an app's public index on a page of its own (public-detail-page-for-a-provider-item).
+        ['name' => 'contentCatalogue#detail', 'url' => '/api/content/catalogue/detail', 'verb' => 'GET'],
         [
             'name' => 'content#page',
             'url' => '/api/content/page/{route}',
@@ -204,6 +230,11 @@ return [
         // no Nextcloud session. The collector resolves the portal by HOST
         // first and accepts a slug only when the host resolves nothing.
         // Registered here, ahead of the SPA catch-all.
+        // site-member-voting-record-and-confidential-papers: the anonymous reads behind the public records block.
+        ['name' => 'publicRecord#list', 'url' => '/api/public-records/{app}/{list}', 'verb' => 'GET'],
+        ['name' => 'publicRecord#record', 'url' => '/api/public-records/{app}/{list}/{id}', 'verb' => 'GET'],
+        // search-assistant-from-public-content: the anonymous, tool-free assistant.
+        ['name' => 'publicAssistant#ask', 'url' => '/api/assistant/ask', 'verb' => 'POST'],
         ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
         ['name' => 'traffic#pixel', 'url' => '/api/traffic/pixel.gif', 'verb' => 'GET'],
         ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],
@@ -234,6 +265,11 @@ return [
         // front-end has no equivalent of. Registered here so it sits ahead of
         // the SPA catch-all like the content routes above.
         ['name' => 'cmsEditor#editingContext', 'url' => '/api/cms/editing-context', 'verb' => 'GET'],
+        // What would render broken if a portal's content went out as it is (portal-cms-admin-ui).
+        ['name' => 'cmsEditor#publishCheck', 'url' => '/api/cms/publish-check', 'verb' => 'GET'],
+        // The TXT record a portal's domains publish, and the check that reads it (portal-cms-admin-ui).
+        ['name' => 'cmsDomain#records', 'url' => '/api/cms/domains', 'verb' => 'GET'],
+        ['name' => 'cmsDomain#verify', 'url' => '/api/cms/domains/verify', 'verb' => 'POST'],
         // A page's published versions for the designer's History dialog
         // (site-page-seo-history-and-media REQ-SPH-003), page editors only.
         ['name' => 'pageHistory#index', 'url' => '/api/pages/{id}/history', 'verb' => 'GET'],
@@ -273,7 +309,7 @@ return [
         // One click on a demo: the example resident's session, closed unless
         // an administrator sets example_resident_demo_login=yes
         // (example-resident-demo-login).
-        ['name' => 'session#exampleResident', 'url' => '/portal/api/session/example-resident', 'verb' => 'GET'],
+        ['name' => 'exampleResident#signIn', 'url' => '/portal/api/session/example-resident', 'verb' => 'GET'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
         // Sliding-window session refresh, capped by an absolute maximum
         // session lifetime (portal-session-hardening-v2 T03). Registered
@@ -298,6 +334,7 @@ return [
         // Admin-only incident response (portal-auth-edge-session-hardening):
         // revoke every active portal session for an Organisation.
         ['name' => 'sessionAdmin#revokeOrganisation', 'url' => '/api/session-admin/revoke-organisation', 'verb' => 'POST'],
+        ['name' => 'sessionAdmin#revokeAccount', 'url' => '/api/session-admin/revoke-account', 'verb' => 'POST'],
 
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
@@ -316,6 +353,8 @@ return [
         // Delete ONE of the resident's own inbox messages: portaliq's own notices,
         // or an app's inbox that declares `deletable: true`; ownership and tenant
         // re-verified, a shared row refused (inbox-delete-own-messages).
+        // inbox-reply-with-attachments: answer a message through the create action its collection declares.
+        ['name' => 'contribution#reply', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/reply', 'verb' => 'POST'],
         ['name' => 'contribution#deleteMessage', 'url' => '/portal/api/inbox/{register}/{schema}/{id}', 'verb' => 'DELETE'],
         // The embedded intake form (embedded-intake-form). The frame is served
         // from the portal's own origin with `frame-ancestors` built from that
@@ -328,9 +367,19 @@ return [
         // entry point over opencatalogi's published catalogue, the form a
         // binding resolves to at render time, the submission, and the
         // reference page that reads the submission's real state.
+        // form-flow-repeating-groups-calculations-and-decisions: a step's decision, asked of the rule engine on the server.
+        ['name' => 'portalIntake#decide', 'url' => '/portal/api/intake/decide', 'verb' => 'POST'],
         ['name' => 'portalIntake#catalogue', 'url' => '/portal/api/intake/catalogue', 'verb' => 'GET'],
+        // Street and town for a postcode and house number (data-lookups-and-checks-in-forms).
+        ['name' => 'portalIntake#address', 'url' => '/portal/api/intake/address', 'verb' => 'GET'],
+        // Pay the fee of a submitted request (intake-pay-on-submit).
+        ['name' => 'portalIntake#pay', 'url' => '/portal/api/intake/pay', 'verb' => 'POST'],
+        ['name' => 'portalIntake#family', 'url' => '/portal/api/intake/family', 'verb' => 'GET'],
         ['name' => 'portalIntake#form', 'url' => '/portal/api/intake/form', 'verb' => 'GET'],
         ['name' => 'portalIntake#submit', 'url' => '/portal/api/intake/submit', 'verb' => 'POST'],
+        // The code that proves a form's e-mail address is the resident's (resident-identity-in-forms).
+        ['name' => 'portalFormEmailCode#send', 'url' => '/portal/api/intake/email-code', 'verb' => 'POST'],
+        ['name' => 'portalFormEmailCode#check', 'url' => '/portal/api/intake/email-code/check', 'verb' => 'POST'],
         ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],
 
         // The citizen's own identity (portal-identity-and-the-organisations-cases):
@@ -340,6 +389,10 @@ return [
         ['name' => 'portalIdentity#challenge', 'url' => '/portal/api/identity/challenge', 'verb' => 'GET'],
         ['name' => 'portalIdentity#requestReferenceLink', 'url' => '/portal/api/identity/reference-link', 'verb' => 'POST'],
         ['name' => 'portalIdentity#redeemReferenceLink', 'url' => '/portal/api/identity/reference-link/redeem', 'verb' => 'POST'],
+        // sign-in-with-an-email-link: behind the instance switch, OFF by default.
+        ['name' => 'emailLink#request', 'url' => '/portal/api/identity/email-link', 'verb' => 'POST'],
+        ['name' => 'emailLink#describe', 'url' => '/portal/api/identity/email-link/describe', 'verb' => 'POST'],
+        ['name' => 'emailLink#redeem', 'url' => '/portal/api/identity/email-link/redeem', 'verb' => 'POST'],
         // The one case a redeemed reference link opens, read only, for the
         // short reference session it started (identity-ways-in-screens D2).
         ['name' => 'portalIdentity#referenceCase', 'url' => '/portal/api/identity/reference-case', 'verb' => 'GET'],
@@ -353,6 +406,11 @@ return [
         ['name' => 'guestAction#act', 'url' => '/portal/api/guest/{appId}/{actionId}', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
+        // The resident's saved draft of a create or endpoint action
+        // (site-multi-step-forms T8). Subject from the bearer only.
+        ['name' => 'portalDraft#show', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'GET'],
+        ['name' => 'portalDraft#save', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'PUT'],
+        ['name' => 'portalDraft#discard', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'DELETE'],
         // What the BRP or the KvK holds about the bearer (identity-registered-details).
         ['name' => 'portalRegisteredDetails#show', 'url' => '/portal/api/identity/registered-details', 'verb' => 'GET'],
         // The resident's own notice choices per kind and channel
@@ -367,6 +425,26 @@ return [
         ['name' => 'portalContactAddress#prefer', 'url' => '/portal/api/identity/addresses/preferred', 'verb' => 'POST'],
         ['name' => 'portalContactAddress#remove', 'url' => '/portal/api/identity/addresses/remove', 'verb' => 'POST'],
         ['name' => 'portalContactAddress#channel', 'url' => '/portal/api/identity/contact-channel', 'verb' => 'PUT'],
+        // A resident's own contacts and invitations (own-contacts-and-invitations).
+        ['name' => 'portalContacts#index', 'url' => '/portal/api/contacts', 'verb' => 'GET'],
+        ['name' => 'portalContacts#invite', 'url' => '/portal/api/contacts/invite', 'verb' => 'POST'],
+        ['name' => 'portalContacts#acceptInvitation', 'url' => '/portal/api/contacts/accept-invitation', 'verb' => 'POST'],
+        ['name' => 'portalContacts#respond', 'url' => '/portal/api/contacts/{id}/respond', 'verb' => 'POST'],
+        ['name' => 'portalContacts#resend', 'url' => '/portal/api/contacts/{id}/resend', 'verb' => 'POST'],
+        ['name' => 'portalContacts#withdraw', 'url' => '/portal/api/contacts/{id}/withdraw', 'verb' => 'POST'],
+        ['name' => 'portalContacts#remove', 'url' => '/portal/api/contacts/{id}', 'verb' => 'DELETE'],
+        // Shared plans with a caseworker (shared-plans-with-a-caseworker).
+        ['name' => 'portalPlans#index', 'url' => '/portal/api/plans', 'verb' => 'GET'],
+        ['name' => 'portalPlans#templates', 'url' => '/portal/api/plans/templates', 'verb' => 'GET'],
+        ['name' => 'portalPlans#start', 'url' => '/portal/api/plans', 'verb' => 'POST'],
+        ['name' => 'portalPlans#show', 'url' => '/portal/api/plans/{id}', 'verb' => 'GET'],
+        ['name' => 'portalPlans#update', 'url' => '/portal/api/plans/{id}', 'verb' => 'PATCH'],
+        ['name' => 'portalPlans#destroy', 'url' => '/portal/api/plans/{id}', 'verb' => 'DELETE'],
+        ['name' => 'portalPlans#pdf', 'url' => '/portal/api/plans/{id}/pdf', 'verb' => 'GET'],
+        ['name' => 'portalPlans#addParticipants', 'url' => '/portal/api/plans/{id}/participants', 'verb' => 'POST'],
+        ['name' => 'portalPlans#removeParticipant', 'url' => '/portal/api/plans/{id}/participants/{ref}', 'verb' => 'DELETE'],
+        ['name' => 'portalPlans#addAction', 'url' => '/portal/api/plans/{id}/actions', 'verb' => 'POST'],
+        ['name' => 'portalPlans#updateAction', 'url' => '/portal/api/plans/{id}/actions/{actionId}', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#removeAccount', 'url' => '/portal/api/identity/remove', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#requestAccess', 'url' => '/portal/api/identity/access-requests', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#myAccessRequests', 'url' => '/portal/api/identity/access-requests', 'verb' => 'GET'],
@@ -383,7 +461,14 @@ return [
         // re-verification (portal-scoped-crud, ADR-062 Phase 1; closes #16).
         // Registered before the /portal/{path} SPA catch-all; the {id} segment
         // makes these distinct from the collection-level routes above.
+        // cases-export-own-data-pdf: a list or one record the resident can see, as a PDF.
+        // The list route is registered first: its `export.pdf` would otherwise read as an {id}.
+        ['name' => 'contribution#exportCollectionPdf', 'url' => '/portal/api/collections/{register}/{schema}/export.pdf', 'verb' => 'GET'],
+        ['name' => 'contribution#exportObjectPdf', 'url' => '/portal/api/collections/{register}/{schema}/{id}/export.pdf', 'verb' => 'GET'],
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
+        // site-member-voting-record-and-confidential-papers: the papers of one object, on any collection that declares `documents`.
+        ['name' => 'portalCollectionDocuments#list', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents', 'verb' => 'GET'],
+        ['name' => 'portalCollectionDocuments#open', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents/{documentId}', 'verb' => 'GET'],
         // The declared history of one object the subject owns (portaliq#723).
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
         // Where one case stands, from its app's steps provider (site-mijn-omgeving-components REQ-SMO-022).
@@ -406,6 +491,15 @@ return [
         // collection's scope first; the proven id is stamped under the
         // action's rowField and forwarded. Before the /portal/{path} catch-all.
         ['name' => 'portalRowAction#forward', 'url' => '/portal/api/collections/{register}/{schema}/{id}/actions/{actionId}', 'verb' => 'POST'],
+        // Who may act for the represented party, and the mandates a holder keeps (site-mandates-the-represented-manage).
+        ['name' => 'mandate#given', 'url' => '/portal/api/mandates/given', 'verb' => 'GET'],
+        ['name' => 'mandate#invite', 'url' => '/portal/api/mandates/invitations', 'verb' => 'POST'],
+        ['name' => 'mandate#accept', 'url' => '/portal/api/mandates/invitations/accept', 'verb' => 'POST'],
+        ['name' => 'mandate#revokeInvitation', 'url' => '/portal/api/mandates/invitations/{id}', 'verb' => 'DELETE'],
+        ['name' => 'mandate#revoke', 'url' => '/portal/api/mandates/{id}/revoke', 'verb' => 'POST'],
+        ['name' => 'mandate#expiry', 'url' => '/portal/api/mandates/{id}/expiry', 'verb' => 'PUT'],
+        ['name' => 'mandate#held', 'url' => '/portal/api/mandates/held', 'verb' => 'GET'],
+        ['name' => 'mandate#stop', 'url' => '/portal/api/mandates/held/{id}/stop', 'verb' => 'POST'],
         // Stream a file attached to an owned object (portal-document-download,
         // the read-side counterpart of uploadFile). Ownership re-verified via
         // the scoped reader BEFORE the file is resolved; the collection must

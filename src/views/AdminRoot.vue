@@ -89,8 +89,17 @@
 					{{ t('portaliq', 'Revoke all sessions for this organisation') }}
 				</NcButton>
 			</form>
+			<NcNoteCard v-if="revokeFailed" type="error" data-testid="revoke-failed">
+				{{
+					t(
+						'portaliq',
+						'Not every session could be revoked. {count} session(s) were revoked; the rest may still be active. Try again, and check that OpenRegister is running.',
+						{ count: revokeResult ?? 0 },
+					)
+				}}
+			</NcNoteCard>
 			<p
-				v-if="revokeResult !== null"
+				v-else-if="revokeResult !== null"
 				class="portaliq-admin-settings__hint"
 				role="status">
 				{{
@@ -98,6 +107,41 @@
 						count: revokeResult,
 					})
 				}}
+			</p>
+		</NcSettingsSection>
+
+		<!--
+			The e-mail link sign-in (sign-in-with-an-email-link, decision 127).
+			OFF by default; the help text says the security review comes first.
+		-->
+		<NcSettingsSection
+			id="section-email-link"
+			:name="t('portaliq', 'Sign-in with an e-mail link')"
+			:description="
+				t(
+					'portaliq',
+					'Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.',
+				)
+			">
+			<NcNoteCard type="warning">
+				{{
+					t(
+						'portaliq',
+						'Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.',
+					)
+				}}
+			</NcNoteCard>
+			<NcCheckboxRadioSwitch
+				v-model="emailLinkEnabled"
+				type="switch"
+				:disabled="savingEmailLink"
+				data-testid="admin-email-link"
+				@update:modelValue="saveEmailLink">
+				{{ t('portaliq', 'Allow sign-in with an e-mail link') }}
+			</NcCheckboxRadioSwitch>
+			<p class="portaliq-admin-settings__hint" role="status">
+				<span v-if="emailLinkError">{{ emailLinkError }}</span>
+				<span v-else-if="emailLinkSaved">{{ t('portaliq', 'Saved.') }}</span>
 			</p>
 		</NcSettingsSection>
 
@@ -140,6 +184,54 @@
 						'portaliq',
 						'No groups configured — only administrators may edit pages.',
 					)
+				}}</span>
+			</p>
+		</NcSettingsSection>
+
+		<!--
+			Who may do which action (operate-roles-for-content-and-actions
+			REQ-ORA-001). One picker per action the app checks; an empty picker
+			means only administrators. Administrators always keep every action.
+		-->
+		<NcSettingsSection
+			:name="t('portaliq', 'Actions')"
+			:description="
+				t(
+					'portaliq',
+					'Choose which groups may do each action. Administrators always may.',
+				)
+			">
+			<div
+				v-for="row in grantRows"
+				:key="row.action"
+				class="portaliq-admin-settings__grant"
+				:data-testid="`admin-action-${row.action}`">
+				<p class="portaliq-admin-settings__grant-label">
+					<strong>{{ row.label }}</strong>
+					<span>{{ row.description }}</span>
+				</p>
+				<NcSelect
+					v-model="row.groups"
+					:inputLabel="row.label"
+					:options="grantGroupOptions"
+					:multiple="true"
+					:keepOpen="true"
+					:disabled="savingGrants"
+					label="label"
+					:data-testid="`admin-action-groups-${row.action}`"
+					@update:modelValue="saveGrantRows" />
+				<p
+					v-if="row.groups.length === 0"
+					class="portaliq-admin-settings__hint">
+					{{ t('portaliq', 'Only administrators') }}
+				</p>
+			</div>
+			<p class="portaliq-admin-settings__hint" role="status">
+				<span v-if="grantsError" data-testid="admin-actions-error">{{
+					grantsError
+				}}</span>
+				<span v-else-if="grantsSaved" data-testid="admin-actions-saved">{{
+					t('portaliq', 'Saved.')
 				}}</span>
 			</p>
 		</NcSettingsSection>
@@ -311,17 +403,20 @@ import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcNoteCard,
 	NcPasswordField,
 	NcSelect,
 	NcSettingsSection,
 	NcTextField,
 } from '@nextcloud/vue'
+import { loadGrants, saveGrants } from '../lib/actionGrants.js'
 
 export default {
 	name: 'AdminRoot',
 	components: {
 		NcSettingsSection,
+		NcCheckboxRadioSwitch,
 		NcNoteCard,
 		NcPasswordField,
 		NcSelect,
@@ -342,6 +437,7 @@ export default {
 			organisationInput: '',
 			revoking: false,
 			revokeResult: null,
+			revokeFailed: false,
 
 			// The groups that may edit portal pages, as `{id, label}` options
 			// so the picker round-trips its own objects; the service accepts
@@ -351,6 +447,13 @@ export default {
 			savingGroups: false,
 			groupsSaved: false,
 			groupsError: '',
+
+			// The Actions section: one row per action the app checks.
+			grantRows: [],
+			grantGroupOptions: [],
+			savingGrants: false,
+			grantsSaved: false,
+			grantsError: '',
 
 			// Visitor geography. The licence key field is write-only: it
 			// starts empty whether or not one is stored, and an empty
@@ -371,6 +474,12 @@ export default {
 			savingInternalBaseUrl: false,
 			internalBaseUrlSaved: false,
 			internalBaseUrlError: '',
+
+			// The e-mail link switch, off until an administrator turns it on.
+			emailLinkEnabled: false,
+			savingEmailLink: false,
+			emailLinkSaved: false,
+			emailLinkError: '',
 		}
 	},
 
@@ -414,6 +523,7 @@ export default {
 	 */
 	mounted() {
 		this.loadEditorGroups()
+		this.loadActionGrants()
 		this.loadGeo()
 	},
 
@@ -478,6 +588,55 @@ export default {
 		},
 
 		/**
+		 * Load the actions and the groups granted each.
+		 *
+		 * @return {Promise<void>} Resolves when loaded.
+		 *
+		 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-an-administrator-grants-an-action-to-a-group-on-screen-req-ora-001
+		 */
+		async loadActionGrants() {
+			try {
+				const loaded = await loadGrants(
+					axios,
+					generateUrl('/apps/portaliq/api/settings/actions'),
+				)
+				this.grantRows = loaded.rows
+				this.grantGroupOptions = loaded.groupOptions
+			} catch {
+				this.grantsError = t('portaliq', 'The actions could not be loaded.')
+			}
+		},
+
+		/**
+		 * Save the grants as the pickers now stand.
+		 *
+		 * @return {Promise<void>} Resolves when saved.
+		 *
+		 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-the-grants-accept-only-known-actions-and-existing-groups-req-ora-002
+		 */
+		async saveGrantRows() {
+			this.savingGrants = true
+			this.grantsSaved = false
+			this.grantsError = ''
+			try {
+				const stored = await saveGrants(
+					axios,
+					generateUrl('/apps/portaliq/api/settings/actions'),
+					this.grantRows,
+				)
+				this.grantRows = stored.rows
+				this.grantsSaved = true
+			} catch {
+				this.grantsError = t(
+					'portaliq',
+					'Saving the actions failed. The grants are unchanged.',
+				)
+			} finally {
+				this.savingGrants = false
+			}
+		},
+
+		/**
 		 * Load the geography settings and the database status. The
 		 * response carries whether a key is stored, never the key.
 		 *
@@ -504,11 +663,43 @@ export default {
 					metadata: (geo.status && geo.status.metadata) || {},
 				}
 				this.internalBaseUrl = String(data.internal_base_url || '')
+				this.emailLinkEnabled = data.email_link_signin_enabled === true
 			} catch {
 				this.geoError = t(
 					'portaliq',
 					'The geography settings could not be loaded.',
 				)
+			}
+		},
+
+		/**
+		 * Save the e-mail link switch; on failure the switch shows what is stored.
+		 *
+		 * @param {boolean} enabled The new state.
+		 * @return {Promise<void>} Resolves when saved.
+		 *
+		 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
+		 */
+		async saveEmailLink(enabled) {
+			this.savingEmailLink = true
+			this.emailLinkSaved = false
+			this.emailLinkError = ''
+			try {
+				const { data } = await axios.put(
+					generateUrl('/apps/portaliq/api/settings'),
+					{ email_link_signin_enabled: enabled === true },
+				)
+				this.emailLinkEnabled =
+					(data.config || {}).email_link_signin_enabled === true
+				this.emailLinkSaved = true
+			} catch {
+				this.emailLinkEnabled = !enabled
+				this.emailLinkError = t(
+					'portaliq',
+					'The setting could not be saved. Try again.',
+				)
+			} finally {
+				this.savingEmailLink = false
 			}
 		},
 
@@ -597,7 +788,7 @@ export default {
 		 * is SessionAdminController::revokeOrganisation(), which carries this
 		 * same anchor.
 		 *
-		 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.2
+		 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 		 */
 		async revokeOrganisation() {
 			if (this.organisationInput === '') {
@@ -605,6 +796,7 @@ export default {
 			}
 			this.revoking = true
 			this.revokeResult = null
+			this.revokeFailed = false
 			try {
 				const { data } = await axios.post(
 					generateUrl(
@@ -613,8 +805,11 @@ export default {
 					{ organisation: this.organisationInput },
 				)
 				this.revokeResult = data.revoked ?? 0
-			} catch {
-				this.revokeResult = 0
+			} catch (error) {
+				// A refused or incomplete run is an error, never "0 revoked"
+				// (security review S5); a 503 still says how many were revoked.
+				this.revokeFailed = true
+				this.revokeResult = error?.response?.data?.revoked ?? 0
 			} finally {
 				this.revoking = false
 			}
@@ -632,6 +827,20 @@ export default {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 	line-height: 1.5;
+}
+
+.portaliq-admin-settings__grant {
+	margin-block-end: 1.25rem;
+}
+
+.portaliq-admin-settings__grant-label {
+	display: flex;
+	flex-direction: column;
+	margin: 0 0 0.25rem;
+}
+
+.portaliq-admin-settings__grant-label span {
+	color: var(--color-text-maxcontrast);
 }
 
 .portaliq-admin-settings__revoke {

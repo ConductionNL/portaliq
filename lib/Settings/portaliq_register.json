@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.69.0"
+        "version": "0.93.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.69.0",
+                "version": "0.93.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -46,8 +46,12 @@
                     "portalReporterContact",
                     "portalRevealRequest",
                     "portalMandate",
+                    "portalContact",
+                    "portalPlan",
+                    "portalPlanTemplate",
                     "portalInvitation",
                     "portalReferenceLink",
+                    "portalEmailLink",
                     "portalAccessRequest",
                     "portalFormBinding",
                     "portalIntakeSubmission",
@@ -72,7 +76,15 @@
                     "portalAvailabilityDaily",
                     "portalAvailabilityOutage",
                     "media",
-                    "portalNotice"
+                    "portalNotice",
+                    "portalDraft",
+                    "portalAction",
+                    "portalMailTemplate",
+                    "portalMailLog",
+                    "portalFaq",
+                    "portalFinder",
+                    "sharedBlock",
+                    "accessibilityMeasurement"
                 ]
             }
         },
@@ -737,7 +749,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.17.0",
+                "version": "0.18.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -767,7 +779,8 @@
                             "digid",
                             "eidas",
                             "generic",
-                            "dev"
+                            "dev",
+                            "email"
                         ],
                         "example": "eherkenning"
                     },
@@ -800,6 +813,19 @@
                         "type": "string",
                         "description": "Contact email for notifications (masked in logs).",
                         "example": "contact@example.org"
+                    },
+                    "signInAddress": {
+                        "type": "string",
+                        "title": "Sign-in address",
+                        "description": "The address an e-mail link is sent to (sign-in-with-an-email-link H2). Only an account of identity type `email` has one. Self-service never changes it; staff do, or a session at `substantial` or higher, and the old address is told. Stored lower case and trimmed.",
+                        "authorization": {
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
+                        }
                     },
                     "contactAddresses": {
                         "title": "Contact addresses",
@@ -981,8 +1007,12 @@
                         "description": "SHA-256 of the one-time secret in the invitation mail of a waiting account. Emptied when the secret is redeemed. Readable by administrators only.",
                         "example": "9f86d0…",
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "claimCodeHash": {
@@ -991,8 +1021,12 @@
                         "description": "HMAC-SHA256 of the one-time code in the invitation letter of a waiting account, keyed with a key derived from the instance secret. Emptied when the code is redeemed. Readable by administrators only.",
                         "example": "9f86d0…",
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "claimExpiresAt": {
@@ -1002,8 +1036,12 @@
                         "description": "When the invitation of a waiting account stops working.",
                         "example": "2026-10-12T09:00:00+00:00",
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "claimAttempts": {
@@ -1012,8 +1050,12 @@
                         "description": "How many wrong invitation secrets this account offered inside the running hour. Five lock the redeem route for the account.",
                         "example": 0,
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "claimAttemptsSince": {
@@ -1023,8 +1065,12 @@
                         "description": "When the first wrong invitation secret of the running hour was offered.",
                         "example": "2026-10-05T09:00:00+00:00",
                         "authorization": {
-                            "read": ["admin"],
-                            "update": ["admin"]
+                            "read": [
+                                "admin"
+                            ],
+                            "update": [
+                                "admin"
+                            ]
                         }
                     },
                     "pendingEmailMode": {
@@ -1042,6 +1088,17 @@
                         "format": "date-time",
                         "description": "When the owner's removal request was carried out.",
                         "example": "2026-09-18T12:00:00+00:00"
+                    },
+                    "hiddenPages": {
+                        "title": "Pages hidden for this client",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Pages of the installed apps this account does not see, as app:pageId. A hidden page also closes the collections only that page shows, so the account cannot read those records through the API either. Staff set it; the account holder cannot change it.",
+                        "example": [
+                            "pipelinq:invoices"
+                        ]
                     }
                 }
             },
@@ -1049,11 +1106,11 @@
                 "slug": "portalSession",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "admin"
                     ]
                 },
                 "icon": "Ticket",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Session",
                 "description": "A bearer session issued by Portaliq's auth edge. Records the minted token id (jti) so sessions can be revoked. Owned by Portaliq; never publicly readable.",
                 "type": "object",
@@ -1180,7 +1237,7 @@
                     ]
                 },
                 "icon": "EmailOutline",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "configuration": {
                     "linkedTypes": [
                         "talk"
@@ -1307,6 +1364,26 @@
                         "type": "string",
                         "description": "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.",
                         "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                    },
+                    "readReceiptRequested": {
+                        "title": "Read receipt requested",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the sender asked to see when this message was opened. Set by the sending app. Opening the message never changes it, and the resident is told it was asked.",
+                        "example": false
+                    },
+                    "readAt": {
+                        "title": "Read at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The moment the resident first opened the message. Written once, and only when a read receipt was requested.",
+                        "example": "2026-10-08T09:14:00+00:00"
+                    },
+                    "sendingRef": {
+                        "title": "Sending reference",
+                        "type": "string",
+                        "description": "An id the sending app chooses, shared by every copy of one sending, so the readers of one letter can be listed together.",
+                        "example": "brief-groep-5b-2026-10-07"
                     }
                 }
             },
@@ -1620,7 +1697,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.7.0",
+                "version": "0.8.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -1915,6 +1992,11 @@
                                     "type": "string",
                                     "description": "On a cases collection: the field whose value words say whose turn it is."
                                 },
+                                "caseField": {
+                                    "title": "Case field",
+                                    "type": "string",
+                                    "description": "On a tasks collection: the field with the reference of the case a task belongs to. The case page lists the open tasks whose value equals its case. Without it, no task shows on a case page."
+                                },
                                 "visibleFromField": {
                                     "title": "Visible from field",
                                     "type": "string",
@@ -2042,6 +2124,61 @@
                                     "title": "Options providers",
                                     "type": "object",
                                     "description": "Per-field value sources for select inputs, keyed by property name (contribution-manifest-v3). Each provider declares a `type` from the normaliser's allowed provider kinds; an unrecognised kind is dropped rather than rendered."
+                                },
+                                "summary": {
+                                    "title": "Start tile summary",
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "description": "One sentence that offers this create or endpoint action as a start tile (site-nlds-widget-palette D6). Plain text, at most 200 characters. Until decision 127 this key held the answer sentence, which now lives under answerSummary.",
+                                    "example": "Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar."
+                                },
+                                "audiences": {
+                                    "title": "Start tile audiences",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "The audiences a start tile is meant for, a subset of the provider's own audiences; the hint for the way in when a signed-out visitor picks the tile.",
+                                    "example": [
+                                        "citizen"
+                                    ]
+                                },
+                                "answerSummary": {
+                                    "title": "Answer sentence",
+                                    "type": "object",
+                                    "required": [
+                                        "template"
+                                    ],
+                                    "properties": {
+                                        "label": {
+                                            "title": "Sentence lead-in",
+                                            "description": "The words that open the sentence, for example You report. Optional.",
+                                            "type": "string",
+                                            "maxLength": 120
+                                        },
+                                        "template": {
+                                            "title": "Sentence template",
+                                            "description": "The sentence with the action's own fields named as {field}. At most 300 characters.",
+                                            "type": "string",
+                                            "maxLength": 300
+                                        },
+                                        "phrases": {
+                                            "title": "Sentence phrases",
+                                            "description": "Per field, the words shown for each answer value instead of the raw value.",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "description": "One sentence from the resident's own answers, shown above the send button and on the confirmation (action-summary-sentence). The template names only the action's own fields as {field}.",
+                                    "example": {
+                                        "label": "U meldt",
+                                        "template": "{learner} is {when} {reason}.",
+                                        "phrases": {
+                                            "when": {
+                                                "today": "vandaag de hele dag"
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2448,7 +2585,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.12.0",
+                "version": "0.24.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -2474,6 +2611,56 @@
                         "type": "string",
                         "description": "One supporting line shown under the portal name in the footer's logo block. The NL Design System reference carries one; without this field every portal's footer showed a bare title.",
                         "example": "Één plek voor alle publicaties van de gemeente"
+                    },
+                    "paymentHosts": {
+                        "title": "Payment hosts",
+                        "type": "array",
+                        "description": "The host names a resident may be sent to for paying, such as www.mollie.com. Only https addresses on these hosts are followed. Empty means no payment page is followed.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": []
+                    },
+                    "statementTexts": {
+                        "title": "Statement texts",
+                        "type": "object",
+                        "description": "The wording of the statements a form asks on its review step, one wording per portal. Each has a `text` and a `version`; the version is recorded with every acceptance. A required statement without a text blocks the form.",
+                        "properties": {
+                            "truth": {
+                                "title": "Statement of truth text",
+                                "type": "object",
+                                "description": "The statement of truth.",
+                                "properties": {
+                                    "text": {
+                                        "title": "Text",
+                                        "type": "string",
+                                        "description": "What the resident ticks."
+                                    },
+                                    "version": {
+                                        "title": "Version",
+                                        "type": "string",
+                                        "description": "The version of this wording."
+                                    }
+                                }
+                            },
+                            "privacy": {
+                                "title": "Privacy consent text",
+                                "type": "object",
+                                "description": "The privacy consent.",
+                                "properties": {
+                                    "text": {
+                                        "title": "Text",
+                                        "type": "string",
+                                        "description": "What the resident ticks."
+                                    },
+                                    "version": {
+                                        "title": "Version",
+                                        "type": "string",
+                                        "description": "The version of this wording."
+                                    }
+                                }
+                            }
+                        }
                     },
                     "footer": {
                         "title": "Footer",
@@ -3015,6 +3202,16 @@
                         "description": "The text of one button in the header that opens the visitor's own area, where they choose how to sign in. Empty shows a link for each way to sign in instead.",
                         "example": "Mijn Wilgenboom"
                     },
+                    "breadcrumb": {
+                        "title": "Words of the breadcrumb",
+                        "type": "string",
+                        "description": "Which words name the page on screen in the breadcrumb. `menu` uses the header menu's words when the menu links to the page. `page` uses the page's own title. Empty or unknown means `menu`.",
+                        "enum": [
+                            "menu",
+                            "page"
+                        ],
+                        "example": "page"
+                    },
                     "residentMenu": {
                         "title": "Menu of the own area",
                         "type": "object",
@@ -3056,6 +3253,19 @@
                                             "inbox"
                                         ]
                                     }
+                                ]
+                            },
+                            "leaveOut": {
+                                "title": "Left out of the menu",
+                                "type": "array",
+                                "description": "Items of the own area this portal leaves out of the menu by name, such as cases, tasks or access, when its design has no place for them. The pages stay reachable by their address. Empty leaves nothing out.",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "cases",
+                                    "tasks",
+                                    "access"
                                 ]
                             }
                         }
@@ -3107,7 +3317,8 @@
                                         "oidc",
                                         "digid",
                                         "eherkenning",
-                                        "eidas"
+                                        "eidas",
+                                        "email-link"
                                     ]
                                 },
                                 "example": [
@@ -3389,6 +3600,7 @@
                                         "form_field",
                                         "form_abandon",
                                         "page_not_found",
+                                        "assistant_asked",
                                         "js_error",
                                         "email_open",
                                         "email_click"
@@ -3492,6 +3704,7 @@
                                                 "form_field",
                                                 "form_abandon",
                                                 "page_not_found",
+                                                "assistant_asked",
                                                 "js_error",
                                                 "email_open",
                                                 "email_click"
@@ -4159,6 +4372,194 @@
                         "default": [],
                         "example": []
                     },
+                    "tokens": {
+                        "title": "Token overrides",
+                        "type": "object",
+                        "description": "Design tokens this portal sets on top of its theme, as token name to value. A name must start with --nldesign-, --utrecht-, --tilburg-, --conduction-, --ams- or --c-. A value may hold only the characters a token value needs, and a value with url(, expression, javascript:, data:, @import or a backslash is dropped.",
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "example": {
+                            "--nldesign-header-link-color": "#f36c21"
+                        }
+                    },
+                    "assistant": {
+                        "title": "Assistant",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The assistant on the public site. It answers from this portal's published pages, glossary and publications only. Off unless enabled is true, and it needs hermiq.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "enabled": {
+                                "title": "Assistant enabled",
+                                "type": "boolean",
+                                "description": "Whether the assistant widget is offered and answers. Off by default.",
+                                "default": false
+                            },
+                            "excludedRoutes": {
+                                "title": "Pages the assistant leaves out",
+                                "type": "array",
+                                "description": "Page routes the assistant does not read or link to.",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "themes": {
+                        "title": "Themes",
+                        "type": "array",
+                        "description": "The life domains this portal groups a resident's items by, such as parking or income. Each has a slug, a title, an intro and the word for the products held in it.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "slug": {
+                                    "title": "Theme slug",
+                                    "type": "string",
+                                    "description": "The slug a contribution tags its collections and actions with. Lower case letters, digits and hyphens."
+                                },
+                                "title": {
+                                    "title": "Theme title",
+                                    "type": "string",
+                                    "description": "The name of the theme in the resident menu and as the heading of its page."
+                                },
+                                "intro": {
+                                    "title": "Theme intro",
+                                    "type": "string",
+                                    "description": "The sentence under the heading of the theme page."
+                                },
+                                "productsLabel": {
+                                    "title": "Products label",
+                                    "type": "string",
+                                    "description": "What the products held in this theme are called, for example parkeervergunningen."
+                                }
+                            }
+                        }
+                    },
+                    "plansEnabled": {
+                        "title": "Shared plans enabled",
+                        "type": "boolean",
+                        "description": "Whether signed-in residents of this portal get the page where they work on plans with their contacts. Off by default. It needs contacts to be on.",
+                        "default": false
+                    },
+                    "contactsEnabled": {
+                        "title": "Contacts enabled",
+                        "type": "boolean",
+                        "description": "Whether signed-in residents of this portal get the page with their own contacts and can invite people. Off by default.",
+                        "default": false
+                    },
+                    "searchInsideDocuments": {
+                        "title": "Search inside documents",
+                        "type": "boolean",
+                        "description": "Whether a visitor's search also reads the text inside public documents. On by default. Switch it off when the catalogue should match titles and metadata only. Only the published, redacted copy of a document is ever searched.",
+                        "default": true,
+                        "example": true
+                    },
+                    "navigation": {
+                        "title": "Navigation",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "Which pages of the installed apps this portal shows, and in which order, per audience. Each audience maps to a list of pages as app:pageId with hidden true or false. A page not in the list stays visible after the listed ones, so a newly installed app is never hidden by an older choice. Hiding a page here is not access control: the records stay readable by an account that may see them on another portal.",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "page"
+                                ],
+                                "properties": {
+                                    "page": {
+                                        "type": "string",
+                                        "title": "Page",
+                                        "description": "The page as app:pageId."
+                                    },
+                                    "hidden": {
+                                        "type": "boolean",
+                                        "title": "Hidden",
+                                        "description": "Whether the page is left out of the navigation."
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "help": {
+                        "title": "Help details",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The contact details of the help dialog on forms: introduction, phone with a note on what to say, opening hours, the desk and an e-mail address. A form may override each key. Empty shows no \"Hulp nodig?\".",
+                        "additionalProperties": false,
+                        "properties": {
+                            "intro": {
+                                "title": "Introduction",
+                                "type": "string",
+                                "description": "The sentence that opens the help dialog."
+                            },
+                            "image": {
+                                "title": "Image",
+                                "type": "string",
+                                "description": "A picture in the help dialog: a path in the site or an https address."
+                            },
+                            "phone": {
+                                "title": "Phone",
+                                "type": "string",
+                                "description": "The phone number of the desk."
+                            },
+                            "phoneNote": {
+                                "title": "What to say on the phone",
+                                "type": "string",
+                                "description": "What to tell the desk when calling. It may name the form with {formulier}."
+                            },
+                            "hours": {
+                                "title": "Opening hours",
+                                "type": "string",
+                                "description": "When the desk can be reached."
+                            },
+                            "desk": {
+                                "title": "Desk",
+                                "type": "string",
+                                "description": "Where to go in person, and what to do first."
+                            },
+                            "email": {
+                                "title": "E-mail",
+                                "type": "string",
+                                "description": "The address for \"Vraag per e-mail\"."
+                            }
+                        }
+                    },
+                    "sectionHelp": {
+                        "title": "Help per part of the area",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "A short help text for each part of Mijn omgeving, keyed by overview, cases, tasks, messages and contacts. A part with a text shows \"Hulp bij deze pagina\"; a part without shows nothing.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "overview": {
+                                "title": "Overview",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            },
+                            "cases": {
+                                "title": "Cases",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            },
+                            "tasks": {
+                                "title": "Tasks",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            },
+                            "messages": {
+                                "title": "Messages",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            },
+                            "contacts": {
+                                "title": "Contacts",
+                                "type": "string",
+                                "description": "The help text of this part."
+                            }
+                        }
+                    },
                     "registeredDetails": {
                         "title": "My details forms",
                         "type": "object",
@@ -4178,13 +4579,66 @@
                         },
                         "default": {},
                         "example": {}
+                    },
+                    "accessibilityAudit": {
+                        "title": "Accessibility audit",
+                        "type": "object",
+                        "widget": "json",
+                        "additionalProperties": false,
+                        "description": "The independent audit the accessibility statement rests on: the party that did it, the date, the report and the result. Only an audit supports status A or B, and only for three years.",
+                        "properties": {
+                            "party": {
+                                "title": "Audited by",
+                                "type": "string",
+                                "description": "The independent party that did the audit."
+                            },
+                            "date": {
+                                "title": "Audit date",
+                                "type": "string",
+                                "format": "date",
+                                "description": "The date of the audit report."
+                            },
+                            "reportUrl": {
+                                "title": "Report",
+                                "type": "string",
+                                "description": "Where the audit report can be read, an https address."
+                            },
+                            "result": {
+                                "title": "Result",
+                                "type": "string",
+                                "enum": [
+                                    "A",
+                                    "B",
+                                    "C",
+                                    "D"
+                                ],
+                                "description": "The status the audit found, from the national model."
+                            }
+                        }
+                    },
+                    "accessibilityRegisterUrl": {
+                        "title": "Register entry",
+                        "type": "string",
+                        "description": "The address of this website's entry in the national register of accessibility statements. The statement links to it.",
+                        "example": "https://www.toegankelijkheidsverklaring.nl/register/12345"
+                    },
+                    "accessibilityPages": {
+                        "title": "Pages to measure",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The pages the accessibility measurement checks besides the home, search and not-found pages, as site routes. Add a publication page here.",
+                        "example": [
+                            "/contact"
+                        ]
                     }
                 }
             },
             "menu": {
                 "slug": "menu",
                 "icon": "Menu",
-                "version": "0.1.0",
+                "version": "0.1.1",
                 "title": "Menu",
                 "authorization": {
                     "read": [
@@ -4277,6 +4731,11 @@
                                     "description": "One level of sub-items. A sub-item MUST NOT declare its own `items` — three-level nesting is rejected.",
                                     "items": {
                                         "type": "object",
+                                        "not": {
+                                            "required": [
+                                                "items"
+                                            ]
+                                        },
                                         "properties": {
                                             "order": {
                                                 "title": "Order",
@@ -4340,7 +4799,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -4404,6 +4863,11 @@
                         "type": "string",
                         "description": "The address of an image shown by a hero widget, or media:<id> for an item of this portal's media library. Optional: a page without one renders as before.",
                         "example": "https://example.org/images/webinar-hero.jpg"
+                    },
+                    "helpText": {
+                        "title": "Help text",
+                        "type": "string",
+                        "description": "A short help text for this page. When set, the page shows \"Hulp bij deze pagina\" under its heading."
                     },
                     "seoTitle": {
                         "title": "Search title",
@@ -4839,6 +5303,7 @@
                             "form_field",
                             "form_abandon",
                             "page_not_found",
+                            "assistant_asked",
                             "js_error",
                             "heat_click",
                             "heat_scroll",
@@ -5068,7 +5533,7 @@
                     ]
                 },
                 "icon": "ChartLine",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "title": "Portal Traffic Daily",
                 "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API. One record per portal-day for all visits and one per configured segment; a roll-up portal's record sums its members.",
                 "type": "object",
@@ -5506,6 +5971,35 @@
                             }
                         },
                         "example": []
+                    },
+                    "zeroResultSearches": {
+                        "title": "Searches that found nothing",
+                        "type": "array",
+                        "description": "Search terms whose result count was zero, with how often. Only when the portal keeps search terms. A search that did not report its count is left out.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "term": {
+                                    "title": "Term",
+                                    "type": "string",
+                                    "description": "The search term, as typed.",
+                                    "example": ""
+                                },
+                                "count": {
+                                    "title": "Count",
+                                    "type": "integer",
+                                    "description": "How often it found nothing.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "searchesWithoutCount": {
+                        "title": "Searches without a count",
+                        "type": "integer",
+                        "description": "Searches that did not report how many results they found, so they cannot be counted as found nothing.",
+                        "example": 0
                     },
                     "downloads": {
                         "title": "Downloads",
@@ -6116,7 +6610,7 @@
             "form": {
                 "slug": "form",
                 "icon": "FormSelect",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Form",
                 "authorization": {
                     "read": [
@@ -6235,6 +6729,50 @@
                                         "type": "string"
                                     }
                                 }
+                            }
+                        }
+                    },
+                    "help": {
+                        "title": "Form help details",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The help dialog of this form. Each key set here overrides the portal's help details for this form.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "intro": {
+                                "title": "Introduction",
+                                "type": "string",
+                                "description": "The sentence that opens the help dialog."
+                            },
+                            "image": {
+                                "title": "Image",
+                                "type": "string",
+                                "description": "A picture in the help dialog: a path in the site or an https address."
+                            },
+                            "phone": {
+                                "title": "Phone",
+                                "type": "string",
+                                "description": "The phone number of the desk."
+                            },
+                            "phoneNote": {
+                                "title": "What to say on the phone",
+                                "type": "string",
+                                "description": "What to tell the desk when calling. It may name the form with {formulier}."
+                            },
+                            "hours": {
+                                "title": "Opening hours",
+                                "type": "string",
+                                "description": "When the desk can be reached."
+                            },
+                            "desk": {
+                                "title": "Desk",
+                                "type": "string",
+                                "description": "Where to go in person, and what to do first."
+                            },
+                            "email": {
+                                "title": "E-mail",
+                                "type": "string",
+                                "description": "The address for \"Vraag per e-mail\"."
                             }
                         }
                     },
@@ -6445,7 +6983,7 @@
                     ]
                 },
                 "icon": "FileTreeOutline",
-                "version": "0.2.0",
+                "version": "0.4.0",
                 "title": "Portal Case Type",
                 "description": "What a citizen may change on a case of this type, and until when. The flag lives on the field, so `portalWritable` carries one entry per field; the two windows say in which statuses an amendment and a document are still accepted; `portalStatusLabels` carries the words the citizen reads. A case app owns all four and the portal renders them without adding a vocabulary of its own.",
                 "type": "object",
@@ -6547,6 +7085,74 @@
                                 "description": "The sentence the citizen reads once the window has closed.",
                                 "type": "string",
                                 "example": "De zaak neemt geen stukken meer aan."
+                            }
+                        }
+                    },
+                    "portalFee": {
+                        "title": "Fee",
+                        "type": "object",
+                        "description": "What a request of this type costs and which action of the case app takes the payment. The portal holds no price: it shows this amount and forwards it, and ignores any amount the browser sends. Absent means the request is free.",
+                        "properties": {
+                            "amount": {
+                                "title": "Amount",
+                                "type": "string",
+                                "description": "The fee as a decimal with a point, such as 45.00.",
+                                "example": "45.00"
+                            },
+                            "currency": {
+                                "title": "Currency",
+                                "type": "string",
+                                "description": "The three-letter currency code, such as EUR.",
+                                "example": "EUR"
+                            },
+                            "description": {
+                                "title": "What the fee is for",
+                                "type": "string",
+                                "description": "A short line the payment page shows.",
+                                "example": "Parkeervergunning"
+                            },
+                            "payAction": {
+                                "title": "Pay action",
+                                "type": "string",
+                                "description": "The id of the endpoint action in the case app's contribution that creates the payment and answers with the checkout address.",
+                                "example": "create-payment"
+                            }
+                        }
+                    },
+                    "portalStatusActions": {
+                        "title": "Next step per status",
+                        "type": "object",
+                        "description": "What the current status step offers the resident, keyed by the status value. Each entry has a `label` (the button words), a `kind` (`task`, `page` or `action`) and a `target`: the task type to open, a site route, or the id of an action the case declares. A status without an entry shows no button.",
+                        "additionalProperties": {
+                            "type": "object",
+                            "required": [
+                                "label",
+                                "kind",
+                                "target"
+                            ],
+                            "properties": {
+                                "label": {
+                                    "title": "Button label",
+                                    "type": "string",
+                                    "description": "The words on the button.",
+                                    "example": "Stuur de ontbrekende stukken"
+                                },
+                                "kind": {
+                                    "title": "Kind",
+                                    "type": "string",
+                                    "enum": [
+                                        "task",
+                                        "page",
+                                        "action"
+                                    ],
+                                    "description": "Where the button leads: to a task, to a page or to one of the case's actions."
+                                },
+                                "target": {
+                                    "title": "Target",
+                                    "type": "string",
+                                    "description": "The task type, the site route or the action id, by kind.",
+                                    "example": "aanvullen"
+                                }
                             }
                         }
                     },
@@ -6667,7 +7273,7 @@
                     ]
                 },
                 "icon": "FolderOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Case",
                 "description": "A citizen's own case as the portal sees it: scoped by subjectRef, pointing at its case type, carrying its status and the answers the citizen gave. `portalWrites` is the append-only record of what the citizen changed, naming the identity and the mandate each change acted under.",
                 "type": "object",
@@ -6737,6 +7343,312 @@
                         "type": "string",
                         "description": "What the applicant said when withdrawing, when they said anything.",
                         "example": "Ik ben toch niet verhuisd."
+                    },
+                    "plannedDecisionDate": {
+                        "title": "Expected decision",
+                        "type": "string",
+                        "format": "date",
+                        "description": "The day the organisation plans to decide. Written by the case app. The case page shows it as Verwacht besluit, only when set.",
+                        "example": "2026-10-20"
+                    },
+                    "legalDecisionDate": {
+                        "title": "Latest decision day",
+                        "type": "string",
+                        "format": "date",
+                        "description": "The last day the law allows for the decision. Written by the case app. The case page shows it as Uiterlijk klaar op, and the case card takes it as its due day.",
+                        "example": "2026-11-01"
+                    }
+                }
+            },
+            "portalContact": {
+                "slug": "portalContact",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountMultiple",
+                "version": "0.1.0",
+                "title": "Portal contact",
+                "description": "One side of a link between two people who work together in the portal. A link is two rows, one held by each side, so each reads only its own. A person becomes a contact after both sides approve. A contact sees a name and the messages sent to them, never cases or personal data. Written by the portal's contact service; never by a resident's own form.",
+                "type": "object",
+                "required": [
+                    "owner",
+                    "state"
+                ],
+                "properties": {
+                    "owner": {
+                        "title": "Owner",
+                        "type": "string",
+                        "description": "The subject reference of the resident who holds this row. The portal reads and writes a row only for its owner.",
+                        "example": "bsn-123456782"
+                    },
+                    "contactRef": {
+                        "title": "Contact",
+                        "type": "string",
+                        "description": "The subject reference of the other account. Empty while the invitation waits for someone without an account.",
+                        "example": "bsn-987654321"
+                    },
+                    "role": {
+                        "title": "Role",
+                        "type": "string",
+                        "enum": [
+                            "begeleider",
+                            "contact",
+                            "organisatie"
+                        ],
+                        "description": "How the contact is shown. A begeleider is written by the case or plan app, never by the resident; a resident adds contacts.",
+                        "default": "contact",
+                        "example": "contact"
+                    },
+                    "displayName": {
+                        "title": "Name",
+                        "type": "string",
+                        "description": "The other person's name as the owner sees it.",
+                        "example": "Ahmed Bakker"
+                    },
+                    "line": {
+                        "title": "Line",
+                        "type": "string",
+                        "description": "The organisation or relation shown under the name.",
+                        "example": "Schuldhulpverlening"
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "requested",
+                            "invited",
+                            "approved",
+                            "declined",
+                            "withdrawn"
+                        ],
+                        "description": "requested: the other side asked and waits for the owner. invited: the owner asked and waits for the other side. approved: both agreed. declined and withdrawn end the link.",
+                        "example": "approved"
+                    },
+                    "email": {
+                        "title": "E-mail address",
+                        "type": "string",
+                        "description": "The address an invitation was sent to. Only on an invitation to someone without an account.",
+                        "example": "j.devries@example.nl"
+                    },
+                    "message": {
+                        "title": "Message",
+                        "type": "string",
+                        "description": "The short message the owner wrote with the invitation.",
+                        "example": "Kijk je mee met mijn plan?"
+                    },
+                    "tokenHash": {
+                        "title": "Token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret in the invitation link. The secret is in the mail and nowhere else.",
+                        "example": "9f86d0"
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the invitation or request was sent or sent again.",
+                        "example": "2026-10-08T10:00:00Z"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the invitation link stops working: 14 days after it was sent.",
+                        "example": "2026-10-22T10:00:00Z"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant the row belongs to, stamped by the portal.",
+                        "example": "gemeente-zuiddrecht"
+                    }
+                }
+            },
+            "portalPlan": {
+                "slug": "portalPlan",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "ClipboardCheckOutline",
+                "version": "0.1.0",
+                "title": "Shared plan",
+                "description": "A plan a resident works on with their contacts: a goal, actions, a note and an end date. Every participant sees and changes the goal, the actions and the note; only the owner changes the participants and the end date, marks it done or deletes it. Written by the portal's plan service; never by a resident's own form.",
+                "type": "object",
+                "required": [
+                    "owner",
+                    "title",
+                    "status"
+                ],
+                "properties": {
+                    "owner": {
+                        "title": "Owner",
+                        "type": "string",
+                        "description": "The subject reference of the resident who made the plan.",
+                        "example": "bsn-123456782"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant the plan belongs to, stamped by the portal.",
+                        "example": "gemeente-zuiddrecht"
+                    },
+                    "participants": {
+                        "title": "Participants",
+                        "type": "array",
+                        "description": "The subject references of the people who take part besides the owner. Each is an approved contact of the owner.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "title": {
+                        "title": "Plan title",
+                        "type": "string",
+                        "description": "The name of the plan.",
+                        "example": "Schuldhulp op orde"
+                    },
+                    "goal": {
+                        "title": "Goal",
+                        "type": "string",
+                        "description": "What the plan is to reach.",
+                        "example": "Over drie maanden een overzicht van alle schulden en een vaste afbetaalregeling."
+                    },
+                    "goalDetail": {
+                        "title": "Goal explained",
+                        "type": "string",
+                        "description": "More about the goal."
+                    },
+                    "endDate": {
+                        "title": "End date",
+                        "type": "string",
+                        "description": "The day the plan should be finished.",
+                        "format": "date",
+                        "example": "2026-10-27"
+                    },
+                    "status": {
+                        "title": "Plan status",
+                        "type": "string",
+                        "description": "Whether the plan is running or done. A done plan is read-only.",
+                        "enum": [
+                            "running",
+                            "done"
+                        ],
+                        "default": "running",
+                        "example": "running"
+                    },
+                    "template": {
+                        "title": "Template",
+                        "type": "string",
+                        "description": "The template the plan was started from. Empty for a plan started empty."
+                    },
+                    "note": {
+                        "title": "Shared note",
+                        "type": "object",
+                        "description": "The note every participant can edit: text, who edited it last and when.",
+                        "widget": "json"
+                    },
+                    "doneAt": {
+                        "title": "Done at",
+                        "type": "string",
+                        "description": "When the plan was marked done. A done plan is hidden a year later.",
+                        "format": "date-time"
+                    },
+                    "endReminderSentAt": {
+                        "title": "End reminder sent at",
+                        "type": "string",
+                        "description": "When the reminder before the end date was sent. Cleared when the end date changes, so a new date earns a new reminder.",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "portalPlanTemplate": {
+                "slug": "portalPlanTemplate",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "icon": "ClipboardListOutline",
+                "version": "0.1.0",
+                "title": "Plan template",
+                "description": "A starting point for a plan that the municipality sets up: a goal, the first actions with their day offsets and a duration. Only a published template is offered to residents.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "title"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this template belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "title": {
+                        "title": "Template title",
+                        "type": "string",
+                        "description": "The name shown when a resident chooses where to begin.",
+                        "example": "Schuldhulp op orde"
+                    },
+                    "summary": {
+                        "title": "Template summary",
+                        "type": "string",
+                        "description": "One line under the name: what the template fills in."
+                    },
+                    "goal": {
+                        "title": "Template goal",
+                        "type": "string",
+                        "description": "The goal the plan starts with."
+                    },
+                    "goalDetail": {
+                        "title": "Template goal explained",
+                        "type": "string",
+                        "description": "More about the goal."
+                    },
+                    "durationDays": {
+                        "title": "Duration in days",
+                        "type": "integer",
+                        "description": "How many days after the start the plan ends.",
+                        "default": 56,
+                        "example": 56
+                    },
+                    "actions": {
+                        "title": "Template actions",
+                        "type": "array",
+                        "description": "The actions the plan starts with, each with a title, a kind (once or recurring) and the days after the start it should be done.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "title": "Action title",
+                                    "type": "string",
+                                    "description": "What has to be done."
+                                },
+                                "kind": {
+                                    "title": "Action kind",
+                                    "type": "string",
+                                    "description": "Once, or coming back.",
+                                    "enum": [
+                                        "once",
+                                        "recurring"
+                                    ]
+                                },
+                                "offsetDays": {
+                                    "title": "Days after the start",
+                                    "type": "integer",
+                                    "description": "How many days after the plan starts the action should be done."
+                                }
+                            }
+                        }
+                    },
+                    "published": {
+                        "title": "Published",
+                        "type": "boolean",
+                        "description": "Whether residents are offered this template.",
+                        "default": false
                     }
                 }
             },
@@ -6748,7 +7660,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Mandate",
                 "description": "What a portal identity may act for on behalf of an organisation (portal-identity-and-the-organisations-cases REQ-PIOC-002). No mandate recorded means no organisation case is visible: the empty default is the closed one. Owned by portaliq's auth edge; never publicly readable.",
                 "type": "object",
@@ -6831,6 +7743,31 @@
                         "format": "date-time",
                         "description": "When it stops granting anything. Empty means it does not expire.",
                         "example": "2027-09-18T09:00:00+00:00"
+                    },
+                    "holder": {
+                        "title": "Held by",
+                        "type": "string",
+                        "example": "kvk:12345678",
+                        "description": "Who holds the mandate, typed: kvk: and eight digits for a company, or subject: and a reference for a person. Empty means the account in subjectRef."
+                    },
+                    "revokedBy": {
+                        "title": "Ended by",
+                        "type": "string",
+                        "example": "subject-1",
+                        "description": "The subject reference of whoever ended it."
+                    },
+                    "revokedAt": {
+                        "title": "Ended at",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-10-08T12:00:00+00:00",
+                        "description": "When it was ended."
+                    },
+                    "invitationId": {
+                        "title": "Invitation",
+                        "type": "string",
+                        "example": "inv-1",
+                        "description": "The invitation whose acceptance wrote this mandate."
                     }
                 }
             },
@@ -6842,7 +7779,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Invitation",
                 "description": "An address invited into the portal (REQ-PIOC-003). The link's secret is stored hashed, never in the clear, and the state the sender sees is on this row.",
                 "type": "object",
@@ -6908,6 +7845,38 @@
                         "format": "date-time",
                         "description": "When it stops admitting anybody.",
                         "example": "2026-09-25T09:00:00+00:00"
+                    },
+                    "onBehalfOf": {
+                        "title": "On behalf of",
+                        "type": "string",
+                        "example": "kvk:12345678",
+                        "description": "For an invitation to act for a party: the party, typed (kvk: or subject:)."
+                    },
+                    "mandate": {
+                        "title": "Mandate terms",
+                        "type": "object",
+                        "description": "For an invitation to act for a party: what the mandate will grant when it is accepted.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "caseTypes": {
+                                "title": "Case types",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "The case types in scope. Empty means all cases."
+                            },
+                            "label": {
+                                "title": "Label",
+                                "type": "string",
+                                "description": "A short text about what the holder may do."
+                            },
+                            "expiresAt": {
+                                "title": "Valid until",
+                                "type": "string",
+                                "description": "The last day the mandate grants anything, as a day. Empty means no end."
+                            }
+                        }
                     },
                     "subjectRef": {
                         "title": "Subject reference",
@@ -7001,6 +7970,95 @@
                         "format": "date-time",
                         "description": "When it was followed.",
                         "example": "2026-09-18T10:00:00+00:00"
+                    }
+                }
+            },
+            "portalEmailLink": {
+                "slug": "portalEmailLink",
+                "x-openregister-demo-data": "a one-time sign-in token ledger the app writes when a link is sent; a demo row would be a live credential, so none ships",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.1.0",
+                "title": "Portal Email Link",
+                "description": "A one-time sign-in link mailed to the sign-in address of an `email` portal account (sign-in-with-an-email-link, REQ-IWI-009). Only the SHA-256 of the token is stored, with the account, the requesting browser's cookie hash, the address hash and the expiry. Spent once; a newer link voids it. Readable by administrators only.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "tokenHash",
+                    "expiresAt"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Account",
+                        "type": "string",
+                        "description": "The subject reference of the account the link signs in to.",
+                        "example": "email:3f2a9c"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant of the account.",
+                        "example": "warmtepompacademie"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The slug of the portal the link was asked on.",
+                        "example": "academie"
+                    },
+                    "tokenHash": {
+                        "title": "Token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time token. The token itself is never stored.",
+                        "example": "9f86d0…"
+                    },
+                    "cookieHash": {
+                        "title": "Browser cookie hash",
+                        "type": "string",
+                        "description": "SHA-256 of the short-lived cookie the requesting browser holds.",
+                        "example": "2c26b4…"
+                    },
+                    "addressHash": {
+                        "title": "Address hash",
+                        "type": "string",
+                        "description": "SHA-256 of the normalised address the link was sent to; a browser without the cookie must type that address.",
+                        "example": "fcde2b…"
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "sent",
+                            "used",
+                            "void"
+                        ],
+                        "description": "`used` after the one sign-in, `void` when a newer link or staff revoked it.",
+                        "example": "sent"
+                    },
+                    "issuedAt": {
+                        "title": "Issued at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was issued.",
+                        "example": "2026-10-09T09:00:00+00:00"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Fifteen minutes after issue; not configurable upward.",
+                        "example": "2026-10-09T09:15:00+00:00"
+                    },
+                    "usedAt": {
+                        "title": "Used at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it signed somebody in.",
+                        "example": "2026-10-09T09:05:00+00:00"
                     }
                 }
             },
@@ -7098,7 +8156,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.2.0",
+                "version": "0.4.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -7227,6 +8285,126 @@
                         "description": "What the citizen is told after submitting. The form's words, not the portal's.",
                         "example": "Bedankt. U hoort binnen vijf werkdagen van ons."
                     },
+                    "intro": {
+                        "title": "Introduction page",
+                        "type": "object",
+                        "description": "The page a form opens with, before step 1: what you need, how long it takes and what happens next. Absent means the form opens at step 1.",
+                        "properties": {
+                            "lead": {
+                                "title": "Lead",
+                                "type": "string",
+                                "description": "The opening sentence under the heading."
+                            },
+                            "blocks": {
+                                "title": "Blocks",
+                                "type": "array",
+                                "description": "The blocks under Voordat u begint, each with a title, a text and a list.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {
+                                            "title": "Block title",
+                                            "type": "string",
+                                            "description": "The block heading."
+                                        },
+                                        "text": {
+                                            "title": "Block text",
+                                            "type": "string",
+                                            "description": "The block text."
+                                        },
+                                        "items": {
+                                            "title": "Block list",
+                                            "type": "array",
+                                            "description": "The lines of the block's list.",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "statements": {
+                        "title": "Statements",
+                        "type": "object",
+                        "description": "The statements the resident accepts on the review step: `truth` (the answers are true) and `privacy` (the privacy statement). A statement whose `required` is true must be accepted before the form is sent. A statement not listed is not asked.",
+                        "properties": {
+                            "truth": {
+                                "title": "Statement of truth",
+                                "type": "object",
+                                "description": "Whether the statement of truth is asked, and whether it is required.",
+                                "properties": {
+                                    "required": {
+                                        "title": "Required",
+                                        "type": "boolean",
+                                        "description": "Whether the form cannot be sent without it."
+                                    }
+                                }
+                            },
+                            "privacy": {
+                                "title": "Privacy consent",
+                                "type": "object",
+                                "description": "Whether the privacy consent is asked, and whether it is required.",
+                                "properties": {
+                                    "required": {
+                                        "title": "Required",
+                                        "type": "boolean",
+                                        "description": "Whether the form cannot be sent without it."
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "confirmation": {
+                        "title": "Confirmation page",
+                        "type": "object",
+                        "description": "The page after sending: a title, a body with {reference} and {deadline}, and the steps that follow. A sentence whose value is empty is left out. `confirmationText` is the fallback body.",
+                        "properties": {
+                            "title": {
+                                "title": "Confirmation title",
+                                "type": "string",
+                                "description": "The heading of the confirmation page."
+                            },
+                            "body": {
+                                "title": "Confirmation body",
+                                "type": "string",
+                                "description": "The text under the heading. Write {reference} and {deadline} where they belong."
+                            },
+                            "next": {
+                                "title": "Next steps",
+                                "type": "array",
+                                "description": "What happens now, in order.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {
+                                            "title": "Step title",
+                                            "type": "string",
+                                            "description": "The step heading."
+                                        },
+                                        "text": {
+                                            "title": "Step text",
+                                            "type": "string",
+                                            "description": "The step text."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "confirmationMail": {
+                        "title": "Confirmation mail",
+                        "type": "object",
+                        "description": "The mail with the reference and a summary of the answers, sent to the e-mail address in the form.",
+                        "properties": {
+                            "enabled": {
+                                "title": "Send the mail",
+                                "type": "boolean",
+                                "description": "Whether a confirmation mail is sent."
+                            }
+                        }
+                    },
                     "minTrust": {
                         "title": "Sign-in level",
                         "type": "string",
@@ -7237,6 +8415,53 @@
                             "high"
                         ],
                         "example": "low"
+                    },
+                    "cosign": {
+                        "title": "Co-signing",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "Whether a second person must co-sign after the form is sent: required (boolean) and deadlineDays. Off when empty.",
+                        "additionalProperties": false,
+                        "properties": {
+                            "required": {
+                                "title": "Co-signing required",
+                                "type": "boolean",
+                                "description": "Whether the request waits for a co-signer before it is delivered.",
+                                "default": false
+                            },
+                            "deadlineDays": {
+                                "title": "Days to co-sign",
+                                "type": "integer",
+                                "description": "How many days the co-signer has before the request lapses.",
+                                "default": 14
+                            }
+                        }
+                    },
+                    "staffMayFill": {
+                        "title": "Employees may fill in",
+                        "type": "boolean",
+                        "description": "Whether an employee may fill this form in for a resident. The resident is then the applicant on the case.",
+                        "default": false
+                    },
+                    "yiviAttributes": {
+                        "title": "Yivi attributes",
+                        "type": "array",
+                        "description": "The Yivi attributes the form asks for, each with the field it fills in. Empty means the form does not offer Yivi.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "attribute": {
+                                    "title": "Attribute",
+                                    "type": "string",
+                                    "description": "The Yivi attribute identifier."
+                                },
+                                "field": {
+                                    "title": "Field",
+                                    "type": "string",
+                                    "description": "The name of the form field the attribute fills in."
+                                }
+                            }
+                        }
                     },
                     "allowedOrigins": {
                         "title": "Allowed origins",
@@ -7269,7 +8494,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.2.0",
+                "version": "0.6.0",
                 "title": "Portal Intake Submission",
                 "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
                 "type": "object",
@@ -7360,12 +8585,574 @@
                         "description": "When it was submitted.",
                         "example": "2026-09-18T09:00:00+00:00"
                     },
+                    "statements": {
+                        "title": "Accepted statements",
+                        "type": "array",
+                        "description": "The statements the resident accepted when sending: the key, the version of the text and the moment.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "key": {
+                                    "title": "Statement key",
+                                    "type": "string",
+                                    "description": "`truth` or `privacy`."
+                                },
+                                "textVersion": {
+                                    "title": "Text version",
+                                    "type": "string",
+                                    "description": "The version of the statement text the resident saw."
+                                },
+                                "acceptedAt": {
+                                    "title": "Accepted at",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the statement was accepted."
+                                }
+                            }
+                        }
+                    },
+                    "computed": {
+                        "title": "Calculated and decided fields",
+                        "type": "array",
+                        "description": "The names of the fields the portal worked out or a decision filled, as against answers the resident typed. Delivery marks them computed.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "decisions": {
+                        "title": "Decisions",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The outcome the rule engine gave for each decided step, by step id, asked again when the form was sent."
+                    },
+                    "filledBy": {
+                        "title": "Filled in by",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The employee who filled the form in for the applicant: uid and display name. Empty when the applicant filled it in."
+                    },
+                    "applicant": {
+                        "title": "Applicant",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "Who the request is for when an employee filled it in: a kind (bsn, kvk or named) and the value."
+                    },
+                    "cosign": {
+                        "title": "Co-signature",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "The co-signature the form asked for: state (awaiting, signed, refused or expired), the co-signer address, the time and the co-signer subject."
+                    },
+                    "verifiedEmails": {
+                        "title": "Verified e-mail addresses",
+                        "type": "array",
+                        "widget": "json",
+                        "description": "The e-mail addresses the resident verified with a code before sending, each with the time."
+                    },
+                    "confirmationMailState": {
+                        "title": "Confirmation mail state",
+                        "type": "string",
+                        "enum": [
+                            "sent",
+                            "failed"
+                        ],
+                        "description": "Whether the confirmation mail went out. Failed lists the submission under Bevestiging mislukt."
+                    },
+                    "paymentIntentId": {
+                        "title": "Payment intent",
+                        "type": "string",
+                        "description": "The id of the payment the case app created for this request. The payment state is read from this record, never from the address the resident returns on.",
+                        "example": ""
+                    },
                     "registeredAt": {
                         "title": "Registered at",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the case was created.",
                         "example": ""
+                    }
+                }
+            },
+            "portalMailTemplate": {
+                "slug": "portalMailTemplate",
+                "icon": "EmailEditOutline",
+                "version": "0.1.0",
+                "title": "Mail template",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "The text of one kind of mail a portal sends, replacing the default text for that portal only. One row per portal and template key. The mail names the kind of change and links to the case: no variable carries a field value of a record. Removing the row brings the default text back.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "templateKey",
+                    "subject",
+                    "body"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this text belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "templateKey": {
+                        "title": "Kind of mail",
+                        "type": "string",
+                        "description": "The kind of mail this text replaces, such as invitation or form-confirmation.",
+                        "example": "invitation"
+                    },
+                    "subject": {
+                        "title": "Subject line",
+                        "type": "string",
+                        "description": "The subject line. It may contain the variables the kind of mail declares, written like {portal}.",
+                        "example": "U bent uitgenodigd voor het portaal van {portal}"
+                    },
+                    "body": {
+                        "title": "Text",
+                        "type": "string",
+                        "description": "The text of the mail. It may contain the variables the kind of mail declares. It is sent as plain text with the link, never as HTML.",
+                        "example": "Open de link en log in. Daarna ziet u wat {portal} met u deelt."
+                    },
+                    "active": {
+                        "title": "Active",
+                        "type": "boolean",
+                        "description": "Whether this text is sent. Off means the default text is sent.",
+                        "default": true,
+                        "example": true
+                    },
+                    "updatedBy": {
+                        "title": "Changed by",
+                        "type": "string",
+                        "description": "The administrator who last saved this text.",
+                        "example": "admin"
+                    }
+                }
+            },
+            "portalMailLog": {
+                "slug": "portalMailLog",
+                "icon": "EmailSearchOutline",
+                "version": "0.1.0",
+                "title": "Mail log",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One mail the portal sent: when, to whom (masked), which kind of mail, for which case and what became of it. Kept 90 days, then removed by a daily job. The full address and the text of the mail are never stored here.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "templateKey",
+                    "status",
+                    "sentAt"
+                ],
+                "properties": {
+                    "kind": {
+                        "title": "Record kind",
+                        "type": "string",
+                        "description": "Always `mail`. It lets the daily job read every row of the log in one scoped read.",
+                        "example": "mail"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal the mail was sent for.",
+                        "example": "open-tilburg"
+                    },
+                    "templateKey": {
+                        "title": "Kind of mail",
+                        "type": "string",
+                        "description": "The kind of mail.",
+                        "example": "invitation"
+                    },
+                    "recipientMasked": {
+                        "title": "Recipient",
+                        "type": "string",
+                        "description": "The address with its middle hidden, such as s***@example.nl.",
+                        "example": "s***@example.nl"
+                    },
+                    "recipientHash": {
+                        "title": "Recipient hash",
+                        "type": "string",
+                        "description": "A one-way hash of the address, to tell two mails to the same address apart without keeping it.",
+                        "example": ""
+                    },
+                    "subjectRef": {
+                        "title": "Account",
+                        "type": "string",
+                        "description": "The portal account the mail went to, so a failed mail can be sent again to the account's current address. Empty for a mail to someone without an account.",
+                        "example": ""
+                    },
+                    "caseRef": {
+                        "title": "Case",
+                        "type": "string",
+                        "description": "The reference of the case or request the mail is about, when there is one.",
+                        "example": "AANVRAAG-7"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "What became of the mail.",
+                        "enum": [
+                            "queued",
+                            "delivered",
+                            "failed"
+                        ],
+                        "example": "delivered"
+                    },
+                    "failureReason": {
+                        "title": "Reason it failed",
+                        "type": "string",
+                        "description": "Why the mail failed, in a word. Never the text of the mail.",
+                        "example": ""
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "description": "When the mail was sent or tried.",
+                        "format": "date-time",
+                        "example": "2026-10-08T09:14:00+00:00"
+                    },
+                    "retryOf": {
+                        "title": "Sent again from",
+                        "type": "string",
+                        "description": "The log row of the failed mail this one sends again.",
+                        "example": ""
+                    }
+                }
+            },
+            "portalFaq": {
+                "slug": "portalFaq",
+                "icon": "HelpCircleOutline",
+                "version": "0.1.0",
+                "title": "FAQ entry",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "description": "One frequently asked question with its answer, written once and shown on every page it belongs to. Only a published entry is served on the public site.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "question",
+                    "answer"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this entry belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "question": {
+                        "title": "Question",
+                        "type": "string",
+                        "description": "The question as a resident asks it.",
+                        "example": "Hoeveel parkeervergunningen kan ik per adres aanvragen?"
+                    },
+                    "answer": {
+                        "title": "Answer",
+                        "type": "string",
+                        "description": "The answer, in markdown. It is shown as text and sanitised like page markdown.",
+                        "example": "Per adres kunt u twee vergunningen aanvragen."
+                    },
+                    "pages": {
+                        "title": "Pages",
+                        "type": "array",
+                        "description": "The routes of the pages this entry is shown on, such as /parkeren. Empty means it shows on the list of all questions only.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "/parkeren"
+                        ]
+                    },
+                    "topic": {
+                        "title": "Topic",
+                        "type": "string",
+                        "description": "The topic the entry is grouped under on the list of all questions.",
+                        "example": "Parkeren en verkeer"
+                    },
+                    "order": {
+                        "title": "Order",
+                        "type": "integer",
+                        "description": "Where the entry stands among the others; lower comes first.",
+                        "default": 0,
+                        "example": 10
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Only published entries are served on the public site.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "default": "draft",
+                        "example": "published"
+                    }
+                }
+            },
+            "portalFinder": {
+                "slug": "portalFinder",
+                "icon": "FileFindOutline",
+                "version": "0.1.0",
+                "title": "Product finder",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "description": "A product finder: yes or no questions that rule out products. The products are the site's own product pages, named by route. Evaluated in the browser; no answer is ever sent or stored.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "title",
+                    "products",
+                    "questions"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this finder belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "The heading of the finder.",
+                        "example": "Welke vergunning past bij u?"
+                    },
+                    "intro": {
+                        "title": "Introduction",
+                        "type": "string",
+                        "description": "A short text under the heading.",
+                        "example": "Beantwoord een paar vragen en zie welke vergunningen bij u passen."
+                    },
+                    "products": {
+                        "title": "Products",
+                        "type": "array",
+                        "description": "The routes of the product pages the finder chooses from.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "/parkeren/bewoners"
+                        ]
+                    },
+                    "questions": {
+                        "title": "Questions",
+                        "type": "array",
+                        "description": "The questions, each with the products that an answer rules out.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Question id",
+                                    "type": "string",
+                                    "description": "A short key for the question, unique within the finder."
+                                },
+                                "text": {
+                                    "title": "Question",
+                                    "type": "string",
+                                    "description": "The yes or no question as the resident reads it."
+                                },
+                                "help": {
+                                    "title": "Help text",
+                                    "type": "string",
+                                    "description": "A line of help under the question; may contain a link."
+                                },
+                                "excludesOnYes": {
+                                    "title": "Ruled out on yes",
+                                    "type": "array",
+                                    "description": "The product routes an answer of yes rules out.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "excludesOnNo": {
+                                    "title": "Ruled out on no",
+                                    "type": "array",
+                                    "description": "The product routes an answer of no rules out.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Only published finders are served on the public site.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "default": "draft",
+                        "example": "published"
+                    }
+                }
+            },
+            "sharedBlock": {
+                "slug": "sharedBlock",
+                "icon": "ViewDashboardOutline",
+                "version": "0.1.0",
+                "title": "Shared block",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "description": "A named block of widgets that belongs to one organisation and to no portal. A page places it by its id and the content API expands the placement when the page is read, so one edit shows on every portal of the organisation that places it. A block never renders on a portal of another organisation.",
+                "type": "object",
+                "required": [
+                    "title",
+                    "organisation"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "The name editors pick the block by.",
+                        "example": "Contact and opening hours"
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "description": "What the block is for, for the editors who place it.",
+                        "example": "Address and opening hours of the town hall."
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The organisation that owns the block. Only portals of this organisation show it.",
+                        "example": "gemeente-voorbeeld"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Only a published block is shown on a page.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "default": "draft",
+                        "example": "published"
+                    },
+                    "widgets": {
+                        "title": "Widgets",
+                        "type": "array",
+                        "description": "The published widgets, on the same 12-column grid as a page.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Widget id",
+                                    "type": "string",
+                                    "description": "The widget's id, unique within the grid."
+                                },
+                                "widgetKey": {
+                                    "title": "Widget",
+                                    "type": "string",
+                                    "description": "The kind of widget, such as markdown."
+                                },
+                                "slot": {
+                                    "title": "Region",
+                                    "type": "string",
+                                    "description": "The page region the widget is in."
+                                },
+                                "gridX": {
+                                    "title": "Column",
+                                    "type": "integer",
+                                    "description": "The column the widget starts in, from 0."
+                                },
+                                "gridY": {
+                                    "title": "Row",
+                                    "type": "integer",
+                                    "description": "The row the widget starts in, from 0."
+                                },
+                                "gridWidth": {
+                                    "title": "Width",
+                                    "type": "integer",
+                                    "description": "How many of the 12 columns the widget covers."
+                                },
+                                "gridHeight": {
+                                    "title": "Height",
+                                    "type": "integer",
+                                    "description": "How many rows the widget covers."
+                                },
+                                "props": {
+                                    "title": "Settings",
+                                    "type": "object",
+                                    "description": "The widget's own settings."
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "draftWidgets": {
+                        "title": "Draft widgets",
+                        "type": "array",
+                        "description": "The unpublished work on the widgets; publishing copies it into the widgets.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Widget id",
+                                    "type": "string",
+                                    "description": "The widget's id, unique within the grid."
+                                },
+                                "widgetKey": {
+                                    "title": "Widget",
+                                    "type": "string",
+                                    "description": "The kind of widget, such as markdown."
+                                },
+                                "slot": {
+                                    "title": "Region",
+                                    "type": "string",
+                                    "description": "The page region the widget is in."
+                                },
+                                "gridX": {
+                                    "title": "Column",
+                                    "type": "integer",
+                                    "description": "The column the widget starts in, from 0."
+                                },
+                                "gridY": {
+                                    "title": "Row",
+                                    "type": "integer",
+                                    "description": "The row the widget starts in, from 0."
+                                },
+                                "gridWidth": {
+                                    "title": "Width",
+                                    "type": "integer",
+                                    "description": "How many of the 12 columns the widget covers."
+                                },
+                                "gridHeight": {
+                                    "title": "Height",
+                                    "type": "integer",
+                                    "description": "How many rows the widget covers."
+                                },
+                                "props": {
+                                    "title": "Settings",
+                                    "type": "object",
+                                    "description": "The widget's own settings."
+                                }
+                            }
+                        },
+                        "example": []
                     }
                 }
             },
@@ -8035,6 +9822,11 @@
                         "description": "The words the public website shows beside the date to say who the item is for, such as 'groep 7' or 'hele school'. Written by staff, because the site never reads the school app's groups for a visitor who is not signed in. Empty shows nothing.",
                         "example": "hele school"
                     },
+                    "eventRef": {
+                        "title": "Event",
+                        "type": "string",
+                        "description": "The event this item is about. The article then shows the event's facts and a sign-up card."
+                    },
                     "photoRefs": {
                         "title": "Photos",
                         "type": "array",
@@ -8321,6 +10113,54 @@
                         "example": true,
                         "description": "Whether a guardian may RSVP to this event."
                     },
+                    "location": {
+                        "title": "Where",
+                        "type": "string",
+                        "description": "Where the event takes place, in words, such as the hall and the address."
+                    },
+                    "rsvpBy": {
+                        "title": "Who may answer",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "guardian",
+                                "learner"
+                            ]
+                        },
+                        "example": [
+                            "guardian"
+                        ],
+                        "description": "Who may answer for a child: guardian, learner, or both. Without it only a guardian answers."
+                    },
+                    "askSeats": {
+                        "title": "Ask for seats",
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Whether an answer carries the number of seats the person needs."
+                    },
+                    "maxSeatsPerAnswer": {
+                        "title": "Most seats per answer",
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 20,
+                        "example": 4,
+                        "description": "The most seats one answer may ask for, when seats are asked. Empty means 4."
+                    },
+                    "capacity": {
+                        "title": "Seats in all",
+                        "type": "integer",
+                        "minimum": 1,
+                        "example": 300,
+                        "description": "The seats for the whole event. An answer that would pass it is refused."
+                    },
+                    "signupDeadline": {
+                        "title": "Answers close after",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-30",
+                        "description": "The last day answers are taken, as a date or a date and time. After it every answer is refused."
+                    },
                     "signupRoles": {
                         "title": "Sign-up roles",
                         "type": "array",
@@ -8407,6 +10247,13 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the guardian last responded, in ISO 8601."
+                    },
+                    "seats": {
+                        "title": "Seats",
+                        "type": "integer",
+                        "minimum": 0,
+                        "example": 2,
+                        "description": "The seats this answer asks for, when the event asks for seats. Zero for an answer of no."
                     }
                 }
             },
@@ -9423,6 +11270,335 @@
                         ],
                         "description": "Only a published notice is shown.",
                         "example": "published"
+                    }
+                }
+            },
+            "portalAction": {
+                "slug": "portalAction",
+                "icon": "Check",
+                "version": "0.2.0",
+                "title": "Personal action",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One step a resident keeps on their own list, optionally given to an approved contact (personal-action-list). Read and written only through portaliq's own contribution, scoped on the owner and the assignee; the history is OpenRegister's audit trail of the object. An assignee who is not the owner may change status, file and description, never the assignee, and never delete.",
+                "type": "object",
+                "required": [
+                    "owner",
+                    "assignee",
+                    "title",
+                    "status"
+                ],
+                "properties": {
+                    "owner": {
+                        "title": "Owner",
+                        "type": "string",
+                        "example": "subject-1",
+                        "description": "The subject reference of the resident whose list this is. Stamped by portaliq."
+                    },
+                    "assignee": {
+                        "title": "Assigned to",
+                        "type": "string",
+                        "example": "subject-1",
+                        "description": "The subject reference of whoever does the step: the owner, or an approved contact."
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "example": "gemeente-zuiddrecht",
+                        "description": "The organisation whose portal the resident uses. Stamped by portaliq."
+                    },
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "maxLength": 200,
+                        "example": "Bankafschriften van drie maanden uploaden",
+                        "description": "What has to be done."
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "maxLength": 2000,
+                        "description": "More about the step. Optional."
+                    },
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "enum": [
+                            "once",
+                            "recurring"
+                        ],
+                        "default": "once",
+                        "example": "once",
+                        "description": "Once, or coming back."
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "todo",
+                            "doing",
+                            "done"
+                        ],
+                        "default": "todo",
+                        "example": "todo",
+                        "description": "Where the step stands."
+                    },
+                    "endDate": {
+                        "title": "Done by",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-14",
+                        "description": "The day the step should be done."
+                    },
+                    "file": {
+                        "title": "File",
+                        "type": "string",
+                        "description": "One file kept with the step: an OpenRegister file reference. PDF, JPG or PNG, at most 10 MB."
+                    },
+                    "plan": {
+                        "title": "Plan",
+                        "type": "string",
+                        "description": "The shared plan this action belongs to. An action in a plan is visible to every participant of the plan. Empty for a personal action."
+                    },
+                    "reminderSentAt": {
+                        "title": "Reminder sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-10-11T07:00:00+00:00",
+                        "description": "When the reminder before the end date was sent. Set once per end date, so the reminder is sent once."
+                    },
+                    "reminderForEndDate": {
+                        "title": "Reminder was for",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-14",
+                        "description": "The end date the reminder was sent for. A changed end date earns a new reminder."
+                    }
+                }
+            },
+            "portalDraft": {
+                "slug": "portalDraft",
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Portal draft",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "The half-filled answers of a create or endpoint action, kept for the signed-in resident who typed them (site-multi-step-forms). Read and written only through portaliq's own draft routes, scoped to the subject, never sent to the contributing app. Removed when the action is sent and by the purge job after the retention the action declared. File answers are not kept.",
+                "type": "object",
+                "required": [
+                    "kind",
+                    "subjectRef",
+                    "actionKey",
+                    "expiresAt"
+                ],
+                "properties": {
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "description": "Always `draft`; lets the purge job find every draft.",
+                        "example": "draft"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The signed-in resident the draft belongs to.",
+                        "example": "subject-1"
+                    },
+                    "actionKey": {
+                        "title": "Action",
+                        "type": "string",
+                        "description": "The contributing app and the action, as `app/action`.",
+                        "example": "dossiq/woo-request"
+                    },
+                    "answers": {
+                        "title": "Answers",
+                        "type": "object",
+                        "description": "The visible answers so far, without files.",
+                        "example": {
+                            "omschrijving": "Alle stukken over de rotonde"
+                        }
+                    },
+                    "step": {
+                        "title": "Step",
+                        "type": "string",
+                        "description": "The id of the step the resident reached.",
+                        "example": "step-2"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the purge job deletes the draft.",
+                        "example": "2026-11-01T12:00:00+00:00"
+                    }
+                }
+            },
+            "accessibilityMeasurement": {
+                "slug": "accessibilityMeasurement",
+                "icon": "ShieldCheckOutline",
+                "version": "0.1.0",
+                "title": "Accessibility measurement",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One run of the accessibility measurement on a portal's own pages (site-accessibility-statement). An administrator runs axe-core in their own browser over the home page, the search page, a publication page, the not-found page and the pages they added; portaliq stores what it found. The public accessibility statement is generated from the latest run. A page that could not be measured is kept with its reason and never counts as passing.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "measuredAt",
+                    "measuredBy",
+                    "axeVersion",
+                    "tags",
+                    "pages"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal that was measured.",
+                        "example": "open-tilburg"
+                    },
+                    "measuredAt": {
+                        "title": "Measured at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the run finished, set by portaliq.",
+                        "example": "2026-10-09T10:00:00+00:00"
+                    },
+                    "measuredBy": {
+                        "title": "Measured by",
+                        "type": "string",
+                        "description": "The user id of the administrator who ran it.",
+                        "example": "admin"
+                    },
+                    "axeVersion": {
+                        "title": "axe-core version",
+                        "type": "string",
+                        "maxLength": 40,
+                        "description": "The version of the axe-core library that measured.",
+                        "example": "4.10.3"
+                    },
+                    "tags": {
+                        "title": "Rule sets",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The axe-core rule sets the run used.",
+                        "example": [
+                            "wcag2a",
+                            "wcag2aa",
+                            "wcag21a",
+                            "wcag21aa",
+                            "wcag22aa"
+                        ]
+                    },
+                    "theme": {
+                        "title": "Theme",
+                        "type": "string",
+                        "description": "The house style the portal used during the run. The theme decides colour contrast.",
+                        "example": "vng"
+                    },
+                    "pages": {
+                        "title": "Pages",
+                        "type": "array",
+                        "description": "Per page what the run found.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "url",
+                                "measured"
+                            ],
+                            "properties": {
+                                "url": {
+                                    "title": "Page",
+                                    "type": "string",
+                                    "description": "The page's address within the site.",
+                                    "example": "/zoeken"
+                                },
+                                "measured": {
+                                    "title": "Measured",
+                                    "type": "boolean",
+                                    "description": "Whether the page could be loaded and measured.",
+                                    "example": true
+                                },
+                                "reason": {
+                                    "title": "Reason",
+                                    "type": "string",
+                                    "description": "Why the page could not be measured.",
+                                    "example": "The page refused to load in a frame."
+                                },
+                                "violations": {
+                                    "title": "Violations",
+                                    "type": "array",
+                                    "description": "The rules the page failed.",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "rule",
+                                            "impact",
+                                            "nodes"
+                                        ],
+                                        "properties": {
+                                            "rule": {
+                                                "title": "Rule",
+                                                "type": "string",
+                                                "description": "The axe-core rule id.",
+                                                "example": "color-contrast"
+                                            },
+                                            "impact": {
+                                                "title": "Impact",
+                                                "type": "string",
+                                                "enum": [
+                                                    "minor",
+                                                    "moderate",
+                                                    "serious",
+                                                    "critical"
+                                                ],
+                                                "description": "How much the failure hinders a visitor.",
+                                                "example": "serious"
+                                            },
+                                            "nodes": {
+                                                "title": "Elements",
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "description": "How many elements on the page failed the rule.",
+                                                "example": 3
+                                            },
+                                            "help": {
+                                                "title": "Help text",
+                                                "type": "string",
+                                                "description": "The rule's short description from axe-core.",
+                                                "example": "Elements must meet minimum color contrast ratio thresholds"
+                                            },
+                                            "helpUrl": {
+                                                "title": "Help link",
+                                                "type": "string",
+                                                "description": "The page that explains the rule.",
+                                                "example": "https://dequeuniversity.com/rules/axe/4.10/color-contrast"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -45,6 +45,7 @@ export function flowSteps(steps, titles) {
 			: {}),
 		fields: step.fields.filter((field) => typeof field === 'string'),
 		review: false,
+		...(step.decides === true ? { decides: true } : {}),
 	}))
 	const review = list.find((step) => step.review === true)
 	out.push({
@@ -170,4 +171,58 @@ export function confirmationText(text, answer) {
 		)
 		.join('')
 		.trim()
+}
+
+/**
+ * Where a resumed draft opens: the first step with a missing required answer,
+ * else the review (REQ-SMF-012).
+ *
+ * @param {Array<object>} steps The flow's steps, a review last.
+ * @param {(fields: string[]) => Record<string, string>} check The errors of some fields.
+ * @param {(field: string) => boolean} isShown Whether a field shows.
+ * @return {number} The step's index.
+ *
+ * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+ */
+export function landingStep(steps, check, isShown) {
+	const at = steps.findIndex(
+		(step) =>
+			!step.review
+			&& Object.keys(check(step.fields.filter((field) => isShown(field))))
+				.length > 0,
+	)
+	return at >= 0 ? at : Math.max(0, steps.length - 1)
+}
+
+/**
+ * The date a draft is kept until, in the page's language.
+ *
+ * @param {string} iso The draft's `expiresAt`.
+ * @param {string} locale The page's language.
+ * @return {string} The date, or '' when it cannot be read.
+ */
+export function retentionDate(iso, locale) {
+	const date = new Date(iso)
+	if (Number.isNaN(date.getTime())) {
+		return ''
+	}
+	return date.toLocaleDateString(locale || 'nl', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	})
+}
+
+/**
+ * The place of the step with an id in the flow, or -1.
+ *
+ * @param {Array<object>} flow The steps walked through.
+ * @param {string} id The step id.
+ * @return {number} The index, or -1 when the flow has no such step.
+ * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
+ */
+export function stepIndexById(flow, id) {
+	return (Array.isArray(flow) ? flow : []).findIndex(
+		(step) => step.id === id && step.review !== true,
+	)
 }

@@ -35,4 +35,4 @@
 
 ## 6. After integriq ships
 
-- [ ] 6.1 Run the e2e spec against an instance with both apps, then archive this change.
+- [ ] 6.1 Run the e2e spec against an instance with both apps, then archive this change. — not run: needs a live instance with both apps

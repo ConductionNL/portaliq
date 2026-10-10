@@ -37,10 +37,10 @@
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.2
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
  */
 
 declare(strict_types=1);
@@ -51,6 +51,7 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
@@ -89,12 +90,12 @@ class PortalSessionService {
 	/**
 	 * The OpenRegister register the `portalSession` schema lives in.
 	 */
-	private const SESSION_REGISTER = 'portaliq';
+	public const SESSION_REGISTER = 'portaliq';
 
 	/**
 	 * The OpenRegister schema recording issued sessions for revocation.
 	 */
-	private const SESSION_SCHEMA = 'portalSession';
+	public const SESSION_SCHEMA = 'portalSession';
 
 	/**
 	 * The app config key for the absolute maximum session lifetime override
@@ -164,8 +165,9 @@ class PortalSessionService {
 	 * @param PortalObjectReader $reader Looks up sessions by jti / organisation.
 	 * @param AuditTrailService $auditor Records login/logout/refresh session events
 	 *                                   (portal-session-hardening-v2).
+	 * @param IAppConfig $appConfig Holds the signing secret, flagged sensitive.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
 	 */
 	public function __construct(
@@ -175,9 +177,17 @@ class PortalSessionService {
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalObjectReader $reader,
 		private readonly AuditTrailService $auditor,
+		IAppConfig $appConfig,
 	) {
-		$secret = (string)$config->getAppValue(Application::APP_ID, 'jwt_signing_secret', '');
-		$this->jwt = self::buildJwtService(secret: $secret);
+		// The secret is a sensitive app value (security review S4): read it
+		// through IAppConfig, which decrypts it, never through IConfig.
+		$secret = $appConfig->getValueString(Application::APP_ID, 'jwt_signing_secret', '');
+		$jwt = null;
+		if ($secret !== '') {
+			$jwt = self::buildJwtService(secret: $secret);
+		}
+
+		$this->jwt = $jwt;
 	}//end __construct()
 
 	/**
@@ -205,7 +215,7 @@ class PortalSessionService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function isConfigured(): bool {
 		return $this->jwt !== null;
@@ -283,9 +293,10 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#11
 	 */
 	public function issueSession(
 		string $subjectRef,
@@ -312,6 +323,14 @@ class PortalSessionService {
 			return null;
 		}
 
+		// The way in rides with the login entry, so an e-mail link sign-in
+		// is an audit entry with the account, the method and the moment
+		// (sign-in-with-an-email-link REQ-IWI-012).
+		$detail = [];
+		if ($provider !== '') {
+			$detail = ['method' => $provider];
+		}
+
 		$this->auditor->record(
 			verb: 'login',
 			subjectRef: $subjectRef,
@@ -319,7 +338,8 @@ class PortalSessionService {
 			register: self::SESSION_REGISTER,
 			schema: self::SESSION_SCHEMA,
 			id: $issued['jti'],
-			jti: $issued['jti']
+			jti: $issued['jti'],
+			detail: $detail
 		);
 
 		return $issued;
@@ -487,9 +507,9 @@ class PortalSessionService {
 	 *                                   expired, or revoked.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.2
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.3
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
 	 */
 	public function resolveFromBearer(?string $authorizationHeader): ?array {
 		if ($this->jwt === null) {
@@ -673,22 +693,34 @@ class PortalSessionService {
 	 * expired bearer, malformed bearer, or past the absolute cap — all
 	 * indistinguishable to the caller, exactly like `resolveFromBearer()`.
 	 *
+	 * With an audience (read from the account, never the request), the new
+	 * session carries it instead (invitation-joins-an-unbound-account); the
+	 * session's own audience and `supplier` are refused.
+	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 * @param string      $audience            The audience the account holds now, or '' to keep the session's.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The NEW
 	 *         bearer token, its id and when the rotated session ends, or null on any rejection.
 	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */
-	public function refreshSession(?string $authorizationHeader): ?array {
+	public function refreshSession(?string $authorizationHeader, string $audience = ''): ?array {
 		// Resolving the bearer already fails closed on: unconfigured secret,
 		// absent/malformed/forged bearer, expired bearer, and revoked/unknown
 		// jti — refresh inherits every one of those rejections for free.
 		$subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);
-		if ($subject === null) {
+		if ($subject === null || ($audience !== '' && in_array($audience, ['supplier', (string)($subject['audience'] ?? '')], true) === true)) {
 			return null;
+		}
+
+		// A new audience brings that audience's role, never the old one's.
+		if ($audience !== '') {
+			$subject['audience'] = $audience;
+			$subject['roles']    = [$audience . ':read'];
 		}
 
 		// A refresh carries the branch and its restriction unchanged: it
@@ -772,11 +804,15 @@ class PortalSessionService {
 			return null;
 		}
 
-		// Rotate: the OLD bearer stops validating from here on. A quiet
-		// revoke (no separate `logout` audit entry) — the visible event for
-		// this rotation is `refresh`, recorded once, below.
-		$this->revokeQuietly(jti: $oldJti);
+		// A revoke-all (or a logout) can land between the resolve above and
+		// the mint: the new bearer must not outlive it (security review S1).
+		if ($this->isJtiActive(jti: $oldJti) === false) {
+			$this->revokeQuietly(jti: $issued['jti']);
+			$this->logger->info('Portaliq: refresh refused, the session was revoked while it rotated', ['jti' => $oldJti]);
+			return null;
+		}
 
+		// `refresh` is recorded before the old bearer is revoked.
 		$this->auditor->record(
 			verb: 'refresh',
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
@@ -786,6 +822,13 @@ class PortalSessionService {
 			id: $issued['jti'],
 			jti: $oldJti
 		);
+
+		// A quiet revoke; a failed one never signs the person out.
+		try {
+			$this->revokeQuietly(jti: $oldJti);
+		} catch (Throwable $exception) {
+			$this->logger->warning('Portaliq: the old bearer was not revoked after a rotation', ['exception' => get_class($exception)]);
+		}
 
 		return $issued;
 	}//end rotate()
@@ -799,8 +842,8 @@ class PortalSessionService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.2
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.3
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
 	 */
 	private function isJtiActive(string $jti): bool {
 		if ($jti === '') {
@@ -812,7 +855,7 @@ class PortalSessionService {
 			return false;
 		}
 
-		return ($row['revoked'] ?? false) !== true;
+		return $this->revoker()->isRevoked(row: $row) === false;
 	}//end isJtiActive()
 
 	/**
@@ -848,7 +891,7 @@ class PortalSessionService {
 	 *
 	 * @return bool True when a matching session was found and marked revoked.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 */
 	public function revoke(string $jti): bool {
@@ -889,7 +932,7 @@ class PortalSessionService {
 	 *                                   when the jti is empty, unknown, or
 	 *                                   the OR write failed.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
 	 */
 	private function revokeQuietly(string $jti): ?array {
@@ -898,7 +941,7 @@ class PortalSessionService {
 		}
 
 		$row = $this->findSessionByJti(jti: $jti);
-		$uuid = $this->rowId(row: $row);
+		$uuid = $this->revoker()->rowId(row: $row);
 		if ($row === null || $uuid === null) {
 			return null;
 		}
@@ -922,98 +965,43 @@ class PortalSessionService {
 
 	/**
 	 * Revoke every active `portalSession` for an organisation (admin incident
-	 * response — e.g. a supplier reports device theft). Already-revoked rows
-	 * are left untouched; unreachable OpenRegister yields zero revocations
-	 * (fail-closed reporting, never a partial silent success).
+	 * response, e.g. a supplier reports device theft).
+	 *
+	 * Reads only the rows not yet revoked, page by page until OpenRegister
+	 * runs out, BEFORE revoking any (revoking while paging would shift the
+	 * pages under the offset), so a live session past the first page is
+	 * never missed (security review B1). An unreachable OpenRegister or a
+	 * failed write makes the result `complete: false`, so the admin never
+	 * reads "0 revoked" for "did not run" (S5). Every revocation is audited
+	 * as `admin-revoke` naming the admin, plus one entry for the call (S6).
 	 *
 	 * @param string $organisation The tenant to revoke every session for.
+	 * @param string $admin The Nextcloud user id of the acting admin.
+	 * @param string $subjectRef One account only (sign-in-with-an-email-link), or ''.
 	 *
-	 * @return int The number of sessions revoked.
+	 * @return array{revoked: int, failed: int, complete: bool}
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.2
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#12
 	 */
-	public function revokeAllForOrganisation(string $organisation): int {
-		if ($organisation === '') {
-			return 0;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::SESSION_REGISTER,
-			schema: self::SESSION_SCHEMA,
-			scopeField: 'organisation',
-			subjectRef: $organisation,
-			organisation: $organisation,
-			limit: 500
-		);
-
-		$revoked = 0;
-		foreach ($rows as $row) {
-			if (($row['revoked'] ?? false) === true) {
-				continue;
-			}
-
-			$uuid = $this->rowId(row: $row);
-			if ($uuid === null) {
-				continue;
-			}
-
-			$updated = $this->writer->updateObject(
-				register: self::SESSION_REGISTER,
-				schema: self::SESSION_SCHEMA,
-				scopeField: '',
-				subjectRef: '',
-				organisation: '',
-				id: $uuid,
-				data: ['revoked' => true]
-			);
-
-			if ($updated !== null) {
-				$revoked++;
-				$this->auditor->record(
-					verb: 'logout',
-					subjectRef: (string)($row['subjectRef'] ?? ''),
-					organisation: $organisation,
-					register: self::SESSION_REGISTER,
-					schema: self::SESSION_SCHEMA,
-					id: (string)($row['jti'] ?? ''),
-					jti: (string)($row['jti'] ?? '')
-				);
-			}
-		}//end foreach
-
-		return $revoked;
+	public function revokeAllForOrganisation(string $organisation, string $admin, string $subjectRef = ''): array {
+		return $this->revoker()->revokeAll(organisation: $organisation, admin: $admin, subjectRef: $subjectRef);
 	}//end revokeAllForOrganisation()
 
 	/**
-	 * Extract a row's identifier (`id`/`uuid`, flat or in `@self`), or null.
+	 * The revoker over this service's OpenRegister and audit collaborators.
 	 *
-	 * @param array<string, mixed>|null $row The normalised row.
-	 *
-	 * @return string|null
+	 * @return PortalSessionRevoker
 	 */
-	private function rowId(?array $row): ?string {
-		if ($row === null) {
-			return null;
-		}
-
-		$self = ($row['@self'] ?? null);
-		$selfUuid = null;
-		$selfId = null;
-		if (is_array($self) === true) {
-			$selfUuid = ($self['uuid'] ?? null);
-			$selfId = ($self['id'] ?? null);
-		}
-
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), $selfUuid, $selfId];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
-	}//end rowId()
+	private function revoker(): PortalSessionRevoker {
+		return new PortalSessionRevoker(
+			reader: $this->reader,
+			writer: $this->writer,
+			auditor: $this->auditor,
+			logger: $this->logger
+		);
+	}//end revoker()
 
 	/**
 	 * Mint a short-lived `X-Portal-Subject` assertion for a resolved subject.

@@ -35,9 +35,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
+use DateTimeInterface;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
@@ -78,6 +81,27 @@ class PortalIdentityMailer {
 	public const TEMPLATE_ACCOUNT_INVITATION = 'account-invitation';
 
 	/**
+	 * The invitation of a resident to become a contact of another resident
+	 * (own-contacts-and-invitations REQ-ROC-003).
+	 */
+	public const TEMPLATE_CONTACT_INVITATION = 'contact-invitation';
+
+	/**
+	 * The one-time sign-in link of an `email` account (sign-in-with-an-email-link).
+	 */
+	public const TEMPLATE_EMAIL_LINK = 'email-link';
+
+	/**
+	 * The notice after each e-mail link sign-in (security review L4).
+	 */
+	public const NOTICE_SIGNED_IN = 'email-link-signed-in';
+
+	/**
+	 * The notice to the old address after the sign-in address changed (H2).
+	 */
+	public const NOTICE_ADDRESS_CHANGED = 'sign-in-address-changed';
+
+	/**
 	 * Per template: the fragment key the portal consumes, and the English
 	 * source keys of the mail (l10n/nl.json carries the Dutch). `%1$s` is the
 	 * portal's name in every line that takes one. `site` sends the link to
@@ -108,6 +132,22 @@ class PortalIdentityMailer {
 			'intro' => 'Open the link and sign in. After that you see what %1$s shares with you.',
 			'button' => 'Open the portal',
 		],
+		self::TEMPLATE_CONTACT_INVITATION => [
+			'fragment' => 'contact-invitation',
+			'site' => true,
+			'subject' => 'You are invited to work together at %1$s',
+			'heading' => 'You are invited',
+			'intro' => 'Someone you know wants to work with you in the portal of %1$s. Open the link to create your account or sign in.',
+			'button' => 'Open the invitation',
+		],
+		self::TEMPLATE_EMAIL_LINK => [
+			'fragment' => 'email-link',
+			'site' => true,
+			'subject' => 'Your sign-in link for %1$s',
+			'heading' => 'Sign in',
+			'intro' => 'You asked for a link to sign in to %1$s. The link works for 15 minutes.',
+			'button' => 'Sign in',
+		],
 		self::TEMPLATE_EMAIL_CONFIRMATION => [
 			'fragment' => 'confirm-email',
 			'subject' => 'Confirm your new e-mail address for %1$s',
@@ -124,6 +164,12 @@ class PortalIdentityMailer {
 			'button' => 'Activate your account',
 		],
 	];
+
+	/**
+	 * The notice that an invitation was accepted by an account that took on
+	 * its audience (invitation-joins-an-unbound-account).
+	 */
+	public const NOTICE_TEMPLATE = 'invitation-accepted';
 
 	/**
 	 * The line every identity mail carries under its button.
@@ -154,6 +200,8 @@ class PortalIdentityMailer {
 	 * @param PortalResolver $portals Finds the organisation's portal when the caller has none.
 	 * @param PortalOrganisationConfigService $organisations The tenant's name when no portal names it.
 	 * @param LoggerInterface $logger Records a failed send, never the secret.
+	 * @param MailTemplateRenderer|null $renderer Swaps in a portal's own text (mail-templates-admin-screen).
+	 * @param MailLog|null $mailLog Logs each send, with the address masked.
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
@@ -162,6 +210,8 @@ class PortalIdentityMailer {
 		private readonly PortalResolver $portals,
 		private readonly PortalOrganisationConfigService $organisations,
 		private readonly LoggerInterface $logger,
+		private readonly ?MailTemplateRenderer $renderer=null,
+		private readonly ?MailLog $mailLog=null,
 	) {
 	}//end __construct()
 
@@ -178,12 +228,14 @@ class PortalIdentityMailer {
 	 * @param array<string, mixed>|null $portal The portal the request came
 	 *                                          through, or null to look up
 	 *                                          the organisation's one portal.
+	 * @param array<string, string> $details Who wrote the mail's invitation: `inviter` (a name)
+	 *                                       and `message` (their words), both optional.
 	 *
 	 * @return bool True when the mail left.
 	 *
 	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
-	public function send(string $template, string $email, string $secret, string $organisation, ?array $portal = null): bool {
+	public function send(string $template, string $email, string $secret, string $organisation, ?array $portal = null, array $details = []): bool {
 		$keys = (self::TEMPLATES[$template] ?? null);
 		if ($keys === null || $secret === '' || $this->mailer->validateMailAddress($email) === false) {
 			$this->logger->warning('Portaliq: identity mail not sent, the call was incomplete', ['template' => $template]);
@@ -199,10 +251,22 @@ class PortalIdentityMailer {
 			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
 
 			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $template, []);
-			$mail->setSubject($l10n->t($keys['subject'], [$name]));
+			$text = $this->textOf(
+				template: $template,
+				portalSlug: trim((string)($portal['slug'] ?? '')),
+				values: ['portal' => $name, 'link' => $link],
+				subject: $l10n->t($keys['subject'], [$name]),
+				intro: $l10n->t($keys['intro'], [$name])
+			);
+
+			$mail->setSubject($text['subject']);
 			$mail->addHeader();
 			$mail->addHeading($l10n->t($keys['heading']));
-			$mail->addBodyText($l10n->t($keys['intro'], [$name]));
+			$mail->addBodyText($text['body']);
+			foreach ($this->detailLines(l10n: $l10n, details: $details) as $line) {
+				$mail->addBodyText($line);
+			}
+
 			$mail->addBodyButton($l10n->t($keys['button']), $link);
 			$mail->addBodyText($this->closing(l10n: $l10n));
 			$mail->addFooter();
@@ -215,16 +279,262 @@ class PortalIdentityMailer {
 			// The exception's own message is left out on purpose: a transport
 			// error may quote the recipient or the body back.
 			$this->logger->warning('Portaliq: identity mail not sent', ['template' => $template, 'exception' => get_class($failure)]);
+			$this->logSend(template: $template, email: $email, portal: $portal, status: 'failed', reason: 'exception');
 			return false;
 		}
 
 		if (count($failed) > 0) {
 			$this->logger->warning('Portaliq: identity mail refused by the mail server', ['template' => $template]);
+			$this->logSend(template: $template, email: $email, portal: $portal, status: 'failed', reason: 'refused');
 			return false;
 		}
 
+		$this->logSend(template: $template, email: $email, portal: $portal, status: 'delivered', reason: '');
+
 		return true;
 	}//end send()
+
+	/**
+	 * The lines that say who invited the reader and what they wrote.
+	 *
+	 * @param \OCP\IL10N $l10n The portal's language.
+	 * @param array<string, string> $details `inviter` and `message`.
+	 *
+	 * @return array<int, string> The lines, none when the mail names no inviter.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t04
+	 */
+	private function detailLines(\OCP\IL10N $l10n, array $details): array {
+		$lines   = [];
+		$inviter = trim((string)($details['inviter'] ?? ''));
+		if ($inviter !== '') {
+			$lines[] = $l10n->t('%1$s invited you.', [$inviter]);
+		}
+
+		$message = trim((string)($details['message'] ?? ''));
+		if ($message !== '') {
+			$lines[] = $l10n->t('Their message: %1$s', [$message]);
+		}
+
+		// The e-mail link names the address it was asked for (security
+		// review L7), so a look-alike mail without it stands out.
+		$address = trim((string)($details['address'] ?? ''));
+		if ($address !== '') {
+			$lines[] = $l10n->t('This link was asked for %1$s.', [$address]);
+		}
+
+		return $lines;
+	}//end detailLines()
+
+	/**
+	 * The subject and text to send: the portal's own when it has one.
+	 *
+	 * @param string                $template   The template key.
+	 * @param string                $portalSlug The portal slug.
+	 * @param array<string, string> $values     The variables' values.
+	 * @param string                $subject    The default subject.
+	 * @param string                $intro      The default text.
+	 *
+	 * @return array{subject: string, body: string}
+	 *
+	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 */
+	private function textOf(string $template, string $portalSlug, array $values, string $subject, string $intro): array {
+		if ($this->renderer === null) {
+			return ['subject' => $subject, 'body' => $intro];
+		}
+
+		$rendered = $this->renderer->render(portal: $portalSlug, key: $template, values: $values, subject: $subject, body: $intro);
+
+		return ['subject' => $rendered['subject'], 'body' => $rendered['body']];
+	}//end textOf()
+
+	/**
+	 * Log one send; never a reason to fail the mail.
+	 *
+	 * @param string                    $template The template key.
+	 * @param string                    $email    The recipient.
+	 * @param array<string, mixed>|null $portal   The portal.
+	 * @param string                    $status   `delivered` or `failed`.
+	 * @param string                    $reason   A word for a failure, or ''.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 */
+	private function logSend(string $template, string $email, ?array $portal, string $status, string $reason): void {
+		if ($this->mailLog === null) {
+			return;
+		}
+
+		try {
+			$this->mailLog->record(
+				portal: trim((string)($portal['slug'] ?? '')),
+				templateKey: $template,
+				email: $email,
+				status: $status,
+				failureReason: $reason
+			);
+		} catch (Throwable) {
+			// The log is a convenience; the mail has gone either way.
+		}
+	}//end logSend()
+
+	/**
+	 * Tell the invited address that its invitation was accepted by an account
+	 * that took on the invitation's audience (invitation-joins-an-unbound-account,
+	 * security review M1): the date, and who to contact when that was not
+	 * the person it was meant for. No secret and no link: the mail only
+	 * informs.
+	 *
+	 * Never throws. A mail that did not leave answers false and is logged
+	 * without the address.
+	 *
+	 * @param string            $email        The invited address.
+	 * @param string            $organisation The tenant.
+	 * @param DateTimeInterface $moment       When the invitation was accepted.
+	 *
+	 * @return bool True when the mail left.
+	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 */
+	public function sendClaimNotice(string $email, string $organisation, DateTimeInterface $moment): bool {
+		if ($this->mailer->validateMailAddress($email) === false) {
+			$this->logger->warning('Portaliq: identity mail not sent, the call was incomplete', ['template' => self::NOTICE_TEMPLATE]);
+			return false;
+		}
+
+		$portal = $this->portalOf(organisation: $organisation);
+		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+
+		try {
+			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
+			$day  = (string)$l10n->l('date', $moment, ['width' => 'long']);
+
+			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . self::NOTICE_TEMPLATE, []);
+			$mail->setSubject($l10n->t('Your invitation to %1$s was accepted', [$name]));
+			$mail->addHeader();
+			$mail->addHeading($l10n->t('Your invitation was accepted'));
+			$mail->addBodyText($l10n->t('Your invitation to the portal of %1$s was accepted on %2$s.', [$name, $day]));
+			$mail->addBodyText($l10n->t('Was this not you? Then contact %1$s.', [$name]));
+			$mail->addFooter();
+
+			$message = $this->mailer->createMessage();
+			$message->setTo([$email]);
+			$message->useTemplate($mail);
+			$failed = $this->mailer->send($message);
+		} catch (Throwable $failure) {
+			$this->logger->warning('Portaliq: identity mail not sent', ['template' => self::NOTICE_TEMPLATE, 'exception' => get_class($failure)]);
+			return false;
+		}
+
+		return count($failed) === 0;
+	}//end sendClaimNotice()
+
+	/**
+	 * Tell an `email` account's address that it was just used to sign in
+	 * (security review L4): the portal, the moment, and who to contact when
+	 * it was not them. No secret and no link.
+	 *
+	 * Never throws.
+	 *
+	 * @param string            $email        The account's sign-in address.
+	 * @param string            $organisation The tenant.
+	 * @param array<string, mixed>|null $portal The portal signed in to.
+	 * @param DateTimeInterface $moment       When.
+	 *
+	 * @return bool True when the mail left.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-never-reaches-a-log-an-answer-or-the-traffic-store-req-iwi-012
+	 */
+	public function sendSignedInNotice(string $email, string $organisation, ?array $portal, DateTimeInterface $moment): bool {
+		return $this->notice(
+			template: self::NOTICE_SIGNED_IN,
+			email: $email,
+			organisation: $organisation,
+			portal: $portal,
+			keys: [
+				'subject' => 'You signed in to %1$s',
+				'heading' => 'You signed in',
+				'line' => 'Your account at %1$s was signed in to with an e-mail link on %2$s.',
+			],
+			moment: $moment
+		);
+	}//end sendSignedInNotice()
+
+	/**
+	 * Tell the OLD sign-in address that it no longer signs in (H2).
+	 *
+	 * Never throws.
+	 *
+	 * @param string            $email        The old sign-in address.
+	 * @param string            $organisation The tenant.
+	 * @param DateTimeInterface $moment       When it changed.
+	 *
+	 * @return bool True when the mail left.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	public function sendSignInAddressChanged(string $email, string $organisation, DateTimeInterface $moment): bool {
+		return $this->notice(
+			template: self::NOTICE_ADDRESS_CHANGED,
+			email: $email,
+			organisation: $organisation,
+			portal: null,
+			keys: [
+				'subject' => 'Your sign-in address for %1$s was changed',
+				'heading' => 'Your sign-in address was changed',
+				'line' => 'From %2$s, sign-in links for your account at %1$s go to another address.',
+			],
+			moment: $moment
+		);
+	}//end sendSignInAddressChanged()
+
+	/**
+	 * One informing mail: a heading, one line with the portal and the day,
+	 * and whom to contact. Never throws; never logs the address.
+	 *
+	 * @param string                    $template     The notice key, for the log.
+	 * @param string                    $email        The recipient.
+	 * @param string                    $organisation The tenant.
+	 * @param array<string, mixed>|null $portal       The portal, or null to look it up.
+	 * @param array<string, string>     $keys         `subject`, `heading`, `line` source keys.
+	 * @param DateTimeInterface         $moment       The moment the line names.
+	 *
+	 * @return bool
+	 */
+	private function notice(string $template, string $email, string $organisation, ?array $portal, array $keys, DateTimeInterface $moment): bool {
+		if ($this->mailer->validateMailAddress($email) === false) {
+			$this->logger->warning('Portaliq: identity mail not sent, the call was incomplete', ['template' => $template]);
+			return false;
+		}
+
+		$portal = ($portal ?? $this->portalOf(organisation: $organisation));
+		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+
+		try {
+			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
+			$day  = (string)$l10n->l('datetime', $moment, ['width' => 'long']);
+
+			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $template, []);
+			$mail->setSubject($l10n->t($keys['subject'], [$name]));
+			$mail->addHeader();
+			$mail->addHeading($l10n->t($keys['heading']));
+			$mail->addBodyText($l10n->t($keys['line'], [$name, $day]));
+			$mail->addBodyText($l10n->t('Was this not you? Then contact %1$s.', [$name]));
+			$mail->addFooter();
+
+			$message = $this->mailer->createMessage();
+			$message->setTo([$email]);
+			$message->useTemplate($mail);
+			$failed = $this->mailer->send($message);
+		} catch (Throwable $failure) {
+			$this->logger->warning('Portaliq: identity mail not sent', ['template' => $template, 'exception' => get_class($failure)]);
+			return false;
+		}
+
+		return count($failed) === 0;
+	}//end notice()
 
 	/**
 	 * The page a template's link opens. Every link opens the site: the ways

@@ -45,7 +45,16 @@ export function isEndpointRowAction(action) {
  * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-an-update-row-action-must-be-shown-only-on-the-rows-its-rowwhen-names-req-urc-001
  */
 export function offersRowAction(action, row) {
-	if (!action || !action.rowWhen) {
+	if (!action) {
+		return true
+	}
+	// `availableWhen` (case-actions-row-inputs-and-conditions): the button is
+	// absent on a row where the named field does not equal the value. The
+	// server refuses the forward on that row too.
+	if (action.availableWhen && !isAvailable(action, row)) {
+		return false
+	}
+	if (!action.rowWhen) {
 		return true
 	}
 	const { field, in: allowed } = action.rowWhen
@@ -53,6 +62,105 @@ export function offersRowAction(action, row) {
 		return false
 	}
 	return allowed.includes(row[field])
+}
+
+/**
+ * Whether the row satisfies the action's `availableWhen`. An action without
+ * one is available on every row; a malformed one on none.
+ *
+ * @param {object} action A resolved row action.
+ * @param {object} row The row.
+ * @return {boolean}
+ * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
+ */
+export function isAvailable(action, row) {
+	const when = action?.availableWhen
+	if (!when) {
+		return true
+	}
+	if (typeof when.field !== 'string' || !row) {
+		return false
+	}
+	return row[when.field] === when.equals
+}
+
+/**
+ * Why the action is not offered on this row: the text of its
+ * `unavailableReasonField`, shown where the button would be. '' when the
+ * action is available, or the row says nothing.
+ *
+ * @param {object} action A resolved row action.
+ * @param {object} row The row.
+ * @return {string} The reason.
+ * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
+ */
+export function unavailableReason(action, row) {
+	if (!action?.availableWhen || isAvailable(action, row)) {
+		return ''
+	}
+	const reason = row?.[action.unavailableReasonField]
+	return typeof reason === 'string' ? reason.trim() : ''
+}
+
+/**
+ * The inputs the selected row declares for the action, as the server accepts
+ * them: a name, a label, whether it is required and its type.
+ *
+ * @param {object} action A resolved row action.
+ * @param {object} row The row.
+ * @return {Array<{name: string, label: string, required: boolean, type: string}>}
+ * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+ */
+export function rowInputsOf(action, row) {
+	const from = action?.rowInputs?.from
+	const list =
+		typeof from === 'string' && Array.isArray(row?.[from]) ? row[from] : []
+	const seen = new Set()
+	const out = []
+	for (const entry of list) {
+		const name = entry && typeof entry.name === 'string' ? entry.name : ''
+		if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name) || seen.has(name)) {
+			continue
+		}
+		seen.add(name)
+		out.push({
+			name,
+			label:
+				typeof entry.label === 'string' && entry.label ? entry.label : name,
+			required: entry.required === true,
+			type: entry.type === 'date' ? 'date' : 'text',
+		})
+	}
+	return out
+}
+
+/**
+ * What a forward's answer says to show: the target's own sentence on any
+ * answer, and its messages for named inputs on a refusal.
+ *
+ * @param {object} result `{ok, status, body}` from a forward.
+ * @return {{message: string, errors: Object<string, string>}}
+ * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-the-resident-sees-what-happened-req-rai-003
+ */
+export function answerWords(result) {
+	const body =
+		result && typeof result.body === 'object' && result.body ? result.body : {}
+	const errors = {}
+	if (
+		body.errors
+		&& typeof body.errors === 'object'
+		&& !Array.isArray(body.errors)
+	) {
+		for (const [name, value] of Object.entries(body.errors)) {
+			if (typeof value === 'string' && value !== '') {
+				errors[name] = value
+			}
+		}
+	}
+	return {
+		message: typeof body.message === 'string' ? body.message.trim() : '',
+		errors,
+	}
 }
 
 /**
@@ -191,9 +299,10 @@ export function answerLink(result, origin = pageOrigin()) {
  * @param {object} collection The collection the row belongs to.
  * @param {object} row The row.
  * @param {object} action The endpoint row action.
+ * @param answers
  * @return {Promise<{redirect: string|null, messageKey: string, link: string}>}
  */
-export async function runRowAction(api, collection, row, action) {
+export async function runRowAction(api, collection, row, action, answers = {}) {
 	const rowId = row && (row.id || row['@self']?.id)
 	if (!rowId || !api) {
 		return {
@@ -201,15 +310,18 @@ export async function runRowAction(api, collection, row, action) {
 			messageKey: outcomeKey({ ok: false, status: 0, body: {} }),
 		}
 	}
-	const result = await api.forwardRowAction(collection, rowId, action.id)
+	const result = await api.forwardRowAction(collection, rowId, action.id, answers)
 	const redirect = redirectTarget(result)
 	const link = answerLink(result)
-	// `link` only when the action answered one, so every other outcome keeps
-	// its shape.
+	const words = answerWords(result)
+	// `link`, `message` and `errors` only when the answer carried them, so
+	// every other outcome keeps its shape.
 	return {
 		redirect,
 		messageKey: redirect ? '' : outcomeKey(result),
 		...(link ? { link } : {}),
+		...(words.message ? { message: words.message } : {}),
+		...(Object.keys(words.errors).length > 0 ? { errors: words.errors } : {}),
 	}
 }
 

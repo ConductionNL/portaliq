@@ -92,23 +92,35 @@ class EventGuardianController extends Controller implements PortalProtected {
 	 * @param string $id The event id.
 	 * @param string $childRef The child.
 	 * @param string $response One of `yes`, `no`, `maybe`.
+	 * @param int|null $seats The seats asked, when the event asks for seats.
 	 *
-	 * @return JSONResponse 204 on success, 404 otherwise.
+	 * @return JSONResponse 204 on success, 404 when unreachable, 422 when the event is full, closed or the seats are out of range.
 	 *
 	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function rsvp(string $id, string $childRef, string $response): JSONResponse {
+	public function rsvp(string $id, string $childRef, string $response, ?int $seats = null): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$recorded = $this->rsvpService->rsvp(subjectRef: (string)($subject['subjectRef'] ?? ''), eventId: $id, childRef: $childRef, response: $response);
-		if ($recorded === false) {
+		$reason = $this->rsvpService->attempt(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			eventId: $id,
+			childRef: $childRef,
+			response: $response,
+			seats: $seats
+		);
+		if ($reason === EventRsvpService::REASON_NOT_FOUND) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if ($reason !== null) {
+			// Full, closed or a number of seats out of range: said in words by the page.
+			return new JSONResponse(['error' => $reason], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
 		return new JSONResponse([], Http::STATUS_NO_CONTENT);

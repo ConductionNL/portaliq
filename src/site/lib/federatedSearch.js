@@ -32,6 +32,7 @@
  * @param {string} state.query        Free-text term, may be empty.
  * @param {string} state.facetField   Object field to facet on.
  * @param {Array<string>} state.selectedFacets Selected facet values.
+ * @param {Record<string, string|Array<string>>} [state.lockedFilters] Filters always sent, never offered or removable.
  * @return {string} The absolute request URL.
  */
 export function buildRequestUrl(state) {
@@ -46,13 +47,24 @@ export function buildRequestUrl(state) {
 	// something this portal should be betting on.
 	if (state.query) {
 		url.searchParams.set('_search', state.query)
+
+		// THE TEXT INSIDE PUBLIC DOCUMENTS (REQ-PFS-CONTENT-001). The opt-in
+		// opencatalogi's document content search defines; sent whenever there
+		// is a term, unless the portal switched it off. Only the published,
+		// redacted copy of a document is searched on the other side.
+		if (state.searchInsideDocuments !== false) {
+			url.searchParams.set('_content', 'true')
+		}
 	}
 
 	// ONE FACET PER FIELD, IN THE SAME REQUEST (woo-search-and-detail D1).
 	// `facetFields` with a `facets` map is the current shape; a caller that
 	// still passes the single `facetField` with `selectedFacets` gets exactly
 	// the request it got before.
-	const fields = facetFieldsOf(state)
+	// A LOCKED FILTER IS ALWAYS SENT and is not a facet: it is neither asked
+	// for as a facet nor taken from what the visitor ticked (REQ-HTL-001).
+	const locked = lockedFiltersOf(state)
+	const fields = withoutLocked(facetFieldsOf(state), locked)
 	for (const field of fields) {
 		url.searchParams.set(`_facets[${field}][type]`, 'terms')
 	}
@@ -60,6 +72,12 @@ export function buildRequestUrl(state) {
 	const selected = state.facets || { [fields[0]]: state.selectedFacets || [] }
 	for (const field of fields) {
 		for (const value of selected[field] || []) {
+			url.searchParams.append(field, value)
+		}
+	}
+
+	for (const [field, values] of Object.entries(locked)) {
+		for (const value of values) {
 			url.searchParams.append(field, value)
 		}
 	}
@@ -107,10 +125,36 @@ export function buildRequestUrl(state) {
  * @return {object} The view model.
  */
 export function toResult(row) {
+	const result = baseResult(row)
+	// A subject's own page and how many publications it holds
+	// (search-filter-by-kind REQ-SFK-002). No other kind carries them.
+	if (result.kind === 'subject') {
+		result.slug = subjectSlug(row)
+		result.publicationCount = Number((row || {}).publicationCount) || 0
+	}
+
+	return result
+}
+
+/**
+ * The view-model row every kind shares.
+ *
+ * @param {object} row One row of the endpoint's answer.
+ * @return {object} The row the block draws.
+ * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+ */
+function baseResult(row) {
 	const self = (row || {})['@self'] || {}
 	const summary = self.summary || (row || {}).description || ''
+	const kind = resultKind(row)
 
 	return {
+		// 'document' for a row that is a document, else 'publication' (or
+		// whatever the endpoint named). A document links to its own page.
+		kind,
+		// The publication a document belongs to, so a hit inside a PDF still
+		// says where it lives. Empty for a row that is not a document.
+		publication: kind === 'document' ? publicationName(row) : '',
 		key: self.id || (row || {}).id || (row || {}).sha || (row || {}).name || '',
 		title: (row || {}).name || self.name || self.title || 'Zonder titel',
 		// Truncated here rather than by CSS: an ellipsis that hides text still
@@ -133,6 +177,81 @@ export function toResult(row) {
 		// read; a page that knows its corpus supplies `typeLabel` instead.
 		type: self.schemaTitle || '',
 	}
+}
+
+/**
+ * A subject's slug: a plain address part, else empty, so a slug from a peer
+ * can never put anything but a path segment into a link.
+ *
+ * @param {object} row The result row.
+ * @return {string} The slug, or ''.
+ * @spec openspec/changes/search-filter-by-kind/specs/portal-federated-search/spec.md#requirement-each-kind-links-to-its-own-page-req-sfk-002
+ */
+export function subjectSlug(row) {
+	const slug = String((row || {}).slug || ((row || {})['@self'] || {}).slug || '')
+	return /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(slug) ? slug : ''
+}
+
+/** The facet field the endpoint counts the kinds of record in. */
+export const KIND_FIELD = 'resultType'
+
+/**
+ * The fields a search asks facets for: the kind of record first, then the
+ * placement's own. A placement that leaves the kind out with `hideKind` asks
+ * for no kind facet.
+ *
+ * @param {Array<string>} fields The placement's facet fields.
+ * @param {boolean} hideKind Whether the placement turned the kind filter off.
+ * @return {Array<string>} The fields to ask for.
+ * @spec openspec/changes/search-filter-by-kind/specs/portal-federated-search/spec.md#requirement-results-filter-by-kind-req-sfk-001
+ */
+export function withKindField(fields, hideKind = false) {
+	const own = (Array.isArray(fields) ? fields : []).filter(
+		(field) => field !== KIND_FIELD,
+	)
+	return hideKind === true ? own : [KIND_FIELD, ...own]
+}
+
+/**
+ * What kind of row the endpoint returned: its `resultType`, else the schema
+ * word on `@self`, else 'publication'.
+ *
+ * @param {object} row One API result.
+ * @return {string} 'document', 'subject' or 'publication'.
+ *
+ * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
+ */
+export function resultKind(row) {
+	const self = (row || {})['@self'] || {}
+	const word = String(
+		(row || {}).resultType || self.resultType || self.schema || '',
+	)
+		.toLowerCase()
+		.trim()
+	if (word === 'document' || word === 'subject') {
+		return word
+	}
+
+	return 'publication'
+}
+
+/**
+ * The name of the publication a document row belongs to.
+ *
+ * @param {object} row One API result.
+ * @return {string} The name, or ''.
+ */
+function publicationName(row) {
+	const publication = (row || {}).publication
+	if (publication && typeof publication === 'object') {
+		return String(publication.title || publication.name || '')
+	}
+
+	return String(
+		(typeof publication === 'string' ? publication : '')
+			|| (row || {}).publicationTitle
+			|| '',
+	)
 }
 
 /**
@@ -423,4 +542,48 @@ export function searchQuery(state, catalog = '') {
 		},
 		catalog: String(catalog || ''),
 	}
+}
+
+/**
+ * The locked filters of a search state as a map of field to values.
+ *
+ * A locked filter belongs to the block's placement, not to the visitor: a
+ * subject's page locks its own subject. Empty fields and empty values are
+ * dropped, so a lock that names nothing locks nothing.
+ *
+ * @param {object} state The search state.
+ * @return {Record<string, Array<string>>} Field to values; empty without locks.
+ *
+ * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ */
+export function lockedFiltersOf(state) {
+	const raw = state && state.lockedFilters
+	const locked = {}
+	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+		return locked
+	}
+
+	for (const [field, value] of Object.entries(raw)) {
+		const values = (Array.isArray(value) ? value : [value])
+			.map((entry) => String(entry ?? ''))
+			.filter((entry) => entry !== '')
+		if (field !== '' && values.length > 0) {
+			locked[field] = values
+		}
+	}
+
+	return locked
+}
+
+/**
+ * The facet fields without the locked ones.
+ *
+ * @param {Array<string>} fields The facet fields.
+ * @param {Record<string, Array<string>>} locked The locked filters.
+ * @return {Array<string>} The fields the visitor may filter on.
+ *
+ * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ */
+export function withoutLocked(fields, locked) {
+	return (fields || []).filter((field) => !Object.hasOwn(locked || {}, field))
 }

@@ -95,4 +95,34 @@ class ActionFormShape {
 	public function flow(array $action, array $whitelist): array {
 		return (new FormStepsNormaliser())->applyToAction(action: $action, whitelist: $whitelist);
 	}//end flow()
+
+	/**
+	 * Normalise the confirmation-mail keys and the row-action inputs of an
+	 * action.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 * @param array<int, string> $whitelist The action's `fields`.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+	 */
+	public function mailAndRowInputs(array $action, array $whitelist): array {
+		$action = (new ConfirmationMailKeys())->normalise(action: $action, whitelist: $whitelist);
+
+		return (new RowActionInputs())->normaliseAction(action: $action);
+	}//end mailAndRowInputs()
+
+	/**
+	 * Normalise the life-domain keys of an action.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+	 */
+	public function themeTags(array $action): array {
+		return (new ThemeTagKeys())->action(action: $action);
+	}//end themeTags()
 }//end class

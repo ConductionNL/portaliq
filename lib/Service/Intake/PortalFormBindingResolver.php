@@ -75,6 +75,13 @@ class PortalFormBindingResolver {
 	private const DEFAULT_FORM_SCHEMA = 'registrationForm';
 
 	/**
+	 * Reads the fields of a published form.
+	 *
+	 * @var PortalFormFields
+	 */
+	private readonly PortalFormFields $fields;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads the binding and the form.
@@ -83,12 +90,21 @@ class PortalFormBindingResolver {
 	 *                                           Absent hides nothing.
 	 * @param VisibleWhenLocal $visibleWhen Which field conditions the portal
 	 *                                      can check on submit.
+	 * @param PortalReferenceLists|null $lists Fills a field's `options.referenceList`. Absent
+	 *                                         leaves such a field with no options, which
+	 *                                         closes it.
+	 * @param PortalFormCalculator $calculator Knows which `calculate` operations the server can repeat.
+	 * @param PortalFee|null $fees Reads the fee a case type declares. Absent means no form carries one.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
+		?PortalReferenceLists $lists = null,
+		private readonly PortalFormCalculator $calculator = new PortalFormCalculator(),
+		private readonly ?PortalFee $fees = null,
 	) {
+		$this->fields = new PortalFormFields(lists: $lists);
 	}//end __construct()
 
 	/**
@@ -253,18 +269,19 @@ class PortalFormBindingResolver {
 			'prefillFromEarlierCases' => (($binding['prefillFromEarlierCases'] ?? false) === true),
 			'challenge' => (($binding['challenge'] ?? false) === true),
 			'confirmationText' => (string)($binding['confirmationText'] ?? ''),
+			// The introduction, the statements asked, the confirmation page and
+			// mail (form-statements-intro-and-confirmation-mail). Carried as the
+			// binding declares them; the controller adds the portal's wording.
+			'intro' => $this->arrayOrNull(value: ($binding['intro'] ?? null)),
+			'statementsDeclared' => $this->arrayOrNull(value: ($binding['statements'] ?? null)),
+			'confirmation' => $this->arrayOrNull(value: ($binding['confirmation'] ?? null)),
+			'confirmationMail' => ((($binding['confirmationMail']['enabled'] ?? false)) === true),
 		];
 
 		if ($this->caseTypes?->hidesBinding(binding: $binding) === true) {
 			// The portal does not show this case type, so its form does not
 			// open (operate-show-per-case-type REQ-OSC-002).
-			return [
-				'kind' => (string)($binding['intakeKind'] ?? self::KIND_HOSTED),
-				'resolvesToNoForm' => true,
-				'reason' => 'hiddenCaseType',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return $this->noForm(kind: (string)($binding['intakeKind'] ?? self::KIND_HOSTED), reason: 'hiddenCaseType', settings: $settings);
 		}
 
 		if ((string)($binding['intakeKind'] ?? self::KIND_HOSTED) === self::KIND_EXTERNAL) {
@@ -283,27 +300,22 @@ class PortalFormBindingResolver {
 
 		$form = $this->publishedForm(binding: $binding);
 		if ($form === null) {
-			return [
-				'kind' => self::KIND_HOSTED,
-				'resolvesToNoForm' => true,
-				'reason' => 'no_published_form_for_audience',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return $this->noForm(kind: self::KIND_HOSTED, reason: 'no_published_form_for_audience', settings: $settings);
 		}
 
-		$fields = $this->fieldsOf(form: $form);
+		$fields = $this->fields->fieldsOf(form: $form);
 		if ($this->visibleWhen->decidesEveryField(fields: $fields) === false) {
 			// The server could not repeat on submit what the screen decided,
 			// so the form is refused rather than half checked (REQ-ICQ-003).
-			return [
-				'kind' => self::KIND_HOSTED,
-				'resolvesToNoForm' => true,
-				'reason' => 'unsupportedCondition',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return $this->noForm(kind: self::KIND_HOSTED, reason: 'unsupportedCondition', settings: $settings);
 		}
+
+		if ($this->calculator->knowsEveryOperation(fields: $fields) === false) {
+			// The server could not work the value out again on submit, so the
+			// form does not open (form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002).
+			return $this->noForm(kind: self::KIND_HOSTED, reason: 'unsupportedCalculation', settings: $settings);
+		}
+		$fee = $this->fees?->forBinding(binding: $binding);
 
 		$confirmation = (string)($form['confirmationText'] ?? '');
 		if ($confirmation !== '') {
@@ -325,11 +337,33 @@ class PortalFormBindingResolver {
 				known: array_map(static fn (array $field): string => (string)$field['name'], $fields)
 			),
 			'settings' => $settings,
+			// What the request costs, from the case type and nowhere else
+			// (intake-pay-on-submit REQ-IPS-001). Null for a free request.
+			'fee' => $fee,
 			// The sign-in level the maker chose for this form (buildiq#935).
 			// Carried as declared; requiredTrust() decides what it means.
 			'minTrust' => ($form['minTrust'] ?? null),
 		];
 	}//end render()
+
+	/**
+	 * The render of a binding that resolves to no form.
+	 *
+	 * @param string               $kind     The binding's intake kind.
+	 * @param string               $reason   Why, as the admin surface prints it.
+	 * @param array<string, mixed> $settings The intake settings.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function noForm(string $kind, string $reason, array $settings): array {
+		return [
+			'kind' => $kind,
+			'resolvesToNoForm' => true,
+			'reason' => $reason,
+			'fields' => [],
+			'settings' => $settings,
+		];
+	}//end noForm()
 
 	/**
 	 * The sign-in level a submission of this form needs, or null for none.
@@ -417,46 +451,19 @@ class PortalFormBindingResolver {
 	}//end formAnswersTheBinding()
 
 	/**
-	 * The form's fields, in the order the form declares, with its presets.
+	 * A value when it is an array, otherwise null.
 	 *
-	 * @param array<string, mixed> $form The published form.
+	 * @param mixed $value The value.
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return array<string, mixed>|null
 	 */
-	private function fieldsOf(array $form): array {
-		$fields = ($form['fields'] ?? []);
-		if (is_array($fields) === false) {
-			return [];
+	private function arrayOrNull(mixed $value): ?array {
+		if (is_array($value) === true) {
+			return $value;
 		}
 
-		$presets = (array)($form['presets'] ?? []);
-		$out = [];
-		foreach ($fields as $field) {
-			if (is_array($field) === false) {
-				continue;
-			}
-
-			$name = (string)($field['name'] ?? '');
-			if ($name === '') {
-				continue;
-			}
-
-			if (array_key_exists($name, $presets) === true) {
-				$field['preset'] = $presets[$name];
-			}
-
-			$out[] = $field;
-		}
-
-		usort(
-			$out,
-			static function (array $first, array $second): int {
-				return ((int)($first['order'] ?? 0) <=> (int)($second['order'] ?? 0));
-			}
-		);
-
-		return $out;
-	}//end fieldsOf()
+		return null;
+	}//end arrayOrNull()
 
 	/**
 	 * The host a URL names, for the card the visitor reads before leaving.

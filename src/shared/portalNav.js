@@ -16,6 +16,7 @@ export const NAV_KEYS = {
 	access: '__access__',
 	cases: '__cases__',
 	details: '__details__',
+	contacts: '__contacts__',
 	account: '__account__',
 }
 
@@ -23,7 +24,14 @@ export const NAV_KEYS = {
  * Sections that are never the page a signed-in resident lands on: they are
  * there to visit, not to open with.
  */
-const NEVER_DEFAULT = ['inbox', 'access', 'details', 'account']
+const NEVER_DEFAULT = [
+	'inbox',
+	'access',
+	'details',
+	'contacts',
+	'samenwerken',
+	'account',
+]
 
 /**
  * The in-site route every signed-in section lives under. A CMS page with this
@@ -45,6 +53,8 @@ export const ACCOUNT_ROUTE = '/mijn'
  * @param {boolean} [enabled.news] The guardian's feed holds news.
  * @param {boolean} [enabled.access] Signed in with the contributions loaded.
  * @param {boolean} [enabled.cases] `cases.enabled` on the aggregate.
+ * @param {Array<object>} [enabled.pages] The own-area pages the portal switched on: `{special, label, icon}`.
+ * @param {Array<object>} [enabled.themes] The life domains with something for this resident.
  * @return {Array<object>} `{key, label, icon, page?, contribution?, special?}` entries.
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
@@ -103,6 +113,23 @@ export function buildNav(contributions, t, enabled = {}) {
 			special: 'inbox',
 		})
 	}
+	for (const page of enabled.pages || []) {
+		nav.push({
+			key: `__${page.special}__`,
+			label: t(page.label),
+			icon: page.icon,
+			special: page.special,
+		})
+	}
+	for (const theme of enabled.themes || []) {
+		nav.push({
+			key: `__theme__:${theme.slug}`,
+			label: theme.title,
+			icon: 'Tag',
+			special: `thema/${theme.slug}`,
+			theme,
+		})
+	}
 	if (enabled.access === true) {
 		nav.push({
 			key: NAV_KEYS.access,
@@ -137,7 +164,7 @@ export function buildNav(contributions, t, enabled = {}) {
  * @param {object|null} state.contributions The contributions aggregate, or null.
  * @param {Array|null} state.threads The message threads.
  * @param {Array|null} state.news The news feed.
- * @return {{tasks: boolean, messages: boolean, news: boolean, access: boolean, cases: boolean}}
+ * @return {{tasks: boolean, messages: boolean, news: boolean, access: boolean, cases: boolean, pages: Array<object>, themes: Array<object>}}
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function shellSections({ session, contributions, threads, news }) {
@@ -147,6 +174,11 @@ export function shellSections({ session, contributions, threads, news }) {
 		news: Array.isArray(news) && news.length > 0,
 		access: Boolean(session && contributions),
 		cases: contributions?.cases?.enabled === true,
+		pages:
+			session && Array.isArray(contributions?.areaPages)
+				? contributions.areaPages
+				: [],
+		themes: Array.isArray(contributions?.themes) ? contributions.themes : [],
 	}
 }
 

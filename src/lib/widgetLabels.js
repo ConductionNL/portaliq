@@ -29,6 +29,10 @@ const PUBLIC_LABELS = {
 	intakeCatalogue: 'Aanvragen per onderwerp',
 	intakeForm: 'Aanvraagformulier',
 	intakeStatus: 'Status van een aanvraag',
+	contactForm: 'Vraagformulier',
+	assistant: 'Vraag het de assistent',
+	publicRecords: 'Openbare overzichten',
+	sharedBlock: 'Gedeeld blok',
 }
 
 /**

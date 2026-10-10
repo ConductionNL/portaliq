@@ -31,7 +31,7 @@
 - [x] 3.1 `src/portal/App.jsx` — every literal from proposal.md now goes
       through `t('key')` (or `t('key', {vars})` for the two interpolated
       strings), using the `t` prop threaded down from `main.jsx`.
-- [ ] 3.2 `window.prompt()` field collection in `createInCollection` (and the
+- [x] 3.2 (retired with the React portal: `src/portal/` is gone from `development` and `grep -rn window.prompt src/` finds nothing, so there is no prompt left to replace) `window.prompt()` field collection in `createInCollection` (and the
       new `invokeEndpointAction`) still uses `window.prompt()` — its
       messages are now translated (`t('{field}?', {field})`,
       `t('New document')`), but the REPLACEMENT with an inline labelled form
@@ -52,4 +52,4 @@
       this apply pass.
 - [ ] 4.2 Run Hydra gates (spdx-headers, i18n-keys-english convention,
       spec-coverage) before push. — not run as part of this apply pass
-      (process/review step); flag for the PR review stage.
+      (process/review step); flag for the PR review stage. — not run: the conduction/hydra-gates package is not available in this environment; run in CI/review

@@ -26,8 +26,10 @@
 			v-if="confirmed.summary"
 			class="pq-schema-form__summary"
 			data-testid="schema-form-confirmation-summary">
-			<p v-if="action.summary.label" class="pq-schema-form__summary-label">
-				{{ action.summary.label }}
+			<p
+				v-if="action.answerSummary.label"
+				class="pq-schema-form__summary-label">
+				{{ action.answerSummary.label }}
 			</p>
 			<p class="utrecht-paragraph pq-schema-form__summary-text">
 				{{ confirmed.summary }}
@@ -131,8 +133,10 @@
 			class="pq-schema-form__summary"
 			aria-live="polite"
 			data-testid="schema-form-summary">
-			<p v-if="action.summary.label" class="pq-schema-form__summary-label">
-				{{ action.summary.label }}
+			<p
+				v-if="action.answerSummary.label"
+				class="pq-schema-form__summary-label">
+				{{ action.answerSummary.label }}
 			</p>
 			<p class="utrecht-paragraph pq-schema-form__summary-text">
 				{{ summaryText }}
@@ -163,6 +167,15 @@
 				:disabled="submitting"
 				data-testid="schema-form-submit">
 				{{ submitting ? translate('Please wait…') : submitLabel }}
+			</button>
+			<button
+				v-if="canSaveDraft"
+				type="button"
+				class="utrecht-button utrecht-button--subtle"
+				:disabled="submitting"
+				data-testid="schema-form-save-draft"
+				@click="saveDraft">
+				{{ translate('Save and continue later') }}
 			</button>
 			<button
 				v-if="pending !== null"
@@ -196,7 +209,12 @@ import {
 } from '../../../shared/fileFieldSubmit.js'
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
 import stepFlow from '../forms/stepFlow.js'
-import { confirmationText, stepHeading } from '../forms/steps.js'
+import {
+	confirmationText,
+	landingStep,
+	retentionDate,
+	stepHeading,
+} from '../forms/steps.js'
 import { summarySentence } from '../forms/summary.js'
 import {
 	collectionProviders,
@@ -206,6 +224,8 @@ import {
 	fieldLabel,
 	formBody,
 	formFields,
+	invalidFieldErrors,
+	refusalKey,
 	serverFieldErrors,
 	staticOptions,
 	translatorOr,
@@ -253,6 +273,11 @@ export default {
 		 * `recordField` (case-actions-on-the-case-page).
 		 */
 		preset: { type: Object, default: () => ({}) },
+		/**
+		 * Values the form starts from and the resident may change, by field:
+		 * the row's own values on an update (site-action-forms).
+		 */
+		initial: { type: Object, default: () => ({}) },
 	},
 
 	emits: ['submitted'],
@@ -289,7 +314,7 @@ export default {
 				(typeof document !== 'undefined' && document.documentElement?.lang)
 				|| 'nl'
 			return summarySentence(
-				this.action?.summary || null,
+				this.action?.answerSummary || null,
 				this.values,
 				this.options,
 				{ locale },
@@ -306,6 +331,46 @@ export default {
 		 */
 		showsSummary() {
 			return this.summaryText !== '' && (!this.hasSteps || this.onReview)
+		},
+
+		/**
+		 * The retention the action declares for a saved draft, or 0 for none.
+		 *
+		 * @return {number} Days.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		draftDays() {
+			const days = this.action.draft && this.action.draft.retentionDays
+			return Number.isInteger(days) && days > 0 ? days : 0
+		},
+
+		/**
+		 * Whether "Opslaan en later verdergaan" shows: the action declares a
+		 * draft, the form runs in steps and the api can keep one.
+		 *
+		 * @return {boolean} True to show the button.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		canSaveDraft() {
+			return (
+				this.draftDays > 0
+				&& this.hasSteps
+				&& !this.confirmed
+				&& typeof this.api.saveDraft === 'function'
+			)
+		},
+
+		/**
+		 * The app part of the draft's key: the action's app, else its register.
+		 *
+		 * @return {string} The app.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		draftApp() {
+			return String(this.action.appId || this.action.register || 'portal')
 		},
 
 		translate() {
@@ -450,23 +515,39 @@ export default {
 		},
 	},
 
+	/**
+	 * Load the options, then open a saved draft when the action keeps one.
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+	 */
 	mounted() {
 		this.loadOptions()
+		this.resumeDraft()
 	},
 
 	methods: {
 		/**
 		 * One empty string per whitelisted field, or the value the page gives
-		 * for it (`preset`).
+		 * for it (`preset`), or the value the form starts from (`initial`).
 		 *
 		 * @return {Record<string, string>} The values.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		emptyValues() {
 			const values = {}
 			for (const field of formFields(this.action)) {
 				values[field] =
 					field in this.preset ? String(this.preset[field]) : ''
+				const start = this.initial[field]
+				if (
+					!(field in this.preset)
+					&& start !== undefined
+					&& start !== null
+					&& typeof start !== 'object'
+				) {
+					values[field] = String(start)
+				}
 			}
 			return values
 		},
@@ -611,6 +692,82 @@ export default {
 		},
 
 		/**
+		 * The page's language, for dates.
+		 *
+		 * @return {string} The language code.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		pageLocale() {
+			return (
+				(typeof document !== 'undefined' && document.documentElement?.lang)
+				|| 'nl'
+			)
+		},
+
+		/**
+		 * Keep the answers so far and the step reached, without sending them
+		 * to the app. Files are not kept.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 */
+		async saveDraft() {
+			this.error = ''
+			this.done = ''
+			const kept = await this.api.saveDraft(this.draftApp, this.action.id, {
+				answers: { ...this.values },
+				step: this.currentStep ? this.currentStep.id : '',
+				retentionDays: this.draftDays,
+			})
+			if (kept === null || kept === undefined) {
+				this.error = this.translate('Your answers could not be saved.')
+				return
+			}
+			this.done = this.translate(
+				'Your answers are saved until {date}. You can continue later.',
+				{
+					date: retentionDate(kept.expiresAt, this.pageLocale()),
+				},
+			)
+		},
+
+		/**
+		 * Open a saved draft: its answers back in the fields, on the first step
+		 * with a missing required answer, else on the review.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+		 */
+		async resumeDraft() {
+			if (!this.canSaveDraft || typeof this.api.getDraft !== 'function') {
+				return
+			}
+			const draft = await this.api.getDraft(this.draftApp, this.action.id)
+			if (!draft || typeof draft.answers !== 'object') {
+				return
+			}
+			const values = { ...this.values }
+			for (const field of this.fields) {
+				if (field in draft.answers && !(field in this.preset)) {
+					values[field] = draft.answers[field]
+				}
+			}
+			this.values = values
+			this.stepIndex = landingStep(
+				this.flow,
+				(fields) => this.checkFields(fields),
+				(field) => this.isShownField(field),
+			)
+			this.done = this.translate(
+				'Your answers are saved until {date}. You can continue later.',
+				{ date: retentionDate(draft.expiresAt, this.pageLocale()) },
+			)
+		},
+
+		/**
 		 * Move focus to the error summary's heading.
 		 *
 		 * @return {void}
@@ -677,6 +834,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 */
 		async submit() {
 			this.error = ''
@@ -706,15 +864,23 @@ export default {
 			if (!result.ok) {
 				// A refusal that names fields (a required field left empty)
 				// lands in the summary, on its step; anything else in words.
-				const refused = serverFieldErrors(this.action, result.errors, this.t)
+				// A value the server refused (`invalid`, site-action-forms) gets
+				// plain words on its field too.
+				const refused = {
+					...invalidFieldErrors(this.action, result.invalid, this.t),
+					...serverFieldErrors(this.action, result.errors, this.t),
+				}
 				if (Object.keys(refused).length > 0) {
 					this.showErrors(refused)
 					return
 				}
-				this.error = this.translate('Saving did not work.')
+				this.error = this.translate(refusalKey(result.status || 0))
 				return
 			}
 
+			if (this.draftDays > 0 && typeof this.api.discardDraft === 'function') {
+				this.api.discardDraft(this.draftApp, this.action.id)
+			}
 			this.values = this.startValues()
 			this.files = {}
 			this.fileKey++
@@ -735,18 +901,21 @@ export default {
 		 * as a create.
 		 *
 		 * @param {object} body The body.
-		 * @return {Promise<{ok: boolean, object: object|null, id: string, failed: Array, errors: object}>} The result.
+		 * @return {Promise<{ok: boolean, status: number, object: object|null, id: string, failed: Array, errors: object, invalid: object}>} The result.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 */
 		async sendBody(body) {
 			const answer = (await this.send(body)) || {}
 			return {
 				ok: answer.ok === true,
+				status: answer.status || 0,
 				object: answer.object || null,
 				id: '',
 				failed: [],
 				errors: answer.errors || {},
+				invalid: answer.invalid || {},
 			}
 		},
 

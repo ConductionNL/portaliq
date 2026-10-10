@@ -183,6 +183,9 @@ export function headerSearchOf(site) {
 		enabled: search.enabled === true,
 		label: String(search.label || ''),
 		placeholder: String(search.placeholder || ''),
+		// Suggestions while typing, unless the portal switches them off
+		// (search-suggestions-while-typing).
+		suggest: search.suggest !== false,
 		route: /^\/(?!\/)/.test(route) ? route : '/zoeken',
 	}
 }

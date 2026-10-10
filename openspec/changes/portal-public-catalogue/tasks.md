@@ -8,5 +8,5 @@
   - PHPUnit `PublicCatalogueTest::testTheEndpointAnswersAVisitorOfAPublicPortalAndRefusesOneThatIsNot`
 - [x] **T4**: `nlCatalogue` widget (on demand), registry, meta, `SITE_COMPOSITIONS`; `nlEventList` `source`; `WidgetGrid` hands both the portal
   - node `tests/portal-public-catalogue.spec.mjs` (`check:portal-public-catalogue`, in `check:specs`); `widget-registry`, `widget-tokens` green
-- [ ] **T5**: live check next to the Vaartveld, Esdoornveen and Warmtepompacademie `Zoeken` boards, after learniq declares its index (`portal-public-index`) and the example portals place the block
+- [ ] **T5**: live check next to the Vaartveld, Esdoornveen and Warmtepompacademie `Zoeken` boards, after learniq declares its index (`portal-public-index`) and the example portals place the block — not run: needs a live instance and learniq
 - [x] **T6**: `openspec validate portal-public-catalogue --strict`

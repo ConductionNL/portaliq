@@ -111,9 +111,14 @@ function onlyIdentifiers(objects, field) {
  * The columns of a table: the app's declared `columns`, else every field the
  * rows carry, minus the envelope and fields that hold only identifiers.
  *
+ * A heading is the column's own label, else the field's label in
+ * `fieldConfigs` (which the server fills from the schema property's title
+ * when the app wrote none), else the field written as words.
+ *
  * @param {object} collection The collection.
  * @param {Array<object>} objects The rows.
  * @return {Array<{field: string, label: string, render: string}>}
+ * @spec openspec/changes/collection-column-labels/specs/portal-contribution-contract/spec.md#requirement-a-collection-field-must-read-under-its-schema-title-when-the-app-gave-no-label
  */
 export function deriveColumns(collection, objects) {
 	const declared = Array.isArray(collection?.columns)
@@ -123,11 +128,11 @@ export function deriveColumns(collection, objects) {
 		: []
 	if (declared.length > 0) {
 		return declared.map((c) => {
-			const valueLabels =
-				c.valueLabels || fieldConfigOf(collection, c.field).valueLabels
+			const config = fieldConfigOf(collection, c.field)
+			const valueLabels = c.valueLabels || config.valueLabels
 			return {
 				...c,
-				label: columnLabel(c),
+				label: columnLabel({ label: config.label, ...withLabel(c) }),
 				render: c.render || 'text',
 				...(valueLabels ? { valueLabels } : {}),
 			}
@@ -144,7 +149,29 @@ export function deriveColumns(collection, objects) {
 	}
 	return fields
 		.filter((field) => !onlyIdentifiers(rows, field))
-		.map((field) => ({ field, label: humanise(field), render: 'text' }))
+		.map((field) => ({
+			field,
+			label: columnLabel({
+				field,
+				label: fieldConfigOf(collection, field).label,
+			}),
+			render: 'text',
+		}))
+}
+
+/**
+ * A column without a blank label, so the field's config label can stand in.
+ *
+ * @param {{label?: string}} column The declared column.
+ * @return {object} The column, its label dropped when blank.
+ */
+function withLabel(column) {
+	if (typeof column.label === 'string' && column.label.trim() !== '') {
+		return column
+	}
+	const rest = { ...column }
+	delete rest.label
+	return rest
 }
 
 /**
@@ -179,6 +206,7 @@ export function detailFields(collection, row) {
 			field,
 			label: columnLabel(column),
 			render: column.render || 'text',
+			linkLabel: column.linkLabel,
 			valueLabels: column.valueLabels || config.valueLabels,
 			declared: declared.length > 0,
 		}
@@ -394,6 +422,55 @@ export function safeHref(value) {
 		|| (href.startsWith('/') && !href.startsWith('//'))
 		? href
 		: ''
+}
+
+/** The schemes a `qr` value may have besides http(s) and a site path: the two EUDI wallet schemes. */
+const QR_SCHEMES = /^(openid-credential-offer|openid4vp):\/\//i
+
+/**
+ * The address a `qr` cell draws as a code and links to: http(s), a
+ * site-relative path made absolute on the site's own origin (a phone camera
+ * cannot resolve a path), or an `openid-credential-offer://` or
+ * `openid4vp://` value. Anything else, `javascript:` included, is no
+ * address: it reads as plain text, with no code and no link.
+ *
+ * @param {unknown} value The value.
+ * @param {string} origin The site's origin, to make a path absolute.
+ * @return {string} The address, or '' when it is not one.
+ *
+ * @spec openspec/changes/link-field-qr-code/tasks.md#t3
+ */
+export function qrHref(value, origin = '') {
+	if (typeof value !== 'string') {
+		return ''
+	}
+	const href = value.trim()
+	if (QR_SCHEMES.test(href) && /^[!-~]+$/.test(href)) {
+		return href
+	}
+	const safe = safeHref(href)
+	if (safe.startsWith('/') && origin !== '') {
+		return `${String(origin).replace(/\/$/, '')}${safe}`
+	}
+	return safe.startsWith('/') ? '' : safe
+}
+
+/**
+ * The words of a link or code: the column's `linkLabel`, else its label, else
+ * the field name.
+ *
+ * @param {{linkLabel?: string, label?: string, field?: string}} column The column or field.
+ * @return {string} The words.
+ *
+ * @spec openspec/changes/link-field-qr-code/tasks.md#t5
+ */
+export function qrLabel(column) {
+	for (const key of ['linkLabel', 'label', 'field']) {
+		if (typeof column?.[key] === 'string' && column[key].trim() !== '') {
+			return column[key].trim()
+		}
+	}
+	return ''
 }
 
 /**

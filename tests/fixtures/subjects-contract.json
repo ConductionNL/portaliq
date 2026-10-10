@@ -1,0 +1,23 @@
+{
+	"_source": "opencatalogi openspec/changes/subjects-as-first-class-records REQ-SUB-002 and REQ-SUB-003, as quoted in home-and-theme-landing-pages proposal.md 'Dependencies'. Not yet merged on opencatalogi: re-copy when it is.",
+	"list": {
+		"results": [
+			{ "id": "th-fietsen", "slug": "fietsen", "title": "Fietsen", "summary": "Fietsroutes en subsidies", "description": "", "image": "/img/fietsen.jpg", "url": "", "isExternal": false, "featured": true, "featuredOrder": 2, "publicationCount": 1 },
+			{ "id": "th-parkeren", "slug": "parkeren", "title": "Parkeren", "summary": "Vergunningen en tarieven", "description": "Alles over parkeren.", "image": { "url": "/img/parkeren.jpg", "alt": "Een parkeerplaats" }, "url": "", "isExternal": false, "featured": true, "featuredOrder": 1, "publicationCount": 14 },
+			{ "id": "th-afval", "slug": "afval", "title": "Afval", "summary": "", "description": "", "image": "", "featured": true, "publicationCount": 3 },
+			{ "id": "th-oud", "slug": "oud", "title": "Oud onderwerp", "featured": false, "featuredOrder": 0, "publicationCount": 9 },
+			{ "id": "th-zonder-titel", "slug": "zonder", "title": "", "featured": true }
+		],
+		"total": 5
+	},
+	"one": { "id": "th-parkeren", "slug": "parkeren", "title": "Parkeren", "summary": "Vergunningen en tarieven", "description": "Alles over parkeren.", "image": { "url": "/img/parkeren.jpg", "alt": "Een parkeerplaats" }, "publicationsUrl": "/index.php/apps/opencatalogi/api/themes/th-parkeren/publications", "publicationCount": 14 },
+	"counts": {
+		"results": [],
+		"total": 40,
+		"facets": {
+			"wooCategory": { "data": { "buckets": [ { "value": "infocat006", "count": 12 }, { "value": "infocat004", "count": 7 }, { "value": "infocat001", "count": 0 } ] } },
+			"themes": { "buckets": [ { "key": "th-parkeren", "results": 14, "label": "Parkeren" }, { "key": "th-fietsen", "results": 1, "label": "Fietsen" } ] },
+			"publicationDate": { "data": { "buckets": [ { "value": "2025-01-01", "count": 15 }, { "value": "2026-01-01", "count": 25 } ] } }
+		}
+	}
+}

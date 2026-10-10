@@ -13,6 +13,8 @@
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  */
 
+import { formatProblem } from './formats.js'
+
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
 /**
@@ -183,6 +185,23 @@ export const DUTCH = Object.freeze({
 	change: 'Wijzigen',
 	changeStep: 'Stap {n} wijzigen',
 	notAnswered: 'Niet ingevuld',
+	mailedTo:
+		'Wij hebben een bevestiging gestuurd naar {email}, met een samenvatting van uw aanvraag. Geen mail gezien? Kijk ook bij uw ongewenste e-mail.',
+	whatNow: 'Wat gebeurt er nu?',
+	print: 'Deze pagina printen',
+	statementRequired: 'Vink deze verklaring aan voordat u verstuurt.',
+	decisionDown: 'Er is een storing bij een koppeling. Uw antwoorden zijn bewaard.',
+	retry: 'Opnieuw proberen',
+	notCalculated: 'Nog niet te berekenen',
+	feeLine: 'Deze aanvraag kost {amount}.',
+	payNow: 'Betaal {amount} nu',
+	paid: 'Betaald',
+	unpaid: 'Nog niet betaald',
+	paymentFailed: 'De betaling is mislukt',
+	paymentUnknown: 'Wij kunnen de betaling nu nog niet tonen',
+	payUnavailable: 'U kunt nu niet betalen. Probeer het later opnieuw.',
+	signInFee:
+		'Log in om deze aanvraag in te dienen. Er hoort een bedrag van {amount} bij.',
 })
 
 /**
@@ -209,6 +228,11 @@ export function plainFieldErrors(fields, values, text = DUTCH) {
 		}
 		if (field.date === true && dateProblem(value)) {
 			errors[field.name] = text.date.split('{field}').join(field.label)
+			continue
+		}
+		const problem = formatProblem(field.format, value)
+		if (problem) {
+			errors[field.name] = problem
 		}
 	}
 	return errors

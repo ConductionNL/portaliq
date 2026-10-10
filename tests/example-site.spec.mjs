@@ -31,9 +31,29 @@ const schemas = register.components.schemas
 const siteFiles = readdirSync(new URL('lib/Settings/sites/', root)).filter((f) =>
 	f.endsWith('.json'),
 )
+/**
+ * The declaration as installed on an instance that has every app a page or link
+ * asks for: `requiresApp` is the catalogue's own key and never reaches the store.
+ *
+ * @param {*} value The declared value.
+ * @return {*} The value without `requiresApp`.
+ */
+function withApps(value) {
+	if (Array.isArray(value)) {
+		return value.map(withApps)
+	}
+	if (value && typeof value === 'object') {
+		return Object.fromEntries(
+			Object.entries(value)
+				.filter(([key]) => key !== 'requiresApp')
+				.map(([key, item]) => [key, withApps(item)]),
+		)
+	}
+	return value
+}
 const sites = siteFiles.map((file) => ({
 	file,
-	site: JSON.parse(read(`lib/Settings/sites/${file}`)),
+	site: withApps(JSON.parse(read(`lib/Settings/sites/${file}`))),
 }))
 
 /**
@@ -138,6 +158,8 @@ const blockComponents = {
 	hero: 'src/site/components/HeroBlock.vue',
 	federatedSearch: 'src/site/components/FederatedSearchBlock.vue',
 	publicationDetail: 'src/site/components/PublicationDetailBlock.vue',
+	contactForm: 'src/site/components/ContactForm.vue',
+	publicRecords: 'src/site/components/PublicRecordsBlock.vue',
 }
 const widgetProps = {}
 for (const [key, path] of Object.entries(blockComponents)) {
@@ -327,7 +349,7 @@ test('the Zuiddrecht site holds what the design shows', () => {
 	)
 	// Counts the installer's own test and the documentation name.
 	assert.equal(site.menus.length, 3)
-	assert.equal(site.pages.length, 33)
+	assert.equal(site.pages.length, 38)
 	assert.equal(site.news.length, 4)
 })
 
@@ -498,13 +520,16 @@ for (const { file, site } of sites) {
 			}
 		}
 		// Every page can be reached: a page no link names is dead weight,
-		// except the detail page a search result opens by id.
+		// except the detail pages a search result opens by id (a publication, a subject).
 		const linked = new Set(linksOf(site).map(({ href }) => href))
 		const orphans = site.pages
 			.map((page) => page.route)
 			.filter(
 				(route) =>
-					route !== '/' && route !== '/publicatie' && !linked.has(route),
+					route !== '/'
+					&& route !== '/publicatie'
+					&& route !== '/onderwerp'
+					&& !linked.has(route),
 			)
 		assert.deepEqual(orphans, [])
 	})
@@ -738,6 +763,6 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'cards',
 		'rows',
 	])
-	assert.equal(portal.version, '0.12.0')
-	assert.equal(register.info.version, '0.69.0')
+	assert.equal(portal.version, '0.24.0')
+	assert.equal(register.info.version, '0.93.0')
 })

@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Controller\ActionSettingsController;
 use OCA\Portaliq\Controller\MetricsController;
 use OCA\Portaliq\Controller\PortalHomePageController;
 use OCA\Portaliq\Controller\SessionAdminController;
@@ -74,6 +75,8 @@ class AdminOnlyPostureTest extends TestCase {
 		return [
 			'metrics#index' => [MetricsController::class, 'index'],
 			'sessionadmin#revokeOrganisation' => [SessionAdminController::class, 'revokeOrganisation'],
+			'actionsettings#index' => [ActionSettingsController::class, 'index'],
+			'actionsettings#update' => [ActionSettingsController::class, 'update'],
 			'settings#update' => [SettingsController::class, 'update'],
 			'settings#create' => [SettingsController::class, 'create'],
 			'portalhomepage#index' => [PortalHomePageController::class, 'index'],

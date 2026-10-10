@@ -62,6 +62,12 @@ class DocumentsProviderMethod {
 		}
 
 		$collection['documents'] = ['label' => $label, 'provider' => $declared['provider']];
+		// An `opened` hook (site-member-voting-record-and-confidential-papers) is kept only
+		// as a plain method name; a malformed one is dropped and the key stays without it.
+		if (array_key_exists('opened', $declared) === true && (new TimelineProviderMethod())->accepts(name: $declared['opened']) === true) {
+			$collection['documents']['opened'] = $declared['opened'];
+		}
+
 		return $collection;
 	}//end normalise()
 }//end class

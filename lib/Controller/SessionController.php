@@ -35,8 +35,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentCatalogue;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentRecord;
+use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
@@ -263,8 +262,6 @@ class SessionController extends Controller {
 	 *                                cannot be used against it.
 	 * @param OrganisationLoginConfig|null $loginConfig The route per provider
 	 *                                                  (signin-integriq-broker-login).
-	 * @param ExampleResidentRecord|null $exampleResidents The example resident install records, for the one-click demo sign-in.
-	 * @param ExampleResidentCatalogue|null $exampleCatalogue The shipped example residents.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -279,8 +276,6 @@ class SessionController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly PortalResolver $portals,
 		private readonly ?OrganisationLoginConfig $loginConfig = null,
-		private readonly ?ExampleResidentRecord $exampleResidents = null,
-		private readonly ?ExampleResidentCatalogue $exampleCatalogue = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -901,115 +896,6 @@ class SessionController extends Controller {
 	}//end nextcloud()
 
 	/**
-	 * One click on a demo: the example resident's session
-	 * (example-resident-demo-login).
-	 *
-	 * The example resident's way in is the `nextcloud` mode, which exchanges
-	 * a Nextcloud session for a portal session; a demo visitor got the
-	 * platform's login form. This route mints the same session without the
-	 * form, for the example resident's OWN account id only. It is closed
-	 * unless an administrator set `example_resident_demo_login` to `yes`;
-	 * `debug` mode does NOT open it, unlike the test sign-in. The subject is
-	 * the install record's, never the caller's, and every refusal is a
-	 * throttled 404, so the route is no oracle for which residents exist.
-	 *
-	 * @param string $id       The example resident's id (`zuiddrecht`).
-	 * @param string $portal   The portal slug to sign in to.
-	 * @param string $returnTo Where to send the browser afterwards.
-	 *
-	 * @return Response A redirect carrying the bearer in the URL fragment, or 404.
-	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 10, period: 60)]
-	#[BruteForceProtection(action: 'portaliq_example_resident_login')]
-	public function exampleResident(string $id = '', string $portal = '', string $returnTo = ''): Response {
-		$userId = $this->exampleResidentUser(id: $id, portal: $portal);
-		if ($userId === '') {
-			$response = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-			$response->throttle(['reason' => 'example_resident_login_closed']);
-			return $response;
-		}
-
-		$account = $this->accounts->findBySubjectRef(subjectRef: $userId);
-		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
-			$response = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-			$response->throttle(['reason' => 'example_resident_login_closed']);
-			return $response;
-		}
-
-		$audience = (string)($account['audience'] ?? 'client');
-		$issued   = $this->session->issueSession(
-			subjectRef: $userId,
-			audience: $audience,
-			organisation: (string)($account['organisation'] ?? 'dev-org'),
-			// No password was asked: the lowest assurance, as dev-login and
-			// the nextcloud mode carry.
-			trust: 'low',
-			roles: [$audience . ':read']
-		);
-		if ($issued === null) {
-			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
-
-		$target = $returnTo;
-		if ($target === '') {
-			$target = '/apps/portaliq/site?portal=' . rawurlencode(string: $portal);
-		}
-
-		return new RedirectResponse(
-			$this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode(string: $issued['token']),
-			Http::STATUS_FOUND
-		);
-	}//end exampleResident()
-
-	/**
-	 * The Nextcloud account id the one-click demo sign-in may mint for, or
-	 * '' when any part of the guard fails: the explicit switch, the install
-	 * record, the declaration's portal against the named portal, and that
-	 * portal offering the `nextcloud` mode.
-	 *
-	 * @param string $id     The example resident's id.
-	 * @param string $portal The portal slug named by the caller.
-	 *
-	 * @return string The user id, or ''.
-	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
-	 */
-	private function exampleResidentUser(string $id, string $portal): string {
-		if ($this->config->getAppValue(Application::APP_ID, 'example_resident_demo_login', 'no') !== 'yes'
-			|| $this->exampleResidents === null
-			|| $this->exampleCatalogue === null
-		) {
-			return '';
-		}
-
-		try {
-			$declared = $this->exampleCatalogue->find(id: $id);
-			$record   = $this->exampleResidents->read(id: $id);
-			$site     = $this->portalFor(slug: $portal);
-		} catch (\Throwable) {
-			// A record, declaration or portal that cannot be read is no door.
-			return '';
-		}
-
-		if ($declared === null || $record['userId'] === '' || $portal === '' || (string)($declared['portal'] ?? '') !== $portal) {
-			return '';
-		}
-
-		$modes = ($site['authentication']['modes'] ?? []);
-		if ($site === null || (string)($site['slug'] ?? '') !== $portal
-			|| is_array($modes) === false || in_array(needle: 'nextcloud', haystack: $modes, strict: true) === false
-		) {
-			return '';
-		}
-
-		return $record['userId'];
-	}//end exampleResidentUser()
-
-	/**
 	 * The signed-in Nextcloud user id, or '' when there is none.
 	 *
 	 * @return string The uid.
@@ -1053,7 +939,7 @@ class SessionController extends Controller {
 	 * @return JSONResponse 200.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
@@ -1088,10 +974,12 @@ class SessionController extends Controller {
 	 * @return string
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
 	 */
 	private function brokerLogoutUrl(array $subject): string {
 		$provider = (string)($subject['provider'] ?? '');
-		if ($provider === '') {
+		// An e-mail link session has no broker to sign out of (REQ-IWI-011).
+		if ($provider === '' || $provider === EmailLinkSetting::MODE) {
 			return '';
 		}
 

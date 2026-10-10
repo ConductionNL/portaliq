@@ -44,6 +44,8 @@ export default {
 		'Legal effect': 'Rechtsgevolg',
 		'Loading…': 'Laden…',
 		'Mark as read': 'Markeren als gelezen',
+		'The sender sees when you opened this message.':
+			'De afzender ziet wanneer u dit bericht hebt geopend.',
 		'Maximum file size: {size} MB.': 'Maximale bestandsgrootte: {size} MB.',
 		Messages: 'Berichten',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -147,6 +149,11 @@ export default {
 			'Uw taak is ingediend. Dank u wel.',
 		'Your teacher marks this question.': 'Je docent kijkt deze vraag na.',
 		'Your test is handed in.': 'Je toets is ingeleverd.',
+		'About: {value}': 'Over: {value}',
+		All: 'Alles',
+		'Unread ({count})': 'Ongelezen ({count})',
+		'Mark all as read': 'Alles als gelezen markeren',
+		'Filter messages': 'Berichten filteren',
 	},
 	en: {
 		'A file is required for this task.': 'A file is required for this task.',
@@ -182,6 +189,8 @@ export default {
 		'Legal effect': 'Legal effect',
 		'Loading…': 'Loading…',
 		'Mark as read': 'Mark as read',
+		'The sender sees when you opened this message.':
+			'The sender sees when you opened this message.',
 		'Maximum file size: {size} MB.': 'Maximum file size: {size} MB.',
 		Messages: 'Messages',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -285,5 +294,10 @@ export default {
 			'Your task has been submitted. Thank you.',
 		'Your teacher marks this question.': 'Your teacher marks this question.',
 		'Your test is handed in.': 'Your test is handed in.',
+		'About: {value}': 'About: {value}',
+		All: 'All',
+		'Unread ({count})': 'Unread ({count})',
+		'Mark all as read': 'Mark all as read',
+		'Filter messages': 'Filter messages',
 	},
 }

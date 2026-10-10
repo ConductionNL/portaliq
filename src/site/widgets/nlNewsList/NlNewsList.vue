@@ -127,6 +127,14 @@ import '@utrecht/paragraph-css/dist/index.css'
 export default {
 	name: 'NlNewsList',
 
+	inject: {
+		/**
+		 * The language of the page's content (site-dates-in-content-language);
+		 * empty outside the site shell, so the document's language applies.
+		 */
+		contentLocale: { from: 'siteContentLocale', default: () => () => '' },
+	},
+
 	props: {
 		/** The heading. */
 		heading: { type: String, default: '' },
@@ -252,7 +260,7 @@ export default {
 		 */
 		metaOf(item) {
 			return [
-				longDate(item.publishedAt),
+				longDate(item.publishedAt, this.contentLocale()),
 				this.showAudience ? item.audienceLabel : '',
 			]
 				.filter(Boolean)

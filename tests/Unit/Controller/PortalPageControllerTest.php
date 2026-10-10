@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalPageController;
+use OCA\Portaliq\Service\Cms\AccessibilityFraming;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
@@ -29,6 +30,10 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
  */
 class PortalPageControllerTest extends TestCase {
+
+	/** @var AccessibilityFraming|null The framing rule a test sets, or a mock that says no. */
+	private ?AccessibilityFraming $framing = null;
+
 
 	/**
 	 * `/portal` answers 302 to the site with the same query string
@@ -163,6 +168,37 @@ class PortalPageControllerTest extends TestCase {
 	 * Asserted by NAME, because the three modes fail differently and only this
 	 * one means "we own the document".
 	 */
+	/**
+	 * The site is never framed, except by its own origin for a request the
+	 * accessibility measurement may make (site-accessibility-statement
+	 * REQ-SAS-001).
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 */
+	public function testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin(): void {
+		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();
+		$this->assertStringContainsString("frame-ancestors 'none'", $policy);
+
+		$this->framing = $this->getMockBuilder(AccessibilityFraming::class)->disableOriginalConstructor()->onlyMethods(['allowsSelf'])->getMock();
+		$this->framing->method('allowsSelf')->willReturn(true);
+		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();
+		$this->assertStringContainsString("frame-ancestors 'self'", $policy);
+		$this->assertStringNotContainsString('frame-ancestors *', $policy);
+
+	}//end testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin()
+
+	/**
+	 * The real framing rule with nobody allowed to measure.
+	 *
+	 * @return AccessibilityFraming
+	 */
+	private function noFraming(): AccessibilityFraming {
+		$framing = $this->getMockBuilder(AccessibilityFraming::class)->disableOriginalConstructor()->onlyMethods(['allowsSelf'])->getMock();
+		$framing->method('allowsSelf')->willReturn(false);
+
+		return $framing;
+	}//end noFraming()
+
 	public function testSiteRendersSiteTemplateAsBlank(): void {
 		$controller = $this->controller(orgSlug: '');
 		$response = $controller->site();
@@ -201,6 +237,23 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertSame('themes/vng-tokens', $params['nldsStylesheet']);
 
 	}//end testSiteEmitsBothStylesheetsForAThemedPortal()
+
+
+	/**
+	 * REQ-PTB-002: a themed portal's token overrides reach the template as
+	 * filtered CSS; an unthemed portal gets none, whatever it declares.
+	 *
+	 * @return void
+	 */
+	public function testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly(): void {
+		$tokens = ['--nldesign-header-link-color' => '#f36c21', '--evil-x' => 'red', '--nldesign-bad' => 'url(x)'];
+
+		$themed = $this->controller(orgSlug: '', portal: ['theme' => 'vng', 'tokens' => $tokens], themeStylesheet: 'themes/vng');
+		$this->assertSame(':root{--nldesign-header-link-color:#f36c21}', $themed->site()->getParams()['themeTokenCss']);
+
+		$unthemed = $this->controller(orgSlug: '', portal: ['theme' => 'vng', 'tokens' => $tokens], themeStylesheet: null);
+		$this->assertSame('', $unthemed->site()->getParams()['themeTokenCss']);
+	}//end testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly()
 
 
 	/**
@@ -614,7 +667,8 @@ class PortalPageControllerTest extends TestCase {
 			$portalResolver,
 			$themeResolver,
 			new SiteHead($reader),
-			($notices ?? $this->createMock(PortalNoticeReader::class))
+			($notices ?? $this->createMock(PortalNoticeReader::class)),
+			($this->framing ?? $this->noFraming())
 		);
 	}//end controller()
 

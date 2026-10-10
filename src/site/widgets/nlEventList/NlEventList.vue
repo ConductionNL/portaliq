@@ -33,7 +33,10 @@
 				:key="row.key"
 				class="nl-event-list__row"
 				data-testid="nl-event-row">
-				<DateTile v-if="mode === 'tiles'" :date="row.date" />
+				<DateTile
+					v-if="mode === 'tiles'"
+					:date="row.date"
+					:locale="contentLocale()" />
 				<span v-else class="nl-event-list__label">{{ row.label }}</span>
 				<span class="nl-event-list__text">
 					<a
@@ -81,7 +84,7 @@
 import DateTile from '../../components/mijn/DateTile.vue'
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
 import { fetchCatalogue } from '../../lib/publicCatalogue.js'
-import { eventItemsOf } from '../nlCatalogue/catalogue.js'
+import { eventItemsOf, sourceQuery } from '../nlCatalogue/catalogue.js'
 import { eventRows } from './events.js'
 
 import '@utrecht/heading-3-css/dist/index.css'
@@ -95,6 +98,14 @@ export default {
 	name: 'NlEventList',
 
 	components: { DateTile },
+
+	inject: {
+		/**
+		 * The language of the page's content (site-dates-in-content-language);
+		 * empty outside the site shell, so the document's language applies.
+		 */
+		contentLocale: { from: 'siteContentLocale', default: () => () => '' },
+	},
 
 	props: {
 		/** The heading. */
@@ -150,6 +161,7 @@ export default {
 			return eventRows(this.fetched || this.items, {
 				upcomingOnly: this.upcomingOnly,
 				limit: this.limit,
+				locale: this.contentLocale(),
 			})
 		},
 
@@ -175,6 +187,20 @@ export default {
 		 * @spec openspec/changes/portal-public-catalogue/specs/portaliq-cms/spec.md#requirement-a-dated-list-may-fill-itself-from-the-catalogue
 		 */
 		async loadSource() {
+			// An app's own index: its kind, categories and a limit or range.
+			const own = sourceQuery(this.source)
+			if (own !== null) {
+				try {
+					const page = await fetchCatalogue(this.portal, {
+						...own,
+						upcoming: this.source?.range !== 'schoolYear',
+					})
+					this.fetched = eventItemsOf(page.items)
+				} catch {
+					this.fetched = null
+				}
+				return
+			}
 			const types = Array.isArray(this.source?.types)
 				? this.source.types.filter((type) => typeof type === 'string')
 				: []

@@ -37,7 +37,7 @@
   - `docs/portal-parity.md` carries the re-measured baseline; its 2026-08-15 figures were stale by 84% gzipped
   - An e2e run asserts a search returns rows AND that a row names a directory, against a live instance
 - [x] Implement
-- [ ] Test
+- [ ] Test — not run: needs a live instance (the demo rig)
 
 > Task 3's e2e box stays open until the spec runs green against the demo rig.
 > Ticking it before then would be the phantom tick ADR-029 exists to stop.
@@ -63,5 +63,5 @@
     `--base development`, merge never rebase, no `Co-Authored-By`. Done means merged on
     `development` with CI green; 6.2 then reads `yes` (build), and `production` only with a store
     release
-- [ ] Implement
-- [ ] Test
+- [x] Implement — portaliq's half: `buildRequestUrl()` sends `_content=true` for a term unless `searchInsideDocuments` is false; a document row (`resultType` or `@self.schema` `document`) links to `/document/{id}` and names its publication; `searchInsideDocuments` is declared on `#portal` (default true, register 0.71.0, portal 0.14.0), served on `/site` and handed from `App.vue` through `WidgetGrid.vue` to the block.
+- [x] Test — node: `tests/federated-search.spec.mjs` (`a term sends the content flag`, `a portal that switched it off sends no content flag`, document kind and publication name), `tests/site-woo-pages.spec.mjs` (a document result links to its own page and names its publication); PHPUnit `ContentControllerTest::testAPortalCanSwitchSearchInsideDocumentsOff`, `PortaliqRegisterConfigTest`. Not run: the opencatalogi check that `/api/federation/publications` honours `_content` (needs opencatalogi), the two e2e scenarios (need a live instance), the full pre-push list (`composer check:strict` waits on the composer install; hydra gates: hydra-gates package not installed)

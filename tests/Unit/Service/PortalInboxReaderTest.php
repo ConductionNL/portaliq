@@ -102,6 +102,25 @@ class PortalInboxReaderTest extends TestCase {
 	/**
 	 * Rows without a `receivedAt` sort last, never crashing the comparator.
 	 */
+	/**
+	 * inbox-read-receipt-on-request T02: the receipt fields of Portaliq's own
+	 * message reach the inbox row unchanged.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t02
+	 */
+	public function testReceiptFieldsReachTheInboxRow(): void {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([
+			['id' => 'm1', 'subject' => 'Brief', 'receivedAt' => '2026-10-07T00:00:00Z', 'read' => true, 'readReceiptRequested' => true, 'readAt' => '2026-10-08T09:14:00Z', 'sendingRef' => 'brief-5b'],
+		]);
+
+		$messages = (new PortalInboxReader($reader))->aggregateInbox(self::SUBJECT, ['contributions' => []]);
+
+		$this->assertTrue($messages[0]['readReceiptRequested']);
+		$this->assertSame('2026-10-08T09:14:00Z', $messages[0]['readAt']);
+		$this->assertSame('brief-5b', $messages[0]['sendingRef']);
+	}//end testReceiptFieldsReachTheInboxRow()
+
 	public function testRowsWithoutReceivedAtSortLast(): void {
 		$aggregate = [
 			'contributions' => [
@@ -696,6 +715,43 @@ class PortalInboxReaderTest extends TestCase {
 
 		$this->assertSame(['newer', 'own', 'older'], array_column($messages, 'id'));
 	}//end testMappedRowsSortByTheirOwnDate()
+
+	/**
+	 * inbox-reply-with-attachments REQ-IRA-001: a message from a collection that
+	 * declares a reply carries what the screen needs to offer it; a message from
+	 * a collection without one, and portaliq's own notices, carry nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+	 */
+	public function testOnlyAMessageWithAReplyDeclarationCarriesIt(): void {
+		$row = ['id' => 'b1', 'subject' => 'Besluit', 'sentAt' => '2026-10-02T10:00:00Z'];
+		[$aggregate, $reader] = $this->dossiqInbox([$row], ['reply' => ['action' => 'replyToMessage', 'carry' => ['caseId' => 'caseId'], 'subjectFrom' => 'subject']]);
+		$aggregate['contributions'][0]['actions'] = [[
+			'id' => 'replyToMessage', 'type' => 'create', 'label' => 'Antwoorden', 'register' => 'dossiq', 'schema' => 'portaalBericht',
+			'fields' => ['subject', 'content', 'attachments', 'caseId'], 'fieldConfigs' => ['attachments' => ['type' => 'file', 'multiple' => true]],
+			'defaults' => ['direction' => 'citizen_to_handler'],
+		]];
+
+		$byId = array_column((new PortalInboxReader($reader))->aggregateInbox(self::SUBJECT, $aggregate), null, 'id');
+
+		$reply = $byId['b1']['_source']['reply'];
+		$this->assertSame('replyToMessage', $reply['action']['id']);
+		$this->assertSame(['subject', 'content', 'attachments', 'caseId'], $reply['action']['fields']);
+		$this->assertSame('file', ((array)$reply['action']['fieldConfigs'])['attachments']['type']);
+		$this->assertSame(['caseId'], $reply['carried']);
+		$this->assertSame('subject', $reply['subjectFrom']);
+		$this->assertArrayNotHasKey('defaults', $reply['action'], 'the server keeps its defaults');
+		$this->assertArrayNotHasKey('reply', $byId['own']['_source'], 'portaliq notices cannot be answered');
+
+		[$plain, $plainReader] = $this->dossiqInbox([$row]);
+		$this->assertArrayNotHasKey('reply', array_column((new PortalInboxReader($plainReader))->aggregateInbox(self::SUBJECT, $plain), null, 'id')['b1']['_source']);
+
+		[$orphan, $orphanReader] = $this->dossiqInbox([$row], ['reply' => ['action' => 'gone']]);
+		$this->assertArrayNotHasKey('reply', array_column((new PortalInboxReader($orphanReader))->aggregateInbox(self::SUBJECT, $orphan), null, 'id')['b1']['_source']);
+
+	}//end testOnlyAMessageWithAReplyDeclarationCarriesIt()
 
 	/**
 	 * Files are listed only for a collection that declares `filesDownload`.

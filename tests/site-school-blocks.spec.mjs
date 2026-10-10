@@ -226,11 +226,22 @@ test('the grid hands the host data to the new widgets after the authored props',
 	)
 	assert.match(
 		source,
-		/'nlNewsArticle'\s*\)\s*\{\s*return \{ \.\.\.props, portal: this\.portal, routeParam: this\.routeParam \}/,
+		/'nlPublicDetail'\s*\)\s*\{\s*const news = \{\s*\.\.\.props,\s*portal: this\.portal,\s*routeParam: this\.routeParam,?\s*\}/,
 	)
 
 	assert.match(
 		source,
 		/widgetKey === 'nlSignIn'\) \{\s*return \{\s*\.\.\.props,\s*signedIn:[^}]*ways: this\.signInRoutes/,
 	)
+})
+
+test('T7: the app hands its sign-in routes to the grid, and the grid to nlSignIn', () => {
+	const app = readFileSync('src/site/App.vue', 'utf8')
+	const context = app.slice(app.indexOf('gridContext() {'))
+	assert.match(
+		context.slice(0, context.indexOf('},')),
+		/signInRoutes: this\.signInRoutes/,
+	)
+	const grid = readFileSync('src/site/components/WidgetGrid.vue', 'utf8')
+	assert.match(grid, /ways: this\.signInRoutes\.map/)
 })

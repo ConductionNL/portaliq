@@ -79,9 +79,14 @@
 						<!-- What the shell adds beside the signed-in name, such as
 						     whom the resident acts for. -->
 						<slot name="account" />
-						<span data-testid="site-auth-subject">{{
-							sessionLabel
-						}}</span>
+						<span data-testid="site-auth-subject"
+							><template v-if="sessionParts"
+								>{{ sessionParts.before
+								}}<NoTranslate :value="sessionParts.value" />{{
+									sessionParts.after
+								}}</template
+							><template v-else>{{ sessionLabel }}</template></span
+						>
 						<!-- The way to the resident's own area, on every page
 						     (site-resident-menu REQ-SRM-003). -->
 						<a
@@ -190,7 +195,9 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
+import NoTranslate from './NoTranslate.vue'
 import SiteMenu from './SiteMenu.vue'
+import { markAround } from '../lib/markAround.js'
 
 /**
  * The portal's header block (`brandHeader`).
@@ -206,6 +213,7 @@ export default {
 	name: 'BrandHeader',
 
 	components: {
+		NoTranslate,
 		SiteMenu,
 		// Only a designed header loads it (site-chrome-follows-the-design).
 		HeaderTools: defineAsyncComponent(() => import('./chrome/HeaderTools.vue')),
@@ -265,6 +273,21 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The signed-in line split around the resident's name, so the name stays
+		 * untranslated and "Ingelogd als" does not.
+		 *
+		 * @return {{before: string, value: string, after: string}|null}
+		 *
+		 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
+		 */
+		sessionParts() {
+			const name = String(
+				this.session?.displayName || this.session?.name || '',
+			).trim()
+			return markAround(this.sessionLabel, name)
+		},
+
 		/**
 		 * Whether the navigation shares the masthead's row.
 		 *

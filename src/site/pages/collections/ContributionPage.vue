@@ -139,6 +139,18 @@
 				</template>
 			</GreetingBlock>
 
+			<!-- A list or a figure whose read failed (a 429, a 5xx) says so in
+			     one sentence with a retry, never an empty block
+			     (portal-subject-rate-limit). -->
+			<LoadError
+				v-else-if="
+					(item.kind === 'table' || item.kind === 'kpi')
+					&& loadedOf(item.collection).failed === true
+				"
+				:text="tr('The items could not be loaded.')"
+				:retryLabel="tr('Try again')"
+				@retry="reload(item.collection)" />
+
 			<!-- Rows as cards with a progress figure (REQ-SMO-028), and the
 			     status, note and coming-up parts (site-school-blocks). -->
 			<ProgressCards
@@ -147,6 +159,12 @@
 				:block="item.block"
 				:collection="item.collection"
 				:titleFields="item.collection.titleFields || []"
+				:statusRows="
+					item.block.status
+						? loadedOf({ id: item.block.status.collection })
+						: null
+				"
+				:today="today || undefined"
 				:t="tr"
 				:locale="lang" />
 
@@ -178,8 +196,14 @@
 					v-if="showsHeading(item)"
 					:id="headingId(item)"
 					class="utrecht-heading-3">
-					{{ item.collection.label }}
+					{{ headingOf(item) }}
 				</component>
+				<!-- The list as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
+				<PdfDownloadButton
+					v-if="item.collection.exportPdf === true"
+					:collection="item.collection"
+					:api="api"
+					:locale="lang" />
 				<!-- A collection that declares groupByField shows one table per
 				     child, each named by its own heading
 				     (collection-group-by-field). -->
@@ -320,6 +344,7 @@
 					item.kind === 'calendar' && item.block.display === 'tiles'
 				"
 				:items="calendarOf(item)"
+				:range="item.block.range || ''"
 				:loading="calendarLoading(item)"
 				:label="item.block.label || ''"
 				:level="sectionLevel"
@@ -393,9 +418,11 @@
 				:record="activeRecord"
 				:api="api"
 				:level="sectionLevel"
+				:route="item.block.page ? tileTarget(item.block).route || '' : ''"
 				:t="tr"
 				:locale="lang"
-				:today="today || undefined" />
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)" />
 
 			<DocumentsBlock
 				v-else-if="item.kind === 'documents'"
@@ -439,7 +466,11 @@
 				:row="selected[item.collection.id] || null"
 				:api="api"
 				:t="tr"
-				:locale="lang" />
+				:locale="lang"
+				:taskCollections="caseTaskCollections"
+				:nav="nav"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				@navigate="$emit('navigate', $event)" />
 
 			<SlotHost
 				v-else-if="item.kind === 'timedTask'"
@@ -476,6 +507,8 @@ import KpiCards from '../../components/collections/KpiCards.vue'
 import NewsBlock from '../../components/collections/NewsBlock.vue'
 import RichTextBlock from '../../components/collections/RichTextBlock.vue'
 import SlotHost from '../../components/collections/SlotHost.vue'
+import LoadError from '../../components/mijn/LoadError.vue'
+import { asksInput } from '../../../shared/actionInput.js'
 import {
 	anyGrouped,
 	groupFieldOf,
@@ -485,6 +518,7 @@ import {
 import {
 	itemsInRange,
 	listOrder,
+	skipRows,
 	sortRows,
 	windowRows,
 } from '../../../shared/listWindow.js'
@@ -554,8 +588,14 @@ export default {
 	components: {
 		CalendarBlock,
 		CollectionTable,
+		// On demand: only a collection that opted in with `exportPdf` loads it.
+		PdfDownloadButton: defineAsyncComponent(
+			() => import('../../components/collections/PdfDownloadButton.vue'),
+		),
+
 		DetailCard,
 		KpiCards,
+		LoadError,
 		NewsBlock,
 		RichTextBlock,
 		SlotHost,
@@ -653,6 +693,16 @@ export default {
 
 		currentContribution() {
 			return this.entry?.contribution || this.contribution || null
+		},
+
+		/** The collections whose rows are tasks of a case (they declare `caseField`). */
+		/**
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
+		caseTaskCollections() {
+			return (this.currentContribution?.collections || []).filter(
+				(collection) => typeof collection?.caseField === 'string',
+			)
 		},
 
 		lang() {
@@ -1228,7 +1278,8 @@ export default {
 			const sort = listOrder(item.block, item.collection)
 			if (this.expanded[item.index]) {
 				return {
-					rows: sortRows(this.rowsOf(item), sort),
+					// Without the rows a highlight already shows (collection-skip).
+					rows: skipRows(sortRows(this.rowsOf(item), sort), item.block),
 					more: false,
 				}
 			}
@@ -1386,8 +1437,20 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 		 */
 		showsHeading(item) {
-			const label = item.collection.label || ''
+			const label = this.headingOf(item)
 			return label !== '' && label !== (this.entry && this.entry.label)
+		},
+
+		/**
+		 * A collection block's heading: the block's own `label` ("Laatste
+		 * cijfers"), else the collection's (collection-block-label).
+		 *
+		 * @param {object} item The page item.
+		 * @return {string} The heading, or ''.
+		 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
+		 */
+		headingOf(item) {
+			return String(item.block?.label || item.collection?.label || '')
 		},
 
 		/**
@@ -1466,14 +1529,26 @@ export default {
 
 		/**
 		 * A row button: an endpoint action opens its step below the table, a
-		 * `type: update` transition runs at once with no field data.
+		 * `type: update` action with fields to fill in opens its form there
+		 * (site-action-forms), and a transition without fields runs at once
+		 * with no field data.
 		 *
 		 * @param {object} item The resolved table block.
 		 * @param {object} action The action.
 		 * @param {object} row The row.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		async onRowAction(item, action, row) {
+			if (action.type === 'update' && asksInput(action)) {
+				this.pending = {
+					collectionId: item.collection.id,
+					action,
+					row,
+					dialog: 'form',
+				}
+				return
+			}
 			if (isEndpointRowAction(action)) {
 				this.pending = {
 					collectionId: item.collection.id,

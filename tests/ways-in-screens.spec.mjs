@@ -51,10 +51,10 @@ test('the site translator goes first, the ways-in strings fill its gaps', () => 
 })
 
 test('the doors stay closed unless the site config opens them (REQ-IWI-005)', () => {
-	assert.deepEqual(lib.waysInFrom({}), { register: false, reference: false, emailSignIn: '', referenceCaseTypes: [] })
+	assert.deepEqual(lib.waysInFrom({}), { register: false, reference: false, emailSignIn: '', referenceCaseTypes: [], emailLink: false })
 	const type = { register: 'cases', schema: 'case', caseType: 'parking', label: 'Parking permit' }
 	const open = lib.waysInFrom({ waysIn: { register: true, reference: true, emailSignIn: 'E-mail', referenceCaseTypes: [type, { label: 'broken' }] } })
-	assert.deepEqual(open, { register: true, reference: true, emailSignIn: 'E-mail', referenceCaseTypes: [type] })
+	assert.deepEqual(open, { register: true, reference: true, emailSignIn: 'E-mail', referenceCaseTypes: [type], emailLink: false })
 	assert.equal(lib.waysInFrom({ waysIn: { reference: true, referenceCaseTypes: [] } }).reference, false)
 })
 
@@ -118,7 +118,10 @@ test('the screens: a labelled form, a trap out of sight, a read-only case, an ac
 	assert.match(ways, /v-if="ways\.referenceCaseTypes\.length > 1"/)
 	const link = read('src/site/components/WayInLink.vue')
 	assert.match(link, /data-testid="reference-case"/)
-	assert.doesNotMatch(link, /<input|<textarea/)
+	// The case a reference link opens is read only. (The e-mail link page
+	// asks for an address in another browser: sign-in-with-an-email-link.)
+	const caseView = link.slice(link.indexOf('data-testid="reference-case"'), link.indexOf('</section>'))
+	assert.doesNotMatch(caseView, /<input|<textarea/)
 	assert.match(link, /data-testid="way-in-accept"/)
 })
 
@@ -170,6 +173,7 @@ test('a button link ships its stylesheet, so a sign-in link never falls back to 
 		'src/site/components/chrome/HeaderTools.vue',
 		'src/site/components/chrome/SignInPage.vue',
 		'src/site/pages/inbox/InboxPage.vue',
+		'src/site/widgets/nlAlert/NlAlert.vue',
 	]
 	for (const file of users) {
 		const source = read(file)

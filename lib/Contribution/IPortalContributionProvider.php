@@ -83,6 +83,17 @@
  *   manifest can never widen access. A provider that never sets `anonymous`
  *   is byte-identical to today: every entry stays bearer-required.
  *
+ * site-member-voting-record-and-confidential-papers adds two optional, duck-typed keys:
+ *
+ * - `publicRecords` (`[{id, label, group?, listProvider, recordProvider}]`) — record lists
+ *   read with no subject. Both providers name public methods on the provider (a plain
+ *   identifier, never a contract method). `listProvider()` returns `[{id, title, subtitle?,
+ *   image?}]`, `recordProvider(id)` returns `{title, subtitle?, summary[], columns[],
+ *   rows[], note?}` or null. Portaliq fetches a record only for an id the list holds.
+ * - `documents.opened` on a collection — a public method called before a paper streams,
+ *   with the object id, the document id and the session's subject (subjectRef, trust,
+ *   identityType, audience). Anything but `true` streams nothing (fail-closed, 503).
+ *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
  *

@@ -58,6 +58,14 @@ class PortalObjectWriter {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
+	 * Why the last create or update was refused, as the store said it; ''
+	 * when it was not (site-action-forms). Read by WriteRefusal, never sent.
+	 *
+	 * @var string
+	 */
+	private string $lastFailure = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister services.
@@ -104,6 +112,7 @@ class PortalObjectWriter {
 		string $organisation,
 		array $data,
 	): ?array {
+		$this->lastFailure = '';
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return null;
@@ -129,6 +138,7 @@ class PortalObjectWriter {
 			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR write failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			$this->lastFailure = $e->getMessage();
 			return null;
 		}
 
@@ -234,7 +244,7 @@ class PortalObjectWriter {
 	 *                             ownership check (may be empty). It is never
 	 *                             written on update.
 	 * @param string $id The client-supplied object id (never trusted).
-	 * @param array<string, mixed> $data The client-supplied fields (already whitelisted).
+	 * @param array<string, mixed>|\Closure $data The client-supplied fields (already whitelisted), or a closure that returns them from the verified row.
 	 *
 	 * @return array<string, mixed>|null The updated object, or null on ownership/OR failure.
 	 *
@@ -248,8 +258,9 @@ class PortalObjectWriter {
 		string $subjectRef,
 		string $organisation,
 		string $id,
-		array $data,
+		array|\Closure $data,
 	): ?array {
+		$this->lastFailure = '';
 		if ($id === '') {
 			return null;
 		}
@@ -272,6 +283,13 @@ class PortalObjectWriter {
 		);
 		if ($existing === null) {
 			return null;
+		}
+
+		// A callable decides the fields from the row just verified as the
+		// subject's own, so a write that depends on the stored value (the
+		// first read moment) cannot race a second read.
+		if ($data instanceof \Closure) {
+			$data = (array)$data($existing);
 		}
 
 		// (2) Merge the whitelisted fields onto the existing object; drop the
@@ -313,11 +331,25 @@ class PortalObjectWriter {
 			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR update failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			$this->lastFailure = $e->getMessage();
 			return null;
 		}
 
 		return $this->normalise(row: $saved);
 	}//end updateObject()
+
+	/**
+	 * Why the last create or update was refused, as the store said it, or ''
+	 * (site-action-forms). The text stays on the server: WriteRefusal reads
+	 * only a field name and a kind from it.
+	 *
+	 * @return string The refusal, or ''.
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	public function lastFailure(): string {
+		return $this->lastFailure;
+	}//end lastFailure()
 
 	/**
 	 * Delete ONE row, only when it is the subject's alone: the same ownership

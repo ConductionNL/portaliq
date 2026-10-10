@@ -41,15 +41,26 @@
 			`labelVisible` because on a public portal the prompt is the only
 			instruction a visitor gets.
 		-->
-		<CnSiteSearch
-			:label="inputLabel"
-			:placeholder="placeholder"
-			:submitLabel="submitLabel"
-			:value="query"
-			inputId="pq-federated-search"
-			:labelVisible="true"
-			data-testid="federated-search-form"
-			@search="onSearch" />
+		<div class="pq-search__box" @input="onTyping" @keydown="onSuggestKey">
+			<CnSiteSearch
+				:label="inputLabel"
+				:placeholder="placeholder"
+				:submitLabel="submitLabel"
+				:value="query"
+				inputId="pq-federated-search"
+				:labelVisible="true"
+				data-testid="federated-search-form"
+				@search="onSearch" />
+			<!-- Suggestions while typing (search-suggestions-while-typing). The
+		     shared search control owns the input, so the combobox attributes
+		     are put on it from `suggestState` (see syncCombobox). -->
+			<SearchSuggestions
+				ref="suggestions"
+				:query="typed"
+				:endpoint="endpoint"
+				@state="onSuggestState"
+				@choose="openSuggestion" />
+		</div>
 
 		<!--
 			ONE LIVE REGION FOR THE RESULT COUNT, and it is `polite`.
@@ -98,6 +109,18 @@
 				facet".
 			-->
 			<div class="pq-search__results">
+				<ul
+					v-if="lockedChips.length > 0"
+					class="pq-search__locked"
+					data-testid="federated-search-locked">
+					<li
+						v-for="chip in lockedChips"
+						:key="chip.key"
+						class="pq-search__locked-chip"
+						data-testid="federated-search-locked-chip">
+						{{ chip.label }}
+					</li>
+				</ul>
 				<p
 					v-if="error"
 					class="utrecht-alert utrecht-alert--error"
@@ -452,16 +475,21 @@ import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
  * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 import { defineAsyncComponent } from 'vue'
+import SearchSuggestions from './SearchSuggestions.vue'
 import {
 	buildRequestUrl,
+	lockedFiltersOf,
 	pageWindow,
 	paginationItems,
 	readSearchState,
 	searchQuery,
 	toBuckets,
 	toResult,
+	withKindField,
+	withoutLocked,
 	writeSearchState,
 } from '../lib/federatedSearch.js'
+import { suggestionRoute } from '../lib/searchSuggestions.js'
 import { labelBuckets, pageLocale } from '../lib/wooCategories.js'
 
 export default {
@@ -469,6 +497,7 @@ export default {
 
 	components: {
 		CnSiteSearch,
+		SearchSuggestions,
 		SaveSearch: defineAsyncComponent(() => import('./SaveSearch.vue')),
 	},
 
@@ -556,6 +585,28 @@ export default {
 			default: '/publicatie',
 		},
 
+		/**
+		 * Whether a search also reads the text inside public documents. The
+		 * host sets it from the portal's `searchInsideDocuments`, after the
+		 * authored props.
+		 */
+		searchInsideDocuments: {
+			type: Boolean,
+			default: true,
+		},
+
+		/** The route of a document's own page; the id is appended. */
+		documentRoute: {
+			type: String,
+			default: '/document',
+		},
+
+		/** Words before the publication a document result belongs to. */
+		partOfLabel: {
+			type: String,
+			default: 'Onderdeel van',
+		},
+
 		/** Screen-reader prefix for a result's source directory. */
 		sourceLabel: {
 			type: String,
@@ -624,10 +675,49 @@ export default {
 			default: () => ['wooCategory', 'organization'],
 		},
 
+		/**
+		 * Leave the "Soort" filter (publication, document or subject) out. It
+		 * shows only when the endpoint counts the kinds, so this is for a
+		 * catalogue that has one kind and says so.
+		 */
+		hideKind: {
+			type: Boolean,
+			default: false,
+		},
+
+		/**
+		 * Filters that are always sent and shown as fixed chips, for example
+		 * `{themes: '<subject id>'}` on a subject's own page. The field is not
+		 * offered as a facet and is not written to the address.
+		 */
+		lockedFilters: {
+			type: Object,
+			default: () => ({}),
+		},
+
+		/** The words on the fixed chips, by `field:value` or by field. */
+		lockedLabels: {
+			type: Object,
+			default: () => ({}),
+		},
+
+		/** The route of a subject's own page; the slug is appended. */
+		subjectRoute: {
+			type: String,
+			default: '/onderwerp',
+		},
+
+		/** The words after the number of publications a subject holds. */
+		publicationsLabel: {
+			type: String,
+			default: 'publicaties',
+		},
+
 		/** A heading per facet field; a field without one shows its name. */
 		facetLabels: {
 			type: Object,
 			default: () => ({
+				resultType: 'Soort',
 				wooCategory: 'Informatiecategorie',
 				organization: 'Organisatie',
 				themes: 'Thema',
@@ -687,6 +777,9 @@ export default {
 
 	data() {
 		return {
+			// What is typed right now, for the suggestions only; `query` stays what
+			// was searched.
+			typed: '',
 			// What was actually searched for, as opposed to what is currently
 			// typed. `CnSiteSearch` keeps the typed term to itself and hands it
 			// over on submit, so the list never thrashes per keystroke and the
@@ -727,7 +820,38 @@ export default {
 		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		fields() {
-			return this.facetField ? [this.facetField] : this.facetFields
+			const own = this.facetField ? [this.facetField] : this.facetFields
+			return withoutLocked(withKindField(own, this.hideKind), this.locked)
+		},
+
+		/**
+		 * The locked filters in effect, field to values.
+		 *
+		 * @return {Record<string, Array<string>>} The locks.
+		 *
+		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 */
+		locked() {
+			return lockedFiltersOf({ lockedFilters: this.lockedFilters })
+		},
+
+		/**
+		 * One fixed chip per locked value.
+		 *
+		 * @return {Array<{key: string, label: string}>} The chips.
+		 *
+		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 */
+		lockedChips() {
+			return Object.entries(this.locked).flatMap(([field, values]) =>
+				values.map((value) => ({
+					key: `${field}:${value}`,
+					label:
+						this.lockedLabels[`${field}:${value}`]
+						|| this.lockedLabels[field]
+						|| value,
+				})),
+			)
 		},
 
 		/**
@@ -946,6 +1070,8 @@ export default {
 				periodFrom: this.periodFrom,
 				periodTo: this.periodTo,
 				sort: this.sort,
+				searchInsideDocuments: this.searchInsideDocuments,
+				lockedFilters: this.locked,
 			})
 		},
 
@@ -1102,6 +1228,24 @@ export default {
 				})
 			}
 
+			if (result.kind === 'subject' && result.publicationCount > 0) {
+				items.push({
+					key: 'count',
+					text: `${result.publicationCount} ${this.publicationsLabel}`,
+					prefix: '',
+					testid: 'federated-search-publication-count',
+				})
+			}
+
+			if (result.kind === 'document' && result.publication) {
+				items.push({
+					key: 'publication',
+					text: `${this.partOfLabel} ${result.publication}`,
+					prefix: '',
+					testid: 'federated-search-publication',
+				})
+			}
+
 			items.push({
 				key: 'source',
 				text: result.directory,
@@ -1131,6 +1275,98 @@ export default {
 		},
 
 		/**
+		 * The text now in the search input, from the input events that bubble
+		 * out of the shared search control.
+		 *
+		 * @param {Event} event The input event.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
+		onTyping(event) {
+			this.typed = String(event?.target?.value ?? '')
+		},
+
+		/**
+		 * The input's keys go to the suggestion list first; a key it uses does
+		 * not also submit or move the caret.
+		 *
+		 * @param {KeyboardEvent} event The key event.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 */
+		onSuggestKey(event) {
+			const list = this.$refs.suggestions
+			if (list && list.onKey(event)) {
+				event.preventDefault()
+			}
+		},
+
+		/**
+		 * Put the combobox attributes on the shared control's input.
+		 *
+		 * @param {{expanded: boolean, controls: string, activeId: string}} state The list's state.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 */
+		onSuggestState(state) {
+			const input =
+				typeof document !== 'undefined'
+					? document.getElementById('pq-federated-search')
+					: null
+			if (!input) {
+				return
+			}
+			input.setAttribute('role', 'combobox')
+			input.setAttribute('aria-autocomplete', 'list')
+			input.setAttribute('aria-controls', state.controls)
+			input.setAttribute('aria-expanded', String(state.expanded))
+			if (state.activeId) {
+				input.setAttribute('aria-activedescendant', state.activeId)
+			} else {
+				input.removeAttribute('aria-activedescendant')
+			}
+		},
+
+		/**
+		 * A suggestion opens its own page.
+		 *
+		 * @param {{id: string, kind: string}} item The suggestion.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
+		openSuggestion(item) {
+			this.$emit(
+				'navigate',
+				suggestionRoute(item, {
+					detail: this.detailRoute,
+					document: this.documentRoute,
+				}),
+			)
+		},
+
+		/**
+		 * The in-site path of a result's own page: a document has its own
+		 * page, everything else is a publication.
+		 *
+		 * @param {object} result A view-model row with an id.
+		 * @return {string} The path, with the id appended.
+		 *
+		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
+		 */
+		detailPath(result) {
+			if (result.kind === 'subject' && result.slug) {
+				return `${this.subjectRoute}/${result.slug}`
+			}
+			const base =
+				result.kind === 'document' ? this.documentRoute : this.detailRoute
+			return `${base}/${result.id}`
+		},
+
+		/**
 		 * The in-site href of a result's detail page.
 		 *
 		 * @param {object} result A view-model row.
@@ -1139,7 +1375,7 @@ export default {
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
 		 */
 		detailHref(result) {
-			if (!result.id) {
+			if (!result.id && !(result.kind === 'subject' && result.slug)) {
 				// No id means no detail page to link to; fall back to whatever
 				// the row itself points at rather than emitting a dead link.
 				return result.href || '#'
@@ -1147,7 +1383,7 @@ export default {
 
 			const url = new URL(window.location.href)
 			url.search = ''
-			url.searchParams.set('route', `${this.detailRoute}/${result.id}`)
+			url.searchParams.set('route', this.detailPath(result))
 
 			return url.toString()
 		},
@@ -1165,14 +1401,14 @@ export default {
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
 		 */
 		openDetail(result) {
-			if (!result.id) {
+			if (!result.id && !(result.kind === 'subject' && result.slug)) {
 				if (result.href) {
 					window.location.href = result.href
 				}
 				return
 			}
 
-			this.$emit('navigate', `${this.detailRoute}/${result.id}`)
+			this.$emit('navigate', this.detailPath(result))
 		},
 
 		/**
@@ -1373,6 +1609,22 @@ export default {
 
 /* A filter group: the fieldset carries the legend for assistive tech and no
    frame of its own; the groups are separated by space only. */
+.pq-search__locked {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+	list-style: none;
+	margin: 0 0 var(--utrecht-space-block-md, 1rem);
+	padding: 0;
+}
+
+.pq-search__locked-chip {
+	padding: 0.125rem 0.75rem;
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
+	border-radius: 999px;
+}
+
 .pq-search__facet-group {
 	border: 0;
 	margin: 0 0 16px;

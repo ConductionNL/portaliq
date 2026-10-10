@@ -294,6 +294,7 @@ function dutchLabel(key, vars = {}) {
 		'Log in with your account': 'Inloggen met uw account',
 		'Log in': 'Inloggen',
 		'Log in with {provider}': 'Inloggen met {provider}',
+		'Send me a sign-in link': 'Stuur mij een inloglink',
 	}
 	return (nl[key] || key).replace(/\{(\w+)\}/g, (_, name) =>
 		String(vars[name] ?? ''),
@@ -320,8 +321,10 @@ function dutchLabel(key, vars = {}) {
  *        added while the demo switch is off (`signin.exampleResidentWayIn`),
  *        or ''. That way is left out, so a demo card shows only on a portal
  *        that switched the demo on.
- * @return {Array<{mode: string, label: string, card?: object, href: string, demo?: boolean}>} The routes.
+ * @param {boolean} [emailLink] Whether the portal offers the e-mail link (`waysIn.emailLink`).
+ * @return {Array<{mode: string, label: string, card?: object, href: string, demo?: boolean, form?: string}>} The routes.
  * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+ * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
  * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  */
 export function signInRoutes(
@@ -330,6 +333,7 @@ export function signInRoutes(
 	t = dutchLabel,
 	exampleResident = '',
 	residentWayIn = '',
+	emailLink = false,
 ) {
 	const modes = Array.isArray(site?.authentication?.modes)
 		? site.authentication.modes
@@ -375,6 +379,12 @@ export function signInRoutes(
 		.filter(Boolean)
 		.join('&')
 
+	// The e-mail link is a form, not a link: only where the auth edge says
+	// the switch is on and the portal declares it (sign-in-with-an-email-link).
+	if (emailLink === true) {
+		labels['email-link'] = t('Send me a sign-in link')
+	}
+
 	return modes
 		.filter((mode) => mode !== 'public' && Object.hasOwn(labels, mode))
 		.filter((mode) => residentWayIn === '' || mode !== residentWayIn)
@@ -383,13 +393,23 @@ export function signInRoutes(
 			label: cards[mode]?.button || labels[mode],
 			...(cards[mode] ? { card: cards[mode] } : {}),
 			...(mode === 'nextcloud' && demo ? { demo: true } : {}),
+			// Nextcloud's own reset, reached from the account route's card
+			// (password-reset-from-the-sign-in-page REQ-PWR-001). Never on the demo.
+			...(mode === 'nextcloud' && !demo && site?.lostPasswordUrl
+				? { lostPasswordUrl: String(site.lostPasswordUrl) }
+				: {}),
+			...(mode === 'email-link'
+				? { form: 'email-link', authBase, portal: slug }
+				: {}),
 			href:
-				mode === 'nextcloud'
-					? demo
-						? `${authBase}/session/example-resident?${demoQuery}`
-						: `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
-					: `${authBase}/session/oidc/start?provider=${encodeURIComponent(
-							providers[mode] || mode,
-						)}${query ? `&${query}` : ''}`,
+				mode === 'email-link'
+					? ''
+					: mode === 'nextcloud'
+						? demo
+							? `${authBase}/session/example-resident?${demoQuery}`
+							: `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
+						: `${authBase}/session/oidc/start?provider=${encodeURIComponent(
+								providers[mode] || mode,
+							)}${query ? `&${query}` : ''}`,
 		}))
 }

@@ -97,6 +97,45 @@ class ExampleResidentSignIn {
 	}//end hiddenWayIn()
 
 	/**
+	 * Whether the one-click demo sign-in is open at all: the switch is `yes`
+	 * and the install records and declarations can be read.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	public function open(): bool {
+		return $this->switchedOn() === true && $this->records !== null && $this->catalogue !== null;
+	}//end open()
+
+	/**
+	 * The Nextcloud account id the one-click demo sign-in may mint for: the
+	 * sign-in is open, and the resident `$id` declares this portal as its own
+	 * and is installed. '' otherwise. The caller checks that the portal
+	 * offers the `nextcloud` mode.
+	 *
+	 * @param string               $id     The example resident's id.
+	 * @param array<string, mixed> $portal The resolved portal record.
+	 *
+	 * @return string The user id, or ''.
+	 *
+	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	public function userFor(string $id, array $portal): string {
+		$slug = (string)($portal['slug'] ?? '');
+		if ($this->switchedOn() === false || $this->records === null || $this->catalogue === null || $slug === '') {
+			return '';
+		}
+
+		$declared = $this->catalogue->find(id: $id);
+		if ($declared === null || (string)($declared['portal'] ?? '') !== $slug) {
+			return '';
+		}
+
+		return $this->records->read(id: $id)['userId'];
+	}//end userFor()
+
+	/**
 	 * Whether the administrator switched the one-click demo sign-in on.
 	 *
 	 * @return bool

@@ -153,7 +153,9 @@ class TrafficEventValidator {
 			'name' => $this->string(value: $event['name'], max: 64),
 			'sequence' => $event['sequence'],
 			'occurredAt' => $occurredAt->format('Y-m-d\TH:i:s.v\Z'),
-			'pageLocation' => $this->string(value: $event['pageLocation'], max: self::MAX_STRING),
+			// The fragment never reaches the store: it can carry a mailed
+			// secret (`#email-link=`, sign-in-with-an-email-link M4).
+			'pageLocation' => explode('#', $this->string(value: $event['pageLocation'], max: self::MAX_STRING), 2)[0],
 			// A session id is what the client says it is; the aggregation
 			// step sessionises by visitor hash when it is empty. A client id
 			// is only kept when the PORTAL allowed it to exist.
@@ -447,4 +449,5 @@ class TrafficEventValidator {
 
 		return mb_substr(trim($value), 0, $max);
 	}
+
 }
