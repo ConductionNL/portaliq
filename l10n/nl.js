@@ -2961,7 +2961,11 @@ OC.L10N.register(
         "Handeling": "Handeling",
         "Ontvangst": "Ontvangst",
         "Alle inzendingen": "Alle inzendingen",
-        "Nog geen inzendingen": "Nog geen inzendingen"
+        "Nog geen inzendingen": "Nog geen inzendingen",
+        "Een account uitgeven": "Een account uitgeven",
+        "Nieuw nieuwsbericht": "Nieuw nieuwsbericht",
+        "Iemand uitnodigen": "Iemand uitnodigen",
+        "Account uitgeven": "Account uitgeven"
     },
     "nplurals=2; plural=(n != 1);"
 )

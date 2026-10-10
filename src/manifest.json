@@ -1068,8 +1068,13 @@
             "label": "Download"
           },
           {
+            "action": "invite-someone",
+            "label": "Iemand uitnodigen"
+          },
+          {
             "action": "issue-account",
-            "variant": "primary"
+            "variant": "primary",
+            "label": "Account uitgeven"
           }
         ],
         "quickFilters": [
@@ -1181,7 +1186,8 @@
           },
           {
             "action": "invite-someone",
-            "variant": "primary"
+            "variant": "primary",
+            "label": "Iemand uitnodigen"
           }
         ],
         "quickFilters": [
@@ -3464,7 +3470,8 @@
           },
           {
             "action": "new-news-item",
-            "variant": "primary"
+            "variant": "primary",
+            "label": "Nieuw nieuwsbericht"
           }
         ],
         "quickFilters": [
