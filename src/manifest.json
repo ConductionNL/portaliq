@@ -1117,7 +1117,7 @@
             "content": {
               "entries": [
                 {
-                  "title": "Sessions issued",
+                  "title": "Totaal",
                   "register": "portaliq",
                   "schema": "portalSession",
                   "metric": "count",
@@ -1136,7 +1136,7 @@
             "content": {
               "entries": [
                 {
-                  "title": "Active sessions",
+                  "title": "Nu actief",
                   "register": "portaliq",
                   "schema": "portalSession",
                   "metric": "count",

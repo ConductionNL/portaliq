@@ -2913,7 +2913,9 @@ OC.L10N.register(
         "Portal reference": "Verwijzing naar de portal",
         "There is no list of portals to choose from. Enter the portal's reference.": "Er is geen lijst met portals om uit te kiezen. Vul de verwijzing naar de portal in.",
         "This news item is for specific people. You can change the text, not who it is for.": "Dit nieuwsbericht is voor bepaalde mensen. U kunt de tekst wijzigen, niet voor wie het is.",
-        "Save keeps the item as a draft. You publish it in the list, with Publish in the row menu.": "Opslaan bewaart het bericht als concept. Publiceren doet u in de lijst, met Publiceren in het menu van de rij."
+        "Save keeps the item as a draft. You publish it in the list, with Publish in the row menu.": "Opslaan bewaart het bericht als concept. Publiceren doet u in de lijst, met Publiceren in het menu van de rij.",
+        "Totaal": "Totaal",
+        "Nu actief": "Nu actief"
     },
     "nplurals=2; plural=(n != 1);"
 )

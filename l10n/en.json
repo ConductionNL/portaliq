@@ -2805,7 +2805,9 @@
         "Portal reference": "Portal reference",
         "There is no list of portals to choose from. Enter the portal's reference.": "There is no list of portals to choose from. Enter the portal's reference.",
         "This news item is for specific people. You can change the text, not who it is for.": "This news item is for specific people. You can change the text, not who it is for.",
-        "Save keeps the item as a draft. You publish it in the list, with Publish in the row menu.": "Save keeps the item as a draft. You publish it in the list, with Publish in the row menu."
+        "Save keeps the item as a draft. You publish it in the list, with Publish in the row menu.": "Save keeps the item as a draft. You publish it in the list, with Publish in the row menu.",
+        "Totaal": "Totaal",
+        "Nu actief": "Nu actief"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
