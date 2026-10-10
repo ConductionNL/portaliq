@@ -84,7 +84,8 @@ class PortalActionForwarder {
 	 * @param array<string, mixed>|null $whitelisted The rebuilt whitelisted body, or null to relay raw.
 	 * @param string $scopeValue The server-resolved value of the action's declared `scopeClaim`,
 	 *                           signed into the assertion; '' when the action declares none.
-	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files Checked uploads of a row action that declares `files`; sent multipart.
+	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files Checked uploads of a row action
+	 *                                                                           that declares `files`; sent multipart.
 	 *
 	 * @return IResponse|null The domain app's response, or null on transport failure.
 	 *
@@ -148,20 +149,6 @@ class PortalActionForwarder {
 		}//end try
 	}//end forward()
 
-	/**
-	 * Whether an action may be forwarded at all: a non-empty INSTANCE-LOCAL
-	 * endpoint path (SSRF guard: a leading slash, no protocol-relative `//`,
-	 * no scheme) and an allowed method. Trust is the caller's check.
-	 *
-	 * The same rule `ContributionController::isForwardableAction()` applies to
-	 * the id-addressed forward; the row-scoped forward reads it from here.
-	 *
-	 * @param array<string, mixed> $action The matched action declaration.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
-	 */
 	/**
 	 * The multipart parts of a forward that carries files, or null when it carries none.
 	 *
@@ -230,6 +217,20 @@ class PortalActionForwarder {
 		return $handle;
 	}//end open()
 
+	/**
+	 * Whether an action may be forwarded at all: a non-empty INSTANCE-LOCAL
+	 * endpoint path (SSRF guard: a leading slash, no protocol-relative `//`,
+	 * no scheme) and an allowed method. Trust is the caller's check.
+	 *
+	 * The same rule `ContributionController::isForwardableAction()` applies to
+	 * the id-addressed forward; the row-scoped forward reads it from here.
+	 *
+	 * @param array<string, mixed> $action The matched action declaration.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 */
 	public function isForwardable(array $action): bool {
 		$endpoint = ($action['endpoint'] ?? null);
 		if (is_string($endpoint) === false
