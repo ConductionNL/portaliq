@@ -2914,7 +2914,27 @@ OC.L10N.register(
         "A search with a term shows the best matches first.": "Een zoekopdracht met een zoekterm toont de beste treffers eerst.",
         "A misspelling is still found in {fields}.": "Een tikfout wordt nog gevonden in {fields}.",
         "Only exact words are found in {fields}.": "Alleen exacte woorden worden gevonden in {fields}.",
-        "Results from other catalogues without a score come after the scored results.": "Resultaten uit andere catalogi zonder score komen na de resultaten met een score."
+        "Results from other catalogues without a score come after the scored results.": "Resultaten uit andere catalogi zonder score komen na de resultaten met een score.",
+        "{shown} of {total} sessions": "{shown} van {total} sessies",
+        "Signed in": "Ingelogd",
+        "New term": "Nieuw begrip",
+        "{shown} of {total} terms": "{shown} van {total} begrippen",
+        "{shown} of {total} templates": "{shown} van {total} sjablonen",
+        "Kind of notice": "Soort melding",
+        "Pending": "In afwachting",
+        "Suspended": "Geschorst",
+        "{identityType} - on behalf of {organisation}": "{identityType} · namens {organisation}",
+        "Receipt confirmed": "Bevestigd",
+        "Receipt pending": "Wacht",
+        "Receipt failed": "Ontvangstbevestiging mislukt",
+        "via {appId}": "via {appId}",
+        "Unread": "Ongelezen",
+        "in the inbox of {subjectRef}": "in de inbox van {subjectRef}",
+        "Draft": "Concept",
+        "Umbrella": "Overkoepelend",
+        "Ingetrokken": "Ingetrokken",
+        "Visible from": "Zichtbaar van",
+        "Until": "Tot"
     },
     "nplurals=2; plural=(n != 1);"
 )
