@@ -1,3 +1,3 @@
 # Screens
 
-- No board found yet (decision 150)
+- wilgenboom/Zoeken https://identity.conduction.nl/screens/board?id=wilgenboom/Zoeken

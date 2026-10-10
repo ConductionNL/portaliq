@@ -1,3 +1,4 @@
 # Screens
 
-- No board found yet (decision 150)
+- Berichten https://identity.conduction.nl/screens/board?id=portaliq/Berichten
+- BerichtDetail https://identity.conduction.nl/screens/board?id=portaliq/BerichtDetail

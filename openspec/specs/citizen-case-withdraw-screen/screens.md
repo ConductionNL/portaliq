@@ -1,3 +1,3 @@
 # Screens
 
-- No board found yet (decision 150)
+- ZaakIntrekken https://identity.conduction.nl/screens/board?id=portaliq/ZaakIntrekken

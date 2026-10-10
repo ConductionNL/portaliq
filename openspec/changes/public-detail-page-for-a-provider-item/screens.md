@@ -1,3 +1,3 @@
 # Screens
 
-- No board found yet (decision 150)
+- warmtepompacademie/Artikel https://identity.conduction.nl/screens/board?id=warmtepompacademie/Artikel

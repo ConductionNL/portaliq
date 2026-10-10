@@ -1,3 +1,4 @@
 # Screens
 
-- No board found yet (decision 150)
+- PtArtikelen https://identity.conduction.nl/screens/board?id=portaliq/PtArtikelen
+- PtArtikel https://identity.conduction.nl/screens/board?id=portaliq/PtArtikel

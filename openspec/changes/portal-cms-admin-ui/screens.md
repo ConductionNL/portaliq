@@ -1,3 +1,4 @@
 # Screens
 
-- No board found yet (decision 150)
+- PtPortals https://identity.conduction.nl/screens/board?id=portaliq/PtPortals
+- PtPagina https://identity.conduction.nl/screens/board?id=portaliq/PtPagina
