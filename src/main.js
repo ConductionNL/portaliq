@@ -123,7 +123,23 @@ try {
 // short-circuits for the 'en' locale (it assumes the key IS the English text),
 // but this template uses slugged keys like 'app-availability.title', so we must
 // register en.json explicitly to get readable strings instead of raw slugs.
-register('portaliq', enTranslations.translations)
+//
+// Only keys the user's locale file (l10n/<locale>.js, loaded before this
+// bundle) did not already translate are added. `register()` merges over the
+// registry, so registering the whole English file used to overwrite every
+// Dutch string with its English source for any t('portaliq', ...) call.
+const alreadyTranslated =
+	(typeof window !== 'undefined'
+		&& window._oc_l10n_registry_translations?.portaliq)
+	|| {}
+register(
+	'portaliq',
+	Object.fromEntries(
+		Object.entries(enTranslations.translations).filter(
+			([key]) => !(key in alreadyTranslated),
+		),
+	),
+)
 
 // Fire-and-forget translation load. Some Nextcloud installs (including
 // standard dev containers) only allow the JS/CSS allowlist through

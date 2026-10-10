@@ -354,6 +354,19 @@ function rendererContractLint(manifest) {
 		const widgets = page.config.widgets
 		const layout = Array.isArray(page.config.layout) ? page.config.layout : []
 		const placed = new Set(layout.map((l) => l && l.widgetId))
+		// A `tabs` widget holds its children as tabs and `sideColumn` draws
+		// widgets beside the body: neither needs a grid cell of its own, and a
+		// grid cell for them would draw the widget twice.
+		for (const widget of widgets) {
+			if (widget && widget.type === 'tabs' && widget.content && Array.isArray(widget.content.tabs)) {
+				for (const tab of widget.content.tabs) {
+					placed.add(typeof tab === 'string' ? tab : tab && tab.widgetId)
+				}
+			}
+		}
+		for (const entry of Array.isArray(page.config.sideColumn) ? page.config.sideColumn : []) {
+			placed.add(typeof entry === 'string' ? entry : entry && entry.id)
+		}
 
 		for (const widget of widgets) {
 			if (!widget || typeof widget !== 'object') continue
