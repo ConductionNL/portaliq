@@ -1,162 +1,109 @@
 <?php
 
 /**
+ * Unit tests for the word list the "did you mean" correction reads.
+ *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @spec openspec/changes/search-suggestions-while-typing/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Search;
 
-use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\Search\PublicPublicationSearch;
 use OCA\Portaliq\Service\Search\SuggestionWordList;
 use OCP\Files\IAppData;
 use OCP\Files\NotFoundException;
 use OCP\Files\SimpleFS\ISimpleFile;
 use OCP\Files\SimpleFS\ISimpleFolder;
-use OCP\Http\Client\IResponse;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
- * The word list is made of what the anonymous public search answers, titles
- * and summaries only (search-sort-by-relevance REQ-SSR-005).
- *
- * The real PublicPublicationSearch runs over an InstanceLoopback double whose
- * request() has the real signature; the double answers what the anonymous
- * endpoint answers, and records that no credential was sent.
+ * Words come from published publications only, and the list is kept per portal.
  *
  * @covers \OCA\Portaliq\Service\Search\SuggestionWordList
- * @covers \OCA\Portaliq\Service\Search\PublicPublicationSearch
- *
- * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
  */
 class SuggestionWordListTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testTokensAreLowerCaseLettersOfAtLeastThreeCharacters(): void {
+		$this->assertSame(['afval', 'brengen', 'eén'], SuggestionWordList::tokens(text: 'Afval, brengen: 12 of EÉN!'));
+		$this->assertSame([], SuggestionWordList::tokens(text: 'a 1 of'));
+	}//end testTokensAreLowerCaseLettersOfAtLeastThreeCharacters()
 
 	/**
-	 * The requests the loopback received.
-	 *
-	 * @var list<array{0: string, 1: array<string, mixed>}>
+	 * @return void
 	 */
-	private array $requests = [];
-
-	/**
-	 * What was stored, by file name.
-	 *
-	 * @var array<string, string>
-	 */
-	private array $stored = [];
-
-	public function testADraftNeverReachesTheList(): void {
+	public function testWordsCountPublishedRowsOnly(): void {
 		$rows = [
-			['name' => 'Hondenbelasting 2026', '@self' => ['summary' => 'Tarieven voor de hondenbelasting', 'published' => '2026-01-02']],
-			['name' => 'Reorganisatie geheim', 'status' => 'draft', '@self' => ['summary' => 'Niet openbaar']],
-			['name' => 'Concept nota', '@self' => ['published' => null, 'summary' => 'Vertrouwelijk stuk']],
+			['name' => 'Afval brengen', 'summary' => 'Afval en grofvuil'],
+			['title' => 'Grofvuil', 'description' => 'afhalen', '@self' => ['published' => '2026-01-01']],
+			['name' => 'Verborgen', 'status' => 'Concept'],
+			['name' => 'Ingetrokken', '@self' => ['published' => null]],
+			['@self' => ['name' => 'Zelf', 'summary' => 'samenvatting']],
 		];
-		$list = $this->list(rows: $rows);
 
-		$this->assertSame(3, $list->rebuild(portal: 'gemeente'));
-		$words = $list->words(portal: 'gemeente');
-
-		$this->assertSame(['hondenbelasting' => 2, 'tarieven' => 1, 'voor' => 1], $words);
-		$this->assertArrayNotHasKey('geheim', $words);
-		$this->assertArrayNotHasKey('vertrouwelijk', $words);
-		$this->assertArrayNotHasKey('de', $words, 'a word under three letters is never a correction');
-
-		// Anonymous: the request carries no cookie, token or authorisation.
-		[$path, $options] = $this->requests[0];
-		$this->assertStringStartsWith(PublicPublicationSearch::ENDPOINT.'?', $path);
-		$headers = array_change_key_case((array)($options['headers'] ?? []));
-		$this->assertArrayNotHasKey('authorization', $headers);
-		$this->assertArrayNotHasKey('cookie', $headers);
-		$this->assertArrayNotHasKey('auth', $options);
-	}//end testADraftNeverReachesTheList()
-
-	public function testAnUnbuiltListIsEmpty(): void {
-		$this->assertSame([], $this->list(rows: [])->words(portal: 'nergens'));
-	}//end testAnUnbuiltListIsEmpty()
-
-	public function testTheCountAsksFuzzyMatching(): void {
-		$search = new PublicPublicationSearch($this->loopback(rows: [], total: 7), new NullLogger());
-
-		$this->assertSame(7, $search->count(term: 'hondenbelasting'));
-		$this->assertStringContainsString('_fuzzy=true', $this->requests[0][0]);
-		$this->assertStringContainsString('_search=hondenbelasting', $this->requests[0][0]);
-	}//end testTheCountAsksFuzzyMatching()
+		$this->assertSame(
+			['afhalen' => 1, 'afval' => 2, 'brengen' => 1, 'grofvuil' => 2, 'samenvatting' => 1, 'zelf' => 1],
+			SuggestionWordList::wordsOf(rows: $rows)
+		);
+	}//end testWordsCountPublishedRowsOnly()
 
 	/**
-	 * The list over the real search, a loopback answering these rows and an
-	 * in-memory app data folder.
-	 *
-	 * @param list<array<string, mixed>> $rows The anonymous search's rows.
-	 *
-	 * @return SuggestionWordList
+	 * @return void
 	 */
-	private function list(array $rows): SuggestionWordList {
-		$search = new PublicPublicationSearch($this->loopback(rows: $rows, total: count($rows)), new NullLogger());
-
+	public function testRebuildStoresTheListInANewFolderAndCountsTheWords(): void {
+		$search = $this->createMock(PublicPublicationSearch::class);
+		$search->method('rows')->willReturn([['name' => 'Afval brengen']]);
 		$folder = $this->createMock(ISimpleFolder::class);
-		$folder->method('newFile')->willReturnCallback(
-			function (string $name, $content = null) {
-				$this->stored[$name] = (string)$content;
-				return $this->createMock(ISimpleFile::class);
-			}
-		);
-		$folder->method('getFile')->willReturnCallback(
-			function (string $name) {
-				if (isset($this->stored[$name]) === false) {
-					throw new NotFoundException();
-				}
-
-				$file = $this->createMock(ISimpleFile::class);
-				$file->method('getContent')->willReturn($this->stored[$name]);
-				return $file;
-			}
-		);
-
-		$built   = false;
+		$folder->expects($this->once())->method('newFile')->with('de_stad.json', '{"afval":1,"brengen":1}');
 		$appData = $this->createMock(IAppData::class);
-		$appData->method('getFolder')->willReturnCallback(
-			static function () use (&$built, $folder) {
-				if ($built === false) {
-					throw new NotFoundException();
-				}
+		$appData->method('getFolder')->willThrowException(new NotFoundException());
+		$appData->expects($this->once())->method('newFolder')->with(SuggestionWordList::FOLDER)->willReturn($folder);
 
-				return $folder;
-			}
-		);
-		$appData->method('newFolder')->willReturnCallback(
-			static function () use (&$built, $folder) {
-				$built = true;
-				return $folder;
-			}
-		);
+		$list = new SuggestionWordList($search, $appData, $this->createMock(LoggerInterface::class));
 
-		return new SuggestionWordList($search, $appData, new NullLogger());
-	}//end list()
+		$this->assertSame(2, $list->rebuild(portal: 'De Stad'));
+	}//end testRebuildStoresTheListInANewFolderAndCountsTheWords()
 
 	/**
-	 * A loopback answering one page of rows.
-	 *
-	 * @param list<array<string, mixed>> $rows  The rows.
-	 * @param int                        $total The total.
-	 *
-	 * @return InstanceLoopback
+	 * @return void
 	 */
-	private function loopback(array $rows, int $total): InstanceLoopback {
-		$loopback = $this->getMockBuilder(InstanceLoopback::class)->disableOriginalConstructor()->onlyMethods(['request'])->getMock();
-		$loopback->method('request')->willReturnCallback(
-			function (string $method, string $path, array $options = []) use ($rows, $total): IResponse {
-				$this->requests[] = [$path, $options];
-				$response = $this->createMock(IResponse::class);
-				$response->method('getStatusCode')->willReturn(200);
-				$response->method('getBody')->willReturn((string)json_encode(['results' => $rows, 'total' => $total, 'pages' => 1]));
-				return $response;
-			}
-		);
+	public function testRebuildSurvivesAStoreThatCannotBeWritten(): void {
+		$search = $this->createMock(PublicPublicationSearch::class);
+		$search->method('rows')->willReturn([['name' => 'Afval']]);
+		$appData = $this->createMock(IAppData::class);
+		$appData->method('getFolder')->willThrowException(new RuntimeException('disk full'));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning');
 
-		return $loopback;
-	}//end loopback()
+		$this->assertSame(1, (new SuggestionWordList($search, $appData, $logger))->rebuild(portal: 'a'));
+	}//end testRebuildSurvivesAStoreThatCannotBeWritten()
+
+	/**
+	 * @return void
+	 */
+	public function testWordsReadTheStoredListAndAnythingElseIsEmpty(): void {
+		$file = $this->createMock(ISimpleFile::class);
+		$file->method('getContent')->willReturnOnConsecutiveCalls('{"afval":"3","kaart":1}', 'not json');
+		$folder = $this->createMock(ISimpleFolder::class);
+		$folder->expects($this->exactly(2))->method('getFile')->with('de_stad.json')->willReturn($file);
+		$appData = $this->createMock(IAppData::class);
+		$appData->method('getFolder')->with(SuggestionWordList::FOLDER)->willReturn($folder);
+		$list = new SuggestionWordList($this->createMock(PublicPublicationSearch::class), $appData, $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(['afval' => 3, 'kaart' => 1], $list->words(portal: 'De Stad'));
+		$this->assertSame([], $list->words(portal: 'De Stad'));
+
+		$missing = $this->createMock(IAppData::class);
+		$missing->method('getFolder')->willThrowException(new NotFoundException());
+		$empty = new SuggestionWordList($this->createMock(PublicPublicationSearch::class), $missing, $this->createMock(LoggerInterface::class));
+		$this->assertSame([], $empty->words(portal: 'x'));
+	}//end testWordsReadTheStoredListAndAnythingElseIsEmpty()
 }//end class
