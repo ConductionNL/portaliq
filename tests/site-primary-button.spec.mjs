@@ -24,7 +24,7 @@ import { mountSfc } from './support/mount-sfc.mjs'
 
 const FORM = 'src/site/components/c/SchemaForm.vue'
 const THEME_CSS = new URL('../css/site-theme.css', import.meta.url)
-const TEMPLATE = new URL('../templates/site.php', import.meta.url)
+const TEMPLATE = new URL('../templates/parts/site-stylesheets.php', import.meta.url)
 
 /**
  * The stylesheet without comments, so prose that names a value is not read as

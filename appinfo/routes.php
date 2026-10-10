@@ -297,6 +297,9 @@ return [
         // deleted is not a comparison. `/site` retires `/portal` once the
         // control pair is recorded, not before.
         ['name' => 'portalPage#site', 'url' => '/site', 'verb' => 'GET'],
+        // The plain version of a site page, server-rendered for a visitor without
+        // JavaScript (site-honest-without-javascript REQ-SHJ-002). Public, read anonymously.
+        ['name' => 'portalPage#plain', 'url' => '/site/plain', 'verb' => 'GET'],
 
         // Portal auth-edge API (supplier-portal T02). session#index resolves the
         // caller's bearer (fail-closed); devLogin is debug-gated; logout ends the

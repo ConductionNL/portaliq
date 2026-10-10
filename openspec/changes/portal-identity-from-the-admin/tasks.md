@@ -62,7 +62,9 @@ that is not in `check:specs` does not run in CI.
     the e2e `tests/e2e/portal-identity.spec.ts` is written (not run: needs the live instance). The hero fallback is `heroPropsOf` in
     `src/site/lib/blockProps.js` through WidgetGrid. The TOOI kinds come from OpenRegister's `ConceptRepository`, `ConceptLifecycle`
     and `ConceptHierarchy` (`lib/Service/OrganisationTypeOptions.php`, `GET /api/organisation-types`); the scheme uri is the app setting
-    `organisation_type_scheme`, empty by default until Q-portaliq-4 names it. `grep -rn -i "de gemeente" src/site` answers nothing.
+    `organisation_type_scheme`, by default TOOI-kern `https://identifier.overheid.nl/tooi/def/thes/kern/overheidsorganisatie`
+    (Q-portaliq-4); the ambtsdrager, functionaris and organisatieonderdeel branches are left out through skos:broader
+    (OrganisationTypeOptionsTest::testTheDefaultSchemeIsTooiKernOverheidsorganisatie, testOfficeHoldersAndOrganisationPartsAreNotOffered). `grep -rn -i "de gemeente" src/site` answers nothing.
 
 ## 4. Live
 

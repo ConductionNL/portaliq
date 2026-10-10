@@ -348,8 +348,10 @@ class SiteShell {
 	 * The serving portal, or null when the request resolves to none.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
 	 */
-	private function sitePortal(): ?array {
+	public function sitePortal(): ?array {
 		try {
 			return $this->portalResolver->resolve(
 				request: $this->request,

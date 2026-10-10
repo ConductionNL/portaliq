@@ -40,9 +40,12 @@ use Throwable;
  * to leave out a deprecated or expired kind, ConceptHierarchy for the Dutch
  * label. Portaliq keeps no copy of the list (decision D3, TOOI half).
  *
- * The scheme uri is the app setting `organisation_type_scheme`. Without it, or
- * when the concept register does not hold that scheme, nothing is offered and
- * the picker says the list is not installed.
+ * The scheme uri is the app setting `organisation_type_scheme`, by default
+ * TOOI-kern `overheidsorganisatie`. That scheme also holds office holders
+ * (ambtsdrager, functionaris) and organisation parts; those branches are left
+ * out by walking their narrower terms (skos:broader). When the concept
+ * register does not hold the scheme, nothing is offered and the picker says
+ * the list is not installed.
  *
  * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
@@ -52,6 +55,21 @@ class OrganisationTypeOptions {
 	 * The app setting naming the TOOI organisation type scheme uri.
 	 */
 	public const SCHEME_KEY = 'organisation_type_scheme';
+
+	/**
+	 * TOOI-kern scheme of government organisation types (thesaurus 1.6.0).
+	 */
+	public const DEFAULT_SCHEME = 'https://identifier.overheid.nl/tooi/def/thes/kern/overheidsorganisatie';
+
+	/**
+	 * Roots of the branches in the default scheme that are not organisation
+	 * types: ambtsdrager, functionaris and organisatieonderdeel.
+	 */
+	public const NOT_A_TYPE = [
+		'https://identifier.overheid.nl/tooi/def/thes/kern/c_232d2da9',
+		'https://identifier.overheid.nl/tooi/def/thes/kern/c_9023bfae',
+		'https://identifier.overheid.nl/tooi/def/thes/kern/c_07d0ec18',
+	];
 
 	private const REPOSITORY = 'OCA\\OpenRegister\\Service\\Vocabulary\\ConceptRepository';
 
@@ -82,7 +100,7 @@ class OrganisationTypeOptions {
 	 */
 	public function options(): array {
 		$none   = ['installed' => false, 'options' => []];
-		$scheme = trim($this->appConfig->getValueString(Application::APP_ID, self::SCHEME_KEY, ''));
+		$scheme = trim($this->appConfig->getValueString(Application::APP_ID, self::SCHEME_KEY, self::DEFAULT_SCHEME));
 		if ($scheme === '') {
 			return $none;
 		}
@@ -101,10 +119,21 @@ class OrganisationTypeOptions {
 			return $none;
 		}
 
+		$excluded = [];
+		foreach (self::NOT_A_TYPE as $root) {
+			if (isset($concepts[$root]) === true) {
+				$excluded += array_fill_keys($hierarchy->branchUris(rootUri: $root, conceptsByUri: $concepts), true);
+			}
+		}
+
 		$now     = new DateTimeImmutable();
 		$options = [];
 		foreach ($concepts as $uri => $concept) {
-			if (is_array($concept) === false || $lifecycle->isOfferable(concept: $concept, at: $now) === false) {
+			if (isset($excluded[(string)$uri]) === true || is_array($concept) === false) {
+				continue;
+			}
+
+			if ($lifecycle->isOfferable(concept: $concept, at: $now) === false) {
 				continue;
 			}
 
