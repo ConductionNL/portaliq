@@ -205,6 +205,12 @@ const RENDERABLE_WIDGET_TYPES = new Set([
 	'tile',
 	'chart',
 	'stats-block',
+	// The library registers these for a legacy `config.widgets` dashboard too
+	// (CnWidgetGrid/registerDashboardWidgets.js, CnBannerWidget); the lint
+	// used to reject them, which hid the board's attention card and lists.
+	'banner',
+	'table',
+	'stat',
 	...registryWidgetKeys(),
 ])
 
