@@ -551,26 +551,10 @@
             "gridHeight": 1
           },
           {
-            "id": 5,
-            "widgetId": "now-sessions",
-            "gridX": 0,
-            "gridY": 1,
-            "gridWidth": 4,
-            "gridHeight": 1
-          },
-          {
-            "id": 6,
-            "widgetId": "now-messages",
-            "gridX": 4,
-            "gridY": 1,
-            "gridWidth": 4,
-            "gridHeight": 1
-          },
-          {
             "id": "attention-first",
             "widgetId": "attention-first",
             "gridX": 0,
-            "gridY": 2,
+            "gridY": 1,
             "gridWidth": 12,
             "gridHeight": 2
           },
@@ -578,17 +562,33 @@
             "id": "list-requests",
             "widgetId": "list-requests",
             "gridX": 0,
-            "gridY": 4,
-            "gridWidth": 7,
+            "gridY": 3,
+            "gridWidth": 8,
             "gridHeight": 5
           },
           {
             "id": "list-submissions",
             "widgetId": "list-submissions",
-            "gridX": 7,
-            "gridY": 4,
-            "gridWidth": 5,
+            "gridX": 0,
+            "gridY": 8,
+            "gridWidth": 8,
             "gridHeight": 5
+          },
+          {
+            "id": 5,
+            "widgetId": "now-sessions",
+            "gridX": 8,
+            "gridY": 3,
+            "gridWidth": 4,
+            "gridHeight": 1
+          },
+          {
+            "id": 6,
+            "widgetId": "now-messages",
+            "gridX": 8,
+            "gridY": 4,
+            "gridWidth": 4,
+            "gridHeight": 1
           }
         ],
         "kpiRow": [
@@ -598,6 +598,27 @@
           "kpi-submissions"
         ],
         "showWidgetActions": false,
+        "showRefresh": false,
+        "showRequestFeature": false,
+        "showReportBug": false,
+        "showDocumentation": false,
+        "headerActions": [
+          {
+            "id": "view-website",
+            "label": "Website bekijken",
+            "icon": "OpenInNew",
+            "type": "navigate",
+            "target": "Portals"
+          },
+          {
+            "id": "new-notice",
+            "label": "Nieuwe mededeling",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "variant": "primary"
+          }
+        ],
         "description": "What needs attention today"
       }
     },
@@ -1250,7 +1271,7 @@
           {
             "id": "account-stats-sessions-issued",
             "type": "stats-block",
-            "title": "Sessions issued",
+            "title": "Uitgegeven sessies",
             "icon": "ShieldCheckOutline",
             "content": {
               "entries": [
@@ -1269,7 +1290,7 @@
           {
             "id": "account-stats-active-sessions",
             "type": "stats-block",
-            "title": "Active sessions",
+            "title": "Actieve sessies",
             "icon": "ShieldCheckOutline",
             "content": {
               "entries": [
@@ -3938,11 +3959,12 @@
         "Features & roadmap": "Functies en roadmap",
         "Flows": "Flows",
         "Integrations": "Integraties",
+        "Add integration": "Koppeling toevoegen",
         "Mail templates": "E-mailsjablonen",
         "Sent mail": "Verzonden e-mail",
         "Frequently asked questions": "Veelgestelde vragen",
         "Product finders": "Productzoekers",
-        "Shared blocks": "Gedeelde blokken",
+        "Shared blocks": "Gedeelde bibliotheek",
         "Open portal": "Portal openen",
         "Status": "Status",
         "Title": "Titel",
