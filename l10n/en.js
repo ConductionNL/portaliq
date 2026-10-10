@@ -2812,7 +2812,24 @@ OC.L10N.register(
         "A search with a term shows the best matches first.": "A search with a term shows the best matches first.",
         "A misspelling is still found in {fields}.": "A misspelling is still found in {fields}.",
         "Only exact words are found in {fields}.": "Only exact words are found in {fields}.",
-        "Results from other catalogues without a score come after the scored results.": "Results from other catalogues without a score come after the scored results."
+        "Results from other catalogues without a score come after the scored results.": "Results from other catalogues without a score come after the scored results.",
+        "%s: this part only works with JavaScript.": "%s: this part only works with JavaScript.",
+        "Information category": "Information category",
+        "Main menu": "Main menu",
+        "Open the full page": "Open the full page",
+        "Open this page with JavaScript": "Open this page with JavaScript",
+        "Page %1$s of %2$s": "Page %1$s of %2$s",
+        "Page not found": "Page not found",
+        "Pages of results": "Pages of results",
+        "Publication date": "Publication date",
+        "Read the plain version of this page": "Read the plain version of this page",
+        "Search publications": "Search publications",
+        "Search": "Search",
+        "This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.": "This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.",
+        "This website uses JavaScript for the parts where you do something.": "This website uses JavaScript for the parts where you do something.",
+        "Untitled": "Untitled",
+        "We cannot show the publications here right now.": "We cannot show the publications here right now.",
+        "_%n result_::_%n results_": ["%n result","%n results"]
     },
     "nplurals=2; plural=(n != 1);"
 )

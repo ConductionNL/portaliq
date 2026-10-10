@@ -2928,7 +2928,27 @@
         "A search with a term shows the best matches first.": "Een zoekopdracht met een zoekterm toont de beste treffers eerst.",
         "A misspelling is still found in {fields}.": "Een tikfout wordt nog gevonden in {fields}.",
         "Only exact words are found in {fields}.": "Alleen exacte woorden worden gevonden in {fields}.",
-        "Results from other catalogues without a score come after the scored results.": "Resultaten uit andere catalogi zonder score komen na de resultaten met een score."
+        "Results from other catalogues without a score come after the scored results.": "Resultaten uit andere catalogi zonder score komen na de resultaten met een score.",
+        "%s: this part only works with JavaScript.": "%s: dit onderdeel werkt alleen met JavaScript.",
+        "Information category": "Informatiecategorie",
+        "Main menu": "Hoofdmenu",
+        "Open the full page": "Open de volledige pagina",
+        "Open this page with JavaScript": "Open deze pagina met JavaScript",
+        "Page %1$s of %2$s": "Pagina %1$s van %2$s",
+        "Page not found": "Pagina niet gevonden",
+        "Pages of results": "Pagina's met resultaten",
+        "Publication date": "Publicatiedatum",
+        "Read the plain version of this page": "Lees de eenvoudige versie van deze pagina",
+        "Search publications": "Zoek in publicaties",
+        "Search": "Zoeken",
+        "This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.": "Deze pagina bestaat niet (meer). Misschien is het adres verkeerd getypt, of hebben wij de pagina verplaatst.",
+        "This website uses JavaScript for the parts where you do something.": "Deze website gebruikt JavaScript voor de onderdelen waarmee u iets doet.",
+        "Untitled": "Zonder titel",
+        "We cannot show the publications here right now.": "We kunnen de publicaties hier nu niet tonen.",
+        "_%n result_::_%n results_": [
+            "%n resultaat",
+            "%n resultaten"
+        ]
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

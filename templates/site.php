@@ -175,7 +175,7 @@ $locale = (string)($_['locale'] ?? 'nl');
 
     <?php
     // WITHOUT JAVASCRIPT THE PAGE SAYS SO (site-honest-without-javascript
-    // REQ-SHJ-001). A browser that runs scripts does not parse <noscript>
+    // REQ-SHJ-001). A browser that runs scripts does not parse noscript
     // content into the page, so for it the bundle's own #pq-main stays the
     // only one; without scripts this main is the skip link's target, and its
     // link opens the plain page of the same route, search included.
