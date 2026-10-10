@@ -1087,7 +1087,7 @@
       "id": "PortalAccountDetail",
       "route": "/accounts/:id",
       "type": "detail",
-      "title": "Portal Account",
+      "title": "Account",
       "config": {
         "register": "portaliq",
         "schema": "portalAccount",
@@ -1314,7 +1314,28 @@
               ]
             }
           ]
-        }
+        },
+        "follow": false,
+        "favourite": false,
+        "breadcrumb": {
+          "label": "Accounts",
+          "route": "PortalAccounts",
+          "currentField": "displayName"
+        },
+        "statusPill": {
+          "field": "status",
+          "colorMap": {
+            "active": "success",
+            "pending": "warning",
+            "suspended": "error"
+          },
+          "labels": {
+            "active": "Active",
+            "pending": "Pending",
+            "suspended": "Suspended"
+          }
+        },
+        "headerMeta": "{identityType} - on behalf of {organisation}"
       }
     },
     {
@@ -1326,11 +1347,26 @@
         "register": "portaliq",
         "schema": "portalSession",
         "columns": [
-          "subjectRef",
-          "audience",
-          "trustLevel",
-          "issuedAt",
-          "expiresAt",
+          {
+            "key": "subjectRef",
+            "label": "From"
+          },
+          {
+            "key": "audience",
+            "label": "Audience"
+          },
+          {
+            "key": "trustLevel",
+            "label": "Level"
+          },
+          {
+            "key": "issuedAt",
+            "label": "Signed in"
+          },
+          {
+            "key": "expiresAt",
+            "label": "Expires"
+          },
           {
             "key": "revoked",
             "label": "Revoked",
@@ -1343,10 +1379,38 @@
             }
           }
         ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        }
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} sessions",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Actief",
+            "filter": {
+              "revoked": false
+            },
+            "showCount": true
+          },
+          {
+            "label": "Ingetrokken",
+            "filter": {
+              "revoked": true
+            },
+            "showCount": true
+          }
+        ],
+        "showAdd": false
       }
     },
     {
@@ -1457,7 +1521,7 @@
       "id": "PortalMessageDetail",
       "route": "/messages/:id",
       "type": "detail",
-      "title": "Portal Message",
+      "title": "Message",
       "config": {
         "register": "portaliq",
         "schema": "portalMessage",
@@ -1514,7 +1578,26 @@
               ]
             }
           ]
-        }
+        },
+        "follow": false,
+        "favourite": false,
+        "breadcrumb": {
+          "label": "Messages",
+          "route": "PortalMessages",
+          "currentField": "subject"
+        },
+        "statusPill": {
+          "field": "read",
+          "colorMap": {
+            "true": "success",
+            "false": "warning"
+          },
+          "labels": {
+            "true": "Read",
+            "false": "Unread"
+          }
+        },
+        "headerMeta": "in the inbox of {subjectRef}"
       }
     },
     {
@@ -1595,7 +1678,7 @@
       "id": "PortalSubmissionDetail",
       "route": "/submissions/:id",
       "type": "detail",
-      "title": "Portal Submission",
+      "title": "Submission",
       "config": {
         "register": "portaliq",
         "schema": "portalSubmission",
@@ -1652,7 +1735,28 @@
               ]
             }
           ]
-        }
+        },
+        "follow": false,
+        "favourite": false,
+        "breadcrumb": {
+          "label": "Submissions",
+          "route": "PortalSubmissions",
+          "currentField": "actionId"
+        },
+        "statusPill": {
+          "field": "deliveryStatus",
+          "colorMap": {
+            "delivered": "success",
+            "pending": "warning",
+            "failed": "error"
+          },
+          "labels": {
+            "delivered": "Receipt confirmed",
+            "pending": "Receipt pending",
+            "failed": "Receipt failed"
+          }
+        },
+        "headerMeta": "via {appId}"
       }
     },
     {
@@ -2149,6 +2253,35 @@
         "sidebar": {
           "enabled": true,
           "showMetadata": true
+        },
+        "follow": false,
+        "favourite": false,
+        "breadcrumb": {
+          "label": "Portals",
+          "route": "Portals",
+          "currentField": "title"
+        },
+        "statusPill": {
+          "field": "status",
+          "colorMap": {
+            "published": "success",
+            "draft": "warning"
+          },
+          "labels": {
+            "published": "Published",
+            "draft": "Draft"
+          }
+        },
+        "typePill": {
+          "field": "kind",
+          "colorMap": {
+            "site": "info",
+            "external": "default"
+          },
+          "labels": {
+            "site": "Website",
+            "external": "Umbrella"
+          }
         }
       }
     },
@@ -2658,14 +2791,45 @@
         "register": "portaliq",
         "schema": "glossaryTerm",
         "columns": [
-          "term",
-          "portal",
-          "source"
+          {
+            "key": "term",
+            "label": "Term"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
+          {
+            "key": "source",
+            "label": "Source"
+          }
         ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        }
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} terms",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          },
+          {
+            "action": "import",
+            "label": "Import"
+          },
+          {
+            "action": "add",
+            "variant": "primary",
+            "label": "New term"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          }
+        ]
       }
     },
     {
@@ -2783,16 +2947,12 @@
             "label": "Notice"
           },
           {
-            "key": "portal",
-            "label": "Portal"
-          },
-          {
             "key": "startsAt",
-            "label": "Starts"
+            "label": "Visible from"
           },
           {
             "key": "endsAt",
-            "label": "Ends"
+            "label": "Until"
           },
           {
             "key": "status",
@@ -3075,9 +3235,18 @@
         "schema": "portalMailTemplate",
         "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController.",
         "columns": [
-          "portal",
-          "templateKey",
-          "subject",
+          {
+            "key": "templateKey",
+            "label": "Kind of notice"
+          },
+          {
+            "key": "subject",
+            "label": "Subject line"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
           {
             "key": "active",
             "label": "Active",
@@ -3089,12 +3258,29 @@
               }
             }
           },
-          "updatedBy"
+          {
+            "key": "updatedBy",
+            "label": "Changed by"
+          }
         ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        }
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} templates",
+        "headerButtons": [
+          {
+            "action": "export",
+            "label": "Download"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "Alles",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          }
+        ],
+        "showAdd": false
       }
     },
     {
@@ -3417,7 +3603,7 @@
         "Ends": "Eindigt",
         "{shown} of {total} news items": "{shown} van {total} nieuwsberichten",
         "Audience": "Doelgroep",
-        "Published": "Gepubliceerd op",
+        "Published": "Gepubliceerd",
         "Author": "Auteur",
         "{shown} of {total} accounts": "{shown} van {total} accounts",
         "Name": "Naam",
@@ -3447,7 +3633,69 @@
         "Withdraw invitation": "Uitnodiging intrekken",
         "Change": "Wijzigen",
         "Publish": "Publiceren",
-        "Take back": "Terugnemen"
+        "Take back": "Terugnemen",
+        "{shown} of {total} sessions": "{shown} van {total} sessies",
+        "From": "Van",
+        "Level": "Niveau",
+        "Signed in": "Ingelogd",
+        "Revoked": "Ingetrokken",
+        "Portal Sessions": "Sessies",
+        "New term": "Nieuw begrip",
+        "{shown} of {total} terms": "{shown} van {total} begrippen",
+        "Term": "Begrip",
+        "Source": "Bron",
+        "Glossary": "Begrippenlijst",
+        "{shown} of {total} templates": "{shown} van {total} sjablonen",
+        "Kind of notice": "Soort melding",
+        "Subject line": "Onderwerpregel",
+        "Active": "Actief",
+        "Changed by": "Gewijzigd door",
+        "Install portal configurations that other organisations have published: a theme, a set of pages, or the flows behind a form.": "Installeer portalconfiguraties die andere organisaties publiceerden: een thema, een set pagina's of de stromen achter een formulier",
+        "Pending": "In afwachting",
+        "Suspended": "Geschorst",
+        "Account": "Account",
+        "{identityType} - on behalf of {organisation}": "{identityType} · namens {organisation}",
+        "Account details": "Gegevens",
+        "Withdraw this account": "Account intrekken",
+        "Sessions issued": "Uitgegeven sessies",
+        "Sessions": "Sessies",
+        "Messages": "Berichten",
+        "Meetings": "Agenda",
+        "Receipt confirmed": "Bevestigd",
+        "Receipt pending": "Wacht",
+        "Receipt failed": "Ontvangstbevestiging mislukt",
+        "Submission": "Gegevens",
+        "via {appId}": "via {appId}",
+        "Forms": "Formulieren",
+        "Read": "Gelezen",
+        "Unread": "Ongelezen",
+        "Message": "Bericht",
+        "in the inbox of {subjectRef}": "in de inbox van {subjectRef}",
+        "Staff conversation": "Gesprek in Talk",
+        "Draft": "Concept",
+        "Umbrella": "Overkoepelend",
+        "Home page": "Startpagina",
+        "Portal details": "Instellingen",
+        "Pages": "Pagina's",
+        "Traffic": "Verkeer",
+        "What visitors looked at, who they were, where they came from and whether they did what the portal hoped. Pick a portal, a period and a segment at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes, and Export downloads exactly what the page shows.": "Wat bezoekers bekeken, waar ze vandaan kwamen en of ze deden wat de portal hoopte · dagcijfers, elk kwartier bijgewerkt",
+        "Page views": "Paginaweergaven",
+        "Visitors": "Bezoekers",
+        "Engaged sessions": "Betrokken sessies",
+        "Per day": "Per dag",
+        "Paths": "Paden",
+        "Sources": "Bronnen",
+        "Goals": "Doelen",
+        "Funnels": "Trechters",
+        "Custom dimensions": "Eigen dimensies",
+        "Script errors": "Scriptfouten",
+        "Experiments": "Experimenten",
+        "Heatmap": "Heatmap",
+        "Session recordings": "Sessieopnames",
+        "Availability": "Beschikbaarheid",
+        "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.": "Hoe beschikbaar elke portal was over de laatste twaalf volle maanden, met elke storing · voor een overleg over het serviceniveau",
+        "Visible from": "Zichtbaar van",
+        "Until": "Tot"
       }
     }
   }
