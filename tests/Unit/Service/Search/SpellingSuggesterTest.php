@@ -1,8 +1,12 @@
 <?php
 
 /**
+ * Unit tests for the "did you mean" correction of a search term.
+ *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @spec openspec/changes/search-suggestions-while-typing/tasks.md
  */
 
 declare(strict_types=1);
@@ -15,59 +19,50 @@ use OCA\Portaliq\Service\Search\SuggestionWordList;
 use PHPUnit\Framework\TestCase;
 
 /**
- * "Bedoelde u": the correction rule and the check that it finds results
- * (search-sort-by-relevance REQ-SSR-005).
+ * A word the portal's own words do not hold is replaced by its nearest one,
+ * and a suggestion is only offered when searching it finds something.
  *
  * @covers \OCA\Portaliq\Service\Search\SpellingSuggester
- *
- * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
  */
 class SpellingSuggesterTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testCorrectReplacesOnlyTheWordsTheListDoesNotHold(): void {
+		$words = ['afval' => 9, 'kalender' => 4, 'parkeren' => 7];
 
-	public function testASummaryWordGetsASuggestion(): void {
-		$suggester = $this->suggester(words: ['hondenbelasting' => 3, 'parkeren' => 5], counts: ['hondenbelasting' => 4]);
-
-		$this->assertSame(['suggestion' => 'hondenbelasting', 'results' => 4], $suggester->suggest(portal: 'gemeente', term: 'hondenbelasing'));
-	}//end testASummaryWordGetsASuggestion()
-
-	public function testAShortWordAllowsOneEdit(): void {
-		$words = ['afval' => 2, 'water' => 1];
-
-		$this->assertSame('afval', SpellingSuggester::correct(term: 'afvak', words: $words));
-		// Two edits on a five-letter word is too far.
-		$this->assertNull(SpellingSuggester::correct(term: 'avfak', words: $words));
-		// A longer word may take two.
-		$this->assertSame('parkeervergunning', SpellingSuggester::correct(term: 'parkeervergunig', words: ['parkeervergunning' => 1]));
-		// A known word is left as it is; nothing changed is no suggestion.
-		$this->assertNull(SpellingSuggester::correct(term: 'afval', words: $words));
-	}//end testAShortWordAllowsOneEdit()
-
-	public function testNoSuggestionThatFindsNothing(): void {
-		$suggester = $this->suggester(words: ['hondenbelasting' => 3], counts: ['hondenbelasting' => 0]);
-		$this->assertSame(['suggestion' => null, 'results' => 0], $suggester->suggest(portal: 'gemeente', term: 'hondenbelasing'));
-
-		$unanswered = $this->suggester(words: ['hondenbelasting' => 3], counts: []);
-		$this->assertSame(['suggestion' => null, 'results' => 0], $unanswered->suggest(portal: 'gemeente', term: 'hondenbelasing'));
-	}//end testNoSuggestionThatFindsNothing()
-
-	public function testTheMoreFrequentWordWinsATie(): void {
-		$this->assertSame('kaart', SpellingSuggester::correct(term: 'kaarx', words: ['kaarp' => 1, 'kaart' => 9]));
-	}//end testTheMoreFrequentWordWinsATie()
+		$this->assertSame('afval kalender', SpellingSuggester::correct(term: 'afvall  Kalender', words: $words));
+		$this->assertNull(SpellingSuggester::correct(term: 'afval', words: $words), 'Nothing to correct.');
+		$this->assertNull(SpellingSuggester::correct(term: 'zzzzzz', words: $words), 'Nothing near.');
+		$this->assertNull(SpellingSuggester::correct(term: 'afvall', words: []));
+		$this->assertSame('parkeren', SpellingSuggester::correct(term: 'parkerne', words: $words), 'Two edits allowed beyond five letters.');
+		$this->assertNull(SpellingSuggester::correct(term: 'afvaal ', words: ['afvaaaaal' => 1]));
+	}//end testCorrectReplacesOnlyTheWordsTheListDoesNotHold()
 
 	/**
-	 * The suggester over a word list and a search that counts per term.
-	 *
-	 * @param array<string, int> $words  The word list.
-	 * @param array<string, int> $counts The result count per corrected term; absent = no answer.
-	 *
-	 * @return SpellingSuggester
+	 * @return void
 	 */
-	private function suggester(array $words, array $counts): SpellingSuggester {
-		$list = $this->getMockBuilder(SuggestionWordList::class)->disableOriginalConstructor()->onlyMethods(['words'])->getMock();
-		$list->method('words')->with('gemeente')->willReturn($words);
-		$search = $this->getMockBuilder(PublicPublicationSearch::class)->disableOriginalConstructor()->onlyMethods(['count'])->getMock();
-		$search->method('count')->willReturnCallback(static fn (string $term): ?int => ($counts[$term] ?? null));
+	public function testTheNearestWordWinsByDistanceThenByCount(): void {
+		$this->assertSame('boom', SpellingSuggester::correct(term: 'boon', words: ['bood' => 1, 'boom' => 5, 'boot' => 2]));
+		$this->assertSame('bood', SpellingSuggester::correct(term: 'boon', words: ['bood' => 5, 'boom' => 5]), 'Equal count: the first by spelling.');
+	}//end testTheNearestWordWinsByDistanceThenByCount()
 
-		return new SpellingSuggester($list, $search);
-	}//end suggester()
+	/**
+	 * @return void
+	 */
+	public function testASuggestionNeedsAnEmptyTermToBeSkippedAndAHitToBeOffered(): void {
+		$list = $this->createMock(SuggestionWordList::class);
+		$list->method('words')->willReturn(['afval' => 3]);
+		$search = $this->createMock(PublicPublicationSearch::class);
+		$search->method('count')->willReturnOnConsecutiveCalls(5, 0, null);
+		$suggester = new SpellingSuggester($list, $search);
+		$none      = ['suggestion' => null, 'results' => 0];
+
+		$this->assertSame($none, $suggester->suggest(portal: 'p', term: '   '));
+		$this->assertSame($none, $suggester->suggest(portal: 'p', term: str_repeat('a', SpellingSuggester::MAX_TERM_LENGTH + 1)));
+		$this->assertSame($none, $suggester->suggest(portal: 'p', term: 'afval'));
+		$this->assertSame(['suggestion' => 'afval', 'results' => 5], $suggester->suggest(portal: 'p', term: 'afvall'));
+		$this->assertSame($none, $suggester->suggest(portal: 'p', term: 'afvall'));
+		$this->assertSame($none, $suggester->suggest(portal: 'p', term: 'afvall'));
+	}//end testASuggestionNeedsAnEmptyTermToBeSkippedAndAHitToBeOffered()
 }//end class

@@ -2965,10 +2965,10 @@
         "This website uses JavaScript for the parts where you do something.": "Deze website gebruikt JavaScript voor de onderdelen waarmee u iets doet.",
         "Untitled": "Zonder titel",
         "We cannot show the publications here right now.": "We kunnen de publicaties hier nu niet tonen.",
-        "_%n result_::_%n results_": [
+        "_%n result_::_%n results_": [,
             "%n resultaat",
-            "%n resultaten"
-        ]
+            "%n resultaten",
+        ],
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

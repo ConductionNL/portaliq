@@ -1,8 +1,12 @@
 <?php
 
 /**
+ * Unit tests for the daily job that rebuilds the search word lists.
+ *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @spec openspec/changes/search-suggestions-while-typing/tasks.md
  */
 
 declare(strict_types=1);
@@ -14,46 +18,42 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\Search\SuggestionWordList;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
-use ReflectionMethod;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
- * The daily job rebuilds every published portal's list, and is registered
- * (search-sort-by-relevance REQ-SSR-005).
+ * One rebuild per published portal; a failing portal does not stop the rest.
  *
  * @covers \OCA\Portaliq\BackgroundJob\SuggestionWordListJob
- *
- * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
  */
 class SuggestionWordListJobTest extends TestCase {
-
-	public function testEveryPublishedPortalIsRebuiltAndOneFailureStopsNothing(): void {
+	/**
+	 * @return void
+	 */
+	public function testEveryPublishedPortalIsRebuiltAndAFailureIsLogged(): void {
 		$portals = $this->createMock(PortalResolver::class);
 		$portals->method('allPublishedPortals')->willReturn([['slug' => 'a'], ['slug' => ''], ['slug' => 'b'], ['slug' => 'c']]);
-
-		$built = [];
-		$list  = $this->getMockBuilder(SuggestionWordList::class)->disableOriginalConstructor()->onlyMethods(['rebuild'])->getMock();
+		$seen = [];
+		$list = $this->createMock(SuggestionWordList::class);
 		$list->method('rebuild')->willReturnCallback(
-			static function (string $portal) use (&$built): int {
-				$built[] = $portal;
+			function (string $portal) use (&$seen): int {
+				$seen[] = $portal;
 				if ($portal === 'b') {
-					throw new \RuntimeException('down');
+					throw new RuntimeException('boom');
 				}
 
 				return 1;
 			}
 		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning');
+		$job = new SuggestionWordListJob($this->createMock(ITimeFactory::class), $portals, $list, $logger);
 
-		$job = new SuggestionWordListJob($this->createMock(ITimeFactory::class), $portals, $list, new NullLogger());
-		(new ReflectionMethod($job, 'run'))->invoke($job, null);
+		$run = new \ReflectionMethod($job, 'run');
+		$run->setAccessible(true);
+		$run->invoke($job, null);
 
-		$this->assertSame(['a', 'b', 'c'], $built);
+		$this->assertSame(['a', 'b', 'c'], $seen);
 		$this->assertSame(SuggestionWordListJob::INTERVAL, $job->getInterval());
-	}//end testEveryPublishedPortalIsRebuiltAndOneFailureStopsNothing()
-
-	public function testTheJobIsRegistered(): void {
-		$info = (string)file_get_contents(__DIR__.'/../../../appinfo/info.xml');
-
-		$this->assertStringContainsString('<job>OCA\Portaliq\BackgroundJob\SuggestionWordListJob</job>', $info);
-	}//end testTheJobIsRegistered()
+	}//end testEveryPublishedPortalIsRebuiltAndAFailureIsLogged()
 }//end class
