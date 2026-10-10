@@ -30,7 +30,7 @@ When creating a new app, clone this template and use `/app-create` to rename all
 | `lib/AppInfo/Application.php` | App bootstrap, listener + repair registration |
 | `lib/Controller/SettingsController.php` | Settings API endpoints |
 | `lib/Service/SettingsService.php` | Settings business logic, OpenRegister integration |
-| `lib/Listener/DeepLinkRegistrationListener.php` | Registers deep link patterns with OpenRegister search |
+| `lib/Listener/DeepLinkRegistrationListener.php` | Not implemented yet: no deep link patterns are registered with OpenRegister search (#81) |
 | `lib/Repair/InitializeSettings.php` | Import register on install/upgrade |
 | `lib/Settings/app_template_register.json` | OpenAPI 3.0 register schema definition |
 | `src/App.vue` | App shell (navigation + routing) |

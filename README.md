@@ -495,7 +495,7 @@ portaliq/
 │   ├── Controller/             # DashboardController, SettingsController
 │   ├── Mcp/ExampleToolProvider.php  # AI Chat Companion tools (hydra ADR-034/035)
 │   ├── Service/SettingsService.php
-│   ├── Listener/DeepLinkRegistrationListener.php
+│   ├── Listener/               # Event listeners (no DeepLinkRegistrationListener yet; deep links are not registered with OpenRegister search, see #81)
 │   ├── Repair/InitializeSettings.php
 │   └── Settings/               # AdminSettings, app_template_register.json
 ├── templates/                  # PHP templates (SPA shells)
