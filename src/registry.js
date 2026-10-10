@@ -48,10 +48,12 @@ import PortalAccessibility from './widgets/PortalAccessibility.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
+import PortalIdentity from './widgets/PortalIdentity.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
+import SearchRanking from './widgets/SearchRanking.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
 import TrafficDimensions from './widgets/TrafficDimensions.vue'
 import TrafficErrors from './widgets/TrafficErrors.vue'
@@ -282,6 +284,28 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: 'Whether this portal has a published page at its root, and what to do when it has not (portaliq-cms). Custom because the three states come from PortalHomePageController, because an absent page and a draft at the root are different errors with different remedies, and because an object-list over the pages shows rows rather than a verdict about one route.',
+	},
+	// @custom-widget-ratchet exclude the text is rendered from the site's search ranking declaration, the same object the search request is built from, which no built-in widget can read
+	SearchRanking: {
+		kind: 'widget',
+		component: SearchRanking,
+		defaultSize: { w: 12, h: 3 },
+		minSize: { w: 6, h: 2 },
+		maxSize: { w: 12, h: 6 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'How the public search ranks (search-sort-by-relevance REQ-SSR-006). Custom because it renders RANKING from src/site/lib/federatedSearch.js, so the explanation follows the request.',
+	},
+	// @custom-widget-ratchet exclude the pickers read the portal's own media library and the TOOI list through an admin controller, and the save shows the portal guard's refusal, which no built-in widget does
+	PortalIdentity: {
+		kind: 'widget',
+		component: PortalIdentity,
+		defaultSize: { w: 12, h: 6 },
+		minSize: { w: 6, h: 5 },
+		maxSize: { w: 12, h: 10 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "The portal's favicon, logo and hero image from its media library, and its kind of organisation from the TOOI list (portal-identity-from-the-admin). Custom because the images come from this portal's library only, the kinds come from OpenRegister's concept register through OrganisationTypeController, and a refused favicon must show the guard's message.",
 	},
 	// @custom-widget-ratchet exclude the radio list reads the theme app's catalogue and a contrast verdict per set through an admin controller, and a failing set must show its findings and ask again before it saves, which no built-in widget does
 	PortalTheme: {

@@ -68,6 +68,24 @@ class CmsReaderMediaTest extends TestCase {
 		$this->assertSame("Tekst\n\n![Stadhuis](".$url.")\n\n![Concept]()", $page['body']['markdown']);
 	}//end testTheShareImageAndMarkdownReferencesResolve()
 
+	/**
+	 * The portal's hero image reaches the site shell as `{url, alt}`, for a
+	 * hero block without an image of its own (portal-identity-from-the-admin
+	 * REQ-PIA-002); an item of another portal or a draft lends nothing.
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testThePortalsHeroImageReachesTheShell(): void {
+		$reader = $this->reader(pages: []);
+
+		$this->assertSame(
+			['url' => 'https://gemeente.example/media/'.self::IMAGE.'?portal=gemeente', 'alt' => 'Het stadhuis aan de Markt'],
+			$reader->shell(portal: ['slug' => 'gemeente', 'heroImage' => 'media:'.self::IMAGE])['heroImage']
+		);
+		$this->assertNull($reader->shell(portal: ['slug' => 'gemeente', 'heroImage' => 'media:'.self::DRAFT])['heroImage']);
+		$this->assertNull($reader->shell(portal: ['slug' => 'gemeente'])['heroImage']);
+	}//end testThePortalsHeroImageReachesTheShell()
+
 	public function testOnlyThePortalsPublishedItemsAreRead(): void {
 		$this->reader(pages: []);
 

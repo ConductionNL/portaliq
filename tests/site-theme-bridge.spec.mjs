@@ -22,7 +22,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const template = readFileSync(join(ROOT, 'templates', 'site.php'), 'utf8')
+const template = readFileSync(join(ROOT, 'templates', 'parts', 'site-stylesheets.php'), 'utf8')
 
 const BRIDGE_PUSH = "$tokenStylesheets[] = $asset($themeApp, 'css/' . $themeBridgeStylesheet . '.css');"
 const SET_PUSH = "$tokenStylesheets[] = $asset($themeApp, 'css/' . $themeStylesheet . '.css');"

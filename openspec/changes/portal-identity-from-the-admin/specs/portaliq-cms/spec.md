@@ -39,7 +39,11 @@ background image is empty.
 
 `#portal` SHALL declare `organisationType` (a TOOI organisation type URI) and
 `organisationTypeLabel`. The settings form SHALL offer the concepts of the TOOI organisation type
-scheme from OpenRegister's concept register and SHALL store the URI and the label picked. When the
+scheme from OpenRegister's concept register and SHALL store the URI and the label picked. The scheme
+is the app setting `organisation_type_scheme`, by default TOOI-kern
+`https://identifier.overheid.nl/tooi/def/thes/kern/overheidsorganisatie`; the concepts under
+ambtsdrager, functionaris and organisatieonderdeel (found through `skos:broader`) are not organisation
+types and SHALL NOT be offered. When the
 scheme is not in the concept register, the picker SHALL say so and offer nothing, and no free text
 SHALL be accepted. The site SHALL use the label wherever it names the organisation's kind: the
 signed-in area's "Van ..." line (with the Dutch article of the label: "het" for waterschap and
@@ -50,6 +54,11 @@ organisation type SHALL say "Van de organisatie".
 - **GIVEN** a portal with `organisationType` the TOOI concept for waterschap and label "waterschap"
 - **WHEN** a signed-in resident opens a message from the organisation
 - **THEN** it SHALL read "Van het waterschap" and nowhere "Van de gemeente"
+
+#### Scenario: Office holders are not organisation types
+- **GIVEN** the default scheme holds gemeente and waterschap, and burgemeester under ambtsdrager
+- **WHEN** the administrator opens the organisation type picker
+- **THEN** it SHALL offer gemeente and waterschap, and SHALL NOT offer ambtsdrager or burgemeester
 
 #### Scenario: No type set
 - **GIVEN** a portal without an organisation type

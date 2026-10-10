@@ -47,13 +47,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\SiteShell;
-use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
-use OCA\Portaliq\Service\PortalThemeResolver;
-use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\Cms\AccessibilityFraming;
-use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\Cms\PlainLinks;
+use OCA\Portaliq\Service\Cms\PlainPageRenderer;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -76,50 +73,25 @@ class PortalPageController extends Controller {
 	private const STATUS_FOUND = 302;
 
 	/**
-	 * Builds what the site shell template renders.
-	 *
-	 * @var SiteShell
-	 */
-	private readonly SiteShell $shell;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param IRequest $request The request
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the serving
-	 *                                                    portal and the runtime
-	 *                                                    config built from it.
-	 * @param IURLGenerator $urlGenerator Builds the content API base handed to
-	 *                                    the site renderer.
-	 * @param PortalResolver $portalResolver Resolves the serving portal, so the
-	 *                                       shell knows whose theme to load.
-	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
-	 *                                           reference to a real themiq
-	 *                                           token stylesheet.
-	 * @param SiteHead $siteHead The head of the page a site request asks for.
-	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
-	 * @param AccessibilityFraming $framing Whether the accessibility measurement may frame this request.
+	 * @param IRequest             $request      The request
+	 * @param IURLGenerator        $urlGenerator Builds the content API base handed to
+	 *                                           the site renderer.
+	 * @param SiteShell            $shell        Builds what the site shell template renders:
+	 *                                           the serving portal, its theme, its head,
+	 *                                           its notices and its tab icon.
+	 * @param AccessibilityFraming $framing      Whether the accessibility measurement may frame this request.
+	 * @param PlainPageRenderer    $plain        The plain version of a page, for a visitor without JavaScript.
 	 */
 	public function __construct(
 		IRequest $request,
-		PortalRuntimeConfigResolver $configResolver,
 		private readonly IURLGenerator $urlGenerator,
-		PortalResolver $portalResolver,
-		PortalThemeResolver $themeResolver,
-		SiteHead $siteHead,
-		PortalNoticeReader $notices,
+		private readonly SiteShell $shell,
 		private readonly AccessibilityFraming $framing,
+		private readonly PlainPageRenderer $plain,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
-		$this->shell = new SiteShell(
-			request: $request,
-			portalResolver: $portalResolver,
-			themeResolver: $themeResolver,
-			urlGenerator: $urlGenerator,
-			siteHead: $siteHead,
-			notices: $notices,
-			configResolver: $configResolver
-		);
 	}//end __construct()
 
 	/**
@@ -213,10 +185,20 @@ class PortalPageController extends Controller {
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function site(): TemplateResponse {
+		$params = $this->shell->templateParams();
+		// The way on for a visitor without JavaScript (site-honest-without-javascript
+		// REQ-SHJ-001): the plain page of the same route, search included.
+		$params['plainUrl'] = $this->plainLinks()->plain(
+			route: $this->routeParam(),
+			query: $this->searchParam(),
+			page: $this->pageParam()
+		);
+		$params['noscript'] = $this->plain->notice(locale: (string)($params['locale'] ?? 'nl'));
+
 		$response = new TemplateResponse(
 			Application::APP_ID,
 			'site',
-			$this->shell->templateParams(),
+			$params,
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
 			// chrome. `layout.public.php` emits `<header id="header">` with
 			// `header-appname`, the Nextcloud logo and a `header-info` title,
@@ -267,5 +249,77 @@ class PortalPageController extends Controller {
 		return $response;
 	}//end site()
 
+	/**
+	 * The plain version of a site page, rendered by the server for a visitor
+	 * without JavaScript (site-honest-without-javascript REQ-SHJ-002).
+	 *
+	 * The same portal, route and stylesheets as `site()`, and no script at
+	 * all. Every read is anonymous, also when the request carries a session,
+	 * so a shared cache can never keep a resident's data. A route without a
+	 * published page answers 404 with the portal's not-found text.
+	 *
+	 * @return TemplateResponse The plain page.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function plain(): TemplateResponse {
+		$params = $this->shell->templateParams();
+		$view   = $this->plain->render(
+			portal: $this->shell->sitePortal(),
+			route: $this->routeParam(),
+			locale: (string)($params['locale'] ?? 'nl'),
+			portalParam: $this->shell->requestedPortalSlug(),
+			query: $this->searchParam(),
+			page: $this->pageParam()
+		);
 
+		$params['plain'] = $view;
+		$response        = new TemplateResponse(Application::APP_ID, 'site-plain', $params, TemplateResponse::RENDER_AS_BLANK);
+		$response->setStatus((int)$view['status']);
+		$response->setContentSecurityPolicy($this->framing->sitePolicy(request: $this->request));
+
+		return $response;
+	}//end plain()
+
+	/**
+	 * The links of this request, keeping the portal the visitor named.
+	 *
+	 * @return PlainLinks
+	 */
+	private function plainLinks(): PlainLinks {
+		return new PlainLinks(urlGenerator: $this->urlGenerator, portal: $this->shell->requestedPortalSlug());
+	}//end plainLinks()
+
+	/**
+	 * The route asked for, `/` when none.
+	 *
+	 * @return string
+	 */
+	private function routeParam(): string {
+		$route = trim((string)$this->request->getParam('route', '/'));
+
+		return '/'.trim($route, '/');
+	}//end routeParam()
+
+	/**
+	 * The search term, `_search`, at most 200 characters.
+	 *
+	 * @return string
+	 */
+	private function searchParam(): string {
+		return mb_substr(trim((string)$this->request->getParam('_search', '')), 0, 200);
+	}//end searchParam()
+
+	/**
+	 * The results page, `_page`, from 1.
+	 *
+	 * @return int
+	 */
+	private function pageParam(): int {
+		return max(1, min(10000, (int)$this->request->getParam('_page', '1')));
+	}//end pageParam()
 }//end class

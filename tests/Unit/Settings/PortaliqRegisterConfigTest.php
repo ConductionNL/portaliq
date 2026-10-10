@@ -383,8 +383,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.91.0 (portal 0.23.0, accessibilityMeasurement 0.1.0): `accessibilityAudit`, `accessibilityRegisterUrl`, `accessibilityPages` and the measurement schema (site-accessibility-statement). Additive.
 		// 0.92.0 (portalPage 0.8.0): an action's `summary` is the start tile's string, the answer sentence moves to `answerSummary`, plus `audiences` (decision 127, site-nlds-widget-palette D6). Tightens `summary`; MoveActionSummarySentence moves the stored object shape first. portalSession 0.4.0: read by admins only (security review S3).
 		// 0.93.0 (portal 0.24.0, portalAccount 0.18.0, portalEmailLink 0.1.0): the `email-link` sign-in mode, identity type `email`, the account's own `signInAddress` and the one-time link record (sign-in-with-an-email-link). Additive.
-		$this->assertSame('0.93.0', self::$register['info']['version']);
-		$this->assertSame('0.93.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.94.0 (portal 0.25.0): `favicon`, `heroImage`, `organisationType` and `organisationTypeLabel`; `logo` takes a media reference (portal-identity-from-the-admin). Additive.
+		$this->assertSame('0.94.0', self::$register['info']['version']);
+		$this->assertSame('0.94.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame(200, self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['summary']['maxLength']);
 		$this->assertSame('object', self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['answerSummary']['type']);
@@ -447,7 +448,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.24.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.25.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
@@ -1226,4 +1227,27 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('array', $portal['accessibilityPages']['type']);
 
 	}//end testTheMeasurementSchemaIsDeclared()
+
+	/**
+	 * portal-identity-from-the-admin REQ-PIA-001 and REQ-PIA-003: the portal
+	 * declares its favicon, hero image and organisation type; the logo takes a
+	 * media reference beside a URL.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+	 */
+	public function testThePortalDeclaresFaviconAndHeroImage(): void {
+		$portal = self::$register['components']['schemas']['portal']['properties'];
+
+		foreach (['favicon', 'heroImage', 'logo'] as $key) {
+			$this->assertSame('string', $portal[$key]['type'], $key);
+			$this->assertStringContainsString('media:', $portal[$key]['description'], $key);
+		}
+
+		$this->assertSame('string', $portal['organisationType']['type']);
+		$this->assertSame('uri', $portal['organisationType']['format']);
+		$this->assertSame('string', $portal['organisationTypeLabel']['type']);
+
+	}//end testThePortalDeclaresFaviconAndHeroImage()
 }//end class

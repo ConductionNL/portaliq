@@ -590,4 +590,43 @@ WT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
 	"${WT_BASE}/index.php/apps/portaliq/api/preferences/walkthrough_completed_version" || echo 000)"
 echo "[ci-seed] PUT preferences/walkthrough_completed_version -> HTTP ${WT_CODE}"
 
+# ── One published Woo publication in opencatalogi ───────────────────────────
+# For tests/e2e/site-without-javascript.spec.ts (site-honest-without-javascript
+# 3.4): the plain search and detail read opencatalogi's public federation
+# endpoint on the server, so the suite needs one publication an anonymous
+# visitor may read, with one PDF. Through opencatalogi's own API: its
+# configuration import and first-catalog action, the publication object in
+# its `publication` register, the file on that object, then its publish
+# action. Tolerant of an instance without opencatalogi (the plain page then
+# shows its honest notice), but LOUD: a seed that did not land is a
+# ::warning, never a silent pass, and the spec's search test fails on it.
+if php occ app:list --output=json 2>/dev/null | grep -q '"opencatalogi"'; then
+	OC="${BASE}/index.php/apps/opencatalogi"
+	OR_OBJECTS="${BASE}/index.php/apps/openregister/api/objects/publication/publication"
+	AUTH=(-u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true')
+	curl -sS "${AUTH[@]}" -X POST -o /dev/null "${OC}/api/settings/import" || true
+	curl -sS "${AUTH[@]}" -X POST -o /dev/null "${OC}/api/setup/action/create-first-catalog" || true
+	PUB_BODY="$(mktemp)"
+	YESTERDAY="$(date -u -d 'yesterday' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT00:00:00Z)"
+	PUB_CODE="$(curl -sS "${AUTH[@]}" -X POST -H 'Content-Type: application/json' -o "$PUB_BODY" -w '%{http_code}' \
+		--data "{\"title\":\"Woo-besluit afvalinzameling 2026\",\"summary\":\"Het besluit over de afvalinzameling in 2026.\",\"wooCategory\":\"infocat014\",\"publicationDate\":\"${YESTERDAY}\"}" \
+		"$OR_OBJECTS" || echo 000)"
+	PUB_ID="$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print((d.get('@self') or {}).get('id') or d.get('id') or '')" "$PUB_BODY" 2>/dev/null || true)"
+	echo "[ci-seed] opencatalogi publication -> HTTP ${PUB_CODE} id=${PUB_ID:-none}"
+	if [ -n "$PUB_ID" ]; then
+		PDF_B64="$(printf '%%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%%%EOF\n' | base64 -w0)"
+		FILE_CODE="$(curl -sS "${AUTH[@]}" -X POST -H 'Content-Type: application/json' -o /dev/null -w '%{http_code}' \
+			--data "{\"name\":\"besluit-afvalinzameling-2026.pdf\",\"content\":\"data:application/pdf;base64,${PDF_B64}\",\"share\":true}" \
+			"${OR_OBJECTS}/${PUB_ID}/files" || echo 000)"
+		PUBLISH_CODE="$(curl -sS "${AUTH[@]}" -X POST -o /dev/null -w '%{http_code}' "${OC}/api/publications/${PUB_ID}/publish" || echo 000)"
+		echo "[ci-seed] publication file -> HTTP ${FILE_CODE}; publish -> HTTP ${PUBLISH_CODE}"
+		SEEN="$(curl -sS "${OC}/api/federation/publications?_search=afvalinzameling" | grep -c 'Woo-besluit afvalinzameling 2026' || true)"
+		[ "${SEEN:-0}" -gt 0 ] || echo "::warning::The seeded publication is not in opencatalogi's anonymous federation search; site-without-javascript.spec.ts will fail."
+	else
+		echo "::warning::opencatalogi publication was not created (HTTP ${PUB_CODE}): $(head -c 300 "$PUB_BODY")"
+	fi
+else
+	echo "::warning::opencatalogi is not installed; the plain publication search and detail cannot be tested end to end."
+fi
+
 echo "[ci-seed] done."

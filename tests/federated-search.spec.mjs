@@ -234,6 +234,8 @@ assertEqual(
 		id: 'abc',
 		date: '',
 		type: '',
+		// No score, no match (search-sort-by-relevance REQ-SSR-003).
+		match: null,
 	},
 )
 
@@ -271,6 +273,8 @@ assertEqual(
 		id: '',
 		date: '',
 		type: '',
+		// No score, no match (search-sort-by-relevance REQ-SSR-003).
+		match: null,
 	},
 )
 
