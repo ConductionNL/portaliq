@@ -96,6 +96,8 @@ class PlainLinks {
 	 * The plain page's own address without parameters, the search form's action.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-publications-can-be-searched-without-javascript-req-shj-003
 	 */
 	public function plainBase(): string {
 		return $this->urlGenerator->linkToRoute('portaliq.portalPage.plain');
@@ -105,6 +107,8 @@ class PlainLinks {
 	 * The portal the visitor named, or ''.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-publications-can-be-searched-without-javascript-req-shj-003
 	 */
 	public function portal(): string {
 		return $this->portal;

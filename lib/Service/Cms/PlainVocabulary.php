@@ -158,6 +158,10 @@ class PlainVocabulary {
 			return $code;
 		}
 
-		return self::WOO_CATEGORIES[$code][str_starts_with($locale, 'en') === true ? 1 : 0];
+		if (str_starts_with($locale, 'en') === true) {
+			return self::WOO_CATEGORIES[$code][1];
+		}
+
+		return self::WOO_CATEGORIES[$code][0];
 	}//end wooCategory()
 }//end class

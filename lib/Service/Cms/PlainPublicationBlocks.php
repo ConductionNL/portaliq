@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use OCP\IL10N;
 use Throwable;
 
@@ -49,7 +50,10 @@ class PlainPublicationBlocks {
 	 */
 	public const ENDPOINT = '/index.php/apps/opencatalogi/api/federation/publications';
 
-	private const MONTHS_NL = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+	private const MONTHS_NL = [
+		'januari', 'februari', 'maart', 'april', 'mei', 'juni',
+		'juli', 'augustus', 'september', 'oktober', 'november', 'december',
+	];
 
 	/**
 	 * Constructor.
@@ -105,9 +109,14 @@ class PlainPublicationBlocks {
 		$pages   = max(1, (int)ceil($total / $pageSize));
 		$results = [];
 		foreach ($answer['results'] as $result) {
+			$href = '';
+			if ($result['id'] !== '') {
+				$href = $links->plain(route: $detailRoute.'/'.$result['id']);
+			}
+
 			$results[] = [
 				'title'   => $result['title'],
-				'href'    => ($result['id'] !== '') ? $links->plain(route: $detailRoute.'/'.$result['id']) : '',
+				'href'    => $href,
 				'date'    => $this->date(value: $result['date'], locale: $locale),
 				'summary' => $result['summary'],
 			];
@@ -117,9 +126,20 @@ class PlainPublicationBlocks {
 		$block['total']     = $total;
 		$block['totalText'] = $l10n->n('%n result', '%n results', $total);
 		$block['results']   = $results;
-		$block['pageText']  = ($pages > 1) ? $l10n->t('Page %1$s of %2$s', [$page, $pages]) : '';
-		$block['previous']  = ($page > 1) ? ['href' => $links->plain(route: $route, query: $query, page: $page - 1), 'text' => $l10n->t('Previous page')] : null;
-		$block['next']      = ($page < $pages) ? ['href' => $links->plain(route: $route, query: $query, page: $page + 1), 'text' => $l10n->t('Next page')] : null;
+		$block['pageText']  = '';
+		$block['previous']  = null;
+		$block['next']      = null;
+		if ($pages > 1) {
+			$block['pageText'] = $l10n->t('Page %1$s of %2$s', [$page, $pages]);
+		}
+
+		if ($page > 1) {
+			$block['previous'] = ['href' => $links->plain(route: $route, query: $query, page: $page - 1), 'text' => $l10n->t('Previous page')];
+		}
+
+		if ($page < $pages) {
+			$block['next'] = ['href' => $links->plain(route: $route, query: $query, page: $page + 1), 'text' => $l10n->t('Next page')];
+		}
 		$block['navLabel']  = $l10n->t('Pages of results');
 
 		return $block;
@@ -170,7 +190,9 @@ class PlainPublicationBlocks {
 
 		$documents = [];
 		foreach ((array)($answer['documents'] ?? []) as $document) {
-			$facts       = array_values(array_filter([$document['type'], $this->size(bytes: $document['size'])], static fn (string $fact): bool => $fact !== ''));
+			$facts       = array_values(
+				array_filter([$document['type'], $this->size(bytes: $document['size'])], static fn (string $fact): bool => $fact !== '')
+			);
 			$documents[] = [
 				'name'  => $document['name'],
 				'href'  => $document['href'],
@@ -181,7 +203,7 @@ class PlainPublicationBlocks {
 		return [
 			'kind'             => 'publication',
 			'state'            => 'ok',
-			'title'            => (string)(($publication['name'] ?? '') !== '' ? $publication['name'] : ($self['name'] ?? ($self['title'] ?? $l10n->t('Untitled')))),
+			'title'            => $this->titleOf(publication: $publication, self: $self, l10n: $l10n),
 			'summary'          => $this->summary(publication: $publication),
 			'rows'             => $rows,
 			'documents'        => $documents,
@@ -215,8 +237,32 @@ class PlainPublicationBlocks {
 	private function endpointOf(array $props): string {
 		$endpoint = trim((string)($props['endpoint'] ?? ''));
 
-		return ($endpoint !== '') ? $endpoint : self::ENDPOINT;
+		if ($endpoint === '') {
+			return self::ENDPOINT;
+		}
+
+		return $endpoint;
 	}//end endpointOf()
+
+	/**
+	 * The publication's name as the detail block reads it: `name`, then
+	 * `@self.name`, `@self.title`, then the schema's own `title`.
+	 *
+	 * @param array<string, mixed> $publication The publication.
+	 * @param array<string, mixed> $self        Its `@self`.
+	 * @param IL10N                $l10n        The words.
+	 *
+	 * @return string
+	 */
+	private function titleOf(array $publication, array $self, IL10N $l10n): string {
+		foreach ([$publication['name'] ?? '', $self['name'] ?? '', $self['title'] ?? '', $publication['title'] ?? ''] as $candidate) {
+			if (is_string($candidate) === true && trim($candidate) !== '') {
+				return trim($candidate);
+			}
+		}
+
+		return $l10n->t('Untitled');
+	}//end titleOf()
 
 	/**
 	 * The summary under the title: `summary`, else `description`.
@@ -254,7 +300,7 @@ class PlainPublicationBlocks {
 			return '';
 		}
 
-		$date = $date->setTimezone(new \DateTimeZone('UTC'));
+		$date = $date->setTimezone(new DateTimeZone('UTC'));
 		if (str_starts_with($locale, 'en') === true) {
 			return $date->format('j F Y');
 		}

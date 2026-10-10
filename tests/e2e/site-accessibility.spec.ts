@@ -109,6 +109,23 @@ test.describe('site renderer — accessibility', () => {
 		expect(violations, describe(violations)).toEqual([])
 	})
 
+	// site-honest-without-javascript 4.1: the plain pages pass the same check.
+	// axe needs scripting, so it runs with JavaScript on; the plain page holds
+	// no script (tests/site-plain.spec.mjs), so this is the DOM a visitor
+	// without JavaScript gets. Its body carries the same site-root test id.
+	for (const route of ['/site/plain?route=/over-ons', '/site/plain?route=/zoeken&_search=afval']) {
+		test(`S13d: the plain page ${route} has no serious or critical axe violations`, async ({
+			page,
+		}) => {
+			const response = await page.goto(`${BASE}/index.php/apps/portaliq${route}`)
+			expect(response?.status()).toBeLessThan(500)
+			await expect(page.locator('main#pq-main h1')).toBeVisible()
+
+			const violations = await seriousViolations(page)
+			expect(violations, describe(violations)).toEqual([])
+		})
+	}
+
 	test('S13c: the not-found state has no serious or critical axe violations', async ({
 		page,
 	}) => {

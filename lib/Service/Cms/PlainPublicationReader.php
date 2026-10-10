@@ -128,7 +128,8 @@ class PlainPublicationReader {
 	 * @param string $endpoint The widget's endpoint.
 	 * @param string $id       The publication id.
 	 *
-	 * @return array{state: string, publication?: array<string, mixed>, documents?: list<array{name: string, type: string, size: int, href: string}>, themes?: list<string>}
+	 * @return array{state: string, publication?: array<string, mixed>,
+	 *               documents?: list<array{name: string, type: string, size: int, href: string}>, themes?: list<string>}
 	 *
 	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-a-publication-can-be-read-without-javascript-req-shj-004
 	 */
@@ -191,12 +192,14 @@ class PlainPublicationReader {
 				continue;
 			}
 
-			$name        = (string)(($file['title'] ?? '') !== '' ? $file['title'] : ($file['name'] ?? 'Document'));
+			$name        = $this->firstText(candidates: [$file['title'] ?? '', $file['name'] ?? '', 'Document']);
 			$documents[] = [
 				'name' => $name,
 				'type' => $this->fileType(file: $file, name: $name),
 				'size' => max(0, (int)($file['size'] ?? 0)),
-				'href' => $this->safeLink(value: (string)($file['downloadUrl'] ?? '')) ?: $this->safeLink(value: (string)($file['accessUrl'] ?? '')),
+				'href' => $this->firstText(
+					candidates: [$this->safeLink(value: (string)($file['downloadUrl'] ?? '')), $this->safeLink(value: (string)($file['accessUrl'] ?? ''))]
+				),
 			];
 		}
 
@@ -214,7 +217,12 @@ class PlainPublicationReader {
 	private function themeNames(array $publication): array {
 		$names = [];
 		foreach ((array)($publication['themes'] ?? []) as $theme) {
-			$themeId = (string)(is_array($theme) === true ? ($theme['id'] ?? '') : $theme);
+			$themeId = $theme;
+			if (is_array($theme) === true) {
+				$themeId = ($theme['id'] ?? '');
+			}
+
+			$themeId = (string)$themeId;
 			if (preg_match('/^[A-Za-z0-9._\-]{1,128}$/', $themeId) !== 1) {
 				continue;
 			}
@@ -225,7 +233,7 @@ class PlainPublicationReader {
 				continue;
 			}
 
-			$name = trim((string)(($body['title'] ?? '') !== '' ? $body['title'] : ($body['name'] ?? '')));
+			$name = $this->firstText(candidates: [$body['title'] ?? '', $body['name'] ?? '']);
 			if ($name !== '') {
 				$names[] = $name;
 			}
@@ -243,13 +251,12 @@ class PlainPublicationReader {
 	 */
 	private function result(array $row): array {
 		$self    = (array)($row['@self'] ?? []);
-		$summary = (string)(($self['summary'] ?? '') !== '' ? $self['summary'] : ($row['description'] ?? ''));
-		$title   = (string)($row['name'] ?? ($self['name'] ?? ($self['title'] ?? '')));
+		$summary = $this->firstText(candidates: [$self['summary'] ?? '', $row['description'] ?? '']);
 
 		return [
-			'id'      => (string)(($self['id'] ?? '') !== '' ? $self['id'] : ($row['id'] ?? '')),
-			'title'   => ($title !== '') ? $title : 'Zonder titel',
-			'date'    => (string)(($row['publicationDate'] ?? '') !== '' ? $row['publicationDate'] : ($self['published'] ?? '')),
+			'id'      => $this->firstText(candidates: [$self['id'] ?? '', $row['id'] ?? '']),
+			'title'   => $this->firstText(candidates: [$row['name'] ?? '', $self['name'] ?? '', $self['title'] ?? '', $row['title'] ?? '', 'Zonder titel']),
+			'date'    => $this->firstText(candidates: [$row['publicationDate'] ?? '', $self['published'] ?? '']),
 			'summary' => mb_substr($summary, 0, 280),
 		];
 	}//end result()
@@ -304,8 +311,29 @@ class PlainPublicationReader {
 	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-publications-can-be-searched-without-javascript-req-shj-003
 	 */
 	public function isLocalPath(string $endpoint): bool {
-		return preg_match('#^/(?![/\\\\])[A-Za-z0-9._~/\-]*$#', $endpoint) === 1 && str_contains($endpoint, '/../') === false && str_ends_with($endpoint, '/..') === false;
+		if (preg_match('#^/(?![/\\\\])[A-Za-z0-9._~/\-]*$#', $endpoint) !== 1) {
+			return false;
+		}
+
+		return str_contains($endpoint, '/../') === false && str_ends_with($endpoint, '/..') === false;
 	}//end isLocalPath()
+
+	/**
+	 * The first candidate that is a non-blank string, trimmed; '' for none.
+	 *
+	 * @param list<mixed> $candidates The candidates, in order.
+	 *
+	 * @return string
+	 */
+	private function firstText(array $candidates): string {
+		foreach ($candidates as $candidate) {
+			if (is_scalar($candidate) === true && trim((string)$candidate) !== '') {
+				return trim((string)$candidate);
+			}
+		}
+
+		return '';
+	}//end firstText()
 
 	/**
 	 * A link a visitor can follow: http(s), or a path on this instance.

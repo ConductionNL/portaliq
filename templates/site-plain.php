@@ -44,7 +44,7 @@ $robots = ((int)($plain['status'] ?? 404) === 200 && ($head['robots'] ?? '') !==
     <link rel="icon" href="<?php p((string)$_['siteIcon']); ?>">
     <?php } ?>
 </head>
-<body>
+<body data-testid="site-root">
     <p>
         <a id="skip-link"
            class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"

@@ -124,7 +124,7 @@ class PlainPageRenderer {
 		$view = [
 			'status'        => 200,
 			'portalTitle'   => (string)($portal['title'] ?? ''),
-			'menu'          => ($slug !== '') ? $this->menu(slug: $slug, locale: $locale, links: $links) : [],
+			'menu'          => $this->menu(slug: $slug, locale: $locale, links: $links),
 			'menuLabel'     => $l10n->t('Main menu'),
 			'fullUrl'       => $links->full(route: $route, query: $query, page: $page),
 			'fullLinkText'  => $l10n->t('Open this page with JavaScript'),
@@ -216,11 +216,26 @@ class PlainPageRenderer {
 		$props = (array)($widget['props'] ?? []);
 
 		if ($key === 'federatedSearch') {
-			return $this->publications->search(props: $props, route: $context['route'], query: $context['query'], page: $context['page'], links: $links, l10n: $l10n, locale: $context['locale']);
+			return $this->publications->search(
+				props: $props,
+				route: $context['route'],
+				query: $context['query'],
+				page: $context['page'],
+				links: $links,
+				l10n: $l10n,
+				locale: $context['locale']
+			);
 		}
 
 		if ($key === 'publicationDetail' && $context['routeParam'] !== '') {
-			return $this->publications->detail(props: $props, route: $context['route'], id: $context['routeParam'], links: $links, l10n: $l10n, locale: $context['locale']);
+			return $this->publications->detail(
+				props: $props,
+				route: $context['route'],
+				id: $context['routeParam'],
+				links: $links,
+				l10n: $l10n,
+				locale: $context['locale']
+			);
 		}
 
 		$html = $this->text(key: $key, props: $props, links: $links);
@@ -279,16 +294,24 @@ class PlainPageRenderer {
 	 * @return string
 	 */
 	private function listHtml(array $props): string {
-		$tag   = (($props['ordered'] ?? false) === true || in_array((string)($props['display'] ?? ''), ['numbered', 'steps'], true) === true) ? 'ol' : 'ul';
+		$tag = 'ul';
+		if (($props['ordered'] ?? false) === true || in_array((string)($props['display'] ?? ''), ['numbered', 'steps'], true) === true) {
+			$tag = 'ol';
+		}
+
 		$items = '';
 		foreach ((array)($props['items'] ?? []) as $item) {
-			$title = trim((string)(is_array($item) === true ? ($item['title'] ?? '') : $item));
+			$item = ['title' => $item, 'text' => ''];
+			if (is_array($item['title']) === true) {
+				$item = (array)$item['title'];
+			}
+
+			$title = trim((string)($item['title'] ?? ''));
 			if ($title === '') {
 				continue;
 			}
 
-			$text   = trim((string)(is_array($item) === true ? ($item['text'] ?? '') : ''));
-			$items .= '<li>'.$this->escape(text: $title).(($text !== '') ? ' '.$this->escape(text: $text) : '').'</li>';
+			$items .= '<li>'.$this->withTail(head: $this->escape(text: $title), tail: (string)($item['text'] ?? '')).'</li>';
 		}
 
 		return '<'.$tag.'>'.$items.'</'.$tag.'>';
@@ -318,15 +341,19 @@ class PlainPageRenderer {
 
 		$items = '';
 		foreach ((array)($props['links'] ?? []) as $link) {
-			$href = trim((string)(is_array($link) === true ? ($link['href'] ?? '') : ''));
-			$href = $this->linkTarget(href: $href, links: $links);
+			$link = (array)$link;
+			$href = $this->linkTarget(href: trim((string)($link['href'] ?? '')), links: $links);
 			if ($href === '') {
 				continue;
 			}
 
-			$label       = trim((string)(($link['label'] ?? '') !== '' ? $link['label'] : $link['href']));
-			$description = trim((string)($link['description'] ?? ''));
-			$items      .= '<li><a href="'.$this->escape(text: $href).'">'.$this->escape(text: $label).'</a>'.(($description !== '') ? ' '.$this->escape(text: $description) : '').'</li>';
+			$label = trim((string)($link['label'] ?? ''));
+			if ($label === '') {
+				$label = trim((string)$link['href']);
+			}
+
+			$anchor = '<a href="'.$this->escape(text: $href).'">'.$this->escape(text: $label).'</a>';
+			$items .= '<li>'.$this->withTail(head: $anchor, tail: (string)($link['description'] ?? '')).'</li>';
 		}
 
 		return $html.'<ul>'.$items.'</ul>';
@@ -364,6 +391,10 @@ class PlainPageRenderer {
 	 */
 	private function menu(string $slug, string $locale, PlainLinks $links): array {
 		$items = [];
+		if ($slug === '') {
+			return $items;
+		}
+
 		foreach ($this->reader->menus(portal: $slug, locale: $locale, audience: self::AUDIENCE) as $menu) {
 			if ((int)($menu['position'] ?? 0) !== 0) {
 				continue;
@@ -395,11 +426,33 @@ class PlainPageRenderer {
 		$view['summary']   = '';
 		$view['canonical'] = '';
 		$view['blocks']  = [
-			['kind' => 'html', 'html' => '<p>'.$this->escape(text: $l10n->t('This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.')).'</p>'],
+			[
+				'kind' => 'html',
+				'html' => '<p>'.$this->escape(
+					text: $l10n->t('This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.')
+				).'</p>',
+			],
 		];
 
 		return $view;
 	}//end notFound()
+
+	/**
+	 * HTML followed by a space and escaped text, when there is text.
+	 *
+	 * @param string $head Safe HTML.
+	 * @param string $tail Raw text, '' for none.
+	 *
+	 * @return string
+	 */
+	private function withTail(string $head, string $tail): string {
+		$tail = trim($tail);
+		if ($tail === '') {
+			return $head;
+		}
+
+		return $head.' '.$this->escape(text: $tail);
+	}//end withTail()
 
 	/**
 	 * Text with its line breaks kept, escaped.

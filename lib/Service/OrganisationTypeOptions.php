@@ -119,12 +119,7 @@ class OrganisationTypeOptions {
 			return $none;
 		}
 
-		$excluded = [];
-		foreach (self::NOT_A_TYPE as $root) {
-			if (isset($concepts[$root]) === true) {
-				$excluded += array_fill_keys($hierarchy->branchUris(rootUri: $root, conceptsByUri: $concepts), true);
-			}
-		}
+		$excluded = $this->notATypeUris(hierarchy: $hierarchy, concepts: $concepts);
 
 		$now     = new DateTimeImmutable();
 		$options = [];
@@ -144,4 +139,26 @@ class OrganisationTypeOptions {
 
 		return ['installed' => true, 'options' => $options];
 	}//end options()
+
+	/**
+	 * The uris of the concepts under ambtsdrager, functionaris and
+	 * organisatieonderdeel (found through skos:broader), roots included.
+	 *
+	 * @param object               $hierarchy OpenRegister's ConceptHierarchy.
+	 * @param array<string, mixed> $concepts  The scheme's concepts by uri.
+	 *
+	 * @return array<string, true>
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	private function notATypeUris(object $hierarchy, array $concepts): array {
+		$excluded = [];
+		foreach (self::NOT_A_TYPE as $root) {
+			if (isset($concepts[$root]) === true) {
+				$excluded += array_fill_keys($hierarchy->branchUris(rootUri: $root, conceptsByUri: $concepts), true);
+			}
+		}
+
+		return $excluded;
+	}//end notATypeUris()
 }//end class

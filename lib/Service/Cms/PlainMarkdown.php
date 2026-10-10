@@ -44,6 +44,41 @@ class PlainMarkdown {
 	private const SAFE_SCHEMES = ['http', 'https', 'mailto'];
 
 	/**
+	 * The HTML blocks built so far.
+	 *
+	 * @var list<string>
+	 */
+	private array $html = [];
+
+	/**
+	 * The lines of the open paragraph.
+	 *
+	 * @var list<string>
+	 */
+	private array $paragraph = [];
+
+	/**
+	 * The items of the open list.
+	 *
+	 * @var list<string>
+	 */
+	private array $items = [];
+
+	/**
+	 * The open list's tag, `ul` or `ol`, or null.
+	 *
+	 * @var string|null
+	 */
+	private ?string $list = null;
+
+	/**
+	 * The lines of the open fenced code block, or null.
+	 *
+	 * @var list<string>|null
+	 */
+	private ?array $fence = null;
+
+	/**
 	 * Markdown source as HTML.
 	 *
 	 * @param string $markdown The source.
@@ -58,94 +93,139 @@ class PlainMarkdown {
 			return '';
 		}
 
-		$html      = [];
-		$paragraph = [];
-		$list      = null;
-		$items     = [];
-		$fence     = null;
-
-		$flushParagraph = function () use (&$paragraph, &$html): void {
-			if ($paragraph !== []) {
-				$html[]    = '<p>'.$this->inline(text: implode(' ', $paragraph)).'</p>';
-				$paragraph = [];
-			}
-		};
-		$flushList      = function () use (&$list, &$items, &$html): void {
-			if ($list !== null) {
-				$html[] = '<'.$list.'>'.implode('', array_map(fn (string $item): string => '<li>'.$this->inline(text: $item).'</li>', $items)).'</'.$list.'>';
-				$list   = null;
-				$items  = [];
-			}
-		};
+		$this->html      = [];
+		$this->paragraph = [];
+		$this->items     = [];
+		$this->list      = null;
+		$this->fence     = null;
 
 		foreach ($lines as $line) {
-			if ($fence !== null) {
-				if (preg_match('/^\s*```/', $line) === 1) {
-					$html[] = '<pre><code>'.$this->escape(text: implode("\n", $fence)).'</code></pre>';
-					$fence  = null;
-					continue;
-				}
-
-				$fence[] = $line;
-				continue;
-			}
-
-			if (preg_match('/^\s*```/', $line) === 1) {
-				$flushParagraph();
-				$flushList();
-				$fence = [];
-				continue;
-			}
-
-			if (trim($line) === '') {
-				$flushParagraph();
-				$flushList();
-				continue;
-			}
-
-			if (preg_match('/^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/', $line, $match) === 1) {
-				$flushParagraph();
-				$flushList();
-				$level  = strlen($match[1]);
-				$html[] = '<h'.$level.'>'.$this->inline(text: $match[2]).'</h'.$level.'>';
-				continue;
-			}
-
-			$kind = null;
-			if (preg_match('/^\s*[-*+]\s+(.*)$/', $line, $match) === 1) {
-				$kind = 'ul';
-			} else if (preg_match('/^\s*\d{1,9}[.)]\s+(.*)$/', $line, $match) === 1) {
-				$kind = 'ol';
-			}
-
-			if ($kind !== null) {
-				$flushParagraph();
-				if ($list !== $kind) {
-					$flushList();
-					$list = $kind;
-				}
-
-				$items[] = $match[1];
-				continue;
-			}
-
-			if ($list !== null) {
-				$items[count($items) - 1] .= ' '.trim($line);
-				continue;
-			}
-
-			$paragraph[] = trim($line);
-		}//end foreach
-
-		if ($fence !== null) {
-			$html[] = '<pre><code>'.$this->escape(text: implode("\n", $fence)).'</code></pre>';
+			$this->line(line: $line);
 		}
 
-		$flushParagraph();
-		$flushList();
+		if ($this->fence !== null) {
+			$this->html[] = '<pre><code>'.$this->escape(text: implode("\n", $this->fence)).'</code></pre>';
+		}
 
-		return implode("\n", $html);
+		$this->flushBlocks();
+
+		return implode("\n", $this->html);
 	}//end toHtml()
+
+	/**
+	 * Read one source line into the blocks being built.
+	 *
+	 * @param string $line The line.
+	 *
+	 * @return void
+	 */
+	private function line(string $line): void {
+		$isFence = (preg_match('/^\s*```/', $line) === 1);
+		if ($this->fence !== null) {
+			if ($isFence === true) {
+				$this->html[] = '<pre><code>'.$this->escape(text: implode("\n", $this->fence)).'</code></pre>';
+				$this->fence  = null;
+				return;
+			}
+
+			$this->fence[] = $line;
+			return;
+		}
+
+		if ($isFence === true || trim($line) === '') {
+			$this->flushBlocks();
+			if ($isFence === true) {
+				$this->fence = [];
+			}
+
+			return;
+		}
+
+		if (preg_match('/^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/', $line, $match) === 1) {
+			$this->flushBlocks();
+			$level        = strlen($match[1]);
+			$this->html[] = '<h'.$level.'>'.$this->inline(text: $match[2]).'</h'.$level.'>';
+			return;
+		}
+
+		$this->textLine(line: $line);
+	}//end line()
+
+	/**
+	 * A line that is a list item, the continuation of one, or paragraph text.
+	 *
+	 * @param string $line The line.
+	 *
+	 * @return void
+	 */
+	private function textLine(string $line): void {
+		$kind = null;
+		if (preg_match('/^\s*[-*+]\s+(.*)$/', $line, $match) === 1) {
+			$kind = 'ul';
+		} else if (preg_match('/^\s*\d{1,9}[.)]\s+(.*)$/', $line, $match) === 1) {
+			$kind = 'ol';
+		}
+
+		if ($kind !== null) {
+			$this->flushParagraph();
+			if ($this->list !== $kind) {
+				$this->flushList();
+				$this->list = $kind;
+			}
+
+			$this->items[] = $match[1];
+			return;
+		}
+
+		if ($this->list !== null) {
+			$this->items[count($this->items) - 1] .= ' '.trim($line);
+			return;
+		}
+
+		$this->paragraph[] = trim($line);
+	}//end textLine()
+
+	/**
+	 * Close the open paragraph and the open list.
+	 *
+	 * @return void
+	 */
+	private function flushBlocks(): void {
+		$this->flushParagraph();
+		$this->flushList();
+	}//end flushBlocks()
+
+	/**
+	 * Close the open paragraph.
+	 *
+	 * @return void
+	 */
+	private function flushParagraph(): void {
+		if ($this->paragraph !== []) {
+			$this->html[]    = '<p>'.$this->inline(text: implode(' ', $this->paragraph)).'</p>';
+			$this->paragraph = [];
+		}
+	}//end flushParagraph()
+
+	/**
+	 * Close the open list.
+	 *
+	 * @return void
+	 */
+	private function flushList(): void {
+		if ($this->list === null) {
+			return;
+		}
+
+		$items = '';
+		foreach ($this->items as $item) {
+			$items .= '<li>'.$this->inline(text: $item).'</li>';
+		}
+
+		$this->html[] = '<'.$this->list.'>'.$items.'</'.$this->list.'>';
+		$this->list   = null;
+		$this->items  = [];
+	}//end flushList()
 
 	/**
 	 * Whether a link target may be kept: http, https, mailto, or a relative
@@ -189,26 +269,26 @@ class PlainMarkdown {
 
 		$text = (string)preg_replace_callback(
 			'/`([^`]+)`/',
-			fn (array $m): string => $hold('<code>'.$this->escape(text: $m[1]).'</code>'),
+			fn (array $match): string => $hold('<code>'.$this->escape(text: $match[1]).'</code>'),
 			$text
 		);
 
 		$text = (string)preg_replace_callback(
 			'/\[([^\]]+)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/',
-			function (array $m) use ($hold): string {
-				$label = $this->emphasis(html: $this->escape(text: $m[1]));
-				if ($this->isSafeTarget(href: $m[2]) === false) {
+			function (array $match) use ($hold): string {
+				$label = $this->emphasis(html: $this->escape(text: $match[1]));
+				if ($this->isSafeTarget(href: $match[2]) === false) {
 					return $hold($label);
 				}
 
-				return $hold('<a href="'.$this->escape(text: (string)preg_replace('/[\x00-\x20\x7f]+/', '', $m[2])).'">'.$label.'</a>');
+				return $hold('<a href="'.$this->escape(text: (string)preg_replace('/[\x00-\x20\x7f]+/', '', $match[2])).'">'.$label.'</a>');
 			},
 			$text
 		);
 
 		$html = $this->emphasis(html: $this->escape(text: $text));
 
-		return (string)preg_replace_callback('/\x00(\d+)\x00/', static fn (array $m): string => $held[(int)$m[1]], $html);
+		return (string)preg_replace_callback('/\x00(\d+)\x00/', static fn (array $match): string => $held[(int)$match[1]], $html);
 	}//end inline()
 
 	/**
