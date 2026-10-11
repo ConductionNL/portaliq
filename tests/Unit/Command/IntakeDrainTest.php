@@ -22,7 +22,7 @@ class IntakeDrainTest extends TestCase {
 
 	public function testAnEmptyQueueExitsZero(): void {
 		$drain = $this->createMock(IntakeQueueDrain::class);
-		$drain->expects($this->once())->method('drain')->with(200, false)->willReturn(['delivered' => 3, 'refused' => 0, 'waiting' => 0, 'reasons' => []]);
+		$drain->expects($this->once())->method('drain')->with(200)->willReturn(['delivered' => 3, 'refused' => 0, 'waiting' => 0, 'reasons' => []]);
 
 		$tester = new CommandTester(new IntakeDrain($drain));
 
@@ -33,11 +33,23 @@ class IntakeDrainTest extends TestCase {
 
 	public function testARefusalIsNamedAndTheRunExitsOne(): void {
 		$drain = $this->createMock(IntakeQueueDrain::class);
-		$drain->method('drain')->with(5, true)->willReturn(['delivered' => 0, 'refused' => 1, 'waiting' => 1, 'reasons' => ['AANVRAAG-X' => 'The form this request came from is no longer published.']]);
+		$drain->method('drain')->with(5)->willReturn(['delivered' => 0, 'refused' => 1, 'waiting' => 1, 'reasons' => ['AANVRAAG-X' => 'The form this request came from is no longer published.']]);
 
 		$tester = new CommandTester(new IntakeDrain($drain));
 
-		$this->assertSame(1, $tester->execute(['--limit' => '5', '--dry-run' => true]));
+		$this->assertSame(1, $tester->execute(['--limit' => '5']));
 		$this->assertStringContainsString('AANVRAAG-X: The form this request came from is no longer published.', $tester->getDisplay());
 	}//end testARefusalIsNamedAndTheRunExitsOne()
+
+	public function testADryRunOnlyCountsAndSendsNothing(): void {
+		$drain = $this->createMock(IntakeQueueDrain::class);
+		$drain->expects($this->never())->method('drain');
+		$drain->method('waiting')->willReturnOnConsecutiveCalls(4, 0);
+
+		$tester = new CommandTester(new IntakeDrain($drain));
+
+		$this->assertSame(1, $tester->execute(['--dry-run' => true]));
+		$this->assertStringContainsString('Waiting: 4', $tester->getDisplay());
+		$this->assertSame(0, $tester->execute(['--dry-run' => true]));
+	}//end testADryRunOnlyCountsAndSendsNothing()
 }//end class

@@ -54,8 +54,7 @@ class IntakeQueueDrain {
 	/**
 	 * One pass over the waiting entries.
 	 *
-	 * @param int  $limit  How many entries of each state to take.
-	 * @param bool $dryRun Count only, send nothing.
+	 * @param int $limit How many entries of each state to take.
 	 *
 	 * @return array{delivered: int, refused: int, waiting: int, reasons: array<string, string>}
 	 *         `reasons` holds why each refused entry did not arrive, by reference.
@@ -63,12 +62,8 @@ class IntakeQueueDrain {
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
 	 */
-	public function drain(int $limit = 200, bool $dryRun = false): array {
-		$pending = $this->queue->pending(limit: $limit);
-		if ($dryRun === true) {
-			return ['delivered' => 0, 'refused' => 0, 'waiting' => count($pending), 'reasons' => []];
-		}
-
+	public function drain(int $limit = 200): array {
+		$pending   = $this->queue->pending(limit: $limit);
 		$delivered = 0;
 		$reasons   = [];
 		foreach ($pending as $entry) {
@@ -90,6 +85,19 @@ class IntakeQueueDrain {
 	}//end drain()
 
 	/**
+	 * How many entries wait, sending nothing.
+	 *
+	 * @param int $limit How many entries of each state to count.
+	 *
+	 * @return int
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	public function waiting(int $limit = 200): int {
+		return count($this->queue->pending(limit: $limit));
+	}//end waiting()
+
+	/**
 	 * Send one entry, and mark it.
 	 *
 	 * @param array<string, mixed> $entry The queue entry.
@@ -103,10 +111,6 @@ class IntakeQueueDrain {
 		}
 
 		$reference = (string)($entry['reference'] ?? '');
-		$computed  = [];
-		foreach (array_filter((array)($entry['computed'] ?? []), 'is_string') as $name) {
-			$computed[$name] = ['computed' => true];
-		}
 
 		$submitted = $this->intake->submit(
 			binding: $binding,
@@ -120,7 +124,7 @@ class IntakeQueueDrain {
 				'statements' => (array)($entry['statements'] ?? []),
 				'decisions' => (array)($entry['decisions'] ?? []),
 				'verifiedEmails' => (array)($entry['verifiedEmails'] ?? []),
-				'fieldMeta' => $computed,
+				'fieldMeta' => (new DestinationMapping())->fieldMeta(computed: (array)($entry['computed'] ?? [])),
 			],
 			idempotencyKey: $reference
 		);

@@ -127,13 +127,10 @@ class MoveBindingDestination implements IRepairStep {
 			$read    = count($page);
 			$offset += $read;
 			foreach ($page as $row) {
-				$binding = $this->movedBinding(row: $row);
-				if ($binding === null && $this->needsDestination(row: $row) === true) {
+				$outcome = $this->repair(objectService: $objectService, row: $row);
+				$moved  += (int)($outcome === 'moved');
+				if ($outcome === 'without') {
 					$without[] = $this->uuidOf(row: $row);
-				}
-
-				if ($binding !== null && $this->save(objectService: $objectService, row: $binding, uuid: $this->uuidOf(row: $row)) === true) {
-					$moved++;
 				}
 			}
 		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
@@ -175,6 +172,31 @@ class MoveBindingDestination implements IRepairStep {
 
 		return $row;
 	}//end movedBinding()
+
+	/**
+	 * Repair one binding.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $row           The stored binding.
+	 *
+	 * @return string `moved`, `without` (no destination to move, none set) or `kept`.
+	 */
+	private function repair(object $objectService, array $row): string {
+		$binding = $this->movedBinding(row: $row);
+		if ($binding === null) {
+			if ($this->needsDestination(row: $row) === true) {
+				return 'without';
+			}
+
+			return 'kept';
+		}
+
+		if ($this->save(objectService: $objectService, row: $binding, uuid: $this->uuidOf(row: $row)) === true) {
+			return 'moved';
+		}
+
+		return 'kept';
+	}//end repair()
 
 	/**
 	 * Whether a binding that was not moved still has no destination: a hosted

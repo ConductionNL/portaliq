@@ -166,9 +166,9 @@ class DestinationLookup {
 	/**
 	 * The object in one destination, by earlier reference or, for its owner, by its own.
 	 *
-	 * @param array{destination: array{register: string, schema: string}, binding: array<string, mixed>, schema: array<string, mixed>} $entry      The destination.
-	 * @param string                                                                                                                     $reference  The reference.
-	 * @param string                                                                                                                     $subjectRef The signed-in subject, or ''.
+	 * @param array<string, mixed> $entry      The destination: `destination`, `binding` and `schema`.
+	 * @param string               $reference  The reference.
+	 * @param string               $subjectRef The signed-in subject, or ''.
 	 *
 	 * @return array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>}|null
 	 */

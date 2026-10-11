@@ -35,6 +35,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationLookup;
+use OCA\Portaliq\Service\Intake\DestinationMapping;
 use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
 use OCA\Portaliq\Service\Intake\FormStatements;
 use OCA\Portaliq\Service\Intake\PortalAddressLookup;
@@ -352,12 +353,13 @@ class PortalIntakeController extends Controller implements PortalProtected {
 				'statements' => $prepared['statements'],
 				'decisions' => $prepared['decisions'],
 				'verifiedEmails' => $prepared['verified'],
-				'fieldMeta' => $this->fieldMeta(computed: $prepared['computed']),
+				'fieldMeta' => (new DestinationMapping())->fieldMeta(computed: $prepared['computed']),
 			],
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($submitted === null || $submitted['ok'] === false) {
-			return $this->refusedBy(submitted: $submitted);
+			$refusal = DestinationIntake::refusal(submitted: $submitted);
+			return new JSONResponse($refusal['body'], $refusal['status']);
 		}
 
 		$answer    = $submitted['answer'];
@@ -480,25 +482,12 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$slug   = (string)($site['slug'] ?? '');
-		$status = null;
-		$found  = $this->lookup?->find(portal: $slug, reference: $reference, subjectRef: (string)($this->subject()['subjectRef'] ?? ''));
-		if ($found !== null) {
-			$status = $this->lookup?->statusOf(found: $found, reference: $reference);
-			// The payment state is the destination's own (decision 181), never
-			// read from the address the resident returned on.
-			$payment = $this->payments->paymentOf(found: $found);
-			if ($payment !== null) {
-				$status['payment'] = $payment;
-			}
-		}
-
-		// An earlier reference the drain has not reached yet still answers
+		// The object the request created, with the payment state it holds;
+		// an earlier reference the drain has not reached yet still answers
 		// from the queue, until the drain reports zero (task 4.3).
-		if ($status === null) {
-			$status = $this->queue->status(reference: $reference, portal: $slug);
-		}
-
+		$slug   = (string)($site['slug'] ?? '');
+		$status = $this->payments->statusWithPayment(reference: $reference, portal: $slug, subjectRef: (string)($this->subject()['subjectRef'] ?? ''))
+			?? $this->queue->status(reference: $reference, portal: $slug);
 		if ($status === null) {
 			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -534,52 +523,6 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		return $this->payments->start(subject: $subject, site: $this->site(portal: $portal), reference: $reference);
 	}//end pay()
-
-	/**
-	 * The answer to a submit the destination refused.
-	 *
-	 * 422: the destination's message on each refused field, and nothing was
-	 * stored. 503 (and no submit service at all): the request did not arrive,
-	 * the page keeps the answers and says to try again later. Nothing is
-	 * queued (decision 181).
-	 *
-	 * @param array<string, mixed>|null $submitted What DestinationIntake answered, or null without it.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
-	 */
-	private function refusedBy(?array $submitted): JSONResponse {
-		$status = (int)($submitted['status'] ?? Http::STATUS_SERVICE_UNAVAILABLE);
-		if ($status === Http::STATUS_UNPROCESSABLE_ENTITY) {
-			return new JSONResponse(['error' => 'refused_by_destination', 'errors' => (array)($submitted['errors'] ?? [])], $status);
-		}
-
-		if ($status === Http::STATUS_FORBIDDEN || $status === Http::STATUS_NOT_FOUND) {
-			return new JSONResponse(['error' => 'form_not_submittable'], $status);
-		}
-
-		return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
-	}//end refusedBy()
-
-	/**
-	 * `fieldMeta` marking each field the portal worked out or a decision
-	 * filled as `computed`, so the destination can tell them from typed answers.
-	 *
-	 * @param array<int, string> $computed The names of those fields.
-	 *
-	 * @return array<string, array{computed: bool}>
-	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t07
-	 */
-	private function fieldMeta(array $computed): array {
-		$meta = [];
-		foreach (array_filter($computed, 'is_string') as $name) {
-			$meta[$name] = ['computed' => true];
-		}
-
-		return $meta;
-	}//end fieldMeta()
 
 	/**
 	 * Why this form accepts no submission from this visitor, or null.

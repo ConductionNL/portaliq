@@ -209,21 +209,38 @@ class PortalEmbedController extends Controller {
 			return new JSONResponse(['errors' => $validated['errors']], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->send(site: $site, binding: $binding, render: $render, answers: $validated['answers'], origin: $origin);
+	}//end submit()
+
+	/**
+	 * Submit the frame's validated answers into the binding's destination.
+	 *
+	 * @param array<string, mixed> $site    The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render  What the binding renders to.
+	 * @param array<string, mixed> $answers The answers the portal's checks accepted.
+	 * @param string               $origin  The framing origin.
+	 *
+	 * @return JSONResponse The reference, its moments and follow link, or the refusal.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.2
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) -- DestinationIntake::refusal is the one
+	 * refusal shape the intake and the embed submit share.
+	 */
+	private function send(array $site, array $binding, array $render, array $answers, string $origin): JSONResponse {
 		// Nothing here reads a bearer: a submission from the frame is
 		// anonymous even when the visitor is signed in elsewhere.
 		$submitted = $this->intake->submit(
 			binding: $binding,
 			render: $render,
-			answers: $validated['answers'],
+			answers: $answers,
 			server: ['portal' => (string)($site['slug'] ?? ''), 'origin' => $origin],
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
-		if ($submitted['ok'] === false && $submitted['status'] === Http::STATUS_UNPROCESSABLE_ENTITY) {
-			return new JSONResponse(['error' => 'refused_by_destination', 'errors' => $submitted['errors']], Http::STATUS_UNPROCESSABLE_ENTITY);
-		}
-
 		if ($submitted['ok'] === false) {
-			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
+			$refusal = DestinationIntake::refusal(submitted: $submitted);
+			return new JSONResponse($refusal['body'], $refusal['status']);
 		}
 
 		$answer    = $submitted['answer'];
@@ -243,7 +260,7 @@ class PortalEmbedController extends Controller {
 				]
 			)
 		);
-	}//end submit()
+	}//end send()
 
 	/**
 	 * The frame, with this form's own `frame-ancestors`.

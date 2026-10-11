@@ -76,9 +76,7 @@ class IntakeQueueDrainTest extends TestCase {
 		$queue = $this->queue(pending: [[$this->entry(), $this->entry()]]);
 		$queue->expects($this->never())->method('markRegistered');
 
-		$result = $this->drain(queue: $queue, fake: $fake)->drain(dryRun: true);
-
-		$this->assertSame(2, $result['waiting']);
+		$this->assertSame(2, $this->drain(queue: $queue, fake: $fake)->waiting());
 		$this->assertSame([], $fake->calls);
 	}//end testADryRunOnlyCounts()
 

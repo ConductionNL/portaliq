@@ -62,7 +62,12 @@ class IntakeDrain extends Command {
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:intake:drain');
 		$this->setDescription(description: 'Send the requests still waiting in the old intake queue into their destination');
-		$this->addOption(name: 'limit', mode: InputOption::VALUE_REQUIRED, description: 'How many queued and how many failed entries one run takes', default: '200');
+		$this->addOption(
+			name: 'limit',
+			mode: InputOption::VALUE_REQUIRED,
+			description: 'How many queued and how many failed entries one run takes',
+			default: '200'
+		);
 		$this->addOption(name: 'dry-run', mode: InputOption::VALUE_NONE, description: 'Count the waiting entries, send nothing');
 	}//end configure()
 
@@ -77,8 +82,15 @@ class IntakeDrain extends Command {
 	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		$limit  = max(1, (int)$input->getOption('limit'));
-		$result = $this->drain->drain(limit: $limit, dryRun: (bool)$input->getOption('dry-run'));
+		$limit = max(1, (int)$input->getOption('limit'));
+		if ((bool)$input->getOption('dry-run') === true) {
+			$waiting = $this->drain->waiting(limit: $limit);
+			$output->writeln('Waiting: ' . $waiting);
+
+			return (int)($waiting > 0);
+		}
+
+		$result = $this->drain->drain(limit: $limit);
 
 		$output->writeln('Delivered: ' . $result['delivered']);
 		$output->writeln('Refused: ' . $result['refused']);

@@ -108,12 +108,7 @@ class DestinationMapping {
 		$destination = (array)($binding['destination'] ?? []);
 		$properties  = (array)($schema['properties'] ?? []);
 
-		$fixed = [];
-		foreach ($server as $name => $value) {
-			if (array_key_exists((string)$name, $properties) === true && $value !== null && $value !== [] && $value !== '') {
-				$fixed[(string)$name] = $value;
-			}
-		}
+		$fixed = $this->declaredOnly(values: $server, properties: $properties);
 
 		$typeProperty = $this->typeProperty(binding: $binding, properties: $properties);
 		if ($typeProperty !== null) {
@@ -131,6 +126,44 @@ class DestinationMapping {
 
 		return ['fields' => $this->fieldsOf(fields: $fields, renames: (array)($destination['fields'] ?? [])), 'fixed' => $fixed];
 	}//end mappingFor()
+
+	/**
+	 * `fieldMeta` marking each field the portal worked out or a decision
+	 * filled as `computed`, so the destination can tell them from typed answers.
+	 *
+	 * @param array<int, mixed> $computed The names of those fields.
+	 *
+	 * @return array<string, array{computed: bool}>
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t07
+	 */
+	public function fieldMeta(array $computed): array {
+		$meta = [];
+		foreach (array_filter($computed, 'is_string') as $name) {
+			$meta[$name] = ['computed' => true];
+		}
+
+		return $meta;
+	}//end fieldMeta()
+
+	/**
+	 * The server values the destination declares a property for, without empty ones.
+	 *
+	 * @param array<string, mixed> $values     The server values, by name.
+	 * @param array<string, mixed> $properties The destination's properties.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function declaredOnly(array $values, array $properties): array {
+		$kept = [];
+		foreach ($values as $name => $value) {
+			if (array_key_exists((string)$name, $properties) === true && $value !== null && $value !== [] && $value !== '') {
+				$kept[(string)$name] = $value;
+			}
+		}
+
+		return $kept;
+	}//end declaredOnly()
 
 	/**
 	 * The answers per field: each finding filed under the field that writes

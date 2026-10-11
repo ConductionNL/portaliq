@@ -73,7 +73,7 @@ class PortalIntakePayments {
 	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
 	 */
 	public function start(array $subject, ?array $site, string $reference): JSONResponse {
-		if ($site === null || $this->fees === null || $this->forwarder === null || $this->registry === null || $this->lookup === null) {
+		if ($site === null || $this->fees === null || $this->forwarder === null || $this->lookup === null || $this->registry === null) {
 			return new JSONResponse(['error' => 'payment_unavailable'], Http::STATUS_BAD_GATEWAY);
 		}
 
@@ -82,8 +82,8 @@ class PortalIntakePayments {
 			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$fee = $this->fees->forBinding(binding: $found['binding']);
-		if ($fee === null || (($this->paymentOf(found: $found)['state'] ?? '') === 'paid')) {
+		$fee = $this->feeToPay(fees: $this->fees, found: $found);
+		if ($fee === null) {
 			return new JSONResponse(['error' => 'nothing_to_pay'], Http::STATUS_CONFLICT);
 		}
 
@@ -98,6 +98,51 @@ class PortalIntakePayments {
 			context: ['action' => $action, 'subject' => $subject, 'site' => $site, 'binding' => $found['binding'], 'fee' => $fee, 'reference' => $reference]
 		);
 	}//end start()
+
+	/**
+	 * The fee the object's case type declares, or null when there is none or it is paid.
+	 *
+	 * @param PortalFee                                                                                       $fees  Reads the fee of a binding.
+	 * @param array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>} $found The object.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function feeToPay(PortalFee $fees, array $found): ?array {
+		if (($this->paymentOf(found: $found)['state'] ?? '') === 'paid') {
+			return null;
+		}
+
+		return $fees->forBinding(binding: $found['binding']);
+	}//end feeToPay()
+
+	/**
+	 * What the reference page says about the object behind a reference, with
+	 * the payment state the object holds (decision 181), or null when no
+	 * object answers to it. The state is never read from the address the
+	 * resident returned on.
+	 *
+	 * @param string $reference  The reference.
+	 * @param string $portal     The portal's slug.
+	 * @param string $subjectRef The signed-in subject, or ''.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#3.3
+	 */
+	public function statusWithPayment(string $reference, string $portal, string $subjectRef = ''): ?array {
+		$found = $this->lookup?->find(portal: $portal, reference: $reference, subjectRef: $subjectRef);
+		if ($found === null || $this->lookup === null) {
+			return null;
+		}
+
+		$status  = $this->lookup->statusOf(found: $found, reference: $reference);
+		$payment = $this->paymentOf(found: $found);
+		if ($payment !== null) {
+			$status['payment'] = $payment;
+		}
+
+		return $status;
+	}//end statusWithPayment()
 
 	/**
 	 * The payment state of a found object, or null when its binding names no

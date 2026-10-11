@@ -22,9 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use DateTimeImmutable;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
+use OCP\IL10N;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
@@ -163,14 +165,14 @@ class FormConfirmationMailer {
 	 * The lines naming when the request arrived, when its term starts and
 	 * when a decision is due, for each moment the destination answered.
 	 *
-	 * @param \OCP\IL10N           $l10n    The portal's language.
+	 * @param IL10N                $l10n    The portal's language.
 	 * @param array<string, mixed> $moments The destination's confirmation moments.
 	 *
 	 * @return array<int, string>
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.4
 	 */
-	private function momentLines(\OCP\IL10N $l10n, array $moments): array {
+	private function momentLines(IL10N $l10n, array $moments): array {
 		$lines    = [];
 		$received = $this->dayOf(value: ($moments['receivedAt'] ?? null));
 		if ($received !== '') {
@@ -203,7 +205,7 @@ class FormConfirmationMailer {
 		}
 
 		try {
-			return (new \DateTimeImmutable($value))->format('d-m-Y');
+			return (new DateTimeImmutable($value))->format('d-m-Y');
 		} catch (Throwable) {
 			return '';
 		}
