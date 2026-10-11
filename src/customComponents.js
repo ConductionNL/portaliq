@@ -42,12 +42,14 @@ import {
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { spawnDialog } from '@nextcloud/vue/functions/dialog'
+import FormEmbedDialog from './dialogs/FormEmbedDialog.vue'
 import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
 import NewsItemDialog from './dialogs/NewsItemDialog.vue'
 import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
+import { createFormBindingEmbed } from './lib/formBindingEmbed.js'
 import { createFormBindingPreview } from './lib/formBindingPreview.js'
 import { refreshList } from './lib/listRefresh.js'
 import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
@@ -117,6 +119,13 @@ const formBindingPreview = createFormBindingPreview({
  * themselves so a refusal is shown where the clerk can correct it; see
  * src/lib/staffAccountActions.js.
  */
+const formBindingEmbed = createFormBindingEmbed({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	openDialog: (props) => spawnDialog(FormEmbedDialog, props),
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
+})
 const staffAccountHandlers = createStaffAccountHandlers({
 	actions: createStaffAccountActions({
 		post: (url, body) => axios.post(url, body),
@@ -200,6 +209,7 @@ export default {
 	 * `Check form` row action on the Request forms index page.
 	 */
 	...formBindingPreview,
+	...formBindingEmbed,
 	/**
 	 * `Issue an account`, `Invite someone` and `Withdraw invitation`
 	 * (identity-staff-account-screens). Handlers, not the object form: the
