@@ -96,12 +96,13 @@ class FormConfirmationMailer {
 	 * @param string                                       $reference The submission's reference.
 	 * @param string                                       $formName  The form's name.
 	 * @param array<int, array{label: string, value: string}> $summary   The answers to repeat.
+	 * @param array<string, mixed>                         $moments   The destination's confirmation moments: receivedAt, termStartsAt, deadline.
 	 *
 	 * @return bool True when the mail server took it.
 	 *
 	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
 	 */
-	public function send(string $email, array $site, string $reference, string $formName, array $summary): bool {
+	public function send(string $email, array $site, string $reference, string $formName, array $summary, array $moments = []): bool {
 		try {
 			$locales  = (array)($site['locales'] ?? []);
 			$language = self::DEFAULT_LANGUAGE;
@@ -131,6 +132,10 @@ class FormConfirmationMailer {
 			$mail->addHeader();
 			$mail->addHeading($l10n->t('We have received your request'));
 			$mail->addBodyText($text['body']);
+			foreach ($this->momentLines(l10n: $l10n, moments: $moments) as $line) {
+				$mail->addBodyText($line);
+			}
+
 			foreach ($summary as $line) {
 				$mail->addBodyText($line['label'] . ': ' . $line['value']);
 			}
@@ -153,6 +158,56 @@ class FormConfirmationMailer {
 			return false;
 		}
 	}//end send()
+
+	/**
+	 * The lines naming when the request arrived, when its term starts and
+	 * when a decision is due, for each moment the destination answered.
+	 *
+	 * @param \OCP\IL10N           $l10n    The portal's language.
+	 * @param array<string, mixed> $moments The destination's confirmation moments.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.4
+	 */
+	private function momentLines(\OCP\IL10N $l10n, array $moments): array {
+		$lines    = [];
+		$received = $this->dayOf(value: ($moments['receivedAt'] ?? null));
+		if ($received !== '') {
+			$lines[] = $l10n->t('Received on %1$s.', [$received]);
+		}
+
+		$term = $this->dayOf(value: ($moments['termStartsAt'] ?? null));
+		if ($term !== '') {
+			$lines[] = $l10n->t('The term starts on %1$s.', [$term]);
+		}
+
+		$deadline = $this->dayOf(value: ($moments['deadline'] ?? null));
+		if ($deadline !== '') {
+			$lines[] = $l10n->t('You can expect a decision by %1$s.', [$deadline]);
+		}
+
+		return $lines;
+	}//end momentLines()
+
+	/**
+	 * A moment as a day (`d-m-Y`), or '' when it is not a date.
+	 *
+	 * @param mixed $value An ISO 8601 date or date-time.
+	 *
+	 * @return string
+	 */
+	private function dayOf(mixed $value): string {
+		if (is_string($value) === false || trim($value) === '') {
+			return '';
+		}
+
+		try {
+			return (new \DateTimeImmutable($value))->format('d-m-Y');
+		} catch (Throwable) {
+			return '';
+		}
+	}//end dayOf()
 
 	/**
 	 * Log one send; never a reason to fail the mail.

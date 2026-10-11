@@ -33,17 +33,16 @@ class PortalIntakeConfirmation {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalIntakeQueue $queue Records and reports on submissions.
 	 * @param FormConfirmationMailer|null $confirmationMail Mails the resident the reference and a summary.
 	 */
 	public function __construct(
-		private readonly PortalIntakeQueue $queue,
 		private readonly ?FormConfirmationMailer $confirmationMail = null,
 	) {
 	}//end __construct()
 
 	/**
-	 * Mail the confirmation when the form asks for it, and record the outcome.
+	 * Mail the confirmation when the form asks for it. The mailer logs the
+	 * outcome; there is no portal record to write it on any more (decision 179).
 	 *
 	 * @param array<string, mixed> $site      The portal.
 	 * @param array<string, mixed> $render    What the binding renders to.
@@ -70,28 +69,13 @@ class PortalIntakeConfirmation {
 			site: $site,
 			reference: $reference,
 			formName: (string)($render['formName'] ?? ''),
-			summary: (new FormConfirmationSummary())->build(fields: $fields, answers: $answers)
+			summary: (new FormConfirmationSummary())->build(fields: $fields, answers: $answers),
+			moments: $moments
 		);
-		$this->queue->markConfirmationMail(reference: $reference, portal: (string)($site['slug'] ?? ''), state: $this->mailState(sent: $sent));
 		if ($sent === true) {
 			return $email;
 		}
 
 		return '';
 	}//end send()
-
-	/**
-	 * The state word recorded for a mail.
-	 *
-	 * @param bool $sent Whether the mail server took it.
-	 *
-	 * @return string
-	 */
-	private function mailState(bool $sent): string {
-		if ($sent === true) {
-			return 'sent';
-		}
-
-		return 'failed';
-	}//end mailState()
 }//end class

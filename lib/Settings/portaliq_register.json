@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.93.0"
+        "version": "0.94.0"
     },
     "x-openregister": {
         "type": "application",
@@ -8222,17 +8222,57 @@
                         "description": "The schema the published form leaf lives in.",
                         "example": "registrationForm"
                     },
+                    "destination": {
+                        "title": "Destination",
+                        "type": "object",
+                        "description": "The object a submit of this form creates, in the same request (decision 179). `register` and `schema` name it. `subjectField` names the property that holds the signed-in resident's subject reference; `paymentField` the property the payment state is read from; `fields` maps a form field to a differently named property; `fixed` holds values every submit writes. A published binding must be valid against this schema.",
+                        "properties": {
+                            "register": {
+                                "type": "string",
+                                "title": "Register",
+                                "example": "dossiq"
+                            },
+                            "schema": {
+                                "type": "string",
+                                "title": "Schema",
+                                "example": "case"
+                            },
+                            "subjectField": {
+                                "type": "string",
+                                "title": "Subject property",
+                                "example": "portalSubject"
+                            },
+                            "paymentField": {
+                                "type": "string",
+                                "title": "Payment state property",
+                                "example": "paymentState"
+                            },
+                            "fields": {
+                                "type": "object",
+                                "title": "Field to property",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            },
+                            "fixed": {
+                                "type": "object",
+                                "title": "Fixed values"
+                            }
+                        }
+                    },
                     "caseRegister": {
                         "title": "Case register",
                         "type": "string",
-                        "description": "The register the case created from this form lives in.",
-                        "example": "dossiq"
+                        "description": "The register the case created from this form lives in. Replaced by `destination` (decision 179); a repair step moves it there.",
+                        "example": "dossiq",
+                        "deprecated": true
                     },
                     "caseSchema": {
                         "title": "Case schema",
                         "type": "string",
-                        "description": "The schema the case created from this form lives in. The background job creates the case here, through the ordinary anonymous contribution create.",
-                        "example": "zaak"
+                        "description": "The schema the case created from this form lives in. The background job creates the case here, through the ordinary anonymous contribution create. Replaced by `destination` (decision 179); a repair step moves it there.",
+                        "example": "zaak",
+                        "deprecated": true
                     },
                     "deliverTo": {
                         "title": "Deliver to",
@@ -8242,8 +8282,9 @@
                             "wooRequest"
                         ],
                         "default": "case",
-                        "description": "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed.",
-                        "example": "wooRequest"
+                        "description": "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed. Replaced by `destination` (decision 179); a repair step moves it there.",
+                        "example": "wooRequest",
+                        "deprecated": true
                     },
                     "intakeKind": {
                         "title": "Intake kind",

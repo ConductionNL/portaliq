@@ -33,6 +33,8 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Intake\DestinationIntake;
+use OCA\Portaliq\Service\Intake\DestinationLookup;
 use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
 use OCA\Portaliq\Service\Intake\FormStatements;
 use OCA\Portaliq\Service\Intake\PortalAddressLookup;
@@ -41,7 +43,6 @@ use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Intake\PortalFamilyMembers;
 use OCA\Portaliq\Service\Intake\PortalFee;
-use OCA\Portaliq\Service\Intake\PortalPaymentIntents;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\Intake\PortalEmailVerification;
@@ -115,11 +116,12 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalFormCalculator|null $calculator Works out the form's calculated fields again on submit.
 	 * @param PortalFormDecision|null $decision Asks the rule engine for the decisions a form's steps declare.
 	 * @param PortalFee|null $fees Checks a fee and the address a resident may be sent to pay at.
-	 * @param PortalPaymentIntents|null $intents Reads the state of a payment.
 	 * @param PortalContributionRegistry|null $registry Finds the case app's pay action in the subject's own manifest.
 	 * @param PortalActionForwarder|null $forwarder Forwards the pay action with a server-built body.
 	 * @param PortalDeepLinkBuilder|null $deepLinks Builds the address the resident returns to.
 	 * @param PortalEmailVerification|null $emailVerification Checks the proof that an e-mail address was verified.
+	 * @param DestinationIntake|null $intake Submits the answers into the binding's destination (decision 179).
+	 * @param DestinationLookup|null $lookup Finds the object a reference belongs to.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -138,11 +140,12 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalFormCalculator $calculator = null,
 		?PortalFormDecision $decision = null,
 		?PortalFee $fees = null,
-		?PortalPaymentIntents $intents = null,
 		?PortalContributionRegistry $registry = null,
 		?PortalActionForwarder $forwarder = null,
 		?PortalDeepLinkBuilder $deepLinks = null,
 		?PortalEmailVerification $emailVerification = null,
+		private readonly ?DestinationIntake $intake = null,
+		private readonly ?DestinationLookup $lookup = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
@@ -154,15 +157,13 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			emailVerification: $emailVerification
 		);
 		$this->payments     = new PortalIntakePayments(
-			queue: $queue,
-			bindings: $bindings,
+			lookup: $lookup,
 			fees: $fees,
-			intents: $intents,
 			registry: $registry,
 			forwarder: $forwarder,
 			deepLinks: $deepLinks
 		);
-		$this->confirmation = new PortalIntakeConfirmation(queue: $queue, confirmationMail: $confirmationMail);
+		$this->confirmation = new PortalIntakeConfirmation(confirmationMail: $confirmationMail);
 	}//end __construct()
 
 	/**
@@ -340,30 +341,44 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $prepared;
 		}
 
-		$accepted = $this->queue->accept(
-			portal: (string)($site['slug'] ?? ''),
-			route: $route,
+		$submitted = $this->intake?->submit(
+			binding: $binding,
+			render: $render,
 			answers: $prepared['answers'],
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			origin: (string)$this->request->getHeader('Origin'),
-			statements: $prepared['statements'],
-			computed: $prepared['computed'],
-			decisions: $prepared['decisions'],
-			verifiedEmails: $prepared['verified']
+			server: [
+				'portal' => (string)($site['slug'] ?? ''),
+				'origin' => (string)$this->request->getHeader('Origin'),
+				'statements' => $prepared['statements'],
+				'decisions' => $prepared['decisions'],
+				'verifiedEmails' => $prepared['verified'],
+				'fieldMeta' => $this->fieldMeta(computed: $prepared['computed']),
+			],
+			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
-		if ($accepted === null) {
-			return new JSONResponse(['error' => 'not_accepted'], Http::STATUS_SERVICE_UNAVAILABLE);
+		if ($submitted === null || $submitted['ok'] === false) {
+			return $this->refusedBy(submitted: $submitted);
 		}
 
-		$mailedTo = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $accepted['reference']);
+		$answer    = $submitted['answer'];
+		$reference = (string)($answer['reference'] ?? '');
+		$moments   = (array)($answer['confirmation'] ?? []);
+		$mailedTo  = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $reference, moments: $moments);
 
-		return new JSONResponse([
-			'reference' => $accepted['reference'],
-			'state' => $accepted['state'],
-			'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
-			'confirmation' => ($render['settings']['confirmation'] ?? null),
-			'mailedTo' => $mailedTo,
-		]);
+		return new JSONResponse(
+			array_merge(
+				$moments,
+				[
+					'reference' => $reference,
+					'id' => (string)($answer['id'] ?? ''),
+					'receivedAt' => (string)($answer['receivedAt'] ?? ''),
+					'state' => PortalIntakeQueue::STATE_REGISTERED,
+					'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
+					'confirmation' => ($render['settings']['confirmation'] ?? null),
+					'mailedTo' => $mailedTo,
+				]
+			)
+		);
 	}//end submit()
 
 	/**
@@ -465,16 +480,27 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$status = $this->queue->status(reference: $reference, portal: (string)($site['slug'] ?? ''));
-		if ($status === null) {
-			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
+		$slug   = (string)($site['slug'] ?? '');
+		$status = null;
+		$found  = $this->lookup?->find(portal: $slug, reference: $reference, subjectRef: (string)($this->subject()['subjectRef'] ?? ''));
+		if ($found !== null) {
+			$status = $this->lookup?->statusOf(found: $found, reference: $reference);
+			// The payment state is the destination's own (decision 181), never
+			// read from the address the resident returned on.
+			$payment = $this->payments->paymentOf(found: $found);
+			if ($payment !== null) {
+				$status['payment'] = $payment;
+			}
 		}
 
-		// The payment state is read from the payment record the portal stored
-		// the id of, never from the address the resident returned on.
-		$payment = $this->payments->paymentOf(reference: $reference, portal: (string)($site['slug'] ?? ''));
-		if ($payment !== null) {
-			$status['payment'] = $payment;
+		// An earlier reference the drain has not reached yet still answers
+		// from the queue, until the drain reports zero (task 4.3).
+		if ($status === null) {
+			$status = $this->queue->status(reference: $reference, portal: $slug);
+		}
+
+		if ($status === null) {
+			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
 		return new JSONResponse($status);
@@ -508,6 +534,52 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		return $this->payments->start(subject: $subject, site: $this->site(portal: $portal), reference: $reference);
 	}//end pay()
+
+	/**
+	 * The answer to a submit the destination refused.
+	 *
+	 * 422: the destination's message on each refused field, and nothing was
+	 * stored. 503 (and no submit service at all): the request did not arrive,
+	 * the page keeps the answers and says to try again later. Nothing is
+	 * queued (decision 181).
+	 *
+	 * @param array<string, mixed>|null $submitted What DestinationIntake answered, or null without it.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
+	 */
+	private function refusedBy(?array $submitted): JSONResponse {
+		$status = (int)($submitted['status'] ?? Http::STATUS_SERVICE_UNAVAILABLE);
+		if ($status === Http::STATUS_UNPROCESSABLE_ENTITY) {
+			return new JSONResponse(['error' => 'refused_by_destination', 'errors' => (array)($submitted['errors'] ?? [])], $status);
+		}
+
+		if ($status === Http::STATUS_FORBIDDEN || $status === Http::STATUS_NOT_FOUND) {
+			return new JSONResponse(['error' => 'form_not_submittable'], $status);
+		}
+
+		return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
+	}//end refusedBy()
+
+	/**
+	 * `fieldMeta` marking each field the portal worked out or a decision
+	 * filled as `computed`, so the destination can tell them from typed answers.
+	 *
+	 * @param array<int, string> $computed The names of those fields.
+	 *
+	 * @return array<string, array{computed: bool}>
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t07
+	 */
+	private function fieldMeta(array $computed): array {
+		$meta = [];
+		foreach (array_filter($computed, 'is_string') as $name) {
+			$meta[$name] = ['computed' => true];
+		}
+
+		return $meta;
+	}//end fieldMeta()
 
 	/**
 	 * Why this form accepts no submission from this visitor, or null.

@@ -231,6 +231,36 @@ class PortalIntakeQueue {
 	}//end queued()
 
 	/**
+	 * The submissions the drain still has to send: queued, and failed.
+	 *
+	 * @param int $limit How many of each state to take.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	public function pending(int $limit = 200): array {
+		$out = [];
+		foreach ([self::STATE_QUEUED, self::STATE_FAILED] as $state) {
+			$rows = $this->reader->readCollection(
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				scopeField: 'state',
+				subjectRef: $state,
+				organisation: '',
+				limit: $limit
+			);
+			foreach ($rows as $row) {
+				if (is_array($row) === true && ($row['state'] ?? '') === $state) {
+					$out[] = $row;
+				}
+			}
+		}
+
+		return $out;
+	}//end pending()
+
+	/**
 	 * Record that a submission became a case.
 	 *
 	 * @param array<string, mixed> $submission The submission row.
