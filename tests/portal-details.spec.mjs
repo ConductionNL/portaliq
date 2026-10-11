@@ -3,7 +3,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // portal-details.spec.mjs: the "Gegevens van de portal" form refuses what the
-// portal cannot use and saves the stored portal with the form on top
+// portal cannot use and saves only the fields that changed
 // (portal-domains-and-editors REQ-PDE-004).
 //
 // Usage:
@@ -11,7 +11,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { formFrom, portalBody, validateDetails } from '../src/lib/portalDetails.js'
+import { formFrom, portalPatch, validateDetails } from '../src/lib/portalDetails.js'
 
 const PORTAL = {
 	title: 'Gemeente Zuiddrecht',
@@ -41,10 +41,16 @@ test('an origin with a scheme and a port is accepted', () => {
 	assert.equal(errors.frameAncestors, undefined)
 })
 
-test('the body keeps the fields the form does not edit and drops bookkeeping keys', () => {
-	const body = portalBody(PORTAL, { ...formFrom(PORTAL), tagline: ' Samen ' })
-	assert.equal(body.status, 'published')
-	assert.deepEqual(body.domains, PORTAL.domains)
-	assert.equal(body.tagline, 'Samen')
-	assert.equal('@self' in body, false)
+test('the patch holds only the fields that changed, so nothing else is sent', () => {
+	const patch = portalPatch(PORTAL, { ...formFrom(PORTAL), tagline: ' Samen ' })
+	assert.deepEqual(patch, { tagline: 'Samen' })
+})
+
+test('a form left as loaded sends nothing', () => {
+	assert.deepEqual(portalPatch(PORTAL, formFrom(PORTAL)), {})
+})
+
+test('a list that changed is sent whole', () => {
+	const patch = portalPatch(PORTAL, { ...formFrom(PORTAL), locales: ['nl', 'en'] })
+	assert.deepEqual(patch, { locales: ['nl', 'en'] })
 })

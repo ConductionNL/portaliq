@@ -2367,6 +2367,15 @@
             "content": {
               "kind": "status"
             }
+          },
+          {
+            "id": "portal-side-editors",
+            "type": "PortalSummaryCard",
+            "title": "Beheerders",
+            "icon": "AccountGroupOutline",
+            "content": {
+              "kind": "editors"
+            }
           }
         ],
         "layout": [
@@ -2455,7 +2464,8 @@
         "sideColumn": [
           "portal-side-domain",
           "portal-side-theme",
-          "portal-side-status"
+          "portal-side-status",
+          "portal-side-editors"
         ],
         "tabsLabel": "Onderdelen van de portal"
       }
