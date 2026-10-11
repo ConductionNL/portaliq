@@ -556,13 +556,13 @@
             "gridX": 0,
             "gridY": 0,
             "gridWidth": 12,
-            "gridHeight": 2
+            "gridHeight": 3
           },
           {
             "id": "list-requests",
             "widgetId": "list-requests",
             "gridX": 0,
-            "gridY": 2,
+            "gridY": 3,
             "gridWidth": 8,
             "gridHeight": 5
           },
@@ -570,7 +570,7 @@
             "id": "list-submissions",
             "widgetId": "list-submissions",
             "gridX": 0,
-            "gridY": 7,
+            "gridY": 8,
             "gridWidth": 8,
             "gridHeight": 5
           },
@@ -578,7 +578,7 @@
             "id": 5,
             "widgetId": "now-sessions",
             "gridX": 8,
-            "gridY": 2,
+            "gridY": 3,
             "gridWidth": 4,
             "gridHeight": 1
           },
@@ -586,7 +586,7 @@
             "id": 6,
             "widgetId": "now-messages",
             "gridX": 8,
-            "gridY": 3,
+            "gridY": 4,
             "gridWidth": 4,
             "gridHeight": 1
           }
