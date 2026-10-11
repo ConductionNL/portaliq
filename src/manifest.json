@@ -554,7 +554,7 @@
             "id": "attention-first",
             "widgetId": "attention-first",
             "gridX": 0,
-            "gridY": 1,
+            "gridY": 0,
             "gridWidth": 12,
             "gridHeight": 2
           },
@@ -562,7 +562,7 @@
             "id": "list-requests",
             "widgetId": "list-requests",
             "gridX": 0,
-            "gridY": 3,
+            "gridY": 2,
             "gridWidth": 8,
             "gridHeight": 5
           },
@@ -570,7 +570,7 @@
             "id": "list-submissions",
             "widgetId": "list-submissions",
             "gridX": 0,
-            "gridY": 8,
+            "gridY": 7,
             "gridWidth": 8,
             "gridHeight": 5
           },
@@ -578,7 +578,7 @@
             "id": 5,
             "widgetId": "now-sessions",
             "gridX": 8,
-            "gridY": 3,
+            "gridY": 2,
             "gridWidth": 4,
             "gridHeight": 1
           },
@@ -586,7 +586,7 @@
             "id": 6,
             "widgetId": "now-messages",
             "gridX": 8,
-            "gridY": 4,
+            "gridY": 3,
             "gridWidth": 4,
             "gridHeight": 1
           }
@@ -619,7 +619,8 @@
             "variant": "primary"
           }
         ],
-        "description": "What needs attention today"
+        "description": "website en Mijn Zuiddrecht",
+        "greeting": "first"
       }
     },
     {
@@ -2986,6 +2987,13 @@
             "icon": "FormSelect",
             "type": "handler",
             "handler": "previewFormBinding"
+          },
+          {
+            "id": "insert-form",
+            "label": "Insert form",
+            "icon": "CodeTags",
+            "type": "handler",
+            "handler": "openFormBindingEmbed"
           }
         ],
         "showTitle": true,
@@ -4089,7 +4097,8 @@
         "Until": "Tot",
         "Intake kind": "Soort intake",
         "{shown} of {total} entries on the portals · which form each entry opens, for whom": "{shown} van {total} ingangen op de portals · welk formulier elke ingang opent, voor wie",
-        "Link a form": "Formulier koppelen"
+        "Link a form": "Formulier koppelen",
+        "Insert form": "Formulier insluiten"
       }
     }
   }
