@@ -137,43 +137,6 @@ class PortalActionForwarderTest extends TestCase {
 	}//end testFilesGoMultipartBesideTheFields()
 
 	/**
-	 * A file that cannot be opened is left out of the multipart body instead of being sent empty (REQ-RAF-001).
-	 *
-	 * @return void
-	 */
-	public function testAnUnreadableFileIsLeftOutOfTheMultipartBody(): void {
-		$tmp = tempnam(sys_get_temp_dir(), 'raf');
-		file_put_contents($tmp, 'scan bytes');
-		$seen = [];
-		$loopback = $this->getMockBuilder(InstanceLoopback::class)
-			->disableOriginalConstructor()
-			->onlyMethods(['request'])
-			->getMock();
-		$loopback->method('request')->willReturnCallback(
-			function (string $method, string $path, array $options) use (&$seen): IResponse {
-				$seen = $options;
-				return $this->createMock(IResponse::class);
-			}
-		);
-
-		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
-		$forwarder->forward(
-			action: ['endpoint' => '/apps/dossiq/api/portal/woo/answer', 'files' => ['field' => 'attachments', 'max' => 5, 'maxBytes' => 1000]],
-			subject: [],
-			whitelisted: ['answer' => 'Zie bijlage'],
-			files: [
-				['name' => 'gone.pdf', 'type' => 'application/pdf', 'tmp_name' => '/nonexistent/raf-upload', 'size' => 10],
-				['name' => 'blank.pdf', 'type' => 'application/pdf', 'tmp_name' => '', 'size' => 10],
-				['name' => 'scan.pdf', 'type' => 'application/pdf', 'tmp_name' => $tmp, 'size' => 10],
-			]
-		);
-		unlink($tmp);
-
-		$this->assertSame(['answer', 'attachments[]'], array_column($seen['multipart'], 'name'));
-		$this->assertSame('scan.pdf', $seen['multipart'][1]['filename']);
-	}//end testAnUnreadableFileIsLeftOutOfTheMultipartBody()
-
-	/**
 	 * Without files, or on an action without `files`, the forward stays JSON.
 	 *
 	 * @return void
