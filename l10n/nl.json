@@ -2994,7 +2994,13 @@
         "The term starts on %1$s.": "De termijn begint op %1$s.",
         "You can expect a decision by %1$s.": "U kunt uiterlijk %1$s een besluit verwachten.",
         "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.": "Dit formulier kan niet worden gepubliceerd: de antwoorden passen niet waar ze heen gaan. Los de punten hieronder op, of sla het op als concept.",
-        "This entry opens \"{form}\", but it cannot be published yet: {findings}": "Deze ingang opent \"{form}\", maar kan nog niet worden gepubliceerd: {findings}"
+        "This entry opens \"{form}\", but it cannot be published yet: {findings}": "Deze ingang opent \"{form}\", maar kan nog niet worden gepubliceerd: {findings}",
+        "The register of the object a submit creates.": "Het register van het object dat een verzending aanmaakt.",
+        "The schema of the object a submit creates.": "Het schema van het object dat een verzending aanmaakt.",
+        "The property that holds the signed-in resident.": "De eigenschap die de ingelogde inwoner bevat.",
+        "The property the payment state is read from.": "De eigenschap waaruit de betaalstatus wordt gelezen.",
+        "A form field that writes into a property with another name.": "Een formulierveld dat in een eigenschap met een andere naam schrijft.",
+        "Values every submit writes.": "Waarden die elke verzending schrijft."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

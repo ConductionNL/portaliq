@@ -353,51 +353,6 @@ class PortalIntakeQueue {
 	}//end find()
 
 	/**
-	 * Keep the payment intent the case app created for a submission.
-	 *
-	 * @param array<string, mixed> $submission     The submission row.
-	 * @param string               $paymentIntentId The payment intent id.
-	 *
-	 * @return bool True when it was written.
-	 *
-	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
-	 */
-	public function markPaymentIntent(array $submission, string $paymentIntentId): bool {
-		if ($paymentIntentId === '') {
-			return false;
-		}
-
-		return $this->write(submission: $submission, data: ['paymentIntentId' => $paymentIntentId]);
-	}//end markPaymentIntent()
-
-	/**
-	 * Record whether the confirmation mail went out.
-	 *
-	 * A failed mail is shown on the submissions page under Bevestiging
-	 * mislukt; a mail that was never asked for leaves the field empty.
-	 *
-	 * @param string $reference The submission's reference.
-	 * @param string $portal    The portal.
-	 * @param string $state     `sent` or `failed`.
-	 *
-	 * @return bool True when the state was written.
-	 *
-	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
-	 */
-	public function markConfirmationMail(string $reference, string $portal, string $state): bool {
-		if (in_array($state, ['sent', 'failed'], true) === false) {
-			return false;
-		}
-
-		$submission = $this->byReference(reference: $reference, portal: $portal);
-		if ($submission === null) {
-			return false;
-		}
-
-		return $this->write(submission: $submission, data: ['confirmationMailState' => $state]);
-	}//end markConfirmationMail()
-
-	/**
 	 * Write on a submission row.
 	 *
 	 * @param array<string, mixed> $submission The submission row.

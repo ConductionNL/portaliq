@@ -54,22 +54,6 @@ class PortalIntakeQueueTest extends TestCase {
 		$this->assertArrayNotHasKey('statements', $rows[1]);
 	}//end testAcceptedStatementsAreStoredOnTheSubmission()
 
-	/**
-	 * T05: a mail that failed is recorded on the submission; any other word is refused.
-	 *
-	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
-	 */
-	public function testTheConfirmationMailOutcomeIsRecorded(): void {
-		$queue = $this->queue();
-		$accepted = $queue->accept(portal: 'gemeente-x', route: 'woo', answers: []);
-
-		$this->assertTrue($queue->markConfirmationMail($accepted['reference'], 'gemeente-x', 'failed'));
-		$this->assertSame('failed', $this->storedRows('portalIntakeSubmission')[0]['confirmationMailState']);
-		$this->assertFalse($queue->markConfirmationMail($accepted['reference'], 'gemeente-x', 'maybe'));
-		$this->assertFalse($queue->markConfirmationMail($accepted['reference'], 'andere-gemeente', 'sent'));
-		$this->assertFalse($queue->markConfirmationMail('AANVRAAG-NOPE', 'gemeente-x', 'sent'));
-	}//end testTheConfirmationMailOutcomeIsRecorded()
-
 	public function testTheReferencePageSaysQueuedUntilTheCaseExists(): void {
 		$queue = $this->queue();
 		$accepted = $queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: []);
@@ -166,6 +150,26 @@ class PortalIntakeQueueTest extends TestCase {
 		$this->assertNotSame($second['reference'], $waiting[0]['reference']);
 
 	}//end testOnlyQueuedSubmissionsAreHandedToTheJob()
+
+	/**
+	 * submit-creates-the-case-directly 4.1: the drain takes queued and failed
+	 * entries, never registered ones.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	public function testTheDrainTakesQueuedAndFailedEntries(): void {
+		$queue = $this->queue();
+		foreach ([1, 2, 3] as $n) {
+			$queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: ['n' => $n]);
+		}
+
+		$queue->markRegistered(submission: $this->storedRows('portalIntakeSubmission')[0], caseId: 'zaak-1');
+		$queue->markFailed(submission: $this->storedRows('portalIntakeSubmission')[1], reason: 'refused');
+
+		$pending = $queue->pending();
+
+		$this->assertEqualsCanonicalizing(['queued', 'failed'], array_column($pending, 'state'));
+	}//end testTheDrainTakesQueuedAndFailedEntries()
 
 	public function testASubmissionThatCouldNotBeRecordedIsNotAcknowledged(): void {
 		$writer = $this->getMockBuilder(\OCA\Portaliq\Service\PortalObjectWriter::class)

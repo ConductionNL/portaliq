@@ -8230,33 +8230,39 @@
                             "register": {
                                 "type": "string",
                                 "title": "Register",
-                                "example": "dossiq"
+                                "example": "dossiq",
+                                "description": "The register of the object a submit creates."
                             },
                             "schema": {
                                 "type": "string",
                                 "title": "Schema",
-                                "example": "case"
+                                "example": "case",
+                                "description": "The schema of the object a submit creates."
                             },
                             "subjectField": {
                                 "type": "string",
                                 "title": "Subject property",
-                                "example": "portalSubject"
+                                "example": "portalSubject",
+                                "description": "The property that holds the signed-in resident."
                             },
                             "paymentField": {
                                 "type": "string",
                                 "title": "Payment state property",
-                                "example": "paymentState"
+                                "example": "paymentState",
+                                "description": "The property the payment state is read from."
                             },
                             "fields": {
                                 "type": "object",
                                 "title": "Field to property",
                                 "additionalProperties": {
                                     "type": "string"
-                                }
+                                },
+                                "description": "A form field that writes into a property with another name."
                             },
                             "fixed": {
                                 "type": "object",
-                                "title": "Fixed values"
+                                "title": "Fixed values",
+                                "description": "Values every submit writes."
                             }
                         }
                     },

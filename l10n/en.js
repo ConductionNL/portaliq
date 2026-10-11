@@ -2858,7 +2858,13 @@ OC.L10N.register(
         "The term starts on %1$s.": "The term starts on %1$s.",
         "You can expect a decision by %1$s.": "You can expect a decision by %1$s.",
         "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.": "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.",
-        "This entry opens \"{form}\", but it cannot be published yet: {findings}": "This entry opens \"{form}\", but it cannot be published yet: {findings}"
+        "This entry opens \"{form}\", but it cannot be published yet: {findings}": "This entry opens \"{form}\", but it cannot be published yet: {findings}",
+        "The register of the object a submit creates.": "The register of the object a submit creates.",
+        "The schema of the object a submit creates.": "The schema of the object a submit creates.",
+        "The property that holds the signed-in resident.": "The property that holds the signed-in resident.",
+        "The property the payment state is read from.": "The property the payment state is read from.",
+        "A form field that writes into a property with another name.": "A form field that writes into a property with another name.",
+        "Values every submit writes.": "Values every submit writes."
     },
     "nplurals=2; plural=(n != 1);"
 )
