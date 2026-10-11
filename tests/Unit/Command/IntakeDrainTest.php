@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Command;
 
 use OCA\Portaliq\Command\IntakeDrain;
 use OCA\Portaliq\Service\Intake\IntakeQueueDrain;
+use OCA\Portaliq\Service\Intake\PortalDraftDrain;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -52,4 +53,24 @@ class IntakeDrainTest extends TestCase {
 		$this->assertStringContainsString('Waiting: 4', $tester->getDisplay());
 		$this->assertSame(0, $tester->execute(['--dry-run' => true]));
 	}//end testADryRunOnlyCountsAndSendsNothing()
+	public function testSavedDraftsAreMovedAndCountTowardsTheZero(): void {
+		$drain = $this->createMock(IntakeQueueDrain::class);
+		$drain->method('drain')->willReturn(['delivered' => 0, 'refused' => 0, 'waiting' => 0, 'reasons' => []]);
+		$drain->method('waiting')->willReturn(0);
+		$drafts = $this->createMock(PortalDraftDrain::class);
+		$drafts->method('drain')->willReturnOnConsecutiveCalls(
+			['converted' => 2, 'expired' => 1, 'refused' => 1, 'reasons' => ['r-1' => 'the destination refused it (422): Not a date.'], 'waiting' => 1],
+			['converted' => 0, 'expired' => 0, 'refused' => 0, 'reasons' => [], 'waiting' => 0]
+		);
+		$drafts->method('waiting')->willReturn(3);
+
+		$tester = new CommandTester(new IntakeDrain($drain, $drafts));
+
+		$this->assertSame(1, $tester->execute([]));
+		$this->assertStringContainsString('Drafts moved: 2', $tester->getDisplay());
+		$this->assertStringContainsString('r-1: the destination refused it (422): Not a date.', $tester->getDisplay());
+		$this->assertSame(0, $tester->execute([]));
+		$this->assertSame(1, $tester->execute(['--dry-run' => true]));
+		$this->assertStringContainsString('Drafts waiting: 3', $tester->getDisplay());
+	}//end testSavedDraftsAreMovedAndCountTowardsTheZero()
 }//end class

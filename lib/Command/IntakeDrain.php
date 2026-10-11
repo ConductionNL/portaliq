@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Command;
 
 use OCA\Portaliq\Service\Intake\IntakeQueueDrain;
+use OCA\Portaliq\Service\Intake\PortalDraftDrain;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -48,6 +49,7 @@ class IntakeDrain extends Command {
 	 */
 	public function __construct(
 		private readonly IntakeQueueDrain $drain,
+		private readonly ?PortalDraftDrain $drafts = null,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -61,7 +63,7 @@ class IntakeDrain extends Command {
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:intake:drain');
-		$this->setDescription(description: 'Send the requests still waiting in the old intake queue into their destination');
+		$this->setDescription(description: 'Send the requests still waiting in the old intake queue into their destination, and move saved drafts into their destination as drafts');
 		$this->addOption(
 			name: 'limit',
 			mode: InputOption::VALUE_REQUIRED,
@@ -85,9 +87,11 @@ class IntakeDrain extends Command {
 		$limit = max(1, (int)$input->getOption('limit'));
 		if ((bool)$input->getOption('dry-run') === true) {
 			$waiting = $this->drain->waiting(limit: $limit);
+			$drafts  = (int)$this->drafts?->waiting(limit: $limit);
 			$output->writeln('Waiting: ' . $waiting);
+			$output->writeln('Drafts waiting: ' . $drafts);
 
-			return (int)($waiting > 0);
+			return (int)($waiting + $drafts > 0);
 		}
 
 		$result = $this->drain->drain(limit: $limit);
@@ -99,10 +103,38 @@ class IntakeDrain extends Command {
 		}
 
 		$output->writeln('Still waiting: ' . $result['waiting']);
-		if ($result['waiting'] === 0) {
+		$draftsWaiting = $this->drainDrafts(limit: $limit, output: $output);
+		if ($result['waiting'] === 0 && $draftsWaiting === 0) {
 			return 0;
 		}
 
 		return 1;
 	}//end execute()
+
+	/**
+	 * Move saved `portalDraft` rows into OpenRegister drafts and report (task 5.3).
+	 *
+	 * @param int             $limit  How many rows one run takes.
+	 * @param OutputInterface $output The report.
+	 *
+	 * @return int The rows still waiting.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#5.3
+	 */
+	private function drainDrafts(int $limit, OutputInterface $output): int {
+		if ($this->drafts === null) {
+			return 0;
+		}
+
+		$result = $this->drafts->drain(limit: $limit);
+		$output->writeln('Drafts moved: ' . $result['converted']);
+		$output->writeln('Drafts expired: ' . $result['expired']);
+		$output->writeln('Drafts kept: ' . $result['refused']);
+		foreach ($result['reasons'] as $id => $reason) {
+			$output->writeln('  ' . $id . ': ' . $reason);
+		}
+
+		$output->writeln('Drafts still waiting: ' . $result['waiting']);
+		return $result['waiting'];
+	}//end drainDrafts()
 }//end class
