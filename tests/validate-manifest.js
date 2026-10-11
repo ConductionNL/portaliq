@@ -364,13 +364,20 @@ function rendererContractLint(manifest) {
 		// widgets beside the body: neither needs a grid cell of its own, and a
 		// grid cell for them would draw the widget twice.
 		for (const widget of widgets) {
-			if (widget && widget.type === 'tabs' && widget.content && Array.isArray(widget.content.tabs)) {
+			if (
+				widget
+				&& widget.type === 'tabs'
+				&& widget.content
+				&& Array.isArray(widget.content.tabs)
+			) {
 				for (const tab of widget.content.tabs) {
 					placed.add(typeof tab === 'string' ? tab : tab && tab.widgetId)
 				}
 			}
 		}
-		for (const entry of Array.isArray(page.config.sideColumn) ? page.config.sideColumn : []) {
+		for (const entry of Array.isArray(page.config.sideColumn)
+			? page.config.sideColumn
+			: []) {
 			placed.add(typeof entry === 'string' ? entry : entry && entry.id)
 		}
 

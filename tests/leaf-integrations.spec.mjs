@@ -105,10 +105,13 @@ test('every integration widget names an integration', () => {
 
 test('every integration widget is placed in its page layout', () => {
 	for (const { page, config, widget } of integrationWidgets()) {
+		// A detail page in the v2 shape places its facts in `sideColumn` (a list
+		// of widget ids) instead of the grid; both are placements.
 		const placed = (config.layout || []).some((item) => item.widgetId === widget.id)
+			|| (config.sideColumn || []).includes(widget.id)
 		assert.ok(
 			placed,
-			`${page.id}/${widget.id}: declared but absent from config.layout. A `
+			`${page.id}/${widget.id}: declared but absent from config.layout and config.sideColumn. A `
 			+ 'widget the grid never places is dark in exactly the way this file '
 			+ 'exists to catch, and nothing else reports it.',
 		)
