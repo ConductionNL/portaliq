@@ -963,10 +963,12 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {string} app The contributing app, or the action's register.
 		 * @param {string} actionId The action id.
-		 * @param {{answers: object, step: string, retentionDays: number}} draft The draft.
-		 * @return {Promise<{step: string, expiresAt: string, answers: object}|null>} What was kept, or null.
+		 * @param {{answers: object, step: string}} draft The draft.
+		 * @return {Promise<{id: string, step: string, expiresAt: string, answers: object}|{saved: false, status: number, errors: object}|null>}
+		 *         What was kept; a refusal with the message per field (a value of the wrong kind); or null when the call failed.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 		 */
 		async saveDraft(app, actionId, draft) {
 			try {
@@ -979,7 +981,18 @@ export function createPortalApi(config, store = {}) {
 					},
 					body: JSON.stringify(draft),
 				})
-				return res.ok ? await res.json() : null
+				if (res.ok) {
+					return await res.json()
+				}
+				const refusal = await res.json().catch(() => ({}))
+				return {
+					saved: false,
+					status: res.status,
+					errors:
+						refusal?.errors && typeof refusal.errors === 'object'
+							? refusal.errors
+							: {},
+				}
 			} catch {
 				return null
 			}
