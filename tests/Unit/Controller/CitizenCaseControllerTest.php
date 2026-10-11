@@ -60,6 +60,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\CitizenWriteThrottle
  * @uses   \OCA\Portaliq\Service\PortalSessionService
  * @uses   \OCA\Portaliq\Contribution\TimelineProviderMethod
+ * @uses   \OCA\Portaliq\Service\Identity\MandateParties
  * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
  * @uses   \OCA\Portaliq\Service\Branch\PortalBranchScope
  * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
