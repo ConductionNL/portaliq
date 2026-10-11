@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Intake\DestinationLookup;
 use OCA\Portaliq\Service\Intake\PortalFee;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
-use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
-use OCA\Portaliq\Service\Intake\PortalPaymentIntents;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCP\Http\Client\IResponse;
@@ -17,7 +16,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Starting an intake payment and reading its state.
+ * Paying for a request whose case already exists (decision 181), and reading
+ * the payment state from that case (submit-creates-the-case-directly 3.3).
+ *
+ * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#3.3
  */
 #[CoversClass(PortalIntakePayments::class)]
 class PortalIntakePaymentsTest extends TestCase {
@@ -27,13 +29,9 @@ class PortalIntakePaymentsTest extends TestCase {
 
 	private const FEE = ['amount' => 10, 'currency' => 'EUR', 'description' => 'Fee', 'payAction' => 'pay'];
 
-	private PortalIntakeQueue $queue;
-
-	private PortalFormBindingResolver $bindings;
+	private DestinationLookup $lookup;
 
 	private PortalFee $fees;
-
-	private PortalPaymentIntents $intents;
 
 	private PortalContributionRegistry $registry;
 
@@ -45,180 +43,159 @@ class PortalIntakePaymentsTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->queue    = $this->createMock(PortalIntakeQueue::class);
-		$this->bindings = $this->createMock(PortalFormBindingResolver::class);
-		$this->fees     = $this->createMock(PortalFee::class);
-		$this->intents  = $this->createMock(PortalPaymentIntents::class);
-		$this->registry = $this->createMock(PortalContributionRegistry::class);
+		$this->lookup    = $this->createMock(DestinationLookup::class);
+		$this->fees      = $this->createMock(PortalFee::class);
+		$this->registry  = $this->createMock(PortalContributionRegistry::class);
 		$this->forwarder = $this->createMock(PortalActionForwarder::class);
 
-		$this->bindings->method('bindingFor')->willReturn(['x' => 1]);
 		$this->fees->method('forBinding')->willReturn(self::FEE);
 		$this->registry->method('aggregateFor')->willReturn(['contributions' => [['actions' => ['junk', ['id' => 'other'], ['id' => 'pay']]]]]);
 		$this->forwarder->method('isForwardable')->willReturn(true);
 	}//end setUp()
 
 	/**
-	 * The payments service over the doubles.
+	 * The service over the doubles.
 	 *
-	 * @param bool $withFees Whether the optional collaborators are present.
+	 * @param PortalFee|null $fees The fee reader, the default double when null.
 	 *
 	 * @return PortalIntakePayments
 	 */
-	private function payments(bool $withFees=true): PortalIntakePayments {
-		if ($withFees === false) {
-			return new PortalIntakePayments($this->queue, $this->bindings);
-		}
+	private function payments(?PortalFee $fees = null): PortalIntakePayments {
+		$deepLinks = $this->createMock(PortalDeepLinkBuilder::class);
+		$deepLinks->method('forSite')->willReturn('https://portal.example/?portal=zuid');
 
-		$links = $this->createMock(PortalDeepLinkBuilder::class);
-		$links->method('forSite')->willReturn('/index.php/apps/portaliq/?portal=zuid');
-
-		return new PortalIntakePayments($this->queue, $this->bindings, $this->fees, $this->intents, $this->registry, $this->forwarder, $links);
+		return new PortalIntakePayments(
+			lookup: $this->lookup,
+			fees: ($fees ?? $this->fees),
+			registry: $this->registry,
+			forwarder: $this->forwarder,
+			deepLinks: $deepLinks
+		);
 	}//end payments()
 
 	/**
-	 * A forwarder response with a status.
+	 * The case a request created, as the lookup finds it.
 	 *
-	 * @param int $status The HTTP status.
+	 * @param string      $subjectRef   Whose it is.
+	 * @param string|null $paymentState Its payment state, or null for none yet.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function found(string $subjectRef = 'abc', ?string $paymentState = null): array {
+		$object = ['identifier' => '2026-0042', 'portalSubject' => $subjectRef];
+		if ($paymentState !== null) {
+			$object['paymentState'] = $paymentState;
+		}
+
+		return [
+			'object' => $object,
+			'binding' => ['route' => 'leges', 'destination' => ['register' => 'dossiq', 'schema' => 'case', 'subjectField' => 'portalSubject', 'paymentField' => 'paymentState']],
+			'schema' => [],
+		];
+	}//end found()
+
+	public function testUnavailable(): void {
+		$response = (new PortalIntakePayments())->start(self::SUBJECT, self::SITE, '2026-0042');
+		$this->assertSame(502, $response->getStatus());
+
+		$this->assertSame(502, $this->payments()->start(self::SUBJECT, null, '2026-0042')->getStatus());
+	}//end testUnavailable()
+
+	public function testTheCaseMustBeTheSubjectsOwn(): void {
+		$this->lookup->method('find')->willReturnOnConsecutiveCalls($this->found(subjectRef: 'someone-else'), null);
+		$this->forwarder->expects($this->never())->method('forward');
+
+		$this->assertSame(404, $this->payments()->start(self::SUBJECT, self::SITE, '2026-0042')->getStatus());
+		$this->assertSame(404, $this->payments()->start(self::SUBJECT, self::SITE, '2026-0099')->getStatus());
+	}//end testTheCaseMustBeTheSubjectsOwn()
+
+	public function testABindingThatStampsNoSubjectHasNoOwnerToPay(): void {
+		$found = $this->found();
+		unset($found['binding']['destination']['subjectField']);
+		$this->lookup->method('find')->willReturn($found);
+
+		$this->assertSame(404, $this->payments()->start(self::SUBJECT, self::SITE, '2026-0042')->getStatus());
+	}//end testABindingThatStampsNoSubjectHasNoOwnerToPay()
+
+	public function testNothingToPay(): void {
+		$this->lookup->method('find')->willReturn($this->found());
+		$fees = $this->createMock(PortalFee::class);
+		$fees->method('forBinding')->willReturn(null);
+
+		$this->assertSame(409, $this->payments(fees: $fees)->start(self::SUBJECT, self::SITE, '2026-0042')->getStatus());
+	}//end testNothingToPay()
+
+	public function testAPaidCaseHasNothingToPay(): void {
+		$this->lookup->method('find')->willReturn($this->found(paymentState: 'paid'));
+		$this->fees->method('stateOf')->willReturn('paid');
+		$this->forwarder->expects($this->never())->method('forward');
+
+		$this->assertSame(409, $this->payments()->start(self::SUBJECT, self::SITE, '2026-0042')->getStatus());
+	}//end testAPaidCaseHasNothingToPay()
+
+	public function testForbiddenWithoutPayAction(): void {
+		$this->lookup->method('find')->willReturn($this->found());
+		$registry = $this->createMock(PortalContributionRegistry::class);
+		$registry->method('aggregateFor')->willReturn(['contributions' => []]);
+		$this->registry = $registry;
+
+		$this->assertSame(403, $this->payments()->start(self::SUBJECT, self::SITE, '2026-0042')->getStatus());
+	}//end testForbiddenWithoutPayAction()
+
+	public function testStartForwardsAgainstTheCaseAndStoresNothing(): void {
+		$this->lookup->method('find')->willReturn($this->found());
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(201);
+		$this->forwarder->expects($this->once())->method('forward')->with(
+			['id' => 'pay'],
+			self::SUBJECT,
+			$this->callback(static fn (array $body): bool => $body['reference'] === '2026-0042' && $body['amount'] === 10 && str_contains($body['returnUrl'], 'route=%2Fleges'))
+		)->willReturn($response);
+		$this->forwarder->method('decodeBody')->willReturn(['checkoutUrl' => 'https://pay.example/c', 'paymentIntentId' => 'pi-1']);
+		$this->fees->method('checkoutAllowed')->willReturn(true);
+
+		$answer = $this->payments()->start(self::SUBJECT, self::SITE, '2026-0042');
+
+		$this->assertSame(200, $answer->getStatus());
+		$this->assertSame(['checkoutUrl' => 'https://pay.example/c'], $answer->getData());
+	}//end testStartForwardsAgainstTheCaseAndStoresNothing()
+
+	public function testProviderFailures(): void {
+		$this->lookup->method('find')->willReturn($this->found());
+		$failed = $this->createMock(IResponse::class);
+		$failed->method('getStatusCode')->willReturn(500);
+		$this->forwarder->method('forward')->willReturnOnConsecutiveCalls(null, $failed, $this->okResponse());
+		$this->forwarder->method('decodeBody')->willReturn(['checkoutUrl' => 'https://evil.example/c']);
+		$this->fees->method('checkoutAllowed')->willReturn(false);
+
+		$payments = $this->payments();
+		$this->assertSame(502, $payments->start(self::SUBJECT, self::SITE, '2026-0042')->getStatus());
+		$this->assertSame(502, $payments->start(self::SUBJECT, self::SITE, '2026-0042')->getStatus());
+		$this->assertSame(502, $payments->start(self::SUBJECT, self::SITE, '2026-0042')->getStatus());
+	}//end testProviderFailures()
+
+	public function testThePaymentStateIsTheCasesOwn(): void {
+		$fees     = new PortalFee($this->createMock(CaseTypeReader::class));
+		$payments = $this->payments(fees: $fees);
+
+		$this->assertSame(['state' => 'paid'], $payments->paymentOf(found: $this->found(paymentState: 'paid')));
+		$this->assertSame(['state' => 'unpaid'], $payments->paymentOf(found: $this->found(paymentState: 'open')));
+		$this->assertNull($payments->paymentOf(found: $this->found()));
+
+		$noField = $this->found(paymentState: 'paid');
+		unset($noField['binding']['destination']['paymentField']);
+		$this->assertNull($payments->paymentOf(found: $noField));
+	}//end testThePaymentStateIsTheCasesOwn()
+
+	/**
+	 * A 200 response.
 	 *
 	 * @return IResponse
 	 */
-	private function response(int $status): IResponse {
+	private function okResponse(): IResponse {
 		$response = $this->createMock(IResponse::class);
-		$response->method('getStatusCode')->willReturn($status);
+		$response->method('getStatusCode')->willReturn(200);
 
 		return $response;
-	}//end response()
-
-	/**
-	 * Without a site or the optional collaborators payment is unavailable.
-	 *
-	 * @return void
-	 */
-	public function testUnavailable(): void {
-		$this->assertSame(502, $this->payments(false)->start(self::SUBJECT, self::SITE, 'R1')->getStatus());
-		$this->assertSame(502, $this->payments()->start(self::SUBJECT, null, 'R1')->getStatus());
-	}//end testUnavailable()
-
-	/**
-	 * Only the submitter may pay: unknown, foreign or failing lookups are 404.
-	 *
-	 * @return void
-	 */
-	public function testSubmissionMustBeOwn(): void {
-		$this->queue->method('find')->willReturnOnConsecutiveCalls(null, ['subjectRef' => 'other'], ['subjectRef' => '']);
-		$p = $this->payments();
-
-		foreach ([1, 2, 3] as $ignored) {
-			$response = $p->start(self::SUBJECT, self::SITE, 'R1');
-			$this->assertSame(404, $response->getStatus());
-			$this->assertSame(['error' => 'reference_not_found'], $response->getData());
-		}
-	}//end testSubmissionMustBeOwn()
-
-	/**
-	 * A thrown lookup counts as not found.
-	 *
-	 * @return void
-	 */
-	public function testLookupFailureIsNotFound(): void {
-		$this->queue->method('find')->willThrowException(new \RuntimeException('db'));
-
-		$this->assertSame(404, $this->payments()->start(self::SUBJECT, self::SITE, 'R1')->getStatus());
-		$this->assertNull($this->payments()->paymentOf('R1', 'zuid'));
-	}//end testLookupFailureIsNotFound()
-
-	/**
-	 * An already paid submission has nothing to pay.
-	 *
-	 * @return void
-	 */
-	public function testNothingToPay(): void {
-		$this->queue->method('find')->willReturn(['subjectRef' => 'abc', 'route' => '/r', 'paymentIntentId' => 'pi_1']);
-		$this->intents->method('status')->willReturn('paid');
-		$this->fees->method('stateOf')->willReturn('paid');
-
-		$response = $this->payments()->start(self::SUBJECT, self::SITE, 'R1');
-
-		$this->assertSame(409, $response->getStatus());
-		$this->assertSame(['error' => 'nothing_to_pay'], $response->getData());
-	}//end testNothingToPay()
-
-	/**
-	 * Without a forwardable pay action the caller is refused.
-	 *
-	 * @return void
-	 */
-	public function testForbiddenWithoutPayAction(): void {
-		$this->queue->method('find')->willReturn(['subjectRef' => 'abc', 'route' => '/r']);
-		$forwarder = $this->createMock(PortalActionForwarder::class);
-		$forwarder->method('isForwardable')->willReturn(false);
-		$links = $this->createMock(PortalDeepLinkBuilder::class);
-		$p = new PortalIntakePayments($this->queue, $this->bindings, $this->fees, $this->intents, $this->registry, $forwarder, $links);
-
-		$this->assertSame(403, $p->start(self::SUBJECT, self::SITE, 'R1')->getStatus());
-	}//end testForbiddenWithoutPayAction()
-
-	/**
-	 * A good provider answer returns the checkout URL and records the intent.
-	 *
-	 * @return void
-	 */
-	public function testStartSucceeds(): void {
-		$submission = ['subjectRef' => 'abc', 'route' => 'r/x'];
-		$this->queue->method('find')->willReturn($submission);
-		$this->queue->expects($this->once())->method('markPaymentIntent')->with($submission, 'pi_9');
-		$this->forwarder->expects($this->once())->method('forward')->with(
-			$this->anything(),
-			self::SUBJECT,
-			$this->callback(static fn (array $w): bool => $w['amount'] === 10 && $w['reference'] === 'R1' && str_contains($w['returnUrl'], 'route=%2Fr%2Fx&reference=R1'))
-		)->willReturn($this->response(200));
-		$this->forwarder->method('decodeBody')->willReturn(['checkoutUrl' => 'https://pay.example/c', 'paymentIntentId' => ' pi_9 ']);
-		$this->fees->method('checkoutAllowed')->willReturn(true);
-
-		$response = $this->payments()->start(self::SUBJECT, self::SITE, 'R1');
-
-		$this->assertSame(200, $response->getStatus());
-		$this->assertSame(['checkoutUrl' => 'https://pay.example/c'], $response->getData());
-	}//end testStartSucceeds()
-
-	/**
-	 * A failing provider, a missing intent or a disallowed checkout host is a 502.
-	 *
-	 * @return void
-	 */
-	public function testProviderFailures(): void {
-		$this->queue->method('find')->willReturn(['subjectRef' => 'abc', 'route' => '/r']);
-		$this->queue->expects($this->never())->method('markPaymentIntent');
-		$this->forwarder->method('forward')->willReturnOnConsecutiveCalls(null, $this->response(500), $this->response(200), $this->response(200));
-		$this->forwarder->method('decodeBody')->willReturnOnConsecutiveCalls(
-			['checkoutUrl' => 'https://pay.example/c'],
-			['checkoutUrl' => 'https://evil.example/c', 'paymentIntentId' => 'pi']
-		);
-		$this->fees->method('checkoutAllowed')->willReturn(false);
-		$p = $this->payments();
-
-		for ($i = 0; $i < 4; $i++) {
-			$response = $p->start(self::SUBJECT, self::SITE, 'R1');
-			$this->assertSame(502, $response->getStatus());
-			$this->assertSame(['error' => 'payment_unavailable'], $response->getData());
-		}
-	}//end testProviderFailures()
-
-	/**
-	 * Payment state: none without an intent, unknown when the status is lost.
-	 *
-	 * @return void
-	 */
-	public function testPaymentOf(): void {
-		$this->queue->method('find')->willReturnOnConsecutiveCalls(['x' => 1], ['paymentIntentId' => 'pi'], ['paymentIntentId' => 'pi'], ['paymentIntentId' => 'pi']);
-		$this->intents->method('status')->willReturnOnConsecutiveCalls(null, 'open');
-		$this->fees->method('stateOf')->with('open')->willReturn('pending');
-		$p = $this->payments();
-
-		$this->assertNull($p->paymentOf('R1', 'zuid'));
-		$this->assertSame(['state' => 'unknown'], $p->paymentOf('R1', 'zuid'));
-		$this->assertSame(['state' => 'pending'], $p->paymentOf('R1', 'zuid'));
-		$this->assertNull($this->payments(false)->paymentOf('R1', 'zuid'));
-	}//end testPaymentOf()
+	}//end okResponse()
 }//end class
