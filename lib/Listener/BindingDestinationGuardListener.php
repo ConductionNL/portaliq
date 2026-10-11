@@ -105,26 +105,41 @@ class BindingDestinationGuardListener implements IEventListener {
 	 * @return void
 	 */
 	private function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
-		if ($this->isBinding(schema: (string)$entity->getSchema()) === false) {
-			return;
-		}
-
-		$binding = (array)($entity->getObject() ?? []);
-		if ((string)($binding['status'] ?? '') !== 'published') {
-			return;
-		}
-
-		$findings = $this->intake->check(binding: $binding, render: $this->bindings->render(binding: $binding));
-		if ($findings === []) {
+		$errors = $this->refusalFor(schema: (string)$entity->getSchema(), binding: (array)($entity->getObject() ?? []));
+		if ($errors === null) {
 			return;
 		}
 
 		$event->stopPropagation();
-		$event->setErrors([
+		$event->setErrors($errors);
+	}//end check()
+
+	/**
+	 * The errors that refuse this write, or null when it may go ahead: it is
+	 * not a binding, not published, or its destination accepts its form.
+	 *
+	 * @param string               $schema  The written object's schema id.
+	 * @param array<string, mixed> $binding The written object.
+	 *
+	 * @return array{message: string, findings: array<int, array<string, mixed>>}|null
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 */
+	public function refusalFor(string $schema, array $binding): ?array {
+		if ((string)($binding['status'] ?? '') !== 'published' || $this->isBinding(schema: $schema) === false) {
+			return null;
+		}
+
+		$findings = $this->intake->check(binding: $binding, render: $this->bindings->render(binding: $binding));
+		if ($findings === []) {
+			return null;
+		}
+
+		return [
 			'message' => $this->l10n->t('This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.'),
 			'findings' => $findings,
-		]);
-	}//end check()
+		];
+	}//end refusalFor()
 
 	/**
 	 * Whether an object's schema is portaliq's form binding schema.
