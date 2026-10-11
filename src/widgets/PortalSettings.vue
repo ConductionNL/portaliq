@@ -29,6 +29,7 @@
 import { translate as t } from '@nextcloud/l10n'
 import PortalAccessibility from './PortalAccessibility.vue'
 import PortalCaseTypes from './PortalCaseTypes.vue'
+import PortalDetailsForm from './PortalDetailsForm.vue'
 import PortalRegistration from './PortalRegistration.vue'
 import PortalSignin from './PortalSignin.vue'
 import PortalTheme from './PortalTheme.vue'
@@ -53,6 +54,7 @@ export default {
 		 */
 		sections() {
 			return [
+				{ id: 'details', title: t('portaliq', 'Portal details'), component: PortalDetailsForm },
 				{ id: 'theme', title: t('portaliq', 'House style'), component: PortalTheme },
 				{ id: 'case-types', title: t('portaliq', 'Case types residents see'), component: PortalCaseTypes },
 				{ id: 'signin', title: t('portaliq', 'Sign in'), component: PortalSignin },
