@@ -8225,7 +8225,7 @@
                     "destination": {
                         "title": "Destination",
                         "type": "object",
-                        "description": "The object a submit of this form creates, in the same request (decision 179). `register` and `schema` name it. `subjectField` names the property that holds the signed-in resident's subject reference; `paymentField` the property the payment state is read from; `fields` maps a form field to a differently named property; `fixed` holds values every submit writes. A published binding must be valid against this schema.",
+                        "description": "The object a submit of this form creates, in the same request. A published binding must fit its schema.",
                         "properties": {
                             "register": {
                                 "type": "string",
@@ -8263,14 +8263,14 @@
                     "caseRegister": {
                         "title": "Case register",
                         "type": "string",
-                        "description": "The register the case created from this form lives in. Replaced by `destination` (decision 179); a repair step moves it there.",
+                        "description": "The register the case created from this form lives in.",
                         "example": "dossiq",
                         "deprecated": true
                     },
                     "caseSchema": {
                         "title": "Case schema",
                         "type": "string",
-                        "description": "The schema the case created from this form lives in. The background job creates the case here, through the ordinary anonymous contribution create. Replaced by `destination` (decision 179); a repair step moves it there.",
+                        "description": "The schema the case created from this form lives in. The background job creates the case here, through the ordinary anonymous contribution create.",
                         "example": "zaak",
                         "deprecated": true
                     },
@@ -8282,7 +8282,7 @@
                             "wooRequest"
                         ],
                         "default": "case",
-                        "description": "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed. Replaced by `destination` (decision 179); a repair step moves it there.",
+                        "description": "Where a submission goes. `case` creates an object in caseRegister and caseSchema. `wooRequest` hands it to opencatalogi's Woo intake, which mints the request reference and starts the statutory term; the form's fields are then named after the request's own fields (`requestedInformation`, `requesterName`, `requesterEmail`, `requesterPhone`, `requesterAddress`). Without opencatalogi a `wooRequest` submission is marked failed.",
                         "example": "wooRequest",
                         "deprecated": true
                     },

@@ -2969,7 +2969,17 @@ OC.L10N.register(
         "Withdraw account": "Account intrekken",
         "Account intrekken": "Account intrekken",
         "Portaliq": "Portaliq",
-        "Gemeente Zuiddrecht": "Gemeente Zuiddrecht"
+        "Gemeente Zuiddrecht": "Gemeente Zuiddrecht",
+        "Destination": "Bestemming",
+        "Field to property": "Veld naar eigenschap",
+        "Fixed values": "Vaste waarden",
+        "Payment state property": "Eigenschap met de betaalstatus",
+        "Subject property": "Eigenschap met de aanvrager",
+        "The object a submit of this form creates, in the same request. A published binding must fit its schema.": "Het object dat een verzending van dit formulier in hetzelfde verzoek aanmaakt. Een gepubliceerde koppeling moet in het schema ervan passen.",
+        "Received on %1$s.": "Ontvangen op %1$s.",
+        "The term starts on %1$s.": "De termijn begint op %1$s.",
+        "You can expect a decision by %1$s.": "U kunt uiterlijk %1$s een besluit verwachten.",
+        "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.": "Dit formulier kan niet worden gepubliceerd: de antwoorden passen niet waar ze heen gaan. Los de punten hieronder op, of sla het op als concept."
     },
     "nplurals=2; plural=(n != 1);"
 )
