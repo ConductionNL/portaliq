@@ -41,14 +41,49 @@ class FormSubmitFake {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function submit(array $destination, ?array $mapping, array $payload, mixed $subject = null, ?string $idempotencyKey = null, string $scope = '', ?string $draftId = null): array {
-		$this->calls[] = compact('destination', 'mapping', 'payload', 'subject', 'idempotencyKey', 'scope', 'draftId');
+	public function submit(array $destination, ?array $mapping, array $payload, mixed $subject = null, ?string $idempotencyKey = null, string $scope = '', ?string $draftId = null, mixed $owner = null): array {
+		$this->calls[] = compact('destination', 'mapping', 'payload', 'subject', 'idempotencyKey', 'scope', 'draftId', 'owner');
 		if ($this->outcome instanceof Throwable) {
 			throw $this->outcome;
 		}
 
 		return $this->outcome;
 	}//end submit()
+
+		/**
+	 * FormSubmitService::saveDraft's signature (decisions 180 and 195).
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function saveDraft(array $destination, ?array $mapping, array $payload, mixed $subject, ?string $draftId = null, string $scope = '', mixed $owner = null): array {
+		$this->calls[] = ['saveDraft' => true] + compact('destination', 'mapping', 'payload', 'subject', 'draftId', 'scope', 'owner');
+		if ($this->outcome instanceof Throwable) {
+			throw $this->outcome;
+		}
+
+		return $this->outcome;
+	}//end saveDraft()
+
+	/**
+	 * FormSubmitService::findDraft's signature: answers `$found`.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public function findDraft(array $destination, mixed $subject, mixed $owner = null, array $match = []): ?array {
+		$this->calls[] = ['findDraft' => true] + compact('destination', 'subject', 'owner', 'match');
+		if ($this->found instanceof Throwable) {
+			throw $this->found;
+		}
+
+		return $this->found;
+	}//end findDraft()
+
+	/**
+	 * What findDraft answers.
+	 *
+	 * @var array<string, mixed>|Throwable|null
+	 */
+	public array|Throwable|null $found = null;
 
 	/**
 	 * A container that hands out this fake as the submit service.
