@@ -2983,7 +2983,14 @@ OC.L10N.register(
         "Websites that may show the form": "Websites waarop het formulier mag staan",
         "On any other website the browser does not show the form.": "Op een andere website laat de browser het formulier niet zien.",
         "This form cannot be put on another website yet. Add the website addresses that may show it.": "Dit formulier kan nog niet op een andere website. Voeg de websites toe die het mogen tonen.",
-        "Could not load the code for this form. Try again.": "De code voor dit formulier kon niet worden geladen. Probeer het opnieuw."
+        "Could not load the code for this form. Try again.": "De code voor dit formulier kon niet worden geladen. Probeer het opnieuw.",
+        "Case types residents see": "Zaaktypen die inwoners zien",
+        "No domain yet.": "Nog geen domein.",
+        "Nothing to show yet.": "Nog niets om te tonen.",
+        "Last changed": "Laatst gewijzigd",
+        "Domain": "Domein",
+        "Domain and certificate": "Domein en certificaat",
+        "Status and last publication": "Status en laatste publicatie"
     },
     "nplurals=2; plural=(n != 1);"
 )

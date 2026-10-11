@@ -49,7 +49,9 @@ import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
+import PortalSettings from './widgets/PortalSettings.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
+import PortalSummaryCard from './widgets/PortalSummaryCard.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
@@ -249,6 +251,28 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "Who may make an account on the portal and the registrations waiting for approval (identity-staff-account-screens T07). Custom because the policy is saved inside the portal's authentication block and Approve and Refuse post the guarded account routes.",
+	},
+	// @custom-widget-ratchet exclude one tab that stacks five existing custom widgets (house style, case types, sign-in, registration, accessibility) in cards, because the tab strip takes one widget per tab and each part is itself a custom widget
+	PortalSettings: {
+		kind: 'widget',
+		component: PortalSettings,
+		defaultSize: { w: 12, h: 12 },
+		minSize: { w: 6, h: 6 },
+		maxSize: { w: 12, h: 24 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "The Instellingen tab of a portal: its house style, case types, sign-in, registration and accessibility in one stack (screens PtPortalInstellingen). Custom because each part is a custom widget and the tab strip takes one widget per tab.",
+	},
+	// @custom-widget-ratchet exclude a read-only summary of the portal record in the side column (domains, house style, status) with the portal's own computed values, which no built-in widget draws without a data source
+	PortalSummaryCard: {
+		kind: 'widget',
+		component: PortalSummaryCard,
+		defaultSize: { w: 4, h: 3 },
+		minSize: { w: 3, h: 2 },
+		maxSize: { w: 12, h: 6 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "A summary card on the portal page: content.kind is domain, theme or status. Reads the portal the page shows.",
 	},
 	// @custom-widget-ratchet exclude per provider a route choice, the broker settings and a write-only secret, saved through an admin controller that refuses a broker route whose settings are incomplete, which no built-in widget does
 	PortalSignin: {
