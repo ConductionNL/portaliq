@@ -46,22 +46,19 @@ export function validateDetails(form) {
 }
 
 /**
- * The portal object to save: the stored portal with the form's fields on top.
+ * What to send: only the fields the beheerder changed. OpenRegister merges a
+ * PATCH into the stored portal, so every field the form does not edit (domains,
+ * theme, tokens, traffic, bookkeeping) is never part of the request and cannot
+ * be lost by it.
  *
  * @param {object} portal The portal as the page loaded it.
  * @param {object} form The form values.
- * @return {object} The body to PUT.
+ * @return {object} The body to PATCH; empty when nothing changed.
  * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
  */
-export function portalBody(portal, form) {
-	const body = {}
-	for (const [key, value] of Object.entries(portal || {})) {
-		if (!key.startsWith('@')) {
-			body[key] = value
-		}
-	}
-	return {
-		...body,
+export function portalPatch(portal, form) {
+	const before = formFrom(portal)
+	const after = {
 		title: String(form.title).trim(),
 		tagline: String(form.tagline || '').trim(),
 		slug: form.slug,
@@ -73,6 +70,13 @@ export function portalBody(portal, form) {
 		logo: String(form.logo || '').trim(),
 		frameAncestors: [...(form.frameAncestors || [])],
 	}
+	const patch = {}
+	for (const [key, value] of Object.entries(after)) {
+		if (JSON.stringify(value) !== JSON.stringify(before[key])) {
+			patch[key] = value
+		}
+	}
+	return patch
 }
 
 /**

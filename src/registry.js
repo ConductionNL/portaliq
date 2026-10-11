@@ -272,7 +272,7 @@ export default {
 		maxSize: { w: 12, h: 6 },
 		allowedSlots: ['body'],
 		propsSchema: null,
-		_note: "A summary card on the portal page: content.kind is domain, theme or status. Reads the portal the page shows.",
+		_note: "A summary card on the portal page: content.kind is domain, theme, status or editors. Reads the portal the page shows.",
 	},
 	// @custom-widget-ratchet exclude per provider a route choice, the broker settings and a write-only secret, saved through an admin controller that refuses a broker route whose settings are incomplete, which no built-in widget does
 	PortalSignin: {

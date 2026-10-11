@@ -29,6 +29,7 @@
 
 <script>
 import { translate as t } from '@nextcloud/l10n'
+import { certificateEnd, initials } from '../lib/portalDomains.js'
 
 export default {
 	name: 'PortalSummaryCard',
@@ -40,7 +41,7 @@ export default {
 			default: null,
 		},
 
-		/** Which summary: `domain`, `theme` or `status`. */
+		/** Which summary: `domain`, `theme`, `status` or `editors`. */
 		content: {
 			type: Object,
 			default: () => ({}),
@@ -53,6 +54,7 @@ export default {
 				domain: t('portaliq', 'Domain and certificate'),
 				theme: t('portaliq', 'Theme'),
 				status: t('portaliq', 'Status and last publication'),
+				editors: t('portaliq', 'Administrators'),
 			}[this.kind] || ''
 		},
 
@@ -61,6 +63,9 @@ export default {
 		},
 
 		emptyText() {
+			if (this.kind === 'editors') {
+				return t('portaliq', 'Nobody listed yet.')
+			}
 			return this.kind === 'domain'
 				? t('portaliq', 'No domain yet.')
 				: t('portaliq', 'Nothing to show yet.')
@@ -91,10 +96,23 @@ export default {
 				}
 				return out
 			}
-			const out = (Array.isArray(o.domains) ? o.domains : [])
-				.map((d) => (typeof d === 'string' ? d : d?.hostname || ''))
-				.filter(Boolean)
-				.map((host) => ({ label: t('portaliq', 'Domain'), value: host }))
+			if (this.kind === 'editors') {
+				return (Array.isArray(o.editors) ? o.editors : [])
+					.filter((e) => e?.userId)
+					.map((e) => ({
+						label: e.role === 'chief-editor' ? t('portaliq', 'Chief editor') : t('portaliq', 'Editor'),
+						value: `${initials(e.displayName || e.userId)}  ${e.displayName || e.userId}`,
+					}))
+			}
+			const domains = (Array.isArray(o.domains) ? o.domains : [])
+				.map((d) => (typeof d === 'string' ? { hostname: d } : d))
+				.filter((d) => d?.hostname)
+			const first = domains.find((d) => d.verified === true) || domains[0]
+			const out = domains.map((d) => ({ label: t('portaliq', 'Domain'), value: d.hostname }))
+			const end = first ? certificateEnd(first, (d) => d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })) : null
+			if (end) {
+				out.push({ label: t('portaliq', 'Certificate'), value: t('portaliq', 'valid until {date}', { date: end }) })
+			}
 			if (Array.isArray(o.locales) && o.locales.length > 0) {
 				out.push({ label: t('portaliq', 'Language'), value: o.locales.join(', ') })
 			}

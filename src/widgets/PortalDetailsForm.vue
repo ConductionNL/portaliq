@@ -87,7 +87,7 @@ import {
 	HEADER_OPTIONS,
 	KIND_OPTIONS,
 	LOCALE_OPTIONS,
-	portalBody,
+	portalPatch,
 	validateDetails,
 } from '../lib/portalDetails.js'
 
@@ -166,10 +166,13 @@ export default {
 			this.saving = true
 			this.notice = ''
 			try {
-				await axios.put(
-					generateUrl(`/apps/openregister/api/objects/portaliq/portal/${id}`),
-					portalBody(this.objectData, this.form),
-				)
+				const patch = portalPatch(this.objectData, this.form)
+				if (Object.keys(patch).length > 0) {
+					await axios.patch(
+						generateUrl(`/apps/openregister/api/objects/portaliq/portal/${id}`),
+						patch,
+					)
+				}
 				this.noticeType = 'success'
 				this.notice = t('portaliq', 'The portal is saved.')
 			} catch {
