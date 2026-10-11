@@ -19,6 +19,7 @@ use OCA\Portaliq\Service\Cms\PortalDomainVerifier;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Http;
+use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -109,11 +110,13 @@ class PortalDomainVerifierTest extends TestCase {
 	public function testTheEndpointsAnswerInWords(): void {
 		$saved = [];
 		$row   = self::portal([['hostname' => 'portal.example.com', 'verificationToken' => 'tok']]);
-		$controller = new CmsDomainController('portaliq', $this->createMock(IRequest::class), $this->verifier([], $row, $saved));
+		$l10n       = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters=[]): string => vsprintf($text, $parameters));
+		$controller = new CmsDomainController('portaliq', $this->createMock(IRequest::class), $this->verifier([], $row, $saved), $l10n);
 
 		$this->assertSame('_portaliq-verify.portal.example.com', $controller->records('open-tilburg')->getData()['domains'][0]['name']);
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->records('nergens-x')->getStatus());
-		$this->assertSame(['status' => 'pending'], $controller->verify('open-tilburg', 'portal.example.com')->getData());
+		$this->assertSame(['status' => 'pending', 'message' => 'The record of portal.example.com is not there yet.'], $controller->verify('open-tilburg', 'portal.example.com')->getData());
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->verify('open-tilburg', 'evil.example')->getStatus());
 	}
 
