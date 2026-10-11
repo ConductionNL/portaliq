@@ -2871,7 +2871,8 @@
         "Received on %1$s.": "Received on %1$s.",
         "The term starts on %1$s.": "The term starts on %1$s.",
         "You can expect a decision by %1$s.": "You can expect a decision by %1$s.",
-        "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.": "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft."
+        "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.": "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.",
+        "This entry opens \"{form}\", but it cannot be published yet: {findings}": "This entry opens \"{form}\", but it cannot be published yet: {findings}"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

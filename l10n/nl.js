@@ -2979,7 +2979,8 @@ OC.L10N.register(
         "Received on %1$s.": "Ontvangen op %1$s.",
         "The term starts on %1$s.": "De termijn begint op %1$s.",
         "You can expect a decision by %1$s.": "U kunt uiterlijk %1$s een besluit verwachten.",
-        "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.": "Dit formulier kan niet worden gepubliceerd: de antwoorden passen niet waar ze heen gaan. Los de punten hieronder op, of sla het op als concept."
+        "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.": "Dit formulier kan niet worden gepubliceerd: de antwoorden passen niet waar ze heen gaan. Los de punten hieronder op, of sla het op als concept.",
+        "This entry opens \"{form}\", but it cannot be published yet: {findings}": "Deze ingang opent \"{form}\", maar kan nog niet worden gepubliceerd: {findings}"
     },
     "nplurals=2; plural=(n != 1);"
 )
