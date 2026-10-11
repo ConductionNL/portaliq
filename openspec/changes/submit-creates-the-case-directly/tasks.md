@@ -37,12 +37,17 @@
 
 ## 5. Drafts
 
-- [ ] 5.1 (waits on Q-portaliq-d179-1) "Save and carry on later" saves the destination object in status `draft` through OpenRegister (decision 180); a type-invalid answer is refused on its field, a missing required answer is allowed
+- [x] 5.1 "Save and carry on later" saves the destination object in status `draft` through OpenRegister (decision 180); a type-invalid answer is refused on its field, a missing required answer is allowed
+  - Built: `DestinationSubmit::saveDraft/findDraft/sendDraft/discardDraft` (owner `portal:<subjectRef>`, decision 195; discard through openregister#4591 `DraftDiscard`), `ActionDraft` (action, body, retention 30 days by default on read from `updatedAt`, decision 201), `PortalDraftController` on top. Tests: DestinationSubmitTest, ActionDraftTest, PortalDraftControllerTest.
   - Spec ref: specs/portal-intake-form/spec.md, REQ-PIFO-008
-  - Files: lib/Service/Intake/PortalDraftStore.php (replaced), lib/Controller/PortalIntakeController.php
-- [ ] 5.2 (waits on Q-portaliq-d179-1) Resume by account or resume link loads the draft object; sending moves it out of `draft` through `FormSubmitService`
-- [ ] 5.3 (waits on Q-portaliq-d179-1) Drain `portalDraft` into draft destination objects (a draft holding a type-invalid answer is reported, not converted); remove the schema at zero pending
-- [ ] 5.4 (waits on Q-portaliq-d179-1) Files on a draft: uploads attach to the draft object, so drafts stop dropping uploaded files
+  - Files: lib/Service/Intake/DestinationSubmit.php, lib/Service/Intake/ActionDraft.php, lib/Controller/PortalDraftController.php, lib/Controller/ContributionController.php
+- [x] 5.2 Resume by account loads the draft object; sending moves it out of `draft` through `FormSubmitService`
+  - Built: `ContributionController::createFrom` sends a live draft instead of writing a second object (ContributionControllerDraftSendTest). Resume link for a signed-out visitor: not offered, anonymous drafts wait on Q-openregister-F2.
+- [x] 5.3 Drain `portalDraft` into draft destination objects (a draft holding a type-invalid answer is reported, not converted)
+  - Built: `PortalDraftDrain` in `occ portaliq:intake:drain` (PortalDraftDrainTest, IntakeDrainTest). `journeyRun` was never built in portaliq, so there is nothing of it to drain.
+- [x] 5.4 Files on a draft: uploads attach to the draft object, so drafts stop dropping uploaded files
+  - Built: `SchemaForm.saveDraft` uploads picked files into the draft id through the existing upload route; the site shows the draft as "Voorlopig" (decision 200). Test: tests/site-form-drafts.spec.mjs.
+- [ ] 5.5 (live pass, decision 139) When the drain reports zero drafts waiting: remove `portalDraft`, `PortalDraftStore`, `PortalDraftPurgeJob` (and its `info.xml` entry)
 
 ## 6. Amend the open changes this touches
 

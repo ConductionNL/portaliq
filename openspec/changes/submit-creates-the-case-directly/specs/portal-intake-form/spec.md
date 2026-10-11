@@ -21,7 +21,7 @@ A `portalFormBinding` SHALL store `destination { register, schema }`, and MAY na
 
 ### Requirement: A saved form is a draft of its destination object (REQ-PIFO-008)
 
-"Save and carry on later" SHALL save the destination object with OpenRegister metadata status `draft` (decision 180). The draft MAY miss required answers. It SHALL NOT hold a type-invalid answer; such an answer SHALL be refused on its field. Sending SHALL move the object out of `draft` through OpenRegister's submit service, with full validation; only then SHALL it get its reference and received moment. portaliq SHALL keep no draft store of its own.
+"Save and carry on later" SHALL save the destination object with OpenRegister metadata status `draft` (decision 180). The draft MAY miss required answers. It SHALL NOT hold a type-invalid answer; such an answer SHALL be refused on its field. Sending SHALL move the object out of `draft` through OpenRegister's submit service, with full validation; only then SHALL it get its reference and received moment. portaliq SHALL keep no draft store of its own. The draft's owner SHALL be `portal:<subjectRef>` (decision 195): only that signed-in resident reads, saves, sends or discards it. A draft SHALL read as gone, and be discarded, once the action's retention has passed since its last change (`updatedAt`): `draft.retentionDays`, 30 days by default (decision 201). Picked files SHALL be uploaded into the draft object. The site SHALL label a saved draft "Voorlopig" (decision 200).
 
 #### Scenario: A resident saves half a form
 - **GIVEN** a form into a dossiq case type whose description is required
@@ -38,6 +38,21 @@ A `portalFormBinding` SHALL store `destination { register, schema }`, and MAY na
 - **GIVEN** a saved draft that now holds every required answer
 - **WHEN** the resident sends it
 - **THEN** the case leaves `draft`, and the confirmation names its reference, received moment, term start and deadline
+
+#### Scenario: A draft past its retention is gone
+- GIVEN a draft last changed 31 days ago on an action without its own retention
+- WHEN the resident opens the form
+- THEN no draft is offered and the draft object is discarded
+
+#### Scenario: Someone else's draft stays out of reach
+- GIVEN a draft owned by `portal:sanne`
+- WHEN another resident saves, reads or sends the same form
+- THEN they see no draft and Sanne's draft is unchanged
+
+#### Scenario: A file picked before saving stays with the draft
+- GIVEN a resident picked a file and saved the form as a draft
+- WHEN she sends the form later
+- THEN the file is on the case and is not uploaded twice
 
 ## RENAMED Requirements
 
