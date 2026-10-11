@@ -2948,10 +2948,6 @@
         "_note": "Which form each portal entry opens (portal-intake-form-as-an-object T03). The row shows the binding as configured, which reads the same whether its form is published or not; Check form asks FormBindingAdminController for the form it resolves to today. See src/lib/formBindingPreview.js.",
         "columns": [
           {
-            "key": "formName",
-            "label": "Form"
-          },
-          {
             "key": "portal",
             "label": "Portal"
           },
@@ -2964,8 +2960,12 @@
             "label": "Audience"
           },
           {
+            "key": "formName",
+            "label": "Form"
+          },
+          {
             "key": "intakeKind",
-            "label": "Kind"
+            "label": "Intake kind"
           },
           {
             "key": "status",
@@ -2990,11 +2990,15 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} request forms",
+        "countText": "{shown} of {total} entries on the portals · which form each entry opens, for whom",
         "headerButtons": [
           {
             "action": "export",
             "label": "Download"
+          },
+          {
+            "action": "add",
+            "label": "Link a form"
           }
         ],
         "quickFilters": [
@@ -4012,7 +4016,7 @@
         "Receipt": "Ontvangstbevestiging",
         "{shown} of {total} request forms": "{shown} van {total} aanvraagformulieren",
         "Form": "Formulier",
-        "Route": "Pad",
+        "Route": "Route",
         "Kind": "Soort",
         "Issue an account": "Account uitgeven",
         "Invite someone": "Iemand uitnodigen",
@@ -4082,7 +4086,10 @@
         "Availability": "Beschikbaarheid",
         "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.": "Hoe beschikbaar elke portal was over de laatste twaalf volle maanden, met elke storing · voor een overleg over het serviceniveau",
         "Visible from": "Zichtbaar van",
-        "Until": "Tot"
+        "Until": "Tot",
+        "Intake kind": "Soort intake",
+        "{shown} of {total} entries on the portals · which form each entry opens, for whom": "{shown} van {total} ingangen op de portals · welk formulier elke ingang opent, voor wie",
+        "Link a form": "Formulier koppelen"
       }
     }
   }
