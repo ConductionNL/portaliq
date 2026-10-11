@@ -13,10 +13,22 @@
 
 import { compileScript, compileTemplate, parse } from '@vue/compiler-sfc'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import * as nodeModule from 'node:module'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { resolve as stubResolve } from './nextcloud-stub-hooks.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
+
+// The public bundles' stub for the Nextcloud client packages (nextcloud-stub-hooks.mjs).
+// registerHooks is node 22.15+; package.json allows 22.14, which gets the slower
+// off-thread loader instead.
+if (nodeModule.registerHooks) {
+	nodeModule.registerHooks({ resolve: stubResolve })
+} else {
+	nodeModule.register('./nextcloud-stub-hooks.mjs', import.meta.url)
+}
+
 // Inside the repository so the compiled modules resolve `vue` from node_modules.
 const OUT = join(ROOT, 'node_modules', '.cache', 'mount-sfc')
 
