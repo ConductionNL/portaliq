@@ -7,7 +7,12 @@
 
 ### Requirement: A form binding names its destination and is valid against it (REQ-PIFO-007)
 
-A `portalFormBinding` SHALL store `destination { register, schema }`. Saving or publishing a binding SHALL run OpenRegister's form destination validator over the bound form. A binding with findings SHALL NOT be saved or published, from the first release (decision 181).
+A `portalFormBinding` SHALL store `destination { register, schema }`, and MAY name `subjectField` (the property that holds the signed-in resident's subject reference), `paymentField` (the property the payment state is read from), `fields` (a form field written into a differently named property) and `fixed` (values every submit writes). Saving or publishing a binding SHALL run OpenRegister's form destination validator over the bound form. A binding with findings SHALL NOT be published, from the first release (decision 181); a binding in `draft` MAY be saved with its findings, which the preview shows (decision 189).
+
+#### Scenario: A draft binding saves with its findings
+- **GIVEN** a binding in status `draft` whose form misses a required property of its destination
+- **WHEN** an administrator saves it
+- **THEN** it is saved, and the preview names the finding
 
 #### Scenario: A binding to a case type missing a required field is refused
 - **GIVEN** a form that does not ask for `communicationChannel`, bound to a case type requiring it before creation
@@ -77,6 +82,13 @@ A valid submission SHALL create the case in the same request. The confirmation S
 - **WHEN** it is posted
 - **THEN** the confirmation shows the case number, the received moment, the term start and the deadline from the response
 - e2e: `tests/e2e/portal-intake-form-as-an-object.spec.ts`
+
+#### Scenario: A case number alone does not open the reference page
+- **GIVEN** a case created by a submit, with a case number that counts up
+- **WHEN** someone who is not the signed-in subject on that case asks the reference page for that number
+- **THEN** the page answers that the reference is not found
+- **AND** an earlier `AANVRAAG-` or `WOO-` reference, copied to `externalReference` by the drain, still finds the case for anyone who holds it
+- @e2e exclude Lookup rule; covered by PHPUnit (DestinationLookupTest)
 
 #### Scenario: The citizen is not held on the page
 - **GIVEN** a valid submission
