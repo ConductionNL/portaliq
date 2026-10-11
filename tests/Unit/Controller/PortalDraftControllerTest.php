@@ -4,66 +4,215 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalDraftController;
-use OCA\Portaliq\Service\Intake\PortalDraftStore;
+use OCA\Portaliq\Service\Intake\ActionDraft;
+use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerSubmit;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
- * site-multi-step-forms T8 (REQ-SMF-021): the draft routes take the subject
- * from the bearer only, so one resident never reads or deletes another's.
+ * site-multi-step-forms T8 and submit-creates-the-case-directly 5.1/5.2: the
+ * draft routes take the subject from the bearer only, resolve the subject's
+ * own create action, and keep the draft in OpenRegister as the destination
+ * object in status draft, owned by portal:<subjectRef>. portaliq writes no
+ * draft object of its own.
  *
  * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+ * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
  */
 #[CoversClass(PortalDraftController::class)]
-#[UsesClass(\OCA\Portaliq\Service\Intake\PortalDraftStore::class)]
+#[UsesClass(ActionDraft::class)]
+#[UsesClass(\OCA\Portaliq\Service\Intake\DestinationSubmit::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\ActionScopeResolver::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\CreateBody::class)]
+#[UsesClass(PortalSessionService::class)]
 class PortalDraftControllerTest extends TestCase {
-	use PortalIdentityStoreTrait;
 
-	protected function setUp(): void {
-		$this->rows = [];
-	}//end setUp()
+	private const ACTION = [
+		'id' => 'request',
+		'type' => 'create',
+		'register' => 'dossiq',
+		'schema' => 'case',
+		'fields' => ['title', 'preferredDate'],
+		'defaults' => ['caseType' => 'ct-1'],
+		'draft' => ['retentionDays' => 14],
+	];
 
-	public function testADraftIsOnlyItsOwnersToRead(): void {
-		$this->controller('sanne')->save('dossiq', 'woo', ['a' => '1'], 'step-2', 30);
+	private FormSubmitFake $fake;
 
-		$this->assertSame(Http::STATUS_OK, $this->controller('sanne')->show('dossiq', 'woo')->getStatus());
-		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller('ahmed')->show('dossiq', 'woo')->getStatus());
-	}//end testADraftIsOnlyItsOwnersToRead()
+	/**
+	 * Draft ids OpenRegister was asked to discard.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $discarded = [];
+
+	public function testSavingStartsADraftOfTheDestinationOwnedByThePortalSubject(): void {
+		$controller        = $this->controller(subjectRef: 'sanne', outcome: ['id' => 'd-1', 'status' => 'draft']);
+		$response          = $controller->save('dossiq', 'request', ['title' => 'Half', 'other' => 'x']);
+		$data              = $response->getData();
+		$save              = $this->call('saveDraft');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('d-1', $data['id']);
+		$this->assertSame('draft', $data['status']);
+		$this->assertSame(['title' => 'Half'], $data['answers']);
+		$this->assertNotSame('', $data['expiresAt']);
+		$this->assertSame(['register' => 'dossiq', 'schema' => 'case'], $save['destination']);
+		$this->assertSame(['title' => 'Half', 'caseType' => 'ct-1', 'subjectRef' => 'sanne'], $save['payload']);
+		$this->assertNull($save['draftId']);
+		$this->assertSame('portal:sanne', $save['owner']->value);
+		$this->assertSame('dossiq/request', $save['scope']);
+	}//end testSavingStartsADraftOfTheDestinationOwnedByThePortalSubject()
+
+	public function testSavingAgainUpdatesTheLiveDraft(): void {
+		$controller = $this->controller(subjectRef: 'sanne', outcome: ['id' => 'd-1'], found: $this->live());
+		$controller->save('dossiq', 'request', ['title' => 'Whole']);
+
+		$this->assertSame('d-1', $this->call('saveDraft')['draftId']);
+	}//end testSavingAgainUpdatesTheLiveDraft()
+
+	public function testATypeInvalidAnswerIsRefusedOnItsField(): void {
+		$controller = $this->controller(
+			subjectRef: 'sanne',
+			outcome: FormSubmitFake::refusal(status: 422, findings: [['property' => 'preferredDate', 'code' => 'format-mismatch', 'message' => 'Fill in a date.']])
+		);
+		$response = $controller->save('dossiq', 'request', ['preferredDate' => '0612345678']);
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame(['preferredDate' => 'Fill in a date.'], $response->getData()['errors']);
+	}//end testATypeInvalidAnswerIsRefusedOnItsField()
+
+	public function testShowAnswersTheLiveDraftsAnswersAndExpiry(): void {
+		$response = $this->controller(subjectRef: 'sanne', found: $this->live())->show('dossiq', 'request');
+		$data     = $response->getData();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['title' => 'Half'], $data['answers']);
+		$this->assertSame('d-1', $data['id']);
+		$this->assertSame('portal:sanne', $this->call('findDraft')['owner']->value);
+		$this->assertSame(['caseType' => 'ct-1'], $this->call('findDraft')['match']);
+	}//end testShowAnswersTheLiveDraftsAnswersAndExpiry()
+
+	public function testADraftPastItsRetentionIsNotShownAndIsDiscarded(): void {
+		$old      = ['id' => 'd-old', 'status' => 'draft', 'data' => ['title' => 'Old'], 'updatedAt' => '2026-01-01T00:00:00+00:00'];
+		$response = $this->controller(subjectRef: 'sanne', found: $old)->show('dossiq', 'request');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['d-old'], $this->discarded);
+	}//end testADraftPastItsRetentionIsNotShownAndIsDiscarded()
+
+	public function testNoDraftAndAnUnknownActionAreNotFound(): void {
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(subjectRef: 'sanne')->show('dossiq', 'request')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(subjectRef: 'sanne')->show('dossiq', 'unknown')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(subjectRef: 'sanne')->save('other', 'request', [])->getStatus());
+		$this->assertSame([], $this->fake->calls);
+	}//end testNoDraftAndAnUnknownActionAreNotFound()
+
+	public function testAnUnresolvedScopeClaimIsForbidden(): void {
+		$controller = $this->controller(subjectRef: 'sanne', action: self::ACTION + ['scopeClaim' => 'missing']);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->save('dossiq', 'request', ['title' => 'x'])->getStatus());
+		$this->assertSame([], $this->fake->calls);
+	}//end testAnUnresolvedScopeClaimIsForbidden()
+
+	public function testDiscardRemovesOnlyTheLiveDraft(): void {
+		$this->assertSame(['deleted' => true], $this->controller(subjectRef: 'sanne', found: $this->live())->discard('dossiq', 'request')->getData());
+		$this->assertSame(['d-1'], $this->discarded);
+
+		$this->assertSame(['deleted' => false], $this->controller(subjectRef: 'sanne')->discard('dossiq', 'request')->getData());
+		$this->assertSame(['deleted' => false], $this->controller(subjectRef: 'sanne')->discard('dossiq', 'unknown')->getData());
+	}//end testDiscardRemovesOnlyTheLiveDraft()
 
 	public function testSignedOutIsRefusedOnEveryRoute(): void {
-		$controller = $this->controller('');
+		$controller = $this->controller(subjectRef: '');
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->show('dossiq', 'woo')->getStatus());
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->save('dossiq', 'woo', [], '', 30)->getStatus());
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->discard('dossiq', 'woo')->getStatus());
-		$this->assertSame([], $this->storedRows('portalDraft'));
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->show('dossiq', 'request')->getStatus());
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->save('dossiq', 'request', [])->getStatus());
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->discard('dossiq', 'request')->getStatus());
+		$this->assertSame([], $this->fake->calls);
 	}//end testSignedOutIsRefusedOnEveryRoute()
 
-	public function testSendingDeletesTheDraft(): void {
-		$this->controller('sanne')->save('dossiq', 'woo', ['a' => '1'], 'step-2', 30);
-		$this->controller('ahmed')->discard('dossiq', 'woo');
-		$this->assertCount(1, $this->storedRows('portalDraft'));
+	/**
+	 * A draft changed a moment ago.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function live(): array {
+		return ['id' => 'd-1', 'status' => 'draft', 'data' => ['title' => 'Half', 'caseType' => 'ct-1', 'subjectRef' => 'sanne'], 'updatedAt' => (new \DateTimeImmutable())->format(DATE_ATOM)];
+	}//end live()
 
-		$this->controller('sanne')->discard('dossiq', 'woo');
-		$this->assertSame([], $this->storedRows('portalDraft'));
-	}//end testSendingDeletesTheDraft()
+	/**
+	 * The first call of a kind the fake recorded.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function call(string $kind): array {
+		foreach ($this->fake->calls as $call) {
+			if (isset($call[$kind]) === true) {
+				return $call;
+			}
+		}
 
-	private function controller(string $subjectRef): PortalDraftController {
+		$this->fail('No ' . $kind . ' call.');
+	}//end call()
+
+	/**
+	 * The controller over a fake OpenRegister.
+	 *
+	 * @param array<string, mixed>|\Throwable $outcome What saveDraft answers.
+	 * @param array<string, mixed>|null       $found   What findDraft answers.
+	 * @param array<string, mixed>            $action  The subject's create action.
+	 */
+	private function controller(string $subjectRef, array|\Throwable $outcome = [], ?array $found = null, array $action = self::ACTION): PortalDraftController {
 		$session = $this->getMockBuilder(PortalSessionService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
 			->getMock();
-		$session->method('resolveFromBearer')->willReturn($subjectRef === '' ? null : ['subjectRef' => $subjectRef]);
+		$session->method('resolveFromBearer')->willReturn($subjectRef === '' ? null : ['subjectRef' => $subjectRef, 'trust' => 'low']);
 
-		$request = $this->createMock(IRequest::class);
-		$store = new PortalDraftStore($this->fakeReader(), $this->fakeWriter());
+		$registry = $this->createMock(PortalContributionRegistry::class);
+		$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'dossiq', 'actions' => [$action]]]]);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturnCallback(
+			static fn (string $scopeClaim, string $contributingApp, array $subject): ?string => ($scopeClaim === 'missing' ? null : (string)($subject['subjectRef'] ?? ''))
+		);
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('stamp')->willReturnCallback(
+			static fn (string $schema, string $scopeField, string $subjectRef, string $organisation, array $data): array => array_merge($data, [$scopeField => $subjectRef])
+		);
 
-		return new PortalDraftController($request, $session, $store);
+		$this->fake        = new FormSubmitFake(outcome: $outcome);
+		$this->fake->found = $found;
+		$this->discarded   = [];
+		$discard           = new class($this->discarded) {
+			public function __construct(private array &$discarded) {
+			}
+
+			public function discard(array $destination, string $draftId, object $owner): bool {
+				$this->discarded[] = $draftId;
+				return true;
+			}
+		};
+		$drafts = new PortalOwnerSubmit(
+			$this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $discard]),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		return new PortalDraftController(
+			$this->createMock(IRequest::class),
+			$session,
+			new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts),
+			$drafts
+		);
 	}//end controller()
 }//end class

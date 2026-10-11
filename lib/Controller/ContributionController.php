@@ -56,6 +56,8 @@ use OCA\Portaliq\Contribution\PageChoice;
 use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Http\PdfDownloadResponse;
+use OCA\Portaliq\Service\Intake\ActionDraft;
+use OCA\Portaliq\Service\Intake\DestinationSubmit;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
@@ -185,6 +187,11 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                  OpenRegister (cases-export-own-data-pdf). Absent offers no export.
 	 * @param PortalRateLimit|null $rateLimit Limits a portal session per subject and a call
 	 *                                        without one per IP (portal-subject-rate-limit).
+
+	 * @param ActionDraft|null $drafts Finds the subject's live draft of a create action, which a
+	 *                                 create then sends instead of writing a new object (decision 180).
+	 *                                 Absent writes a new object as before.
+	 * @param DestinationSubmit|null $destinations Sends that draft through OpenRegister's submit service.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -212,6 +219,8 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?ContactConfirmationMailer $confirmation = null,
 		private readonly ?PortalPdfExport $pdf = null,
 		private readonly ?PortalRateLimit $rateLimit = null,
+		private readonly ?ActionDraft $drafts = null,
+		private readonly ?DestinationSubmit $destinations = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -1523,16 +1532,25 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$created = $this->writer->createObject(
+		// Change signin-eherkenning-branch D2: a case filed in a branch session
+		// lands on that branch.
+		$branched = $this->branches->stamp(subject: $subject, action: $action, data: $data);
+
+		// A saved draft of this action is the object itself, in status draft:
+		// sending it moves it out of draft instead of writing a second object.
+		$sent = $this->sendLiveDraft(subject: $subject, action: $action, stamp: $stamp, data: $branched);
+		if ($sent instanceof JSONResponse) {
+			return $sent;
+		}
+
+		$created = ($sent ?? $this->writer->createObject(
 			register: $register,
 			schema: $schema,
 			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
 			subjectRef: $stamp,
 			organisation: (string)($subject['organisation'] ?? ''),
-			// Change signin-eherkenning-branch D2: a case filed in a branch session
-			// lands on that branch.
-			data: $this->branches->stamp(subject: $subject, action: $action, data: $data)
-		);
+			data: $branched
+		));
 
 		if ($created === null) {
 			// A value the store refused names its field (site-action-forms).
@@ -1569,6 +1587,56 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['object' => $created]);
 	}//end createFrom()
+
+	/**
+	 * Send the subject's live draft of a create action, when there is one.
+	 *
+	 * The draft is the destination object in status `draft` (decision 180),
+	 * owned by `portal:<subjectRef>` (decision 195). Sending it runs
+	 * OpenRegister's full validation and stamps its reference; only then
+	 * does it count as received. The body carries the same stamps a new
+	 * object would.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $action  The matched create action.
+	 * @param string               $stamp   The scope stamp.
+	 * @param array<string, mixed> $data    The body a create would write.
+	 *
+	 * @return array<string, mixed>|JSONResponse|null The sent object; the refusal; or null when there is no draft.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+	 */
+	private function sendLiveDraft(array $subject, array $action, string $stamp, array $data): array|JSONResponse|null {
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$draft      = $this->drafts?->find(action: $action, subjectRef: $subjectRef);
+		if ($draft === null || $this->destinations === null) {
+			return null;
+		}
+
+		$payload = $this->writer->stamp(
+			schema: (string)($action['schema'] ?? ''),
+			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+			subjectRef: $stamp,
+			organisation: (string)($subject['organisation'] ?? ''),
+			data: $data
+		);
+		$sent    = $this->destinations->sendDraft(
+			destination: ActionDraft::destinationOf(action: $action),
+			payload: $payload,
+			subjectRef: $subjectRef,
+			draftId: (string)$draft['id'],
+			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
+		);
+		if ($sent['ok'] === false) {
+			return new JSONResponse(['error' => 'invalid', 'errors' => ActionDraft::errorsOf(findings: $sent['findings'])], $sent['status']);
+		}
+
+		$id = (string)($sent['answer']['id'] ?? $draft['id']);
+		return array_merge(
+			$payload,
+			['id' => $id, 'uuid' => $id, 'reference' => ($sent['answer']['reference'] ?? null), 'receivedAt' => ($sent['answer']['receivedAt'] ?? null)]
+		);
+	}//end sendLiveDraft()
 
 
 	/**

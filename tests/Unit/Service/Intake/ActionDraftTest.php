@@ -11,6 +11,7 @@ use OCA\Portaliq\Service\Intake\DestinationSubmit;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerSubmit;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -67,10 +68,9 @@ class ActionDraftTest extends TestCase {
 				return true;
 			}
 		};
-		$submit = new DestinationSubmit(
+		$submit = new PortalOwnerSubmit(
 			$this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]),
-			$this->createMock(LoggerInterface::class),
-			static fn (string $subjectRef): ?object => (object)['value' => 'portal:' . $subjectRef]
+			$this->createMock(LoggerInterface::class)
 		);
 
 		return new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $submit);
@@ -150,4 +150,15 @@ class ActionDraftTest extends TestCase {
 		$this->assertSame(90, ActionDraft::retentionDays(action: ['draft' => ['retentionDays' => 400]]));
 		$this->assertSame('2026-10-31T00:00:00+00:00', ActionDraft::expiresAt(action: [], updatedAt: '2026-10-01T00:00:00+00:00')?->format(DATE_ATOM));
 	}//end testRetentionIsTheActionsWithinOneToNinetyElseThirty()
+	public function testFindingsAreFiledUnderTheFieldOfTheirProperty(): void {
+		$this->assertSame(
+			['preferredDate' => 'Not a date.', 'address' => 'No street.', '_form' => 'Try again.'],
+			ActionDraft::errorsOf(findings: [
+				['property' => 'preferredDate', 'message' => 'Not a date.'],
+				['property' => 'address.street', 'message' => 'No street.'],
+				['property' => '/address/number', 'message' => 'Second.'],
+				['property' => '', 'message' => 'Try again.'],
+			])
+		);
+	}//end testFindingsAreFiledUnderTheFieldOfTheirProperty()
 }//end class

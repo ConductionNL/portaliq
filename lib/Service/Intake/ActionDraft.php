@@ -271,6 +271,32 @@ class ActionDraft {
 	}//end matchOf()
 
 	/**
+	 * A refusal's findings per field, for the form: a create action's field is its property.
+	 *
+	 * @param array<int, array<string, mixed>> $findings The destination's findings.
+	 *
+	 * @return array<string, string> The first message per field; '_form' for a finding without a property.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+	 */
+	public static function errorsOf(array $findings): array {
+		$errors = [];
+		foreach ($findings as $finding) {
+			$parts = explode('.', str_replace('/', '.', trim((string)($finding['property'] ?? ''), './')));
+			$field = $parts[0];
+			if ($field === '') {
+				$field = '_form';
+			}
+
+			if (isset($errors[$field]) === false) {
+				$errors[$field] = (string)($finding['message'] ?? '');
+			}
+		}
+
+		return $errors;
+	}//end errorsOf()
+
+	/**
 	 * Whether the action can hold a draft for this subject.
 	 *
 	 * @param array<string, mixed> $action  The action.

@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\Intake\DestinationSubmit;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerSubmit;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -128,10 +129,9 @@ class DestinationSubmitTest extends TestCase {
 	 * A draft service with an owner built from the subject reference, as `portal:<ref>`.
 	 */
 	private function drafts(FormSubmitFake $fake, array $more = [], ?LoggerInterface $logger = null): DestinationSubmit {
-		return new DestinationSubmit(
+		return new PortalOwnerSubmit(
 			$fake->container($more),
-			$logger ?? $this->createMock(LoggerInterface::class),
-			static fn (string $subjectRef): ?object => $subjectRef === '' ? null : (object)['value' => 'portal:' . $subjectRef]
+			$logger ?? $this->createMock(LoggerInterface::class)
 		);
 	}//end drafts()
 

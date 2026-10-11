@@ -67,43 +67,15 @@ class DestinationSubmit {
 	private const DRAFT_OWNER = 'OCA\\OpenRegister\\Service\\Object\\DraftOwner';
 
 	/**
-	 * Builds the draft owner from a subject reference; null when it cannot.
-	 *
-	 * @var \Closure(string): ?object
-	 */
-	private readonly \Closure $ownerOf;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param ContainerInterface                  $container Resolves OpenRegister's services.
-	 * @param LoggerInterface                     $logger    Records why a destination could not be reached.
-	 * @param (\Closure(string): ?object)|null    $ownerOf   Builds a draft owner from a subject reference;
-	 *                                                       absent uses OpenRegister's `DraftOwner::portalSubject`.
+	 * @param ContainerInterface $container Resolves OpenRegister's services.
+	 * @param LoggerInterface    $logger    Records why a destination could not be reached.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
-		?\Closure $ownerOf = null,
 	) {
-		$this->ownerOf = ($ownerOf ?? static function (string $subjectRef): ?object {
-			$factory = [self::DRAFT_OWNER, 'portalSubject'];
-			if ($subjectRef === '' || is_callable($factory) === false) {
-				return null;
-			}
-
-			try {
-				$owner = $factory($subjectRef);
-			} catch (Throwable) {
-				return null;
-			}
-
-			if (is_object($owner) === false) {
-				return null;
-			}
-
-			return $owner;
-		});
 	}//end __construct()
 
 	/**
@@ -178,7 +150,7 @@ class DestinationSubmit {
 	 */
 	public function saveDraft(array $destination, array $payload, string $subjectRef, string $draftId = '', string $scope = ''): array {
 		$service = $this->resolve(name: self::SUBMIT_SERVICE);
-		$owner   = ($this->ownerOf)($subjectRef);
+		$owner   = $this->ownerOf(subjectRef: $subjectRef);
 		if ($service === null || $owner === null) {
 			return $this->refusal(status: 503, message: 'The destination cannot be reached.', findings: []);
 		}
@@ -217,7 +189,7 @@ class DestinationSubmit {
 	 */
 	public function findDraft(array $destination, string $subjectRef, array $match = []): ?array {
 		$service = $this->resolve(name: self::SUBMIT_SERVICE);
-		$owner   = ($this->ownerOf)($subjectRef);
+		$owner   = $this->ownerOf(subjectRef: $subjectRef);
 		if ($service === null || $owner === null) {
 			return null;
 		}
@@ -251,7 +223,7 @@ class DestinationSubmit {
 	 */
 	public function sendDraft(array $destination, array $payload, string $subjectRef, string $draftId, string $idempotencyKey = ''): array {
 		$service = $this->resolve(name: self::SUBMIT_SERVICE);
-		$owner   = ($this->ownerOf)($subjectRef);
+		$owner   = $this->ownerOf(subjectRef: $subjectRef);
 		if ($service === null || $owner === null || $draftId === '') {
 			return $this->refusal(status: 503, message: 'The destination cannot be reached.', findings: []);
 		}
@@ -290,7 +262,7 @@ class DestinationSubmit {
 	 */
 	public function discardDraft(array $destination, string $subjectRef, string $draftId): bool {
 		$discard = $this->resolve(name: self::DRAFT_DISCARD);
-		$owner   = ($this->ownerOf)($subjectRef);
+		$owner   = $this->ownerOf(subjectRef: $subjectRef);
 		if ($discard === null || $owner === null || $draftId === '') {
 			return false;
 		}
@@ -302,6 +274,35 @@ class DestinationSubmit {
 			return false;
 		}
 	}//end discardDraft()
+
+	/**
+	 * The draft owner for a portal subject: OpenRegister's `portal:<subjectRef>`, or null.
+	 *
+	 * Null when the reference is empty or does not fit an owner, or when
+	 * OpenRegister is not installed; every draft call then refuses.
+	 *
+	 * @param string $subjectRef The signed-in subject.
+	 *
+	 * @return object|null The owner.
+	 */
+	protected function ownerOf(string $subjectRef): ?object {
+		$factory = [self::DRAFT_OWNER, 'portalSubject'];
+		if ($subjectRef === '' || is_callable($factory) === false) {
+			return null;
+		}
+
+		try {
+			$owner = $factory($subjectRef);
+		} catch (Throwable) {
+			return null;
+		}
+
+		if (is_object($owner) === false) {
+			return null;
+		}
+
+		return $owner;
+	}//end ownerOf()
 
 	/**
 	 * A value, or null for ''.
