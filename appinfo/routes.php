@@ -68,6 +68,7 @@ return [
         ['name' => 'mailTemplateAdmin#test', 'url' => '/api/mail-templates/test', 'verb' => 'POST'],
         ['name' => 'mailTemplateAdmin#resend', 'url' => '/api/mail-log/{id}/resend', 'verb' => 'POST'],
         ['name' => 'formBindingAdmin#preview', 'url' => '/api/form-bindings/preview', 'verb' => 'POST'],
+        ['name' => 'formBindingAdmin#embedSnippet', 'url' => '/api/form-bindings/embed-snippet', 'verb' => 'POST'],
         // A portal's "Case types" page: which case types residents see
         // (operate-show-per-case-type). Admin-only.
         ['name' => 'portalCaseTypes#index', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'GET'],
