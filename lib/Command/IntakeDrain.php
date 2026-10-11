@@ -45,7 +45,8 @@ class IntakeDrain extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param IntakeQueueDrain $drain Does the work.
+	 * @param IntakeQueueDrain      $drain  Does the work.
+	 * @param PortalDraftDrain|null $drafts Moves saved `portalDraft` rows into OpenRegister drafts (task 5.3).
 	 */
 	public function __construct(
 		private readonly IntakeQueueDrain $drain,
@@ -63,7 +64,9 @@ class IntakeDrain extends Command {
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:intake:drain');
-		$this->setDescription(description: 'Send the requests still waiting in the old intake queue into their destination, and move saved drafts into their destination as drafts');
+		$this->setDescription(
+			description: 'Send the requests still waiting in the old intake queue into their destination, and move saved drafts there as drafts'
+		);
 		$this->addOption(
 			name: 'limit',
 			mode: InputOption::VALUE_REQUIRED,

@@ -56,13 +56,13 @@ class PortalDraftDrain {
 	 * @param PortalObjectReader $reader  Reads the rows.
 	 * @param PortalObjectWriter $writer  Deletes a drained row.
 	 * @param ActionDraft        $actions Resolves the row's action and the draft body.
-	 * @param DestinationSubmit  $drafts  Saves the OpenRegister draft.
+	 * @param DestinationDraft   $drafts  Saves the OpenRegister draft.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ActionDraft $actions,
-		private readonly DestinationSubmit $drafts,
+		private readonly DestinationDraft $drafts,
 	) {
 	}//end __construct()
 
@@ -140,13 +140,13 @@ class PortalDraftDrain {
 
 		$existing = $this->actions->find(action: $match['action'], subjectRef: $subjectRef, now: $now);
 		$saved    = $this->drafts->saveDraft(
-			destination: ActionDraft::destinationOf(action: $match['action']),
+			destination: $this->actions->destinationOf(action: $match['action']),
 			payload: $body,
 			subjectRef: $subjectRef,
 			draftId: (string)($existing['id'] ?? '')
 		);
 		if ($saved['ok'] === false) {
-			return 'the destination refused it (' . $saved['status'] . '): ' . implode('; ', ActionDraft::errorsOf(findings: $saved['findings']));
+			return 'the destination refused it (' . $saved['status'] . '): ' . implode('; ', $this->drafts->errorsOf(findings: $saved['findings']));
 		}
 
 		return $this->remove(row: $row, outcome: 'converted');

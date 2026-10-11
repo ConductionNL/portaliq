@@ -11,7 +11,8 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
-use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerSubmit;
+use OCA\Portaliq\Service\Intake\DestinationSubmit;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -31,6 +32,7 @@ use Psr\Log\LoggerInterface;
  */
 #[CoversClass(PortalDraftController::class)]
 #[UsesClass(ActionDraft::class)]
+#[UsesClass(\OCA\Portaliq\Service\Intake\DestinationDraft::class)]
 #[UsesClass(\OCA\Portaliq\Service\Intake\DestinationSubmit::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\ActionScopeResolver::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\CreateBody::class)]
@@ -203,10 +205,7 @@ class PortalDraftControllerTest extends TestCase {
 				return true;
 			}
 		};
-		$drafts = new PortalOwnerSubmit(
-			$this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $discard]),
-			$this->createMock(LoggerInterface::class)
-		);
+		$drafts = new PortalOwnerDraft($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $discard]), $this->createMock(LoggerInterface::class), new DestinationSubmit($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $discard]), $this->createMock(LoggerInterface::class)));
 
 		return new PortalDraftController(
 			$this->createMock(IRequest::class),

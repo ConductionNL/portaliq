@@ -11,7 +11,8 @@ use OCA\Portaliq\Service\Intake\PortalDraftDrain;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
-use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerSubmit;
+use OCA\Portaliq\Service\Intake\DestinationSubmit;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -23,6 +24,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Portaliq\Service\Intake\PortalDraftDrain
  * @uses \OCA\Portaliq\Service\Intake\ActionDraft
+ * @uses \OCA\Portaliq\Service\Intake\DestinationDraft
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses \OCA\Portaliq\Contribution\CreateBody
@@ -115,7 +117,7 @@ class PortalDraftDrainTest extends TestCase {
 		$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'dossiq', 'actions' => [self::ACTION]]]]);
 
 		$this->fake = new FormSubmitFake(outcome: $outcome);
-		$drafts     = new PortalOwnerSubmit($this->fake->container(), $this->createMock(LoggerInterface::class));
+		$drafts     = new PortalOwnerDraft($this->fake->container(), $this->createMock(LoggerInterface::class), new DestinationSubmit($this->fake->container(), $this->createMock(LoggerInterface::class)));
 
 		return new PortalDraftDrain(
 			reader: $reader,

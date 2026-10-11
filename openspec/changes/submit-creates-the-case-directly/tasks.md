@@ -38,9 +38,9 @@
 ## 5. Drafts
 
 - [x] 5.1 "Save and carry on later" saves the destination object in status `draft` through OpenRegister (decision 180); a type-invalid answer is refused on its field, a missing required answer is allowed
-  - Built: `DestinationSubmit::saveDraft/findDraft/sendDraft/discardDraft` (owner `portal:<subjectRef>`, decision 195; discard through openregister#4591 `DraftDiscard`), `ActionDraft` (action, body, retention 30 days by default on read from `updatedAt`, decision 201), `PortalDraftController` on top. Tests: DestinationSubmitTest, ActionDraftTest, PortalDraftControllerTest.
+  - Built: `DestinationDraft::saveDraft/findDraft/sendDraft/discardDraft` (owner `portal:<subjectRef>`, decision 195; discard through openregister#4591 `DraftDiscard`), `ActionDraft` (action, body, retention 30 days by default on read from `updatedAt`, decision 201), `PortalDraftController` on top. Tests: DestinationDraftTest, ActionDraftTest, PortalDraftControllerTest.
   - Spec ref: specs/portal-intake-form/spec.md, REQ-PIFO-008
-  - Files: lib/Service/Intake/DestinationSubmit.php, lib/Service/Intake/ActionDraft.php, lib/Controller/PortalDraftController.php, lib/Controller/ContributionController.php
+  - Files: lib/Service/Intake/DestinationDraft.php, lib/Service/Intake/ActionDraft.php, lib/Controller/PortalDraftController.php, lib/Controller/ContributionController.php
 - [x] 5.2 Resume by account loads the draft object; sending moves it out of `draft` through `FormSubmitService`
   - Built: `ContributionController::createFrom` sends a live draft instead of writing a second object (ContributionControllerDraftSendTest). Resume link for a signed-out visitor: not offered, anonymous drafts wait on Q-openregister-F2.
 - [x] 5.3 Drain `portalDraft` into draft destination objects (a draft holding a type-invalid answer is reported, not converted)

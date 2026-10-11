@@ -33,7 +33,7 @@ namespace OCA\Portaliq\Controller;
 use DateTimeImmutable;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Intake\ActionDraft;
-use OCA\Portaliq\Service\Intake\DestinationSubmit;
+use OCA\Portaliq\Service\Intake\DestinationDraft;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,13 +57,13 @@ class PortalDraftController extends Controller {
 	 * @param IRequest             $request The request.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param ActionDraft          $actions Resolves the action, its draft body and its retention.
-	 * @param DestinationSubmit    $drafts  Saves and discards drafts in OpenRegister.
+	 * @param DestinationDraft     $drafts  Saves and discards drafts in OpenRegister.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly ActionDraft $actions,
-		private readonly DestinationSubmit $drafts,
+		private readonly DestinationDraft $drafts,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -104,7 +104,7 @@ class PortalDraftController extends Controller {
 				'status' => 'draft',
 				'step' => '',
 				'expiresAt' => (string)$draft['expiresAt'],
-				'answers' => ActionDraft::answersOf(action: $match['action'], draft: $draft),
+				'answers' => $this->actions->answersOf(action: $match['action'], draft: $draft),
 			]
 		);
 	}//end show()
@@ -147,7 +147,7 @@ class PortalDraftController extends Controller {
 		$subjectRef = (string)$subject['subjectRef'];
 		$existing   = $this->actions->find(action: $match['action'], subjectRef: $subjectRef);
 		$saved      = $this->drafts->saveDraft(
-			destination: ActionDraft::destinationOf(action: $match['action']),
+			destination: $this->actions->destinationOf(action: $match['action']),
 			payload: $body,
 			subjectRef: $subjectRef,
 			draftId: (string)($existing['id'] ?? ''),
@@ -155,12 +155,12 @@ class PortalDraftController extends Controller {
 		);
 		if ($saved['ok'] === false) {
 			return new JSONResponse(
-				['saved' => false, 'error' => 'invalid', 'errors' => ActionDraft::errorsOf(findings: $saved['findings'])],
+				['saved' => false, 'error' => 'invalid', 'errors' => $this->drafts->errorsOf(findings: $saved['findings'])],
 				$saved['status']
 			);
 		}
 
-		$expiresAt = (new DateTimeImmutable())->modify('+' . ActionDraft::retentionDays(action: $match['action']) . ' days');
+		$expiresAt = (new DateTimeImmutable())->modify('+' . $this->actions->retentionDays(action: $match['action']) . ' days');
 
 		return new JSONResponse(
 			[
@@ -168,7 +168,7 @@ class PortalDraftController extends Controller {
 				'status' => 'draft',
 				'step' => '',
 				'expiresAt' => $expiresAt->format(DATE_ATOM),
-				'answers' => ActionDraft::answersOf(action: $match['action'], draft: ['data' => $body]),
+				'answers' => $this->actions->answersOf(action: $match['action'], draft: ['data' => $body]),
 			]
 		);
 	}//end save()
@@ -200,7 +200,7 @@ class PortalDraftController extends Controller {
 			$draft      = $this->actions->find(action: $match['action'], subjectRef: $subjectRef);
 			if ($draft !== null) {
 				$deleted = $this->drafts->discardDraft(
-					destination: ActionDraft::destinationOf(action: $match['action']),
+					destination: $this->actions->destinationOf(action: $match['action']),
 					subjectRef: $subjectRef,
 					draftId: (string)$draft['id']
 				);

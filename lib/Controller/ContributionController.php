@@ -57,7 +57,7 @@ use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Service\Intake\ActionDraft;
-use OCA\Portaliq\Service\Intake\DestinationSubmit;
+use OCA\Portaliq\Service\Intake\DestinationDraft;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
@@ -187,11 +187,10 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                  OpenRegister (cases-export-own-data-pdf). Absent offers no export.
 	 * @param PortalRateLimit|null $rateLimit Limits a portal session per subject and a call
 	 *                                        without one per IP (portal-subject-rate-limit).
-
 	 * @param ActionDraft|null $drafts Finds the subject's live draft of a create action, which a
 	 *                                 create then sends instead of writing a new object (decision 180).
 	 *                                 Absent writes a new object as before.
-	 * @param DestinationSubmit|null $destinations Sends that draft through OpenRegister's submit service.
+	 * @param DestinationDraft|null $destinations Sends that draft through OpenRegister's submit service.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -220,7 +219,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?PortalPdfExport $pdf = null,
 		private readonly ?PortalRateLimit $rateLimit = null,
 		private readonly ?ActionDraft $drafts = null,
-		private readonly ?DestinationSubmit $destinations = null,
+		private readonly ?DestinationDraft $destinations = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -1608,8 +1607,12 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function sendLiveDraft(array $subject, array $action, string $stamp, array $data): array|JSONResponse|null {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
-		$draft      = $this->drafts?->find(action: $action, subjectRef: $subjectRef);
-		if ($draft === null || $this->destinations === null) {
+		if ($this->drafts === null || $this->destinations === null) {
+			return null;
+		}
+
+		$draft = $this->drafts->find(action: $action, subjectRef: $subjectRef);
+		if ($draft === null) {
 			return null;
 		}
 
@@ -1621,14 +1624,14 @@ class ContributionController extends Controller implements PortalProtected {
 			data: $data
 		);
 		$sent    = $this->destinations->sendDraft(
-			destination: ActionDraft::destinationOf(action: $action),
+			destination: $this->drafts->destinationOf(action: $action),
 			payload: $payload,
 			subjectRef: $subjectRef,
 			draftId: (string)$draft['id'],
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($sent['ok'] === false) {
-			return new JSONResponse(['error' => 'invalid', 'errors' => ActionDraft::errorsOf(findings: $sent['findings'])], $sent['status']);
+			return new JSONResponse(['error' => 'invalid', 'errors' => $this->destinations->errorsOf(findings: $sent['findings'])], $sent['status']);
 		}
 
 		$id = (string)($sent['answer']['id'] ?? $draft['id']);

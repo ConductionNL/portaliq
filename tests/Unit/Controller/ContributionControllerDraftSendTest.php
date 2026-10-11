@@ -31,7 +31,8 @@ use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
-use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerSubmit;
+use OCA\Portaliq\Service\Intake\DestinationSubmit;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -41,6 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Portaliq\Controller\ContributionController
  * @uses \OCA\Portaliq\Service\Intake\ActionDraft
+ * @uses \OCA\Portaliq\Service\Intake\DestinationDraft
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
  */
 class ContributionControllerDraftSendTest extends TestCase {
@@ -145,7 +147,7 @@ class ContributionControllerDraftSendTest extends TestCase {
 
 		$this->fake        = new FormSubmitFake(outcome: $outcome);
 		$this->fake->found = $found;
-		$destinations      = new PortalOwnerSubmit($this->fake->container(), $this->createMock(LoggerInterface::class));
+		$destinations      = new PortalOwnerDraft($this->fake->container(), $this->createMock(LoggerInterface::class), new DestinationSubmit($this->fake->container(), $this->createMock(LoggerInterface::class)));
 
 		return new ContributionController(
 			request: $request,

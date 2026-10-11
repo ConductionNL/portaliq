@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake\Fakes;
 
-use OCA\Portaliq\Service\Intake\DestinationSubmit;
+use OCA\Portaliq\Service\Intake\DestinationDraft;
 
 /**
- * DestinationSubmit with a draft owner that needs no OpenRegister: `{value: portal:<ref>}`.
+ * DestinationDraft with a draft owner that needs no OpenRegister: `{value: portal:<ref>}`.
  *
  * The real owner is OpenRegister's DraftOwner; CI runs without OpenRegister,
  * so the draft paths are tested against this stand-in and the real factory
- * once, where the class is there (DestinationSubmitTest).
+ * once, where the class is there (DestinationDraftTest).
  */
-class PortalOwnerSubmit extends DestinationSubmit {
+class PortalOwnerDraft extends DestinationDraft {
 	/**
 	 * The stand-in owner, or null for an empty reference.
 	 *

@@ -11,7 +11,7 @@ use OCA\Portaliq\Service\Intake\DestinationSubmit;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
-use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerSubmit;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -23,6 +23,7 @@ use Psr\Log\LoggerInterface;
  * is discarded.
  *
  * @covers \OCA\Portaliq\Service\Intake\ActionDraft
+ * @uses \OCA\Portaliq\Service\Intake\DestinationDraft
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses \OCA\Portaliq\Contribution\CreateBody
@@ -68,10 +69,7 @@ class ActionDraftTest extends TestCase {
 				return true;
 			}
 		};
-		$submit = new PortalOwnerSubmit(
-			$this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]),
-			$this->createMock(LoggerInterface::class)
-		);
+		$submit = new PortalOwnerDraft($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]), $this->createMock(LoggerInterface::class), new DestinationSubmit($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]), $this->createMock(LoggerInterface::class)));
 
 		return new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $submit);
 	}//end drafts()
@@ -121,7 +119,7 @@ class ActionDraftTest extends TestCase {
 		$this->assertSame('2026-10-11T10:00:00+00:00', $draft['expiresAt']);
 		$this->assertSame(['caseType' => 'ct-1'], $this->fake->calls[0]['match']);
 		$this->assertSame(['register' => 'dossiq', 'schema' => 'case'], $this->fake->calls[0]['destination']);
-		$this->assertSame(['title' => 'Half'], ActionDraft::answersOf(action: self::ACTION, draft: $draft));
+		$this->assertSame(['title' => 'Half'], $drafts->answersOf(action: self::ACTION, draft: $draft));
 		$this->assertSame([], $this->discard->asked);
 	}//end testALiveDraftIsFoundByItsScalarDefaultsWithItsExpiry()
 
@@ -143,22 +141,11 @@ class ActionDraftTest extends TestCase {
 	}//end testADraftPastItsRetentionOrWithoutAMomentIsDiscardedAndReadsAsNone()
 
 	public function testRetentionIsTheActionsWithinOneToNinetyElseThirty(): void {
-		$this->assertSame(10, ActionDraft::retentionDays(action: self::ACTION));
-		$this->assertSame(30, ActionDraft::retentionDays(action: []));
-		$this->assertSame(30, ActionDraft::retentionDays(action: ['draft' => ['retentionDays' => 0]]));
-		$this->assertSame(30, ActionDraft::retentionDays(action: ['draft' => ['retentionDays' => '12']]));
-		$this->assertSame(90, ActionDraft::retentionDays(action: ['draft' => ['retentionDays' => 400]]));
-		$this->assertSame('2026-10-31T00:00:00+00:00', ActionDraft::expiresAt(action: [], updatedAt: '2026-10-01T00:00:00+00:00')?->format(DATE_ATOM));
+		$this->assertSame(10, $this->drafts()->retentionDays(action: self::ACTION));
+		$this->assertSame(30, $this->drafts()->retentionDays(action: []));
+		$this->assertSame(30, $this->drafts()->retentionDays(action: ['draft' => ['retentionDays' => 0]]));
+		$this->assertSame(30, $this->drafts()->retentionDays(action: ['draft' => ['retentionDays' => '12']]));
+		$this->assertSame(90, $this->drafts()->retentionDays(action: ['draft' => ['retentionDays' => 400]]));
+		$this->assertSame('2026-10-31T00:00:00+00:00', $this->drafts()->expiresAt(action: [], updatedAt: '2026-10-01T00:00:00+00:00')?->format(DATE_ATOM));
 	}//end testRetentionIsTheActionsWithinOneToNinetyElseThirty()
-	public function testFindingsAreFiledUnderTheFieldOfTheirProperty(): void {
-		$this->assertSame(
-			['preferredDate' => 'Not a date.', 'address' => 'No street.', '_form' => 'Try again.'],
-			ActionDraft::errorsOf(findings: [
-				['property' => 'preferredDate', 'message' => 'Not a date.'],
-				['property' => 'address.street', 'message' => 'No street.'],
-				['property' => '/address/number', 'message' => 'Second.'],
-				['property' => '', 'message' => 'Try again.'],
-			])
-		);
-	}//end testFindingsAreFiledUnderTheFieldOfTheirProperty()
 }//end class

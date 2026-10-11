@@ -47,6 +47,8 @@ use Throwable;
  * Resolves a create action's draft: its action, destination, body and retention.
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies, the one trust rule every portal path uses.
  */
 class ActionDraft {
 	/**
@@ -70,13 +72,13 @@ class ActionDraft {
 	 * @param PortalContributionRegistry $registry The subject's aggregate of actions.
 	 * @param PortalObjectReader         $reader   Resolves the action's scope claim.
 	 * @param PortalObjectWriter         $writer   Applies the create's ownership stamps.
-	 * @param DestinationSubmit          $drafts   Finds and discards drafts in OpenRegister.
+	 * @param DestinationDraft           $drafts   Finds and discards drafts in OpenRegister.
 	 */
 	public function __construct(
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
-		private readonly DestinationSubmit $drafts,
+		private readonly DestinationDraft $drafts,
 	) {
 	}//end __construct()
 
@@ -99,7 +101,7 @@ class ActionDraft {
 			}
 
 			foreach ((array)($contribution['actions'] ?? []) as $action) {
-				if (is_array($action) === true && ($action['id'] ?? '') === $actionId && self::isDraftable(action: $action, subject: $subject) === true) {
+				if (is_array($action) === true && ($action['id'] ?? '') === $actionId && $this->isDraftable(action: $action, subject: $subject) === true) {
 					return ['action' => $action, 'app' => $appId];
 				}
 			}
@@ -117,7 +119,7 @@ class ActionDraft {
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
-	public static function destinationOf(array $action): array {
+	public function destinationOf(array $action): array {
 		return ['register' => (string)($action['register'] ?? ''), 'schema' => (string)($action['schema'] ?? '')];
 	}//end destinationOf()
 
@@ -141,7 +143,7 @@ class ActionDraft {
 		}
 
 		$kept = [];
-		foreach (self::answerFields(action: $action) as $field) {
+		foreach ($this->answerFields(action: $action) as $field) {
 			if (array_key_exists($field, $answers) === true && $answers[$field] !== null) {
 				$kept[$field] = $answers[$field];
 			}
@@ -168,13 +170,13 @@ class ActionDraft {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
 	public function find(array $action, string $subjectRef, ?DateTimeImmutable $now = null): ?array {
-		$destination = self::destinationOf(action: $action);
-		$draft       = $this->drafts->findDraft(destination: $destination, subjectRef: $subjectRef, match: self::matchOf(action: $action));
+		$destination = $this->destinationOf(action: $action);
+		$draft       = $this->drafts->findDraft(destination: $destination, subjectRef: $subjectRef, match: $this->matchOf(action: $action));
 		if ($draft === null) {
 			return null;
 		}
 
-		$expiresAt = self::expiresAt(action: $action, updatedAt: (string)($draft['updatedAt'] ?? ''));
+		$expiresAt = $this->expiresAt(action: $action, updatedAt: (string)($draft['updatedAt'] ?? ''));
 		if ($expiresAt === null || $expiresAt <= ($now ?? new DateTimeImmutable())) {
 			// Retention on read (decision 201): past it, the draft is gone for the resident.
 			$this->drafts->discardDraft(destination: $destination, subjectRef: $subjectRef, draftId: (string)$draft['id']);
@@ -195,10 +197,10 @@ class ActionDraft {
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
-	public static function answersOf(array $action, array $draft): array {
+	public function answersOf(array $action, array $draft): array {
 		$data    = (array)($draft['data'] ?? []);
 		$answers = [];
-		foreach (self::answerFields(action: $action) as $field) {
+		foreach ($this->answerFields(action: $action) as $field) {
 			if (array_key_exists($field, $data) === true) {
 				$answers[$field] = $data[$field];
 			}
@@ -216,7 +218,7 @@ class ActionDraft {
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
-	public static function retentionDays(array $action): int {
+	public function retentionDays(array $action): int {
 		$days = ($action['draft']['retentionDays'] ?? null);
 		if (is_int($days) === false || $days < 1) {
 			return self::DEFAULT_DAYS;
@@ -235,16 +237,22 @@ class ActionDraft {
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
-	public static function expiresAt(array $action, string $updatedAt): ?DateTimeImmutable {
+	public function expiresAt(array $action, string $updatedAt): ?DateTimeImmutable {
 		if ($updatedAt === '') {
 			return null;
 		}
 
 		try {
-			return (new DateTimeImmutable($updatedAt))->modify('+' . self::retentionDays(action: $action) . ' days');
+			$expiry = (new DateTimeImmutable($updatedAt))->modify('+' . $this->retentionDays(action: $action) . ' days');
 		} catch (Throwable) {
 			return null;
 		}
+
+		if ($expiry === false) {
+			return null;
+		}
+
+		return $expiry;
 	}//end expiresAt()
 
 	/**
@@ -259,7 +267,7 @@ class ActionDraft {
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
-	public static function matchOf(array $action): array {
+	public function matchOf(array $action): array {
 		$match = [];
 		foreach ((array)($action['defaults'] ?? []) as $key => $value) {
 			if (is_string($key) === true && $key !== '' && is_scalar($value) === true) {
@@ -271,32 +279,6 @@ class ActionDraft {
 	}//end matchOf()
 
 	/**
-	 * A refusal's findings per field, for the form: a create action's field is its property.
-	 *
-	 * @param array<int, array<string, mixed>> $findings The destination's findings.
-	 *
-	 * @return array<string, string> The first message per field; '_form' for a finding without a property.
-	 *
-	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
-	 */
-	public static function errorsOf(array $findings): array {
-		$errors = [];
-		foreach ($findings as $finding) {
-			$parts = explode('.', str_replace('/', '.', trim((string)($finding['property'] ?? ''), './')));
-			$field = $parts[0];
-			if ($field === '') {
-				$field = '_form';
-			}
-
-			if (isset($errors[$field]) === false) {
-				$errors[$field] = (string)($finding['message'] ?? '');
-			}
-		}
-
-		return $errors;
-	}//end errorsOf()
-
-	/**
 	 * Whether the action can hold a draft for this subject.
 	 *
 	 * @param array<string, mixed> $action  The action.
@@ -304,8 +286,8 @@ class ActionDraft {
 	 *
 	 * @return bool
 	 */
-	private static function isDraftable(array $action, array $subject): bool {
-		$destination = self::destinationOf(action: $action);
+	private function isDraftable(array $action, array $subject): bool {
+		$destination = $this->destinationOf(action: $action);
 
 		return ($action['type'] ?? '') === 'create'
 			&& $destination['register'] !== ''
@@ -320,7 +302,7 @@ class ActionDraft {
 	 *
 	 * @return array<int, string>
 	 */
-	private static function answerFields(array $action): array {
+	private function answerFields(array $action): array {
 		$files = [];
 		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
 			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE) {
