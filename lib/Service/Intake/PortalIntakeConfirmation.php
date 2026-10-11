@@ -47,13 +47,15 @@ class PortalIntakeConfirmation {
 	 * @param array<string, mixed> $site      The portal.
 	 * @param array<string, mixed> $render    What the binding renders to.
 	 * @param array<string, mixed> $answers   The accepted answers.
-	 * @param string               $reference The submission's reference.
+	 * @param string               $reference The reference of the object the request created.
+	 * @param array<string, mixed> $moments   The destination's confirmation properties (receivedAt, termStartsAt, deadline).
 	 *
 	 * @return string The address the mail went to, or '' when none went.
 	 *
 	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.4
 	 */
-	public function send(array $site, array $render, array $answers, string $reference): string {
+	public function send(array $site, array $render, array $answers, string $reference, array $moments = []): string {
 		if (($render['settings']['confirmationMail'] ?? false) !== true || $this->confirmationMail === null) {
 			return '';
 		}
