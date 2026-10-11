@@ -59,19 +59,30 @@ class PortalDomainVerifier {
 	private readonly Closure $lookup;
 
 	/**
+	 * The certificate probe: a host name in, the certificate's end as a
+	 * timestamp out, or null when the host gave none.
+	 *
+	 * @var Closure(string): (int|null)
+	 */
+	private readonly Closure $probe;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader The portal reader.
 	 * @param PortalObjectWriter $writer The portal writer.
 	 * @param LoggerInterface    $logger The logger.
 	 * @param Closure|null       $lookup Resolves a TXT name to its values; DNS by default.
+	 * @param Closure|null       $probe  Reads the end of a host's certificate as a timestamp; a TLS connection to port 443 by default.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
 		?Closure $lookup = null,
+		?Closure $probe = null,
 	) {
+		$this->probe = ($probe ?? static fn (string $host): ?int => self::probeCertificate(host: $host));
 		$this->lookup = ($lookup ?? static function (string $name): array {
 			// A failed lookup warns; the handler swallows it so the miss reads as no record.
 			set_error_handler(static fn (): bool => true);
@@ -95,7 +106,8 @@ class PortalDomainVerifier {
 	 *
 	 * @param string $slug The portal slug.
 	 *
-	 * @return array<int, array{hostname: string, name: string, value: string, verified: bool}>|null Null for an unknown portal.
+	 * @return array<int, array<string, mixed>>|null Per domain: hostname, name, value, verified and the certificate dates.
+	 *                                               Null for an unknown portal.
 	 *
 	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
 	 */
@@ -124,6 +136,8 @@ class PortalDomainVerifier {
 				'name' => self::PREFIX . $domain['hostname'],
 				'value' => (string)$domain['verificationToken'],
 				'verified' => (($domain['verified'] ?? false) === true),
+				'certificateValidUntil' => ($domain['certificateValidUntil'] ?? null),
+				'certificateCheckedAt' => ($domain['certificateCheckedAt'] ?? null),
 			],
 			$domains
 		);
@@ -159,6 +173,7 @@ class PortalDomainVerifier {
 
 			$domains[$i]['verified']   = true;
 			$domains[$i]['verifiedAt'] = gmdate('c');
+			$domains[$i]            = $this->withCertificate(domain: $domains[$i]);
 
 			if ($portal === null || $this->save(portal: $portal, domains: $domains) === false) {
 				return null;
@@ -169,6 +184,97 @@ class PortalDomainVerifier {
 
 		return self::NOT_FOUND;
 	}//end verify()
+
+	/**
+	 * The domain with the end of its certificate and the moment it was looked
+	 * at. A host that gives no certificate keeps the earlier end date and only
+	 * updates the moment.
+	 *
+	 * @param array<string, mixed> $domain The domain entry.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/portal-domains-and-editors/tasks.md#t03
+	 */
+	private function withCertificate(array $domain): array {
+		$until = null;
+		try {
+			$until = ($this->probe)((string)$domain['hostname']);
+		} catch (Throwable $e) {
+			$this->logger->info('Portaliq: certificate probe failed', ['reason' => $e->getMessage()]);
+		}
+
+		if ($until !== null) {
+			$domain['certificateValidUntil'] = gmdate('c', $until);
+		}
+
+		$domain['certificateCheckedAt'] = gmdate('c');
+
+		return $domain;
+	}//end withCertificate()
+
+	/**
+	 * Read the end of the certificate a host presents on port 443. The chain is
+	 * not verified and no request is sent: only the end date is read. A host that
+	 * resolves to a private or reserved address is not contacted.
+	 *
+	 * @param string $host The host name.
+	 *
+	 * @return int|null The end as a timestamp, null when the host gave no certificate.
+	 *
+	 * @spec openspec/changes/portal-domains-and-editors/tasks.md#t03
+	 */
+	public static function probeCertificate(string $host): ?int {
+		$ip = gethostbyname($host);
+		if ($ip === $host || filter_var($ip, FILTER_VALIDATE_IP, (FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) === false) {
+			return null;
+		}
+
+		$context = stream_context_create(
+			[
+				'ssl' => [
+					'capture_peer_cert' => true,
+					'verify_peer'       => false,
+					'verify_peer_name'  => false,
+					'peer_name'         => $host,
+					'SNI_enabled'       => true,
+					'SNI_server_name'   => $host,
+				],
+			]
+		);
+
+		set_error_handler(static fn (): bool => true);
+		try {
+			$socket = stream_socket_client(
+				address: 'ssl://' . $ip . ':443',
+				error_code: $errno,
+				error_message: $error,
+				timeout: 5,
+				flags: STREAM_CLIENT_CONNECT,
+				context: $context
+			);
+		} finally {
+			restore_error_handler();
+		}
+
+		if ($socket === false) {
+			return null;
+		}
+
+		$params = stream_context_get_params($socket);
+		fclose($socket);
+		$certificate = ($params['options']['ssl']['peer_certificate'] ?? null);
+		if ($certificate === null) {
+			return null;
+		}
+
+		$parsed = openssl_x509_parse($certificate);
+		if ($parsed === false || isset($parsed['validTo_time_t']) === false) {
+			return null;
+		}
+
+		return (int)$parsed['validTo_time_t'];
+	}//end probeCertificate()
 
 	/**
 	 * Whether the domain's record is published with this portal's token.
