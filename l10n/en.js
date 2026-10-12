@@ -2882,7 +2882,15 @@ OC.L10N.register(
         "Waiting for verification": "Waiting for verification",
         "not checked yet": "not checked yet",
         "valid until {date}": "valid until {date}",
-        "{hostname} is verified.": "{hostname} is verified."
+        "{hostname} is verified.": "{hostname} is verified.",
+        "Fill this in.": "Fill this in.",
+        "This is already in the list.": "This is already in the list.",
+        "This value is not valid.": "This value is not valid.",
+        "This list cannot be saved here.": "This list cannot be saved here.",
+        "valid until": "valid until",
+        "Publish this TXT record: {name} = {value}": "Publish this TXT record: {name} = {value}",
+        "%s is verified.": "%s is verified.",
+        "The record of %s is not there yet.": "The record of %s is not there yet."
     },
     "nplurals=2; plural=(n != 1);"
 )

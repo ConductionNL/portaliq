@@ -3034,7 +3034,15 @@ OC.L10N.register(
         "Waiting for verification": "Wacht op verificatie",
         "not checked yet": "nog niet gecontroleerd",
         "valid until {date}": "geldig tot {date}",
-        "{hostname} is verified.": "{hostname} is geverifieerd."
+        "{hostname} is verified.": "{hostname} is geverifieerd.",
+        "Fill this in.": "Vul dit in.",
+        "This is already in the list.": "Dit staat al in de lijst.",
+        "This value is not valid.": "Deze waarde is niet geldig.",
+        "This list cannot be saved here.": "Deze lijst kan hier niet worden opgeslagen.",
+        "valid until": "geldig tot",
+        "Publish this TXT record: {name} = {value}": "Publiceer dit TXT-record: {name} = {value}",
+        "%s is verified.": "%s is geverifieerd.",
+        "The record of %s is not there yet.": "Het record van %s staat er nog niet."
     },
     "nplurals=2; plural=(n != 1);"
 )
