@@ -3090,7 +3090,16 @@ OC.L10N.register(
         "Last published": "Laatste publicatie",
         "Mijn Zuiddrecht nu": "Mijn Zuiddrecht nu",
         "Sign-in method": "Inlogwijze",
-        "Wacht op goedkeuring": "Wacht op goedkeuring"
+        "Wacht op goedkeuring": "Wacht op goedkeuring",
+        "Submitted on": "Ingediend op",
+        "Submitted action": "Handeling",
+        "Requester": "Aanvrager",
+        "Access requested to": "Gevraagde toegang",
+        "Requested on": "Aangevraagd op",
+        "Refuse with a reason": "Afwijzen met een reden",
+        "Record a request": "Verzoek vastleggen",
+        "Wacht op bevestiging": "Wacht op bevestiging",
+        "Bevestiging mislukt": "Bevestiging mislukt"
     },
     "nplurals=2; plural=(n != 1);"
 )

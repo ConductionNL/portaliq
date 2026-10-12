@@ -2952,7 +2952,18 @@
         "Last published": "Last published",
         "Mijn Zuiddrecht nu": "Mijn Zuiddrecht nu",
         "Sign-in method": "Sign-in method",
-        "Wacht op goedkeuring": "Wacht op goedkeuring"
+        "Wacht op goedkeuring": "Wacht op goedkeuring",
+        "Submitted on": "Submitted on",
+        "Submitted action": "Submitted action",
+        "Requester": "Requester",
+        "Access requested to": "Access requested to",
+        "Requested on": "Requested on",
+        "Refuse with a reason": "Refuse with a reason",
+        "Record a request": "Record a request",
+        "Wacht op bevestiging": "Waiting for confirmation",
+        "Bevestiging mislukt": "Confirmation failed",
+        "Alles": "All",
+        "Bevestigd": "Confirmed"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
