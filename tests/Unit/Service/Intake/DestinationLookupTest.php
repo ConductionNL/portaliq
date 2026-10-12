@@ -19,6 +19,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Portaliq\Service\Intake\DestinationLookup
  *
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.2
+ * @uses \OCA\Portaliq\Service\Intake\DestinationMapping
  */
 class DestinationLookupTest extends TestCase {
 

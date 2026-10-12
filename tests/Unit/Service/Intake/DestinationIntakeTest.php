@@ -23,6 +23,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Portaliq\Service\Intake\DestinationIntake
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md
+ * @uses \OCA\Portaliq\Service\Intake\DestinationMapping
+ * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
  */
 class DestinationIntakeTest extends TestCase {
 

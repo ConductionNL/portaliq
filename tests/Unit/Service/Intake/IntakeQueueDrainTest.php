@@ -23,6 +23,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Portaliq\Service\Intake\IntakeQueueDrain
  *
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+ * @uses \OCA\Portaliq\Service\Intake\DestinationIntake
+ * @uses \OCA\Portaliq\Service\Intake\DestinationMapping
+ * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
  */
 class IntakeQueueDrainTest extends TestCase {
 

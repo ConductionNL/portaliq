@@ -46,6 +46,36 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Service\Intake\DestinationIntake
  * @uses \OCA\Portaliq\Service\Intake\DestinationMapping
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
+ * @uses \OCA\Portaliq\Contribution\ActionConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\ActionFormShape
+ * @uses \OCA\Portaliq\Contribution\ActionOptionsNormaliser
+ * @uses \OCA\Portaliq\Contribution\ActionSummaryNormaliser
+ * @uses \OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\CollectionConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\CollectionSchemaLabels
+ * @uses \OCA\Portaliq\Contribution\ConfirmationMailKeys
+ * @uses \OCA\Portaliq\Contribution\CreateActionMatcher
+ * @uses \OCA\Portaliq\Contribution\CreateBody
+ * @uses \OCA\Portaliq\Contribution\CrossRefConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\FieldWidgetNormaliser
+ * @uses \OCA\Portaliq\Contribution\FormStepsNormaliser
+ * @uses \OCA\Portaliq\Contribution\GuestActionConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\InboxReplyConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\ItemListConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\ManifestValueNormaliser
+ * @uses \OCA\Portaliq\Contribution\PortalManifestNormaliser
+ * @uses \OCA\Portaliq\Contribution\PortalPageResolver
+ * @uses \OCA\Portaliq\Contribution\RequiredFieldsNormaliser
+ * @uses \OCA\Portaliq\Contribution\RowActionInputs
+ * @uses \OCA\Portaliq\Contribution\RowActionResolver
+ * @uses \OCA\Portaliq\Contribution\SchemaInputHintNormaliser
+ * @uses \OCA\Portaliq\Contribution\StartTileNormaliser
+ * @uses \OCA\Portaliq\Contribution\ThemeTagKeys
+ * @uses \OCA\Portaliq\Contribution\TimedTaskConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\ValueLabelsNormaliser
+ * @uses \OCA\Portaliq\Service\PortalJwtService
+ * @uses \OCA\Portaliq\Service\PortalUserDisplayNames
+ * @uses \OCA\Portaliq\Service\RequiredFieldsGuard
  */
 class ContributionControllerLandingDestinationTest extends TestCase {
 

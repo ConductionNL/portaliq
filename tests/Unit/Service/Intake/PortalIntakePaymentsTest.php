@@ -13,6 +13,7 @@ use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCP\Http\Client\IResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,6 +23,7 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#3.3
  */
 #[CoversClass(PortalIntakePayments::class)]
+#[UsesClass(PortalFee::class)]
 class PortalIntakePaymentsTest extends TestCase {
 	private const SUBJECT = ['subjectRef' => 'abc'];
 

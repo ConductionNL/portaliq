@@ -44,6 +44,14 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Service\Intake\ActionDraft
  * @uses \OCA\Portaliq\Service\Intake\DestinationDraft
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
+ * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
+ * @uses \OCA\Portaliq\Contribution\CreateActionMatcher
+ * @uses \OCA\Portaliq\Contribution\CreateBody
+ * @uses \OCA\Portaliq\Service\Branch\PortalBranchScope
+ * @uses \OCA\Portaliq\Service\PortalCrossRefGuard
+ * @uses \OCA\Portaliq\Service\PortalSessionService
+ * @uses \OCA\Portaliq\Service\PortalUserDisplayNames
+ * @uses \OCA\Portaliq\Service\RequiredFieldsGuard
  */
 class ContributionControllerDraftSendTest extends TestCase {
 	private const SUBJECT = ['subjectRef' => 'sanne', 'audience' => 'resident', 'organisation' => '', 'trust' => 'low', 'jti' => 'jti-1'];
