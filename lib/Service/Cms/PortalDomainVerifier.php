@@ -225,6 +225,8 @@ class PortalDomainVerifier {
 	 * @spec openspec/changes/portal-domains-and-editors/tasks.md#t03
 	 */
 	public static function probeCertificate(string $host): ?int {
+		$errorCode    = 0;
+		$errorMessage = '';
 		$address = gethostbyname($host);
 		if ($address === $host || filter_var($address, FILTER_VALIDATE_IP, (FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) === false) {
 			return null;
