@@ -49,6 +49,12 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The heading of the card for its kind.
+		 *
+		 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+		 * @return {string} The translated heading, empty for an unknown kind.
+		 */
 		title() {
 			return (
 				{

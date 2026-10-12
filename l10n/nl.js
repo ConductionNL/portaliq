@@ -3047,7 +3047,23 @@ OC.L10N.register(
         "User": "Gebruiker",
         "When the TLS certificate this host presented on port 443 ends, read at the last verification run. Empty until a verified domain has been probed; kept when a later probe gets no answer.": "Wanneer het TLS-certificaat eindigt dat deze host op poort 443 aanbood, afgelezen bij de laatste controle. Leeg tot een geverifieerd domein is gecontroleerd; blijft staan als een latere controle geen antwoord krijgt.",
         "When the certificate was last probed, whether or not the host answered.": "Wanneer het certificaat voor het laatst is gecontroleerd, of de host nu antwoordde of niet.",
-        "Who looks after this portal: Nextcloud user id, the display name stored beside it so the list reads without a lookup per person, and the role. Listing a user here grants no right to change pages.": "Wie dit portaal beheert: de Nextcloud-gebruikers-id, de weergavenaam die ernaast staat zodat de lijst leest zonder opzoeking per persoon, en de rol. Iemand hier opnemen geeft geen recht om pagina's te wijzigen."
+        "Who looks after this portal: Nextcloud user id, the display name stored beside it so the list reads without a lookup per person, and the role. Listing a user here grants no right to change pages.": "Wie dit portaal beheert: de Nextcloud-gebruikers-id, de weergavenaam die ernaast staat zodat de lijst leest zonder opzoeking per persoon, en de rol. Iemand hier opnemen geeft geen recht om pagina's te wijzigen.",
+        "Actieve sessies": "Actieve sessies",
+        "Beheerders": "Beheerders",
+        "Details of the portal": "Gegevens van de portal",
+        "Domein en certificaat": "Domein en certificaat",
+        "Insert form": "Formulier invoegen",
+        "Instellingen": "Instellingen",
+        "Link a form": "Formulier koppelen",
+        "Nieuwe mededeling": "Nieuwe mededeling",
+        "Status en laatste publicatie": "Status en laatste publicatie",
+        "Thema": "Thema",
+        "Uitgegeven sessies": "Uitgegeven sessies",
+        "Website bekijken": "Website bekijken",
+        "displayName": "displayName",
+        "hostname": "hostname",
+        "website en Mijn Zuiddrecht": "website en Mijn Zuiddrecht",
+        "The name of the editor as it is shown in the list.": "De naam van de redacteur zoals die in de lijst staat."
     },
     "nplurals=2; plural=(n != 1);"
 )

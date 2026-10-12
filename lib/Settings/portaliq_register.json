@@ -4666,6 +4666,7 @@
                                 "displayName": {
                                     "title": "Display name",
                                     "type": "string",
+                                    "description": "The name of the editor as it is shown in the list.",
                                     "example": "Pieter Jansen"
                                 },
                                 "role": {
