@@ -1138,10 +1138,8 @@
             "showCount": true
           },
           {
-            "label": "Geschorst",
-            "filter": {
-              "status": "suspended"
-            },
+            "label": "Nog niet ingelogd",
+            "empty": "lastLoginAt",
             "showCount": true
           },
           {
