@@ -191,13 +191,13 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { createTranslator } from '../../shared/i18n/index.js'
+import { pageLocale } from '../lib/facetLabels.js'
 import {
 	publicationSummary,
 	themeIdsOf,
 	toDocuments,
 	visitorRows,
 } from '../lib/publicationDetail.js'
-import { pageLocale } from '../lib/wooCategories.js'
 
 /**
  * One publication, as a visitor reads it: title, summary, date, category and

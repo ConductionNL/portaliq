@@ -2,81 +2,53 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 /**
- * The names of the 17 Woo information categories (Woo art. 3.3).
+ * Words for the codes a search facet and a record page show.
  *
- * A publication stores its category as the TOOI code (`infocat014`), and the
- * search facet answers with the same code. A visitor reads the name. The list
- * is the statutory one, the same in every municipality, and it is the list
- * opencatalogi files publications under (`OCA\OpenCatalogi\Service\WooCategory`),
- * so the site can name a code without asking the app.
+ * A record stores a code (`infocat014`, `publication`), and the facet answers
+ * with the same code. A visitor reads the name. Which fields have a list of
+ * names, and the names themselves, are configuration in
+ * `src/site/config/valueLists.js`; nothing here knows one list from another.
  *
  * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 
-const CATEGORIES = {
-	infocat001: [
-		'Wetten en algemeen verbindende voorschriften',
-		'Laws and generally binding regulations',
-	],
-	infocat002: [
-		'Overige besluiten van algemene strekking',
-		'Other decisions of general scope',
-	],
-	infocat003: [
-		'Ontwerpen van wet- en regelgeving met adviesaanvraag',
-		'Draft legislation sent out for advice',
-	],
-	infocat004: ['Organisatie en werkwijze', 'Organisation and working methods'],
-	infocat005: ['Bereikbaarheidsgegevens', 'Contact details'],
-	infocat006: [
-		'Bij vertegenwoordigende organen ingekomen stukken',
-		'Documents received by representative bodies',
-	],
-	infocat007: [
-		'Vergaderstukken Staten-Generaal',
-		'Meeting documents of the States General',
-	],
-	infocat008: [
-		'Vergaderstukken decentrale overheden',
-		'Meeting documents of local and regional governments',
-	],
-	infocat009: [
-		"Agenda's en besluitenlijsten bestuurscolleges",
-		'Agendas and decision lists of executive boards',
-	],
-	infocat010: ['Adviezen', 'Advice'],
-	infocat011: ['Convenanten', 'Covenants'],
-	infocat012: ['Jaarplannen en jaarverslagen', 'Annual plans and annual reports'],
-	infocat013: [
-		'Subsidieverplichtingen anders dan met beschikking',
-		'Subsidy obligations other than by decision',
-	],
-	infocat014: ['Woo-verzoeken en -besluiten', 'Woo requests and decisions'],
-	infocat015: ['Onderzoeksrapporten', 'Research reports'],
-	infocat016: ['Beschikkingen', 'Individual decisions'],
-	infocat017: ['Klachtoordelen', 'Complaint rulings'],
+import { VALUE_LISTS } from '../config/valueLists.js'
+
+/**
+ * Whether a field has a configured list of names.
+ *
+ * @param {string} field The field's name in the stored record.
+ * @return {boolean} True when the site can name the field's codes.
+ */
+export function hasValueList(field) {
+	return Object.hasOwn(VALUE_LISTS, String(field ?? ''))
 }
 
 /**
- * The name of a Woo category in the site's language: English for `en`,
- * Dutch otherwise. A code outside the statutory list reads as itself.
+ * The name of a code in the site's language. A language without a name reads
+ * in Dutch. A field without a list, and a code outside its list, read as the
+ * code itself, so a newly added code still shows something a visitor can
+ * search for.
  *
- * @param {string} code The category code, for example `infocat014`.
+ * @param {string} field The field's name in the stored record.
+ * @param {string} code The stored code.
  * @param {string} locale The site's language.
  * @return {string} The name.
  * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
-export function wooCategoryLabel(code, locale) {
+export function valueLabel(field, code, locale) {
 	const key = String(code ?? '')
-	if (!Object.hasOwn(CATEGORIES, key)) {
+	if (!hasValueList(field) || !Object.hasOwn(VALUE_LISTS[field], key)) {
 		return key
 	}
-	return CATEGORIES[key][locale === 'en' ? 1 : 0]
+	const names = VALUE_LISTS[field][key]
+	return Object.hasOwn(names, locale) ? names[locale] : names.nl
 }
 
 /**
- * The search facet's buckets with a name on every Woo category. Buckets of
- * any other field keep the label the API gave them.
+ * The search facet's buckets with a name on every code of a field that has a
+ * configured list. Buckets of any other field keep the label the API gave
+ * them.
  *
  * @param {Array<{value: string, label: string, count: number}>} buckets The buckets.
  * @param {string} field The facet field.
@@ -88,12 +60,12 @@ export function labelBuckets(buckets, field, locale) {
 	if (field === 'resultType') {
 		return kindBuckets(buckets, locale)
 	}
-	if (field !== 'wooCategory') {
+	if (!hasValueList(field)) {
 		return buckets
 	}
 	return buckets.map((bucket) => ({
 		...bucket,
-		label: wooCategoryLabel(bucket.value, locale),
+		label: valueLabel(field, bucket.value, locale),
 	}))
 }
 

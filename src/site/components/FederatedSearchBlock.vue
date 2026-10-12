@@ -476,6 +476,7 @@ import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
  */
 import { defineAsyncComponent } from 'vue'
 import SearchSuggestions from './SearchSuggestions.vue'
+import { labelBuckets, pageLocale } from '../lib/facetLabels.js'
 import {
 	buildRequestUrl,
 	lockedFiltersOf,
@@ -490,7 +491,6 @@ import {
 	writeSearchState,
 } from '../lib/federatedSearch.js'
 import { suggestionRoute } from '../lib/searchSuggestions.js'
-import { labelBuckets, pageLocale } from '../lib/wooCategories.js'
 
 export default {
 	name: 'FederatedSearchBlock',

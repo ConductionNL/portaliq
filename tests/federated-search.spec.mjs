@@ -28,6 +28,7 @@
 //      are different requests and only one of them means "everything".
 
 import { readFileSync } from 'node:fs'
+import { kindBuckets, kindLabel, labelBuckets } from '../src/site/lib/facetLabels.js'
 import {
 	buildRequestUrl,
 	facetFieldsOf,
@@ -47,7 +48,6 @@ import {
 	withoutLocked,
 	writeSearchState,
 } from '../src/site/lib/federatedSearch.js'
-import { kindBuckets, kindLabel, labelBuckets } from '../src/site/lib/wooCategories.js'
 
 let failures = 0
 

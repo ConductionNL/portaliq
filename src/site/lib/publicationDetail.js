@@ -12,7 +12,7 @@
  * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 
-import { wooCategoryLabel } from './wooCategories.js'
+import { valueLabel } from './facetLabels.js'
 
 /**
  * Whether a value counts as empty for display.
@@ -125,7 +125,7 @@ export function visitorRows(publication, { t, locale, themeNames = {} }) {
 		rows.push({
 			name: 'wooCategory',
 			label: t('Information category'),
-			value: wooCategoryLabel(publication.wooCategory, locale),
+			value: valueLabel('wooCategory', publication.wooCategory, locale),
 			kind: 'text',
 		})
 	}

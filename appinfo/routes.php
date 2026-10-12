@@ -581,10 +581,12 @@ return [
 
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
-        // Hosted tilburg-woo-ui (Open Tilburg WOO SPA) — public. Registered
+        // A bundled site, public: /woo serves the `woo` bundle (the Open Tilburg
+        // publication site). The route names its bundle in `defaults`; the URLs
+        // are the ones residents have bookmarked and do not change. Registered
         // BEFORE the greedy /{path} catch-all so /woo assets are not swallowed.
-        ['name' => 'woo#serve', 'url' => '/woo', 'verb' => 'GET'],
-        ['name' => 'woo#servePath', 'url' => '/woo/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
+        ['name' => 'bundledSite#serve', 'url' => '/woo', 'verb' => 'GET', 'defaults' => ['bundle' => 'woo']],
+        ['name' => 'bundledSite#servePath', 'url' => '/woo/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['bundle' => 'woo', 'path' => '']],
 
         // SPA catch-all — same controller as the index route; must use a distinct route name
         // (duplicate names replace the earlier route in Symfony, which breaks GET /).

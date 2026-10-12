@@ -1133,6 +1133,41 @@ The site MUST hand the language switch the serving portal's own `locales`, never
 - AND a link inside the site keeps `lang=en`
 - @e2e exclude pinned by `tests/language-nav.spec.mjs`, which records the request URLs
 
+### Requirement: A bundled site is served by a generic host
+
+A site that ships as build output in the app root (a bundle) SHALL be served by
+one host that knows no bundle by name. The route SHALL name the bundle it
+serves, and the host SHALL serve only a bundle the app ships. Which URL serves
+which bundle is configuration (decision 182): today `/woo` and `/woo/{path}`
+serve the `woo` bundle, and those URLs SHALL keep answering until the change
+`retire-the-vendored-woo-bundle` replaces the bundle with authored content.
+
+#### Scenario: the bookmarked URL still opens the site
+- GIVEN the app ships the `woo` bundle
+- WHEN a visitor opens `/woo`
+- THEN the bundle's `index.html` is returned
+- @e2e exclude pinned by `tests/Unit/Controller/BundledSiteControllerTest.php`, which serves a throwaway bundle and reads the bytes
+
+#### Scenario: a client-side route falls back to the entry
+- GIVEN the app ships the `woo` bundle
+- WHEN a visitor opens `/woo/requests/2026/42`, which is no file in the bundle
+- THEN the bundle's `index.html` is returned
+- @e2e exclude pinned by `tests/Unit/Controller/BundledSiteControllerTest.php`
+
+#### Scenario: a path never leaves the bundle
+- GIVEN a file next to the bundle, and a sibling directory whose name starts with the bundle's
+- WHEN a visitor asks for a path that climbs out of the bundle
+- THEN the bundle's `index.html` is returned
+- AND no byte of the outside file is returned
+- @e2e exclude pinned by `tests/Unit/Controller/BundledSiteControllerTest.php`
+
+#### Scenario: a directory that is not a bundle is not served
+- GIVEN a request that names a bundle the app does not ship, such as `lib` or `..`
+- WHEN the host handles it
+- THEN it answers 404
+- AND no byte of that directory is returned
+- @e2e exclude pinned by `tests/Unit/Controller/BundledSiteControllerTest.php`
+
 ## Notes
 
 - The "A page may carry a hero image reference" and "A public page may embed
