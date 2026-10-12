@@ -64,7 +64,7 @@ class CmsCacheInvalidationListener implements IEventListener {
 	 *
 	 * @var string[]
 	 */
-	private const CMS_SCHEMAS = ['portal', 'menu', 'page', 'glossaryTerm', 'media', 'portalFaq', 'portalFinder', 'sharedBlock'];
+	private const CMS_SCHEMAS = ['portal', 'menu', 'page', 'glossaryTerm', 'media', 'portalFaq', 'portalFinder', 'sharedBlock', 'form'];
 
 
 	/**

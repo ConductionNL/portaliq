@@ -145,9 +145,22 @@
 			class="pq-intake-form__form"
 			novalidate
 			@submit.prevent="onSubmit">
-			<h2 v-if="render.formName && !hideFormName" class="utrecht-heading-2">
-				{{ render.formName }}
-			</h2>
+			<!-- The form's title with "Hulp nodig?" to its right (board FormulierHulp). -->
+			<div
+				v-if="(render.formName && !hideFormName) || offersHelp"
+				class="pq-intake-form__header">
+				<h2
+					v-if="render.formName && !hideFormName"
+					class="utrecht-heading-2 pq-intake-form__title">
+					{{ render.formName }}
+				</h2>
+				<FormHelp
+					v-if="offersHelp"
+					class="pq-intake-form__help"
+					:portalHelp="portalHelp"
+					:formHelp="formHelp"
+					:title="render.formName || ''" />
+			</div>
 
 			<template v-if="hasSteps">
 				<FormProgress
@@ -376,6 +389,7 @@
 
 <script>
 import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
+import { defineAsyncComponent } from 'vue'
 import AddressNL from './forms/AddressNL.vue'
 import DateInputGroup from './forms/DateInputGroup.vue'
 import EmailCodeField from './forms/EmailCodeField.vue'
@@ -390,6 +404,7 @@ import SignatureField from './forms/SignatureField.vue'
 import StatementsBlock from './forms/StatementsBlock.vue'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
+import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
 	bindingRouteFrom,
 	decideStep as decideStepOnServer,
@@ -459,11 +474,24 @@ export default {
 		ReviewList,
 		SignatureField,
 		EmailCodeField,
+		FormHelp: defineAsyncComponent(() => import('./FormHelp.vue')),
 	},
 
 	mixins: [stepFlow],
 
 	props: {
+		/** The portal's help details; "Hulp nodig?" shows when there are any. Supplied by the host. */
+		portalHelp: {
+			type: Object,
+			default: null,
+		},
+
+		/** This form's own help details; each key overrides the portal's. */
+		formHelp: {
+			type: Object,
+			default: null,
+		},
+
 		/** The serving portal's slug. Supplied by the host, never authored. */
 		portal: {
 			type: String,
@@ -591,6 +619,14 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {boolean} Whether the portal or the form has help details to offer.
+		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 */
+		offersHelp() {
+			return hasHelp(mergeHelp(this.portalHelp, this.formHelp))
+		},
+
 		/**
 		 * The values of the calculated fields, worked out from the answers so far.
 		 * For display only: the server works them out again on submit.
@@ -1394,6 +1430,23 @@ export default {
 </script>
 
 <style scoped>
+.pq-intake-form__header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem 1.5rem;
+}
+
+.pq-intake-form__title {
+	flex: 1 1 20rem;
+}
+
+.pq-intake-form__help {
+	flex: none;
+	margin-inline-start: auto;
+}
+
 .pq-intake-form__note {
 	margin-block-end: var(--utrecht-space-block-md, 1rem);
 }

@@ -326,6 +326,46 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
+	 * The page a visitor gets carries the help of the stored form its placement names.
+	 *
+	 * Asserted from the reader, the caller: a class that shapes the help but is
+	 * never asked would pass its own test and change nothing on the site.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+	 */
+	public function testAFormPlacementIsServedWithItsStoredFormsHelp(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				[
+					'title'  => 'Woo-verzoek indienen',
+					'route'  => '/woo-verzoek',
+					'portal' => 'zuiddrecht',
+					'status' => 'published',
+					'body'   => [
+						'type'    => 'grid',
+						'widgets' => [
+							['id' => 'form', 'widgetKey' => 'form', 'props' => ['formId' => 'f-1', 'fields' => []]],
+						],
+					],
+				],
+				['id' => 'f-1', 'portal' => 'zuiddrecht', 'help' => ['phone' => '14 021', 'email' => 'woo@zuiddrecht.example']],
+			]
+		);
+
+		$page = $this->reader->page('zuiddrecht', '/woo-verzoek', 'nl', 'anonymous');
+
+		$this->assertSame(
+			['phone' => '14 021', 'email' => 'woo@zuiddrecht.example'],
+			$page['body']['widgets'][0]['props']['formHelp']
+		);
+		$this->assertSame(2, substr_count((string)json_encode($page['body']), '14 021'), 'the copy grouped by region carries it too');
+	}//end testAFormPlacementIsServedWithItsStoredFormsHelp()
+
+
+	/**
 	 * A block of the serving organisation expands into the placement; the placement keeps its cell.
 	 *
 	 * @return void
