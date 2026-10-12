@@ -376,7 +376,12 @@ function rendererContractLint(manifest) {
 			}
 			// A `sections` widget draws its `widgetId` children under headings
 			// (the portal's Instellingen tab).
-			if (widget && widget.type === 'sections' && widget.content && Array.isArray(widget.content.sections)) {
+			if (
+				widget
+				&& widget.type === 'sections'
+				&& widget.content
+				&& Array.isArray(widget.content.sections)
+			) {
 				for (const section of widget.content.sections) {
 					if (section && section.widgetId) {
 						placed.add(section.widgetId)
