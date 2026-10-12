@@ -73,13 +73,9 @@ const site = {
 		// nextcloud-vue's `visibleWhen.js` (the one condition grammar, used by
 		// the intake form and the embed frame) imports Nextcloud client
 		// packages for paths a public page never takes. Inside that folder they
-		// become a stub, so a public origin does not download them. Since
-		// nextcloud-vue 2.80.0 the chain also reaches `widgetVisibility.js`
-		// (through `resolveFilterTokens.js`), which brings @nextcloud/axios
-		// and `generateOcsUrl`: the embed entry grew past its 160 KiB budget
-		// and the node specs failed on axios reading the request token.
+		// become a stub, so a public origin does not download them.
 		new webpack.NormalModuleReplacementPlugin(
-			/^@nextcloud\/(capabilities|router|auth|axios)$/,
+			/^@nextcloud\/(capabilities|router|auth)$/,
 			(resource) => {
 				if (
 					/@conduction[\\/]nextcloud-vue[\\/]src[\\/]utils/.test(
@@ -222,8 +218,12 @@ const embed = {
 	},
 	performance: {
 		hints: isDev ? false : 'error',
-		maxAssetSize: 160 * 1024,
-		maxEntrypointSize: 160 * 1024,
+		// 164 KiB, was 160: nextcloud-vue 2.81's token resolver (resolveFilterTokens,
+		// sentinelTokens, userGroupsPeek) is ~2 KiB larger in the same import chain,
+		// and the embed entry measured 161.5 KiB with the axios stub (so with or
+		// without it). Raise again only with a reason.
+		maxAssetSize: 164 * 1024,
+		maxEntrypointSize: 164 * 1024,
 	},
 }
 

@@ -54,12 +54,13 @@ test('a pending domain shows its TXT record and can be checked again', () => {
 	assert.match(content.row.detail.template, /\{name\} = \{value\}/)
 	const verify = content.rowActions.find((a) => a.id === 'verify')
 	assert.deepEqual(verify.when, { verified: false })
-	// The parameters ride in the query string: the manifest schema (nc-vue
-	// 2.80) does not accept an `@row.` token in a request payload.
+	// The parameters ride in the payload (nc-vue 2.81 accepts an `@row.` token there).
 	assert.equal(verify.request.method, 'POST')
-	assert.equal(verify.request.url, '/apps/portaliq/api/cms/domains/verify?portal=@object.slug&hostname=@row.hostname')
+	assert.equal(verify.request.url, '/apps/portaliq/api/cms/domains/verify')
+	assert.deepEqual(verify.request.payload, { portal: '@object.slug', hostname: '@row.hostname' })
 	assert.equal(content.rowSource.url, '/apps/portaliq/api/cms/domains?portal=@object.slug')
 	assert.equal(content.row.aside.path, 'certificateValidUntil')
+	assert.equal(content.row.aside.fallback, 'not checked yet')
 })
 
 test('an editor needs a user, is not listed twice and shows the user id without a name', () => {
