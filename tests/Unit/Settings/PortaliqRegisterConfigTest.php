@@ -386,9 +386,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.93.0 (portal 0.24.0, portalAccount 0.18.0, portalEmailLink 0.1.0): the `email-link` sign-in mode, identity type `email`, the account's own `signInAddress` and the one-time link record (sign-in-with-an-email-link). Additive.
 		// 0.94.0 (portal 0.25.0): `domains[].certificateValidUntil`, `certificateCheckedAt` and `editors` (portal-domains-and-editors). Additive.
 		// 0.95.0 (portalFormBinding 0.5.0): `destination { register, schema, subjectField, paymentField, fields, fixed }` replaces `caseRegister`, `caseSchema` and `deliverTo`, which MoveBindingDestination moves (submit-creates-the-case-directly, decision 179). Additive; the old fields stay, deprecated, until the drain reports zero.
-		$this->assertSame('0.95.0', self::$register['info']['version']);
-		$this->assertSame('0.95.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('object', self::$register['components']['schemas']['portalFormBinding']['properties']['destination']['type']);
+		// 0.96.0 (form 0.3.0): a landing-page form's `destination { register, schema, fields, fixed }`; a submit creates that object directly (submit-creates-the-case-directly 3.2). Additive.
+		$this->assertSame('0.96.0', self::$register['info']['version']);
+		$this->assertSame('0.96.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['form']['version']);
+		$this->assertSame('object', self::$register['components']['schemas']['form']['properties']['destination']['type']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame(200, self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['summary']['maxLength']);
 		$this->assertSame('object', self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['answerSummary']['type']);

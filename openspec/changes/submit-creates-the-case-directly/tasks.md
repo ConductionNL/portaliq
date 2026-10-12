@@ -24,15 +24,19 @@
 
 - [x] 3.1 Woo request forms submit into the dossiq Woo case; remove `PortalWooRequestDelivery`
   - Built generic: a Woo form is a binding whose destination is the dossiq case; `PortalWooRequestDelivery` and its test are removed. A `deliverTo: wooRequest` binding without a case pair is reported by the repair step and refuses to send until an administrator names the destination (live pass: set it on each Woo binding).
-- [ ] 3.2 Landing-page forms declare the source app's destination; remove `LandingPageSubmissionDispatchListener` (not built in this PR: next stacked PR)
+- [x] 3.2 Landing-page forms declare the source app's destination
+  - Built: `form.destination { register, schema, fields, fixed }` (register 0.96.0, form 0.3.0); `LandingPageProvisioningService` carries the requesting app's `form.destination`; `PortalContributionProvider` synthesises each active form's action onto that destination with its tracking values as `server` values, and a form without one is logged and not submittable; `ContributionController::createAnonymous` submits such an action through `DestinationIntake` (no `landingPageSubmission` written). Tests: PortalContributionProviderTest, LandingPageProvisioningServiceTest, ContributionControllerLandingDestinationTest.
+  - `LandingPageSubmissionDispatchListener` stays until the drain reports zero landing-page submissions (task 4.3); nothing creates a `landingPageSubmission` any more, so it no longer fires for new submits.
+  - Sibling owed: pipelinq's `LandingPageRequestedEvent` must send `form.destination` (its `lead`); until it does, its new landing pages are not submittable (live pass: set the destination per form).
 - [x] 3.3 `PortalIntakePayments` reads the case's payment status (decision 181)
 
 ## 4. Drain and remove
 
-- [ ] 4.1 `occ portaliq:intake:drain` for `portalIntakeSubmission` (`queued`, `failed`) and `landingPageSubmission`; old reference to `externalReference`; report delivered and refused
-  - Built for `portalIntakeSubmission`: `lib/Command/IntakeDrain.php` + `lib/Service/Intake/IntakeQueueDrain.php` (old reference as `externalReference` and as the Idempotency-Key; exit 0 only at zero waiting). `landingPageSubmission` follows with 3.2.
+- [x] 4.1 `occ portaliq:intake:drain` for `portalIntakeSubmission` (`queued`, `failed`) and `landingPageSubmission`; old reference to `externalReference`; report delivered and refused
+  - Built for `portalIntakeSubmission`: `lib/Command/IntakeDrain.php` + `lib/Service/Intake/IntakeQueueDrain.php` (old reference as `externalReference` and as the Idempotency-Key; exit 0 only at zero waiting).
+  - Built for `landingPageSubmission`: `lib/Service/Intake/LandingSubmissionDrain.php` (into the form's destination through `DestinationIntake`, stored id as `externalReference` and Idempotency-Key; a form without a destination or a refusal is reported and kept). Tests: LandingSubmissionDrainTest, IntakeDrainTest.
 - [x] 4.2 Old `AANVRAAG-` lookups resolve to the case through `externalReference`
-- [ ] 4.3 (live pass, decision 139) When the drain reports zero: remove `PortalIntakeQueue`, `PortalIntakeDeliveryJob` (and its `info.xml` entry), both schemas, and the `@spec` tags pointing at the archived intake changes; record the count in the pull request
+- [ ] 4.3 (live pass, decision 139) When the drain reports zero: remove `PortalIntakeQueue`, `PortalIntakeDeliveryJob` (and its `info.xml` entry), both schemas, `landingPageSubmission` with `LandingPageSubmissionDispatchListener`, and the `@spec` tags pointing at the archived intake changes; record the count in the pull request
   - Already done: `PortalIntakeDeliveryJob` and its `info.xml` entry are removed now (it was the `_rbac: false` path, task 2.3); queued entries wait for `occ portaliq:intake:drain`. Left until zero: `PortalIntakeQueue` (drain and old-reference status), both schemas.
 
 ## 5. Drafts

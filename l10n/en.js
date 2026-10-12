@@ -2865,6 +2865,7 @@ OC.L10N.register(
         "The property the payment state is read from.": "The property the payment state is read from.",
         "A form field that writes into a property with another name.": "A form field that writes into a property with another name.",
         "Values every submit writes.": "Values every submit writes.",
+        "The object a submit of this form creates, in the same request.": "The object a submit of this form creates, in the same request.",
         "A domain only works once it is verified.": "A domain only works once it is verified.",
         "Add domain": "Add domain",
         "Administrators": "Administrators",

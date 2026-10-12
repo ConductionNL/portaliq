@@ -90,11 +90,6 @@ class PortalContributionProvider implements IPortalContributionProvider {
 	private const FORM_SCHEMA = 'form';
 
 	/**
-	 * The schema a synthesised form-submission action writes to.
-	 */
-	private const SUBMISSION_SCHEMA = 'landingPageSubmission';
-
-	/**
 	 * The dedicated pseudo-audience under which synthesised form-submission
 	 * actions are surfaced — landing-page forms have no `portalAccount`
 	 * audience of their own, unlike a `portalPage` contribution.
@@ -347,12 +342,14 @@ class PortalContributionProvider implements IPortalContributionProvider {
 
 	/**
 	 * Convert every active `form` object into ONE synthesised `anonymous:
-	 * true`, `type: create` action targeting `landingPageSubmission`,
-	 * whitelisting the form's own declared field ids plus the fixed
-	 * tracking fields (`utmFirstTouch`/`utmLastTouch`/`referrer`), and
-	 * stamping `formId`/`pageId`/`pageRoute`/`portal`/`sourceApp`/
-	 * `externalReference`/`campaign`/`submittedAt`/`nonce` as server
-	 * `defaults` a client can never override.
+	 * true`, `type: create` action targeting the form's own `destination`
+	 * (decision 179: no `landingPageSubmission` in between), whitelisting the
+	 * form's declared field ids plus the fixed tracking fields
+	 * (`utmFirstTouch`/`utmLastTouch`/`referrer`), and carrying
+	 * `formId`/`pageId`/`pageRoute`/`portal`/`sourceApp`/
+	 * `externalReference`/`campaign`/`submittedAt`/`nonce` as `server`
+	 * values a client can never override. A form without a destination is
+	 * not submittable until an administrator names one; it is logged.
 	 *
 	 * `submittedAt`/`nonce` are minted freshly HERE, on every call — this
 	 * method runs once per HTTP request that resolves the anonymous
@@ -379,19 +376,16 @@ class PortalContributionProvider implements IPortalContributionProvider {
 				continue;
 			}
 
-			$fieldIds = [];
-			foreach ((array)($row['fields'] ?? []) as $field) {
-				$fieldId = null;
-				if (is_array($field) === true) {
-					$fieldId = ($field['id'] ?? null);
-				}
-
-				if (is_string($fieldId) === true && $fieldId !== '') {
-					$fieldIds[] = $fieldId;
-				}
+			$fieldIds = $this->fieldIdsOf(row: $row);
+			if ($fieldIds === []) {
+				continue;
 			}
 
-			if ($fieldIds === []) {
+			$destination = (array)($row['destination'] ?? []);
+			$register    = trim((string)($destination['register'] ?? ''));
+			$schema      = trim((string)($destination['schema'] ?? ''));
+			if ($register === '' || $schema === '') {
+				$this->logger->warning('Portaliq: a landing-page form names no destination and cannot be submitted', ['form' => $formId]);
 				continue;
 			}
 
@@ -401,11 +395,13 @@ class PortalContributionProvider implements IPortalContributionProvider {
 				'id' => ('submit-' . $formId),
 				'type' => 'create',
 				'anonymous' => true,
-				'register' => self::REGISTER,
-				'schema' => self::SUBMISSION_SCHEMA,
+				'register' => $register,
+				'schema' => $schema,
 				'label' => (string)($row['submitLabel'] ?? 'Submit'),
 				'fields' => $fieldIds,
-				'defaults' => [
+				'destination' => array_merge($destination, ['register' => $register, 'schema' => $schema]),
+				'intakeScope' => (string)($row['portal'] ?? '') . '/' . (string)($row['pageRoute'] ?? ''),
+				'server' => [
 					'formId' => $formId,
 					'pageId' => (string)($row['pageId'] ?? ''),
 					'pageRoute' => (string)($row['pageRoute'] ?? ''),
@@ -421,6 +417,29 @@ class PortalContributionProvider implements IPortalContributionProvider {
 
 		return $actions;
 	}//end synthesiseFormActions()
+
+	/**
+	 * A form's declared field ids, in order.
+	 *
+	 * @param array<string, mixed> $row The `form` row.
+	 *
+	 * @return array<int, string>
+	 */
+	private function fieldIdsOf(array $row): array {
+		$fieldIds = [];
+		foreach ((array)($row['fields'] ?? []) as $field) {
+			$fieldId = null;
+			if (is_array($field) === true) {
+				$fieldId = ($field['id'] ?? null);
+			}
+
+			if (is_string($fieldId) === true && $fieldId !== '') {
+				$fieldIds[] = $fieldId;
+			}
+		}
+
+		return $fieldIds;
+	}//end fieldIdsOf()
 
 	/**
 	 * Resolve a row's identifier (`id`/`uuid`, flat or in `@self`) for the

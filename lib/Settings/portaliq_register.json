@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.95.0"
+        "version": "0.96.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.95.0",
+                "version": "0.96.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -6660,7 +6660,7 @@
             "form": {
                 "slug": "form",
                 "icon": "FormSelect",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Form",
                 "authorization": {
                     "read": [
@@ -6680,6 +6680,38 @@
                     "status"
                 ],
                 "properties": {
+                    "destination": {
+                        "title": "Destination",
+                        "type": "object",
+                        "description": "The object a submit of this form creates, in the same request.",
+                        "properties": {
+                            "register": {
+                                "type": "string",
+                                "title": "Register",
+                                "example": "pipelinq",
+                                "description": "The register of the object a submit creates."
+                            },
+                            "schema": {
+                                "type": "string",
+                                "title": "Schema",
+                                "example": "lead",
+                                "description": "The schema of the object a submit creates."
+                            },
+                            "fields": {
+                                "type": "object",
+                                "title": "Field to property",
+                                "additionalProperties": {
+                                    "type": "string"
+                                },
+                                "description": "A form field that writes into a property with another name."
+                            },
+                            "fixed": {
+                                "type": "object",
+                                "title": "Fixed values",
+                                "description": "Values every submit writes."
+                            }
+                        }
+                    },
                     "portal": {
                         "title": "Portal",
                         "type": "string",

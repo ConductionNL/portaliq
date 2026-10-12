@@ -58,6 +58,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Service\Intake\ActionDraft;
 use OCA\Portaliq\Service\Intake\DestinationDraft;
+use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
@@ -191,6 +192,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                 create then sends instead of writing a new object (decision 180).
 	 *                                 Absent writes a new object as before.
 	 * @param DestinationDraft|null $destinations Sends that draft through OpenRegister's submit service.
+	 * @param DestinationIntake|null $intake Submits a landing-page form straight into its destination
+	 *                                       (decision 179). Absent answers 503 for such a form.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -220,6 +223,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?PortalRateLimit $rateLimit = null,
 		private readonly ?ActionDraft $drafts = null,
 		private readonly ?DestinationDraft $destinations = null,
+		private readonly ?DestinationIntake $intake = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -1721,6 +1725,10 @@ class ContributionController extends Controller implements PortalProtected {
 			return $missing;
 		}
 
+		if (is_array($action['destination'] ?? null) === true) {
+			return $this->submitIntoDestination(action: $action, answers: $whitelisted);
+		}
+
 		$created = $this->writer->createAnonymousObject(register: $register, schema: $schema, data: $data);
 		if ($created === null) {
 			return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
@@ -1728,6 +1736,52 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['object' => $created]);
 	}//end createAnonymous()
+
+	/**
+	 * Submit an anonymous form straight into its destination (decision 179).
+	 *
+	 * A landing-page form names the object it creates; OpenRegister's submit
+	 * service validates the answers against that schema and creates it in
+	 * this request, under RBAC as an anonymous write. The form's `server`
+	 * values (form, page, portal, campaign, moment) are written where the
+	 * destination declares them and can never be overridden by an answer.
+	 * Nothing is stored in portaliq on the way.
+	 *
+	 * @param array<string, mixed> $action  The synthesised form action.
+	 * @param array<string, mixed> $answers The whitelisted answers.
+	 *
+	 * @return JSONResponse The created object, or the refusal (422 per field, 403/404, 503).
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+	 */
+	private function submitIntoDestination(array $action, array $answers): JSONResponse {
+		if ($this->intake === null) {
+			$refusal = DestinationIntake::refusal(submitted: null);
+			return new JSONResponse($refusal['body'], $refusal['status']);
+		}
+
+		$fields = [];
+		foreach ((array)($action['fields'] ?? []) as $field) {
+			if (is_string($field) === true && $field !== '') {
+				$fields[] = ['name' => $field];
+			}
+		}
+
+		$scope     = explode('/', (string)($action['intakeScope'] ?? ''), 2);
+		$submitted = $this->intake->submit(
+			binding: ['destination' => $action['destination'], 'portal' => $scope[0], 'route' => ($scope[1] ?? '')],
+			render: ['fields' => $fields],
+			answers: $answers,
+			server: (array)($action['server'] ?? []),
+			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
+		);
+		if ($submitted['ok'] === false) {
+			$refusal = DestinationIntake::refusal(submitted: $submitted);
+			return new JSONResponse($refusal['body'], $refusal['status']);
+		}
+
+		return new JSONResponse(['object' => $submitted['answer']]);
+	}//end submitIntoDestination()
 
 	/**
 	 * Find the `anonymous: true`, `type: create` action for (register, schema)

@@ -22,6 +22,12 @@ An active landing-page form SHALL declare the contributing app's destination (fo
 - THEN the created lead holds no `isAdmin`
 - @e2e exclude whitelist invariant, covered by PHPUnit
 
+#### Scenario: A form without a destination cannot be submitted
+- GIVEN an active landing-page form whose requesting app named no destination
+- WHEN the anonymous form actions are built
+- THEN that form offers no submit action and the gap is logged for an administrator
+- @e2e exclude configuration gap, covered by PHPUnit
+
 ## REMOVED Requirements
 
 ### Requirement: A submission is relayed to the contributing app as a fail-safe, not a fail-closed, cross-app event

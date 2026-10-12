@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Command;
 
 use OCA\Portaliq\Service\Intake\IntakeQueueDrain;
+use OCA\Portaliq\Service\Intake\LandingSubmissionDrain;
 use OCA\Portaliq\Service\Intake\PortalDraftDrain;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -47,10 +48,12 @@ class IntakeDrain extends Command {
 	 *
 	 * @param IntakeQueueDrain      $drain  Does the work.
 	 * @param PortalDraftDrain|null $drafts Moves saved `portalDraft` rows into OpenRegister drafts (task 5.3).
+	 * @param LandingSubmissionDrain|null $landing Submits stored landing-page submissions into their form's destination.
 	 */
 	public function __construct(
 		private readonly IntakeQueueDrain $drain,
 		private readonly ?PortalDraftDrain $drafts = null,
+		private readonly ?LandingSubmissionDrain $landing = null,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -91,10 +94,12 @@ class IntakeDrain extends Command {
 		if ((bool)$input->getOption('dry-run') === true) {
 			$waiting = $this->drain->waiting(limit: $limit);
 			$drafts  = (int)$this->drafts?->waiting(limit: $limit);
+			$landing = (int)$this->landing?->waiting(limit: $limit);
 			$output->writeln('Waiting: ' . $waiting);
 			$output->writeln('Drafts waiting: ' . $drafts);
+			$output->writeln('Landing-page submissions waiting: ' . $landing);
 
-			return (int)($waiting + $drafts > 0);
+			return (int)($waiting + $drafts + $landing > 0);
 		}
 
 		$result = $this->drain->drain(limit: $limit);
@@ -106,8 +111,9 @@ class IntakeDrain extends Command {
 		}
 
 		$output->writeln('Still waiting: ' . $result['waiting']);
-		$draftsWaiting = $this->drainDrafts(limit: $limit, output: $output);
-		if ($result['waiting'] === 0 && $draftsWaiting === 0) {
+		$draftsWaiting  = $this->drainDrafts(limit: $limit, output: $output);
+		$landingWaiting = $this->drainLanding(limit: $limit, output: $output);
+		if ($result['waiting'] === 0 && $draftsWaiting === 0 && $landingWaiting === 0) {
 			return 0;
 		}
 
@@ -140,4 +146,30 @@ class IntakeDrain extends Command {
 		$output->writeln('Drafts still waiting: ' . $result['waiting']);
 		return $result['waiting'];
 	}//end drainDrafts()
+
+	/**
+	 * Submit stored landing-page submissions into their form's destination and report (task 4.1).
+	 *
+	 * @param int             $limit  How many one run takes.
+	 * @param OutputInterface $output The report.
+	 *
+	 * @return int The submissions still waiting.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	private function drainLanding(int $limit, OutputInterface $output): int {
+		if ($this->landing === null) {
+			return 0;
+		}
+
+		$result = $this->landing->drain(limit: $limit);
+		$output->writeln('Landing-page submissions delivered: ' . $result['delivered']);
+		$output->writeln('Landing-page submissions kept: ' . $result['refused']);
+		foreach ($result['reasons'] as $id => $reason) {
+			$output->writeln('  ' . $id . ': ' . $reason);
+		}
+
+		$output->writeln('Landing-page submissions still waiting: ' . $result['waiting']);
+		return $result['waiting'];
+	}//end drainLanding()
 }//end class

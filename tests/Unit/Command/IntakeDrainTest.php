@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Command;
 
 use OCA\Portaliq\Command\IntakeDrain;
 use OCA\Portaliq\Service\Intake\IntakeQueueDrain;
+use OCA\Portaliq\Service\Intake\LandingSubmissionDrain;
 use OCA\Portaliq\Service\Intake\PortalDraftDrain;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -73,4 +74,19 @@ class IntakeDrainTest extends TestCase {
 		$this->assertSame(1, $tester->execute(['--dry-run' => true]));
 		$this->assertStringContainsString('Drafts waiting: 3', $tester->getDisplay());
 	}//end testSavedDraftsAreMovedAndCountTowardsTheZero()
+	public function testStoredLandingSubmissionsAreDeliveredAndCountTowardsTheZero(): void {
+		$drain = $this->createMock(IntakeQueueDrain::class);
+		$drain->method('drain')->willReturn(['delivered' => 0, 'refused' => 0, 'waiting' => 0, 'reasons' => []]);
+		$landing = $this->createMock(LandingSubmissionDrain::class);
+		$landing->method('drain')->willReturn(['delivered' => 4, 'refused' => 1, 'reasons' => ['s-9' => 'its form names no destination'], 'waiting' => 1]);
+		$landing->method('waiting')->willReturn(1);
+
+		$tester = new CommandTester(new IntakeDrain($drain, null, $landing));
+
+		$this->assertSame(1, $tester->execute([]));
+		$this->assertStringContainsString('Landing-page submissions delivered: 4', $tester->getDisplay());
+		$this->assertStringContainsString('s-9: its form names no destination', $tester->getDisplay());
+		$this->assertSame(1, $tester->execute(['--dry-run' => true]));
+		$this->assertStringContainsString('Landing-page submissions waiting: 1', $tester->getDisplay());
+	}//end testStoredLandingSubmissionsAreDeliveredAndCountTowardsTheZero()
 }//end class
