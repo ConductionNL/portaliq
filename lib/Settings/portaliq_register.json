@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.93.0"
+        "version": "0.94.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.93.0",
+                "version": "0.94.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2585,7 +2585,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.24.0",
+                "version": "0.25.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3139,6 +3139,20 @@
                                     "format": "date-time",
                                     "description": "When verification last succeeded. Re-checked periodically; a removed record eventually unbinds the domain.",
                                     "example": "2026-08-15T09:00:00+00:00"
+                                },
+                                "certificateValidUntil": {
+                                    "title": "Certificate valid until",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the TLS certificate this host presented on port 443 ends, read at the last verification run. Empty until a verified domain has been probed; kept when a later probe gets no answer.",
+                                    "example": "2027-01-14T12:00:00+00:00"
+                                },
+                                "certificateCheckedAt": {
+                                    "title": "Certificate checked at",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the certificate was last probed, whether or not the host answered.",
+                                    "example": "2026-10-11T09:00:00+00:00"
                                 }
                             }
                         }
@@ -4632,6 +4646,42 @@
                         "example": [
                             "/contact"
                         ]
+                    },
+                    "editors": {
+                        "title": "Editors",
+                        "type": "array",
+                        "description": "Who looks after this portal: Nextcloud user id, the display name stored beside it so the list reads without a lookup per person, and the role. Listing a user here grants no right to change pages.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "userId"
+                            ],
+                            "properties": {
+                                "userId": {
+                                    "title": "User",
+                                    "type": "string",
+                                    "description": "The Nextcloud user id.",
+                                    "example": "pieter"
+                                },
+                                "displayName": {
+                                    "title": "Display name",
+                                    "type": "string",
+                                    "example": "Pieter Jansen"
+                                },
+                                "role": {
+                                    "title": "Role",
+                                    "type": "string",
+                                    "enum": [
+                                        "chief-editor",
+                                        "editor"
+                                    ],
+                                    "default": "editor",
+                                    "description": "Chief editor or editor.",
+                                    "example": "chief-editor"
+                                }
+                            }
+                        },
+                        "example": []
                     }
                 }
             },

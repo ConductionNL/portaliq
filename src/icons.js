@@ -39,7 +39,10 @@ import CheckboxMarkedOutline from 'vue-material-design-icons/CheckboxMarkedOutli
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import ClipboardListOutline from 'vue-material-design-icons/ClipboardListOutline.vue'
 import ClipboardText from 'vue-material-design-icons/ClipboardText.vue'
+import ClockOutline from 'vue-material-design-icons/ClockOutline.vue'
 import Close from 'vue-material-design-icons/Close.vue'
+import CodeTags from 'vue-material-design-icons/CodeTags.vue'
+import Cog from 'vue-material-design-icons/Cog.vue'
 import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultClickOutline.vue'
 import Download from 'vue-material-design-icons/Download.vue'
@@ -128,6 +131,9 @@ export default {
 	// detail headers drew no icon at all, not a fallback (rule 3 above).
 	FileTreeOutline,
 	FolderOutline,
+	ClockOutline,
+	CodeTags,
+	Cog,
 	FormSelect,
 	EmailEditOutline,
 	EmailSearchOutline,

@@ -33,6 +33,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { isPlaced } from './lib/placement.mjs'
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -105,10 +106,10 @@ test('every integration widget names an integration', () => {
 
 test('every integration widget is placed in its page layout', () => {
 	for (const { page, config, widget } of integrationWidgets()) {
-		const placed = (config.layout || []).some((item) => item.widgetId === widget.id)
+		const placed = isPlaced(config, widget)
 		assert.ok(
 			placed,
-			`${page.id}/${widget.id}: declared but absent from config.layout. A `
+			`${page.id}/${widget.id}: declared but absent from the layout, the side column and every tab. A `
 			+ 'widget the grid never places is dark in exactly the way this file '
 			+ 'exists to catch, and nothing else reports it.',
 		)
