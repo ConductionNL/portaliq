@@ -1854,16 +1854,17 @@
         "schema": "portalSubmission",
         "columns": [
           {
-            "key": "submittedAt",
-            "label": "Submitted"
+            "key": "actionId",
+            "label": "Submitted action"
           },
           {
             "key": "appId",
             "label": "App"
           },
           {
-            "key": "actionId",
-            "label": "Action"
+            "key": "submittedAt",
+            "label": "Submitted on",
+            "widget": "date"
           },
           {
             "key": "deliveryStatus",
@@ -1902,20 +1903,27 @@
             "showCount": true
           },
           {
-            "label": "Wacht",
+            "label": "Wacht op bevestiging",
             "filter": {
               "deliveryStatus": "pending"
             },
             "showCount": true
           },
           {
-            "label": "Mislukt",
+            "label": "Bevestiging mislukt",
             "filter": {
               "deliveryStatus": "failed"
             },
             "showCount": true
           }
-        ]
+        ],
+        "rowTitle": "plain",
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards"
+        ],
+        "footerNote": "what the resident filled in is only on the submission itself, not in this list"
       }
     },
     {
@@ -4416,7 +4424,10 @@
         "a withdrawn account can no longer sign in, the cases stay with the organisation": "een ingetrokken account kan niet meer inloggen, de zaken blijven bij de organisatie",
         "Last published": "Laatste publicatie",
         "Copy or delete the selected portals.": "Kopieer of verwijder de geselecteerde portals.",
-        "an umbrella portal has no pages of its own, it adds up the traffic of its members": "een overkoepelende portal heeft geen eigen pagina's, hij telt het verkeer van zijn leden op"
+        "an umbrella portal has no pages of its own, it adds up the traffic of its members": "een overkoepelende portal heeft geen eigen pagina's, hij telt het verkeer van zijn leden op",
+        "Submitted on": "Ingediend op",
+        "what the resident filled in is only on the submission itself, not in this list": "wat de inwoner invulde staat alleen op de inzending zelf, niet in deze lijst",
+        "Submitted action": "Handeling"
       }
     }
   }
