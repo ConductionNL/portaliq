@@ -144,6 +144,14 @@ class PortalDraftControllerTest extends TestCase {
 		$this->assertSame([], $this->fake->calls);
 	}//end testSignedOutIsRefusedOnEveryRoute()
 
+	public function testAFailureBelowAnswersTryAgainLater(): void {
+		$controller = $this->controller(subjectRef: 'sanne', registryFails: true);
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $controller->show('dossiq', 'request')->getStatus());
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $controller->save('dossiq', 'request', [])->getStatus());
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $controller->discard('dossiq', 'request')->getStatus());
+	}//end testAFailureBelowAnswersTryAgainLater()
+
 	/**
 	 * A draft changed a moment ago.
 	 *
@@ -175,7 +183,7 @@ class PortalDraftControllerTest extends TestCase {
 	 * @param array<string, mixed>|null       $found   What findDraft answers.
 	 * @param array<string, mixed>            $action  The subject's create action.
 	 */
-	private function controller(string $subjectRef, array|\Throwable $outcome = [], ?array $found = null, array $action = self::ACTION): PortalDraftController {
+	private function controller(string $subjectRef, array|\Throwable $outcome = [], ?array $found = null, array $action = self::ACTION, bool $registryFails = false): PortalDraftController {
 		$session = $this->getMockBuilder(PortalSessionService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
@@ -183,7 +191,13 @@ class PortalDraftControllerTest extends TestCase {
 		$session->method('resolveFromBearer')->willReturn($subjectRef === '' ? null : ['subjectRef' => $subjectRef, 'trust' => 'low']);
 
 		$registry = $this->createMock(PortalContributionRegistry::class);
-		$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'dossiq', 'actions' => [$action]]]]);
+		if ($registryFails === true) {
+			$registry->method('aggregateFor')->willThrowException(new \RuntimeException('registry gone'));
+		}
+
+		if ($registryFails === false) {
+			$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'dossiq', 'actions' => [$action]]]]);
+		}
 		$reader = $this->createMock(PortalObjectReader::class);
 		$reader->method('resolveScopeValue')->willReturnCallback(
 			static fn (string $scopeClaim, string $contributingApp, array $subject): ?string => ($scopeClaim === 'missing' ? null : (string)($subject['subjectRef'] ?? ''))

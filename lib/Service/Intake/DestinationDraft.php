@@ -223,6 +223,8 @@ class DestinationDraft {
 	 * @param string $subjectRef The signed-in subject.
 	 *
 	 * @return object|null The owner.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
 	protected function ownerOf(string $subjectRef): ?object {
 		$factory = [self::DRAFT_OWNER, 'portalSubject'];

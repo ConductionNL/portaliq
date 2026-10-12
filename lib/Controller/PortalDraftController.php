@@ -42,6 +42,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use Throwable;
 
 /**
  * Save, read and discard the bearer's draft of a create action.
@@ -88,25 +89,30 @@ class PortalDraftController extends Controller {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$match = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
-		$draft = null;
-		if ($match !== null) {
-			$draft = $this->actions->find(action: $match['action'], subjectRef: (string)$subject['subjectRef']);
-		}
+		try {
+			$match = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
+			$draft = null;
+			if ($match !== null) {
+				$draft = $this->actions->find(action: $match['action'], subjectRef: (string)$subject['subjectRef']);
+			}
 
-		if ($match === null || $draft === null) {
-			return new JSONResponse(['found' => false], Http::STATUS_NOT_FOUND);
-		}
+			if ($match === null || $draft === null) {
+				return new JSONResponse(['found' => false], Http::STATUS_NOT_FOUND);
+			}
 
-		return new JSONResponse(
-			[
-				'id' => (string)$draft['id'],
-				'status' => 'draft',
-				'step' => '',
-				'expiresAt' => (string)$draft['expiresAt'],
-				'answers' => $this->actions->answersOf(action: $match['action'], draft: $draft),
-			]
-		);
+			return new JSONResponse(
+				[
+					'id' => (string)$draft['id'],
+					'status' => 'draft',
+					'step' => '',
+					'expiresAt' => (string)$draft['expiresAt'],
+					'answers' => $this->actions->answersOf(action: $match['action'], draft: $draft),
+				]
+			);
+		} catch (Throwable) {
+			// The destination could not be reached: the page keeps the answers and says to try again.
+			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 	}//end show()
 
 	/**
@@ -134,43 +140,48 @@ class PortalDraftController extends Controller {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$match = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
-		if ($match === null) {
-			return new JSONResponse(['found' => false], Http::STATUS_NOT_FOUND);
-		}
+		try {
+			$match = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
+			if ($match === null) {
+				return new JSONResponse(['found' => false], Http::STATUS_NOT_FOUND);
+			}
 
-		$body = $this->actions->bodyOf(match: $match, subject: $subject, answers: $answers);
-		if ($body === null) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
+			$body = $this->actions->bodyOf(match: $match, subject: $subject, answers: $answers);
+			if ($body === null) {
+				return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+			}
 
-		$subjectRef = (string)$subject['subjectRef'];
-		$existing   = $this->actions->find(action: $match['action'], subjectRef: $subjectRef);
-		$saved      = $this->drafts->saveDraft(
-			destination: $this->actions->destinationOf(action: $match['action']),
-			payload: $body,
-			subjectRef: $subjectRef,
-			draftId: (string)($existing['id'] ?? ''),
-			scope: $appId . '/' . $actionId
-		);
-		if ($saved['ok'] === false) {
-			return new JSONResponse(
-				['saved' => false, 'error' => 'invalid', 'errors' => $this->drafts->errorsOf(findings: $saved['findings'])],
-				$saved['status']
+			$subjectRef = (string)$subject['subjectRef'];
+			$existing   = $this->actions->find(action: $match['action'], subjectRef: $subjectRef);
+			$saved      = $this->drafts->saveDraft(
+				destination: $this->actions->destinationOf(action: $match['action']),
+				payload: $body,
+				subjectRef: $subjectRef,
+				draftId: (string)($existing['id'] ?? ''),
+				scope: $appId . '/' . $actionId
 			);
+			if ($saved['ok'] === false) {
+				return new JSONResponse(
+					['saved' => false, 'error' => 'invalid', 'errors' => $this->drafts->errorsOf(findings: $saved['findings'])],
+					$saved['status']
+				);
+			}
+
+			$expiresAt = (new DateTimeImmutable())->modify('+' . $this->actions->retentionDays(action: $match['action']) . ' days');
+
+			return new JSONResponse(
+				[
+					'id' => (string)$saved['answer']['id'],
+					'status' => 'draft',
+					'step' => '',
+					'expiresAt' => $expiresAt->format(DATE_ATOM),
+					'answers' => $this->actions->answersOf(action: $match['action'], draft: ['data' => $body]),
+				]
+			);
+		} catch (Throwable) {
+			// The destination could not be reached: the page keeps the answers and says to try again.
+			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
-
-		$expiresAt = (new DateTimeImmutable())->modify('+' . $this->actions->retentionDays(action: $match['action']) . ' days');
-
-		return new JSONResponse(
-			[
-				'id' => (string)$saved['answer']['id'],
-				'status' => 'draft',
-				'step' => '',
-				'expiresAt' => $expiresAt->format(DATE_ATOM),
-				'answers' => $this->actions->answersOf(action: $match['action'], draft: ['data' => $body]),
-			]
-		);
 	}//end save()
 
 	/**
@@ -193,21 +204,26 @@ class PortalDraftController extends Controller {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$match   = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
-		$deleted = false;
-		if ($match !== null) {
-			$subjectRef = (string)$subject['subjectRef'];
-			$draft      = $this->actions->find(action: $match['action'], subjectRef: $subjectRef);
-			if ($draft !== null) {
-				$deleted = $this->drafts->discardDraft(
-					destination: $this->actions->destinationOf(action: $match['action']),
-					subjectRef: $subjectRef,
-					draftId: (string)$draft['id']
-				);
+		try {
+			$match   = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
+			$deleted = false;
+			if ($match !== null) {
+				$subjectRef = (string)$subject['subjectRef'];
+				$draft      = $this->actions->find(action: $match['action'], subjectRef: $subjectRef);
+				if ($draft !== null) {
+					$deleted = $this->drafts->discardDraft(
+						destination: $this->actions->destinationOf(action: $match['action']),
+						subjectRef: $subjectRef,
+						draftId: (string)$draft['id']
+					);
+				}
 			}
-		}
 
-		return new JSONResponse(['deleted' => $deleted]);
+			return new JSONResponse(['deleted' => $deleted]);
+		} catch (Throwable) {
+			// The destination could not be reached: the page keeps the answers and says to try again.
+			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 	}//end discard()
 
 	/**
