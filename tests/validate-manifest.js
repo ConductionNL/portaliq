@@ -367,6 +367,10 @@ function rendererContractLint(manifest) {
 			if (widget && widget.type === 'tabs' && widget.content && Array.isArray(widget.content.tabs)) {
 				for (const tab of widget.content.tabs) {
 					placed.add(typeof tab === 'string' ? tab : tab && tab.widgetId)
+					// A stack (`widgetIds`) draws every widget it names in the tab.
+					for (const id of (tab && tab.widgetIds) || []) {
+						placed.add(id)
+					}
 				}
 			}
 			// A `sections` widget draws its `widgetId` children under headings
