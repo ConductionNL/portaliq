@@ -22,6 +22,13 @@ An active landing-page form SHALL declare the contributing app's destination (fo
 - THEN the created lead holds no `isAdmin`
 - @e2e exclude whitelist invariant, covered by PHPUnit
 
+#### Scenario: A submit the destination refuses stores nothing
+- GIVEN an active landing-page form whose destination says `email` is an email address
+- WHEN a visitor posts `email: not-an-email-address`
+- THEN the answer is 422 and names the `email` field
+- AND no destination object and no object in portaliq is written
+- @e2e site-form-submission.spec.ts
+
 #### Scenario: A form without a destination cannot be submitted
 - GIVEN an active landing-page form whose requesting app named no destination
 - WHEN the anonymous form actions are built
