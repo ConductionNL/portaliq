@@ -25,6 +25,18 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md
  * @uses \OCA\Portaliq\Service\Intake\DestinationMapping
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
+ * @uses \OCA\Portaliq\Listener\RegisterProposalLeavesListener
+ * @uses \OCA\Portaliq\Service\ActionAuthService
+ * @uses \OCA\Portaliq\Service\PortalFieldProjector
+ * @uses \OCA\Portaliq\Service\PortalFilteredRows
+ * @uses \OCA\Portaliq\Service\PortalObjectReader
+ * @uses \OCA\Portaliq\Service\PortalObjectWriter
+ * @uses \OCA\Portaliq\Service\PortalSchemaReader
+ * @uses \OCA\Portaliq\Service\Proposals\ChangeProposalsProvider
+ * @uses \OCA\Portaliq\Service\Proposals\ProposalQueueReader
+ * @uses \OCA\Portaliq\Service\Proposals\ProposalService
+ * @uses \OCA\Portaliq\Service\Proposals\ReviewerObjectWriter
+ * @uses \OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard
  */
 class DestinationIntakeTest extends TestCase {
 
