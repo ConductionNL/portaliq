@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Cms\FormPlacementHelp;
+
 /**
  * The widgets of a page, with each placed shared block expanded for its organisation.
  *
@@ -33,13 +35,23 @@ namespace OCA\Portaliq\Service;
  */
 class CmsSharedBlocks {
 	/**
+	 * Hands a form placement the help details of its stored form.
+	 *
+	 * @var FormPlacementHelp
+	 */
+	private readonly FormPlacementHelp $formHelp;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param CmsRows $rows Reads the shared block rows.
+	 * @param CmsRows                $rows     Reads the shared block rows.
+	 * @param FormPlacementHelp|null $formHelp Hands a form placement its stored form's help; built on the same rows when left out.
 	 */
 	public function __construct(
 		private readonly CmsRows $rows,
+		?FormPlacementHelp $formHelp=null,
 	) {
+		$this->formHelp = ($formHelp ?? new FormPlacementHelp(rows: $rows));
 	}//end __construct()
 
 	/**
@@ -51,14 +63,19 @@ class CmsSharedBlocks {
 	 * not an existence oracle for another organisation's blocks. A placement
 	 * inside a block is not expanded again.
 	 *
+	 * Last, every form placement, on the page or inside an expanded block,
+	 * gets the help details of its stored form (help-texts-and-form-help).
+	 *
 	 * @param array  $widgets      The shaped page widgets.
 	 * @param string $organisation The serving portal's organisation.
+	 * @param string $portal       The serving portal's slug, whose forms a placement may name.
 	 *
 	 * @return array The widgets, placements expanded.
 	 *
 	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 	 */
-	public function expand(array $widgets, string $organisation): array {
+	public function expand(array $widgets, string $organisation, string $portal=''): array {
 		$blocks = null;
 		foreach ($widgets as $index => $widget) {
 			if ($widget['widgetKey'] !== 'sharedBlock') {
@@ -84,7 +101,7 @@ class CmsSharedBlocks {
 			}
 		}
 
-		return $widgets;
+		return $this->formHelp->attach(widgets: $widgets, portal: $portal);
 	}//end expand()
 
 	/**

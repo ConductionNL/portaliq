@@ -27,7 +27,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Service\Cms\FormPlacementHelp;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalHelp;
 use OCA\Portaliq\Service\Cms\PortalShell;
@@ -77,13 +76,6 @@ class CmsReader {
 	private readonly CmsSharedBlocks $blocks;
 
 	/**
-	 * Hands a form placement the help details of its stored form.
-	 *
-	 * @var FormPlacementHelp
-	 */
-	private readonly FormPlacementHelp $formHelp;
-
-	/**
 	 * The FAQ entries and the product finder.
 	 *
 	 * @var CmsFaq
@@ -116,7 +108,6 @@ class CmsReader {
 		$this->rows      = new CmsRows(container: $container, logger: $logger, context: $context);
 		$this->blocks    = new CmsSharedBlocks(rows: $this->rows);
 		$this->faqReader = new CmsFaq(cache: $this->cache, rows: $this->rows, reader: $this);
-		$this->formHelp  = new FormPlacementHelp(rows: $this->rows);
 	}//end __construct()
 
 
@@ -462,11 +453,11 @@ class CmsReader {
 			return $shaped;
 		}
 
-		$widgets = $this->blocks->expand(widgets: $this->blocks->shapeWidgets(raw: (array)($body['widgets'] ?? [])), organisation: $organisation);
-
-		// A form placement is served with its stored form's help details,
-		// read now and not when the page was made (help-texts-and-form-help).
-		$widgets = $this->formHelp->attach(widgets: $widgets, portal: $portal);
+		// The portal goes along for the form placements: each is served with
+		// its stored form's help details, read now and not when the page was
+		// made (help-texts-and-form-help).
+		$widgets = $this->blocks->shapeWidgets(raw: (array)($body['widgets'] ?? []));
+		$widgets = $this->blocks->expand(widgets: $widgets, organisation: $organisation, portal: $portal);
 
 		usort(
 			$widgets,
