@@ -11,6 +11,8 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
+import { VALUE_LISTS } from '../src/site/config/valueLists.js'
+import { labelBuckets, valueLabel } from '../src/site/lib/facetLabels.js'
 import {
 	humanSize,
 	publicationSummary,
@@ -18,18 +20,17 @@ import {
 	toDocuments,
 	visitorRows,
 } from '../src/site/lib/publicationDetail.js'
-import { labelBuckets, wooCategoryLabel } from '../src/site/lib/wooCategories.js'
 import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 
-function bundle (locale) {
-  return JSON.parse(
+function bundle(locale) {
+	return JSON.parse(
 		readFileSync(
 			new URL(`../src/shared/i18n/${locale}.json`, import.meta.url),
 			'utf8',
 		),
 	)
 }
-function createTranslator (locale) {
+function createTranslator(locale) {
 	const strings = bundle(locale)
 	return (key) => strings[key] || key
 }
@@ -129,10 +130,46 @@ const PUBLICATION = {
 }
 
 test('a Woo category reads as its name, in the site language', () => {
-	assert.equal(wooCategoryLabel('infocat014', 'nl'), 'Woo-verzoeken en -besluiten')
-	assert.equal(wooCategoryLabel('infocat014', 'en'), 'Woo requests and decisions')
-	assert.equal(wooCategoryLabel('infocat016', 'de'), 'Beschikkingen')
-	assert.equal(wooCategoryLabel('infocat999', 'nl'), 'infocat999')
+	assert.equal(
+		valueLabel('wooCategory', 'infocat014', 'nl'),
+		'Woo-verzoeken en -besluiten',
+	)
+	assert.equal(
+		valueLabel('wooCategory', 'infocat014', 'en'),
+		'Woo requests and decisions',
+	)
+	assert.equal(valueLabel('wooCategory', 'infocat016', 'de'), 'Beschikkingen')
+	assert.equal(valueLabel('wooCategory', 'infocat999', 'nl'), 'infocat999')
+})
+
+test('a field without a configured list reads as the code itself', () => {
+	assert.equal(valueLabel('organization', 'org-1', 'nl'), 'org-1')
+	assert.equal(valueLabel('toString', 'infocat014', 'nl'), 'infocat014')
+	assert.equal(valueLabel('wooCategory', 'toString', 'nl'), 'toString')
+	assert.equal(valueLabel(undefined, undefined, 'nl'), '')
+})
+
+test('every configured code has a Dutch and an English name', () => {
+	const lists = Object.entries(VALUE_LISTS)
+	assert.ok(lists.length > 0)
+	for (const [field, codes] of lists) {
+		assert.ok(Object.keys(codes).length > 0, `${field} has no codes`)
+		for (const [code, names] of Object.entries(codes)) {
+			for (const locale of ['nl', 'en']) {
+				assert.equal(
+					typeof names[locale],
+					'string',
+					`${field}.${code}.${locale}`,
+				)
+				assert.notEqual(
+					names[locale].trim(),
+					'',
+					`${field}.${code}.${locale}`,
+				)
+			}
+		}
+	}
+	assert.equal(Object.keys(VALUE_LISTS.wooCategory).length, 17)
 })
 
 test('the category filter shows names, other filters keep their labels', () => {

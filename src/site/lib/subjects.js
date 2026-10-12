@@ -16,8 +16,8 @@
  * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
 
+import { hasValueList, valueLabel } from './facetLabels.js'
 import { toBuckets } from './federatedSearch.js'
-import { wooCategoryLabel } from './wooCategories.js'
 
 /** The publications search the counts are read from. */
 export const SEARCH_ENDPOINT =
@@ -306,8 +306,8 @@ export function countsFrom(body, by, searchRoute = '/zoeken', locale = 'nl') {
  * @return {string} The label.
  */
 function labelOf(field, bucket, value, locale) {
-	if (field === 'wooCategory') {
-		return wooCategoryLabel(bucket.value, locale)
+	if (hasValueList(field)) {
+		return valueLabel(field, bucket.value, locale)
 	}
 	return field === 'publicationDate' || bucket.label === '' ? value : bucket.label
 }

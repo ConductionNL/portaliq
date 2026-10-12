@@ -6654,7 +6654,7 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/WooController.php:1-20 serves the vendored tilburg-woo-ui React build; appinfo/routes.php woo#serve /woo, woo#servePath /woo/{path}; the committed woo/ directory (~28MB per openspec/changes/retire-the-vendored-woo-bundle/proposal.md)",
+				"evidence": "lib/Controller/BundledSiteController.php:1-20 serves the vendored tilburg-woo-ui React build; appinfo/routes.php bundledSite#serve /woo, bundledSite#servePath /woo/{path}; the committed woo/ directory (~28MB per openspec/changes/retire-the-vendored-woo-bundle/proposal.md)",
 				"reachedOn": "public route /woo",
 				"owner": "ConductionNL/portaliq",
 				"note": "openspec/changes/retire-the-vendored-woo-bundle has all tasks unchecked (open, not built): it proposes replacing this one-tenant vendored SPA with ordinary portal/menu/page content so every municipality gets the same pattern instead of only Tilburg. Until that lands this is a special case, not the general CMS pattern.",
