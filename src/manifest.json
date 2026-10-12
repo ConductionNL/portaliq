@@ -1052,7 +1052,8 @@
           {
             "key": "displayName",
             "label": "Name",
-            "secondary": "{email}"
+            "secondary": "{email}",
+            "widget": "avatar"
           },
           {
             "key": "audience",
