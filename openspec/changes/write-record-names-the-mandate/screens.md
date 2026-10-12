@@ -1,0 +1,1 @@
+- No screen: a field added to the write record and the event that portaliq hands to case apps; nothing on screen changes in portaliq
