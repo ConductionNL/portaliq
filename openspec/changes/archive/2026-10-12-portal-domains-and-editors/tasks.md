@@ -7,5 +7,12 @@
 - [x] **T05**: `PortalEditors.vue` card and the side card "Beheerders" (a PortalSummaryCard kind) (REQ-PDE-003)
   - Implementation note (11 Oct 2026): the Domeinen and Beheerders cards are now nextcloud-vue `field-list` widgets in `src/manifest.json` (page PortalDetail, widgets `portal-domains` and `portal-editors`), inside the Instellingen tab's `sections` widget (`portal-settings`). `PortalDomains.vue`, `PortalEditors.vue` and `PortalSettings.vue` are gone; `tests/portal-domains.spec.mjs` checks the manifest configuration. REQ-PDE-001 to 003 still hold. `POST /api/cms/domains/verify` answers a translated `message` that the list shows after "Check again".
 - [x] **T06**: `PortalDetailsForm.vue` and `src/lib/portalDetails.js`; node test for the validation (REQ-PDE-004)
-- [ ] **T07**: Re-check job for domains and certificates (decided out of scope here)
-- [ ] **T08**: Per-portal permission from `editors` (a separate change)
+
+## Not part of this change
+
+Both are named as out of scope in proposal.md. They are not built, and nothing here claims them:
+
+- A background job that checks domains and certificates again. A check runs when a beheerder asks for it.
+- A per-portal right to change pages from `editors`. The list grants nothing (REQ-PDE-003).
+
+Archived 12 Oct 2026: T01 to T06 checked against the code. The spec is `openspec/specs/portal-settings/spec.md`.
