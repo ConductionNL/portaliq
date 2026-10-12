@@ -556,13 +556,13 @@
             "gridX": 0,
             "gridY": 0,
             "gridWidth": 12,
-            "gridHeight": 2
+            "gridHeight": 3
           },
           {
             "id": "list-requests",
             "widgetId": "list-requests",
             "gridX": 0,
-            "gridY": 2,
+            "gridY": 3,
             "gridWidth": 8,
             "gridHeight": 5
           },
@@ -570,7 +570,7 @@
             "id": "list-submissions",
             "widgetId": "list-submissions",
             "gridX": 0,
-            "gridY": 7,
+            "gridY": 8,
             "gridWidth": 8,
             "gridHeight": 5
           },
@@ -578,7 +578,7 @@
             "id": 5,
             "widgetId": "now-sessions",
             "gridX": 8,
-            "gridY": 2,
+            "gridY": 3,
             "gridWidth": 4,
             "gridHeight": 1
           },
@@ -586,7 +586,7 @@
             "id": 6,
             "widgetId": "now-messages",
             "gridX": 8,
-            "gridY": 3,
+            "gridY": 4,
             "gridWidth": 4,
             "gridHeight": 1
           }
@@ -2336,10 +2336,221 @@
           },
           {
             "id": "portal-settings",
-            "type": "PortalSettings",
+            "type": "sections",
             "title": "Instellingen",
             "icon": "Cog",
+            "content": {
+              "cards": true,
+              "sections": [
+                {
+                  "key": "details",
+                  "title": "Details of the portal",
+                  "widgetId": "portal-settings-details"
+                },
+                {
+                  "key": "theme",
+                  "title": "House style",
+                  "widgetId": "portal-settings-theme"
+                },
+                {
+                  "key": "domains",
+                  "title": "Domains",
+                  "widgetId": "portal-domains"
+                },
+                {
+                  "key": "case-types",
+                  "title": "Case types residents see",
+                  "widgetId": "portal-settings-case-types"
+                },
+                {
+                  "key": "signin",
+                  "title": "Sign in",
+                  "widgetId": "portal-settings-signin"
+                },
+                {
+                  "key": "registration",
+                  "title": "Registration",
+                  "widgetId": "portal-settings-registration"
+                },
+                {
+                  "key": "accessibility",
+                  "title": "Accessibility",
+                  "widgetId": "portal-settings-accessibility"
+                },
+                {
+                  "key": "editors",
+                  "title": "Administrators",
+                  "widgetId": "portal-editors"
+                }
+              ]
+            }
+          },
+          {
+            "id": "portal-settings-details",
+            "type": "PortalDetailsForm",
+            "title": "Details of the portal",
             "content": {}
+          },
+          {
+            "id": "portal-settings-theme",
+            "type": "PortalTheme",
+            "title": "House style",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-case-types",
+            "type": "PortalCaseTypes",
+            "title": "Case types residents see",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-signin",
+            "type": "PortalSignin",
+            "title": "Sign in",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-registration",
+            "type": "PortalRegistration",
+            "title": "Registration",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-accessibility",
+            "type": "PortalAccessibility",
+            "title": "Accessibility",
+            "content": {}
+          },
+          {
+            "id": "portal-domains",
+            "type": "field-list",
+            "title": "Domains",
+            "content": {
+              "field": "domains",
+              "key": "hostname",
+              "row": {
+                "title": "hostname",
+                "pill": {
+                  "path": "verified",
+                  "map": {
+                    "true": "Verified",
+                    "false": "Waiting for verification"
+                  },
+                  "variantMap": {
+                    "true": "success",
+                    "false": "warning"
+                  }
+                },
+                "aside": {
+                  "path": "certificateValidUntil",
+                  "format": "date",
+                  "prefix": "valid until"
+                },
+                "detail": {
+                  "template": "Publish this TXT record: {name} = {value}",
+                  "when": {
+                    "verified": false
+                  }
+                }
+              },
+              "add": {
+                "label": "Add domain",
+                "unique": "hostname",
+                "defaults": {
+                  "verified": false
+                },
+                "fields": [
+                  {
+                    "key": "hostname",
+                    "label": "Domain",
+                    "required": true,
+                    "pattern": "^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$",
+                    "patternMessage": "Use a plain host name, such as portal.example.nl, without https:// or a path."
+                  }
+                ]
+              },
+              "remove": {
+                "label": "Remove"
+              },
+              "rowActions": [
+                {
+                  "id": "verify",
+                  "label": "Check again",
+                  "when": {
+                    "verified": false
+                  },
+                  "request": {
+                    "method": "POST",
+                    "url": "/apps/portaliq/api/cms/domains/verify?portal=@object.slug&hostname=@row.hostname"
+                  }
+                }
+              ],
+              "rowSource": {
+                "url": "/apps/portaliq/api/cms/domains?portal=@object.slug",
+                "path": "domains",
+                "key": "hostname"
+              },
+              "hint": "A domain only works once it is verified.",
+              "emptyText": "No domain yet."
+            }
+          },
+          {
+            "id": "portal-editors",
+            "type": "field-list",
+            "title": "Administrators",
+            "content": {
+              "field": "editors",
+              "key": "userId",
+              "row": {
+                "title": "displayName",
+                "titleFallback": "userId",
+                "avatar": true,
+                "meta": [
+                  {
+                    "path": "role",
+                    "map": {
+                      "chief-editor": "Chief editor",
+                      "editor": "Editor"
+                    }
+                  }
+                ]
+              },
+              "add": {
+                "label": "Add",
+                "unique": "userId",
+                "fields": [
+                  {
+                    "key": "userId",
+                    "label": "User name",
+                    "required": true
+                  },
+                  {
+                    "key": "displayName",
+                    "label": "Name"
+                  },
+                  {
+                    "key": "role",
+                    "label": "Role",
+                    "type": "select",
+                    "options": [
+                      {
+                        "value": "editor",
+                        "label": "Editor"
+                      },
+                      {
+                        "value": "chief-editor",
+                        "label": "Chief editor"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "remove": {
+                "label": "Remove"
+              },
+              "hint": "Listing someone here does not give them the right to change pages.",
+              "emptyText": "Nobody listed yet."
+            }
           },
           {
             "id": "portal-side-domain",
@@ -2417,7 +2628,8 @@
             "gridX": 0,
             "gridY": 2,
             "gridWidth": 12,
-            "gridHeight": 2
+            "gridHeight": 2,
+            "sizeToContent": true
           },
           {
             "id": "portal-tabs",
@@ -2425,7 +2637,8 @@
             "gridX": 0,
             "gridY": 4,
             "gridWidth": 12,
-            "gridHeight": 8
+            "gridHeight": 8,
+            "sizeToContent": true
           }
         ],
         "sidebar": {
@@ -4107,7 +4320,8 @@
         "Intake kind": "Soort intake",
         "{shown} of {total} entries on the portals · which form each entry opens, for whom": "{shown} van {total} ingangen op de portals · welk formulier elke ingang opent, voor wie",
         "Link a form": "Formulier koppelen",
-        "Insert form": "Formulier insluiten"
+        "Insert form": "Formulier insluiten",
+        "Details of the portal": "Gegevens van de portal"
       }
     }
   }
