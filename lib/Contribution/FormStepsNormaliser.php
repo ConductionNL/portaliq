@@ -189,7 +189,7 @@ class FormStepsNormaliser {
 	 *
 	 * @return array{retentionDays: int}|null The draft, or null to drop it.
 	 *
-	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 	 */
 	public function draft(mixed $draft): ?array {
 		if (is_array($draft) === false || is_int($draft['retentionDays'] ?? null) === false) {

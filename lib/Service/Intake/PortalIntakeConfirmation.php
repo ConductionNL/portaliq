@@ -33,28 +33,29 @@ class PortalIntakeConfirmation {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalIntakeQueue $queue Records and reports on submissions.
 	 * @param FormConfirmationMailer|null $confirmationMail Mails the resident the reference and a summary.
 	 */
 	public function __construct(
-		private readonly PortalIntakeQueue $queue,
 		private readonly ?FormConfirmationMailer $confirmationMail = null,
 	) {
 	}//end __construct()
 
 	/**
-	 * Mail the confirmation when the form asks for it, and record the outcome.
+	 * Mail the confirmation when the form asks for it. The mailer logs the
+	 * outcome; there is no portal record to write it on any more (decision 179).
 	 *
 	 * @param array<string, mixed> $site      The portal.
 	 * @param array<string, mixed> $render    What the binding renders to.
 	 * @param array<string, mixed> $answers   The accepted answers.
-	 * @param string               $reference The submission's reference.
+	 * @param string               $reference The reference of the object the request created.
+	 * @param array<string, mixed> $moments   The destination's confirmation properties (receivedAt, termStartsAt, deadline).
 	 *
 	 * @return string The address the mail went to, or '' when none went.
 	 *
 	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.4
 	 */
-	public function send(array $site, array $render, array $answers, string $reference): string {
+	public function send(array $site, array $render, array $answers, string $reference, array $moments = []): string {
 		if (($render['settings']['confirmationMail'] ?? false) !== true || $this->confirmationMail === null) {
 			return '';
 		}
@@ -70,28 +71,13 @@ class PortalIntakeConfirmation {
 			site: $site,
 			reference: $reference,
 			formName: (string)($render['formName'] ?? ''),
-			summary: (new FormConfirmationSummary())->build(fields: $fields, answers: $answers)
+			summary: (new FormConfirmationSummary())->build(fields: $fields, answers: $answers),
+			moments: $moments
 		);
-		$this->queue->markConfirmationMail(reference: $reference, portal: (string)($site['slug'] ?? ''), state: $this->mailState(sent: $sent));
 		if ($sent === true) {
 			return $email;
 		}
 
 		return '';
 	}//end send()
-
-	/**
-	 * The state word recorded for a mail.
-	 *
-	 * @param bool $sent Whether the mail server took it.
-	 *
-	 * @return string
-	 */
-	private function mailState(bool $sent): string {
-		if ($sent === true) {
-			return 'sent';
-		}
-
-		return 'failed';
-	}//end mailState()
 }//end class

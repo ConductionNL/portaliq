@@ -422,9 +422,13 @@ and the claim set `sub`, `audience`, `organisation`, `trust`, `jti`, `use`
 `exp - iat` equal to the 60-second assertion TTL. When the forwarded action
 declares a `scopeClaim`, the assertion MUST carry exactly one additional
 claim, named after that claim and holding the value resolved server-side
-from the subject's portal account; it MUST NOT carry any other claim. A unit
-test MUST pin every element of that shape so any drift fails loudly before it
-can break domain-app verifiers templated against it.
+from the subject's portal account. When the originating session acts for a
+company branch, the assertion MUST carry one optional `branch` claim holding
+that branch number, after the nine frozen claims and before a scope claim; a
+session without a branch MUST NOT carry it, and no action may declare
+`branch` as its `scopeClaim`. The assertion MUST NOT carry any other claim. A
+unit test MUST pin every element of that shape so any drift fails loudly
+before it can break domain-app verifiers templated against it.
 
 #### Scenario: The assertion shape is pinned
 
@@ -439,6 +443,21 @@ can break domain-app verifiers templated against it.
 - WHEN the assertion for that forward is decoded
 - THEN the claim keys are the nine frozen keys plus `signerEmail`, and nothing else
 - @e2e exclude wire-format pin; PHPUnit
+
+#### Scenario: A branch session adds the optional branch claim
+
+- GIVEN a session acting for branch `000012345678`
+- WHEN an assertion for one of its forwards is decoded
+- THEN the claim keys are the nine frozen keys plus `branch` holding `000012345678`, and a declared scope claim follows after it
+- AND an assertion for a session without a branch carries the nine frozen keys only
+- @e2e exclude wire-format pin; PHPUnit `PortalJwtServiceTest::testABranchSessionAddsExactlyTheOptionalBranchClaim` and `PortalSessionServiceTest::testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne`
+
+#### Scenario: An action cannot declare branch as its scope claim
+
+- GIVEN an action declaring `scopeClaim: "branch"`
+- WHEN the manifest is normalised or an assertion is minted for it
+- THEN the scope claim is refused as reserved and no forged `branch` value reaches the assertion
+- @e2e exclude wire-format pin; PHPUnit `PortalJwtServiceTest::testAnEmptyBranchAddsNothingAndBranchIsNoScopeClaim`
 
 ### Requirement: Manifest UI configuration is presentation-only
 

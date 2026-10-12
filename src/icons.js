@@ -14,6 +14,7 @@
 
 import Account from 'vue-material-design-icons/Account.vue'
 import AccountBoxOutline from 'vue-material-design-icons/AccountBoxOutline.vue'
+import AccountGroupOutline from 'vue-material-design-icons/AccountGroupOutline.vue'
 import AccountKey from 'vue-material-design-icons/AccountKey.vue'
 import AccountLock from 'vue-material-design-icons/AccountLock.vue'
 import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
@@ -66,6 +67,7 @@ import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
 import History from 'vue-material-design-icons/History.vue'
 import Home from 'vue-material-design-icons/Home.vue'
 import HomeOutline from 'vue-material-design-icons/HomeOutline.vue'
+import InformationOutline from 'vue-material-design-icons/InformationOutline.vue'
 import Login from 'vue-material-design-icons/Login.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
@@ -107,6 +109,8 @@ export default {
 	BookOpenVariant,
 	BookOpenVariantOutline,
 	Calendar,
+	AccountGroupOutline,
+	InformationOutline,
 	ChartBoxOutline,
 	ChartLine,
 	ClipboardCheckOutline,

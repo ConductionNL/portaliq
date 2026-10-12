@@ -21,9 +21,18 @@
 			v-model="form.slug"
 			:label="t('portaliq', 'Address in portaliq')"
 			:error="Boolean(errors.slug)"
-			:helperText="errors.slug ? t('portaliq', errors.slug) : t('portaliq', 'Pages and menus belong to the portal through this address.')"
+			:helperText="
+				errors.slug
+					? t('portaliq', errors.slug)
+					: t(
+							'portaliq',
+							'Pages and menus belong to the portal through this address.',
+						)
+			"
 			data-testid="portal-details-slug" />
-		<NcTextField v-model="form.organisation" :label="t('portaliq', 'Organisation')" />
+		<NcTextField
+			v-model="form.organisation"
+			:label="t('portaliq', 'Organisation')" />
 		<NcSelect
 			v-model="kind"
 			:inputLabel="t('portaliq', 'Kind')"
@@ -48,13 +57,25 @@
 			{{ t('portaliq', errors.locales) }}
 		</p>
 		<p class="portal-details__hint">
-			{{ t('portaliq', 'With more than one language the header shows a language choice.') }}
+			{{
+				t(
+					'portaliq',
+					'With more than one language the header shows a language choice.',
+				)
+			}}
 		</p>
-		<NcTextField v-model="form.accountLabel" :label="t('portaliq', 'Name of the login button')" />
+		<NcTextField
+			v-model="form.accountLabel"
+			:label="t('portaliq', 'Name of the login button')" />
 		<NcTextField
 			v-model="form.logo"
 			:label="t('portaliq', 'Logo')"
-			:helperText="t('portaliq', 'The address of the logo, or a reference to a file in Media.')" />
+			:helperText="
+				t(
+					'portaliq',
+					'The address of the logo, or a reference to a file in Media.',
+				)
+			" />
 		<NcSelect
 			v-model="form.frameAncestors"
 			:inputLabel="t('portaliq', 'May be embedded on')"
@@ -66,11 +87,18 @@
 		<p v-if="errors.frameAncestors" class="portal-details__error">
 			{{ t('portaliq', errors.frameAncestors) }}
 		</p>
-		<NcNoteCard v-if="notice" :type="noticeType" data-testid="portal-details-notice">
+		<NcNoteCard
+			v-if="notice"
+			:type="noticeType"
+			data-testid="portal-details-notice">
 			{{ notice }}
 		</NcNoteCard>
 		<div class="portal-details__actions">
-			<NcButton variant="primary" type="submit" :disabled="saving" data-testid="portal-details-save">
+			<NcButton
+				variant="primary"
+				type="submit"
+				:disabled="saving"
+				data-testid="portal-details-save">
 				{{ t('portaliq', 'Save') }}
 			</NcButton>
 		</div>
@@ -123,11 +151,17 @@ export default {
 
 	computed: {
 		kindOptions() {
-			return KIND_OPTIONS.map((o) => ({ id: o.id, label: t('portaliq', o.label) }))
+			return KIND_OPTIONS.map((o) => ({
+				id: o.id,
+				label: t('portaliq', o.label),
+			}))
 		},
 
 		headerOptions() {
-			return HEADER_OPTIONS.map((o) => ({ id: o.id, label: t('portaliq', o.label) }))
+			return HEADER_OPTIONS.map((o) => ({
+				id: o.id,
+				label: t('portaliq', o.label),
+			}))
 		},
 
 		kind: {
@@ -142,7 +176,9 @@ export default {
 
 		header: {
 			get() {
-				return this.headerOptions.find((o) => o.id === this.form.headerVariant)
+				return this.headerOptions.find(
+					(o) => o.id === this.form.headerVariant,
+				)
 			},
 
 			set(option) {
@@ -181,7 +217,9 @@ export default {
 				const patch = portalPatch(this.baseline, this.form)
 				if (Object.keys(patch).length > 0) {
 					await axios.patch(
-						generateUrl(`/apps/openregister/api/objects/portaliq/portal/${id}`),
+						generateUrl(
+							`/apps/openregister/api/objects/portaliq/portal/${id}`,
+						),
 						patch,
 					)
 					this.baseline = afterSave(this.baseline, patch)
@@ -190,7 +228,10 @@ export default {
 				this.notice = t('portaliq', 'The portal is saved.')
 			} catch {
 				this.noticeType = 'error'
-				this.notice = t('portaliq', 'The portal could not be saved. Try again.')
+				this.notice = t(
+					'portaliq',
+					'The portal could not be saved. Try again.',
+				)
 			} finally {
 				this.saving = false
 			}
@@ -205,14 +246,17 @@ export default {
 	flex-direction: column;
 	gap: 14px;
 }
+
 .portal-details__hint {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 }
+
 .portal-details__error {
 	margin: 0;
 	color: var(--color-error-text);
 }
+
 .portal-details__actions {
 	display: flex;
 	justify-content: flex-end;

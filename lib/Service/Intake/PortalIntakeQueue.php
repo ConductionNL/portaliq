@@ -231,6 +231,36 @@ class PortalIntakeQueue {
 	}//end queued()
 
 	/**
+	 * The submissions the drain still has to send: queued, and failed.
+	 *
+	 * @param int $limit How many of each state to take.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	public function pending(int $limit = 200): array {
+		$out = [];
+		foreach ([self::STATE_QUEUED, self::STATE_FAILED] as $state) {
+			$rows = $this->reader->readCollection(
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				scopeField: 'state',
+				subjectRef: $state,
+				organisation: '',
+				limit: $limit
+			);
+			foreach ($rows as $row) {
+				if (is_array($row) === true && ($row['state'] ?? '') === $state) {
+					$out[] = $row;
+				}
+			}
+		}
+
+		return $out;
+	}//end pending()
+
+	/**
 	 * Record that a submission became a case.
 	 *
 	 * @param array<string, mixed> $submission The submission row.
@@ -321,51 +351,6 @@ class PortalIntakeQueue {
 	public function find(string $reference, string $portal): ?array {
 		return $this->byReference(reference: $reference, portal: $portal);
 	}//end find()
-
-	/**
-	 * Keep the payment intent the case app created for a submission.
-	 *
-	 * @param array<string, mixed> $submission     The submission row.
-	 * @param string               $paymentIntentId The payment intent id.
-	 *
-	 * @return bool True when it was written.
-	 *
-	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
-	 */
-	public function markPaymentIntent(array $submission, string $paymentIntentId): bool {
-		if ($paymentIntentId === '') {
-			return false;
-		}
-
-		return $this->write(submission: $submission, data: ['paymentIntentId' => $paymentIntentId]);
-	}//end markPaymentIntent()
-
-	/**
-	 * Record whether the confirmation mail went out.
-	 *
-	 * A failed mail is shown on the submissions page under Bevestiging
-	 * mislukt; a mail that was never asked for leaves the field empty.
-	 *
-	 * @param string $reference The submission's reference.
-	 * @param string $portal    The portal.
-	 * @param string $state     `sent` or `failed`.
-	 *
-	 * @return bool True when the state was written.
-	 *
-	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
-	 */
-	public function markConfirmationMail(string $reference, string $portal, string $state): bool {
-		if (in_array($state, ['sent', 'failed'], true) === false) {
-			return false;
-		}
-
-		$submission = $this->byReference(reference: $reference, portal: $portal);
-		if ($submission === null) {
-			return false;
-		}
-
-		return $this->write(submission: $submission, data: ['confirmationMailState' => $state]);
-	}//end markConfirmationMail()
 
 	/**
 	 * Write on a submission row.

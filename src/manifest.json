@@ -2570,7 +2570,8 @@
                 "aside": {
                   "path": "certificateValidUntil",
                   "format": "date",
-                  "prefix": "valid until"
+                  "prefix": "valid until",
+                  "fallback": "not checked yet"
                 },
                 "detail": {
                   "template": "Publish this TXT record: {name} = {value}",
@@ -2607,7 +2608,11 @@
                   },
                   "request": {
                     "method": "POST",
-                    "url": "/apps/portaliq/api/cms/domains/verify?portal=@object.slug&hostname=@row.hostname"
+                    "url": "/apps/portaliq/api/cms/domains/verify",
+                    "payload": {
+                      "portal": "@object.slug",
+                      "hostname": "@row.hostname"
+                    }
                   }
                 }
               ],
@@ -4435,7 +4440,8 @@
         "Approve": "Goedkeuren",
         "Refuse with a reason": "Afwijzen met een reden",
         "Record a request": "Verzoek vastleggen",
-        "on approval the requester sees the cases at once, on refusal they read your reason": "bij goedkeuren ziet de aanvrager de zaken direct, bij afwijzen leest hij uw reden"
+        "on approval the requester sees the cases at once, on refusal they read your reason": "bij goedkeuren ziet de aanvrager de zaken direct, bij afwijzen leest hij uw reden",
+        "not checked yet": "nog niet gecontroleerd"
       }
     }
   }

@@ -49,6 +49,7 @@ use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
+use OCA\Portaliq\Listener\BindingDestinationGuardListener;
 use OCA\Portaliq\Listener\GlossaryRelationGuardListener;
 use OCA\Portaliq\Listener\MediaWriteGuardListener;
 use OCA\Portaliq\Listener\NoticeWriteGuardListener;
@@ -234,6 +235,11 @@ class Application extends App implements IBootstrap {
 		// A glossary term relates only to terms of its own portal (portal-cms-content-model).
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, GlossaryRelationGuardListener::class);
+		}
+
+		// A published form binding fits its destination (submit-creates-the-case-directly REQ-PIFO-007).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, BindingDestinationGuardListener::class);
 		}
 
 		// A notice ends after it starts (operate-maintenance-notice REQ-OMN-003).
