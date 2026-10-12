@@ -18,4 +18,10 @@ export const generateOcsUrl = (path) => String(path)
 // widgetVisibility.js fetches the user's groups with it; a public page has no
 // signed-in user, so the request is never made and a call fails safe.
 const refuse = () => Promise.reject(new Error('Not available on a public page'))
-export default { get: refuse, post: refuse, put: refuse, patch: refuse, delete: refuse }
+export default {
+	get: refuse,
+	post: refuse,
+	put: refuse,
+	patch: refuse,
+	delete: refuse,
+}

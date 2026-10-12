@@ -1,3 +1,5 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
@@ -5,8 +7,6 @@
 // (board PtPersoonlijkeInstellingen). Filling the #user-settings slot in
 // App.vue replaces them, which once left the dialog on one empty "Algemeen".
 import { test } from 'node:test'
-import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
 
 const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8')
 const template = app.slice(app.indexOf('<template>'), app.indexOf('<script>'))
