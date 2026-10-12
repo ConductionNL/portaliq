@@ -3167,40 +3167,45 @@
         "columns": [
           {
             "key": "displayName",
-            "label": "Name"
+            "label": "Requester"
           },
           {
             "key": "onBehalfOf",
-            "label": "On behalf of"
-          },
-          {
-            "key": "organisation",
-            "label": "Organisation"
+            "label": "Access requested to"
           },
           {
             "key": "reason",
             "label": "Reason"
           },
           {
-            "key": "state",
-            "label": "Status"
+            "key": "requestedAt",
+            "label": "Requested on",
+            "widget": "date"
           },
           {
-            "key": "requestedAt",
-            "label": "Requested"
+            "key": "state",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "pending": "warning",
+                "granted": "success",
+                "refused": "error"
+              }
+            }
           }
         ],
         "actions": [
           {
             "id": "grant",
-            "label": "Grant",
+            "label": "Approve",
             "icon": "Check",
             "type": "handler",
             "handler": "grantAccessRequest"
           },
           {
             "id": "refuse",
-            "label": "Refuse",
+            "label": "Refuse with a reason",
             "icon": "Close",
             "type": "handler",
             "handler": "refuseAccessRequest"
@@ -3213,6 +3218,11 @@
           {
             "action": "export",
             "label": "Download"
+          },
+          {
+            "action": "add",
+            "variant": "primary",
+            "label": "Record a request"
           }
         ],
         "quickFilters": [
@@ -3243,7 +3253,13 @@
             },
             "showCount": true
           }
-        ]
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards"
+        ],
+        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason"
       }
     },
     {
@@ -4416,7 +4432,14 @@
         "a withdrawn account can no longer sign in, the cases stay with the organisation": "een ingetrokken account kan niet meer inloggen, de zaken blijven bij de organisatie",
         "Last published": "Laatste publicatie",
         "Copy or delete the selected portals.": "Kopieer of verwijder de geselecteerde portals.",
-        "an umbrella portal has no pages of its own, it adds up the traffic of its members": "een overkoepelende portal heeft geen eigen pagina's, hij telt het verkeer van zijn leden op"
+        "an umbrella portal has no pages of its own, it adds up the traffic of its members": "een overkoepelende portal heeft geen eigen pagina's, hij telt het verkeer van zijn leden op",
+        "Requester": "Aanvrager",
+        "Access requested to": "Gevraagde toegang",
+        "Requested on": "Aangevraagd op",
+        "Approve": "Goedkeuren",
+        "Refuse with a reason": "Afwijzen met een reden",
+        "Record a request": "Verzoek vastleggen",
+        "on approval the requester sees the cases at once, on refusal they read your reason": "bij goedkeuren ziet de aanvrager de zaken direct, bij afwijzen leest hij uw reden"
       }
     }
   }
