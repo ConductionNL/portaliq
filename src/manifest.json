@@ -421,7 +421,7 @@
           },
           {
             "id": "list-requests",
-            "type": "table",
+            "type": "record-list",
             "title": "Open toegangsverzoeken",
             "content": {
               "register": "portaliq",
@@ -434,74 +434,62 @@
                 "dir": "asc"
               },
               "limit": 5,
-              "columns": [
-                {
-                  "key": "displayName",
-                  "label": "Naam"
+              "presentation": "rows",
+              "title": "{displayName}, namens {onBehalfOf}",
+              "meta": "Reden: {reason}",
+              "trailing": "{requestedAt|date}",
+              "pill": {
+                "field": "state",
+                "labels": {
+                  "pending": "Beoordelen"
                 },
-                {
-                  "key": "onBehalfOf",
-                  "label": "Namens"
-                },
-                {
-                  "key": "reason",
-                  "label": "Reden"
-                },
-                {
-                  "key": "requestedAt",
-                  "label": "Aangevraagd"
+                "colorMap": {
+                  "pending": "warning"
                 }
-              ],
-              "viewAllRoute": "AccessRequests",
-              "viewAllLabel": "Alle verzoeken",
+              },
               "rowRoute": "AccessRequests",
-              "emptyText": "Geen open toegangsverzoeken",
-              "allowCreate": false
+              "emptyText": "Geen open toegangsverzoeken"
+            },
+            "headerLink": {
+              "label": "Alle verzoeken",
+              "route": "AccessRequests"
             }
           },
           {
             "id": "list-submissions",
-            "type": "table",
+            "type": "record-list",
             "title": "Recente inzendingen",
             "content": {
               "register": "portaliq",
               "schema": "portalSubmission",
-              "filter": {},
               "sort": {
                 "field": "submittedAt",
                 "dir": "desc"
               },
               "limit": 5,
-              "columns": [
-                {
-                  "key": "submittedAt",
-                  "label": "Ingediend",
-                  "widget": "date"
+              "presentation": "rows",
+              "title": "{actionId}",
+              "meta": "{appId}",
+              "trailing": "{submittedAt|datetime}",
+              "pill": {
+                "field": "deliveryStatus",
+                "labels": {
+                  "delivered": "Bevestigd",
+                  "failed": "Mislukt",
+                  "pending": "Wacht"
                 },
-                {
-                  "key": "actionId",
-                  "label": "Handeling"
-                },
-                {
-                  "key": "appId",
-                  "label": "App"
-                },
-                {
-                  "key": "deliveryStatus",
-                  "label": "Ontvangst",
-                  "widget": "badge",
-                  "colorMap": {
-                    "delivered": "success",
-                    "failed": "error",
-                    "pending": "warning"
-                  }
+                "colorMap": {
+                  "delivered": "success",
+                  "failed": "error",
+                  "pending": "warning"
                 }
-              ],
-              "viewAllRoute": "PortalSubmissions",
-              "viewAllLabel": "Alle inzendingen",
+              },
               "rowRoute": "PortalSubmissionDetail",
-              "emptyText": "Nog geen inzendingen",
-              "allowCreate": false
+              "emptyText": "Nog geen inzendingen"
+            },
+            "headerLink": {
+              "label": "Alle inzendingen",
+              "route": "PortalSubmissions"
             }
           },
           {
