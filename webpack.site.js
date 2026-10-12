@@ -71,11 +71,15 @@ const site = {
 	plugins: [
 		new VueLoaderPlugin(),
 		// nextcloud-vue's `visibleWhen.js` (the one condition grammar, used by
-		// the intake form and the embed frame) imports three Nextcloud client
+		// the intake form and the embed frame) imports Nextcloud client
 		// packages for paths a public page never takes. Inside that folder they
-		// become a stub, so a public origin does not download them.
+		// become a stub, so a public origin does not download them. Since
+		// nextcloud-vue 2.80.0 the chain also reaches `widgetVisibility.js`
+		// (through `resolveFilterTokens.js`), which brings @nextcloud/axios
+		// and `generateOcsUrl`: the embed entry grew past its 160 KiB budget
+		// and the node specs failed on axios reading the request token.
 		new webpack.NormalModuleReplacementPlugin(
-			/^@nextcloud\/(capabilities|router|auth)$/,
+			/^@nextcloud\/(capabilities|router|auth|axios)$/,
 			(resource) => {
 				if (
 					/@conduction[\\/]nextcloud-vue[\\/]src[\\/]utils/.test(

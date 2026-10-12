@@ -2295,40 +2295,6 @@
             }
           },
           {
-            "id": "portal-case-types",
-            "type": "PortalCaseTypes",
-            "title": "Case types",
-            "icon": "ClipboardText",
-            "content": {}
-          },
-          {
-            "id": "portal-theme",
-            "type": "PortalTheme",
-            "title": "House style",
-            "icon": "Palette",
-            "content": {}
-          },
-          {
-            "id": "portal-signin",
-            "type": "PortalSignin",
-            "title": "Sign-in",
-            "icon": "Login",
-            "content": {}
-          },
-          {
-            "id": "portal-registration",
-            "type": "PortalRegistration",
-            "title": "Registration",
-            "icon": "AccountPlus"
-          },
-          {
-            "id": "portal-accessibility",
-            "type": "PortalAccessibility",
-            "title": "Accessibility",
-            "icon": "ShieldCheckOutline",
-            "content": {}
-          },
-          {
             "id": "portal-history",
             "type": "audit-trail",
             "title": "Historie",
@@ -2358,14 +2324,57 @@
                   "label": "Begrippen"
                 },
                 {
-                  "widgetId": "portal-case-types",
-                  "label": "Zaaktypen"
+                  "widgetId": "portal-settings",
+                  "label": "Instellingen"
                 },
                 {
                   "widgetId": "portal-history",
                   "label": "Historie"
                 }
               ]
+            }
+          },
+          {
+            "id": "portal-settings",
+            "type": "PortalSettings",
+            "title": "Instellingen",
+            "icon": "Cog",
+            "content": {}
+          },
+          {
+            "id": "portal-side-domain",
+            "type": "PortalSummaryCard",
+            "title": "Domein en certificaat",
+            "icon": "Web",
+            "content": {
+              "kind": "domain"
+            }
+          },
+          {
+            "id": "portal-side-theme",
+            "type": "PortalSummaryCard",
+            "title": "Thema",
+            "icon": "Palette",
+            "content": {
+              "kind": "theme"
+            }
+          },
+          {
+            "id": "portal-side-status",
+            "type": "PortalSummaryCard",
+            "title": "Status en laatste publicatie",
+            "icon": "ClockOutline",
+            "content": {
+              "kind": "status"
+            }
+          },
+          {
+            "id": "portal-side-editors",
+            "type": "PortalSummaryCard",
+            "title": "Beheerders",
+            "icon": "AccountGroupOutline",
+            "content": {
+              "kind": "editors"
             }
           }
         ],
@@ -2453,10 +2462,10 @@
           }
         },
         "sideColumn": [
-          "portal-theme",
-          "portal-signin",
-          "portal-registration",
-          "portal-accessibility"
+          "portal-side-domain",
+          "portal-side-theme",
+          "portal-side-status",
+          "portal-side-editors"
         ],
         "tabsLabel": "Onderdelen van de portal"
       }

@@ -16,6 +16,7 @@
 		size="normal"
 		data-testid="form-embed"
 		@closing="$emit('close', null)">
+		<div class="form-embed__body">
 		<p v-if="formName" class="form-embed__form">
 			{{ formName }}
 		</p>
@@ -62,6 +63,7 @@
 				)
 			}}
 		</NcNoteCard>
+		</div>
 
 		<template #actions>
 			<NcButton variant="primary" @click="$emit('close', null)">
@@ -126,6 +128,9 @@ export default {
 </script>
 
 <style scoped>
+.form-embed__body {
+	padding: 0 16px 8px;
+}
 .form-embed__form {
 	font-weight: 600;
 }
