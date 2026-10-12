@@ -1615,7 +1615,13 @@ class ContributionController extends Controller implements PortalProtected {
 			return null;
 		}
 
-		$draft = $this->drafts->find(action: $action, subjectRef: $subjectRef);
+		try {
+			$draft = $this->drafts->find(action: $action, subjectRef: $subjectRef);
+		} catch (\Throwable) {
+			// The draft could not be looked up: the answers are written as a new object, as before.
+			$draft = null;
+		}
+
 		if ($draft === null) {
 			return null;
 		}

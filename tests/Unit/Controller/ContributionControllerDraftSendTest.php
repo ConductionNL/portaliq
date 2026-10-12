@@ -101,6 +101,16 @@ class ContributionControllerDraftSendTest extends TestCase {
 		$this->assertCount(1, $this->fake->calls, 'only the lookup');
 	}//end testWithoutADraftTheCreateWritesAsBefore()
 
+	public function testAFailingDraftLookupWritesANewObjectAsBefore(): void {
+		$writer = $this->writer();
+		$writer->expects($this->once())->method('createObject')->willReturn(['id' => 'new-1']);
+		$drafts = $this->createMock(ActionDraft::class);
+		$drafts->method('find')->willThrowException(new \RuntimeException('lookup failed'));
+		$controller = $this->controller(writer: $writer, outcome: [], found: null, drafts: $drafts);
+
+		$this->assertSame(['object' => ['id' => 'new-1']], $controller->create('dossiq', 'case')->getData());
+	}//end testAFailingDraftLookupWritesANewObjectAsBefore()
+
 	/**
 	 * A draft changed a moment ago.
 	 *
@@ -129,7 +139,7 @@ class ContributionControllerDraftSendTest extends TestCase {
 	 * @param array<string, mixed>|\Throwable $outcome What the submit answers.
 	 * @param array<string, mixed>|null       $found   The live draft, or none.
 	 */
-	private function controller(PortalObjectWriter $writer, array|\Throwable $outcome, ?array $found): ContributionController {
+	private function controller(PortalObjectWriter $writer, array|\Throwable $outcome, ?array $found, ?ActionDraft $drafts = null): ContributionController {
 		$params  = ['actionId' => 'request', 'title' => 'Whole'];
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'Idempotency-Key' ? 'key-7' : 'Bearer token'));
@@ -165,7 +175,7 @@ class ContributionControllerDraftSendTest extends TestCase {
 			receiptService: $this->createMock(SubmissionReceiptService::class),
 			notificationDispatch: $this->createMock(NotificationDispatchService::class),
 			logger: $this->createMock(LoggerInterface::class),
-			drafts: new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $destinations),
+			drafts: ($drafts ?? new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $destinations)),
 			destinations: $destinations
 		);
 	}//end controller()

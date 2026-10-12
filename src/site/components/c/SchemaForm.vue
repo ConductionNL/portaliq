@@ -346,7 +346,7 @@ export default {
 		 *
 		 * @return {number} Days.
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 */
 		draftDays() {
 			const days = this.action.draft && this.action.draft.retentionDays
@@ -359,7 +359,7 @@ export default {
 		 *
 		 * @return {boolean} True to show the button.
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 */
 		canSaveDraft() {
 			return (
@@ -375,7 +375,7 @@ export default {
 		 *
 		 * @return {string} The app.
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 */
 		draftApp() {
 			return String(this.action.appId || this.action.register || 'portal')
@@ -704,7 +704,7 @@ export default {
 		 *
 		 * @return {string} The language code.
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 */
 		pageLocale() {
 			return (
@@ -722,7 +722,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 		 */
 		async saveDraft() {
