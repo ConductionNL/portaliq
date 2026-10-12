@@ -2490,6 +2490,16 @@
                   "widgetId": "portal-settings-details"
                 },
                 {
+                  "key": "locales",
+                  "title": "Languages",
+                  "widgetId": "portal-settings-locales"
+                },
+                {
+                  "key": "frame",
+                  "title": "May be embedded on",
+                  "widgetId": "portal-settings-frame"
+                },
+                {
                   "key": "theme",
                   "title": "House style",
                   "widgetId": "portal-settings-theme"
@@ -2529,9 +2539,120 @@
           },
           {
             "id": "portal-settings-details",
-            "type": "PortalDetailsForm",
+            "type": "settings-form",
             "title": "Details of the portal",
-            "content": {}
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The portal is saved.",
+              "fields": [
+                {
+                  "key": "title",
+                  "label": "Name",
+                  "required": true
+                },
+                {
+                  "key": "tagline",
+                  "label": "Tagline"
+                },
+                {
+                  "key": "slug",
+                  "label": "Address in portaliq",
+                  "hint": "Pages and menus belong to the portal through this address.",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                  "patternMessage": "Use lowercase letters, digits and dashes."
+                },
+                {
+                  "key": "organisation",
+                  "label": "Organisation"
+                },
+                {
+                  "key": "kind",
+                  "label": "Kind",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "site",
+                      "label": "Website on portaliq"
+                    },
+                    {
+                      "value": "external",
+                      "label": "Points to another website"
+                    }
+                  ]
+                },
+                {
+                  "key": "headerVariant",
+                  "label": "Header",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "double",
+                      "label": "Two lines, menu below"
+                    },
+                    {
+                      "value": "single",
+                      "label": "One line"
+                    }
+                  ]
+                },
+                {
+                  "key": "accountLabel",
+                  "label": "Name of the login button"
+                },
+                {
+                  "key": "logo",
+                  "label": "Logo",
+                  "hint": "The address of the logo, or a reference to a file in Media."
+                }
+              ]
+            }
+          },
+          {
+            "id": "portal-settings-locales",
+            "type": "chips-field",
+            "title": "Languages",
+            "content": {
+              "field": "locales",
+              "label": "Languages",
+              "addLabel": "Add",
+              "hint": "With more than one language the header shows a language choice.",
+              "options": [
+                {
+                  "value": "nl",
+                  "label": "Nederlands"
+                },
+                {
+                  "value": "en",
+                  "label": "English"
+                },
+                {
+                  "value": "de",
+                  "label": "Deutsch"
+                },
+                {
+                  "value": "fr",
+                  "label": "Français"
+                },
+                {
+                  "value": "fy",
+                  "label": "Frysk"
+                }
+              ]
+            }
+          },
+          {
+            "id": "portal-settings-frame",
+            "type": "chips-field",
+            "title": "May be embedded on",
+            "content": {
+              "field": "frameAncestors",
+              "label": "May be embedded on",
+              "addLabel": "Add",
+              "placeholder": "https://www.example.nl",
+              "pattern": "^https?://[A-Za-z0-9.-]+(:[0-9]+)?$",
+              "patternMessage": "An address looks like https://www.example.nl."
+            }
           },
           {
             "id": "portal-settings-theme",
