@@ -1,0 +1,21 @@
+# Screens
+
+- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- Inloggen https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
+- Home https://identity.conduction.nl/screens/board?id=portaliq/Home
+- PtPagina https://identity.conduction.nl/screens/board?id=portaliq/PtPagina
+- Begrippen https://identity.conduction.nl/screens/board?id=portaliq/Begrippen
+- PtBegrippen https://identity.conduction.nl/screens/board?id=portaliq/PtBegrippen
+- Kop https://identity.conduction.nl/screens/board?id=portaliq/Kop
+- Voet https://identity.conduction.nl/screens/board?id=portaliq/Voet
+- EditorMenu https://identity.conduction.nl/screens/board?id=portaliq/EditorMenu
+- NietGevonden https://identity.conduction.nl/screens/board?id=portaliq/NietGevonden
+- PtPortals https://identity.conduction.nl/screens/board?id=portaliq/PtPortals
+- PtNieuws https://identity.conduction.nl/screens/board?id=portaliq/PtNieuws
+- PtNieuwsbericht https://identity.conduction.nl/screens/board?id=portaliq/PtNieuwsbericht
+- Publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
+- Zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken
+- PtPortal https://identity.conduction.nl/screens/board?id=portaliq/PtPortal
+- PtThemas https://identity.conduction.nl/screens/board?id=portaliq/PtThemas
+- Toegankelijkheid https://identity.conduction.nl/screens/board?id=portaliq/Toegankelijkheid
+- Contact https://identity.conduction.nl/screens/board?id=portaliq/Contact
