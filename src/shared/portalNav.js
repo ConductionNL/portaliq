@@ -39,6 +39,9 @@ const NEVER_DEFAULT = [
  */
 export const ACCOUNT_ROUTE = '/mijn'
 
+/** The segment under a theme's route that lists all its products. */
+export const THEME_PRODUCTS_SEGMENT = 'producten'
+
 /**
  * Flatten every contribution's pages into one navigable list, each tagged with
  * its owning contribution so a block's refs resolve in the right scope, and
@@ -218,6 +221,31 @@ export function routeForNav(entry) {
 }
 
 /**
+ * The route of a theme's full product list, expired ones last:
+ * `/mijn/thema/<slug>/producten`. '' for an entry that is no theme.
+ *
+ * @param {object|null} entry A navigation entry.
+ * @return {string} The route, or ''.
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t05b
+ */
+export function themeProductsRoute(entry) {
+	return entry?.theme ? `${routeForNav(entry)}/${THEME_PRODUCTS_SEGMENT}` : ''
+}
+
+/**
+ * Whether a route is the full product list of this theme entry.
+ *
+ * @param {object|null} entry A navigation entry.
+ * @param {string} route The route on screen.
+ * @return {boolean}
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t05b
+ */
+export function isThemeProductsRoute(entry, route) {
+	const products = themeProductsRoute(entry)
+	return products !== '' && String(route || '') === products
+}
+
+/**
  * Whether an in-site route belongs to the signed-in area.
  *
  * @param {string} route The route.
@@ -245,6 +273,12 @@ export function navEntryForRoute(nav, route) {
 	const exact = (nav || []).find((entry) => routeForNav(entry) === route)
 	if (exact) {
 		return exact
+	}
+	// The full product list of a theme is the theme's own page, one segment
+	// deeper: `/mijn/thema/<slug>/producten` (life-domain-theme-pages T05b).
+	const products = (nav || []).find((entry) => isThemeProductsRoute(entry, route))
+	if (products) {
+		return products
 	}
 	// A record page with one record chosen: `/mijn/<app>/<page>/<id>`
 	// (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-020).
