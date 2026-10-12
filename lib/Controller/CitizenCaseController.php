@@ -773,6 +773,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		$subject['actingForEntity'] = $entity;
 		$subject['actingUnderMandate'] = $described['id'];
+		// The name the mandate holder and the represented person know it by,
+		// so the case app can say "namens" in words (write-record-names-the-mandate).
+		$subject['actingForLabel'] = (string)($described['label'] ?? '');
 
 		return $subject;
 	}//end actingAs()

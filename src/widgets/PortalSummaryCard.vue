@@ -49,13 +49,21 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The heading of the card for its kind.
+		 *
+		 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+		 * @return {string} The translated heading, empty for an unknown kind.
+		 */
 		title() {
-			return {
-				domain: t('portaliq', 'Domain and certificate'),
-				theme: t('portaliq', 'Theme'),
-				status: t('portaliq', 'Status and last publication'),
-				editors: t('portaliq', 'Administrators'),
-			}[this.kind] || ''
+			return (
+				{
+					domain: t('portaliq', 'Domain and certificate'),
+					theme: t('portaliq', 'Theme'),
+					status: t('portaliq', 'Status and last publication'),
+					editors: t('portaliq', 'Administrators'),
+				}[this.kind] || ''
+			)
 		},
 
 		kind() {
@@ -80,19 +88,36 @@ export default {
 		rows() {
 			const o = this.objectData || {}
 			if (this.kind === 'theme') {
-				return o.theme ? [{ label: t('portaliq', 'House style'), value: String(o.theme) }] : []
+				return o.theme
+					? [
+							{
+								label: t('portaliq', 'House style'),
+								value: String(o.theme),
+							},
+						]
+					: []
 			}
 			if (this.kind === 'status') {
 				const out = []
 				if (o.status) {
 					out.push({
 						label: t('portaliq', 'Status'),
-						value: o.status === 'published' ? t('portaliq', 'Published') : t('portaliq', 'Draft'),
+						value:
+							o.status === 'published'
+								? t('portaliq', 'Published')
+								: t('portaliq', 'Draft'),
 					})
 				}
 				const updated = o['@self']?.updated
 				if (updated) {
-					out.push({ label: t('portaliq', 'Last changed'), value: new Date(updated).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }) })
+					out.push({
+						label: t('portaliq', 'Last changed'),
+						value: new Date(updated).toLocaleDateString('nl-NL', {
+							day: 'numeric',
+							month: 'short',
+							year: 'numeric',
+						}),
+					})
 				}
 				return out
 			}
@@ -100,7 +125,10 @@ export default {
 				return (Array.isArray(o.editors) ? o.editors : [])
 					.filter((e) => e?.userId)
 					.map((e) => ({
-						label: e.role === 'chief-editor' ? t('portaliq', 'Chief editor') : t('portaliq', 'Editor'),
+						label:
+							e.role === 'chief-editor'
+								? t('portaliq', 'Chief editor')
+								: t('portaliq', 'Editor'),
 						value: `${initials(e.displayName || e.userId)}  ${e.displayName || e.userId}`,
 					}))
 			}
@@ -108,13 +136,30 @@ export default {
 				.map((d) => (typeof d === 'string' ? { hostname: d } : d))
 				.filter((d) => d?.hostname)
 			const first = domains.find((d) => d.verified === true) || domains[0]
-			const out = domains.map((d) => ({ label: t('portaliq', 'Domain'), value: d.hostname }))
-			const end = first ? certificateEnd(first, (d) => d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })) : null
+			const out = domains.map((d) => ({
+				label: t('portaliq', 'Domain'),
+				value: d.hostname,
+			}))
+			const end = first
+				? certificateEnd(first, (d) =>
+						d.toLocaleDateString('nl-NL', {
+							day: 'numeric',
+							month: 'short',
+							year: 'numeric',
+						}),
+					)
+				: null
 			if (end) {
-				out.push({ label: t('portaliq', 'Certificate'), value: t('portaliq', 'valid until {date}', { date: end }) })
+				out.push({
+					label: t('portaliq', 'Certificate'),
+					value: t('portaliq', 'valid until {date}', { date: end }),
+				})
 			}
 			if (Array.isArray(o.locales) && o.locales.length > 0) {
-				out.push({ label: t('portaliq', 'Language'), value: o.locales.join(', ') })
+				out.push({
+					label: t('portaliq', 'Language'),
+					value: o.locales.join(', '),
+				})
 			}
 			return out
 		},
@@ -129,22 +174,27 @@ export default {
 	border-radius: var(--border-radius-large, 12px);
 	padding: 16px 20px;
 }
+
 .portal-summary__title {
 	margin: 0 0 10px;
 	font-size: 15px;
 }
+
 .portal-summary__row {
 	display: flex;
 	gap: 16px;
 	padding: 3px 0;
 }
+
 .portal-summary__label {
 	color: var(--color-text-maxcontrast);
 	min-width: 80px;
 }
+
 .portal-summary__value {
 	font-weight: 600;
 }
+
 .portal-summary__empty {
 	color: var(--color-text-maxcontrast);
 }

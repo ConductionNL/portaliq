@@ -1,0 +1,107 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "E2E fixture register",
+    "description": "A destination for the landing-page form fixture (tests/e2e/site-form-submission.spec.ts). Stands in for the register of the app that asked for the page, such as a CRM's lead. Never shipped: only tests/e2e/fixtures/seed-cms.sh imports it.",
+    "version": "0.1.0"
+  },
+  "x-openregister": {
+    "type": "application",
+    "app": "e2efixture",
+    "description": "E2E fixture: the object a landing-page form creates.",
+    "rbac": true,
+    "multitenancy": false
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "signup": {
+        "slug": "signup",
+        "icon": "AccountPlusOutline",
+        "version": "0.1.0",
+        "title": "Sign-up",
+        "type": "object",
+        "description": "What a visitor's submit of the fixture form creates, in the visitor's own request (decision 179). The public may create one, as a CRM lets the public create a lead; only an administrator reads it.",
+        "authorization": {
+          "create": [
+            "public"
+          ],
+          "read": [
+            "admin"
+          ],
+          "update": [
+            "admin"
+          ],
+          "delete": [
+            "admin"
+          ]
+        },
+        "required": [
+          "name",
+          "email"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "The name the visitor typed.",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "The email address the visitor typed.",
+            "maxLength": 255
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Fixed by the form: where this sign-up came from."
+          },
+          "formId": {
+            "type": "string",
+            "title": "Form",
+            "description": "Written by the page, never by an answer: the form that was submitted."
+          },
+          "pageRoute": {
+            "type": "string",
+            "title": "Page route",
+            "description": "Written by the page: the route of the page that hosts the form."
+          },
+          "portal": {
+            "type": "string",
+            "title": "Portal",
+            "description": "Written by the page: the portal the page belongs to."
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted at",
+            "description": "Written by the page: when the visitor sent the form."
+          },
+          "nonce": {
+            "type": "string",
+            "title": "Submission id",
+            "description": "Written by the page: its own id for this submission."
+          },
+          "utmFirstTouch": {
+            "type": "object",
+            "title": "First touch",
+            "description": "The campaign parameters of the visitor's first visit."
+          },
+          "utmLastTouch": {
+            "type": "object",
+            "title": "Last touch",
+            "description": "The campaign parameters of the visit the form was sent on."
+          },
+          "referrer": {
+            "type": "string",
+            "title": "Referrer",
+            "description": "The page the visitor came from."
+          }
+        }
+      }
+    }
+  }
+}

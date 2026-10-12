@@ -22,12 +22,19 @@
 			v-model="fields.email"
 			type="email"
 			:label="t('portaliq', 'E-mail address')"
-			:helperText="t('portaliq', 'The invitation with a one-time code goes to this address.')"
+			:helperText="
+				t(
+					'portaliq',
+					'The invitation with a one-time code goes to this address.',
+				)
+			"
 			data-testid="invite-someone-email" />
 		<NcTextField
 			v-model="fields.organisation"
 			:label="t('portaliq', 'Organisation (optional)')"
-			:helperText="t('portaliq', 'Leave empty for a resident who comes for themselves.')"
+			:helperText="
+				t('portaliq', 'Leave empty for a resident who comes for themselves.')
+			"
 			data-testid="invite-someone-organisation" />
 		<NcTextField
 			v-model="fields.audience"

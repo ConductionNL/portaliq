@@ -37,3 +37,7 @@ Both from decision 104.
 
 - The feedback question "Hoe vond u dit formulier?" on WooVerzoekVerstuurd (`cmp-ana-feedback`).
 - The co-sign and payment lines on WooVerzoekVerstuurd (`resident-identity-in-forms`, `intake-pay-on-submit`).
+
+## Amended by submit-creates-the-case-directly (decision 179)
+
+Amended by `submit-creates-the-case-directly` (decision 179): REQ-FCI-003's confirmation mail names the destination's reference (the case number) and, where the destination answers them, the received moment, the term start and the deadline. The mail's outcome is logged by the mailer; there is no submission row to record it on.

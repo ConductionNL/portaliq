@@ -39,3 +39,10 @@ All from decision 104.
 
 - The fourth situation on FormulierNietBeschikbaar, a fault in a connection. It belongs to the service fetch in `data-lookups-and-checks-in-forms`.
 - Payment and appointment tabs of PtFormulierInstellingen (`intake-pay-on-submit`, `cmp-tsk-appointment`), and the Bevestiging, Verklaringen and Mede-ondertekenen tabs (`form-statements-intro-and-confirmation-mail`, `resident-identity-in-forms`).
+
+## Amended by submit-creates-the-case-directly (decision 179)
+
+Amended by `submit-creates-the-case-directly` (decision 179):
+- REQ-FGV-002: a form names its destination as `portalFormBinding.destination { register, schema }`, checked against that schema when the binding is published (REQ-PIFO-007). There is no routing step after the submit.
+- REQ-FGV-003: removed. Nothing is retried, because nothing is queued: a refused submit comes back on its field (422) and an unreachable destination says try again later (503), with the answers kept in the form.
+- REQ-FGV-004 and REQ-FGV-005: retention and export read the destination objects (the case, the lead), by the destination app's own rules, not a portaliq submission store.

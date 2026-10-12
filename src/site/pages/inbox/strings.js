@@ -119,6 +119,10 @@ export default {
 		'This task does not exist or is not yours.':
 			'Deze taak bestaat niet of is niet van u.',
 		'This task is already closed.': 'Deze taak is al afgerond.',
+		'This task has its own form. Open the task again to fill it in.':
+			'Deze taak heeft een eigen formulier. Open de taak opnieuw om het in te vullen.',
+		'The form for this task is not available to you right now.':
+			'Het formulier voor deze taak is nu niet voor u beschikbaar.',
 		'This test could not be started.': 'Deze toets kon niet worden gestart.',
 		'Time is up. Your test has been handed in.':
 			'De tijd is om. Je toets is ingeleverd.',
@@ -264,6 +268,10 @@ export default {
 		'This task does not exist or is not yours.':
 			'This task does not exist or is not yours.',
 		'This task is already closed.': 'This task is already closed.',
+		'This task has its own form. Open the task again to fill it in.':
+			'This task has its own form. Open the task again to fill it in.',
+		'The form for this task is not available to you right now.':
+			'The form for this task is not available to you right now.',
 		'This test could not be started.': 'This test could not be started.',
 		'Time is up. Your test has been handed in.':
 			'Time is up. Your test has been handed in.',
