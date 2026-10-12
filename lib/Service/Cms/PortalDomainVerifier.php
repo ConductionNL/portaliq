@@ -243,8 +243,6 @@ class PortalDomainVerifier {
 			]
 		);
 
-		$errorCode    = 0;
-		$errorMessage = '';
 		set_error_handler(static fn (): bool => true);
 		try {
 			$socket = stream_socket_client(

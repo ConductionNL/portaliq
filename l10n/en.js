@@ -2911,7 +2911,12 @@ OC.L10N.register(
         "displayName": "displayName",
         "hostname": "hostname",
         "website en Mijn Zuiddrecht": "website en Mijn Zuiddrecht",
-        "The name of the editor as it is shown in the list.": "The name of the editor as it is shown in the list."
+        "The name of the editor as it is shown in the list.": "The name of the editor as it is shown in the list.",
+        "Beleid wijzigen": "Beleid wijzigen",
+        "Last published": "Last published",
+        "Mijn Zuiddrecht nu": "Mijn Zuiddrecht nu",
+        "Sign-in method": "Sign-in method",
+        "Wacht op goedkeuring": "Wacht op goedkeuring"
     },
     "nplurals=2; plural=(n != 1);"
 )
