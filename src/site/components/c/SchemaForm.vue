@@ -733,7 +733,11 @@ export default {
 				step: this.currentStep ? this.currentStep.id : '',
 			})
 			if (!kept || kept.saved === false) {
-				const refused = serverFieldErrors(this.action, kept && kept.errors, this.t)
+				const refused = serverFieldErrors(
+					this.action,
+					kept && kept.errors,
+					this.t,
+				)
 				if (Object.keys(refused).length > 0) {
 					this.showErrors(refused)
 					return
@@ -745,7 +749,12 @@ export default {
 			this.draftId = String(kept.id || '')
 			if (this.draftId !== '' && Object.keys(this.files).length > 0) {
 				this.submitting = true
-				const { failed } = await uploadFiles(this.api, this.action, this.draftId, this.files)
+				const { failed } = await uploadFiles(
+					this.api,
+					this.action,
+					this.draftId,
+					this.files,
+				)
 				this.submitting = false
 				// An attached file lives on the draft now; only a failed one is picked again.
 				this.files = {}
