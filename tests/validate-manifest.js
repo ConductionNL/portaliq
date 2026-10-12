@@ -369,6 +369,15 @@ function rendererContractLint(manifest) {
 					placed.add(typeof tab === 'string' ? tab : tab && tab.widgetId)
 				}
 			}
+			// A `sections` widget draws its `widgetId` children under headings
+			// (the portal's Instellingen tab).
+			if (widget && widget.type === 'sections' && widget.content && Array.isArray(widget.content.sections)) {
+				for (const section of widget.content.sections) {
+					if (section && section.widgetId) {
+						placed.add(section.widgetId)
+					}
+				}
+			}
 		}
 		for (const entry of Array.isArray(page.config.sideColumn) ? page.config.sideColumn : []) {
 			placed.add(typeof entry === 'string' ? entry : entry && entry.id)
