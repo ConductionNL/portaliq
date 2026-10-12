@@ -426,6 +426,9 @@ export default {
 				// The record a route chooses on a record page
 				// (site-mijn-omgeving-components REQ-SMO-008).
 				routeRecordId: recordIdOfRoute(this.currentRoute),
+				// The route on screen, for a page with a list one segment
+				// deeper (life-domain-theme-pages T05b).
+				currentRoute: this.currentRoute,
 			}
 			const wanted = declaredProps(this.pageComponent)
 			return Object.fromEntries(
