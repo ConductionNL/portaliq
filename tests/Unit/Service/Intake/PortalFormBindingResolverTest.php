@@ -360,6 +360,23 @@ class PortalFormBindingResolverTest extends TestCase {
 	}//end testAPortalDeclaresOnlyTheCaseTypesItPublishedABindingFor()
 
 	/**
+	 * The whole instance's published bindings, for a destination schema that
+	 * is about to change: every portal's, and no draft.
+	 *
+	 * @return void
+	 */
+	public function testEveryPortalsPublishedBindingsAreListedAndNoDraft(): void {
+		$this->seedRow('portalFormBinding', $this->binding());
+		$this->seedRow('portalFormBinding', $this->binding(['portal' => 'gemeente-y', 'route' => 'aanvragen/kap']));
+		$this->seedRow('portalFormBinding', $this->binding(['route' => 'aanvragen/concept', 'status' => 'draft']));
+
+		$all = $this->resolver()->allPublishedBindings();
+
+		$this->assertSame(['gemeente-x', 'gemeente-y'], array_column($all, 'portal'));
+		$this->assertSame(['published', 'published'], array_column($all, 'status'));
+	}//end testEveryPortalsPublishedBindingsAreListedAndNoDraft()
+
+	/**
 	 * gate-7. The predicate the anonymous route refuses on: another portal's
 	 * case type, a draft one, and a partly-right triple are all outside.
 	 *

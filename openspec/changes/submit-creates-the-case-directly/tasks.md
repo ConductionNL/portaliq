@@ -61,6 +61,12 @@
 - [x] 6.3 `intake-conditional-questions-and-drafts`: its draft requirements move to draft destination objects (decision 180); open PR #1152 follows the same rule
 - [x] 6.4 `embedded-intake-form` REQ-EIF-003/004, `intake-pay-on-submit` REQ-IPS-003/005, `form-statements-intro-and-confirmation-mail` REQ-FCI-003, `resident-identity-in-forms` REQ-RIF-002/005, `portal-shared-runtime` task 69
 
+## 6b. Answer OpenRegister when a destination schema changes
+
+- [x] 6b.1 `lib/Listener/FormDestinationDependentsListener.php` adds one `FormDependent` per published `portalFormBinding` whose destination is the event's schema (slug, uuid or id), with the mapping `DestinationMapping::mappingFor()` builds against the proposed schema, audience `public`, and an unpublish that sets the binding to `draft`. An external form and a binding that renders no form are left out. Registered by `lib/AppInfo/FormDependentsRegistrar.php`, called from `Application::register()`. `PortalFormBindingResolver::allPublishedBindings()` reads every portal's published bindings.
+  - PHPUnit `FormDestinationDependentsListenerTest` (OpenRegister's real event, schema, validator and `FormDependentsCheck`), `FormDependentsRegistrarTest::testTheAppRegistersTheListener`, `PortalFormBindingResolverTest::testEveryPortalsPublishedBindingsAreListedAndNoDraft`
+- [ ] 6b.2 (live pass, decision 139) On an instance with dossiq: publish a binding into a case schema, remove a property its form writes, save the schema. The save answers with the binding under `affected`, the binding reads `draft`, and its owner gets the notification
+
 ## 7. Verification
 
 - [ ] 7.1 `composer check:strict`, `npm run lint`, `openspec validate submit-creates-the-case-directly --strict`

@@ -202,6 +202,11 @@ class Application extends App implements IBootstrap {
 		// it wires everything else by hand (WOO-559). Without it the SPA
 		// catch-all answered the store page's JSON call with HTML 200.
 		(new StorePlaneRegistrar())->register($context);
+
+		// OpenRegister asks which published forms write into a schema that
+		// is about to change (decision 179). Portaliq answers for its form
+		// bindings.
+		(new FormDependentsRegistrar())->register($context);
 	}//end register()
 
 	/**
