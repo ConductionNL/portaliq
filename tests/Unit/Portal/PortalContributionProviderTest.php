@@ -268,8 +268,8 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertCount(1, $contribution['actions']);
 		$action = $contribution['actions'][0];
 		$this->assertSame('submit-form-a', $action['id']);
-		$this->assertSame('pipelinq', $action['register']);
-		$this->assertSame('lead', $action['schema']);
+		$this->assertSame('portaliq', $action['register'], 'the address the public form posts to');
+		$this->assertSame('landingPageSubmission', $action['schema']);
 		$this->assertSame(['register' => 'pipelinq', 'schema' => 'lead', 'fixed' => ['source' => 'landing']], $action['destination']);
 		$this->assertSame('open-tilburg//webinar', $action['intakeScope']);
 		$this->assertSame(['email', 'name', 'utmFirstTouch', 'utmLastTouch', 'referrer'], $action['fields']);

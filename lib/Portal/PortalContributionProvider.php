@@ -90,6 +90,13 @@ class PortalContributionProvider implements IPortalContributionProvider {
 	private const FORM_SCHEMA = 'form';
 
 	/**
+	 * The collection address a landing-page form posts to. A published page
+	 * carries only its form id, not the form's destination, so the address
+	 * stays `portaliq/landingPageSubmission`; nothing is written under it.
+	 */
+	private const SUBMIT_ADDRESS = 'landingPageSubmission';
+
+	/**
 	 * The dedicated pseudo-audience under which synthesised form-submission
 	 * actions are surfaced — landing-page forms have no `portalAccount`
 	 * audience of their own, unlike a `portalPage` contribution.
@@ -395,8 +402,10 @@ class PortalContributionProvider implements IPortalContributionProvider {
 				'id' => ('submit-' . $formId),
 				'type' => 'create',
 				'anonymous' => true,
-				'register' => $register,
-				'schema' => $schema,
+				// The address the public form posts to. It is only an address:
+				// the submit creates `destination`, never an object here.
+				'register' => self::REGISTER,
+				'schema' => self::SUBMIT_ADDRESS,
 				'label' => (string)($row['submitLabel'] ?? 'Submit'),
 				'fields' => $fieldIds,
 				'destination' => array_merge($destination, ['register' => $register, 'schema' => $schema]),

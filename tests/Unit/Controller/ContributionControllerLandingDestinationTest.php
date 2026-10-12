@@ -53,8 +53,8 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 		'id' => 'submit-form-a',
 		'type' => 'create',
 		'anonymous' => true,
-		'register' => 'pipelinq',
-		'schema' => 'lead',
+		'register' => 'portaliq',
+		'schema' => 'landingPageSubmission',
 		'fields' => ['email', 'name', 'utmFirstTouch'],
 		'destination' => ['register' => 'pipelinq', 'schema' => 'lead', 'fixed' => ['source' => 'landing']],
 		'intakeScope' => 'open-tilburg//webinar',
@@ -69,7 +69,7 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 		$writer->expects($this->never())->method('createObject');
 
 		$response = $this->controller(writer: $writer, outcome: ['reference' => 'LEAD-7', 'id' => 'l-1'])
-			->create('pipelinq', 'lead');
+			->create('portaliq', 'landingPageSubmission');
 		$call     = $this->fake->calls[0];
 
 		$this->assertSame(200, $response->getStatus());
@@ -89,14 +89,14 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 		$response = $this->controller(
 			writer: $this->createMock(PortalObjectWriter::class),
 			outcome: FormSubmitFake::refusal(status: 422, findings: [['property' => 'email', 'code' => 'format', 'message' => 'Fill in an e-mail address.']])
-		)->create('pipelinq', 'lead');
+		)->create('portaliq', 'landingPageSubmission');
 
 		$this->assertSame(422, $response->getStatus());
 		$this->assertSame(['email' => 'Fill in an e-mail address.'], $response->getData()['errors']);
 	}//end testARefusedAnswerComesBackOnItsField()
 
 	public function testWithoutTheIntakeTheFormSaysTryAgainLater(): void {
-		$response = $this->controller(writer: $this->createMock(PortalObjectWriter::class), outcome: [], wired: false)->create('pipelinq', 'lead');
+		$response = $this->controller(writer: $this->createMock(PortalObjectWriter::class), outcome: [], wired: false)->create('portaliq', 'landingPageSubmission');
 
 		$this->assertSame(503, $response->getStatus());
 		$this->assertSame(['error' => 'try_again_later'], $response->getData());
