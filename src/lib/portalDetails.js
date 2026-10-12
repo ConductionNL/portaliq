@@ -2,7 +2,7 @@
  * The "Gegevens van de portal" form: which fields it edits, how a value is
  * checked before it is saved, and what is sent.
  *
- * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+ * @spec openspec/specs/portal-settings/spec.md
  */
 
 export const KIND_OPTIONS = [
@@ -25,7 +25,7 @@ const ORIGIN = /^https?:\/\/[a-z0-9.-]+(?::\d+)?$/i
  *
  * @param {object} form The form values.
  * @return {Record<string, string>} Field to message key; empty when valid.
- * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+ * @spec openspec/specs/portal-settings/spec.md
  */
 export function validateDetails(form) {
 	const errors = {}
@@ -54,7 +54,7 @@ export function validateDetails(form) {
  * @param {object} portal The portal as the page loaded it.
  * @param {object} form The form values.
  * @return {object} The body to PATCH; empty when nothing changed.
- * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+ * @spec openspec/specs/portal-settings/spec.md
  */
 export function portalPatch(portal, form) {
 	const before = formFrom(portal)
@@ -86,7 +86,7 @@ export function portalPatch(portal, form) {
  * @param {object} baseline The portal before the save.
  * @param {object} patch The body that was sent.
  * @return {object} The portal with the patch applied.
- * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+ * @spec openspec/specs/portal-settings/spec.md
  */
 export function afterSave(baseline, patch) {
 	return { ...baseline, ...patch }
@@ -97,7 +97,7 @@ export function afterSave(baseline, patch) {
  *
  * @param {object} portal The portal as the page loaded it.
  * @return {object} The form values.
- * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+ * @spec openspec/specs/portal-settings/spec.md
  */
 export function formFrom(portal) {
 	const p = portal || {}

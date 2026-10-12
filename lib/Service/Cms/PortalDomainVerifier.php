@@ -194,7 +194,7 @@ class PortalDomainVerifier {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/portal-domains-and-editors/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-10-12-portal-domains-and-editors/tasks.md#t03
 	 */
 	private function withCertificate(array $domain): array {
 		$until = null;
@@ -222,7 +222,7 @@ class PortalDomainVerifier {
 	 *
 	 * @return int|null The end as a timestamp, null when the host gave no certificate.
 	 *
-	 * @spec openspec/changes/portal-domains-and-editors/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-10-12-portal-domains-and-editors/tasks.md#t03
 	 */
 	public static function probeCertificate(string $host): ?int {
 		$errorCode    = 0;

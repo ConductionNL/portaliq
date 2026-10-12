@@ -6,7 +6,7 @@
   organisation, kind, header, languages, the login button, the logo and the
   websites that may embed the portal. Saves the portal object in OpenRegister.
 
-  @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+  @spec openspec/specs/portal-settings/spec.md
 -->
 <template>
 	<form class="portal-details" data-testid="portal-details" @submit.prevent="save">
@@ -200,7 +200,7 @@ export default {
 		 * Check and save the portal.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+		 * @spec openspec/specs/portal-settings/spec.md
 		 */
 		async save() {
 			this.errors = validateDetails(this.form)
