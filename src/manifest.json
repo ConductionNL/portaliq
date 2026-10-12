@@ -1035,7 +1035,8 @@
         "columns": [
           {
             "key": "displayName",
-            "label": "Name"
+            "label": "Name",
+            "secondary": "{email}"
           },
           {
             "key": "audience",
@@ -1043,11 +1044,7 @@
           },
           {
             "key": "identityType",
-            "label": "Sign-in"
-          },
-          {
-            "key": "organisation",
-            "label": "Organisation"
+            "label": "Sign-in method"
           },
           {
             "key": "status",
@@ -1090,6 +1087,10 @@
             "label": "Download"
           },
           {
+            "action": "import",
+            "label": "Import"
+          },
+          {
             "action": "invite-someone",
             "label": "Iemand uitnodigen"
           },
@@ -1114,7 +1115,7 @@
             "showCount": true
           },
           {
-            "label": "In afwachting",
+            "label": "Wacht op goedkeuring",
             "filter": {
               "status": "pending"
             },
@@ -1126,6 +1127,49 @@
               "status": "suspended"
             },
             "showCount": true
+          },
+          {
+            "label": "Ingetrokken",
+            "filter": {
+              "status": "void"
+            },
+            "showCount": true
+          }
+        ],
+        "rowTitle": "plain",
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards"
+        ],
+        "quickFilterMaxVisible": 5,
+        "bulkHint": "Copy, export or delete the selected accounts.",
+        "footerNote": "a withdrawn account can no longer sign in, the cases stay with the organisation",
+        "statRow": [
+          {
+            "id": "pending-registrations",
+            "type": "banner",
+            "content": {
+              "variant": "warning",
+              "text": "{value} aanmeldingen wachten op goedkeuring.",
+              "visibleWhen": {
+                "source": {
+                  "register": "portaliq",
+                  "schema": "portalAccount",
+                  "filter": {
+                    "status": "pending"
+                  }
+                },
+                "op": "gt",
+                "value": 0
+              },
+              "actions": [
+                {
+                  "label": "Beleid wijzigen",
+                  "route": "Portals"
+                }
+              ]
+            }
           }
         ]
       }
@@ -4321,7 +4365,10 @@
         "{shown} of {total} entries on the portals · which form each entry opens, for whom": "{shown} van {total} ingangen op de portals · welk formulier elke ingang opent, voor wie",
         "Link a form": "Formulier koppelen",
         "Insert form": "Formulier insluiten",
-        "Details of the portal": "Gegevens van de portal"
+        "Details of the portal": "Gegevens van de portal",
+        "Sign-in method": "Inlogwijze",
+        "Copy, export or delete the selected accounts.": "Kopieer, exporteer of verwijder de geselecteerde accounts.",
+        "a withdrawn account can no longer sign in, the cases stay with the organisation": "een ingetrokken account kan niet meer inloggen, de zaken blijven bij de organisatie"
       }
     }
   }
