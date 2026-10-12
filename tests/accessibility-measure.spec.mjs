@@ -231,6 +231,8 @@ test('axe-core is a lazy admin chunk and never enters the site', () => {
 test('the widget sits on the portal page and is registered', () => {
 	const manifest = JSON.parse(read('src/manifest.json'))
 	const widgets = JSON.stringify(manifest)
-	assert.match(widgets, /"type":"PortalAccessibility"/)
+	// The portal page's Instellingen tab (PortalSettings) places it.
+	assert.match(widgets, /"type":"PortalSettings"/)
+	assert.match(read('src/widgets/PortalSettings.vue'), /PortalAccessibility/)
 	assert.match(read('src/registry.js'), /PortalAccessibility: \{/)
 })
