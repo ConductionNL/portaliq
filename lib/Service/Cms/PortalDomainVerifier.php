@@ -225,8 +225,8 @@ class PortalDomainVerifier {
 	 * @spec openspec/changes/portal-domains-and-editors/tasks.md#t03
 	 */
 	public static function probeCertificate(string $host): ?int {
-		$ip = gethostbyname($host);
-		if ($ip === $host || filter_var($ip, FILTER_VALIDATE_IP, (FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) === false) {
+		$address = gethostbyname($host);
+		if ($address === $host || filter_var($address, FILTER_VALIDATE_IP, (FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) === false) {
 			return null;
 		}
 
@@ -243,12 +243,14 @@ class PortalDomainVerifier {
 			]
 		);
 
+		$errorCode    = 0;
+		$errorMessage = '';
 		set_error_handler(static fn (): bool => true);
 		try {
 			$socket = stream_socket_client(
-				address: 'ssl://' . $ip . ':443',
-				error_code: $errno,
-				error_message: $error,
+				address: 'ssl://' . $address . ':443',
+				error_code: $errorCode,
+				error_message: $errorMessage,
 				timeout: 5,
 				flags: STREAM_CLIENT_CONNECT,
 				context: $context
@@ -257,7 +259,7 @@ class PortalDomainVerifier {
 			restore_error_handler();
 		}
 
-		if ($socket === false) {
+		if ($socket === false || ($errorCode !== 0 && $errorMessage !== '')) {
 			return null;
 		}
 
