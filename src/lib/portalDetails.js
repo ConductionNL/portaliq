@@ -80,6 +80,19 @@ export function portalPatch(portal, form) {
 }
 
 /**
+ * The portal as the server holds it after a PATCH: the baseline the next save
+ * compares against.
+ *
+ * @param {object} baseline The portal before the save.
+ * @param {object} patch The body that was sent.
+ * @return {object} The portal with the patch applied.
+ * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+ */
+export function afterSave(baseline, patch) {
+	return { ...baseline, ...patch }
+}
+
+/**
  * The form values for a portal.
  *
  * @param {object} portal The portal as the page loaded it.

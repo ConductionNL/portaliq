@@ -75,9 +75,11 @@ test('the portal page carries the widget, and the app registers it', () => {
 		pageDraws(detail.config, 'PortalCaseTypes'),
 		'a portal page draws the case types widget, on the Instellingen tab',
 	)
-	assert.match(
-		readFileSync(new URL('../src/widgets/PortalSettings.vue', import.meta.url), 'utf8'),
-		/Case types residents see/,
+	assert.ok(
+		detail.config.widgets
+			.find((widget) => widget.id === 'portal-settings')
+			.content.sections.some((section) => section.title === 'Case types residents see'),
+		'the Instellingen tab heads the section "Case types residents see"',
 	)
 	const registry = readFileSync(
 		new URL('../src/registry.js', import.meta.url),
