@@ -3115,7 +3115,8 @@
         "Wacht op bevestiging": "Wacht op bevestiging",
         "Bevestiging mislukt": "Bevestiging mislukt",
         "{displayName}, namens {onBehalfOf}": "{displayName}, namens {onBehalfOf}",
-        "{actionId}": "{actionId}"
+        "{actionId}": "{actionId}",
+        "Nog niet ingelogd": "Nog niet ingelogd"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

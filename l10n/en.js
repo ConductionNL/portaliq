@@ -2951,7 +2951,8 @@ OC.L10N.register(
         "Alles": "All",
         "Bevestigd": "Confirmed",
         "{displayName}, namens {onBehalfOf}": "{displayName}, on behalf of {onBehalfOf}",
-        "{actionId}": "{actionId}"
+        "{actionId}": "{actionId}",
+        "Nog niet ingelogd": "Not signed in yet"
     },
     "nplurals=2; plural=(n != 1);"
 )
