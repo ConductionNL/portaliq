@@ -211,6 +211,9 @@ const RENDERABLE_WIDGET_TYPES = new Set([
 	'banner',
 	'table',
 	'stat',
+	// nextcloud-vue 2.80 registers it for the detail-page and app-dashboard
+	// surfaces; a filter without @objectId tokens needs no current object.
+	'record-list',
 	...registryWidgetKeys(),
 ])
 
