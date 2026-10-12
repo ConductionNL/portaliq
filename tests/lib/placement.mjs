@@ -5,9 +5,10 @@
 //
 // A detail page no longer lists every widget in `config.layout`. A widget is
 // drawn when it is in the layout, in the `sideColumn`, in a tab of a `tabs`
-// widget, or inside a composite widget that renders it (PortalSettings holds
-// the portal's settings cards). A spec that asks "is this widget placed?"
-// must ask all four, or it fails on a page that is perfectly fine.
+// widget, in a section of a placed `sections` widget (the portal's
+// Instellingen tab), or inside a composite app widget that renders it. A spec
+// that asks "is this widget placed?" must ask all of these, or it fails on a
+// page that is perfectly fine.
 
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -33,6 +34,16 @@ export function placedIds(config) {
 			}
 		}
 	}
+	// After the tabs: a sections widget is usually a tab's child.
+	for (const widget of config.widgets || []) {
+		if (widget.type === 'sections' && ids.has(widget.id)) {
+			for (const section of widget.content?.sections || []) {
+				if (section.widgetId) {
+					ids.add(section.widgetId)
+				}
+			}
+		}
+	}
 	return ids
 }
 
@@ -50,7 +61,7 @@ export function isPlaced(config, widget) {
 /**
  * The widget components a composite widget renders, read from its imports.
  *
- * @param {string} type The composite widget's type, e.g. PortalSettings.
+ * @param {string} type The composite widget's type, an app widget in src/widgets.
  * @return {string[]} The component names it imports from ./ in src/widgets.
  */
 export function composedOf(type) {
