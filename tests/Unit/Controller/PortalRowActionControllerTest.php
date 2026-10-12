@@ -122,9 +122,11 @@ class PortalRowActionControllerTest extends TestCase {
 		?AuditTrailService $auditor = null,
 		?array $subject = self::SUBJECT,
 		array $params = ['collection' => 'salesInvoices'],
+		array $uploads = [],
 	): PortalRowActionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getUploadedFile')->willReturnCallback(static fn (string $key): mixed => ($uploads[$key] ?? []));
 		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null) => ($params[$key] ?? $default));
 
 		$registry = $this->createMock(PortalContributionRegistry::class);
@@ -354,6 +356,63 @@ class PortalRowActionControllerTest extends TestCase {
 		$this->assertSame(503, $result->getStatus());
 		$this->assertSame(['status' => 'deferred'], $result->getData());
 	}//end testAFieldsWhitelistIsForwardedAndTheStampWins()
+
+	/**
+	 * An action that declares `files` forwards the resident's uploads beside the fields (REQ-RAF-001).
+	 *
+	 * @return void
+	 */
+	public function testDeclaredFilesAreForwardedWithTheBody(): void {
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(200);
+
+		$action = (new \OCA\Portaliq\Contribution\RowActionInputs())->normaliseAction(action: $this->pay(['fields' => ['note'], 'files' => ['field' => 'attachments', 'max' => 2]]));
+		$forwarder = $this->createMock(PortalActionForwarder::class);
+		$forwarder->method('isForwardable')->willReturn(true);
+		$forwarder->expects($this->once())->method('forward')
+			->with(
+				$action,
+				self::SUBJECT,
+				['note' => 'zie bijlage', 'invoiceId' => self::INVOICE_ID],
+				'',
+				[['name' => 'scan.pdf', 'type' => 'application/pdf', 'tmp_name' => '/tmp/php1', 'size' => 10]]
+			)
+			->willReturn($response);
+		$forwarder->method('decodeBody')->willReturn(['message' => 'Ontvangen.']);
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $action,
+			reader: $this->readerReturning($this->invoice()),
+			forwarder: $forwarder,
+			params: ['collection' => 'salesInvoices', 'note' => 'zie bijlage'],
+			uploads: ['attachments' => ['name' => 'scan.pdf', 'type' => 'application/pdf', 'tmp_name' => '/tmp/php1', 'size' => 10, 'error' => UPLOAD_ERR_OK]],
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_OK, $result->getStatus());
+	}//end testDeclaredFilesAreForwardedWithTheBody()
+
+	/**
+	 * Too many files is 422 before the audit and the forward.
+	 *
+	 * @return void
+	 */
+	public function testTooManyFilesIs422AndNotForwarded(): void {
+		$action = (new \OCA\Portaliq\Contribution\RowActionInputs())->normaliseAction(action: $this->pay(['files' => ['field' => 'attachments', 'max' => 1]]));
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $action,
+			reader: $this->readerReturning($this->invoice()),
+			auditor: $auditor,
+			uploads: ['attachments' => ['name' => ['a', 'b'], 'type' => ['t', 't'], 'tmp_name' => ['/tmp/a', '/tmp/b'], 'size' => [1, 1], 'error' => [0, 0]]],
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $result->getStatus());
+		$this->assertSame(['error' => 'too_many_files'], $result->getData());
+	}//end testTooManyFilesIs422AndNotForwarded()
 
 	/**
 	 * A row the guardian's scope does not read is one 404, and shillinq is

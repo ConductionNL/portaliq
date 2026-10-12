@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// site-multi-step-forms T8 (REQ-SMF-012, REQ-SMF-021): a create action with
-// `draft` offers "Opslaan en later verdergaan", saves the answers and the step
-// reached through the portal api, opens a resumed draft on the first step with
-// a gap, and deletes the draft when the action was sent.
+// site-multi-step-forms T8 (REQ-SMF-012, REQ-SMF-021) and
+// submit-creates-the-case-directly 5.1-5.4: a create action with `draft`
+// offers "Opslaan en later verdergaan", saves the answers through the portal
+// api as a draft of the record itself, shows it as Voorlopig (decision 200),
+// uploads picked files into the draft, shows a wrong value on its field,
+// opens a resumed draft on the first step with a gap, and leaves sending the
+// draft to the server (no delete afterwards).
 //
 // Usage:
 //   node --test tests/site-form-drafts.spec.mjs
@@ -38,10 +41,11 @@ const ACTION = {
  * A portal api double that records the draft calls.
  *
  * @param {object|null} stored The draft getDraft answers.
+ * @param {object|null} refusal What saveDraft answers instead of keeping it.
  * @return {object} The api and its call log.
  */
-function fakeApi(stored = null) {
-	const calls = { saved: [], discarded: [], created: [] }
+function fakeApi(stored = null, refusal = null) {
+	const calls = { saved: [], discarded: [], created: [], uploaded: [] }
 	return {
 		calls,
 		async fetchOptions() {
@@ -52,7 +56,14 @@ function fakeApi(stored = null) {
 		},
 		async saveDraft(app, id, draft) {
 			calls.saved.push({ app, id, draft })
-			return { ...draft, expiresAt: '2026-11-01T12:00:00+00:00' }
+			if (refusal) {
+				return refusal
+			}
+			return {
+				...draft,
+				id: 'draft-1',
+				expiresAt: '2026-11-01T12:00:00+00:00',
+			}
 		},
 		async discardDraft(app, id) {
 			calls.discarded.push({ app, id })
@@ -62,7 +73,8 @@ function fakeApi(stored = null) {
 			calls.created.push(body)
 			return { ok: true, object: { id: 'new-1', ...body } }
 		},
-		async uploadFieldFile() {
+		async uploadFieldFile(action, id, field, file) {
+			calls.uploaded.push({ id, field, name: file.name })
 			return { ok: true }
 		},
 	}
@@ -111,8 +123,64 @@ test('the save button shows with a draft declared, and saves answers and step', 
 	assert.equal(api.calls.saved.length, 1)
 	assert.equal(api.calls.saved[0].app, 'dossiq')
 	assert.equal(api.calls.saved[0].draft.step, 'one')
-	assert.equal(api.calls.saved[0].draft.retentionDays, 30)
+	assert.equal(
+		api.calls.saved[0].draft.retentionDays,
+		undefined,
+		'the server decides the retention',
+	)
 	assert.equal(api.calls.saved[0].draft.answers.onderwerp, 'Rotonde')
+	assert.match(form.textOf(form.find('schema-form-draft-status')), /Provisional/)
+})
+
+test('a wrong value is refused on its field and nothing reads as saved', async () => {
+	const api = fakeApi(null, {
+		saved: false,
+		status: 422,
+		errors: { onderwerp: 'Fill in words, not a number.' },
+	})
+	const form = await mountSfc(FORM, { action: ACTION, api, locale: 'nl' })
+	await form.flush()
+
+	await form.fire(form.find('schema-form-save-draft'), 'click')
+	await form.flush()
+
+	assert.match(form.text(), /Fill in words, not a number\./)
+	assert.equal(form.find('schema-form-draft-status'), null)
+})
+
+test('picked files are uploaded into the draft', async () => {
+	const action = {
+		...ACTION,
+		fields: [...ACTION.fields, 'bijlage'],
+		fieldConfigs: {
+			...ACTION.fieldConfigs,
+			bijlage: { label: 'Bijlage', type: 'file' },
+		},
+		steps: [
+			...ACTION.steps.slice(0, 1),
+			{
+				id: 'two',
+				title: 'Omschrijving',
+				fields: ['omschrijving', 'bijlage'],
+			},
+		],
+	}
+	const api = fakeApi()
+	const form = await mountSfc(FORM, { action, api, locale: 'nl' })
+	await form.flush()
+	form.vm.files = { bijlage: [{ name: 'plan.pdf', size: 10 }] }
+
+	await form.fire(form.find('schema-form-save-draft'), 'click')
+	await form.flush()
+
+	assert.deepEqual(api.calls.uploaded, [
+		{ id: 'draft-1', field: 'bijlage', name: 'plan.pdf' },
+	])
+	assert.deepEqual(
+		form.vm.files,
+		{},
+		'an attached file is not uploaded again on send',
+	)
 })
 
 test('no draft declared: no save button', async () => {
@@ -126,7 +194,7 @@ test('no draft declared: no save button', async () => {
 	assert.equal(form.find('schema-form-save-draft'), null)
 })
 
-test('sending the action deletes the draft', async () => {
+test('sending the action leaves the draft to the server', async () => {
 	const api = fakeApi()
 	const form = await mountSfc(FORM, {
 		action: { ...ACTION, steps: undefined },
@@ -142,7 +210,7 @@ test('sending the action deletes the draft', async () => {
 	await form.flush()
 
 	assert.equal(api.calls.created.length, 1)
-	assert.deepEqual(api.calls.discarded, [{ app: 'dossiq', id: 'woo-request' }])
+	assert.deepEqual(api.calls.discarded, [])
 })
 
 test('a resumed draft opens on the step with the gap', async () => {

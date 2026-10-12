@@ -84,14 +84,17 @@ class PortalActionForwarder {
 	 * @param array<string, mixed>|null $whitelisted The rebuilt whitelisted body, or null to relay raw.
 	 * @param string $scopeValue The server-resolved value of the action's declared `scopeClaim`,
 	 *                           signed into the assertion; '' when the action declares none.
+	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files Checked uploads of a row action
+	 *                                                                           that declares `files`; sent multipart.
 	 *
 	 * @return IResponse|null The domain app's response, or null on transport failure.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
+	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
-	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = ''): ?IResponse {
+	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = '', array $files = []): ?IResponse {
 		$scopeClaim = '';
 		if (is_string($action['scopeClaim'] ?? null) === true) {
 			$scopeClaim = $action['scopeClaim'];
@@ -121,6 +124,15 @@ class PortalActionForwarder {
 			'nextcloud' => ['allow_local_address' => true],
 		];
 
+		// Files the action lets the resident add go multipart beside the
+		// fields; without files the forward stays JSON, exactly as before
+		// (row-action-carries-files REQ-RAF-001).
+		$multipart = $this->multipart(action: $action, whitelisted: ($whitelisted ?? []), files: $files);
+		if ($multipart !== null) {
+			unset($options['body'], $options['headers']['Content-Type']);
+			$options['multipart'] = $multipart;
+		}
+
 		try {
 			// InstanceLoopback picks the address that answers from inside the
 			// server (configured, absolute, or the loopback after a transport
@@ -136,6 +148,76 @@ class PortalActionForwarder {
 			return null;
 		}//end try
 	}//end forward()
+
+	/**
+	 * The multipart parts of a forward that carries files, or null when it carries none.
+	 *
+	 * Each whitelisted field is one part (an array as its JSON), each file one
+	 * part named `<files.field>[]` with its own name and type. A file that
+	 * cannot be opened is left out rather than sent empty.
+	 *
+	 * @param array<string, mixed>                                                      $action      The normalised action.
+	 * @param array<string, mixed>                                                      $whitelisted The forwarded fields.
+	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files       The checked uploads.
+	 *
+	 * @return list<array<string, mixed>>|null
+	 *
+	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 */
+	private function multipart(array $action, array $whitelisted, array $files): ?array {
+		$field = ($action['files']['field'] ?? null);
+		if ($files === [] || is_string($field) === false) {
+			return null;
+		}
+
+		$parts = [];
+		foreach ($whitelisted as $name => $value) {
+			$contents = $value;
+			if (is_string($value) === false) {
+				$contents = (string)json_encode($value);
+			}
+
+			$parts[] = ['name' => (string)$name, 'contents' => $contents];
+		}
+
+		foreach ($files as $file) {
+			$handle = $this->open(path: $file['tmp_name']);
+			if ($handle === null) {
+				continue;
+			}
+
+			$parts[] = [
+				'name' => $field . '[]',
+				'contents' => $handle,
+				'filename' => $file['name'],
+				'headers' => ['Content-Type' => $file['type']],
+			];
+		}
+
+		return $parts;
+	}//end multipart()
+
+	/**
+	 * Open an uploaded file for reading, or null when it cannot be read.
+	 *
+	 * @param string $path The upload's temporary path.
+	 *
+	 * @return resource|null
+	 *
+	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 */
+	protected function open(string $path) {
+		if ($path === '' || is_readable($path) === false) {
+			return null;
+		}
+
+		$handle = fopen($path, 'rb');
+		if ($handle === false) {
+			return null;
+		}
+
+		return $handle;
+	}//end open()
 
 	/**
 	 * Whether an action may be forwarded at all: a non-empty INSTANCE-LOCAL

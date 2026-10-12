@@ -16,6 +16,8 @@ import {
 	fillBody,
 	introView,
 	missingStatements,
+	momentLines,
+	readableDay,
 } from '../src/site/components/forms/confirmation.js'
 import { submitIntake } from '../src/site/lib/intakeApi.js'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
@@ -137,4 +139,31 @@ test('site: sending is stopped on a required statement that is not ticked', asyn
 	assert.deepEqual(vm.statementErrors, { privacy: 'Vink deze verklaring aan voordat u verstuurt.' })
 	assert.equal(vm.submitting, false, 'nothing was sent')
 	assert.equal(typeof screen.methods.print, 'function')
+})
+
+test('the confirmation names when the request arrived, its term starts and a decision is due (decision 179)', () => {
+	const text = {
+		receivedOn: 'Ontvangen op {date}.',
+		termStartsOn: 'De termijn begint op {date}.',
+		decisionBy: 'U krijgt uiterlijk {date} een besluit.',
+	}
+	assert.deepEqual(
+		momentLines(
+			{
+				receivedAt: '2026-10-11T09:00:00+00:00',
+				termStartsAt: '2026-10-13T09:00:00+02:00',
+				deadline: '2026-11-24',
+			},
+			text,
+		),
+		[
+			'Ontvangen op 11 oktober 2026.',
+			'De termijn begint op 13 oktober 2026.',
+			'U krijgt uiterlijk 24 november 2026 een besluit.',
+		],
+	)
+	assert.deepEqual(momentLines({ deadline: 'geen datum' }, text), [])
+	assert.deepEqual(momentLines({}, text), [])
+	assert.equal(readableDay(''), '')
+	assert.equal(readableDay('2026-11-24'), '24 november 2026')
 })

@@ -86,3 +86,7 @@ path changes.
 
 Wave 3. Done means merged on `development` with CI green. 7.1 and 7.2 stay yes; through dossiq they
 read `production` only once both a portaliq and a dossiq store release carry the move.
+
+## Amended by submit-creates-the-case-directly (decision 179)
+
+Superseded by `submit-creates-the-case-directly` task 3.1 (decision 179). There is no delivery step any more: a Woo request form is a form binding whose `destination` names the dossiq Woo case, and the submit creates that case in the request through OpenRegister's `FormSubmitService`. `PortalWooRequestDelivery` and `PortalIntakeDeliveryJob` are removed on that branch. Do not build tasks 1 to 3 of this change; archive it as superseded once `submit-creates-the-case-directly` lands.

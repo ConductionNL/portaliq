@@ -109,3 +109,51 @@ export function introView(intro) {
 	const lead = String(intro.lead || '')
 	return lead === '' && blocks.length === 0 ? null : { lead, blocks }
 }
+
+/**
+ * A moment as a Dutch reader writes a day, or '' when it is not a date.
+ *
+ * @param {string|undefined} value An ISO 8601 date or date-time.
+ * @return {string} Such as "24 november 2026".
+ * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.4
+ */
+export function readableDay(value) {
+	const text = String(value || '').trim()
+	// A bare date is a calendar day, not midnight UTC: read it as noon so no time zone moves it.
+	const moment = new Date(
+		/^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T12:00:00` : text,
+	)
+	if (text === '' || Number.isNaN(moment.getTime())) {
+		return ''
+	}
+
+	return new Intl.DateTimeFormat('nl-NL', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	}).format(moment)
+}
+
+/**
+ * The lines the confirmation page adds under the case number: when the
+ * request arrived, when its term starts and when a decision is due, for
+ * each moment the destination answered (decision 179).
+ *
+ * @param {{receivedAt?: string, termStartsAt?: string, deadline?: string}} moments The destination's confirmation.
+ * @param {{receivedOn: string, termStartsOn: string, decisionBy: string}} text The sentences, with `{date}`.
+ * @return {string[]} The lines that can be said.
+ * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.4
+ */
+export function momentLines(moments, text) {
+	const pairs = [
+		[moments?.receivedAt, text.receivedOn],
+		[moments?.termStartsAt, text.termStartsOn],
+		[moments?.deadline, text.decisionBy],
+	]
+	return pairs
+		.map(([value, sentence]) => {
+			const day = readableDay(value)
+			return day === '' ? '' : sentence.split('{date}').join(day)
+		})
+		.filter((line) => line !== '')
+}
