@@ -122,11 +122,14 @@ test('the report is PLACED on the portal page, above the portal fields', () => {
 		'a declared widget with no layout entry never renders: this is the defect this assertion exists for',
 	)
 
-	const fields = PORTAL_DETAIL.config.layout.find(
-		(entry) => entry.widgetId === 'portal-data',
+	// The portal's fields sit in the tab strip, which is itself in the layout:
+	// the report must come above the strip a reader scrolls to.
+	const strip = PORTAL_DETAIL.config.layout.find(
+		(entry) => entry.widgetId === 'portal-tabs',
 	)
+	assert.ok(strip, 'the portal fields sit in the tab strip')
 	assert.ok(
-		placed[0].gridY < fields.gridY,
+		placed[0].gridY < strip.gridY,
 		'a configuration error nobody scrolls to is not reported',
 	)
 	assert.equal(placed[0].gridX, 0)
