@@ -312,100 +312,81 @@
         "widgets": [
           {
             "id": "kpi-portals",
+            "type": "stat",
             "title": "Portals",
-            "type": "stats-block",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portal",
-              "filter": {},
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "",
-              "variant": "default"
+            "content": {
+              "label": "Portals",
+              "layout": "stacked",
+              "caption": "websites and Mijn Zuiddrecht",
+              "source": {
+                "register": "portaliq",
+                "schema": "portal",
+                "metric": "count"
+              },
+              "route": {
+                "name": "Portals"
+              }
             }
           },
           {
             "id": "kpi-accounts",
+            "type": "stat",
             "title": "Active accounts",
-            "type": "stats-block",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalAccount",
-              "filter": {
-                "status": "active"
+            "content": {
+              "label": "Active accounts",
+              "layout": "stacked",
+              "caption": "signed in to Mijn Zuiddrecht",
+              "source": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "metric": "count",
+                "filter": {
+                  "status": "active"
+                }
               },
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "",
-              "variant": "default"
+              "route": {
+                "name": "PortalAccounts"
+              }
             }
           },
           {
             "id": "kpi-requests",
+            "type": "stat",
             "title": "Open access requests",
-            "type": "stats-block",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalAccessRequest",
-              "filter": {
-                "state": "pending"
+            "content": {
+              "label": "Open access requests",
+              "layout": "stacked",
+              "caption": "waiting for a decision",
+              "source": {
+                "register": "portaliq",
+                "schema": "portalAccessRequest",
+                "metric": "count",
+                "filter": {
+                  "state": "pending"
+                }
               },
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "",
-              "variant": "warning"
+              "captionVariant": "warning",
+              "route": {
+                "name": "AccessRequests"
+              }
             }
           },
           {
             "id": "kpi-submissions",
+            "type": "stat",
             "title": "Submissions",
-            "type": "stats-block",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalSubmission",
-              "filter": {},
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "",
-              "variant": "default"
-            }
-          },
-          {
-            "id": "now-sessions",
-            "title": "Active sessions",
-            "type": "stats-block",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalSession",
-              "filter": {
-                "revoked": false
+            "content": {
+              "label": "Submissions",
+              "layout": "stacked",
+              "caption": "received through the portals",
+              "source": {
+                "register": "portaliq",
+                "schema": "portalSubmission",
+                "metric": "count"
               },
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "",
-              "variant": "default"
-            }
-          },
-          {
-            "id": "now-messages",
-            "title": "Unread messages",
-            "type": "stats-block",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalMessage",
-              "filter": {
-                "read": false
-              },
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "",
-              "variant": "default"
+              "route": {
+                "name": "PortalSubmissions"
+              }
             }
           },
           {
@@ -494,7 +475,8 @@
               "columns": [
                 {
                   "key": "submittedAt",
-                  "label": "Ingediend"
+                  "label": "Ingediend",
+                  "widget": "date"
                 },
                 {
                   "key": "actionId",
@@ -506,7 +488,13 @@
                 },
                 {
                   "key": "deliveryStatus",
-                  "label": "Ontvangst"
+                  "label": "Ontvangst",
+                  "widget": "badge",
+                  "colorMap": {
+                    "delivered": "success",
+                    "failed": "error",
+                    "pending": "warning"
+                  }
                 }
               ],
               "viewAllRoute": "PortalSubmissions",
@@ -514,6 +502,42 @@
               "rowRoute": "PortalSubmissionDetail",
               "emptyText": "Nog geen inzendingen",
               "allowCreate": false
+            }
+          },
+          {
+            "id": "now-mijn",
+            "type": "stats-block",
+            "title": "Mijn Zuiddrecht nu",
+            "props": {
+              "entries": [
+                {
+                  "title": "Active accounts",
+                  "register": "portaliq",
+                  "schema": "portalAccount",
+                  "filter": {
+                    "status": "active"
+                  },
+                  "route": {
+                    "name": "PortalAccounts"
+                  }
+                },
+                {
+                  "title": "Active sessions",
+                  "register": "portaliq",
+                  "schema": "portalSession",
+                  "filter": {
+                    "revoked": false
+                  }
+                },
+                {
+                  "title": "Unread messages",
+                  "register": "portaliq",
+                  "schema": "portalMessage",
+                  "filter": {
+                    "read": false
+                  }
+                }
+              ]
             }
           }
         ],
@@ -575,20 +599,12 @@
             "gridHeight": 5
           },
           {
-            "id": 5,
-            "widgetId": "now-sessions",
+            "id": "now-mijn",
+            "widgetId": "now-mijn",
             "gridX": 8,
             "gridY": 3,
             "gridWidth": 4,
-            "gridHeight": 1
-          },
-          {
-            "id": 6,
-            "widgetId": "now-messages",
-            "gridX": 8,
-            "gridY": 4,
-            "gridWidth": 4,
-            "gridHeight": 1
+            "gridHeight": 4
           }
         ],
         "kpiRow": [
@@ -4366,6 +4382,10 @@
         "Link a form": "Formulier koppelen",
         "Insert form": "Formulier insluiten",
         "Details of the portal": "Gegevens van de portal",
+        "websites and Mijn Zuiddrecht": "websites en Mijn Zuiddrecht",
+        "signed in to Mijn Zuiddrecht": "op Mijn Zuiddrecht",
+        "waiting for a decision": "wachten op een besluit",
+        "received through the portals": "binnengekomen via de portals",
         "Sign-in method": "Inlogwijze",
         "Copy, export or delete the selected accounts.": "Kopieer, exporteer of verwijder de geselecteerde accounts.",
         "a withdrawn account can no longer sign in, the cases stay with the organisation": "een ingetrokken account kan niet meer inloggen, de zaken blijven bij de organisatie"
