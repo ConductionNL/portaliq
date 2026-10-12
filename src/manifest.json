@@ -2016,7 +2016,8 @@
         "columns": [
           {
             "key": "title",
-            "label": "Portal"
+            "label": "Portal",
+            "secondary": "{domains.0.hostname}"
           },
           {
             "key": "kind",
@@ -2029,6 +2030,23 @@
           {
             "key": "organisation",
             "label": "Organisation"
+          },
+          {
+            "key": "pages",
+            "label": "Pages",
+            "aggregate": {
+              "schema": "page",
+              "op": "count",
+              "where": {
+                "portal": "@self.slug"
+              }
+            },
+            "sortable": false
+          },
+          {
+            "key": "@self.updated",
+            "label": "Last published",
+            "widget": "date"
           },
           {
             "key": "status",
@@ -2090,7 +2108,15 @@
             },
             "showCount": true
           }
-        ]
+        ],
+        "rowTitle": "plain",
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards"
+        ],
+        "bulkHint": "Copy or delete the selected portals.",
+        "footerNote": "an umbrella portal has no pages of its own, it adds up the traffic of its members"
       }
     },
     {
@@ -4291,7 +4317,6 @@
         "{shown} of {total} request forms": "{shown} van {total} aanvraagformulieren",
         "Form": "Formulier",
         "Route": "Route",
-        "Kind": "Soort",
         "Issue an account": "Account uitgeven",
         "Invite someone": "Iemand uitnodigen",
         "New news item": "Nieuw nieuwsbericht",
@@ -4368,7 +4393,10 @@
         "Details of the portal": "Gegevens van de portal",
         "Sign-in method": "Inlogwijze",
         "Copy, export or delete the selected accounts.": "Kopieer, exporteer of verwijder de geselecteerde accounts.",
-        "a withdrawn account can no longer sign in, the cases stay with the organisation": "een ingetrokken account kan niet meer inloggen, de zaken blijven bij de organisatie"
+        "a withdrawn account can no longer sign in, the cases stay with the organisation": "een ingetrokken account kan niet meer inloggen, de zaken blijven bij de organisatie",
+        "Last published": "Laatste publicatie",
+        "Copy or delete the selected portals.": "Kopieer of verwijder de geselecteerde portals.",
+        "an umbrella portal has no pages of its own, it adds up the traffic of its members": "een overkoepelende portal heeft geen eigen pagina's, hij telt het verkeer van zijn leden op"
       }
     }
   }
