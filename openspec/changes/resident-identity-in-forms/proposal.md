@@ -40,3 +40,7 @@ All from decision 104.
 
 - Signing a prepared document (`dem-tnd-sign-in-portal`, `2026-09-28-case-actions-sign-a-document`). The MedeOndertekenen board is shared with that row; this change uses only its co-sign half.
 - Qualified electronic signatures.
+
+## Amended by submit-creates-the-case-directly (decision 179)
+
+Amended by `submit-creates-the-case-directly` (decision 179): REQ-RIF-002 and REQ-RIF-005 no longer write the verified addresses and the applicant onto a queue entry. They travel to the destination as server-set values (`verifiedEmails`, and the subject reference in `destination.subjectField`), written only where the destination schema declares that property.

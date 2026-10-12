@@ -330,7 +330,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `deliverTo` routes a Woo-request form to opencatalogi's intake, and
 		// a submission keeps the `externalReference` and `dueAt` that intake
 		// armed (woo-request-intake-through-opencatalogi). Additive.
-		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		// 0.5.0: `destination` replaces caseRegister/caseSchema/deliverTo (decision 179); those stay, deprecated.
+		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalFormBinding']['version']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
@@ -384,8 +385,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.92.0 (portalPage 0.8.0): an action's `summary` is the start tile's string, the answer sentence moves to `answerSummary`, plus `audiences` (decision 127, site-nlds-widget-palette D6). Tightens `summary`; MoveActionSummarySentence moves the stored object shape first. portalSession 0.4.0: read by admins only (security review S3).
 		// 0.93.0 (portal 0.24.0, portalAccount 0.18.0, portalEmailLink 0.1.0): the `email-link` sign-in mode, identity type `email`, the account's own `signInAddress` and the one-time link record (sign-in-with-an-email-link). Additive.
 		// 0.94.0 (portal 0.25.0): `domains[].certificateValidUntil`, `certificateCheckedAt` and `editors` (portal-domains-and-editors). Additive.
-		$this->assertSame('0.94.0', self::$register['info']['version']);
-		$this->assertSame('0.94.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.95.0 (portalFormBinding 0.5.0): `destination { register, schema, subjectField, paymentField, fields, fixed }` replaces `caseRegister`, `caseSchema` and `deliverTo`, which MoveBindingDestination moves (submit-creates-the-case-directly, decision 179). Additive; the old fields stay, deprecated, until the drain reports zero.
+		$this->assertSame('object', self::$register['components']['schemas']['portalFormBinding']['properties']['destination']['type']);
+		// 0.96.0 (form 0.3.0): a landing-page form's `destination { register, schema, fields, fixed }`; a submit creates that object directly (submit-creates-the-case-directly 3.2). Additive.
+		$this->assertSame('0.96.0', self::$register['info']['version']);
+		$this->assertSame('0.96.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['form']['version']);
+		$this->assertSame('object', self::$register['components']['schemas']['form']['properties']['destination']['type']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame(200, self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['summary']['maxLength']);
 		$this->assertSame('object', self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['answerSummary']['type']);

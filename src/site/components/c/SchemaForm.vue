@@ -49,6 +49,13 @@
 		data-testid="schema-form"
 		novalidate
 		@submit.prevent="onSubmit">
+		<p
+			v-if="draftId !== ''"
+			class="utrecht-paragraph pq-schema-form__draft-status"
+			data-testid="schema-form-draft-status">
+			<span class="utrecht-badge-status">{{ translate('Provisional') }}</span>
+			{{ translate('Not sent yet. It counts once you send it.') }}
+		</p>
 		<template v-if="hasSteps">
 			<FormProgress
 				:steps="flow"
@@ -295,6 +302,7 @@ export default {
 			submitting: false,
 			pending: null,
 			confirmed: null,
+			draftId: '',
 		}
 	},
 
@@ -338,7 +346,7 @@ export default {
 		 *
 		 * @return {number} Days.
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 */
 		draftDays() {
 			const days = this.action.draft && this.action.draft.retentionDays
@@ -351,7 +359,7 @@ export default {
 		 *
 		 * @return {boolean} True to show the button.
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 */
 		canSaveDraft() {
 			return (
@@ -367,7 +375,7 @@ export default {
 		 *
 		 * @return {string} The app.
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 */
 		draftApp() {
 			return String(this.action.appId || this.action.register || 'portal')
@@ -696,7 +704,7 @@ export default {
 		 *
 		 * @return {string} The language code.
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 */
 		pageLocale() {
 			return (
@@ -706,12 +714,16 @@ export default {
 		},
 
 		/**
-		 * Keep the answers so far and the step reached, without sending them
-		 * to the app. Files are not kept.
+		 * Keep the answers so far as a draft of the record itself: the
+		 * destination object in status draft, which the app does not treat
+		 * as received until it is sent (decision 180). A missing required
+		 * answer is fine; a wrong value is refused on its field. Picked files
+		 * are uploaded into the draft, so they are kept too.
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-or-endpoint-action-must-stay-with-portaliq-and-the-resident-req-smf-021
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
+		 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 		 */
 		async saveDraft() {
 			this.error = ''
@@ -719,11 +731,29 @@ export default {
 			const kept = await this.api.saveDraft(this.draftApp, this.action.id, {
 				answers: { ...this.values },
 				step: this.currentStep ? this.currentStep.id : '',
-				retentionDays: this.draftDays,
 			})
-			if (kept === null || kept === undefined) {
+			if (!kept || kept.saved === false) {
+				const refused = serverFieldErrors(this.action, kept && kept.errors, this.t)
+				if (Object.keys(refused).length > 0) {
+					this.showErrors(refused)
+					return
+				}
 				this.error = this.translate('Your answers could not be saved.')
 				return
+			}
+			this.errors = {}
+			this.draftId = String(kept.id || '')
+			if (this.draftId !== '' && Object.keys(this.files).length > 0) {
+				this.submitting = true
+				const { failed } = await uploadFiles(this.api, this.action, this.draftId, this.files)
+				this.submitting = false
+				// An attached file lives on the draft now; only a failed one is picked again.
+				this.files = {}
+				this.fileKey++
+				if (failed.length > 0) {
+					this.reportFailed(this.draftId, failed)
+					return
+				}
 			}
 			this.done = this.translate(
 				'Your answers are saved until {date}. You can continue later.',
@@ -749,6 +779,7 @@ export default {
 			if (!draft || typeof draft.answers !== 'object') {
 				return
 			}
+			this.draftId = String(draft.id || '')
 			const values = { ...this.values }
 			for (const field of this.fields) {
 				if (field in draft.answers && !(field in this.preset)) {
@@ -878,9 +909,8 @@ export default {
 				return
 			}
 
-			if (this.draftDays > 0 && typeof this.api.discardDraft === 'function') {
-				this.api.discardDraft(this.draftApp, this.action.id)
-			}
+			// A saved draft was the record itself: the server sent it, so there is nothing left to delete.
+			this.draftId = ''
 			this.values = this.startValues()
 			this.files = {}
 			this.fileKey++

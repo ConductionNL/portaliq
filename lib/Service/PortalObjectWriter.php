@@ -118,15 +118,7 @@ class PortalObjectWriter {
 			return null;
 		}
 
-		// Server-side ownership stamps ALWAYS win over any client-supplied value.
-		// An `array` scope field gets the subject's ref as a one-element list.
-		if ($scopeField !== '') {
-			$data[$scopeField] = $this->createStamp(schema: $schema, scopeField: $scopeField, subjectRef: $subjectRef);
-		}
-
-		if ($organisation !== '') {
-			$data['organisation'] = $organisation;
-		}
+		$data = $this->stamp(schema: $schema, scopeField: $scopeField, subjectRef: $subjectRef, organisation: $organisation, data: $data);
 
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
@@ -485,6 +477,36 @@ class PortalObjectWriter {
 
 		return $row;
 	}//end fetchOwnedObject()
+
+	/**
+	 * The server-side ownership stamps a create writes over the client's data.
+	 *
+	 * The stamps ALWAYS win over any client-supplied value. An `array` scope
+	 * field gets the subject's ref as a one-element list. Shared by a create
+	 * here and by a draft saved through OpenRegister's submit service, so a
+	 * draft that is sent later carries the same owner a create would.
+	 *
+	 * @param string               $schema       The schema slug.
+	 * @param string               $scopeField   The scope field, or '' for none.
+	 * @param string               $subjectRef   The stamp value.
+	 * @param string               $organisation The organisation, or ''.
+	 * @param array<string, mixed> $data         The data.
+	 *
+	 * @return array<string, mixed> The stamped data.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+	 */
+	public function stamp(string $schema, string $scopeField, string $subjectRef, string $organisation, array $data): array {
+		if ($scopeField !== '') {
+			$data[$scopeField] = $this->createStamp(schema: $schema, scopeField: $scopeField, subjectRef: $subjectRef);
+		}
+
+		if ($organisation !== '') {
+			$data['organisation'] = $organisation;
+		}
+
+		return $data;
+	}//end stamp()
 
 	/**
 	 * The ownership value a create writes at the scope field: the subject's

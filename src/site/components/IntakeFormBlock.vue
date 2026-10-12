@@ -72,6 +72,13 @@
 				{{ referenceLabel }}
 				<strong data-testid="intake-form-reference">{{ reference }}</strong>
 			</p>
+			<p
+				v-for="line in confirmationMoments"
+				:key="line"
+				class="utrecht-paragraph"
+				data-testid="intake-form-moment">
+				{{ line }}
+			</p>
 			<p class="utrecht-paragraph">
 				{{ keepReferenceLabel }}
 			</p>
@@ -356,6 +363,13 @@
 				role="alert">
 				{{ errorLabel }}
 			</p>
+			<p
+				v-if="formError"
+				class="utrecht-paragraph pq-intake-form__error"
+				data-testid="intake-form-refused"
+				role="alert">
+				{{ formError }}
+			</p>
 		</form>
 	</section>
 </template>
@@ -391,6 +405,8 @@ import {
 	confirmationView,
 	introView,
 	missingStatements,
+	momentLines,
+	readableDay,
 } from './forms/confirmation.js'
 import {
 	DUTCH,
@@ -557,6 +573,10 @@ export default {
 			errors: {},
 			submitting: false,
 			sendFailed: false,
+			/** The destination's refusal that names no field of this form (decision 179). */
+			formError: '',
+			/** When the request arrived, its term starts and a decision is due, as the destination answered. */
+			moments: {},
 			reference: '',
 			confirmationText: '',
 			accepted: [],
@@ -651,7 +671,10 @@ export default {
 			return confirmationView(
 				this.confirmation,
 				this.confirmationText,
-				{ reference: this.reference, deadline: '' },
+				{
+					reference: this.reference,
+					deadline: readableDay(this.moments.deadline),
+				},
 				this.doneLabel,
 			)
 		},
@@ -789,6 +812,17 @@ export default {
 		},
 
 		/**
+		 * The lines under the case number: received, term start, deadline.
+		 *
+		 * @return {string[]} The lines.
+		 *
+		 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.4
+		 */
+		confirmationMoments() {
+			return momentLines(this.moments, this.text)
+		},
+
+		/**
 		 * Whether the form explains "(niet verplicht)": only when it mixes
 		 * required and optional fields.
 		 *
@@ -903,6 +937,7 @@ export default {
 		 */
 		async submit() {
 			this.sendFailed = false
+			this.formError = ''
 			const wrong = this.checkFields(
 				this.fields
 					.filter((field) => this.isShownField(field.name))
@@ -934,7 +969,9 @@ export default {
 					this.verifiedEmails,
 				)
 				if (outcome.reference === '') {
-					const messages = this.messagesOf(outcome.errors)
+					const { _form: formLevel, ...fieldErrors } = outcome.errors || {}
+					this.formError = String(formLevel || '')
+					const messages = this.messagesOf(fieldErrors)
 					this.statementErrors = {}
 					for (const key of Object.keys(messages)) {
 						if (key.startsWith('statement-')) {
@@ -950,6 +987,7 @@ export default {
 				this.confirmationText = outcome.confirmationText
 				this.confirmation = outcome.confirmation
 				this.mailedTo = outcome.mailedTo
+				this.moments = outcome.moments || {}
 				this.state = 'done'
 				this.$nextTick(() => {
 					if (this.$refs.doneHeading) {
@@ -987,6 +1025,7 @@ export default {
 				return
 			}
 			this.reference = status.reference
+			this.moments = status.confirmation || {}
 			this.payment = status.payment || null
 			this.state = 'done'
 		},

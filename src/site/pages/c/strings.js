@@ -96,6 +96,9 @@ export default {
 		'Not answered': 'Niet ingevuld',
 		'Forgot your password?': 'Wachtwoord vergeten',
 		'Save and continue later': 'Opslaan en later verdergaan',
+		Provisional: 'Voorlopig',
+		'Not sent yet. It counts once you send it.':
+			'Nog niet verstuurd. Het telt pas als u het verstuurt.',
 		'Your answers are saved until {date}. You can continue later.':
 			'Uw antwoorden zijn bewaard tot {date}. U kunt later verdergaan.',
 		'Your answers could not be saved.':
@@ -198,6 +201,9 @@ export default {
 		'Not answered': 'Not answered',
 		'Forgot your password?': 'Forgot your password?',
 		'Save and continue later': 'Save and continue later',
+		Provisional: 'Provisional',
+		'Not sent yet. It counts once you send it.':
+			'Not sent yet. It counts once you send it.',
 		'Your answers are saved until {date}. You can continue later.':
 			'Your answers are saved until {date}. You can continue later.',
 		'Your answers could not be saved.': 'Your answers could not be saved.',

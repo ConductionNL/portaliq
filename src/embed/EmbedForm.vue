@@ -13,7 +13,7 @@
 	by slice c's SchemaForm (src/site/components/c/SchemaForm.vue) once that
 	lands, which knows field types, conditions and file fields. Keep this
 	component's contract when swapping: props `fields`, `fieldErrors`, `busy`,
-	`t`; emits `submit(answers)`.
+	`t`; emits `submit(answers, honeypot)`.
 -->
 <template>
 	<form class="pq-embed-form" data-testid="embed-form" @submit.prevent="submit">
@@ -58,6 +58,18 @@
 			:disabled="busy">
 			{{ busy ? t('Sending…') : t('Send') }}
 		</button>
+		<!-- The honeypot: hidden from people and from assistive technology, so
+			only a bot fills it (submit-creates-the-case-directly 2.2). -->
+		<div class="pq-embed-form__hp" aria-hidden="true">
+			<label for="embed-hp">Website</label>
+			<input
+				id="embed-hp"
+				v-model="honeypot"
+				name="_hp"
+				type="text"
+				tabindex="-1"
+				autocomplete="off" />
+		</div>
 	</form>
 </template>
 
@@ -100,6 +112,7 @@ export default {
 	data() {
 		return {
 			answers: initialAnswers(this.fields),
+			honeypot: '',
 		}
 	},
 
@@ -140,13 +153,21 @@ export default {
 			for (const field of this.shownFields) {
 				sent[field.name] = this.answers[field.name]
 			}
-			this.$emit('submit', sent)
+			this.$emit('submit', sent, this.honeypot)
 		},
 	},
 }
 </script>
 
 <style scoped>
+.pq-embed-form__hp {
+	position: absolute;
+	inset-inline-start: -10000px;
+	inline-size: 1px;
+	block-size: 1px;
+	overflow: hidden;
+}
+
 .pq-embed-form {
 	display: flex;
 	flex-direction: column;

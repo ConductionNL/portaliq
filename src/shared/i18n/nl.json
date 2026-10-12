@@ -456,5 +456,7 @@
 	"Sign in": "Inloggen",
 	"This link has already been used. Ask for a new link.": "Deze link is al gebruikt. Vraag een nieuwe link aan.",
 	"That is not the address this link was sent to. Check it and try again.": "Dit is niet het adres waar deze link naartoe is gestuurd. Controleer het en probeer het opnieuw.",
-	"This portal does not offer sign-in with an e-mail link.": "Dit portaal biedt geen inloggen met een e-maillink."
+	"This portal does not offer sign-in with an e-mail link.": "Dit portaal biedt geen inloggen met een e-maillink.",
+	"Provisional": "Voorlopig",
+	"Not sent yet. It counts once you send it.": "Nog niet verstuurd. Het telt pas als u het verstuurt."
 }
