@@ -47,9 +47,9 @@ import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalAccessibility from './widgets/PortalAccessibility.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
+import PortalDetailsForm from './widgets/PortalDetailsForm.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
-import PortalSettings from './widgets/PortalSettings.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
 import PortalSummaryCard from './widgets/PortalSummaryCard.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
@@ -252,16 +252,16 @@ export default {
 		propsSchema: null,
 		_note: "Who may make an account on the portal and the registrations waiting for approval (identity-staff-account-screens T07). Custom because the policy is saved inside the portal's authentication block and Approve and Refuse post the guarded account routes.",
 	},
-	// @custom-widget-ratchet exclude one tab that stacks five existing custom widgets (house style, case types, sign-in, registration, accessibility) in cards, because the tab strip takes one widget per tab and each part is itself a custom widget
-	PortalSettings: {
+	// @custom-widget-ratchet exclude the portal's own fields, where the slug that pages and menus join on, the languages and the embedding origins are checked together and the save patches only the fields that changed, which no built-in form widget does in nc-vue 2.80
+	PortalDetailsForm: {
 		kind: 'widget',
-		component: PortalSettings,
-		defaultSize: { w: 12, h: 12 },
+		component: PortalDetailsForm,
+		defaultSize: { w: 12, h: 8 },
 		minSize: { w: 6, h: 6 },
-		maxSize: { w: 12, h: 24 },
+		maxSize: { w: 12, h: 14 },
 		allowedSlots: ['body'],
 		propsSchema: null,
-		_note: "The Instellingen tab of a portal: its house style, case types, sign-in, registration and accessibility in one stack (screens PtPortalInstellingen). Custom because each part is a custom widget and the tab strip takes one widget per tab.",
+		_note: "Gegevens van de portal, the first section of a portal's Instellingen tab (screens PtPortalInstellingen). The tab itself is a library sections widget; this is one of its sections. Custom because the slug, the languages and the embedding origins are checked together and the save patches only the fields that changed.",
 	},
 	// @custom-widget-ratchet exclude a read-only summary of the portal record in the side column (domains, house style, status) with the portal's own computed values, which no built-in widget draws without a data source
 	PortalSummaryCard: {
