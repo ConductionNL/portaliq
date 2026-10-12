@@ -408,7 +408,7 @@ test('the public renderer mounts the three intake blocks and hands them the port
 	}
 	assert.match(
 		grid,
-		/widgetKey === 'intakeForm'\) \{\s*return \{ \.\.\.props, portal: this\.portal, routeParam: this\.routeParam \}/,
+		/widgetKey === 'intakeForm'\) \{\s*return \{\s*\.\.\.props,\s*portal: this\.portal,\s*routeParam: this\.routeParam,\s*portalHelp: this\.portalHelp,\s*\}/,
 	)
 	assert.match(
 		grid,
@@ -421,7 +421,7 @@ test('the public renderer mounts the three intake blocks and hands them the port
 	)
 	assert.match(
 		catalogue,
-		/intakeForm: \['portal', 'routeParam'\]/,
+		/intakeForm: \['portal', 'routeParam', 'portalHelp'\]/,
 		'the designer must not offer host-supplied props',
 	)
 	// The palette's names live in one module the editor shares
