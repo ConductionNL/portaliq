@@ -83,6 +83,7 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
 import {
+	afterSave,
 	formFrom,
 	HEADER_OPTIONS,
 	KIND_OPTIONS,
@@ -107,6 +108,11 @@ export default {
 	data() {
 		return {
 			form: formFrom(this.objectData),
+			// What the server holds, as far as this form knows. A save moves it
+			// forward: comparing against the prop (the portal as the page loaded
+			// it) turned a later edit back to the loaded value into "nothing
+			// changed" and skipped the PATCH.
+			baseline: { ...this.objectData },
 			errors: {},
 			saving: false,
 			notice: '',
@@ -145,6 +151,12 @@ export default {
 		},
 	},
 
+	watch: {
+		objectData(portal) {
+			this.baseline = { ...portal }
+		},
+	},
+
 	methods: {
 		t,
 
@@ -166,12 +178,13 @@ export default {
 			this.saving = true
 			this.notice = ''
 			try {
-				const patch = portalPatch(this.objectData, this.form)
+				const patch = portalPatch(this.baseline, this.form)
 				if (Object.keys(patch).length > 0) {
 					await axios.patch(
 						generateUrl(`/apps/openregister/api/objects/portaliq/portal/${id}`),
 						patch,
 					)
+					this.baseline = afterSave(this.baseline, patch)
 				}
 				this.noticeType = 'success'
 				this.notice = t('portaliq', 'The portal is saved.')
