@@ -600,7 +600,12 @@ export default {
 			// takes the catalogue link's segment from the route. Both come
 			// after the authored props so a placement cannot point elsewhere.
 			if (widget.widgetKey === 'intakeForm') {
-				return { ...props, portal: this.portal, routeParam: this.routeParam }
+				return {
+					...props,
+					portal: this.portal,
+					routeParam: this.routeParam,
+					portalHelp: this.portalHelp,
+				}
 			}
 
 			if (

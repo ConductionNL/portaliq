@@ -453,7 +453,11 @@ class CmsReader {
 			return $shaped;
 		}
 
-		$widgets = $this->blocks->expand(widgets: $this->blocks->shapeWidgets(raw: (array)($body['widgets'] ?? [])), organisation: $organisation);
+		// The portal goes along for the form placements: each is served with
+		// its stored form's help details, read now and not when the page was
+		// made (help-texts-and-form-help).
+		$widgets = $this->blocks->shapeWidgets(raw: (array)($body['widgets'] ?? []));
+		$widgets = $this->blocks->expand(widgets: $widgets, organisation: $organisation, portal: $portal);
 
 		usort(
 			$widgets,

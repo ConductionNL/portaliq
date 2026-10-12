@@ -98,7 +98,7 @@ const HOST_SUPPLIED = {
 	contributions: ['contributions'],
 	publicationDetail: ['subjectId'],
 	intakeCatalogue: ['portal'],
-	intakeForm: ['portal', 'routeParam'],
+	intakeForm: ['portal', 'routeParam', 'portalHelp'],
 	intakeStatus: ['portal'],
 	contactForm: ['portal', 'signedIn', 'ways', 'apiOverride'],
 	assistant: ['portal', 'askOverride'],
