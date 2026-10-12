@@ -105,8 +105,6 @@ class Application extends App implements IBootstrap {
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-	 *
 	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
 	 */
 	public function register(IRegistrationContext $context): void {
@@ -277,7 +275,8 @@ class Application extends App implements IBootstrap {
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- IBootstrap dictates
+	 * the signature; this app has nothing to do at boot, so `$context` is unread.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */

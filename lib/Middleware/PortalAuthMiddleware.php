@@ -235,7 +235,9 @@ class PortalAuthMiddleware extends Middleware {
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- Middleware dictates
+	 * the signature; the response depends only on the exception type, never on
+	 * which `$controller` / `$methodName` threw it.
 	 */
 	public function afterException($controller, $methodName, \Throwable $exception): Response {
 		if ($exception instanceof PortalUnauthorizedException) {

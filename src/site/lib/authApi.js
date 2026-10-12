@@ -14,11 +14,13 @@
  * `/api/content/site`, so every consumer learns which sign-in routes a portal
  * offers from the public API. Only the act of using them lives here.
  *
- * WHAT THIS FILE DOES NOT DO — stated because the gap is easy to mistake for a
- * bug: it does not ENFORCE anything. Per-portal authentication is declared in
- * the schema and enforced nowhere yet; every portal behaves as `public`
- * read-only. This module offers the door and reports who came through it. It
- * does not guard any content, and no code here should be read as if it did.
+ * WHAT THIS FILE DOES NOT DO: it does not ENFORCE anything. Per-portal
+ * authentication is enforced on the server — the content API refuses a read
+ * the portal's `authentication.modes` / `minTrust` do not allow (401 without a
+ * session, 403 when its trust level is too low; see
+ * `ContentController::refuseUnlessPermitted()`). This module only offers the
+ * door and reports who came through it. Hiding content here would guard
+ * nothing, and no code here should be read as if it did.
  */
 
 /**
