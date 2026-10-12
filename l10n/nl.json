@@ -3052,7 +3052,16 @@
         "valid until": "geldig tot",
         "Publish this TXT record: {name} = {value}": "Publiceer dit TXT-record: {name} = {value}",
         "%s is verified.": "%s is geverifieerd.",
-        "The record of %s is not there yet.": "Het record van %s staat er nog niet."
+        "The record of %s is not there yet.": "Het record van %s staat er nog niet.",
+        "Certificate checked at": "Certificaat gecontroleerd op",
+        "Certificate valid until": "Certificaat geldig tot",
+        "Chief editor or editor.": "Hoofdredacteur of redacteur.",
+        "Editors": "Redacteuren",
+        "The Nextcloud user id.": "De Nextcloud-gebruikers-id.",
+        "User": "Gebruiker",
+        "When the TLS certificate this host presented on port 443 ends, read at the last verification run. Empty until a verified domain has been probed; kept when a later probe gets no answer.": "Wanneer het TLS-certificaat eindigt dat deze host op poort 443 aanbood, afgelezen bij de laatste controle. Leeg tot een geverifieerd domein is gecontroleerd; blijft staan als een latere controle geen antwoord krijgt.",
+        "When the certificate was last probed, whether or not the host answered.": "Wanneer het certificaat voor het laatst is gecontroleerd, of de host nu antwoordde of niet.",
+        "Who looks after this portal: Nextcloud user id, the display name stored beside it so the list reads without a lookup per person, and the role. Listing a user here grants no right to change pages.": "Wie dit portaal beheert: de Nextcloud-gebruikers-id, de weergavenaam die ernaast staat zodat de lijst leest zonder opzoeking per persoon, en de rol. Iemand hier opnemen geeft geen recht om pagina's te wijzigen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
