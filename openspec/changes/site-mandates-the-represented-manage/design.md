@@ -26,6 +26,7 @@ A session acting under a mandate manages nothing on the represented party's beha
 - Accepting (`accept()`, signed in) writes the `portalMandate` with its holder from D7, `grantedBy` the inviter and `invitationId` set. One accept, one mandate. A second accept of the same token is refused, as today.
 - The inviter cannot accept their own invitation.
 - No BSN, name lookup or KVK lookup of the invitee takes place.
+- As built: a mandate invitation is its own kind. `PortalMandateAdminService::invite()` and `::accept()` carry it, and `PortalInvitationService`, which serves guardian and staff invitations, is unchanged. Where this design names `PortalInvitationService::invite()` or `::accept()` for a mandate, read `PortalMandateAdminService`.
 
 ## D4. Ending
 
