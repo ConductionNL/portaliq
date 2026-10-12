@@ -18,28 +18,30 @@
 		size="normal"
 		data-testid="invite-someone"
 		@closing="$emit('close', null)">
-		<p class="invite__intro">
-			{{
-				t(
-					'portaliq',
-					'We mail a link to this address. You see when it runs out, not the link itself.',
-				)
-			}}
-		</p>
 		<NcTextField
 			v-model="fields.email"
 			type="email"
 			:label="t('portaliq', 'E-mail address')"
+			:helperText="t('portaliq', 'The invitation with a one-time code goes to this address.')"
 			data-testid="invite-someone-email" />
 		<NcTextField
 			v-model="fields.organisation"
-			:label="t('portaliq', 'Organisation')"
+			:label="t('portaliq', 'Organisation (optional)')"
+			:helperText="t('portaliq', 'Leave empty for a resident who comes for themselves.')"
 			data-testid="invite-someone-organisation" />
 		<NcTextField
 			v-model="fields.audience"
 			:label="t('portaliq', 'Audience')"
 			:helperText="t('portaliq', 'For example client or supplier.')"
 			data-testid="invite-someone-audience" />
+		<p class="invite__intro">
+			{{
+				t(
+					'portaliq',
+					'The invitation is valid for 14 days. You see it afterwards under Invitations, where you can withdraw it as long as it is not accepted.',
+				)
+			}}
+		</p>
 		<p
 			v-if="refusal"
 			class="invite__refusal"

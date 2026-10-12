@@ -18,25 +18,18 @@
  manifest renders).
 -->
 <template>
+	<CnAdminSettingsShell
+		appId="portaliq"
+		appName="Portaliq"
+		look="board"
+		title="Portaliq"
+		:description="
+			t('portaliq', 'What the app needs before it starts; the other settings live in the app itself, per portal')
+		"
+		docUrl="https://portaliq.conduction.nl"
+		:showVersionCard="false"
+		:showSupport="false">
 	<div class="portaliq-admin-settings">
-		<NcSettingsSection
-			:name="t('portaliq', 'Pre-boot configuration')"
-			:description="
-				t(
-					'portaliq',
-					'Pre-app-boot configuration. Most settings live inside the app at /settings (manifest-driven).',
-				)
-			">
-			<p class="portaliq-admin-settings__hint">
-				{{
-					t(
-						'portaliq',
-						'No pre-boot settings yet. Edit `src/views/AdminRoot.vue` to add fields here.',
-					)
-				}}
-			</p>
-		</NcSettingsSection>
-
 		<!-- `section-portal-auth-edge` is the anchor lib/Settings/connections.json
 			links the Login brokers row to (adopt-connection-registry). Keep it stable. -->
 		<NcSettingsSection
@@ -65,13 +58,22 @@
 				}}
 			</NcNoteCard>
 
+		</NcSettingsSection>
+
+		<NcSettingsSection
+			:name="t('portaliq', 'Organisation')"
+			:description="
+				t(
+					'portaliq',
+					'Revoke all portal sessions of one organisation at once. Anyone who wants to continue signs in again.',
+				)
+			">
 			<form
 				class="portaliq-admin-settings__revoke"
 				@submit.prevent="revokeOrganisation">
 				<NcTextField
 					v-model="organisationInput"
-					:label="t('portaliq', 'Organisation')"
-					:placeholder="t('portaliq', 'Organisation UUID')"
+					:label="t('portaliq', 'Organisation UUID')"
 					:disabled="revoking" />
 				<!--
 					@nextcloud/vue 9 repurposed NcButton's `type` prop: it is now
@@ -107,41 +109,6 @@
 						count: revokeResult,
 					})
 				}}
-			</p>
-		</NcSettingsSection>
-
-		<!--
-			The e-mail link sign-in (sign-in-with-an-email-link, decision 127).
-			OFF by default; the help text says the security review comes first.
-		-->
-		<NcSettingsSection
-			id="section-email-link"
-			:name="t('portaliq', 'Sign-in with an e-mail link')"
-			:description="
-				t(
-					'portaliq',
-					'Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.',
-				)
-			">
-			<NcNoteCard type="warning">
-				{{
-					t(
-						'portaliq',
-						'Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.',
-					)
-				}}
-			</NcNoteCard>
-			<NcCheckboxRadioSwitch
-				v-model="emailLinkEnabled"
-				type="switch"
-				:disabled="savingEmailLink"
-				data-testid="admin-email-link"
-				@update:modelValue="saveEmailLink">
-				{{ t('portaliq', 'Allow sign-in with an e-mail link') }}
-			</NcCheckboxRadioSwitch>
-			<p class="portaliq-admin-settings__hint" role="status">
-				<span v-if="emailLinkError">{{ emailLinkError }}</span>
-				<span v-else-if="emailLinkSaved">{{ t('portaliq', 'Saved.') }}</span>
 			</p>
 		</NcSettingsSection>
 
@@ -184,54 +151,6 @@
 						'portaliq',
 						'No groups configured — only administrators may edit pages.',
 					)
-				}}</span>
-			</p>
-		</NcSettingsSection>
-
-		<!--
-			Who may do which action (operate-roles-for-content-and-actions
-			REQ-ORA-001). One picker per action the app checks; an empty picker
-			means only administrators. Administrators always keep every action.
-		-->
-		<NcSettingsSection
-			:name="t('portaliq', 'Actions')"
-			:description="
-				t(
-					'portaliq',
-					'Choose which groups may do each action. Administrators always may.',
-				)
-			">
-			<div
-				v-for="row in grantRows"
-				:key="row.action"
-				class="portaliq-admin-settings__grant"
-				:data-testid="`admin-action-${row.action}`">
-				<p class="portaliq-admin-settings__grant-label">
-					<strong>{{ row.label }}</strong>
-					<span>{{ row.description }}</span>
-				</p>
-				<NcSelect
-					v-model="row.groups"
-					:inputLabel="row.label"
-					:options="grantGroupOptions"
-					:multiple="true"
-					:keepOpen="true"
-					:disabled="savingGrants"
-					label="label"
-					:data-testid="`admin-action-groups-${row.action}`"
-					@update:modelValue="saveGrantRows" />
-				<p
-					v-if="row.groups.length === 0"
-					class="portaliq-admin-settings__hint">
-					{{ t('portaliq', 'Only administrators') }}
-				</p>
-			</div>
-			<p class="portaliq-admin-settings__hint" role="status">
-				<span v-if="grantsError" data-testid="admin-actions-error">{{
-					grantsError
-				}}</span>
-				<span v-else-if="grantsSaved" data-testid="admin-actions-saved">{{
-					t('portaliq', 'Saved.')
 				}}</span>
 			</p>
 		</NcSettingsSection>
@@ -394,10 +313,95 @@
 				>
 			</p>
 		</NcSettingsSection>
+		<!--
+			The e-mail link sign-in (sign-in-with-an-email-link, decision 127).
+			OFF by default; the help text says the security review comes first.
+		-->
+		<NcSettingsSection
+			id="section-email-link"
+			:name="t('portaliq', 'Sign-in with an e-mail link')"
+			:description="
+				t(
+					'portaliq',
+					'Lets a participant with an e-mail account sign in with a one-time link that works for 15 minutes. A portal offers it only when it also lists the sign-in mode email-link.',
+				)
+			">
+			<NcNoteCard type="warning">
+				{{
+					t(
+						'portaliq',
+						'Do not turn this on before the security review of this sign-in has been accepted. Anyone who can read the mailbox can sign in while the link works.',
+					)
+				}}
+			</NcNoteCard>
+			<NcCheckboxRadioSwitch
+				v-model="emailLinkEnabled"
+				type="switch"
+				:disabled="savingEmailLink"
+				data-testid="admin-email-link"
+				@update:modelValue="saveEmailLink">
+				{{ t('portaliq', 'Allow sign-in with an e-mail link') }}
+			</NcCheckboxRadioSwitch>
+			<p class="portaliq-admin-settings__hint" role="status">
+				<span v-if="emailLinkError">{{ emailLinkError }}</span>
+				<span v-else-if="emailLinkSaved">{{ t('portaliq', 'Saved.') }}</span>
+			</p>
+		</NcSettingsSection>
+
+		<!--
+			Who may do which action (operate-roles-for-content-and-actions
+			REQ-ORA-001). One picker per action the app checks; an empty picker
+			means only administrators. Administrators always keep every action.
+		-->
+		<NcSettingsSection
+			:name="t('portaliq', 'Actions')"
+			:description="
+				t(
+					'portaliq',
+					'Choose which groups may do each action. Administrators always may.',
+				)
+			">
+			<div
+				v-for="row in grantRows"
+				:key="row.action"
+				class="portaliq-admin-settings__grant"
+				:data-testid="`admin-action-${row.action}`">
+				<p class="portaliq-admin-settings__grant-label">
+					<strong>{{ row.label }}</strong>
+					<span>{{ row.description }}</span>
+				</p>
+				<NcSelect
+					v-model="row.groups"
+					:inputLabel="row.label"
+					:options="grantGroupOptions"
+					:multiple="true"
+					:keepOpen="true"
+					:disabled="savingGrants"
+					label="label"
+					:data-testid="`admin-action-groups-${row.action}`"
+					@update:modelValue="saveGrantRows" />
+				<p
+					v-if="row.groups.length === 0"
+					class="portaliq-admin-settings__hint">
+					{{ t('portaliq', 'Only administrators') }}
+				</p>
+			</div>
+			<p class="portaliq-admin-settings__hint" role="status">
+				<span v-if="grantsError" data-testid="admin-actions-error">{{
+					grantsError
+				}}</span>
+				<span v-else-if="grantsSaved" data-testid="admin-actions-saved">{{
+					t('portaliq', 'Saved.')
+				}}</span>
+			</p>
+		</NcSettingsSection>
+
 	</div>
+	</CnAdminSettingsShell>
 </template>
 
 <script>
+import { CnAdminSettingsShell } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
@@ -415,6 +419,7 @@ import { loadGrants, saveGrants } from '../lib/actionGrants.js'
 export default {
 	name: 'AdminRoot',
 	components: {
+		CnAdminSettingsShell,
 		NcSettingsSection,
 		NcCheckboxRadioSwitch,
 		NcNoteCard,

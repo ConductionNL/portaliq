@@ -47,9 +47,11 @@ import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalAccessibility from './widgets/PortalAccessibility.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
+import PortalDetailsForm from './widgets/PortalDetailsForm.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
+import PortalSummaryCard from './widgets/PortalSummaryCard.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
@@ -249,6 +251,28 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "Who may make an account on the portal and the registrations waiting for approval (identity-staff-account-screens T07). Custom because the policy is saved inside the portal's authentication block and Approve and Refuse post the guarded account routes.",
+	},
+	// @custom-widget-ratchet exclude the portal's own fields, where the slug that pages and menus join on, the languages and the embedding origins are checked together and the save patches only the fields that changed, which no built-in form widget does in nc-vue 2.80
+	PortalDetailsForm: {
+		kind: 'widget',
+		component: PortalDetailsForm,
+		defaultSize: { w: 12, h: 8 },
+		minSize: { w: 6, h: 6 },
+		maxSize: { w: 12, h: 14 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "Gegevens van de portal, the first section of a portal's Instellingen tab (screens PtPortalInstellingen). The tab itself is a library sections widget; this is one of its sections. Custom because the slug, the languages and the embedding origins are checked together and the save patches only the fields that changed.",
+	},
+	// @custom-widget-ratchet exclude a read-only summary of the portal record in the side column (domains, house style, status) with the portal's own computed values, which no built-in widget draws without a data source
+	PortalSummaryCard: {
+		kind: 'widget',
+		component: PortalSummaryCard,
+		defaultSize: { w: 4, h: 3 },
+		minSize: { w: 3, h: 2 },
+		maxSize: { w: 12, h: 6 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "A summary card on the portal page: content.kind is domain, theme, status or editors. Reads the portal the page shows.",
 	},
 	// @custom-widget-ratchet exclude per provider a route choice, the broker settings and a write-only secret, saved through an admin controller that refuses a broker route whose settings are incomplete, which no built-in widget does
 	PortalSignin: {

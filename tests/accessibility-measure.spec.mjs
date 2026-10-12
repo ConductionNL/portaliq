@@ -25,6 +25,7 @@ import {
 	measureRun,
 	violationsOf,
 } from '../src/lib/accessibilityMeasure.js'
+import { pageDraws } from './lib/placement.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (path) => readFileSync(join(root, path), 'utf8')
@@ -230,7 +231,8 @@ test('axe-core is a lazy admin chunk and never enters the site', () => {
 
 test('the widget sits on the portal page and is registered', () => {
 	const manifest = JSON.parse(read('src/manifest.json'))
-	const widgets = JSON.stringify(manifest)
-	assert.match(widgets, /"type":"PortalAccessibility"/)
+	const detail = manifest.pages.find((page) => page.id === 'PortalDetail')
+	// The portal page's Instellingen tab (a sections widget) places it.
+	assert.ok(pageDraws(detail.config, 'PortalAccessibility'))
 	assert.match(read('src/registry.js'), /PortalAccessibility: \{/)
 })

@@ -19,6 +19,7 @@ use OCA\Portaliq\Service\Cms\PortalDomainVerifier;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Http;
+use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -31,10 +32,11 @@ class PortalDomainVerifierTest extends TestCase {
 	 * @param array<string, array<int, string>> $dns  Record name to its values.
 	 * @param array<string, mixed>              $row  The stored portal.
 	 * @param array<int, array<string, mixed>>  $saved Filled with each write.
+	 * @param int|null                          $ends  The certificate end the probe returns; null for no answer.
 	 *
 	 * @return PortalDomainVerifier
 	 */
-	private function verifier(array $dns, array $row, array &$saved): PortalDomainVerifier {
+	private function verifier(array $dns, array $row, array &$saved, ?int $ends = null): PortalDomainVerifier {
 		$reader = $this->createMock(PortalObjectReader::class);
 		$reader->method('readCollection')->willReturnCallback(static function () use (&$row): array {
 			return [$row];
@@ -49,7 +51,7 @@ class PortalDomainVerifierTest extends TestCase {
 			}
 		);
 
-		return new PortalDomainVerifier($reader, $writer, $this->createMock(LoggerInterface::class), static fn (string $name): array => ($dns[$name] ?? []));
+		return new PortalDomainVerifier($reader, $writer, $this->createMock(LoggerInterface::class), static fn (string $name): array => ($dns[$name] ?? []), static fn (string $host): ?int => $ends);
 	}
 
 	private static function portal(array $domains): array {
@@ -108,11 +110,50 @@ class PortalDomainVerifierTest extends TestCase {
 	public function testTheEndpointsAnswerInWords(): void {
 		$saved = [];
 		$row   = self::portal([['hostname' => 'portal.example.com', 'verificationToken' => 'tok']]);
-		$controller = new CmsDomainController('portaliq', $this->createMock(IRequest::class), $this->verifier([], $row, $saved));
+		$l10n       = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters=[]): string => vsprintf($text, $parameters));
+		$controller = new CmsDomainController('portaliq', $this->createMock(IRequest::class), $this->verifier([], $row, $saved), $l10n);
 
 		$this->assertSame('_portaliq-verify.portal.example.com', $controller->records('open-tilburg')->getData()['domains'][0]['name']);
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->records('nergens-x')->getStatus());
-		$this->assertSame(['status' => 'pending'], $controller->verify('open-tilburg', 'portal.example.com')->getData());
+		$this->assertSame(['status' => 'pending', 'message' => 'The record of portal.example.com is not there yet.'], $controller->verify('open-tilburg', 'portal.example.com')->getData());
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->verify('open-tilburg', 'evil.example')->getStatus());
+	}
+
+	public function testAVerifiedDomainStoresTheEndOfItsCertificate(): void {
+		$saved = [];
+		$row   = self::portal([['hostname' => 'portal.example.com', 'verificationToken' => 'tok']]);
+		$ends  = gmmktime(12, 0, 0, 1, 14, 2027);
+		$verifier = $this->verifier(['_portaliq-verify.portal.example.com' => ['tok']], $row, $saved, $ends);
+
+		$this->assertSame('verified', $verifier->verify('open-tilburg', 'portal.example.com'));
+		$this->assertSame('2027-01-14T12:00:00+00:00', $saved[0]['domains'][0]['certificateValidUntil']);
+		$this->assertNotEmpty($saved[0]['domains'][0]['certificateCheckedAt']);
+
+		$records = $verifier->records('open-tilburg');
+		$this->assertSame('2027-01-14T12:00:00+00:00', $records[0]['certificateValidUntil']);
+	}
+
+	public function testAHostThatDoesNotAnswerKeepsTheEarlierEndDate(): void {
+		$saved = [];
+		$row   = self::portal([['hostname' => 'portal.example.com', 'verificationToken' => 'tok', 'certificateValidUntil' => '2026-12-01T00:00:00+00:00']]);
+		$verifier = $this->verifier(['_portaliq-verify.portal.example.com' => ['tok']], $row, $saved, null);
+
+		$this->assertSame('verified', $verifier->verify('open-tilburg', 'portal.example.com'));
+		$this->assertSame('2026-12-01T00:00:00+00:00', $saved[0]['domains'][0]['certificateValidUntil']);
+		$this->assertNotEmpty($saved[0]['domains'][0]['certificateCheckedAt']);
+	}
+
+	public function testAPendingDomainIsNotProbed(): void {
+		$saved = [];
+		$row   = self::portal([['hostname' => 'portal.example.com', 'verificationToken' => 'tok']]);
+		$verifier = $this->verifier([], $row, $saved, 1);
+
+		$this->assertSame('pending', $verifier->verify('open-tilburg', 'portal.example.com'));
+		$this->assertSame([], $saved);
+	}
+
+	public function testThePrivateHostIsNeverContacted(): void {
+		$this->assertNull(PortalDomainVerifier::probeCertificate('localhost'));
 	}
 }
