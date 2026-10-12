@@ -2949,7 +2949,10 @@ OC.L10N.register(
         "Wacht op bevestiging": "Waiting for confirmation",
         "Bevestiging mislukt": "Confirmation failed",
         "Alles": "All",
-        "Bevestigd": "Confirmed"
+        "Bevestigd": "Confirmed",
+        "{displayName}, namens {onBehalfOf}": "{displayName}, on behalf of {onBehalfOf}",
+        "{actionId}": "{actionId}",
+        "Nog niet ingelogd": "Not signed in yet"
     },
     "nplurals=2; plural=(n != 1);"
 )

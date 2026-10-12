@@ -3099,7 +3099,10 @@ OC.L10N.register(
         "Refuse with a reason": "Afwijzen met een reden",
         "Record a request": "Verzoek vastleggen",
         "Wacht op bevestiging": "Wacht op bevestiging",
-        "Bevestiging mislukt": "Bevestiging mislukt"
+        "Bevestiging mislukt": "Bevestiging mislukt",
+        "{displayName}, namens {onBehalfOf}": "{displayName}, namens {onBehalfOf}",
+        "{actionId}": "{actionId}",
+        "Nog niet ingelogd": "Nog niet ingelogd"
     },
     "nplurals=2; plural=(n != 1);"
 )
