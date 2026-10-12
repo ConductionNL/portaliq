@@ -54,6 +54,25 @@ class FormConfirmationMailerTest extends TestCase {
 		$this->assertSame(['nl'], $this->mailed['languages']);
 	}//end testTheMailGoesToTheFormsAddressWithTheReferenceAndTheSummary()
 
+	/**
+	 * submit-creates-the-case-directly 2.4: the mail names when the request
+	 * arrived, when its term starts and when a decision is due, from the
+	 * moments the destination answered; a moment that is not a date is left out.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.4
+	 */
+	public function testTheMailNamesTheReceivedMomentTheTermAndTheDeadline(): void {
+		$this->mailer()->send('sanne@example.nl', ['locales' => ['nl']], '2026-0042', 'Bezwaar', [], ['receivedAt' => '2026-10-11T09:00:00+00:00', 'termStartsAt' => '2026-10-13T09:00:00+02:00', 'deadline' => '2026-11-24', 'identifier' => '2026-0042']);
+
+		$this->assertContains('Received on 11-10-2026.', $this->mailed['texts']);
+		$this->assertContains('The term starts on 13-10-2026.', $this->mailed['texts']);
+		$this->assertContains('You can expect a decision by 24-11-2026.', $this->mailed['texts']);
+
+		$this->setUp();
+		$this->mailer()->send('sanne@example.nl', [], 'R', 'F', [], ['deadline' => 'not a date']);
+		$this->assertStringNotContainsString('decision', implode(' ', $this->mailed['texts']));
+	}//end testTheMailNamesTheReceivedMomentTheTermAndTheDeadline()
+
 	public function testTheAddressIsTheFirstValidEmailAnswer(): void {
 		$fields = [['name' => 'a', 'type' => 'string'], ['name' => 'b', 'type' => 'email'], ['name' => 'c', 'type' => 'email']];
 

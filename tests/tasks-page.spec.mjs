@@ -23,6 +23,7 @@ import {
 import { pages } from '../src/site/pages/inbox/index.js'
 import {
 	acceptAttribute,
+	completeViaAction,
 	refusalKey,
 	typeAccepted,
 	uploadRules,
@@ -369,4 +370,140 @@ test('the list shows each open task as an action row with its deadline badge, an
 	assert.match(loading, /<p class="sr-only" role="status">Bezig met laden<\/p>/)
 	assert.match(loading, /class="pq-skeleton__rows" aria-hidden="true"/)
 	assert.equal(typeof pages.tasks, 'function')
+})
+
+const VIA_TASK = {
+	...TASK,
+	uuid: 'task-9',
+	metadata: { completeVia: { app: 'dossiq', action: 'completeChecklistTask' } },
+}
+
+const CHECKLIST_ACTION = {
+	id: 'completeChecklistTask',
+	label: 'Checklist indienen',
+	endpoint: '/index.php/apps/dossiq/api/portal/checklist-tasks',
+	method: 'POST',
+	fields: ['taskId', 'remarks'],
+	requiredFields: ['taskId'],
+	fieldConfigs: { taskId: { visible: false } },
+}
+
+const AGGREGATE = {
+	unreadCount: 0,
+	contributions: [
+		{ app: 'pipelinq', actions: [{ ...CHECKLIST_ACTION, endpoint: '/other' }] },
+		{
+			app: 'dossiq',
+			actions: [{ id: 'other', endpoint: '/x' }, CHECKLIST_ACTION],
+		},
+	],
+}
+
+test("a task that names its app action resolves to that action in the subject's own aggregate", () => {
+	assert.deepEqual(completeViaAction(TASK, AGGREGATE), {
+		named: false,
+		app: '',
+		action: null,
+		taskField: 'taskId',
+	})
+	assert.deepEqual(completeViaAction(VIA_TASK, AGGREGATE), {
+		named: true,
+		app: 'dossiq',
+		action: CHECKLIST_ACTION,
+		taskField: 'taskId',
+	})
+	assert.equal(
+		completeViaAction(VIA_TASK, { contributions: [] }).action,
+		null,
+		'an action this subject may not run is not offered',
+	)
+	assert.equal(completeViaAction(VIA_TASK, null).named, true)
+	const create = {
+		contributions: [
+			{ app: 'dossiq', actions: [{ ...CHECKLIST_ACTION, type: 'create' }] },
+		],
+	}
+	assert.equal(
+		completeViaAction(VIA_TASK, create).action,
+		null,
+		'only an endpoint action completes a task',
+	)
+	const ownField = {
+		contributions: [
+			{ app: 'dossiq', actions: [{ ...CHECKLIST_ACTION, taskField: 'run' }] },
+		],
+	}
+	assert.equal(completeViaAction(VIA_TASK, ownField).taskField, 'run')
+	assert.equal(
+		completeViaAction(
+			{ metadata: { completeVia: { app: 'dossiq' } } },
+			AGGREGATE,
+		).named,
+		false,
+		'half a route names nothing',
+	)
+	assert.equal(
+		refusalKey('complete-via-app'),
+		'This task has its own form. Open the task again to fill it in.',
+	)
+})
+
+test('a task that names its app action sends the answers there with the task preset, then says thank you', async () => {
+	const calls = []
+	const api = {
+		...fakeApi(),
+		async fetchTask(uuid) {
+			return { ok: true, status: 200, code: '', task: { ...VIA_TASK, uuid } }
+		},
+		async forwardAction(app, actionId, body) {
+			calls.push([app, actionId, body])
+			return { ok: true, status: 200, body: { completed: true } }
+		},
+	}
+	const page = instance(TasksPage, {
+		api,
+		t,
+		locale: 'en',
+		contributions: AGGREGATE,
+	})
+	await page.openTask('task-9')
+	assert.equal(page.via.action, CHECKLIST_ACTION)
+
+	const answer = await page.sendVia({ taskId: 'task-9', remarks: 'ok' })
+	assert.deepEqual(calls, [
+		['dossiq', 'completeChecklistTask', { taskId: 'task-9', remarks: 'ok' }],
+	])
+	assert.equal(answer.ok, true)
+
+	page.viaDone()
+	assert.equal(page.completed, true)
+	assert.deepEqual(page.emitted, [['refresh', undefined]])
+})
+
+test('a task that names its app action shows that form, never the upload form', async () => {
+	const withAction = await renderComponent(
+		inState(TasksPage, { loading: false, detail: { task: VIA_TASK } }),
+		{ api: fakeApi(), t, locale: 'en', contributions: AGGREGATE },
+	)
+	assert.doesNotMatch(withAction, /portaliq-task-files/)
+	assert.match(
+		withAction,
+		/<form class="pq-schema-form" aria-label="Checklist indienen" data-testid="schema-form"/,
+	)
+	assert.match(withAction, /data-testid="schema-field-remarks"/)
+	assert.doesNotMatch(
+		withAction,
+		/schema-field-taskId/,
+		'the task uuid is preset, never asked',
+	)
+
+	const without = await renderComponent(
+		inState(TasksPage, { loading: false, detail: { task: VIA_TASK } }),
+		{ api: fakeApi(), t, locale: 'en', contributions: { contributions: [] } },
+	)
+	assert.doesNotMatch(without, /portaliq-task-files/)
+	assert.match(
+		without,
+		/<p class="utrecht-paragraph pq-task-refusal" role="status">The form for this task is not available to you right now\.<\/p>/,
+	)
 })

@@ -108,7 +108,10 @@ export function formFrom(portal) {
 		organisation: p.organisation || '',
 		kind: p.kind || 'site',
 		headerVariant: p.headerVariant || 'double',
-		locales: Array.isArray(p.locales) && p.locales.length > 0 ? [...p.locales] : ['nl'],
+		locales:
+			Array.isArray(p.locales) && p.locales.length > 0
+				? [...p.locales]
+				: ['nl'],
 		accountLabel: p.accountLabel || '',
 		logo: p.logo || '',
 		frameAncestors: Array.isArray(p.frameAncestors) ? [...p.frameAncestors] : [],

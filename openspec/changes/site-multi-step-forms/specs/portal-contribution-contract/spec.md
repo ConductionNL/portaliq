@@ -87,15 +87,15 @@ A required field is never only a marker in the form. Portaliq MUST check every r
 - THEN the error summary links "Tijd is verplicht." and takes focus
 - @e2e exclude client mapping, covered by node test `tests/site-form-widgets.spec.mjs` ("the server refusal of an empty required field lands in the summary of an action form")
 
-### Requirement: A draft of a create or endpoint action MUST stay with portaliq and the resident (REQ-SMF-021)
+### Requirement: A draft of a create action MUST be the record itself, in status draft, and only its resident's (REQ-SMF-021)
 
-For a create or endpoint action with `draft`, the site MUST offer "Opslaan en later verdergaan" to a signed-in resident. Portaliq MUST store the visible answers and the step reached as one draft per subject, contribution and action, readable only by that subject. Portaliq MUST NOT send a draft to the contributing app. It MUST delete the draft when the action is sent and after `retentionDays`. A signed-out visitor MUST NOT get a draft. File answers MUST NOT be kept in a draft.
+For a create action with `draft`, the site MUST offer "Opslaan en later verdergaan" to a signed-in resident. The draft MUST be the object the action creates, saved in its destination with OpenRegister status `draft` (decision 180, amended by submit-creates-the-case-directly). Its owner MUST be `portal:<subjectRef>`, so only that resident reads, saves, sends or discards it (decision 195). Portaliq MUST keep no draft store of its own. A draft MAY miss required answers; a value of the wrong kind MUST be refused on its field. Sending the action MUST send the draft, which then gets its case number and received moment; before that it has neither (decision 201). A draft MUST read as gone once the action's retention has passed since its last change: `draft.retentionDays`, 30 days when the action names none (decision 201). Picked files MUST be uploaded into the draft. The site MUST show a saved draft as "Voorlopig" (decision 200). A signed-out visitor MUST NOT get a draft (anonymous drafts wait on Q-openregister-F2). An endpoint action keeps no draft: it has no destination object.
 
 #### Scenario: Sanne continues her Woo request
-- GIVEN Sanne saved a Woo request draft at step 2 on 2 October 2026 and the action keeps drafts 30 days
+- GIVEN Sanne saved a Woo request draft on 2 October 2026 and the action keeps drafts 30 days
 - WHEN she opens the action on 5 October 2026
-- THEN step 2 opens with her answers
-- AND dossiq holds no case for it
+- THEN the first step with a missing answer opens with her answers, marked "Voorlopig"
+- AND dossiq holds the case in status `draft`, without a case number, hidden from staff work lists unless they filter for drafts
 
 #### Scenario: Another resident cannot read the draft
 - GIVEN Sanne's draft exists
@@ -103,9 +103,14 @@ For a create or endpoint action with `draft`, the site MUST offer "Opslaan en la
 - THEN they receive none
 
 #### Scenario: A draft expires
-- GIVEN a draft saved 31 days ago on an action with `retentionDays: 30`
-- WHEN the purge job runs
-- THEN the draft is gone
+- GIVEN a draft last changed 31 days ago on an action with `retentionDays: 30`
+- WHEN Sanne opens the action
+- THEN no draft is offered and the draft is discarded
+
+#### Scenario: Sending makes it definitive
+- GIVEN Sanne's draft now holds every required answer
+- WHEN she sends the action
+- THEN the same object leaves `draft` and gets its case number, and no second object is created
 
 ### Requirement: A create or endpoint action MAY word its own confirmation (REQ-SMF-022)
 

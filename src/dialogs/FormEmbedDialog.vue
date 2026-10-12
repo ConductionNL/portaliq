@@ -17,52 +17,54 @@
 		data-testid="form-embed"
 		@closing="$emit('close', null)">
 		<div class="form-embed__body">
-		<p v-if="formName" class="form-embed__form">
-			{{ formName }}
-		</p>
-		<template v-if="description.embeddable">
-			<p>
+			<p v-if="formName" class="form-embed__form">
+				{{ formName }}
+			</p>
+			<template v-if="description.embeddable">
+				<p>
+					{{
+						t(
+							'portaliq',
+							'Put this form on a page of your own website. Visitors fill it in there; a submission becomes a real case, with a case number and a confirmation.',
+						)
+					}}
+				</p>
+				<NcTextArea
+					:modelValue="description.snippet"
+					:label="t('portaliq', 'Code for your website')"
+					readonly
+					rows="4"
+					data-testid="form-embed-snippet" />
+				<NcButton data-testid="form-embed-copy" @click="copy">
+					{{
+						copied ? t('portaliq', 'Copied') : t('portaliq', 'Copy code')
+					}}
+				</NcButton>
+				<h3 class="form-embed__heading">
+					{{ t('portaliq', 'Websites that may show the form') }}
+				</h3>
+				<ul class="form-embed__origins" data-testid="form-embed-origins">
+					<li v-for="origin in description.origins" :key="origin">
+						{{ origin }}
+					</li>
+				</ul>
+				<p class="form-embed__hint">
+					{{
+						t(
+							'portaliq',
+							'On any other website the browser does not show the form.',
+						)
+					}}
+				</p>
+			</template>
+			<NcNoteCard v-else type="warning" data-testid="form-embed-refused">
 				{{
 					t(
 						'portaliq',
-						'Put this form on a page of your own website. Visitors fill it in there; a submission becomes a real case, with a case number and a confirmation.',
+						'This form cannot be put on another website yet. Add the website addresses that may show it.',
 					)
 				}}
-			</p>
-			<NcTextArea
-				:modelValue="description.snippet"
-				:label="t('portaliq', 'Code for your website')"
-				readonly
-				rows="4"
-				data-testid="form-embed-snippet" />
-			<NcButton data-testid="form-embed-copy" @click="copy">
-				{{ copied ? t('portaliq', 'Copied') : t('portaliq', 'Copy code') }}
-			</NcButton>
-			<h3 class="form-embed__heading">
-				{{ t('portaliq', 'Websites that may show the form') }}
-			</h3>
-			<ul class="form-embed__origins" data-testid="form-embed-origins">
-				<li v-for="origin in description.origins" :key="origin">
-					{{ origin }}
-				</li>
-			</ul>
-			<p class="form-embed__hint">
-				{{
-					t(
-						'portaliq',
-						'On any other website the browser does not show the form.',
-					)
-				}}
-			</p>
-		</template>
-		<NcNoteCard v-else type="warning" data-testid="form-embed-refused">
-			{{
-				t(
-					'portaliq',
-					'This form cannot be put on another website yet. Add the website addresses that may show it.',
-				)
-			}}
-		</NcNoteCard>
+			</NcNoteCard>
 		</div>
 
 		<template #actions>
@@ -131,12 +133,15 @@ export default {
 .form-embed__body {
 	padding: 0 16px 8px;
 }
+
 .form-embed__form {
 	font-weight: 600;
 }
+
 .form-embed__heading {
 	margin-top: 16px;
 }
+
 .form-embed__hint {
 	color: var(--color-text-maxcontrast);
 }

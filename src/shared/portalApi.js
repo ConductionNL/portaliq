@@ -52,6 +52,38 @@ export function setToken(token) {
 }
 
 /**
+ * The multipart body of a row action that carries files, or null without files.
+ *
+ * Each answer is a form field; an object answer (the row inputs under their
+ * `into` key) becomes `key[name]` fields, which the server reads back as the
+ * same object. Each file is a part under `<field>[]`.
+ *
+ * @param {object} answers The answers.
+ * @param {{field: string, files: Array<File>}|null} upload The declared field and the chosen files.
+ * @return {FormData|null}
+ * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+ */
+export function rowActionFormData(answers, upload) {
+	if (!upload || !upload.field || !upload.files || upload.files.length === 0) {
+		return null
+	}
+	const form = new FormData()
+	for (const [key, value] of Object.entries(answers || {})) {
+		if (value !== null && typeof value === 'object') {
+			for (const [name, inner] of Object.entries(value)) {
+				form.append(`${key}[${name}]`, String(inner))
+			}
+		} else if (value !== undefined && value !== null) {
+			form.append(key, String(value))
+		}
+	}
+	for (const file of upload.files) {
+		form.append(`${upload.field}[]`, file, file.name)
+	}
+	return form
+}
+
+/**
  * Build the adapter bound to a runtime config (`{ apiBase, audience, ... }`).
  * Returned methods read the current token on every call, so a login/logout is
  * picked up without re-creating the adapter.
@@ -963,10 +995,12 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {string} app The contributing app, or the action's register.
 		 * @param {string} actionId The action id.
-		 * @param {{answers: object, step: string, retentionDays: number}} draft The draft.
-		 * @return {Promise<{step: string, expiresAt: string, answers: object}|null>} What was kept, or null.
+		 * @param {{answers: object, step: string}} draft The draft.
+		 * @return {Promise<{id: string, step: string, expiresAt: string, answers: object}|{saved: false, status: number, errors: object}|null>}
+		 *         What was kept; a refusal with the message per field (a value of the wrong kind); or null when the call failed.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 		 */
 		async saveDraft(app, actionId, draft) {
 			try {
@@ -979,7 +1013,18 @@ export function createPortalApi(config, store = {}) {
 					},
 					body: JSON.stringify(draft),
 				})
-				return res.ok ? await res.json() : null
+				if (res.ok) {
+					return await res.json()
+				}
+				const refusal = await res.json().catch(() => ({}))
+				return {
+					saved: false,
+					status: res.status,
+					errors:
+						refusal?.errors && typeof refusal.errors === 'object'
+							? refusal.errors
+							: {},
+				}
 			} catch {
 				return null
 			}
@@ -1347,6 +1392,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} actionId The endpoint row action's id.
 		 * @param {object} [answers] The answers to send, `{}` by default.
 		 * @param {string} [actionApp] Another app whose action is attached to this collection.
+		 * @param {{field: string, files: Array<File>}|null} [upload] Files for an action that declares `files` (REQ-RAF-001).
 		 * @return {Promise<object>} `{ ok, status, body }`; `status` 0 on a network error.
 		 */
 		async forwardRowAction(
@@ -1355,23 +1401,29 @@ export function createPortalApi(config, store = {}) {
 			actionId,
 			answers = {},
 			actionApp = '',
+			upload = null,
 		) {
 			// `actionApp` names another app's action attached to this
 			// collection (woo-journey-entry-points D3).
 			const attached = actionApp
 				? `&actionApp=${encodeURIComponent(actionApp)}`
 				: ''
+			// Files the action lets the resident add go multipart; without
+			// them the body stays JSON (row-action-carries-files REQ-RAF-001).
+			const multipart = rowActionFormData(answers, upload)
 			try {
 				const res = await fetch(
 					`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}${attached}`,
 					{
 						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							Accept: 'application/json',
-							...authHeaders(),
-						},
-						body: JSON.stringify(answers || {}),
+						headers: multipart
+							? { Accept: 'application/json', ...authHeaders() }
+							: {
+									'Content-Type': 'application/json',
+									Accept: 'application/json',
+									...authHeaders(),
+								},
+						body: multipart || JSON.stringify(answers || {}),
 					},
 				)
 				const json = await res.json().catch(() => ({}))

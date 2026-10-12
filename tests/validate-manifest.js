@@ -364,14 +364,24 @@ function rendererContractLint(manifest) {
 		// widgets beside the body: neither needs a grid cell of its own, and a
 		// grid cell for them would draw the widget twice.
 		for (const widget of widgets) {
-			if (widget && widget.type === 'tabs' && widget.content && Array.isArray(widget.content.tabs)) {
+			if (
+				widget
+				&& widget.type === 'tabs'
+				&& widget.content
+				&& Array.isArray(widget.content.tabs)
+			) {
 				for (const tab of widget.content.tabs) {
 					placed.add(typeof tab === 'string' ? tab : tab && tab.widgetId)
 				}
 			}
 			// A `sections` widget draws its `widgetId` children under headings
 			// (the portal's Instellingen tab).
-			if (widget && widget.type === 'sections' && widget.content && Array.isArray(widget.content.sections)) {
+			if (
+				widget
+				&& widget.type === 'sections'
+				&& widget.content
+				&& Array.isArray(widget.content.sections)
+			) {
 				for (const section of widget.content.sections) {
 					if (section && section.widgetId) {
 						placed.add(section.widgetId)
@@ -379,7 +389,9 @@ function rendererContractLint(manifest) {
 				}
 			}
 		}
-		for (const entry of Array.isArray(page.config.sideColumn) ? page.config.sideColumn : []) {
+		for (const entry of Array.isArray(page.config.sideColumn)
+			? page.config.sideColumn
+			: []) {
 			placed.add(typeof entry === 'string' ? entry : entry && entry.id)
 		}
 

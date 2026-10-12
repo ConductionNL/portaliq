@@ -260,9 +260,10 @@ export function initialValues(fields, prefill) {
  * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
  * @param {string[]} statements The keys of the statements ticked.
  * @param {Record<string, string>} verifiedEmails The proof of each verified e-mail address, by address.
- * @return {Promise<{reference: string, confirmationText: string, errors: object}>} The outcome.
+ * @return {Promise<{reference: string, confirmationText: string, errors: object, moments?: object}>} The outcome.
  *
  * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+ * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
  */
 export async function submitIntake(
 	base,
@@ -292,7 +293,9 @@ export async function submitIntake(
 	})
 	const parsed = await response.json().catch(() => ({}))
 
-	if (response.status === 400) {
+	// 400: the portal's own checks. 422: the destination refused an answer
+	// (decision 179); nothing was stored and the answers stay in the form.
+	if (response.status === 400 || response.status === 422) {
 		return { reference: '', confirmationText: '', errors: parsed?.errors || {} }
 	}
 
@@ -307,6 +310,11 @@ export async function submitIntake(
 		confirmationText: String(parsed.confirmationText || ''),
 		confirmation: parsed.confirmation || null,
 		mailedTo: String(parsed.mailedTo || ''),
+		moments: {
+			receivedAt: String(parsed.receivedAt || ''),
+			termStartsAt: String(parsed.termStartsAt || ''),
+			deadline: String(parsed.deadline || ''),
+		},
 		errors: {},
 	}
 }

@@ -37,6 +37,7 @@ Four waves. Each wave is one PR to `development`. Every PR runs `npm run build:s
 ## Wave 4: drafts (REQ-SMF-012, REQ-SMF-021)
 
 - [x] **T8**: `portalDraft` schema in `lib/Settings/portaliq_register.json`; routes to save, read and delete a draft for the signed-in subject; a purge job; the button and resume landing step in `SchemaForm.vue` (design D8).
+  - Amended by submit-creates-the-case-directly section 5 (decisions 180, 195, 200, 201): the draft is now the destination object in OpenRegister status `draft`; `portalDraft` and its purge job stay only until `occ portaliq:intake:drain` reports zero drafts waiting.
   - PHPUnit `PortalDraftControllerTest::testADraftIsOnlyItsOwnersToRead`, `::testSendingDeletesTheDraft`, `::testFileAnswersAreNotKept`; `PortalDraftPurgeJobTest::testAnExpiredDraftIsDeleted`
   - Route auth and IDOR gates green on the new controller — not run: hydra-gates package not installed
   - Node test `tests/site-form-drafts.spec.mjs` (button, save, resume landing step, delete on send). Playwright e2e — not run: needs a live instance

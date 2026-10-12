@@ -9,6 +9,9 @@
  * rules as the React portal's TasksPage.jsx, without a framework.
  */
 
+/** The field an action opened from a task receives the task uuid in, unless it names its own `taskField`. */
+export const TASK_FIELD = 'taskId'
+
 /** Bytes in one megabyte, as the rules count it. */
 const MB = 1024 * 1024
 
@@ -141,5 +144,48 @@ export function refusalKey(code) {
 	if (code === 'upload-constraint') {
 		return 'The upload was refused. Check the file rules above.'
 	}
+	if (code === 'complete-via-app') {
+		return 'This task has its own form. Open the task again to fill it in.'
+	}
 	return 'The tasks are not available right now. Please try again later.'
+}
+
+/**
+ * The app action a task names as the one that completes it
+ * (`metadata.completeVia` = `{app, action}`), looked up in the subject's own
+ * contributions aggregate. OpenRegister refuses a direct completion of such a
+ * task, so the page opens this action instead of the upload form.
+ *
+ * @param {object} task The task row.
+ * @param {object|null} aggregate The contributions aggregate (`contributions[]` of `{app, actions[]}`).
+ * @return {{named: boolean, app: string, action: object|null, taskField: string}}
+ *   `named` when the task names an action at all; `action` only when this
+ *   subject's aggregate holds it as an endpoint action, else null.
+ * @spec openspec/changes/a-task-opens-the-app-action-that-completes-it/specs/site-portal-parity/spec.md#requirement-a-task-that-names-its-app-action-must-open-that-action
+ */
+export function completeViaAction(task, aggregate) {
+	const via = task?.metadata?.completeVia
+	const app = typeof via?.app === 'string' ? via.app.trim() : ''
+	const id = typeof via?.action === 'string' ? via.action.trim() : ''
+	if (app === '' || id === '') {
+		return { named: false, app: '', action: null, taskField: TASK_FIELD }
+	}
+	const contribution = (aggregate?.contributions || []).find(
+		(c) => c && c.app === app,
+	)
+	const action =
+		(contribution?.actions || []).find(
+			(a) =>
+				a
+				&& a.id === id
+				&& a.type !== 'create'
+				&& a.type !== 'update'
+				&& typeof a.endpoint === 'string'
+				&& a.endpoint !== '',
+		) || null
+	const taskField =
+		typeof action?.taskField === 'string' && action.taskField !== ''
+			? action.taskField
+			: TASK_FIELD
+	return { named: true, app, action, taskField }
 }

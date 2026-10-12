@@ -229,6 +229,22 @@ test('the answers go to the submit route with their form page', async () => {
 	})
 })
 
+// submit-creates-the-case-directly 2.2: a filled honeypot travels as `_hp`;
+// an empty one is not sent at all.
+test('a filled honeypot is sent as _hp, an empty one is not', async () => {
+	const bodies = []
+	const fetchImpl = async (url, options) => {
+		bodies.push(JSON.parse(options.body))
+		return { json: async () => ({ state: 'accepted' }) }
+	}
+
+	await submitAnswers({ submitUrl: '/submit', route: 'a/b', answers: {}, honeypot: 'https://spam.example', fetchImpl })
+	await submitAnswers({ submitUrl: '/submit', route: 'a/b', answers: {}, fetchImpl })
+
+	assert.equal(bodies[0]._hp, 'https://spam.example')
+	assert.equal('_hp' in bodies[1], false)
+})
+
 // The server sends a map; the React frame mapped over it as a list and threw.
 test("the server's errors are shown per field and as a list", () => {
 	assert.deepEqual(

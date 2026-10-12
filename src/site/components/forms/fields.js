@@ -202,6 +202,9 @@ export const DUTCH = Object.freeze({
 	payUnavailable: 'U kunt nu niet betalen. Probeer het later opnieuw.',
 	signInFee:
 		'Log in om deze aanvraag in te dienen. Er hoort een bedrag van {amount} bij.',
+	receivedOn: 'Ontvangen op {date}.',
+	termStartsOn: 'De termijn begint op {date}.',
+	decisionBy: 'U krijgt uiterlijk {date} een besluit.',
 })
 
 /**
