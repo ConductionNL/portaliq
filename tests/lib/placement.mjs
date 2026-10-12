@@ -31,6 +31,10 @@ export function placedIds(config) {
 		if (widget.type === 'tabs' && ids.has(widget.id)) {
 			for (const tab of widget.content?.tabs || []) {
 				ids.add(tab.widgetId)
+				// A stack (`widgetIds`): every widget of it is drawn in the tab.
+				for (const id of tab.widgetIds || []) {
+					ids.add(id)
+				}
 			}
 		}
 	}

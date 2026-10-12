@@ -2402,20 +2402,79 @@
               "ariaLabel": "Onderdelen van de portal",
               "tabs": [
                 {
-                  "widgetId": "portal-data",
-                  "label": "Overzicht"
+                  "widgetIds": [
+                    "portal-home-page",
+                    "portal-kpi-page-views",
+                    "portal-kpi-sessions",
+                    "portal-kpi-visitors",
+                    "portal-kpi-engaged",
+                    "portal-data",
+                    "portal-side-domain",
+                    "portal-side-theme",
+                    "portal-side-status",
+                    "portal-side-editors"
+                  ],
+                  "label": "Overzicht",
+                  "columns": 4,
+                  "layout": [
+                    {
+                      "widgetId": "portal-home-page",
+                      "gridWidth": 12
+                    },
+                    {
+                      "widgetId": "portal-data",
+                      "gridWidth": 12
+                    },
+                    {
+                      "widgetId": "portal-side-domain",
+                      "gridWidth": 6
+                    },
+                    {
+                      "widgetId": "portal-side-theme",
+                      "gridWidth": 6
+                    },
+                    {
+                      "widgetId": "portal-side-status",
+                      "gridWidth": 6
+                    },
+                    {
+                      "widgetId": "portal-side-editors",
+                      "gridWidth": 6
+                    }
+                  ]
                 },
                 {
                   "widgetId": "portal-pages",
-                  "label": "Pagina's"
+                  "label": "Pagina's",
+                  "countFrom": {
+                    "register": "portaliq",
+                    "schema": "page",
+                    "filter": {
+                      "portal": "@object.slug"
+                    }
+                  }
                 },
                 {
                   "widgetId": "portal-menus",
-                  "label": "Menu's"
+                  "label": "Menu's",
+                  "countFrom": {
+                    "register": "portaliq",
+                    "schema": "menu",
+                    "filter": {
+                      "portal": "@object.slug"
+                    }
+                  }
                 },
                 {
                   "widgetId": "portal-glossary",
-                  "label": "Begrippen"
+                  "label": "Begrippen",
+                  "countFrom": {
+                    "register": "portaliq",
+                    "schema": "glossaryTerm",
+                    "filter": {
+                      "portal": "@object.slug"
+                    }
+                  }
                 },
                 {
                   "widgetId": "portal-settings",
@@ -2690,51 +2749,10 @@
         ],
         "layout": [
           {
-            "id": "kpi-page-views",
-            "widgetId": "portal-kpi-page-views",
-            "gridX": 0,
-            "gridY": 0,
-            "gridWidth": 3,
-            "gridHeight": 2
-          },
-          {
-            "id": "kpi-sessions",
-            "widgetId": "portal-kpi-sessions",
-            "gridX": 3,
-            "gridY": 0,
-            "gridWidth": 3,
-            "gridHeight": 2
-          },
-          {
-            "id": "kpi-visitors",
-            "widgetId": "portal-kpi-visitors",
-            "gridX": 6,
-            "gridY": 0,
-            "gridWidth": 3,
-            "gridHeight": 2
-          },
-          {
-            "id": "kpi-engaged",
-            "widgetId": "portal-kpi-engaged",
-            "gridX": 9,
-            "gridY": 0,
-            "gridWidth": 3,
-            "gridHeight": 2
-          },
-          {
-            "id": "portal-home-page",
-            "widgetId": "portal-home-page",
-            "gridX": 0,
-            "gridY": 2,
-            "gridWidth": 12,
-            "gridHeight": 2,
-            "sizeToContent": true
-          },
-          {
             "id": "portal-tabs",
             "widgetId": "portal-tabs",
             "gridX": 0,
-            "gridY": 4,
+            "gridY": 0,
             "gridWidth": 12,
             "gridHeight": 8,
             "sizeToContent": true
@@ -2773,12 +2791,6 @@
             "external": "Umbrella"
           }
         },
-        "sideColumn": [
-          "portal-side-domain",
-          "portal-side-theme",
-          "portal-side-status",
-          "portal-side-editors"
-        ],
         "tabsLabel": "Onderdelen van de portal"
       }
     },
