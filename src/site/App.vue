@@ -2510,6 +2510,15 @@ export default {
 			).toString()
 		},
 
+		/**
+		 * Move to an in-site route and add it to the history, in the
+		 * addressing of this host (siteAddress.js).
+		 *
+		 * @param {string} link The route, with a leading slash.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-the-renderer-must-read-and-write-the-addresses-of-its-host-req-srh-004
+		 */
 		go(link) {
 			if (!link || !link.startsWith('/')) {
 				return
