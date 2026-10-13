@@ -295,6 +295,11 @@ return [
         // deleted is not a comparison. `/site` retires `/portal` once the
         // control pair is recorded, not before.
         ['name' => 'portalPage#site', 'url' => '/site', 'verb' => 'GET'],
+        // The same site with the page in the path: /site/afval is the route
+        // /afval. A proxy in front of Nextcloud rewrites the short address of
+        // a portal's own host to this one (site-at-the-root-of-a-portal-host).
+        // `.*`, not `.+`: the root of that host arrives as /site/.
+        ['name' => 'portalPage#sitePath', 'url' => '/site/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.*'], 'defaults' => ['path' => '']],
 
         // Portal auth-edge API (supplier-portal T02). session#index resolves the
         // caller's bearer (fail-closed); devLogin is debug-gated; logout ends the

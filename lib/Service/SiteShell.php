@@ -49,6 +49,13 @@ class SiteShell {
 	private ?SiteShellTheme $themeOfRequest = null;
 
 	/**
+	 * How the pages of the site are addressed on this request's host.
+	 *
+	 * @var SiteAddressing
+	 */
+	private readonly SiteAddressing $addressing;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request        The request.
@@ -68,16 +75,20 @@ class SiteShell {
 		private readonly PortalNoticeReader $notices,
 		private readonly PortalRuntimeConfigResolver $configResolver,
 	) {
+		$this->addressing = new SiteAddressing(portalResolver: $portalResolver, urlGenerator: $urlGenerator);
 	}//end __construct()
 
 	/**
 	 * The template parameters of the site shell.
 	 *
+	 * @param string $path The path under the site route (`/site/afval`), or ''.
+	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-verified-domain-may-serve-the-site-at-its-root-req-srh-001
 	 */
-	public function templateParams(): array {
+	public function templateParams(string $path = ''): array {
 		$theme = $this->theme();
 
 		return [
@@ -97,6 +108,14 @@ class SiteShell {
 				'title' => $this->siteTitle(),
 				'signin' => $this->siteSignin(),
 				'portalNotices' => $this->sitePortalNotices(),
+				// How page addresses read on this host: at its root, or under
+				// the site route, and the page its bare address opens
+				// (site-at-the-root-of-a-portal-host). Read from the verified
+				// domain the host matches, so an unknown host gets neither.
+				'addressing' => $this->addressing->forRequest(
+					request: $this->request,
+					portalSlug: $this->requestedPortalSlug()
+				),
 			],
 			// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.
 			// Everything else this renderer shows is fetched after boot,
@@ -129,9 +148,22 @@ class SiteShell {
 			// which is a WCAG failure and is exactly the shape a request
 			// carrying no Accept-Language would otherwise produce.
 			'locale'          => $this->siteLocale(),
-			'head'            => $this->siteHead(),
+			'head'            => $this->siteHead(path: $path),
 		];
 	}//end templateParams()
+
+	/**
+	 * Whether this request resolves to a portal at all: by the slug it names
+	 * or by its host. False for an unknown host, an unverified domain and an
+	 * unknown slug, which the caller answers with 404.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-host-that-resolves-no-portal-must-get-no-site-req-srh-003
+	 */
+	public function servesAPortal(): bool {
+		return $this->siteResolvedSlug() !== '';
+	}//end servesAPortal()
 
 	/**
 	 * The theme of the portal this request names.
@@ -233,11 +265,19 @@ class SiteShell {
 	 * anonymous read the content API makes, so it resolves nothing a consumer
 	 * of the API cannot read, and the renderer still fetches the page itself.
 	 *
+	 * The route is the one the request asks for: its path under the site
+	 * route, its `?route=`, or the landing page of its host. The canonical
+	 * address is the short one on a domain that serves the site at its root
+	 * (site-at-the-root-of-a-portal-host).
+	 *
+	 * @param string $path The path under the site route, or ''.
+	 *
 	 * @return array{title: string, description: string, robots: string, canonical: string, ogImage: string}
 	 *
 	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-verified-domain-may-serve-the-site-at-its-root-req-srh-001
 	 */
-	private function siteHead(): array {
+	private function siteHead(string $path = ''): array {
 		$portalSlug = $this->requestedPortalSlug();
 		try {
 			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $portalSlug);
@@ -245,17 +285,13 @@ class SiteShell {
 			$portal = null;
 		}
 
-		$route = (string)$this->request->getParam('route', '/');
-		$params = ['route' => $route];
-		if ($portalSlug !== '') {
-			$params['portal'] = $portalSlug;
-		}
+		$route = $this->addressing->route(request: $this->request, portalSlug: $portalSlug, path: $path);
 
 		return $this->siteHead->for(
 			portal: $portal,
 			route: $route,
 			locale: $this->siteLocale(),
-			canonical: $this->urlGenerator->linkToRouteAbsolute('portaliq.portalPage.site', $params)
+			canonical: $this->addressing->canonical(request: $this->request, portalSlug: $portalSlug, route: $route)
 		);
 	}//end siteHead()
 
