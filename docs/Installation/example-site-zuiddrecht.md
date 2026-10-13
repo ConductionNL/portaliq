@@ -60,37 +60,37 @@ Did you install the site before the sign-in cards were added? The install never 
 
 ## The example resident
 
-A fresh site has nobody to sign in as, so the area behind the button stays empty. On a demo or test instance, give the site its resident:
+A fresh site has nobody to sign in as, so the area behind the button stays empty. On a demo or test instance, install the Zuiddrecht example set. It gives the whole demo municipality its people and data, and the site its resident:
 
 ```bash
-occ portaliq:example-resident:install zuiddrecht
+occ openregister:example-set:install zuiddrecht
 ```
 
-This needs the site (above) and dossiq. You get:
+This needs the site (above), OpenRegister and dossiq. OpenRegister holds the cast of the set; portaliq adds its own part from `lib/Settings/example-sets/zuiddrecht.json`. For the site you get:
 
-- A Nextcloud account `sanne.devries`, named Sanne de Vries. Its password is shown once, on the last lines of the output. Prefer your own? Put it in `OC_PASS` and add `--password-from-env`.
-- A portal account under the same id, so the site greets her by name and asks her for an e-mail address, as the design does.
+- A Nextcloud account `sanne.devries`, named Sanne de Vries. Its password is shown once, with the other new passwords at the end of the output. Prefer your own? Put it in `OC_PASS` and add `--password-from-env`.
+- A portal account under the same id. The site greets her by name and asks her for an e-mail address, as the design does.
 - A third card on the sign-in page, "Voorbeeldinwoner", with the button "Inloggen als voorbeeldinwoner". It opens Nextcloud's own sign-in form. The portal gets the sign-in mode `nextcloud` for it.
 - Five cases in dossiq: a Woo request in treatment, a building permit that waits for a drawing, a report about a loose paving stone, and two finished cases. One open question ("Stuur de bouwtekening van uw dakkapel") and four messages belong to them. Every date is counted from the day you install, so the cases stay current.
 
-```
-Nextcloud account sanne.devries: created
-Portal account sanne.devries: created
-Sign-in mode nextcloud on portal zuiddrecht: added
-dossiq case: 5 declared, 5 created, 0 already there, 5 found afterwards
-dossiq aanvullingsverzoek: 1 declared, 1 created, 0 already there, 1 found afterwards
-dossiq portaalBericht: 4 declared, 4 created, 0 already there, 4 found afterwards
-The password of sanne.devries is shown once, here: ...
-Sign in at /index.php/apps/portaliq/site?portal=zuiddrecht&route=/mijn with the card "Voorbeeldinwoner".
-```
-
 Open the site, press "Mijn Zuiddrecht", choose "Inloggen als voorbeeldinwoner" and sign in as `sanne.devries`. You land on the overview with the question, three running cases and the newest messages. "Mijn zaken" lists them under Lopend and Afgerond. Open a case for its steps, details and messages.
 
-The command reads the instance back like the site install does, and exits 2 when something is missing or a key was not kept. Running it again writes nothing: every part is reported as "already there". Is `sanne.devries` taken on your instance? The command refuses to touch an account it did not make. Give it another id with `--user demo-inwoner`.
+Check the set first, without writing any of it, with `--check`. The install reads everything back and exits 2 when something is missing or a key was not kept. Running it again writes nothing: every part is reported as "already there". Is `sanne.devries` an account you made yourself? The install refuses to touch it. Add `--adopt=sanne.devries` to let the set use it; remove then leaves it in place.
+
+### Moving from the old install
+
+`occ portaliq:example-resident:install` is retired. Did you use it on this instance? Remove that install first, or Sanne gets every case twice:
+
+```bash
+occ portaliq:example-resident:remove zuiddrecht
+occ openregister:example-set:install zuiddrecht
+```
+
+The remove command stays for one release, for exactly this step.
 
 ### Who can sign in this way
 
-Only the example resident. The mode `nextcloud` mints a portal session for a Nextcloud account that has an active portal account under the same id, and the install makes exactly one. Other Nextcloud accounts on the instance get "no_portal_account" and nothing else. The account is a full Nextcloud account, though: it can open Files and the other apps. Keep it to a demo or test instance, and remove it when the demo is over.
+Only the example resident. The mode `nextcloud` mints a portal session for a Nextcloud account that has an active portal account under the same id, and the set makes exactly one. Other Nextcloud accounts on the instance get "no_portal_account" and nothing else. The account is a full Nextcloud account, though: it can open Files and the other apps. Keep it to a demo or test instance, and remove it when the demo is over.
 
 ### One click on a demo
 
@@ -100,7 +100,7 @@ On a demo the Nextcloud form is one step too many. Switch the one-click sign-in 
 occ config:app:set portaliq example_resident_demo_login --value=yes
 ```
 
-The card "Voorbeeldinwoner" then signs the visitor in as the example resident with one click, no form, and says "Alleen op deze demo" under its button. It works only for the installed example resident, on its own site, while its portal account is active; the route (`/portal/api/session/example-resident`) answers 404 to everything else, is rate limited like the test sign-in, and `debug` mode does not open it. "Uitloggen" ends the portal session as always. Switch it off again with `occ config:app:set portaliq example_resident_demo_login --value=no`, and the card goes back to the Nextcloud form.
+The card "Voorbeeldinwoner" then signs the visitor in as the example resident with one click, no form, and says "Alleen op deze demo" under its button. It works only for the example resident the set installed, on its own site, while its portal account is active; the route (`/portal/api/session/example-resident`) answers 404 to everything else, is rate limited like the test sign-in, and `debug` mode does not open it. "Uitloggen" ends the portal session as always. Switch it off again with `occ config:app:set portaliq example_resident_demo_login --value=no`, and the card goes back to the Nextcloud form.
 
 ### Why not the test sign-in
 
@@ -109,12 +109,12 @@ Portaliq also has a test sign-in, `POST /portal/api/session/dev-login`, which th
 ### Remove the resident
 
 ```bash
-occ portaliq:example-resident:remove zuiddrecht
+occ openregister:example-set:remove zuiddrecht
 ```
 
-This deletes what the install recorded: the messages, the question, the portal account and the Nextcloud account, and takes the sign-in mode off the portal when the install added it. The cases are the exception. OpenRegister keeps a case as an archive record and refuses to delete it, and dossiq keeps a case whose legal term is running. The command names them and exits 2. They stay in dossiq, where a colleague sees them as demo cases; no resident can open them, because the accounts are gone. Install the resident again under the same id and the command uses the same cases instead of writing new ones.
+This removes the whole set, and exactly what its install recorded: the messages, the question, the portal account and the Nextcloud account. It takes the sign-in mode and its card off the portal again when the set added them. The cases are the exception. OpenRegister keeps a case as an archive record and refuses to delete it, and dossiq keeps a case whose legal term is running. The command names them and exits 2. They stay in dossiq and in the set's record, so a later install uses the same cases instead of writing new ones.
 
-Remove the resident before you remove the site.
+Remove the set before you remove the site.
 
 ## What is and is not in the site
 

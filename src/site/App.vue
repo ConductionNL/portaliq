@@ -595,6 +595,11 @@ import {
 	registerRouteOf,
 } from './lib/shellData.js'
 import {
+	addressAfterMove,
+	addressOfRoute,
+	routeOfLocation,
+} from './lib/siteAddress.js'
+import {
 	hasNavigationBlock,
 	navigationGroups,
 	sideMenuOf,
@@ -1575,13 +1580,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-renderer-must-not-depend-on-nextcloud-globals
 		 */
 		routeFromLocation() {
-			const params = new URLSearchParams(window.location.search)
-			const explicit = params.get('route')
-			if (explicit) {
-				return explicit.startsWith('/') ? explicit : `/${explicit}`
-			}
-
-			return '/'
+			return routeOfLocation(window.location, runtimeConfig())
 		},
 
 		/**
@@ -1915,8 +1914,11 @@ export default {
 		 */
 		replaceRoute(route) {
 			this.route = route
-			const url = new URL(window.location.href)
-			url.searchParams.set('route', route)
+			const url = addressAfterMove(
+				route,
+				window.location.href,
+				runtimeConfig(),
+			)
 			window.history.replaceState({}, '', url)
 			this.applyDocumentTitle()
 		},
@@ -2457,23 +2459,13 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		goSearch(term) {
-			const url = new URL(window.location.href)
-			// The portal the page is served as stays on the address: on an
-			// instance with several portals, an address without it opens
-			// another portal, or none, after a reload or in a new tab.
-			const portal = url.searchParams.get('portal')
-			// The chosen language stays as well (`?lang=`), so the next page
-			// opens in the language the visitor picked.
-			const lang = url.searchParams.get('lang')
-			url.search = ''
-			url.hash = ''
-			if (portal) {
-				url.searchParams.set('portal', portal)
-			}
-			if (lang) {
-				url.searchParams.set('lang', lang)
-			}
-			url.searchParams.set('route', this.searchRoute)
+			// The portal and the chosen language stay on the address, as on
+			// every link (addressOfRoute).
+			const url = addressOfRoute(
+				this.searchRoute,
+				window.location.href,
+				runtimeConfig(),
+			)
 			if (term) {
 				url.searchParams.set('_search', term)
 			}
@@ -2509,37 +2501,31 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		hrefForRoute(route) {
-			const url = new URL(window.location.href)
-			// The portal the page is served as stays on the address: on an
-			// instance with several portals, an address without it opens
-			// another portal, or none, after a reload or in a new tab.
-			const portal = url.searchParams.get('portal')
-			// The chosen language stays as well (`?lang=`), so the next page
-			// opens in the language the visitor picked.
-			const lang = url.searchParams.get('lang')
-			url.search = ''
-			url.hash = ''
-			if (portal) {
-				url.searchParams.set('portal', portal)
-			}
-			if (lang) {
-				url.searchParams.set('lang', lang)
-			}
-			if (route && route !== '/') {
-				url.searchParams.set('route', route)
-			}
-
-			return url.toString()
+			// A short address on a host that serves the site at its root, the
+			// long one anywhere else (siteAddress.js).
+			return addressOfRoute(
+				route,
+				window.location.href,
+				runtimeConfig(),
+			).toString()
 		},
 
+		/**
+		 * Move to an in-site route and add it to the history, in the
+		 * addressing of this host (siteAddress.js).
+		 *
+		 * @param {string} link The route, with a leading slash.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-the-renderer-must-read-and-write-the-addresses-of-its-host-req-srh-004
+		 */
 		go(link) {
 			if (!link || !link.startsWith('/')) {
 				return
 			}
 
 			this.route = link
-			const url = new URL(window.location.href)
-			url.searchParams.set('route', link)
+			const url = addressAfterMove(link, window.location.href, runtimeConfig())
 			window.history.pushState({}, '', url)
 			this.loadRoute(link)
 		},
