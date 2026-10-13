@@ -141,9 +141,19 @@ const site = {
 		// M4), the ways-in resolver's e-mail-link branch decides which sign-in
 		// the first screen offers, and its strings sit in the translator the
 		// first screen reads.
+		//
+		// 431 KiB, up from 428, on 2026-10-13 with the Zuiddrecht demo stack:
+		// the site at the root of a portal host (#1542, #1544) and the link to
+		// make a Nextcloud account (#1546). Measured 428.8 KiB (439,091 B)
+		// with the five PRs merged on development c40ae81e; the budget is the
+		// next whole KiB above that plus 2 KiB. What stays in the entry is
+		// first-paint by design: siteAddress.js reads the route from the
+		// address bar before anything renders and writes every link in the
+		// addressing of this host, and the registration link sits on the
+		// sign-in screen a visitor sees first.
 		hints: isDev ? false : 'error',
-		maxAssetSize: 428 * 1024,
-		maxEntrypointSize: 428 * 1024,
+		maxAssetSize: 431 * 1024,
+		maxEntrypointSize: 431 * 1024,
 	},
 }
 
