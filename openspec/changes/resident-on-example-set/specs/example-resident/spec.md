@@ -27,6 +27,21 @@ whose account id the set did not make or adopt, MUST NOT make anyone the example
 - WHEN its objects are read
 - THEN they MUST hold the five cases, "Verlichting fietspad Lindelaan" first, with the question and the four messages
 
+### Requirement: The set's other residents and business contacts have a portal account
+portaliq's fragment MUST give the cast members whose dossiq cases the set writes a portal account under their own account id: residents `henk`, `linda` and `fatima` (audience `citizen`), and business contacts `janwillem` and `mark` (audience `supplier`). It MUST record the mandates that open cases they did not file: Linda for her father Henk (`subject:` Henk's account id), Jan-Willem for Slagerij Van der Berg and Mark for CloudGemeente B.V. (`kvk:` and the KVK number). They sign in with their own Nextcloud account and the `nextcloud` mode. The one-click demo sign-in MUST stay for Sanne alone: no other account carries `identityRef: example-resident`.
+
+#### Scenario: Linda sees her father's case
+@e2e exclude Live: needs dossiq #3872 and an installed set; the fragment is checked by tests/example-resident.spec.mjs
+- GIVEN the set is installed with dossiq's fragment
+- WHEN Linda signs in
+- THEN Henk's case with Linda as authorised representative MUST be listed, named as granted by the mandate "Namens Henk Bakker"
+
+#### Scenario: Only Sanne is one click away
+@e2e exclude Node: tests/example-resident.spec.mjs
+- GIVEN the shipped `zuiddrecht.json`
+- WHEN its portal accounts are read
+- THEN exactly one, Sanne's, MUST be the example resident
+
 ### Requirement: The old install can be removed for one release
 `occ portaliq:example-resident:remove <site>` MUST remain for one release after the install
 command retired, MUST delete only what the old install recorded, MUST take the portal from

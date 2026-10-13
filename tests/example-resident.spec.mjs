@@ -180,6 +180,40 @@ for (const { file, fragment } of fragments) {
 	})
 }
 
+test('zuiddrecht.json: every portal account and mandate fits its schema, and only Sanne is the one-click resident', () => {
+	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+	const fits = (object) => {
+		const schema = schemas[object.schema]
+		for (const key of schema.required || []) {
+			assert.ok(key in object.data, `${object.key}: ${key} is required`)
+		}
+		for (const [key, value] of Object.entries(object.data)) {
+			const property = schema.properties[key]
+			assert.ok(property, `${object.key}: ${key} is a property of ${object.schema}`)
+			assert.equal(typeof value, property.type, `${object.key}: ${key} is a ${property.type}`)
+			if (property.enum && !value.includes('{{')) {
+				assert.ok(property.enum.includes(value), `${object.key}: ${key} ${value} is allowed`)
+			}
+		}
+	}
+	const accounts = zuiddrecht.objects.filter((object) => object.schema === 'portalAccount')
+	const mandates = zuiddrecht.objects.filter((object) => object.schema === 'portalMandate')
+	assert.deepEqual(
+		accounts.map((object) => object.data.subjectRef),
+		['sanne', 'henk', 'linda', 'fatima', 'janwillem', 'mark'].map((key) => `{{cast:${key}.uid}}`),
+	)
+	accounts.forEach(fits)
+	mandates.forEach(fits)
+	for (const mandate of mandates) {
+		assert.match(mandate.data.onBehalfOf, /^(subject|kvk):\{\{cast:[a-z]+\.(uid|kvk)\}\}$/, `${mandate.key} names a typed party`)
+	}
+	assert.deepEqual(
+		accounts.filter((object) => object.data.identityRef === 'example-resident').map((object) => object.key),
+		[zuiddrecht.exampleResident.account],
+		'the one-click demo sign-in stays Sanne-only',
+	)
+})
+
 test('zuiddrecht.json keeps the five cases of the Woo journey and the resident boards', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	const cases = zuiddrecht.objects.filter((object) => object.schema === 'case').map((object) => object.data.title)

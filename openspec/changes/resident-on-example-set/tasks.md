@@ -3,6 +3,8 @@
 - [x] 1.1 `lib/Settings/example-sets/zuiddrecht.json`: portal account, the old ten objects with `{{cast:sanne.uid}}`, the sign-in change, `after: ["dossiq"]`, `exampleResident`
 - [x] 1.2 `tests/example-resident.spec.mjs` checks the fragment: placeholders, the account against `portalAccount`, the card's house rules, the five cases
 
+- [x] 1.3 Portal accounts for henk, linda, fatima (citizen), janwillem and mark (supplier); mandates Linda for Henk, Jan-Willem and Mark for their companies; the node test checks them against `portalAccount` and `portalMandate`
+
 ## 2. The demo sign-in
 
 - [x] 2.1 `ExampleSetResidents`: the resident of a portal from OpenRegister's example-set record, refusing an account the set did not make or adopt

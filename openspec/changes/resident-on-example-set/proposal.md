@@ -15,6 +15,9 @@ on 13 Oct 2026 that portaliq's resident moves onto the cast.
   set records and takes off again. The ten case, question and message objects are the old
   declaration's, word for word, with `{{subject}}` replaced by `{{cast:sanne.uid}}`. The Woo
   journey and the resident boards depend on them.
+- **The other cast members get portal accounts.** Henk, Linda and Fatima (citizen) and Jan-Willem and Mark
+  (supplier), with mandates for Linda (her father Henk) and for Jan-Willem and Mark (their companies), so
+  their dossiq cases show in Mijn Zuiddrecht. They sign in with their own account; one click stays Sanne's.
 - **The demo sign-in reads the example set.** `exampleResident` in the fragment names the portal,
   the portal account object and the sign-in change. The one-click sign-in trusts only a portal
   account OpenRegister's install record holds for the set, and only when its account id is one the

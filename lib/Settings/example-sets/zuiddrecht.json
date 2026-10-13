@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "portaliq's part of the Zuiddrecht example set: the example resident Sanne de Vries (cast key sanne), her portal account, her five cases, one question and four messages, and the sign-in card on the portal. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` tells portaliq's one-click demo sign-in which of the recorded objects is the resident's portal account and which change added the sign-in mode. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
+	"$comment": "portaliq's part of the Zuiddrecht example set: the example resident Sanne de Vries (cast key sanne), her portal account, portal accounts for Henk, Linda, Fatima, Jan-Willem and Mark with the mandates that let Linda act for her father Henk and Jan-Willem and Mark for their companies, her five cases, one question and four messages, and the sign-in card on the portal. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` tells portaliq's one-click demo sign-in which of the recorded objects is the resident's portal account and which change added the sign-in mode. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
 	"after": [
 		"dossiq"
 	],
@@ -25,6 +25,126 @@
 				"identityRef": "example-resident",
 				"status": "active",
 				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-henk",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:henk.uid}}",
+				"audience": "citizen",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:henk.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-set",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-linda",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:linda.uid}}",
+				"audience": "citizen",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:linda.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-set",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-fatima",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:fatima.uid}}",
+				"audience": "citizen",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:fatima.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-set",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-janwillem",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:janwillem.uid}}",
+				"audience": "supplier",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:janwillem.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-set",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-mark",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:mark.uid}}",
+				"audience": "supplier",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:mark.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-set",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "machtiging-linda-henk",
+			"register": "portaliq",
+			"schema": "portalMandate",
+			"data": {
+				"subjectRef": "{{cast:linda.uid}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "subject:{{cast:henk.uid}}",
+				"label": "Namens {{cast:henk.displayName}}",
+				"reach": "organisation",
+				"status": "active",
+				"grantedBy": "example-set",
+				"grantedAt": "{{datetime:-60 09:00}}"
+			}
+		},
+		{
+			"key": "machtiging-janwillem-slagerij",
+			"register": "portaliq",
+			"schema": "portalMandate",
+			"data": {
+				"subjectRef": "{{cast:janwillem.uid}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "kvk:{{cast:slagerij.kvk}}",
+				"label": "Namens {{cast:slagerij.name}}",
+				"reach": "organisation",
+				"status": "active",
+				"grantedBy": "example-set",
+				"grantedAt": "{{datetime:-400 09:00}}"
+			}
+		},
+		{
+			"key": "machtiging-mark-cloudgemeente",
+			"register": "portaliq",
+			"schema": "portalMandate",
+			"data": {
+				"subjectRef": "{{cast:mark.uid}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "kvk:{{cast:cloudgemeente.kvk}}",
+				"label": "Namens {{cast:cloudgemeente.name}}",
+				"reach": "organisation",
+				"status": "active",
+				"grantedBy": "example-set",
+				"grantedAt": "{{datetime:-300 09:00}}"
 			}
 		},
 		{
