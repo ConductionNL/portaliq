@@ -1199,12 +1199,14 @@ export default {
 		 *
 		 * The type is included only when one is actually known: this envelope
 		 * returns `@self.schema` as a numeric id and no title, so an
-		 * unconditional chip would read "17".
+		 * unconditional chip would read "17". The source likewise only for a
+		 * row from another catalogue: a row of this portal has no source to
+		 * name, as the Zoeken board draws its cards.
 		 *
 		 * @param {object} result A view-model row.
 		 * @return {Array<object>} `{key, text, prefix, testid}` items.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
+		 * @spec openspec/changes/search-names-only-a-foreign-source/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
 		 */
 		metaItems(result) {
 			const items = []
@@ -1246,12 +1248,14 @@ export default {
 				})
 			}
 
-			items.push({
-				key: 'source',
-				text: result.directory,
-				prefix: this.sourceLabel,
-				testid: 'federated-search-source',
-			})
+			if (result.directory) {
+				items.push({
+					key: 'source',
+					text: result.directory,
+					prefix: this.sourceLabel,
+					testid: 'federated-search-source',
+				})
+			}
 
 			return items
 		},

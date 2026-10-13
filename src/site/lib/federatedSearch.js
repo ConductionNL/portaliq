@@ -161,9 +161,12 @@ function baseResult(row) {
 		// ships every byte of it to a mobile connection.
 		summary: typeof summary === 'string' ? summary.slice(0, 280) : '',
 		href: (row || {}).landingUrl || (row || {}).url || self.uri || '',
-		// `local` is the API's own word for a row this instance owns, so an
-		// absent directory is named rather than left blank.
-		directory: self.directory || 'local',
+		// The directory of a row from ANOTHER catalogue, else ''. `local` is
+		// the API's word for a row this instance owns, and so is no
+		// directory at all; a visitor on the portal's own site reads that as
+		// "Bron: local", so the block shows no source for it
+		// (search-names-only-a-foreign-source REQ-SNF-001).
+		directory: foreignDirectory(self.directory),
 		// The id the portal's own detail route addresses. Falls back through
 		// the same chain as `key` so a row from an older peer still links.
 		id: self.id || (row || {}).id || '',
@@ -177,6 +180,22 @@ function baseResult(row) {
 		// read; a page that knows its corpus supplies `typeLabel` instead.
 		type: self.schemaTitle || '',
 	}
+}
+
+/**
+ * The directory a row came from when another catalogue owns it, else ''.
+ *
+ * A row without a directory, or with the API's own word `local`, belongs to
+ * this instance: the portal the visitor is on. Naming that source adds
+ * nothing and showed the raw word "local".
+ *
+ * @param {string|null|undefined} directory The row's `@self.directory`; any other type counts as none.
+ * @return {string} The foreign directory, or ''.
+ * @spec openspec/changes/search-names-only-a-foreign-source/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
+ */
+export function foreignDirectory(directory) {
+	const name = typeof directory === 'string' ? directory.trim() : ''
+	return name === '' || name.toLowerCase() === 'local' ? '' : name
 }
 
 /**
