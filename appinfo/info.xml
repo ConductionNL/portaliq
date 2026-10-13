@@ -152,9 +152,10 @@
              instance, and take it off again. -->
         <command>OCA\Portaliq\Command\ExampleSiteInstall</command>
         <command>OCA\Portaliq\Command\ExampleSiteRemove</command>
-        <!-- example-resident-zuiddrecht: give an example site its resident,
-             so the area behind the sign-in button has something to show. -->
-        <command>OCA\Portaliq\Command\ExampleResidentInstall</command>
+        <!-- resident-on-example-set: the example resident comes from
+             OpenRegister's example set now (occ openregister:example-set:install).
+             The remove command stays one release, to take an old install off
+             before the set is installed. -->
         <command>OCA\Portaliq\Command\ExampleResidentRemove</command>
         <!-- submit-creates-the-case-directly: send the requests still waiting
              in the old intake queue into their destination, then report. -->
