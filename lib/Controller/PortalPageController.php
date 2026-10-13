@@ -76,6 +76,12 @@ class PortalPageController extends Controller {
 	private const STATUS_FOUND = 302;
 
 	/**
+	 * HTTP 404 Not Found: what a site path answers on a host that serves no
+	 * portal (site-at-the-root-of-a-portal-host REQ-SRH-003).
+	 */
+	private const STATUS_NOT_FOUND = 404;
+
+	/**
 	 * Builds what the site shell template renders.
 	 *
 	 * @var SiteShell
@@ -213,10 +219,23 @@ class PortalPageController extends Controller {
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function site(): TemplateResponse {
+		return $this->shellResponse(path: '');
+	}//end site()
+
+	/**
+	 * The site shell for one request, as `site()` and `sitePath()` answer it.
+	 *
+	 * @param string $path The path under the site route, or ''.
+	 *
+	 * @return TemplateResponse The site shell.
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	private function shellResponse(string $path): TemplateResponse {
 		$response = new TemplateResponse(
 			Application::APP_ID,
 			'site',
-			$this->shell->templateParams(),
+			$this->shell->templateParams(path: $path),
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
 			// chrome. `layout.public.php` emits `<header id="header">` with
 			// `header-appname`, the Nextcloud logo and a `header-info` title,
@@ -265,7 +284,40 @@ class PortalPageController extends Controller {
 		$response->setContentSecurityPolicy($this->framing->sitePolicy(request: $this->request));
 
 		return $response;
-	}//end site()
+	}//end shellResponse()
+
+	/**
+	 * A site page named by its path: `/site/afval` is the route `/afval`.
+	 *
+	 * This is the address a proxy in front of Nextcloud rewrites a short
+	 * address to, so `https://portal.example.com/afval` reaches the site
+	 * without `/index.php/apps/portaliq/site` in the address bar. The portal
+	 * is still decided by `site()`'s rules: the slug the request names, else
+	 * the verified domain its host matches. Nothing here picks a portal.
+	 *
+	 * A request that resolves to no portal (an unknown host, an unverified
+	 * domain, an unknown slug) answers 404 with the neutral shell: no theme,
+	 * no title, no addressing of any portal.
+	 *
+	 * @param string $path The path under the site route.
+	 *
+	 * @return TemplateResponse The site shell, 404 when no portal serves it.
+	 *
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-verified-domain-may-serve-the-site-at-its-root-req-srh-001
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-host-that-resolves-no-portal-must-get-no-site-req-srh-003
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function sitePath(string $path = ''): TemplateResponse {
+		$response = $this->shellResponse(path: $path);
+		if ($this->shell->servesAPortal() === false) {
+			$response->setStatus(self::STATUS_NOT_FOUND);
+		}
+
+		return $response;
+	}//end sitePath()
 
 
 }//end class
