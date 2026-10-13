@@ -258,3 +258,33 @@ test('a document found by its text links to its own page and names its publicati
 	assert.match(html, /route=%2Fdocument%2Fd-42/)
 	assert.match(html, /Onderdeel van Besluit Stationsweg/)
 })
+
+test('a result card names its source only for a row from another catalogue (REQ-SNF-001)', async () => {
+	const row = {
+		summary: '',
+		href: '',
+		date: '',
+		type: '',
+		kind: 'publication',
+		publication: '',
+	}
+	const html = await searchPage({}, [
+		{ ...row, key: 'own', id: 'own', title: 'Eigen besluit', directory: '' },
+		{
+			...row,
+			key: 'peer',
+			id: 'peer',
+			title: 'Besluit elders',
+			directory: 'opencatalogi.nl',
+		},
+	])
+	assert.equal(
+		(html.match(/data-testid="federated-search-source"/g) || []).length,
+		1,
+	)
+	assert.match(
+		html,
+		/data-testid="federated-search-source"[^>]*>[\s\S]*?opencatalogi\.nl/,
+	)
+	assert.doesNotMatch(html, />\s*local\s*</)
+})

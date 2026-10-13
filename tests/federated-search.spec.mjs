@@ -32,6 +32,7 @@ import { kindBuckets, kindLabel, labelBuckets } from '../src/site/lib/facetLabel
 import {
 	buildRequestUrl,
 	facetFieldsOf,
+	foreignDirectory,
 	formatDutchDate,
 	KIND_FIELD,
 	lockedFiltersOf,
@@ -237,10 +238,25 @@ assertEqual(
 	},
 )
 
+// A ROW OF THIS PORTAL NAMES NO SOURCE (search-names-only-a-foreign-source
+// REQ-SNF-001). No directory, or the API's own word `local`, is this
+// instance; the card drew "Bron: local" for it.
 assertEqual(
-	'names a row with no directory `local`, rather than leaving it blank',
+	'gives a row with no directory no source, rather than the word local',
 	toResult({ name: 'x', '@self': { id: '1' } }).directory,
-	'local',
+	'',
+)
+
+assertEqual(
+	'gives a row the API calls local no source either',
+	toResult({ name: 'x', '@self': { id: '1', directory: 'local' } }).directory,
+	'',
+)
+
+assertEqual(
+	'keeps the directory of a row from another catalogue',
+	[foreignDirectory('opencatalogi.nl'), foreignDirectory(' LOCAL '), foreignDirectory(17)],
+	['opencatalogi.nl', '', ''],
 )
 
 assertEqual(
@@ -267,7 +283,7 @@ assertEqual(
 		title: 'Zonder titel',
 		summary: '',
 		href: '',
-		directory: 'local',
+		directory: '',
 		id: '',
 		date: '',
 		type: '',
