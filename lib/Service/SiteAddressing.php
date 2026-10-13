@@ -155,6 +155,42 @@ class SiteAddressing {
 	}//end canonical()
 
 	/**
+	 * Where the bare address of this request's host should lead, or null.
+	 *
+	 * Only a host that is a verified domain of a published portal has an
+	 * answer: the long address of the site, on the page the domain opens
+	 * (`landingRoute`), or on the home page. The answer is a path on the same
+	 * host, built from the route table and the stored, cleaned landing route.
+	 * Nothing from the request goes into it but the host that selected the
+	 * domain, and that host is not written into it either.
+	 *
+	 * It is always the long address, also on a domain that declares
+	 * `servedAtRoot`. Behind the proxy rule that declaration stands for, the
+	 * bare address never reaches Nextcloud's root. When it does reach it, the
+	 * rule is missing, and a short address would lead back to the root.
+	 *
+	 * @param IRequest $request The request.
+	 *
+	 * @return string|null The address, or null for a host that resolves no portal.
+	 *
+	 * @spec openspec/changes/portal-host-root-redirect/specs/portal-settings/spec.md#requirement-the-bare-address-of-a-portal-host-must-lead-to-its-site-req-hrr-001
+	 * @spec openspec/changes/portal-host-root-redirect/specs/portal-settings/spec.md#requirement-any-other-host-must-keep-nextclouds-own-root-req-hrr-002
+	 */
+	public function hostRoot(IRequest $request): ?string {
+		$domain = $this->domain(request: $request, portalSlug: '');
+		if ($domain === null) {
+			return null;
+		}
+
+		$landing = $this->cleanRoute(route: ($domain['landingRoute'] ?? ''));
+		if ($landing === '') {
+			return $this->urlGenerator->linkToRoute('portaliq.portalPage.site');
+		}
+
+		return $this->urlGenerator->linkToRoute('portaliq.portalPage.sitePath', ['path' => ltrim($landing, '/')]);
+	}//end hostRoot()
+
+	/**
 	 * The verified domain this request is served on, or null. A resolver that
 	 * throws answers null: the long addressing, never another host's settings.
 	 *
