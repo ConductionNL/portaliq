@@ -22,20 +22,25 @@
  *
  * Every object it creates is recorded and deleted in afterAll, newest first.
  *
- * WHAT IS MARKED fixme, AND WHY (read at the lane branch heads on 30 Sep):
- * - J1 and J5 "publish a decision from dossiq": `POST /woo/assessment`
- *   answers 400 until the app config `dossiq.woo_assessment_schema` points
- *   at a schema, and dossiq ships none; and publish reads documents from
- *   `document_schema` while the case dossier upload writes elsewhere. Without
- *   an assessed-public document, publish answers 409
- *   `no_publishable_documents`. Set `WOO_E2E_DOSSIQ_PUBLISH=1` once dossiq
- *   fixes that, and the steps run.
+ * THE DOSSIQ PUBLISH STEPS RUN (read on dossiq development, 13 Oct 2026):
+ * - J1 and J5 "publish a decision from dossiq" assess a document, assemble
+ *   the decision and publish it. dossiq#3230 (5c100d0c7) ships the
+ *   assessment schema, and the register import sets
+ *   `dossiq.woo_assessment_schema` to it (`SchemaSlugMap`), so
+ *   `POST /woo/assessment` no longer answers 400. Publish and assessment
+ *   read a case's documents through `WooCaseDocuments`: the
+ *   informatieobjecten a case upload writes, and still the `document` rows
+ *   carrying `case`, which is what these steps write.
+ * - Set `WOO_E2E_SKIP_DOSSIQ_PUBLISH=1` on an instance whose dossiq is older
+ *   than #3230. J1 then writes the publication dossiq's publish would write
+ *   directly in OpenRegister, so J2 to J6 still run on a real, public
+ *   publication, and J5 stops after the request reaches Mijn zaken.
+ *
+ * WHAT IS MARKED fixme, AND WHY:
  * - J1 "publish an opencatalogi Woo batch": publish needs a configured
- *   `woo_publish_approval_chain` and a completed approval task sequence.
- *   Set `WOO_E2E_BATCH_PUBLISH=1` on an instance that has one.
- * Until then J1's publication is created directly in OpenRegister with the
- * fields dossiq's publish writes, so J2 to J6 still run on a real, public
- * publication.
+ *   `woo_publish_approval_chain` and a completed approval task sequence
+ *   (`WooService::assertPublishApproved`), and no app ships that chain. Set
+ *   `WOO_E2E_BATCH_PUBLISH=1` on an instance that has one.
  *
  * Run it:
  *
@@ -64,7 +69,8 @@ const SITE = '/index.php/apps/portaliq/site'
 const PORTAL_API = '/index.php/apps/portaliq/portal/api'
 const OR_API = '/index.php/apps/openregister/api/objects'
 const WOO_CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001'
-const RUN_DOSSIQ_PUBLISH = process.env.WOO_E2E_DOSSIQ_PUBLISH === '1'
+// On by default since dossiq#3230; the switch is for an older dossiq.
+const RUN_DOSSIQ_PUBLISH = process.env.WOO_E2E_SKIP_DOSSIQ_PUBLISH !== '1'
 const RUN_BATCH_PUBLISH = process.env.WOO_E2E_BATCH_PUBLISH === '1'
 
 const ADMIN_HEADERS = {
@@ -569,8 +575,9 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 				(await readObject('dossiq', 'case', caseId)).wooPublicationStatus,
 			).toBe('published')
 		} else {
-			// dossiq's publish is blocked (see the file header): the publication
-			// it would write, written directly.
+			// WOO_E2E_SKIP_DOSSIQ_PUBLISH (an instance older than dossiq#3230,
+			// see the file header): the publication dossiq's publish would
+			// write, written directly.
 			const publication = await createObject('publication', 'publication', {
 				title: `Besluit op Woo-verzoek fietspad ${TOKEN_WORD}`,
 				summary: 'Besluit op een Woo-verzoek, e2e.',
@@ -925,9 +932,9 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 		)
 		expect(JSON.stringify(myCases)).toContain(state.caseFromDossier)
 
-		test.fixme(
+		test.skip(
 			!RUN_DOSSIQ_PUBLISH,
-			'dossiq publish needs an assessed-public document; see the file header (B1/B2)',
+			'WOO_E2E_SKIP_DOSSIQ_PUBLISH is set: this dossiq is older than #3230 (see the file header)',
 		)
 		const document = await createObject('dossiq', 'document', {
 			title: `Besluit ${TOKEN_WORD}`,
