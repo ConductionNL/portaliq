@@ -38,11 +38,18 @@ class ExampleSetResidentsTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->record   = [
-			'users'   => ['sanne.devries' => 'created'],
-			'objects' => ['portaliq/portaalaccount-sanne' => ['register' => 'portaliq', 'schema' => 'portalAccount', 'id' => 'acc-1']],
-			'changes' => ['portaliq/inloggen-voorbeeldinwoner' => ['register' => 'portaliq', 'schema' => 'portal', 'id' => 'p-1']],
+			'users'   => ['sanne.devries' => 'created', 'henk.bakker' => 'created', 'linda.bakker' => 'adopted'],
+			'objects' => [
+				'portaliq/portaalaccount-sanne' => ['register' => 'portaliq', 'schema' => 'portalAccount', 'id' => 'acc-1'],
+				'portaliq/portaalaccount-henk'  => ['register' => 'portaliq', 'schema' => 'portalAccount', 'id' => 'acc-2'],
+				'portaliq/portaalaccount-linda' => ['register' => 'portaliq', 'schema' => 'portalAccount', 'id' => 'acc-3'],
+			],
 		];
-		$this->accounts = ['acc-1' => ['id' => 'acc-1', 'subjectRef' => 'sanne.devries']];
+		$this->accounts = [
+			'acc-1' => ['id' => 'acc-1', 'subjectRef' => 'sanne.devries', 'displayName' => 'Sanne de Vries'],
+			'acc-2' => ['id' => 'acc-2', 'subjectRef' => 'henk.bakker', 'displayName' => 'Henk Bakker'],
+			'acc-3' => ['id' => 'acc-3', 'subjectRef' => 'linda.bakker', 'displayName' => ''],
+		];
 	}
 
 	/**
@@ -53,7 +60,21 @@ class ExampleSetResidentsTest extends TestCase {
 	 * @return ExampleSetResidents
 	 */
 	private function residents(bool $withOpenRegister = true): ExampleSetResidents {
-		$records = new class($this) {
+		$records = null;
+		if ($withOpenRegister === true) {
+			$records = $this->recordStandIn();
+		}
+
+		return new ExampleSetResidents(container: $this->containerWith(records: $records), store: $this->storeStandIn());
+	}//end residents()
+
+	/**
+	 * A stand-in for OpenRegister's record service, reading this test's record.
+	 *
+	 * @return object
+	 */
+	private function recordStandIn(): object {
+		return new class($this) {
 			public function __construct(private readonly ExampleSetResidentsTest $test) {
 			}
 
@@ -61,21 +82,41 @@ class ExampleSetResidentsTest extends TestCase {
 				return ($set === 'zuiddrecht') ? $this->test->recordOf() : [];
 			}
 		};
+	}//end recordStandIn()
+
+	/**
+	 * A container handing out the record service, or failing like an instance without OpenRegister.
+	 *
+	 * @param object|null $records The record service, or null.
+	 *
+	 * @return ContainerInterface
+	 */
+	private function containerWith(?object $records): ContainerInterface {
 		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use ($withOpenRegister, $records): object {
-				if ($withOpenRegister === false) {
+			static function (string $id) use ($records): object {
+				if ($records === null) {
 					throw new RuntimeException('no such service');
 				}
 
 				return $records;
 			}
 		);
+
+		return $container;
+	}//end containerWith()
+
+	/**
+	 * The portal accounts of this test, by id.
+	 *
+	 * @return ExampleResidentStore
+	 */
+	private function storeStandIn(): ExampleResidentStore {
 		$store = $this->createMock(originalClassName: ExampleResidentStore::class);
 		$store->method('get')->willReturnCallback(fn (string $register, string $schema, string $id): ?array => ($this->accounts[$id] ?? null));
 
-		return new ExampleSetResidents(container: $container, store: $store);
-	}//end residents()
+		return $store;
+	}//end storeStandIn()
 
 	/**
 	 * The current record, for the stand-in of OpenRegister's record service.
@@ -86,35 +127,80 @@ class ExampleSetResidentsTest extends TestCase {
 		return $this->record;
 	}//end recordOf()
 
-	public function testTheInstalledResidentOfThePortal(): void {
-		$this->assertSame(
-			['set' => 'zuiddrecht', 'uid' => 'sanne.devries', 'mode' => 'nextcloud', 'modeAdded' => true],
-			$this->residents()->forPortal(portal: 'zuiddrecht')
-		);
-		$this->assertNull($this->residents()->forPortal(portal: 'elders'));
+	/**
+	 * Each resident the record vouches for, in the fragment's order; a resident
+	 * whose account the set did not record (Fatima here) is left out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
+	 */
+	public function testTheInstalledResidentsOfThePortal(): void {
+		$residents = $this->residents()->residentsOf(portal: 'zuiddrecht');
+
+		$this->assertSame(['sanne', 'henk', 'linda'], array_column($residents, 'key'));
+		$this->assertSame(['sanne.devries', 'henk.bakker', 'linda.bakker'], array_column($residents, 'uid'));
+		$this->assertSame('zuiddrecht', $residents[0]['set']);
+		$this->assertSame('Sanne de Vries', $residents[0]['name']);
+		// A portal account without a name shows its account id.
+		$this->assertSame('linda.bakker', $residents[2]['name']);
+		$this->assertSame('Linda Bakker', $residents[2]['card']['title']);
+		$this->assertSame([], $this->residents()->residentsOf(portal: 'elders'));
 	}
 
-	public function testAModeThePortalAlreadyOfferedIsNotTheSets(): void {
-		unset($this->record['changes']['portaliq/inloggen-voorbeeldinwoner']);
+	/**
+	 * @return void
+	 *
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
+	 */
+	public function testAnAccountEditedToSomebodyElseDropsOnlyThatResident(): void {
+		$this->accounts['acc-2']['subjectRef'] = 'admin';
 
-		$this->assertFalse($this->residents()->forPortal(portal: 'zuiddrecht')['modeAdded']);
+		$this->assertSame(['sanne', 'linda'], array_column($this->residents()->residentsOf(portal: 'zuiddrecht'), 'key'));
 	}
 
-	public function testAnAccountEditedToSomebodyElseMakesNobodyTheResident(): void {
-		$this->accounts['acc-1']['subjectRef'] = 'admin';
-
-		$this->assertNull($this->residents()->forPortal(portal: 'zuiddrecht'));
-	}
-
+	/**
+	 * @return void
+	 */
 	public function testAPortalAccountTheSetDidNotRecordMakesNobodyTheResident(): void {
 		$this->record['objects'] = [];
 
-		$this->assertNull($this->residents()->forPortal(portal: 'zuiddrecht'));
+		$this->assertSame([], $this->residents()->residentsOf(portal: 'zuiddrecht'));
 	}
 
+	/**
+	 * A fragment that names one resident as an object still counts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
+	 */
+	public function testOneResidentWrittenAsAnObject(): void {
+		$folder = sys_get_temp_dir().'/portaliq-example-sets-'.uniqid();
+		mkdir($folder);
+		file_put_contents(
+			$folder.'/zuiddrecht.json',
+			(string)json_encode(['exampleResident' => ['portal' => 'zuiddrecht', 'cast' => 'sanne', 'account' => 'portaalaccount-sanne']])
+		);
+
+		$residents = new ExampleSetResidents(
+			container: $this->containerWith(records: $this->recordStandIn()),
+			store: $this->storeStandIn(),
+			folder: $folder
+		);
+
+		$this->assertSame(['sanne'], array_column($residents->residentsOf(portal: 'zuiddrecht'), 'key'));
+		$this->assertSame([], $residents->residentsOf(portal: 'zuiddrecht')[0]['card']);
+		unlink($folder.'/zuiddrecht.json');
+		rmdir($folder);
+	}
+
+	/**
+	 * @return void
+	 */
 	public function testWithoutOpenRegisterThereIsNoResident(): void {
 		$this->assertFalse($this->residents(withOpenRegister: false)->available());
-		$this->assertNull($this->residents(withOpenRegister: false)->forPortal(portal: 'zuiddrecht'));
+		$this->assertSame([], $this->residents(withOpenRegister: false)->residentsOf(portal: 'zuiddrecht'));
 		$this->assertTrue($this->residents()->available());
 	}
 }

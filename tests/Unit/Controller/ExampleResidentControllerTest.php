@@ -87,9 +87,12 @@ class ExampleResidentControllerTest extends TestCase {
 		);
 		$residents = $this->createMock(originalClassName: ExampleSetResidents::class);
 		$residents->method('available')->willReturn(true);
-		$residents->method('forPortal')->willReturnCallback(
-			static fn (string $portal): ?array => (
-				$portal === 'zuiddrecht' ? ['set' => 'zuiddrecht', 'uid' => 'sanne.devries', 'mode' => 'nextcloud', 'modeAdded' => true] : null
+		$residents->method('residentsOf')->willReturnCallback(
+			static fn (string $portal): array => (
+				$portal === 'zuiddrecht' ? [
+					['set' => 'zuiddrecht', 'key' => 'sanne', 'uid' => 'sanne.devries', 'name' => 'Sanne de Vries', 'card' => []],
+					['set' => 'zuiddrecht', 'key' => 'linda', 'uid' => 'linda.bakker', 'name' => 'Linda Bakker', 'card' => ['text' => 'Regelt zaken voor Henk.']],
+				] : []
 			)
 		);
 		$portals = $this->createMock(originalClassName: PortalResolver::class);
@@ -102,7 +105,7 @@ class ExampleResidentControllerTest extends TestCase {
 		);
 		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
 		$accounts->method('findBySubjectRef')->willReturnCallback(
-			static fn (string $subjectRef): ?array => ($subjectRef === 'sanne.devries' ? ['status' => 'active', 'audience' => 'citizen', 'organisation' => 'zuiddrecht'] : null)
+			static fn (string $subjectRef): ?array => (in_array(needle: $subjectRef, haystack: ['sanne.devries', 'linda.bakker'], strict: true) ? ['status' => 'active', 'audience' => 'citizen', 'organisation' => 'zuiddrecht'] : null)
 		);
 
 		return ['config' => $config, 'residents' => $residents, 'portals' => $portals, 'accounts' => $accounts];
@@ -158,8 +161,8 @@ class ExampleResidentControllerTest extends TestCase {
 			exampleResidents: $parts['residents']
 		);
 
-		foreach ([['id' => 'someone', 'portal' => 'zuiddrecht'], ['id' => 'zuiddrecht', 'portal' => 'other'], ['id' => '', 'portal' => '']] as $call) {
-			$response = $controller->signIn(id: $call['id'], portal: $call['portal']);
+		foreach ([['id' => 'someone', 'portal' => 'zuiddrecht', 'resident' => ''], ['id' => 'zuiddrecht', 'portal' => 'other', 'resident' => ''], ['id' => '', 'portal' => '', 'resident' => ''], ['id' => 'zuiddrecht', 'portal' => 'zuiddrecht', 'resident' => 'henk']] as $call) {
+			$response = $controller->signIn(id: $call['id'], portal: $call['portal'], resident: $call['resident']);
 			$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus(), message: json_encode($call));
 			$this->assertTrue(condition: $response->isThrottled());
 		}
@@ -196,6 +199,36 @@ class ExampleResidentControllerTest extends TestCase {
 		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
 		$this->assertSame(expected: 'https://demo.test/apps/portaliq/site?portal=zuiddrecht#token=tok.en', actual: $response->getRedirectURL());
 	}//end testTheOneClickSignInMintsForTheExampleResidentOnly()
+
+
+	/**
+	 * With the switch on, a named resident of the set gets a session for the
+	 * account id the record vouches for, and only that one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
+	 */
+	public function testTheOneClickSignInMintsForTheNamedResident(): void {
+		$parts   = $this->demoParts(switch: 'yes');
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->once())->method('issueSession')
+			->with('linda.bakker', 'citizen', 'zuiddrecht', 'low', ['citizen:read'])
+			->willReturn(['token' => 'tok.en', 'expiresAt' => 1]);
+		$urlGenerator = $this->createMock(originalClassName: IURLGenerator::class);
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(static fn (string $url): string => 'https://demo.test' . $url);
+
+		$response = $this->controller(
+			session: $session,
+			config: $parts['config'],
+			accounts: $parts['accounts'],
+			urlGenerator: $urlGenerator,
+			portals: $parts['portals'],
+			exampleResidents: $parts['residents']
+		)->signIn(id: 'zuiddrecht', portal: 'zuiddrecht', resident: 'linda');
+
+		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
+	}//end testTheOneClickSignInMintsForTheNamedResident()
 
 
 	/**

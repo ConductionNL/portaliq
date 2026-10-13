@@ -3402,6 +3402,20 @@
                                         "example": [
                                             "gemeente-x.nl"
                                         ]
+                                    },
+                                    "residentGroup": {
+                                        "title": "Resident group",
+                                        "type": "string",
+                                        "description": "The Nextcloud group whose members are this portal's residents. A member signing in with their Nextcloud account gets a portal account on the first sign-in, and the Create an account link shows when the registration app puts new users in this group. Only means something when the portal offers the Nextcloud way in.",
+                                        "maxLength": 64,
+                                        "example": "inwoners"
+                                    },
+                                    "residentAudience": {
+                                        "title": "Resident audience",
+                                        "type": "string",
+                                        "description": "The audience a resident's first portal account gets. Empty means citizen.",
+                                        "maxLength": 64,
+                                        "example": "citizen"
                                     }
                                 }
                             },

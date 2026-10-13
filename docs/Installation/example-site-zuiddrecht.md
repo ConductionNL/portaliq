@@ -68,12 +68,13 @@ occ openregister:example-set:install zuiddrecht
 
 This needs the site (above), OpenRegister and dossiq. OpenRegister holds the cast of the set; portaliq adds its own part from `lib/Settings/example-sets/zuiddrecht.json`. For the site you get:
 
-- A Nextcloud account `sanne.devries`, named Sanne de Vries. Its password is shown once, with the other new passwords at the end of the output. Prefer your own? Put it in `OC_PASS` and add `--password-from-env`.
-- A portal account under the same id. The site greets her by name and asks her for an e-mail address, as the design does.
-- A third card on the sign-in page, "Voorbeeldinwoner", with the button "Inloggen als voorbeeldinwoner". It opens Nextcloud's own sign-in form. The portal gets the sign-in mode `nextcloud` for it.
+- Nextcloud accounts for the residents Sanne de Vries (`sanne.devries`), Henk Bakker, Linda Bakker and Fatima El-Amrani, and for the business contacts Jan-Willem van der Berg and Mark Visser. The passwords are shown once, with the other new passwords at the end of the output. Prefer your own? Put it in `OC_PASS` and add `--password-from-env`.
+- A portal account for each under the same id, and the mandates that let Linda act for her father Henk and Jan-Willem and Mark for their companies. The site greets a resident by name and asks for an e-mail address, as the design does.
+- The group `inwoners` with the four residents in it. The portal names it as its resident group (`authentication.registration.residentGroup`). The group is kept when it already exists, for example because you made it for the registration app, and is not deleted on remove. The business contacts stay out of it: they act for a company, which is eHerkenning.
+- A third card on the sign-in page, "Met een account", with the button "Inloggen met uw account", as on the Inloggen board. It opens Nextcloud's own sign-in form, with "Wachtwoord vergeten" and, when the registration app puts new users in `inwoners`, "Account aanmaken" under it. The portal gets the sign-in mode `nextcloud` for it.
 - Five cases in dossiq: a Woo request in treatment, a building permit that waits for a drawing, a report about a loose paving stone, and two finished cases. One open question ("Stuur de bouwtekening van uw dakkapel") and four messages belong to them. Every date is counted from the day you install, so the cases stay current.
 
-Open the site, press "Mijn Zuiddrecht", choose "Inloggen als voorbeeldinwoner" and sign in as `sanne.devries`. You land on the overview with the question, three running cases and the newest messages. "Mijn zaken" lists them under Lopend and Afgerond. Open a case for its steps, details and messages.
+Open the site, press "Mijn Zuiddrecht", choose "Inloggen met uw account" and sign in as `sanne.devries`. You land on the overview with the question, three running cases and the newest messages. "Mijn zaken" lists them under Lopend and Afgerond. Open a case for its steps, details and messages.
 
 Check the set first, without writing any of it, with `--check`. The install reads everything back and exits 2 when something is missing or a key was not kept. Running it again writes nothing: every part is reported as "already there". Is `sanne.devries` an account you made yourself? The install refuses to touch it. Add `--adopt=sanne.devries` to let the set use it; remove then leaves it in place.
 
@@ -90,7 +91,7 @@ The remove command stays for one release, for exactly this step.
 
 ### Who can sign in this way
 
-Only the example resident. The mode `nextcloud` mints a portal session for a Nextcloud account that has an active portal account under the same id, and the set makes exactly one. Other Nextcloud accounts on the instance get "no_portal_account" and nothing else. The account is a full Nextcloud account, though: it can open Files and the other apps. Keep it to a demo or test instance, and remove it when the demo is over.
+The cast members of the set, and residents who made their own account. The mode `nextcloud` mints a portal session for a Nextcloud account that has an active portal account under the same id. A member of `inwoners` without one gets it on the first sign-in. Other Nextcloud accounts on the instance get "no_portal_account" and nothing else. The account is a full Nextcloud account, though: it can open Files and the other apps. Keep it to a demo or test instance, and remove it when the demo is over.
 
 ### One click on a demo
 
@@ -100,7 +101,7 @@ On a demo the Nextcloud form is one step too many. Switch the one-click sign-in 
 occ config:app:set portaliq example_resident_demo_login --value=yes
 ```
 
-The card "Voorbeeldinwoner" then signs the visitor in as the example resident with one click, no form, and says "Alleen op deze demo" under its button. It works only for the example resident the set installed, on its own site, while its portal account is active; the route (`/portal/api/session/example-resident`) answers 404 to everything else, is rate limited like the test sign-in, and `debug` mode does not open it. "Uitloggen" ends the portal session as always. Switch it off again with `occ config:app:set portaliq example_resident_demo_login --value=no`, and the card goes back to the Nextcloud form.
+The sign-in page then shows one more card per resident, after the other ways in: Sanne, Henk, Linda and Fatima. Each signs the visitor in as that resident with one click, no form, and says "Alleen op deze demo" under its button. Sign in as Linda to show a case she handles for her father. The "Met een account" card stays as it is, so somebody who made an account still signs in with it. A card works only for a resident the set installed, on its own site, while its portal account is active; the route (`/portal/api/session/example-resident`) answers 404 to everything else, is rate limited like the test sign-in, and `debug` mode does not open it. "Uitloggen" ends the portal session as always. Switch it off again with `occ config:app:set portaliq example_resident_demo_login --value=no`, and the resident cards are gone.
 
 ### Why not the test sign-in
 

@@ -492,23 +492,26 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 
 
 	/**
-	 * With the switch off the site learns which way in the resident's install
-	 * added, so it can leave that demo card out; with the switch on, or on
-	 * another portal, it learns nothing.
+	 * The cards the site may draw: per resident its key, name and card, never
+	 * an account id; none while the switch is off or on another portal.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
-	public function testTheResidentsWayInIsNamedWhileTheSwitchIsOff(): void {
+	public function testTheResidentsCardsAreOfferedOnlyWithTheSwitch(): void {
 		$zuiddrecht = ['slug' => 'zuiddrecht', 'organisation' => ''];
 		$off        = $this->demoResolver(switch: 'no');
 		$on         = $this->demoResolver(switch: 'yes');
 
-		$this->assertSame(expected: 'nextcloud', actual: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidentWayIn']);
-		$this->assertSame(expected: '', actual: $on->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidentWayIn']);
-		$this->assertSame(expected: '', actual: $off->runtimeConfigFor(portal: ['slug' => 'other'], orgValue: '', locale: 'nl')['exampleResidentWayIn']);
-	}//end testTheResidentsWayInIsNamedWhileTheSwitchIsOff()
+		$this->assertSame(
+			expected: [['set' => 'zuiddrecht', 'key' => 'sanne', 'name' => 'Sanne de Vries', 'card' => []]],
+			actual: $on->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidents']
+		);
+		$this->assertSame(expected: [], actual: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidents']);
+		$this->assertSame(expected: [], actual: $on->runtimeConfigFor(portal: ['slug' => 'other'], orgValue: '', locale: 'nl')['exampleResidents']);
+		$this->assertArrayNotHasKey(key: 'exampleResidentWayIn', array: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl'));
+	}//end testTheResidentsCardsAreOfferedOnlyWithTheSwitch()
 
 
 	/**
@@ -533,9 +536,9 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		);
 		$residents = $this->createMock(originalClassName: ExampleSetResidents::class);
 		$residents->method('available')->willReturn(true);
-		$residents->method('forPortal')->willReturnCallback(
-			static fn (string $portal): ?array => (
-				$portal === 'zuiddrecht' ? ['set' => 'zuiddrecht', 'uid' => 'sanne.devries', 'mode' => 'nextcloud', 'modeAdded' => true] : null
+		$residents->method('residentsOf')->willReturnCallback(
+			static fn (string $portal): array => (
+				$portal === 'zuiddrecht' ? [['set' => 'zuiddrecht', 'key' => 'sanne', 'uid' => 'sanne.devries', 'name' => 'Sanne de Vries', 'card' => []]] : []
 			)
 		);
 

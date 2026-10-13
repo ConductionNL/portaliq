@@ -654,7 +654,7 @@ export default {
 					...news,
 					signedIn: this.signedIn === true,
 					ways: this.signInRoutes.map((r) => ({
-						id: r.mode,
+						id: r.key || r.mode,
 						label: r.label,
 						href: r.href,
 					})),
@@ -710,7 +710,7 @@ export default {
 					portal: this.portal,
 					signedIn: this.signedIn === true,
 					ways: this.signInRoutes.map((r) => ({
-						id: r.mode,
+						id: r.key || r.mode,
 						label: r.label,
 						href: r.href,
 					})),
@@ -727,7 +727,7 @@ export default {
 					...props,
 					signedIn: this.signedIn === true,
 					ways: this.signInRoutes.map((r) => ({
-						id: r.mode,
+						id: r.key || r.mode,
 						label: r.label,
 						href: r.href,
 					})),

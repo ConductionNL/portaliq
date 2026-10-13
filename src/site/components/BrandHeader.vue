@@ -121,7 +121,9 @@
 									{{ registerRoute.label || registerLabel }}
 								</a>
 							</li>
-							<li v-for="entry in signInRoutes" :key="entry.mode">
+							<li
+								v-for="entry in signInRoutes"
+								:key="entry.key || entry.mode">
 								<a
 									:href="entry.href"
 									:data-mode="entry.mode"
