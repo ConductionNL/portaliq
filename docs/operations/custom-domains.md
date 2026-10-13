@@ -144,7 +144,20 @@ theming or asset problem and is actually a routing one.
 
 ## 6. Serve the site at the root of the domain (optional)
 
-Without this step the site lives at `https://portal.example.com/index.php/apps/portaliq/site`. To serve it at `https://portal.example.com/` and `https://portal.example.com/afval`, a proxy in front of Nextcloud rewrites the short addresses of that host to the site's path route. Nextcloud owns the root of the instance, so an app cannot do this on its own.
+**The bare address works without this step.** On a verified domain of a published portal, Portaliq answers `https://portal.example.com/` (and `/index.php`) with a redirect to the site's long address, on the domain's `landingRoute` when it has one, else the home page. It does so for guests and signed-in users, before Nextcloud would show its login page or default app. `/login` and every other path are left alone, so an employee can still sign in on the portal host. A host that is not a verified domain of a published portal, the workplace host among them, keeps Nextcloud's own root.
+
+Without the rest of this step the site lives at `https://portal.example.com/index.php/apps/portaliq/site`. To serve its pages at short addresses such as `https://portal.example.com/afval`, a proxy in front of Nextcloud rewrites the short addresses of that host to the site's path route. Only Nextcloud's root can be answered from the app; every other short address needs the proxy.
+
+If you prefer the proxy to answer the bare address as well (so Nextcloud is not reached for it), nginx can redirect it per host:
+
+```nginx
+# In the server block of the portal host only.
+location = / {
+    return 302 /index.php/apps/portaliq/site;   # or .../site/mijn on the host of the signed-in area
+}
+```
+
+That rule names the portal's page in proxy configuration, outside the portal's settings, and must be kept in step with `landingRoute` by hand.
 
 1. Add the rewrite for the portal host only. Leave Nextcloud's own prefixes alone and rewrite everything else to `/index.php/apps/portaliq/site/` followed by the path.
 2. Set `servedAtRoot` to true on that domain of the portal. The site then writes its links and its canonical address as short addresses. Leave it false without the rewrite: short links would land on Nextcloud's own root.
@@ -257,6 +270,7 @@ would mean showing some tenant's content to a visitor who asked for another's.
 | Certificate warning | Proxied with SSL/TLS mode set to Flexible, or ACME has not completed. |
 | Page loads, links point at the platform host | `trusted_domains` / `overwrite*` not set. |
 | Links on the root of the domain lead to the Nextcloud login | `servedAtRoot` is true but the proxy has no rewrite for that host. |
+| The bare address of the domain shows the Nextcloud login | The domain is not verified, the portal is not published, or Nextcloud resolves another host for the request (check `trusted_proxies` and that `overwritehost` is not set). |
 | Signed-in content shown to anonymous visitors | A CDN cache rule caching by URL alone. Remove it. |
 | Portal will not load in a customer's iframe | The origin is not in the portal's `frame-ancestors` configuration. |
 | Redirect loop | Proxied with SSL/TLS mode Flexible while the origin redirects HTTP → HTTPS. Use Full (strict). |
