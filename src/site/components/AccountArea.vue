@@ -53,6 +53,7 @@
 					:demoLabel="t('Only on this demo. No password is asked.')"
 					:introLabel="t('Log in to view your information.')"
 					:lostPasswordLabel="t('Forgot your password?')"
+					:registerLabel="t('Create an account')"
 					:noWayLabel="
 						t('No login method is configured for this organisation yet.')
 					" />
@@ -84,6 +85,13 @@
 								:href="way.lostPasswordUrl"
 								data-testid="site-signin-lost-password">
 								{{ t('Forgot your password?') }}
+							</a>
+							<a
+								v-if="way.registerUrl"
+								class="utrecht-link pq-account__lost-password"
+								:href="way.registerUrl"
+								data-testid="site-signin-register">
+								{{ t('Create an account') }}
 							</a>
 						</li>
 					</ul>

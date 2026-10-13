@@ -26,11 +26,15 @@ use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
 use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
+use OCP\IAppConfig;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUser;
@@ -90,6 +94,13 @@ class ContentControllerTest extends TestCase {
 	 * @var IUserSession|null
 	 */
 	private ?IUserSession $userSession = null;
+
+	/**
+	 * The registration door, or none (nextcloud-account-registration).
+	 *
+	 * @var NextcloudRegistrationDoor|null
+	 */
+	private ?NextcloudRegistrationDoor $registrationDoor = null;
 
 	/**
 	 * The incoming request.
@@ -153,7 +164,8 @@ class ContentControllerTest extends TestCase {
 			urlGenerator: $this->urlGenerator(),
 			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class)),
 			userSession: ($this->userSession ?? $this->createMock(IUserSession::class)),
-			assistant: $assistant
+			assistant: $assistant,
+			registrationDoor: $this->registrationDoor
 		);
 	}//end controller()
 
@@ -922,4 +934,76 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertSame('', $this->controller()->site()->getData()['lostPasswordUrl']);
 	}//end testADigidOnlyPortalIsServedNoLostPasswordAddress()
+
+	/**
+	 * A real registration door on an instance whose registration app is
+	 * enabled and fills the group `inwoners`.
+	 *
+	 * @return NextcloudRegistrationDoor
+	 */
+	private function registrationDoor(): NextcloudRegistrationDoor {
+		$apps = $this->createMock(IAppManager::class);
+		$apps->method('isEnabledForAnyone')->willReturn(true);
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('inwoners');
+		$urls = $this->createMock(IURLGenerator::class);
+		$urls->method('linkToRouteAbsolute')->willReturnCallback(
+			static fn (string $route): string => 'https://portaal.example/index.php/route/' . $route
+		);
+
+		return new NextcloudRegistrationDoor(
+			$apps,
+			$appConfig,
+			$urls,
+			$this->createMock(IGroupManager::class),
+			$this->createMock(PortalResolver::class)
+		);
+	}//end registrationDoor()
+
+	/**
+	 * REQ-NCL-005: a portal offering the account route and naming the group
+	 * the registration app fills is served the registration form's address.
+	 *
+	 * @return void
+	 */
+	public function testARegistrationAddressIsServedForAPortalWithResidents(): void {
+		$portal = $this->portal();
+		$portal['authentication'] = ['modes' => ['nextcloud'], 'registration' => ['residentGroup' => 'inwoners']];
+		$this->resolver->method('resolve')->willReturn($portal);
+		$this->registrationDoor = $this->registrationDoor();
+
+		$this->assertSame(
+			'https://portaal.example/index.php/route/registration.register.showEmailForm',
+			$this->controller()->site()->getData()['registerUrl']
+		);
+	}//end testARegistrationAddressIsServedForAPortalWithResidents()
+
+	/**
+	 * REQ-NCL-005 and REQ-IWI-014: an e-mail-link portal naming the same group
+	 * is served no registration address; neither is a portal naming none.
+	 *
+	 * @return void
+	 */
+	public function testAnEmailLinkPortalIsServedNoRegistrationAddress(): void {
+		$portal = $this->portal();
+		$portal['authentication'] = ['modes' => ['email-link'], 'registration' => ['residentGroup' => 'inwoners', 'policy' => 'activation']];
+		$this->resolver->method('resolve')->willReturn($portal);
+		$this->registrationDoor = $this->registrationDoor();
+
+		$this->assertSame('', $this->controller()->site()->getData()['registerUrl']);
+	}//end testAnEmailLinkPortalIsServedNoRegistrationAddress()
+
+	/**
+	 * Without a resident group the account route alone opens no registration.
+	 *
+	 * @return void
+	 */
+	public function testAnAccountRouteWithoutAResidentGroupIsServedNoRegistrationAddress(): void {
+		$portal = $this->portal();
+		$portal['authentication'] = ['modes' => ['nextcloud']];
+		$this->resolver->method('resolve')->willReturn($portal);
+		$this->registrationDoor = $this->registrationDoor();
+
+		$this->assertSame('', $this->controller()->site()->getData()['registerUrl']);
+	}//end testAnAccountRouteWithoutAResidentGroupIsServedNoRegistrationAddress()
 }//end class

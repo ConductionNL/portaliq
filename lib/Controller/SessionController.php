@@ -40,6 +40,7 @@ use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
 use OCA\Portaliq\Service\Identity\ContactAddressValues;
+use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -262,6 +263,7 @@ class SessionController extends Controller {
 	 *                                cannot be used against it.
 	 * @param OrganisationLoginConfig|null $loginConfig The route per provider
 	 *                                                  (signin-integriq-broker-login).
+	 * @param NextcloudRegistrationDoor|null $residents Admits a resident's first account (REQ-NCL-003).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -276,6 +278,7 @@ class SessionController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly PortalResolver $portals,
 		private readonly ?OrganisationLoginConfig $loginConfig = null,
+		private readonly ?NextcloudRegistrationDoor $residents = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -821,7 +824,7 @@ class SessionController extends Controller {
 	 * THE ACCOUNT MUST ALREADY EXIST. This mints a session for an existing
 	 * `portalAccount` whose `subjectRef` is the Nextcloud user id — it does not
 	 * create one. Auto-creating would make every account on the instance a
-	 * citizen of every portal that enables this mode.
+	 * citizen of every portal that enables this mode (but see REQ-NCL-003).
 	 *
 	 * @param string $portal   The portal slug to sign in to.
 	 * @param string $returnTo Where to send the browser afterwards.
@@ -829,6 +832,7 @@ class SessionController extends Controller {
 	 * @return Response A redirect carrying the bearer in the URL fragment.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-only-an-existing-active-portal-account-gets-a-session-req-ncl-003
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
@@ -860,7 +864,7 @@ class SessionController extends Controller {
 			return new JSONResponse(['error' => 'mode_not_offered'], Http::STATUS_NOT_FOUND);
 		}
 
-		$account = $this->accounts->findBySubjectRef(subjectRef: $uid);
+		$account = $this->accountOf(site: $site, uid: $uid);
 		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
 			return new JSONResponse(['error' => 'no_portal_account'], Http::STATUS_FORBIDDEN);
 		}
@@ -894,6 +898,26 @@ class SessionController extends Controller {
 			Http::STATUS_FOUND
 		);
 	}//end nextcloud()
+
+	/**
+	 * The user's portal account; for a resident without one, written first.
+	 *
+	 * @param array<string, mixed> $site The resolved portal.
+	 * @param string               $uid  The signed-in Nextcloud user id.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-only-an-existing-active-portal-account-gets-a-session-req-ncl-003
+	 */
+	private function accountOf(array $site, string $uid): ?array {
+		$account = $this->accounts->findBySubjectRef(subjectRef: $uid);
+		$user = $this->userSession->getUser();
+		if ($account === null && $user !== null && $this->residents?->admitResident(portal: $site, user: $user) === true) {
+			return $this->accounts->findBySubjectRef(subjectRef: $uid);
+		}
+
+		return $account;
+	}//end accountOf()
 
 	/**
 	 * The signed-in Nextcloud user id, or '' when there is none.
