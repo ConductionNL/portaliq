@@ -21,6 +21,7 @@ import {
 	languageName,
 	requestedLocale,
 } from '../src/site/lib/languageNav.js'
+import { addressOfRoute } from '../src/site/lib/siteAddress.js'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -153,11 +154,32 @@ test('the shell sends the chosen language on every content read, and links keep 
 	for (const read of pageReads) {
 		assert.match(read, /locale: this\.chosenLocale/)
 	}
-	// goSearch and hrefForRoute rebuild the address; both keep `lang`.
+	// goSearch and hrefForRoute rebuild the address through addressOfRoute
+	// (siteAddress.js), which keeps `lang`. Both call sites read it from the
+	// address bar; neither builds its own URL any more.
 	assert.equal(
-		(app.match(/url\.searchParams\.set\('lang', lang\)/g) || []).length,
+		(
+			app.match(
+				/addressOfRoute\(\s*(?:this\.searchRoute|route),\s*window\.location\.href,/g,
+			) || []
+		).length,
 		2,
+		'goSearch and hrefForRoute both build their address with addressOfRoute',
 	)
+	assert.doesNotMatch(app, /new URL\(window\.location\.href\)/)
+	// And addressOfRoute keeps the chosen language, on the long address and
+	// on the short one alike.
+	const siteRoute = '/index.php/apps/portaliq/site'
+	const long = { addressing: { root: false, siteRoute, landingRoute: '' } }
+	const short = { addressing: { root: true, siteRoute, landingRoute: '' } }
+	for (const [config, href] of [
+		[long, 'https://loket.example.nl/apps/portaliq/site?portal=demo&lang=en&x=1'],
+		[short, 'https://loket.example.nl/afval?lang=en&x=1'],
+	]) {
+		const url = addressOfRoute('/contact', href, config)
+		assert.equal(url.searchParams.get('lang'), 'en', href)
+		assert.equal(url.searchParams.get('x'), null, href)
+	}
 })
 
 test('the chosen language reaches every content request', async () => {
