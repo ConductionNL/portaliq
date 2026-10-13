@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\ExampleResidentController;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentCatalogue;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentRecord;
 use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
+use OCA\Portaliq\Service\ExampleResident\ExampleSetResidents;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -36,8 +35,7 @@ class ExampleResidentControllerTest extends TestCase {
 	 * @param PortalAccountService|null     $accounts         The account service.
 	 * @param IURLGenerator|null            $urlGenerator     The URL generator.
 	 * @param PortalResolver|null           $portals          The portal resolver.
-	 * @param ExampleResidentRecord|null    $exampleResidents The install records.
-	 * @param ExampleResidentCatalogue|null $exampleCatalogue The shipped residents.
+	 * @param ExampleSetResidents|null      $exampleResidents The installed example residents.
 	 *
 	 * @return ExampleResidentController
 	 */
@@ -47,8 +45,7 @@ class ExampleResidentControllerTest extends TestCase {
 		?PortalAccountService $accounts = null,
 		?IURLGenerator $urlGenerator = null,
 		?PortalResolver $portals = null,
-		?ExampleResidentRecord $exampleResidents = null,
-		?ExampleResidentCatalogue $exampleCatalogue = null,
+		?ExampleSetResidents $exampleResidents = null,
 	): ExampleResidentController {
 		return new ExampleResidentController(
 			$this->createMock(originalClassName: IRequest::class),
@@ -58,8 +55,7 @@ class ExampleResidentControllerTest extends TestCase {
 			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
 			new ExampleResidentSignIn(
 				config: ($config ?? $this->createMock(originalClassName: IConfig::class)),
-				records: $exampleResidents,
-				catalogue: $exampleCatalogue
+				residents: $exampleResidents
 			)
 		);
 	}//end controller()
@@ -76,7 +72,7 @@ class ExampleResidentControllerTest extends TestCase {
 	 * @param array<int, string> $modes      The sign-in modes the portals offer.
 	 * @param string             $resolvesTo When set, the slug every portal lookup answers with.
 	 *
-	 * @return array{config: IConfig, record: ExampleResidentRecord, catalogue: ExampleResidentCatalogue, portals: PortalResolver, accounts: PortalAccountService}
+	 * @return array{config: IConfig, residents: ExampleSetResidents, portals: PortalResolver, accounts: PortalAccountService}
 	 */
 	private function demoParts(
 		string $switch,
@@ -89,19 +85,12 @@ class ExampleResidentControllerTest extends TestCase {
 		$config->method('getAppValue')->willReturnCallback(
 			static fn (string $app, string $key, mixed $default = ''): string => ($key === 'example_resident_demo_login' ? $switch : (string)$default)
 		);
-		$record = $this->createMock(originalClassName: ExampleResidentRecord::class);
-		$record->method('read')->willReturnCallback(
-			static fn (string $id): array => [
-				'userId'      => ($id === 'zuiddrecht' ? 'sanne.devries' : ''),
-				'userCreated' => true,
-				'account'     => 'acc-1',
-				'signIn'      => ['mode' => 'nextcloud', 'label' => true],
-				'objects'     => [],
-			]
-		);
-		$catalogue = $this->createMock(originalClassName: ExampleResidentCatalogue::class);
-		$catalogue->method('find')->willReturnCallback(
-			static fn (string $id): ?array => ($id === 'zuiddrecht' ? ['id' => 'zuiddrecht', 'portal' => 'zuiddrecht'] : null)
+		$residents = $this->createMock(originalClassName: ExampleSetResidents::class);
+		$residents->method('available')->willReturn(true);
+		$residents->method('forPortal')->willReturnCallback(
+			static fn (string $portal): ?array => (
+				$portal === 'zuiddrecht' ? ['set' => 'zuiddrecht', 'uid' => 'sanne.devries', 'mode' => 'nextcloud', 'modeAdded' => true] : null
+			)
 		);
 		$portals = $this->createMock(originalClassName: PortalResolver::class);
 		$portals->method('resolve')->willReturnCallback(
@@ -116,7 +105,7 @@ class ExampleResidentControllerTest extends TestCase {
 			static fn (string $subjectRef): ?array => ($subjectRef === 'sanne.devries' ? ['status' => 'active', 'audience' => 'citizen', 'organisation' => 'zuiddrecht'] : null)
 		);
 
-		return ['config' => $config, 'record' => $record, 'catalogue' => $catalogue, 'portals' => $portals, 'accounts' => $accounts];
+		return ['config' => $config, 'residents' => $residents, 'portals' => $portals, 'accounts' => $accounts];
 	}//end demoParts()
 
 
@@ -140,8 +129,7 @@ class ExampleResidentControllerTest extends TestCase {
 			config: $parts['config'],
 			accounts: $parts['accounts'],
 			portals: $portals,
-			exampleResidents: $parts['record'],
-			exampleCatalogue: $parts['catalogue']
+			exampleResidents: $parts['residents']
 		)->signIn(id: 'zuiddrecht', portal: 'zuiddrecht');
 
 		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
@@ -167,8 +155,7 @@ class ExampleResidentControllerTest extends TestCase {
 			config: $parts['config'],
 			accounts: $parts['accounts'],
 			portals: $parts['portals'],
-			exampleResidents: $parts['record'],
-			exampleCatalogue: $parts['catalogue']
+			exampleResidents: $parts['residents']
 		);
 
 		foreach ([['id' => 'someone', 'portal' => 'zuiddrecht'], ['id' => 'zuiddrecht', 'portal' => 'other'], ['id' => '', 'portal' => '']] as $call) {
@@ -203,8 +190,7 @@ class ExampleResidentControllerTest extends TestCase {
 			accounts: $parts['accounts'],
 			urlGenerator: $urlGenerator,
 			portals: $parts['portals'],
-			exampleResidents: $parts['record'],
-			exampleCatalogue: $parts['catalogue']
+			exampleResidents: $parts['residents']
 		)->signIn(id: 'zuiddrecht', portal: 'zuiddrecht');
 
 		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
@@ -232,8 +218,7 @@ class ExampleResidentControllerTest extends TestCase {
 			config: $parts['config'],
 			accounts: $accounts,
 			portals: $parts['portals'],
-			exampleResidents: $parts['record'],
-			exampleCatalogue: $parts['catalogue']
+			exampleResidents: $parts['residents']
 		)->signIn(id: 'zuiddrecht', portal: 'zuiddrecht');
 
 		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
@@ -265,8 +250,7 @@ class ExampleResidentControllerTest extends TestCase {
 				config: $parts['config'],
 				accounts: $parts['accounts'],
 				portals: $parts['portals'],
-				exampleResidents: $parts['record'],
-				exampleCatalogue: $parts['catalogue']
+				exampleResidents: $parts['residents']
 			)->signIn(id: 'zuiddrecht', portal: $portal['named']);
 
 			$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus(), message: $case);
@@ -294,8 +278,7 @@ class ExampleResidentControllerTest extends TestCase {
 			config: $parts['config'],
 			accounts: $parts['accounts'],
 			portals: $portals,
-			exampleResidents: $parts['record'],
-			exampleCatalogue: $parts['catalogue']
+			exampleResidents: $parts['residents']
 		)->signIn(id: 'zuiddrecht', portal: 'zuiddrecht');
 
 		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
@@ -321,8 +304,7 @@ class ExampleResidentControllerTest extends TestCase {
 			config: $parts['config'],
 			accounts: $parts['accounts'],
 			portals: $parts['portals'],
-			exampleResidents: $parts['record'],
-			exampleCatalogue: $parts['catalogue']
+			exampleResidents: $parts['residents']
 		)->signIn(id: 'zuiddrecht', portal: 'zuiddrecht');
 
 		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());

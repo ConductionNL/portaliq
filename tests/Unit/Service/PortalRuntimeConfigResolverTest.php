@@ -21,8 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\CaseTypeReader;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentCatalogue;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentRecord;
+use OCA\Portaliq\Service\ExampleResident\ExampleSetResidents;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
@@ -532,13 +531,13 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 				return (string)$default;
 			}
 		);
-		$record = $this->createMock(originalClassName: ExampleResidentRecord::class);
-		$record->method('read')->willReturn(
-			['userId' => 'sanne.devries', 'userCreated' => true, 'account' => 'a', 'signIn' => ['mode' => 'nextcloud', 'label' => true], 'objects' => []]
+		$residents = $this->createMock(originalClassName: ExampleSetResidents::class);
+		$residents->method('available')->willReturn(true);
+		$residents->method('forPortal')->willReturnCallback(
+			static fn (string $portal): ?array => (
+				$portal === 'zuiddrecht' ? ['set' => 'zuiddrecht', 'uid' => 'sanne.devries', 'mode' => 'nextcloud', 'modeAdded' => true] : null
+			)
 		);
-		$catalogue = $this->createMock(originalClassName: ExampleResidentCatalogue::class);
-		$catalogue->method('ids')->willReturn(['zuiddrecht']);
-		$catalogue->method('find')->willReturn(['id' => 'zuiddrecht', 'portal' => 'zuiddrecht']);
 
 		return new PortalRuntimeConfigResolver(
 			portalResolver: $this->createMock(originalClassName: PortalResolver::class),
@@ -546,8 +545,7 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 			themeResolver: $this->createMock(originalClassName: PortalThemeResolver::class),
 			config: $config,
 			waysIn: null,
-			exampleResidents: $record,
-			exampleCatalogue: $catalogue
+			exampleResidents: $residents
 		);
 	}//end demoResolver()
 
