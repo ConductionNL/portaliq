@@ -90,6 +90,14 @@
 							{{ lostPasswordLabel }}
 						</a>
 					</p>
+					<p v-if="way.registerUrl" class="pq-signin__hint">
+						<a
+							class="utrecht-link"
+							:href="way.registerUrl"
+							data-testid="site-signin-register">
+							{{ registerLabel }}
+						</a>
+					</p>
 					<p v-if="way.card && way.card.hint" class="pq-signin__hint">
 						{{ way.card.hint }}
 					</p>
@@ -199,6 +207,8 @@ export default {
 		introLabel: { type: String, default: 'Log in om uw gegevens te bekijken.' },
 		/** The link to Nextcloud's own password reset. */
 		lostPasswordLabel: { type: String, default: 'Wachtwoord vergeten' },
+		/** The link to Nextcloud's own registration (REQ-NCL-005). */
+		registerLabel: { type: String, default: 'Account aanmaken' },
 		noWayLabel: {
 			type: String,
 			default: 'Er is nog geen manier van inloggen ingesteld.',

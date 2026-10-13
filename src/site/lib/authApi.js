@@ -326,6 +326,7 @@ function dutchLabel(key, vars = {}) {
  * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
  * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
  */
 export function signInRoutes(
 	site,
@@ -397,6 +398,13 @@ export function signInRoutes(
 			// (password-reset-from-the-sign-in-page REQ-PWR-001). Never on the demo.
 			...(mode === 'nextcloud' && !demo && site?.lostPasswordUrl
 				? { lostPasswordUrl: String(site.lostPasswordUrl) }
+				: {}),
+			// Nextcloud's own registration form, served by the site config only
+			// when the portal names a resident group the registration app fills
+			// (nextcloud-account-registration REQ-NCL-005). Never on the demo,
+			// never on another mode: the e-mail link opens no registration.
+			...(mode === 'nextcloud' && !demo && site?.registerUrl
+				? { registerUrl: String(site.registerUrl) }
 				: {}),
 			...(mode === 'email-link'
 				? { form: 'email-link', authBase, portal: slug }
