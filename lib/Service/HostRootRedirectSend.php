@@ -41,7 +41,7 @@ class HostRootRedirectSend {
 	 *
 	 * @param string $location A path on the same host.
 	 *
-	 * @return void
+	 * @return never
 	 *
 	 * @SuppressWarnings(PHPMD.ExitExpression) Core answers the bare address after boot; only ending the request keeps this answer.
 	 *
@@ -49,7 +49,7 @@ class HostRootRedirectSend {
 	 *
 	 * @spec openspec/changes/portal-host-root-redirect/specs/portal-settings/spec.md#requirement-the-bare-address-of-a-portal-host-must-lead-to-its-site-req-hrr-001
 	 */
-	public function redirect(string $location): void {
+	public function redirect(string $location): never {
 		http_response_code(302);
 		header('Location: ' . $location);
 		exit();

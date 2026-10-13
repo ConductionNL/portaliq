@@ -60,22 +60,19 @@ class HostRootRedirect {
 	/**
 	 * Send the visitor of a portal host's bare address to the site.
 	 *
+	 * Returns only when the request is left to Nextcloud: a redirect ends it.
+	 *
 	 * @param IRequest $request The request.
 	 *
-	 * @return bool True when the redirect was sent. In production the send
-	 *              ends the request, so a caller only sees false.
+	 * @return void
 	 *
 	 * @spec openspec/changes/portal-host-root-redirect/specs/portal-settings/spec.md#requirement-the-bare-address-of-a-portal-host-must-lead-to-its-site-req-hrr-001
 	 */
-	public function handle(IRequest $request): bool {
+	public function handle(IRequest $request): void {
 		$target = $this->target(request: $request);
-		if ($target === null) {
-			return false;
+		if ($target !== null) {
+			$this->send->redirect(location: $target);
 		}
-
-		$this->send->redirect(location: $target);
-
-		return true;
 	}//end handle()
 
 	/**

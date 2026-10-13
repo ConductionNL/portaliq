@@ -291,9 +291,12 @@ class HostRootRedirectBootTest extends TestCase {
 		);
 
 		$send = $this->createMock(HostRootRedirectSend::class);
+		// The real send never returns (it ends the process), so the stand-in
+		// records the location and throws, as a `never` method must.
 		$send->method('redirect')->willReturnCallback(
-			function (string $location): void {
+			function (string $location): never {
 				$this->sent[] = $location;
+				throw new RedirectSentForTest($location);
 			}
 		);
 
@@ -311,6 +314,16 @@ class HostRootRedirectBootTest extends TestCase {
 		// Constructed without its constructor, which needs a running server;
 		// boot() reads nothing the constructor sets.
 		$app = (new ReflectionClass(Application::class))->newInstanceWithoutConstructor();
-		$app->boot($bootContext);
+		try {
+			$app->boot($bootContext);
+		} catch (RedirectSentForTest) {
+			// The request ended with the redirect recorded in $this->sent.
+		}
 	}//end boot()
+}//end class
+
+/**
+ * Thrown by the stand-in send where the real one ends the process.
+ */
+class RedirectSentForTest extends RuntimeException {
 }//end class
