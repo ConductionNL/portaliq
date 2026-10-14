@@ -329,6 +329,7 @@ class ActionConfigNormaliser {
 	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
+	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
 	 */
 	private function fieldConfigEntry(string $field, array $config, array $mandatory, string $actionType = ''): array {
 		$entry = [];
@@ -342,6 +343,7 @@ class ActionConfigNormaliser {
 
 		$entry = $this->applyFieldFlags(entry: $entry, field: $field, config: $config, mandatory: $mandatory);
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
+		$entry = $this->form->declaredInput(entry: $entry, config: $config);
 		$entry = (new ValueLabelsNormaliser())->apply(entry: $entry, source: $config);
 		$entry = $this->form->fieldWidget(entry: $entry, config: $config);
 

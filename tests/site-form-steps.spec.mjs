@@ -454,6 +454,77 @@ test('an attached Woo action runs the same steps and forwards through the row ac
 	)
 })
 
+// endpoint-action-forms-keep-their-field-shape REQ-EAF-003: a refusal the app
+// words for one field lands on that field on the dossier page too, where it
+// read "Opslaan is niet gelukt" because the forward's status was dropped.
+test('a refusal of an attached Woo action lands on its field, not as a failure', async () => {
+	globalThis.document = {
+		title: 'Dossier',
+		getElementById: () => null,
+		createElement: () => ({}),
+		documentElement: { lang: 'nl' },
+	}
+	const api = {
+		fetchOptions: async () => [],
+		forwardRowAction: async () => ({
+			ok: false,
+			status: 400,
+			body: {
+				error: 'invalid',
+				errors: { onderwerp: 'Zeg waar uw verzoek over gaat.' },
+			},
+		}),
+	}
+	const action = wooAction({
+		app: 'dossiq',
+		fields: ['onderwerp'],
+		fieldConfigs: { onderwerp: { label: 'Waar gaat uw verzoek over?' } },
+		steps: [{ id: 'vraag', title: 'Uw vraag', fields: ['onderwerp'] }],
+	})
+	const block = await mountSfc(ATTACHED, {
+		collection: { id: 'mijnDossiers', attachedActions: [action] },
+		row: { id: 'dos-1' },
+		api,
+		t,
+	})
+	await block.fire(block.find('attached-action-startWooVerzoek'), 'click')
+	await type(block, 'f-startWooVerzoek-onderwerp', 'De brug')
+	await press(block)
+	await press(block)
+
+	assert.deepEqual(summaryLinks(block), ['onderwerp'])
+	assert.equal(
+		block.textOf(block.find('error-summary-link-onderwerp')),
+		'Zeg waar uw verzoek over gaat.',
+	)
+	assert.doesNotMatch(block.text(), /Opslaan is niet gelukt|Saving did not work/)
+
+	// A 400 that names no field is a refusal of the answers, not a failure on
+	// the way: before the status travelled it read "Opslaan is niet gelukt".
+	const vague = await mountSfc(ATTACHED, {
+		collection: { id: 'mijnDossiers', attachedActions: [action] },
+		row: { id: 'dos-1' },
+		api: {
+			fetchOptions: async () => [],
+			forwardRowAction: async () => ({
+				ok: false,
+				status: 400,
+				body: { error: 'invalid' },
+			}),
+		},
+		t,
+	})
+	await vague.fire(vague.find('attached-action-startWooVerzoek'), 'click')
+	await type(vague, 'f-startWooVerzoek-onderwerp', 'De brug')
+	await press(vague)
+	await press(vague)
+	assert.match(
+		vague.text(),
+		/Niet alles is goed ingevuld|Not everything is filled in correctly/,
+	)
+	assert.doesNotMatch(vague.text(), /Opslaan is niet gelukt|Saving did not work/)
+})
+
 test('a published form in steps: the review, then the confirmation heading takes focus', async () => {
 	const sent = []
 	const render = {

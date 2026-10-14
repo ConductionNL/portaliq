@@ -38,6 +38,11 @@ namespace OCA\Portaliq\Contribution;
  */
 class ActionFormShape {
 	/**
+	 * The input hints an action may declare on a field itself.
+	 */
+	private const FIELD_INPUTS = ['date', 'datetime', 'number', 'email'];
+
+	/**
 	 * The widget hint on ONE field config, copied from what the app declared.
 	 *
 	 * @param array<string, mixed> $entry The sanitised field config so far.
@@ -50,6 +55,28 @@ class ActionFormShape {
 	public function fieldWidget(array $entry, array $config): array {
 		return (new FieldWidgetNormaliser())->apply(entry: $entry, source: $config);
 	}//end fieldWidget()
+
+	/**
+	 * The input hint ONE field config declares itself, kept when it is one the
+	 * site knows. A create action gets its hint from the schema's format
+	 * (SchemaInputHintNormaliser), which runs later and wins; an endpoint
+	 * action writes no schema here, so its own declaration is the only place
+	 * a date field can say it is a date.
+	 *
+	 * @param array<string, mixed> $entry  The sanitised field config so far.
+	 * @param array<string, mixed> $config The declared field config.
+	 *
+	 * @return array<string, mixed> The entry.
+	 *
+	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 */
+	public function declaredInput(array $entry, array $config): array {
+		if (in_array(($config['input'] ?? null), self::FIELD_INPUTS, true) === true) {
+			$entry['input'] = $config['input'];
+		}
+
+		return $entry;
+	}//end declaredInput()
 
 	/**
 	 * Mark the fields the resident must fill in: the action's own

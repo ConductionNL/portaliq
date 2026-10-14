@@ -475,3 +475,60 @@ test('a refused value lands on its field in plain words', async () => {
 		'not the generic "not available right now"',
 	)
 })
+
+// endpoint-action-forms-keep-their-field-shape REQ-EAF-004: a start point's
+// page is titled after its action, so the form under that h1 printed the same
+// title again as an h2.
+test('an action block on a page titled after it does not repeat the title', async () => {
+	const headingsOf = (mounted) =>
+		mounted
+			.findAll((n) => n.tag === 'h2' && n.props.class === 'utrecht-heading-2')
+			.map((n) => mounted.textOf(n))
+	const onItsOwnPage = await mountSfc(BLOCK, {
+		block: {
+			type: 'action',
+			action: 'approveHourWeek',
+			pageTitle: 'Uren goedkeuren',
+		},
+		contribution: { app: 'learniq', actions: [approveHourWeek] },
+		api: recordingApi(),
+		t,
+	})
+	await onItsOwnPage.flush()
+	assert.ok(onItsOwnPage.find('schema-form'), 'the form still shows')
+	assert.deepEqual(headingsOf(onItsOwnPage), [])
+
+	const amongOthers = await mountSfc(BLOCK, {
+		block: {
+			type: 'action',
+			action: 'approveHourWeek',
+			pageTitle: 'Mijn overzicht',
+		},
+		contribution: { app: 'learniq', actions: [approveHourWeek] },
+		api: recordingApi(),
+		t,
+	})
+	await amongOthers.flush()
+	assert.deepEqual(headingsOf(amongOthers), ['Uren goedkeuren'])
+})
+
+test('a contribution page hands its title to its action blocks', async () => {
+	const { instance } = await import('./support/page-instance.mjs')
+	const { loadSfc } = await import('./support/render-sfc.mjs')
+	const ContributionPage = await loadSfc(
+		'src/site/pages/collections/ContributionPage.vue',
+	)
+	const page = instance(ContributionPage, {
+		entry: { label: 'Informatie opvragen (Woo-verzoek)' },
+	})
+	assert.deepEqual(
+		page.withTitle({ type: 'action', action: 'startWooVerzoekAlgemeen' }),
+		{
+			type: 'action',
+			action: 'startWooVerzoekAlgemeen',
+			pageTitle: 'Informatie opvragen (Woo-verzoek)',
+		},
+	)
+	const richText = { type: 'richText', markdown: 'x' }
+	assert.equal(page.withTitle(richText), richText, 'other blocks are as they were')
+})

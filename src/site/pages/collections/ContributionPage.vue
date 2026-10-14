@@ -1133,13 +1133,21 @@ export default {
 
 		/**
 		 * A cta block with `{title}` in its label filled with the open
-		 * record's title.
+		 * record's title; an action block with the page's own title, so the
+		 * form does not print the heading the page already printed.
 		 *
 		 * @param {object} block The block.
 		 * @return {object}
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-form-on-a-page-of-its-own-does-not-repeat-the-page-title-req-eaf-004
 		 */
 		withTitle(block) {
+			if (block?.type === 'action') {
+				return {
+					...block,
+					pageTitle: (this.entry && this.entry.label) || '',
+				}
+			}
 			if (block?.type !== 'cta') {
 				return block
 			}
