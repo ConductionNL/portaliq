@@ -773,6 +773,26 @@ console.log('a locked filter (home-and-theme-landing-pages REQ-HTL-001)')
 	assertTrue('the block sends the lock and offers no facet for it', /lockedFilters: this\.locked/.test(block) && /withoutLocked\(withKindField\(own, this\.hideKind\), this\.locked\)/.test(block))
 }
 
+console.log('a link with q (search-reads-q-from-the-address, REQ-SRQ-001)')
+
+{
+	const fields = ['wooCategory']
+	assertEqual('?q= opens the search for that term', readSearchState('?route=/zoeken&q=Lindelaan', fields).query, 'Lindelaan')
+	assertEqual('_search wins when both are there', readSearchState('?q=oud&_search=nieuw', fields).query, 'nieuw')
+	assertEqual('no term is no term', readSearchState('?route=/zoeken', fields).query, '')
+
+	const state = { query: 'fietspad', page: 1, sort: '', facets: { wooCategory: [] } }
+	const fromQ = writeSearchState(new URL('https://portal.example/site?route=/zoeken&q=Lindelaan'), state, fields)
+	assertEqual('a visitor who came with q keeps q, now with the new term', [fromQ.searchParams.get('q'), fromQ.searchParams.has('_search')], ['fietspad', false])
+	assertEqual('and that address opens the new search again', readSearchState(fromQ.search, fields).query, 'fietspad')
+
+	const plain = writeSearchState(new URL('https://portal.example/site?route=/zoeken'), state, fields)
+	assertEqual('without q the term stays _search', [plain.searchParams.get('_search'), plain.searchParams.has('q')], ['fietspad', false])
+
+	const cleared = writeSearchState(new URL('https://portal.example/site?route=/zoeken&q=Lindelaan'), { ...state, query: '' }, fields)
+	assertEqual('clearing the term removes q', cleared.searchParams.has('q'), false)
+}
+
 if (failures > 0) {
 	console.error(`\n${failures} assertion(s) failed`)
 	process.exit(1)
