@@ -348,7 +348,8 @@ export default {
 		 */
 		messageSent() {
 			this.writingTo = null
-			this.notice = 'Your message has been sent. You find the conversation under Messages.'
+			this.notice =
+				'Your message has been sent. You find the conversation under Messages.'
 		},
 
 		/**
