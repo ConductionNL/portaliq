@@ -63,6 +63,33 @@ export function dateValue(day, month, year) {
 }
 
 /**
+ * A whole date typed or pasted into one box, split into day, month and year;
+ * null when the text is not a whole date. Reads `d-m-yyyy` with `-`, `/`, `.`
+ * or a space between the parts, `yyyy-mm-dd`, and `ddmmyyyy`.
+ *
+ * @param {string} text What the box received.
+ * @return {{day: string, month: string, year: string}|null} The parts, or null.
+ *
+ * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-date-typed-or-pasted-whole-fills-day-month-and-year-req-rr3-001
+ */
+export function typedDate(text) {
+	const value = String(text ?? '').trim()
+	const dutch = /^(\d{1,2})[-/.\s]+(\d{1,2})[-/.\s]+(\d{4})$/.exec(value)
+	if (dutch) {
+		return { day: dutch[1], month: dutch[2], year: dutch[3] }
+	}
+	const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value)
+	if (iso) {
+		return { day: iso[3], month: iso[2], year: iso[1] }
+	}
+	const digits = /^(\d{2})(\d{2})(\d{4})$/.exec(value)
+	if (digits) {
+		return { day: digits[1], month: digits[2], year: digits[3] }
+	}
+	return null
+}
+
+/**
  * The three parts a date group shows for a value: an ISO date split into day,
  * month and year without leading zeros, or the `d-m-y` it typed earlier.
  *

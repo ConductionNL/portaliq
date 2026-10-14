@@ -360,10 +360,19 @@ export default {
 		 * @return {boolean} True to show the button.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-form-asks-for-a-draft-only-when-its-action-can-keep-one-req-rr3-005
 		 */
 		canSaveDraft() {
+			// The server keeps a draft only of a create action that names its
+			// register and schema; an endpoint action that declares `draft`
+			// asked for one on every open and got a 404 (live round 3).
+			const draftable =
+				this.action.type === 'create'
+				&& Boolean(this.action.register)
+				&& Boolean(this.action.schema)
 			return (
-				this.draftDays > 0
+				draftable
+				&& this.draftDays > 0
 				&& this.hasSteps
 				&& !this.confirmed
 				&& typeof this.api.saveDraft === 'function'

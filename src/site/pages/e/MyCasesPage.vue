@@ -187,6 +187,7 @@
 import CaseCard from '../../components/mijn/CaseCard.vue'
 import LoadError from '../../components/mijn/LoadError.vue'
 import {
+	ACTING_FOR_SELF,
 	caseStatus,
 	caseTarget,
 	caseTitle,
@@ -196,6 +197,7 @@ import { personOf } from '../../components/chrome/person.js'
 import {
 	actingFor,
 	chooseActingFor,
+	forgetChosenParty,
 	learnMandates,
 } from '../../components/e/actingFor.js'
 import { caseCard } from '../../components/mijn/cases.js'
@@ -246,7 +248,9 @@ export default {
 			data: this.initialData,
 			tab: this.initialTab,
 			request: 0,
-			everyone: false,
+			// Everyone, unless the page is fixed to a mandate or a party was
+			// chosen this session (resident-pages-live-round-3 REQ-RR3-002).
+			everyone: this.mandateId === '' && !actingFor.chosen,
 		}
 	},
 
@@ -458,13 +462,7 @@ export default {
 			this.data = null
 			// Everyone: the resident's own list and each mandate's, as one.
 			const answer = this.everyone
-				? mergedAnswer(
-						await Promise.all(
-							readsFor(EVERYONE, actingFor.mandates).map((id) =>
-								this.api.fetchMyCases(id).catch(() => null),
-							),
-						),
-					)
+				? await this.readEveryone(ticket)
 				: await this.api.fetchMyCases(this.actingUnder)
 			if (ticket !== this.request) {
 				return
@@ -472,6 +470,33 @@ export default {
 			this.data = answer
 			learnMandates(answer)
 			this.$emit('loaded', answer)
+		},
+
+		/**
+		 * Everyone's cases: the resident's own first, which names the
+		 * mandates held, then each of those. On a first visit nothing knows
+		 * the mandates yet, so reading them from the store alone read only
+		 * the resident's own list (live round 3, 14 Oct).
+		 *
+		 * @param {number} ticket The read this belongs to.
+		 * @return {Promise<object|null>} The merged answer.
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/portal-my-cases/spec.md#requirement-everyone-is-the-default-and-reads-every-active-mandate-req-rr3-002
+		 */
+		async readEveryone(ticket) {
+			const own = await this.api
+				.fetchMyCases(ACTING_FOR_SELF)
+				.catch(() => null)
+			if (ticket !== this.request) {
+				return own
+			}
+			learnMandates(own)
+			const others = readsFor(EVERYONE, actingFor.mandates).filter(
+				(id) => id !== ACTING_FOR_SELF,
+			)
+			const rest = await Promise.all(
+				others.map((id) => this.api.fetchMyCases(id).catch(() => null)),
+			)
+			return mergedAnswer([own, ...rest])
 		},
 
 		/**
@@ -487,7 +512,11 @@ export default {
 			const wasEveryone = this.everyone
 			const wasUnder = this.actingUnder
 			this.everyone = id === EVERYONE
-			if (!this.everyone) {
+			if (this.everyone) {
+				// Everyone again on the next visit; the header keeps acting
+				// under whom it acts.
+				forgetChosenParty()
+			} else {
 				chooseActingFor(id)
 			}
 			// Another mandate reloads through the actingUnder watcher; to or

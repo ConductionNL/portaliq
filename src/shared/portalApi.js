@@ -978,13 +978,19 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<{step: string, expiresAt: string, answers: object}|null>} The draft.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-form-asks-for-a-draft-only-when-its-action-can-keep-one-req-rr3-005
 		 */
 		async getDraft(app, actionId) {
 			try {
 				const res = await fetch(draftUrl(app, actionId), {
 					headers: { Accept: 'application/json', ...authHeaders() },
 				})
-				return res.ok ? await res.json() : null
+				if (!res.ok) {
+					return null
+				}
+				// No draft yet answers `{found: false}` (REQ-RR3-005).
+				const draft = await res.json()
+				return draft && draft.found === false ? null : draft
 			} catch {
 				return null
 			}

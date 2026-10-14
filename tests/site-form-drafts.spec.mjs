@@ -226,3 +226,43 @@ test('a resumed draft opens on the step with the gap', async () => {
 	const el = form.findAll((n) => n.props.id === 'f-woo-request-omschrijving')[0]
 	assert.ok(el, 'the gap is on screen')
 })
+
+test('an endpoint action that declares a draft asks for none: the server keeps no draft of it (REQ-RR3-005)', async () => {
+	const asked = []
+	const api = {
+		async fetchOptions() {
+			return []
+		},
+		async getDraft(app, id) {
+			asked.push(['get', app, id])
+			return null
+		},
+		async saveDraft(app, id) {
+			asked.push(['save', app, id])
+			return null
+		},
+	}
+	const endpoint = {
+		...ACTION,
+		type: undefined,
+		register: undefined,
+		schema: undefined,
+		endpoint: '/index.php/apps/dossiq/api/portal/woo-verzoek',
+	}
+	const form = await mountSfc(FORM, {
+		action: endpoint,
+		api,
+		send: async () => ({ ok: true }),
+	})
+	await form.flush()
+	assert.deepEqual(asked, [], 'no draft read on open')
+	assert.equal(form.find('schema-form-save-draft'), null, 'no save button')
+
+	const create = await mountSfc(FORM, { action: ACTION, api })
+	await create.flush()
+	assert.deepEqual(
+		asked,
+		[['get', 'dossiq', 'woo-request']],
+		'a create action still resumes',
+	)
+})
