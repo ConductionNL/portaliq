@@ -349,7 +349,7 @@ test('the Zuiddrecht site holds what the design shows', () => {
 	)
 	// Counts the installer's own test and the documentation name.
 	assert.equal(site.menus.length, 3)
-	assert.equal(site.pages.length, 38)
+	assert.equal(site.pages.length, 39)
 	assert.equal(site.news.length, 4)
 })
 

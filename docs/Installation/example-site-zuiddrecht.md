@@ -20,12 +20,12 @@ Zuiddrecht is a municipality that does not exist. Its website shows what a porta
 occ portaliq:example-site:install zuiddrecht
 ```
 
-You get one portal, three menus, 33 pages and four news items:
+You get one portal, three menus, 39 pages and four news items:
 
 ```
 Portal: 1 declared, 1 created, 0 already there, 1 found afterwards
 Menus: 3 declared, 3 created, 0 already there, 3 found afterwards
-Pages: 33 declared, 33 created, 0 already there, 33 found afterwards
+Pages: 39 declared, 39 created, 0 already there, 39 found afterwards
 News items: 4 declared, 4 created, 0 already there, 4 found afterwards
 The site is installed. Open it at /index.php/apps/portaliq/site?portal=zuiddrecht
 ```
@@ -138,7 +138,7 @@ This deletes the objects the install created, from the install's own record, and
 
 ```
 Menus: 3 deleted, 0 already gone
-Pages: 33 deleted, 0 already gone
+Pages: 39 deleted, 0 already gone
 News items: 4 deleted, 0 already gone
 Portal: deleted
 ```
