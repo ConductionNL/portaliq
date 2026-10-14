@@ -9,7 +9,7 @@
 		class="pq-action-block"
 		:data-testid="`action-block-${resolved.id}`">
 		<template v-if="isForm">
-			<h2 class="utrecht-heading-2">
+			<h2 v-if="headed" class="utrecht-heading-2">
 				{{ resolved.label || resolved.id }}
 			</h2>
 			<SchemaForm
@@ -52,7 +52,7 @@
 		<!-- An endpoint action that needs input, on an `action` block: its
 		     form, sent to the app's endpoint (site-action-forms). -->
 		<template v-else-if="isEndpointForm">
-			<h2 class="utrecht-heading-2">
+			<h2 v-if="headed" class="utrecht-heading-2">
 				{{ resolved.label || resolved.id }}
 			</h2>
 			<SchemaForm
@@ -140,7 +140,7 @@ export default {
 	inheritAttrs: false,
 
 	props: {
-		/** The page block: `{type: 'action'|'cta', action, label?}`. */
+		/** The page block: `{type: 'action'|'cta', action, label?, pageTitle?}`. */
 		block: { type: Object, required: true },
 		/** The contribution the page belongs to (`app`, `actions`). */
 		contribution: { type: Object, default: () => ({}) },
@@ -161,6 +161,23 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Whether the form prints the action's label as its heading: not when
+		 * the page it stands on already carries that title as its h1. A start
+		 * point's page is titled after its action, so the label printed twice,
+		 * one under the other (zuiddrecht live test, 14 October 2026).
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-form-on-a-page-of-its-own-does-not-repeat-the-page-title-req-eaf-004
+		 */
+		headed() {
+			const title = String(this.block.pageTitle || '').trim()
+			const label = String(
+				(this.resolved && (this.resolved.label || this.resolved.id)) || '',
+			).trim()
+			return title === '' || title !== label
+		},
+
 		resolved() {
 			return (
 				this.action
